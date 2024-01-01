@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -28,6 +29,16 @@ func (s fakeActorSource) Get(context.Context, string) (*actor.Actor, error) {
 	return &actor.Actor{Source: s, AccessEnabled: true}, nil
 }
 
+type fakeDotComGraphQLApi struct{}
+
+func (g fakeDotComGraphQLApi) MakeRequest(
+	ctx context.Context,
+	req *graphql.Request,
+	resp *graphql.Response,
+) error {
+	return nil
+}
+
 func TestSuccess(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ps := fakeActorSource{
@@ -38,7 +49,7 @@ func TestSuccess(t *testing.T) {
 		Logger:      logger,
 		EventLogger: events.NewStdoutLogger(logger),
 	}
-	handler, err := httpapi.NewHandler(nil, nil, nil, nil, authr, nil, &httpapi.Config{})
+	handler, err := httpapi.NewHandler(nil, nil, nil, nil, authr, nil, &httpapi.Config{}, fakeDotComGraphQLApi{})
 	require.NoError(t, err)
 	req, err := http.NewRequest("POST", "/v1/attribution", nil)
 	require.NoError(t, err)
@@ -61,7 +72,7 @@ func TestFailsForDotcomUsers(t *testing.T) {
 		Logger:      logger,
 		EventLogger: events.NewStdoutLogger(logger),
 	}
-	handler, err := httpapi.NewHandler(nil, nil, nil, nil, authr, nil, &httpapi.Config{})
+	handler, err := httpapi.NewHandler(nil, nil, nil, nil, authr, nil, &httpapi.Config{}, fakeDotComGraphQLApi{})
 	require.NoError(t, err)
 	req, err := http.NewRequest("POST", "/v1/attribution", nil)
 	require.NoError(t, err)

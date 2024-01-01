@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -60,6 +61,7 @@ func NewHandler(
 	authr *auth.Authenticator,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
+	dotcomClient graphql.Client,
 ) (http.Handler, error) {
 	// Initialize metrics
 	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
@@ -235,7 +237,7 @@ func NewHandler(
 	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
 		instrumentation.HTTPMiddleware("v1.attribution",
 			authr.Middleware(
-				attribution.NewHandler(),
+				attribution.NewHandler(dotcomClient),
 			),
 		),
 	)

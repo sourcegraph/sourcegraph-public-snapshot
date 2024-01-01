@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
@@ -95,11 +96,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Supported actor/auth sources
 	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
+	var dotcomClient graphql.Client
 	if config.Dotcom.AccessToken != "" {
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
 		obctx.Logger.Info("dotcom-based actor sources are enabled")
-		dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+		dotcomClient = dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
@@ -171,7 +173,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			FireworksDisableSingleTenant:                config.Fireworks.DisableSingleTenant,
 			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses:                 config.AutoFlushStreamingResponses,
-		})
+		},
+		dotcomClient)
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
