@@ -167,14 +167,23 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 				Type: "text",
 				Text: m.Text,
 			},
-			{
-				Type: "image_url",
-				ImageURL: struct {
-					URL string `json:"url,omitempty"`
-				}{
-					URL: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+		}
+
+		if m.Base64Image != "" {
+			contentItems = []complexContent{
+				{
+					Type: "text",
+					Text: m.Text,
 				},
-			},
+				{
+					Type: "image_url",
+					ImageURL: struct {
+						URL string `json:"url,omitempty"`
+					}{
+						URL: m.Base64Image,
+					},
+				},
+			}
 		}
 
 		// Serialize the complex content to a JSON string

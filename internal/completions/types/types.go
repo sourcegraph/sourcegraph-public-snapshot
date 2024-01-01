@@ -13,8 +13,9 @@ const HUMAN_MESSAGE_SPEAKER = "human"
 const ASISSTANT_MESSAGE_SPEAKER = "assistant"
 
 type Message struct {
-	Speaker string `json:"speaker"`
-	Text    string `json:"text"`
+	Speaker     string `json:"speaker"`
+	Text        string `json:"text"`
+	Base64Image string `json:"base64Image"`
 }
 
 func (m Message) IsValidSpeaker() bool {
