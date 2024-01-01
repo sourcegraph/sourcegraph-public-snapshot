@@ -12,6 +12,7 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -127,6 +129,48 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 		act := &sgactor.Actor{
 			SourcegraphOperator: acct.AccountSpec.ServiceType == auth.SourcegraphOperatorProviderType,
+		}
+
+		if envvar.SourcegraphDotComMode() {
+			domain, _ := security.ParseEmailDomain(op.UserProps.Email)
+
+			banned, err := security.IsEmailBanned(op.UserProps.Email)
+			if err != nil {
+				return 0, false, false, "could not determine if email domain is banned", err
+			}
+
+			if banned {
+				recorder.Record(ctx, telemetry.FeaturesSignUpBlockedBannedDomain, telemetry.ActionFailed, &telemetry.EventParameters{
+					PrivateMetadata: map[string]any{
+						"serviceType": acct.AccountSpec.ServiceType,
+						"serviceId":   acct.AccountSpec.ServiceID,
+						"emailDomain": domain,
+					},
+				})
+
+				return 0, false, false, "this email address is not allowed to register", errors.New("email domain banned")
+			}
+
+			//if acct.AccountSpec.ServiceID == "https://accounts.google.com" && domain != "gmail.com" {
+			if true {
+				banned, err := security.IsEmailBlockedDueToTooManySignups(op.UserProps.Email)
+
+				if err != nil {
+					return 0, false, false, "could not determine if email domain is banned", err
+				}
+
+				if banned {
+					recorder.Record(ctx, telemetry.FeaturesSignUpBlockedTooManySignups, telemetry.ActionFailed, &telemetry.EventParameters{
+						PrivateMetadata: map[string]any{
+							"serviceType": acct.AccountSpec.ServiceType,
+							"serviceId":   acct.AccountSpec.ServiceID,
+							"emailDomain": domain,
+						},
+					})
+
+					return 0, false, false, "this email address is not allowed to register", errors.New("Email not allowed to register")
+				}
+			}
 		}
 
 		// Fourth and finally, create a new user account and return it.
@@ -349,4 +393,7 @@ func addCodyProForTestUsers(ctx context.Context, db database.DB, userID int32, l
 			logger.Error("failed to create feature flag override", sglog.Error(err))
 		}
 	}
+}
+
+func logBannedDomainEvent(ctx context.Context, db database.DB, logger sglog.Logger, reason string, domain string, acct *extsvc.Account) {
 }
