@@ -141,8 +141,12 @@ func RunSteps(ctx context.Context, opts *RunStepsOpts) (stepResults []execution.
 
 		stepContext := template.StepContext{
 			BatchChange: *opts.Task.BatchChangeAttributes,
-			Repository:  util.NewTemplatingRepo(opts.Task.Repository.Name, opts.Task.Repository.FileMatches),
-			Outputs:     lastOutputs,
+			Repository: util.NewTemplatingRepo(
+				opts.Task.Repository.Name,
+				opts.Task.Repository.Branch.Name,
+				opts.Task.Repository.FileMatches,
+			),
+			Outputs: lastOutputs,
 			Steps: template.StepsContext{
 				Path:    opts.Task.Path,
 				Changes: previousStepResult.ChangedFiles,

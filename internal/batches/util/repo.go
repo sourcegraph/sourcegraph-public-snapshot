@@ -10,13 +10,14 @@ import (
 
 // NewTemplatingRepo transforms a given *graphql.Repository into a
 // template.Repository.
-func NewTemplatingRepo(repoName string, fileMatches map[string]bool) template.Repository {
+func NewTemplatingRepo(repoName string, branch string, fileMatches map[string]bool) template.Repository {
 	matches := make([]string, 0, len(fileMatches))
 	for path := range fileMatches {
 		matches = append(matches, path)
 	}
 	return template.Repository{
 		Name:        repoName,
+		Branch:      branch,
 		FileMatches: matches,
 	}
 }
