@@ -336,7 +336,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "frontend",
 				InstanceFilterRegex: `${internalInstance:regex}`,
-			}, monitoring.ObservableOwnerDevOps),
+			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
@@ -507,7 +507,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `max by(owner) (observability_test_metric_warning)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 						{
@@ -516,7 +516,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `max by(owner) (observability_test_metric_critical)`,
 							Critical:    monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 					},
@@ -694,11 +694,11 @@ func Frontend() *monitoring.Dashboard {
 			},
 
 			// Resource monitoring
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerDevOps),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerInfraOrg),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
 			{
 				Title:  "Search: Ranking",
 				Hidden: true,
@@ -789,7 +789,7 @@ func Frontend() *monitoring.Dashboard {
 						Warning:  monitoring.Alert().Greater(0),
 						Critical: monitoring.Alert().GreaterOrEqual(10),
 
-						Owner: monitoring.ObservableOwnerDevOps,
+						Owner: monitoring.ObservableOwnerInfraOrg,
 						NextSteps: `
 							- Check your SMTP configuration in site configuration.
 							- Check 'sourcegraph-frontend' logs for more detailed error messages.
@@ -805,7 +805,7 @@ func Frontend() *monitoring.Dashboard {
 						Panel:       monitoring.Panel().LegendFormat("emails"),
 						NoAlert:     true, // this is a purely informational panel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
+						Owner:          monitoring.ObservableOwnerInfraOrg,
 						Interpretation: "Total emails successfully delivered.",
 
 						// use to observe behaviour of email usage across instances
@@ -819,7 +819,7 @@ func Frontend() *monitoring.Dashboard {
 							With(monitoring.PanelOptions.LegendOnRight()),
 						NoAlert: true, // this is a purely informational panel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
+						Owner:          monitoring.ObservableOwnerInfraOrg,
 						Interpretation: "Emails successfully delivered by source, i.e. product feature.",
 
 						// use to observe behaviour of email usage across instances.

@@ -238,7 +238,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={authenticatedUser}
                     platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
                 />
 
                 <Suspense fallback={<LoadingSpinner />}>
@@ -483,27 +482,27 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 />
             ))}
 
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={1}
-                id="cody"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {() =>
-                    !isCodySidebarOpen ? (
+            {!isCodySidebarOpen && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={1}
+                    id="cody"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {() => (
                         <AskCodyButton
                             onClick={() => {
                                 logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
                                 setIsCodySidebarOpen(true)
                             }}
                         />
-                    ) : null
-                }
-            </RepoHeaderContributionPortal>
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={2}
+                priority={3}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -530,8 +529,9 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
             {isBrainDotVisible && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={110}
+                    priority={7}
                     id="code-intelligence-status"
+                    renderInContextMenu={true}
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>

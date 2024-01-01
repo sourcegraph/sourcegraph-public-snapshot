@@ -9,7 +9,9 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/v1";
 // SearcherService is an internal interface for the searcher service.
 service SearcherService {
   // Search executes a search, streaming back its results
-  rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc Search(SearchRequest) returns (stream SearchResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 // SearchRequest is set of parameters for a search.

@@ -915,6 +915,8 @@ type ExperimentalFeatures struct {
 	InsightsDataRetention *bool `json:"insightsDataRetention,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// LanguageDetection description: Setting for customizing language detection behavior
+	LanguageDetection *LanguageDetection `json:"languageDetection,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
@@ -997,6 +999,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "insightsBackfillerV2")
 	delete(m, "insightsDataRetention")
 	delete(m, "jvmPackages")
+	delete(m, "languageDetection")
 	delete(m, "npmPackages")
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
@@ -1514,6 +1517,12 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
+}
+
+// LanguageDetection description: Setting for customizing language detection behavior
+type LanguageDetection struct {
+	// GraphQL description: What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.
+	GraphQL string `json:"graphQL"`
 }
 
 // LinkStep description: Link step
@@ -2068,8 +2077,12 @@ type RateLimits struct {
 	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
 	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
 	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
+	// GraphQLMaxDuplicateFieldCount description: Maximum number of duplicate fields allowed in a GraphQL request
+	GraphQLMaxDuplicateFieldCount int `json:"graphQLMaxDuplicateFieldCount,omitempty"`
 	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
 	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
+	// GraphQLMaxUniqueFieldCount description: Maximum number of unique fields allowed in a GraphQL request
+	GraphQLMaxUniqueFieldCount int `json:"graphQLMaxUniqueFieldCount,omitempty"`
 }
 
 // RepoPurgeWorker description: Configuration for repository purge worker.

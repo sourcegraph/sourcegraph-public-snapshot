@@ -1,0 +1,16 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.repo-action-icon {
+    fill: var(--icon-color) !important;
+}
+
+.menu-item {
+    padding: 0.5rem;
+}
+
+@media (--xs-breakpoint-down) {
+    .menu-item {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+}

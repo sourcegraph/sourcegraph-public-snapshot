@@ -47,6 +47,11 @@ func (s Service) Initialize(
 			return nil, errors.Wrap(err, "writeBigQueryEvent")
 		}
 		logger.Info("bigquery connection checked")
+
+		if err := testRedisConnection(ctx, contract); err != nil {
+			return nil, errors.Wrap(err, "newRedisConnection")
+		}
+		logger.Info("redis connection checked")
 	}
 
 	requestCounter, err := getRequestCounter()

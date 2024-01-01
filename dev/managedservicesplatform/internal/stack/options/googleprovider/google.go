@@ -17,6 +17,9 @@ func With(projectID string) stack.NewStackOption {
 		var project *string
 		if projectID != "" {
 			project = pointers.Ptr(projectID)
+			// Make project ID available to custom TF
+			s.Locals().Add("project_id", projectID,
+				"Primary Google Project to use for all GCP resources")
 		}
 		_ = google.NewGoogleProvider(s.Stack, pointers.Ptr("google"), &google.GoogleProviderConfig{
 			Project: project,
