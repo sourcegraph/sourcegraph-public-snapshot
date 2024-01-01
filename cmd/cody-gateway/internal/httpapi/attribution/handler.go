@@ -27,6 +27,7 @@ func NewHandler(client graphql.Client) http.Handler {
 			fmt.Fprintln(w, "attribution search not enabled")
 			return
 		}
+		// TODO: Actually query dotcom for attribution.
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "ok")
 	})
