@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
@@ -229,6 +230,10 @@ func NewHandler(
 			),
 			otelhttp.WithPublicEndpoint(),
 		),
+	)
+
+	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.attribution", attribution.NewHandler()),
 	)
 	return r, nil
 }
