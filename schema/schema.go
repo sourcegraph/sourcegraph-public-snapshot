@@ -674,6 +674,8 @@ type Dotcom struct {
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
+	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
+	SlackLicenseCreationWebhook string `json:"slackLicenseCreationWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
