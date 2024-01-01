@@ -19,26 +19,19 @@ const (
 	FeatureCodeCompletions         = Feature(types.CompletionsFeatureCode)
 	FeatureChatCompletions         = Feature(types.CompletionsFeatureChat)
 	FeatureEmbeddings      Feature = "embeddings"
-	FeatureAttribution     Feature = "attribution"
 )
 
 func (f Feature) IsValid() bool {
 	switch f {
 	case FeatureCodeCompletions,
 		FeatureChatCompletions,
-		FeatureEmbeddings,
-		FeatureAttribution:
+		FeatureEmbeddings:
 		return true
 	}
 	return false
 }
 
-var featureDisplayNames = map[Feature]string{
-	FeatureChatCompletions: "Chat",
-	FeatureCodeCompletions: "Autocomplete",
-	FeatureEmbeddings:      "Embeddings",
-	FeatureAttribution:     "Attribution",
-}
+var featureDisplayNames map[Feature]string = map[Feature]string{FeatureChatCompletions: "Chat", FeatureCodeCompletions: "Autocomplete", FeatureEmbeddings: "Embeddings"}
 
 func (f Feature) DisplayName() string {
 	display, ok := featureDisplayNames[f]
