@@ -28,6 +28,7 @@ go_library(
         "//internal/version",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",
+        "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//hook",
         "@com_github_sourcegraph_log//output",

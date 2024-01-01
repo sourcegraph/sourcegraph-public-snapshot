@@ -6,9 +6,24 @@ go_library(
     srcs = ["handler.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//internal/codygateway",
+        "@com_github_khan_genqlient//graphql",
+    ],
 )
 
 go_test(
     name = "attribution_test",
     srcs = ["handler_test.go"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/auth",
+        "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/httpapi",
+        "//internal/codygateway",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
 )
