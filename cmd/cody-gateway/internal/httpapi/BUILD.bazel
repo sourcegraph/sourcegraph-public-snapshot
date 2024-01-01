@@ -12,6 +12,7 @@ go_library(
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/auth",
         "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/httpapi/attribution",
         "//cmd/cody-gateway/internal/httpapi/completions",
         "//cmd/cody-gateway/internal/httpapi/embeddings",
         "//cmd/cody-gateway/internal/httpapi/featurelimiter",
