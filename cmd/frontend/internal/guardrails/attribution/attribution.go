@@ -2,20 +2,12 @@ package attribution
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
-	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // ServiceOpts configures Service.
@@ -90,153 +82,11 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 	})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
 
-	limitHitErr := errors.New("limit hit error")
-	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(nil)
-
-	// we massage results in this function and possibly cancel if we can stop
-	// looking.
-	truncateAtLimit := func(result *SnippetAttributions) {
-		if result == nil {
-			return
-		}
-		if limit <= len(result.RepositoryNames) {
-			result.LimitHit = true
-			result.RepositoryNames = result.RepositoryNames[:limit]
-		}
-		if result.LimitHit {
-			cancel(limitHitErr)
-		}
-	}
-
-	// TODO(keegancsmith) how should we handle partial errors?
-	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
-
-	//  We don't use NewWithResults since we want local results to come before dotcom
-	var local, dotcom *SnippetAttributions
-
-	p.Go(func(ctx context.Context) error {
-		var err error
-		local, err = c.snippetAttributionLocal(ctx, snippet, limit)
-		truncateAtLimit(local)
-		return err
-	})
-
-	if c.SourcegraphDotComFederate {
-		p.Go(func(ctx context.Context) error {
-			var err error
-			dotcom, err = c.snippetAttributionDotCom(ctx, snippet, limit)
-			truncateAtLimit(dotcom)
-			return err
-		})
-	}
-
-	if err := p.Wait(); err != nil && context.Cause(ctx) != limitHitErr {
+	result, err = c.snippetAttributionDotCom(ctx, snippet, limit)
+	if err != nil {
 		return nil, err
 	}
-
-	var agg SnippetAttributions
-	seen := map[string]struct{}{}
-	for _, result := range []*SnippetAttributions{local, dotcom} {
-		if result == nil {
-			continue
-		}
-
-		// Limitation: We just add to TotalCount even though that may mean we
-		// overcount (both dotcom and local instance have the repo)
-		agg.TotalCount += result.TotalCount
-		agg.LimitHit = agg.LimitHit || result.LimitHit
-		for _, name := range result.RepositoryNames {
-			if _, ok := seen[name]; ok {
-				// We have already counted this repo in the above TotalCount
-				// increment, so undo that.
-				agg.TotalCount--
-				continue
-			}
-			seen[name] = struct{}{}
-			agg.RepositoryNames = append(agg.RepositoryNames, name)
-		}
-	}
-
-	// we call truncateAtLimit on the aggregated result to ensure we only
-	// return upto limit. Note this function will call cancel but that is fine
-	// since we just return after this.
-	truncateAtLimit(&agg)
-
-	return &agg, nil
-}
-
-func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
-	ctx, traceLogger, endObservation := c.operations.snippetAttributionLocal.With(ctx, &err, observation.Args{})
-	defer endObservationWithResult(traceLogger, endObservation, &result)()
-
-	const (
-		version    = "V3"
-		searchMode = search.Precise
-		protocol   = search.Streaming
-	)
-
-	patternType := "literal"
-	searchQuery := fmt.Sprintf("type:file select:repo index:only case:yes count:%d content:%q", limit, snippet)
-
-	inputs, err := c.SearchClient.Plan(
-		ctx,
-		version,
-		&patternType,
-		searchQuery,
-		searchMode,
-		protocol,
-		pointers.Ptr(int32(0)),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create search plan")
-	}
-
-	// TODO(keegancsmith) Reading the SearchClient code it seems to miss out
-	// on some of the observability that we instead add in at a later stage.
-	// For example the search dataset in honeycomb will be missing. Will have
-	// to follow-up with observability and maybe solve it for all users.
-	//
-	// Note: In our current API we could just store repo names in seen. But it
-	// is safer to rely on searches ranking for result stability than doing
-	// something like sorting by name from the map.
-	var (
-		mu        sync.Mutex
-		seen      = map[api.RepoID]struct{}{}
-		repoNames []string
-		limitHit  bool
-	)
-	_, err = c.SearchClient.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
-		mu.Lock()
-		defer mu.Unlock()
-
-		limitHit = limitHit || ev.Stats.IsLimitHit
-
-		for _, m := range ev.Results {
-			repo := m.RepoName()
-			if _, ok := seen[repo.ID]; ok {
-				continue
-			}
-			seen[repo.ID] = struct{}{}
-			repoNames = append(repoNames, string(repo.Name))
-		}
-	}), inputs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute search")
-	}
-
-	// Note: Our search API is missing total count internally, but Zoekt does
-	// expose this. For now we just count what we found.
-	totalCount := len(repoNames)
-	if len(repoNames) > limit {
-		repoNames = repoNames[:limit]
-	}
-
-	return &SnippetAttributions{
-		RepositoryNames: repoNames,
-		TotalCount:      totalCount,
-		LimitHit:        limitHit,
-	}, nil
+	return result, nil
 }
 
 func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
