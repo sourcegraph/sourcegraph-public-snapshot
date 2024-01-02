@@ -35,6 +35,7 @@ var (
 	EventNameAssigned = "license.check.api.assigned"
 )
 
+// 🚨 SECURITY: we store the license check access token instead of the license key itself.
 func logEvent(ctx context.Context, db database.DB, name string, siteID string, accessToken string) {
 	logger := log.Scoped("LicenseCheckHandler logEvent")
 	eArg, err := json.Marshal(struct {
@@ -62,12 +63,12 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string, a
 }
 
 const multipleInstancesSameKeySlackFmt = `
-The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s>, for customer %s, is used on multiple customer instances with site IDs: ` + "`%s`" + ` and ` + "`%s`" + `.
+The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s>, for customer %s, seems to be used on multiple site IDs: ` + "`%v`" + `
 
 To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
 
-func multipleInstancesSameKeySlackMessage(externalURL *url.URL, license *dbLicense, otherSiteID string, customerName string) string {
+func multipleInstancesSameKeySlackMessage(externalURL *url.URL, license *dbLicense, duplicateSiteIDs []string, customerName string) string {
 	return fmt.Sprintf(
 		multipleInstancesSameKeySlackFmt,
 		externalURL.String(),
@@ -75,11 +76,10 @@ func multipleInstancesSameKeySlackMessage(externalURL *url.URL, license *dbLicen
 		url.QueryEscape(license.ID),
 		license.ID,
 		customerName,
-		*license.SiteID,
-		otherSiteID)
+		duplicateSiteIDs)
 }
 
-func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string, customerName string) {
+func sendSlackMessage(logger log.Logger, license *dbLicense, duplicateSiteIDs []string, customerName string) {
 	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		logger.Error("parsing external URL from site config", log.Error(err))
@@ -94,7 +94,7 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string, cust
 
 	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
 	err = client.Post(context.Background(), &slack.Payload{
-		Text: multipleInstancesSameKeySlackMessage(externalURL, license, siteID, customerName),
+		Text: multipleInstancesSameKeySlackMessage(externalURL, license, duplicateSiteIDs, customerName),
 	})
 	if err != nil {
 		logger.Error("error sending Slack message", log.Error(err))
@@ -191,7 +191,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			return
 		}
 
-		if license.SiteID == nil {
+		if license.SiteID == nil || (*license.SiteID != siteID) {
 			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
 				logger.Warn("failed to assign site ID to license")
 				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
@@ -231,7 +231,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 				}
 			}
 
-			sendSlackMessage(logger, license, siteID, customerName)
+			sendSlackMessage(logger, license, duplicateSiteIDs, customerName)
 			return
 		}
 
