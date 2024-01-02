@@ -263,8 +263,8 @@ go_repository(
     name = "org_golang_google_protobuf",
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
-    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
-    version = "v1.31.1",
+    sum = "h1:g0LDEJHgrBl9N9r17Ru3sqWhkIx2NB67okBHPwC7hs8=",
+    version = "v1.31.0",
 )  # keep
 
 # Pin protoc-gen-go-grpc to 1.3.0
@@ -276,6 +276,11 @@ go_repository(
     sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
     version = "v1.3.0",
 )  # keep
+
+load("//dev/bazel-commands:deps.bzl", "custom_commands_dependencies")
+
+# gazelle:repository_macro dev/bazel-commands/deps.bzl%custom_commands_dependencies
+custom_commands_dependencies()
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()

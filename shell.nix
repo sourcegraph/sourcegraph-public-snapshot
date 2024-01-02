@@ -26,7 +26,7 @@ let
     unset CC CXX
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
-    if [ "$1" == "configure" ]; then
+    if [ "$1" == "configure" ] || [ "$1" == "generate" ]; then
       exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
     fi
     exec ${pkgs.bazel_7}/bin/bazel "$@"

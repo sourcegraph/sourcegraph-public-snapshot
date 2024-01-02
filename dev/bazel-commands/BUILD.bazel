@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# ALSO OVERWRITES //:deps.bzl ???????
+gazelle(
+    name = "gazelle-update-repos",
+    args = [
+        "-from_file=dev/bazel-commands/go.mod",
+        "-to_macro=dev/bazel-commands/deps.bzl%custom_commands_dependencies",
+        "-prune",
+        "-build_file_proto_mode=disable_global",
+    ],
+    command = "update-repos",
+)
+
+go_library(
+    name = "bazel-commands_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/bazel-commands",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@build_aspect_cli//pkg/bazel",
+        "@build_aspect_cli//pkg/ioutils",
+        "@build_aspect_cli//pkg/plugin/sdk/v1alpha4/config",
+        "@build_aspect_cli//pkg/plugin/sdk/v1alpha4/plugin",
+        "@com_github_hashicorp_go_plugin//:go-plugin",
+    ],
+)
+
+go_binary(
+    name = "bazel-commands",
+    embed = [":bazel-commands_lib"],
+    visibility = ["//visibility:public"],
+)
