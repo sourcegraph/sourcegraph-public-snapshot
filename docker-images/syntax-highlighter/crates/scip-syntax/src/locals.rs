@@ -1,6 +1,6 @@
 /// This module contains logic to understand the binding structure of
 /// a given source file. We emit information about references and
-/// definition of _local_ bindings. A local binding is a binding that
+/// definitions of _local_ bindings. A local binding is a binding that
 /// cannot be accessed from another file. It is important to never
 /// mark a non-local as local, because that would mean we'd prevent
 /// search-based lookup from finding references to that binding.
@@ -576,10 +576,10 @@ impl<'a> LocalResolver<'a> {
         let mut current_scope = top_scope;
         for ScopeCapture {
             kind: scope_kind,
-            node: scope,
+            node: scope_node,
         } in scopes
         {
-            let new_scope_end = scope.end_byte();
+            let new_scope_end = scope_node.end_byte();
             while new_scope_end > self.end_byte(current_scope) {
                 // Add all remaining definitions before end of current
                 // scope before traversing to parent
@@ -598,17 +598,19 @@ impl<'a> LocalResolver<'a> {
                 }
             }
             // Before adding the new scope we first attach all
-            // definitions that belong to the current scope
+            // definitions and references that belong to the current
+            // scope
+            let new_scope_start = scope_node.start_byte();
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
-                def_capture.node.start_byte() < scope.start_byte()
+                def_capture.node.start_byte() < new_scope_start
             });
             self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
-                ref_capture.node.start_byte() < scope.start_byte()
+                ref_capture.node.start_byte() < new_scope_start
             });
 
             let new_scope = self.arena.alloc(Scope::new(
                 scope_kind.to_string(),
-                scope,
+                scope_node,
                 Some(current_scope),
             ));
             self[current_scope].children.push(new_scope);
