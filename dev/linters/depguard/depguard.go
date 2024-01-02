@@ -19,6 +19,8 @@ var Deny map[string]string = map[string]string{
 	"errors$":                             "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
 	"github.com/cockroachdb/errors$":      "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
 	"github.com/hashicorp/go-multierror$": "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
+	"github.com/aws/smithy-go/ptr":        "use github.com/sourcegraph/sourcegraph/lib/pointers instead",
+	"k8s.io/utils/pointer":                "use github.com/sourcegraph/sourcegraph/lib/pointers instead",
 	"regexp$":                             "Use github.com/grafana/regexp instead",
 	"github.com/hexops/autogold$":         "Use github.com/hexops/autogold/v2 instead",
 	"github.com/google/go-github/github$": "Use github.com/google/go-github/v55/github instead. To convert between v48 and v55, use the internal/extsvc/github/githubconvert package",
