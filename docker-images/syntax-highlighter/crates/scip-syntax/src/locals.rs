@@ -202,6 +202,8 @@ struct RefCapture<'a> {
 /// Created by LocalResolver::ancestors()
 #[derive(Debug)]
 struct Ancestors<'arena, 'a> {
+    /// A reference to LocalResolver's arena, which holds all scopes
+    /// for the entire tree
     arena: &'arena Arena<Scope<'a>>,
     current_scope: ScopeId<'a>,
 }
