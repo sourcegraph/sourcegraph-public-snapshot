@@ -141,7 +141,12 @@ To fix this, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follo
 `
 
 func formatSlackMessage(externalURL *url.URL, license *dbLicense) string {
-	return fmt.Sprintf(slackMessageFmt, *license.SiteID, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID)
+	return fmt.Sprintf(slackMessageFmt,
+		*license.SiteID,
+		externalURL.String(),
+		url.QueryEscape(license.ProductSubscriptionID),
+		url.QueryEscape(license.ID),
+		license.ID)
 }
 
 // checkP50CallTimeForLicense checks the p50 time difference between license-check calls for a specific license.
