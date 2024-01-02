@@ -36,13 +36,13 @@ go_library(
         "//internal/version",
         "//internal/workerutil",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_google_uuid//:uuid",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@com_github_urfave_cli_v2//:cli",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/resource",
-        "@io_k8s_utils//pointer",
     ] + select({
         "@io_bazel_rules_go//go/platform:aix": [
             "@com_github_coreos_go_iptables//iptables",
