@@ -1,5 +1,6 @@
-import { ApolloQueryResult, gql, ApolloClient } from '@apollo/client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
+import { requestGraphQL } from '../../backend/graphql'
 import type { InputMaybe, RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
 
 const query = gql`
@@ -18,35 +19,29 @@ const query = gql`
 `
 
 export async function fetchRepositoriesByNames(
-    names: string[],
-    apolloClient: ApolloClient<object>
+    names: string[]
 ): Promise<RepositoriesByNamesResult['repositories']['nodes']> {
     let repos: RepositoriesByNamesResult['repositories']['nodes'] = []
     const first = names.length
     let after: InputMaybe<string> = null
 
     while (true) {
-        const result: ApolloQueryResult<RepositoriesByNamesResult> = await apolloClient.query<
+        const result = await requestGraphQL<
             RepositoriesByNamesResult,
             RepositoriesByNamesVariables
-        >({
-            query,
-            variables: {
-                names,
-                first,
-                after,
-            },
-        })
+        >(query, {
+            names,
+            first,
+            after,
+        }).toPromise()
 
-        if (result.error) {
-            throw new Error(result.error.message)
-        }
+        const data = dataOrThrowErrors(result)
 
-        repos = repos.concat(result.data.repositories.nodes)
-        if (!result.data.repositories.pageInfo.hasNextPage) {
+        repos = repos.concat(data.repositories.nodes)
+        if (!data.repositories.pageInfo.hasNextPage) {
             break
         }
-        after = result.data.repositories.pageInfo.endCursor
+        after = data.repositories.pageInfo.endCursor
     }
     return repos
 }

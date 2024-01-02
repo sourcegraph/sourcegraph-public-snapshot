@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 import { type Observable, of, throwError, from } from 'rxjs'
@@ -68,8 +67,8 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
         selectedNamespaceType === 'global-owner'
             ? 'Only site-admins can view this context.'
             : selectedNamespaceType === 'org'
-            ? 'Only organization members can view this context.'
-            : 'Only you can view this context.'
+                ? 'Only organization members can view this context.'
+                : 'Only you can view this context.'
 
     return [
         {
@@ -111,8 +110,8 @@ const LOADING = 'loading' as const
 
 export interface SearchContextFormProps
     extends TelemetryProps,
-        Pick<SearchContextProps, 'deleteSearchContext'>,
-        PlatformContextProps<'requestGraphQL'> {
+    Pick<SearchContextProps, 'deleteSearchContext'>,
+    PlatformContextProps<'requestGraphQL'> {
     searchContext?: SearchContextFields
     query?: string
     authenticatedUser: AuthenticatedUser
@@ -130,13 +129,13 @@ const searchContextVisibility = (searchContext: SearchContextFields): SelectedVi
 
 type RepositoriesParseResult =
     | {
-          type: 'errors'
-          errors: Error[]
-      }
+        type: 'errors'
+        errors: Error[]
+    }
     | {
-          type: 'repositories'
-          repositories: SearchContextRepositoryRevisionsInput[]
-      }
+        type: 'repositories'
+        repositories: SearchContextRepositoryRevisionsInput[]
+    }
 
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
     const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
@@ -200,7 +199,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
         )
     }, [description, name, searchContext, selectedNamespace, visibility, queryState, hasRepositoriesConfigChanged])
 
-    const apolloClient = useApolloClient()
     const parseRepositories = useCallback(
         (): Observable<RepositoriesParseResult> =>
             of(parseConfig(repositoriesConfig)).pipe(
@@ -220,7 +218,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         return of({ type: 'repositories', repositories: [] } as RepositoriesParseResult)
                     }
 
-                    return from(fetchRepositoriesByNames(repositoryNames, apolloClient)).pipe(
+                    return from(fetchRepositoriesByNames(repositoryNames)).pipe(
                         map(repositories => {
                             const repositoryNameToID = new Map(repositories.map(({ id, name }) => [name, id]))
                             const errors: Error[] = []
@@ -242,7 +240,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     )
                 })
             ),
-        [repositoriesConfig, apolloClient]
+        [repositoriesConfig]
     )
 
     const validateRepositories = useCallback(
