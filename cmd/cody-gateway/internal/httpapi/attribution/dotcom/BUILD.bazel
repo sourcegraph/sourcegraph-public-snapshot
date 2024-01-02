@@ -40,5 +40,13 @@ write_generated_to_source_files(
 go_test(
     name = "dotcom_test",
     srcs = ["golden_test.go"],
+    data = [
+        ":_operations.go",
+        ":operations.go",
+    ],
+    env = {
+        "GOLDEN_FILE": "$(location operations.go)",
+        "GENERATED_FILE": "$(location _operations.go)",
+    },
     deps = ["@com_github_google_go_cmp//cmp"],
 )
