@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/google/go-github/v55/github"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/log"
 
