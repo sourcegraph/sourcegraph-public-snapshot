@@ -165,6 +165,9 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 	}
 
 	anonymousID := ""
+	// If this event was triggered by an internal actor we need to ensure that at
+	// least the UserID or AnonymousUserID field are set so that we don't trigger
+	// the security_event_logs_check_has_user constraint
 	if a.Internal {
 		anonymousID = "internal"
 	}
@@ -857,7 +860,6 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
 		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
-
 	}
 
 	return nil
