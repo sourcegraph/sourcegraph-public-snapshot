@@ -37,6 +37,53 @@ type GetAndSaveUserOp struct {
 	LookUpByUsername    bool
 }
 
+// Checks if the user's email defined in the GetAndSaveUserOp is banned.
+// This is done by first checking a list of banned email domains.
+// If the domain is not banned, we then check if the email is a Google account
+// that's hosted on a non-gmail.com domain. Then, if too many signups have
+// happend recently, we prevent the signup.
+func checkIfEmailDomainIsBanned(ctx context.Context, recorder *telemetry.BestEffortEventRecorder, op GetAndSaveUserOp, acct *extsvc.Account) (string, error) {
+	domain, _ := security.ParseEmailDomain(op.UserProps.Email)
+
+	banned, err := security.IsEmailBanned(op.UserProps.Email)
+	if err != nil {
+		return "could not determine if email domain is banned", err
+	}
+
+	if banned {
+		recorder.Record(ctx, telemetry.FeaturesSignUpBlockedBannedDomain, telemetry.ActionFailed, &telemetry.EventParameters{
+			PrivateMetadata: map[string]any{
+				"serviceType": acct.AccountSpec.ServiceType,
+				"serviceId":   acct.AccountSpec.ServiceID,
+				"emailDomain": domain,
+			},
+		})
+
+		return "this email address is not allowed to register", errors.New("email domain banned")
+	}
+
+	if acct.AccountSpec.ServiceID == "https://accounts.google.com" && domain != "gmail.com" {
+		banned, err := security.IsEmailBlockedDueToTooManySignups(op.UserProps.Email)
+		if err != nil {
+			return "could not determine if email domain is banned", err
+		}
+
+		if banned {
+			recorder.Record(ctx, telemetry.FeaturesSignUpBlockedTooManySignups, telemetry.ActionFailed, &telemetry.EventParameters{
+				PrivateMetadata: map[string]any{
+					"serviceType": acct.AccountSpec.ServiceType,
+					"serviceId":   acct.AccountSpec.ServiceID,
+					"emailDomain": domain,
+				},
+			})
+
+			return "There seem to be too many signups occurring today. Please try again at a later time.", errors.New("Email not allowed to register due to too many signups")
+		}
+	}
+
+	return "", nil
+}
+
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
 // the necessary updates to the DB, and returns the user ID after the updates have been applied.
 //
@@ -132,43 +179,9 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		if envvar.SourcegraphDotComMode() {
-			domain, _ := security.ParseEmailDomain(op.UserProps.Email)
-
-			banned, err := security.IsEmailBanned(op.UserProps.Email)
+			reason, err := checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
 			if err != nil {
-				return 0, false, false, "could not determine if email domain is banned", err
-			}
-
-			if banned {
-				recorder.Record(ctx, telemetry.FeaturesSignUpBlockedBannedDomain, telemetry.ActionFailed, &telemetry.EventParameters{
-					PrivateMetadata: map[string]any{
-						"serviceType": acct.AccountSpec.ServiceType,
-						"serviceId":   acct.AccountSpec.ServiceID,
-						"emailDomain": domain,
-					},
-				})
-
-				return 0, false, false, "this email address is not allowed to register", errors.New("email domain banned")
-			}
-
-			if acct.AccountSpec.ServiceID == "https://accounts.google.com" && domain != "gmail.com" {
-				banned, err := security.IsEmailBlockedDueToTooManySignups(op.UserProps.Email)
-
-				if err != nil {
-					return 0, false, false, "could not determine if email domain is banned", err
-				}
-
-				if banned {
-					recorder.Record(ctx, telemetry.FeaturesSignUpBlockedTooManySignups, telemetry.ActionFailed, &telemetry.EventParameters{
-						PrivateMetadata: map[string]any{
-							"serviceType": acct.AccountSpec.ServiceType,
-							"serviceId":   acct.AccountSpec.ServiceID,
-							"emailDomain": domain,
-						},
-					})
-
-					return 0, false, false, "There seem to be too many signups occurring today. Please try again at a later time.", errors.New("Email not allowed to register due to too many signups")
-				}
+				return 0, false, false, reason, err
 			}
 		}
 
@@ -392,7 +405,4 @@ func addCodyProForTestUsers(ctx context.Context, db database.DB, userID int32, l
 			logger.Error("failed to create feature flag override", sglog.Error(err))
 		}
 	}
-}
-
-func logBannedDomainEvent(ctx context.Context, db database.DB, logger sglog.Logger, reason string, domain string, acct *extsvc.Account) {
 }
