@@ -46,6 +46,12 @@ func (f *Filter) Less(o *Filter) bool {
 type filters map[string]*Filter
 
 // Add the count to the filter with value.
+// example parameters:
+// value: value of the search filter
+// label: Label served to the UI.
+// count: Number of results.
+// limitHit: whether the search limit was hit or not
+// kind: kind of search filter ('lang', 'file', 'repo')
 func (m filters) Add(value string, label string, count int32, limitHit bool, kind string) {
 	sf, ok := m[value]
 	if !ok {

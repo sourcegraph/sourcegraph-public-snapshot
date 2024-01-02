@@ -93,6 +93,14 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
+	addSymbolFilter := func(symbols []*result.SymbolMatch, limitHit bool) {
+		for _, sym := range symbols {
+			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
+			s.filters.Add(filter, selectKind, 1, limitHit, "Symbol Type")
+		}
+	}
+
 	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
 		if ext := path.Ext(fileMatchPath); ext != "" {
 			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
@@ -124,9 +132,11 @@ func (s *SearchFilters) Update(event SearchEvent) {
 				rev = *v.InputRev
 			}
 			lines := int32(v.ResultCount())
+
 			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
 			addLangFilter(v.Path, lines, v.LimitHit)
 			addFileFilter(v.Path, lines, v.LimitHit)
+			addSymbolFilter(v.Symbols, v.LimitHit)
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
