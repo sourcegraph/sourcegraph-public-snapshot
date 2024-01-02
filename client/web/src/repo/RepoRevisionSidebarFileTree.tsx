@@ -17,11 +17,12 @@ import {
     LoadingSpinner,
     Tooltip,
     ErrorAlert,
+    LanguageIcon,
 } from '@sourcegraph/wildcard'
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
-import { DEFAULT_FILE_ICON, getFileIconInfo, isProbablyTestFile } from './fileIcons'
+import { isProbablyTestFile } from './icon-utils'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
@@ -393,7 +394,6 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const iconInfo = entry?.__typename === 'GitBlob' ? getFileIconInfo(element.name, entry.languages) : undefined
     const isLikelyTest = entry?.isDirectory ? false : isProbablyTestFile(element.name)
 
     // const fileIcon = FILE_ICONS.get(fileInfo.extension)
@@ -468,21 +468,15 @@ function renderNode({
         >
             <div className={styles.fileContainer}>
                 <div className={styles.iconContainer}>
-                    {iconInfo !== undefined ? (
-                        <Icon
-                            as={iconInfo.react.icon}
-                            className={classNames('mr-1', styles.icon, iconInfo.react.className)}
-                            aria-hidden={true}
+                    {entry?.__typename === 'GitBlob' && !isBranch ? (
+                        <LanguageIcon
+                            language={entry.languages.at(0) ?? ''}
+                            fileNameOrExtensions={element.name}
+                            className="mr-1"
                         />
                     ) : (
                         <Icon
-                            svgPath={
-                                isBranch
-                                    ? isExpanded
-                                        ? mdiFolderOpenOutline
-                                        : mdiFolderOutline
-                                    : DEFAULT_FILE_ICON.path
-                            }
+                            svgPath={isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
                             className="mr-1"
                             aria-hidden={true}
                         />

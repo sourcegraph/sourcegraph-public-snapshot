@@ -237,16 +237,12 @@ function toArray<T>(item: T | T[]): T[] {
     return [item]
 }
 
-export const languageFilter = (filter: DynamicClientFilter): ReactNode => {
-    const languageExtension = filter.value.split(':')[1] ?? ''
-
-    return (
-        <>
-            <LanguageIcon language={languageExtension} className={styles.icon} />
-            {filter.label}
-        </>
-    )
-}
+export const languageFilter = (filter: DynamicClientFilter): ReactNode => (
+    <>
+        <LanguageIcon language={filter.label} className={styles.icon} />
+        {filter.label}
+    </>
+)
 
 export const repoFilter = (filter: DynamicClientFilter): ReactNode => (
     <>
