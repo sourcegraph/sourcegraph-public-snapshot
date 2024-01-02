@@ -117,3 +117,25 @@ func TestFailsForDotcomUsers(t *testing.T) {
 		t.Fatalf("expected unauthorized, got %d", got)
 	}
 }
+
+func TestUnavailableIfConfigDisabled(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dotCom := fakeActorSource{
+		name: codygateway.ActorSourceProductSubscription,
+	}
+	authr := &auth.Authenticator{
+		Sources:     actor.NewSources(dotCom),
+		Logger:      logger,
+		EventLogger: events.NewStdoutLogger(logger),
+	}
+	config := &httpapi.Config{}
+	handler, err := httpapi.NewHandler(logger, nil, nil, nil, authr, nil, config, fakeDotComGraphQLApi{})
+	require.NoError(t, err)
+	r := request(t)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	if got, want := w.Code, http.StatusServiceUnavailable; got != want {
+		t.Error(w.Body.String())
+		t.Fatalf("expected unauthorized, got %d", got)
+	}
+}
