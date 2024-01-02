@@ -23,6 +23,7 @@ use scip::{
 use scip_treesitter::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
+use std::ops::{Index, IndexMut};
 use std::slice::Iter;
 use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
@@ -239,6 +240,20 @@ struct LocalResolver<'a> {
     occurrences: Vec<Occurrence>,
 }
 
+impl<'a> Index<ScopeId<'a>> for LocalResolver<'a> {
+    type Output = Scope<'a>;
+
+    fn index(&self, index: ScopeId<'a>) -> &Scope<'a> {
+        self.arena.get(index).unwrap()
+    }
+}
+
+impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
+    fn index_mut(&mut self, index: ScopeId<'a>) -> &mut Scope<'a> {
+        self.arena.get_mut(index).unwrap()
+    }
+}
+
 impl<'a> LocalResolver<'a> {
     fn new(source_bytes: &'a [u8]) -> Self {
         LocalResolver {
@@ -252,15 +267,15 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn start_byte(&self, scope_id: ScopeId<'a>) -> usize {
-        self.get_scope(scope_id).node.start_byte()
+        self[scope_id].node.start_byte()
     }
 
     fn end_byte(&self, scope_id: ScopeId<'a>) -> usize {
-        self.get_scope(scope_id).node.end_byte()
+        self[scope_id].node.end_byte()
     }
 
     fn add_reference(&mut self, scope_id: ScopeId<'a>, reference: Reference<'a>) {
-        self.get_scope_mut(scope_id).references.push(reference)
+        self[scope_id].references.push(reference)
     }
 
     fn add_definition(
@@ -294,7 +309,7 @@ impl<'a> LocalResolver<'a> {
                 // the way to the top_scope
                 for ancestor in self.ancestors(scope_id) {
                     target_scope = ancestor;
-                    if self.get_scope(ancestor).kind == *hoist_scope {
+                    if self[ancestor].kind == *hoist_scope {
                         break;
                     }
                 }
@@ -303,17 +318,14 @@ impl<'a> LocalResolver<'a> {
                 // (https://github.com/rust-lang/rust/issues/53667)
                 if_chain! {
                     if is_def_ref;
-                    if let Some(previous) = self
-                        .get_scope(target_scope)
+                    if let Some(previous) = self[target_scope]
                         .hoisted_definitions
                         .get(&name);
                     then {
                         DefRef::PreviousDefinition(previous.id)
                     } else {
                         let (def_id, definition) = make_def(self);
-                        self.get_scope_mut(target_scope)
-                            .hoisted_definitions
-                            .insert(definition.name, definition);
+                        self[target_scope].hoisted_definitions.insert(definition.name, definition);
                         DefRef::NewDefinition(def_id)
                     }
                 }
@@ -326,7 +338,7 @@ impl<'a> LocalResolver<'a> {
                         DefRef::PreviousDefinition(previous.id)
                     } else {
                         let (def_id, definition) = make_def(self);
-                        self.get_scope_mut(scope_id).definitions.push(definition);
+                        self[scope_id].definitions.push(definition);
                         DefRef::NewDefinition(def_id)
                     }
                 }
@@ -343,21 +355,13 @@ impl<'a> LocalResolver<'a> {
                 });
             }
             DefRef::PreviousDefinition(definition_id) => {
-                self.get_scope_mut(scope_id).references.push(Reference {
+                self[scope_id].references.push(Reference {
                     name,
                     node,
                     resolves_to: Some(definition_id),
                 })
             }
         };
-    }
-
-    fn get_scope(&self, scope_id: ScopeId<'a>) -> &Scope<'a> {
-        self.arena.get(scope_id).unwrap()
-    }
-
-    fn get_scope_mut(&mut self, scope_id: ScopeId<'a>) -> &mut Scope<'a> {
-        self.arena.get_mut(scope_id).unwrap()
     }
 
     fn ancestors(&self, scope_id: ScopeId<'a>) -> Ancestors<'_, 'a> {
@@ -368,13 +372,13 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn parent(&self, scope_id: ScopeId<'a>) -> ScopeId<'a> {
-        self.get_scope(scope_id)
+        self[scope_id]
             .parent
             .expect("Tried to get the root node's parent")
     }
 
     fn print_scope(&self, w: &mut dyn Write, scope_id: ScopeId<'a>, depth: usize) {
-        let scope = self.get_scope(scope_id);
+        let scope = &self[scope_id];
         writeln!(
             w,
             "{}scope {} {}-{}",
@@ -607,7 +611,7 @@ impl<'a> LocalResolver<'a> {
                 scope,
                 Some(current_scope),
             ));
-            self.get_scope_mut(current_scope).children.push(new_scope);
+            self[current_scope].children.push(new_scope);
             current_scope = new_scope
         }
 
@@ -628,7 +632,7 @@ impl<'a> LocalResolver<'a> {
                 ref_capture.node.start_byte() < scope_end_byte
             });
 
-            if let Some(parent) = self.get_scope(current_scope).parent {
+            if let Some(parent) = self[current_scope].parent {
                 current_scope = parent
             } else {
                 // We've made it to the top level scope
@@ -657,7 +661,7 @@ impl<'a> LocalResolver<'a> {
                 eprintln!("Detected a likely infinite loop in scip-syntax::locals::LocalResolver::find_def");
                 return None;
             }
-            let scope = self.get_scope(current_scope);
+            let scope = &self[current_scope];
             if let Some(def) = scope.find_def(name, start_byte) {
                 return Some(def);
             } else if let Some(parent_scope) = scope.parent {
