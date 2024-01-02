@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSearchFiltersUpdate(t *testing.T) {
@@ -15,7 +16,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 	cases := []struct {
 		name            string
 		events          []SearchEvent
-		wantFilterName  string
+		wantFilterValue string
 		wantFilterCount int
 		wantFilterKind  string
 	}{
@@ -32,7 +33,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)}},
 					},
 				}},
-			wantFilterName:  "repo:^foo$",
+			wantFilterValue: "repo:^foo$",
 			wantFilterKind:  "repo",
 			wantFilterCount: 3,
 		},
@@ -47,7 +48,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 					},
 				},
 			},
-			wantFilterName:  "repo:^foo$",
+			wantFilterValue: "repo:^foo$",
 			wantFilterKind:  "repo",
 			wantFilterCount: 1,
 		},
@@ -65,9 +66,40 @@ func TestSearchFiltersUpdate(t *testing.T) {
 					},
 				},
 			},
-			wantFilterName:  "repo:^foo$",
+			wantFilterValue: "repo:^foo$",
 			wantFilterKind:  "repo",
 			wantFilterCount: 2,
+		},
+		{
+			name: "SymbolMatch",
+			events: []SearchEvent{
+				{
+					Results: []result.Match{
+						&result.FileMatch{
+							Symbols: []*result.SymbolMatch{
+								{
+									Symbol: result.Symbol{
+										Kind: "class",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "class",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "class",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantFilterValue: "select:symbol.class",
+			wantFilterKind:  "symbol type",
+			wantFilterCount: 3,
 		},
 	}
 
@@ -79,9 +111,9 @@ func TestSearchFiltersUpdate(t *testing.T) {
 				s.Update(event)
 			}
 
-			f, ok := s.filters[c.wantFilterName]
+			f, ok := s.filters[c.wantFilterValue]
 			if !ok {
-				t.Fatalf("expected %s", c.wantFilterName)
+				t.Fatalf("expected %s", c.wantFilterValue)
 			}
 
 			if f.Kind != c.wantFilterKind {
@@ -90,6 +122,72 @@ func TestSearchFiltersUpdate(t *testing.T) {
 
 			if f.Count != c.wantFilterCount {
 				t.Fatalf("want %d, got %d", c.wantFilterCount, f.Count)
+			}
+		})
+	}
+}
+
+func TestSymbolCounts(t *testing.T) {
+	cases := []struct {
+		name        string
+		events      []SearchEvent
+		wantFilters map[string]*Filter
+	}{
+		{
+			name: "return different counts for different symbol types",
+			events: []SearchEvent{
+				{
+					Results: []result.Match{
+						&result.FileMatch{
+							Symbols: []*result.SymbolMatch{
+								{
+									Symbol: result.Symbol{
+										Kind: "class",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "variable",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "variable",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantFilters: map[string]*Filter{
+				"select:symbol.class": &Filter{
+					Value:      "select:symbol.class",
+					Label:      "class",
+					Count:      1,
+					IsLimitHit: false,
+					Kind:       "symbol type",
+				},
+				"select:symbol.variable": &Filter{
+					Value:      "select:symbol.variable",
+					Label:      "variable",
+					Count:      2,
+					IsLimitHit: false,
+					Kind:       "symbol type",
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &SearchFilters{}
+			for _, event := range tc.events {
+				s.Update(event)
+			}
+
+			for key, filter := range tc.wantFilters {
+				require.Equal(t, filter, s.filters[key])
 			}
 		})
 	}

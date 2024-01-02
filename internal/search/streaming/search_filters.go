@@ -97,7 +97,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		for _, sym := range symbols {
 			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
 			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
-			s.filters.Add(filter, selectKind, 1, limitHit, "Symbol Type")
+			s.filters.Add(filter, selectKind, 1, limitHit, "symbol type")
 		}
 	}
 
