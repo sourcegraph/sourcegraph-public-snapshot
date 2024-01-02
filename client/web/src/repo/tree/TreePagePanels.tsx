@@ -163,8 +163,6 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
         return fileHistoryByPath
     }, [historyEntries])
 
-    console.log(entries)
-
     return (
         <Card as="table" className={classNames(className, styles.files)}>
             <thead>
