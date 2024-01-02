@@ -27,7 +27,7 @@ func Redis() *monitoring.Dashboard {
 						{
 							Name:          "redis-store_up",
 							Description:   "redis-store availability",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							Query:         `redis_up{app="redis-store"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: false, // not deployed on docker-compose
@@ -48,7 +48,7 @@ func Redis() *monitoring.Dashboard {
 						{
 							Name:          "redis-cache_up",
 							Description:   "redis-cache availability",
-							Owner:         monitoring.ObservableOwnerDevOps,
+							Owner:         monitoring.ObservableOwnerInfraOrg,
 							Query:         `redis_up{app="redis-cache"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: false, // not deployed on docker-compose
@@ -62,10 +62,10 @@ func Redis() *monitoring.Dashboard {
 					},
 				},
 			},
-			shared.NewProvisioningIndicatorsGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewProvisioningIndicatorsGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(redisCache, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewProvisioningIndicatorsGroup(redisStore, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewKubernetesMonitoringGroup(redisCache, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewKubernetesMonitoringGroup(redisStore, monitoring.ObservableOwnerInfraOrg, nil),
 		},
 	}
 }

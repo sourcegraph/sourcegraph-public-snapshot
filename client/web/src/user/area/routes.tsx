@@ -11,8 +11,6 @@ import { namespaceAreaRoutes } from '../../namespaces/routes'
 
 import type { UserAreaRoute } from './UserArea'
 
-const AppSettingsArea = lazyComponent(() => import('../../enterprise/app/settings/AppSettingsArea'), 'AppSettingsArea')
-
 const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
     () => import('../../enterprise/batches/global/GlobalBatchChangesArea'),
     'NamespaceBatchChangesArea'
@@ -63,16 +61,6 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: 'account',
         render: () => <Navigate to="../profile" replace={true} />,
-    },
-
-    // Cody app specific route (cody/app settings page)
-    // This route won't be available for any non-app deploy types.
-    // See userAreaHeaderNavItems in client/web/src/enterprise/user/navitems.ts
-    // for more context on user settings page.
-    {
-        path: 'app-settings/*',
-        render: props => <AppSettingsArea telemetryService={props.telemetryService} />,
-        condition: context => context.isCodyApp,
     },
 
     // Redirect from previous /users/:username/subscriptions -> /users/:username/settings/subscriptions.

@@ -7,10 +7,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
+        "//dev/managedservicesplatform/internal/resource/random",
         "//dev/managedservicesplatform/internal/resource/serviceaccount",
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/options/googleprovider",
+        "//dev/managedservicesplatform/internal/stack/options/randomprovider",
         "//dev/managedservicesplatform/spec",
         "//lib/errors",
         "//lib/pointers",

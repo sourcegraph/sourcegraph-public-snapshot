@@ -15,10 +15,12 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/googleprojectserviceidentity"
 	google_beta "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta/provider"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -26,6 +28,7 @@ import (
 
 type CrossStackOutput struct {
 	CloudRunWorkloadServiceAccount *serviceaccount.Output
+	OperatorAccessServiceAccount   *serviceaccount.Output
 }
 
 type Variables struct {
@@ -35,13 +38,18 @@ type Variables struct {
 
 	// SecretEnv should be the environment config that sources from secrets.
 	SecretEnv map[string]string
+
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
 }
 
 const StackName = "iam"
 
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, locals, err := stacks.New(StackName,
-		googleprovider.With(vars.ProjectID))
+		googleprovider.With(vars.ProjectID),
+		randomprovider.With())
 	if err != nil {
 		return nil, err
 	}
@@ -98,11 +106,48 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		id.Group("workload"),
 		serviceaccount.Config{
 			ProjectID: vars.ProjectID,
+			// These might be used to grant access across other projects so
+			// a human-usable ID and name are preferred over random values.
 			AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
 			DisplayName: fmt.Sprintf("%s Service Account",
 				pointers.Deref(vars.Service.Name, vars.Service.ID)),
 			Roles: serviceAccountRoles,
+
+			// There may be external references to the service account to allow
+			// the workload access to external resources, so guard it from deletes.
+			PreventDestroys: vars.PreventDestroys,
 		})
+
+	// Create a service account for operators to impersonate to access other
+	// provisioned MSP resources. We use a randomized ID for more predictable
+	// ID lengths and to indicate this is only used by human operators for MSP
+	// tooling.
+	operatorAccessAccountID := random.New(stack, id.Group("operatoraccess_account_id"), random.Config{
+		Prefix:     "operatoraccess", // 15 charcters with '-'
+		ByteLength: 3,                // 6 chars
+	})
+	operatorAccessServiceAccount := serviceaccount.New(stack,
+		id.Group("operatoraccess"),
+		serviceaccount.Config{
+			ProjectID: vars.ProjectID,
+			AccountID: operatorAccessAccountID.HexValue,
+			DisplayName: fmt.Sprintf("%s Operator Access Service Account",
+				pointers.Deref(vars.Service.Name, vars.Service.ID)),
+			Roles: []serviceaccount.Role{
+				// Roles for connecting to Cloud SQL
+				{
+					ID:   resourceid.New("role_cloudsql_client"),
+					Role: "roles/cloudsql.client",
+				}, {
+					ID:   resourceid.New("role_cloudsql_instanceuser"),
+					Role: "roles/cloudsql.instanceUser",
+				},
+				// Add roles here for operator READONLY access. Write access
+				// should be granted by asking operators to impersonate the
+				// workload service account.
+			},
+		},
+	)
 
 	// Provision the default Cloud Run robot account so that we can grant it
 	// access to prerequisite resources.
@@ -157,14 +202,16 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 					Member:   &workloadServiceAccount.Member,
 				})
 		}
-
 	}
 
 	// Collect outputs
 	locals.Add("cloud_run_service_account", workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
+	locals.Add("operator_access_service_account", operatorAccessServiceAccount.Email,
+		"Service Account email used for operator access to other resources")
 	return &CrossStackOutput{
 		CloudRunWorkloadServiceAccount: workloadServiceAccount,
+		OperatorAccessServiceAccount:   operatorAccessServiceAccount,
 	}, nil
 }
 

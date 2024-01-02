@@ -41,6 +41,4 @@ export enum PageRoutes {
     CodyManagement = '/cody/manage',
     CodySubscription = '/cody/subscription',
     Own = '/own',
-    AppAuthCallback = '/app/auth/callback',
-    AppSetup = '/app-setup',
 }

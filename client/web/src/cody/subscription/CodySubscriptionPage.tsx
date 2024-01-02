@@ -315,23 +315,15 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                     </div>
                     <div className="border d-flex flex-column flex-1 bg-1 border p-3 rounded">
                         <div className="border-bottom pb-4">
-                            <H1 className="mb-1 d-flex align-items-center">
-                                Enterprise{' '}
-                                <Badge variant="secondary" className="ml-1">
-                                    coming soon
-                                </Badge>
-                            </H1>
+                            <H1 className="mb-1 d-flex align-items-center">Enterprise</H1>
                             <Text className="mb-0" size="small">
                                 Best for large teams and enterprises
                             </Text>
                         </div>
                         <div className="d-flex flex-column border-bottom py-4">
                             <div className="mb-1">
-                                <Text className="mb-0 text-muted d-inline">Up to $19/user/month</Text>
+                                <Text className="mb-0 text-muted d-inline">Coming soon</Text>
                             </div>
-                            <Text className="mb-3 text-muted" size="small">
-                                25 users minimum
-                            </Text>
                             <ButtonLink
                                 className="flex-1 mt-3"
                                 variant="secondary"
@@ -346,7 +338,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     )
                                 }}
                             >
-                                Contact sales
+                                Request info
                             </ButtonLink>
                         </div>
                         <div className="border-bottom py-4">

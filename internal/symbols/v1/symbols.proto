@@ -7,10 +7,18 @@ import "google/protobuf/duration.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/v1";
 
 service SymbolsService {
-  rpc Search(SearchRequest) returns (SearchResponse) {}
-  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (stream LocalCodeIntelResponse) {}
-  rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
-  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+  rpc Search(SearchRequest) returns (SearchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (stream LocalCodeIntelResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc Healthz(HealthzRequest) returns (HealthzResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message SearchRequest {

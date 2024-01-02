@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
+import classNames from 'classnames'
 import { toLower, upperFirst } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
@@ -20,7 +21,10 @@ import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } f
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
+import { RepoActionInfo } from '../RepoActionInfo'
 import type { RepoHeaderContext } from '../RepoHeader'
+
+import styles from './actions.module.scss'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
@@ -171,8 +175,14 @@ export const GoToCodeHostAction: React.FunctionComponent<
 
     return (
         <Tooltip content={descriptiveText}>
-            <RepoHeaderActionAnchor {...commonProps}>
-                <Icon as={exportIcon} aria-hidden={true} />
+            <RepoHeaderActionAnchor
+                {...commonProps}
+                className={classNames(commonProps.className, 'd-flex justify-content-center align-items-center')}
+            >
+                <RepoActionInfo
+                    displayName={displayName}
+                    icon={<Icon as={exportIcon} aria-hidden={true} className={styles.repoActionIcon} />}
+                />
             </RepoHeaderActionAnchor>
         </Tooltip>
     )

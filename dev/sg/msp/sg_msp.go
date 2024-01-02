@@ -1,6 +1,4 @@
-//go:build msp
-// +build msp
-
+// Package msp exports the 'sg msp' command for the Managed Services Platform.
 package msp
 
 import (
@@ -8,45 +6,46 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vvakame/gcplogurl"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
+	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// This file is only built when '-tags=msp' is passed to go build while 'sg msp'
-// is experimental, as the introduction of this command currently increases the
-// the binary size of 'sg' by ~20%.
-//
-// To install a variant of 'sg' with 'sg msp' enabled, run:
-//
-//   go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false
-//
-// To work with msp in VS Code, add the following to your VS Code configuration:
-//
-//  "gopls": {
-//     "build.buildFlags": ["-tags=msp"]
-//  }
+// Command is the 'sg msp' toolchain for the Managed Services Platform:
+// https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform
+var Command = &cli.Command{
+	Name:    "managed-services-platform",
+	Aliases: []string{"msp"},
+	Usage:   "EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform",
+	Description: `WARNING: MSP is currently still an experimental project.
+To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)`,
+	UsageText: `
+# Create a service specification
+sg msp init $SERVICE
 
-func init() {
-	// Override no-op implementation with our real implementation.
-	Command.Hidden = false
-	Command.Action = nil
-	// Trim description to just be the command description
-	Command.Description = commandDescription
-	// All 'sg msp ...' subcommands
-	Command.Subcommands = []*cli.Command{
+# Provision Terraform Cloud workspaces
+sg msp tfc sync $SERVICE $ENVIRONMENT
+
+# Generate Terraform manifests
+sg msp generate $SERVICE $ENVIRONMENT
+`,
+	Category: category.Company,
+	Subcommands: []*cli.Command{
 		{
 			Name:      "init",
 			ArgsUsage: "<service ID>",
@@ -61,9 +60,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Value: "service",
 				},
 				&cli.StringFlag{
-					Name:     "owner",
-					Usage:    "Name of team owning this new service",
-					Required: true,
+					Name:  "owner",
+					Usage: "Name of team owning this new service",
 				},
 				&cli.StringFlag{
 					Name:  "name",
@@ -71,7 +69,12 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				},
 				&cli.BoolFlag{
 					Name:  "dev",
-					Usage: "Generate a dev environment as the initial environment",
+					Usage: "Generate a dev environment",
+				},
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
@@ -85,6 +88,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Name:  c.String("name"),
 					Owner: c.String("owner"),
 					Dev:   c.Bool("dev"),
+
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
 				}
 
 				var exampleSpec []byte
@@ -107,8 +112,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 				outputPath := msprepo.ServiceYAMLPath(c.Args().First())
 
-				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
-				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
+				_ = os.MkdirAll(filepath.Dir(outputPath), 0o755)
+				if err := os.WriteFile(outputPath, exampleSpec, 0o644); err != nil {
 					return err
 				}
 
@@ -118,10 +123,68 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 			},
 		},
 		{
+			Name:      "init-env",
+			ArgsUsage: "<service ID> <env ID>",
+			Usage:     "Add an environment to an existing Managed Services Platform service",
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
+				},
+			},
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				envID := c.Args().Get(1)
+				if envID == "" {
+					return errors.New("second argument <environment ID> is required")
+				}
+				if existing := svc.GetEnvironment(envID); existing != nil {
+					return errors.Newf("environment %q already exists", envID)
+				}
+
+				envNode, err := example.NewEnvironment(example.EnvironmentTemplate{
+					ServiceID:             svc.Service.ID,
+					EnvironmentID:         envID,
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
+				})
+				if err != nil {
+					return errors.Wrap(err, "example.NewEnvironment")
+				}
+
+				specPath := msprepo.ServiceYAMLPath(svc.Service.ID)
+				specData, err := os.ReadFile(specPath)
+				if err != nil {
+					return errors.Wrap(err, "ReadFile")
+				}
+
+				specData, err = spec.AppendEnvironment(specData, envNode)
+				if err != nil {
+					return errors.Wrap(err, "spec.AppendEnvironment")
+				}
+
+				if err := os.WriteFile(specPath, specData, 0o644); err != nil {
+					return err
+				}
+
+				std.Out.WriteSuccessf("Initialized environment %q in %s",
+					envID, specPath)
+				return nil
+			},
+		},
+		{
 			Name:      "generate",
 			Aliases:   []string{"gen"},
 			ArgsUsage: "<service ID>",
-			Usage:     "Generate Terraform assets for a Managed Services Platform service spec.",
+			Usage:     "Generate Terraform assets for a Managed Services Platform service spec",
 			Description: `Optionally use '-all' to sync all environments for a service.
 
 Supports completions on services and environments.`,
@@ -199,11 +262,218 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:   "logs",
+			Usage:  "Quick links for logs of various MSP components",
+			Before: msprepo.UseManagedServicesRepo,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "component",
+					Aliases: []string{"c"},
+					Value:   "service",
+				},
+			},
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+			Action: func(c *cli.Context) error {
+				_, env, err := useServiceAndEnvironmentArguments(c)
+				if err != nil {
+					return err
+				}
+
+				switch component := c.String("component"); component {
+				case "service":
+					std.Out.WriteNoticef("Opening link to service logs in browser...")
+					return open.URL((&gcplogurl.Explorer{
+						ProjectID: env.ProjectID,
+						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" jsonPayload.InstrumentationScope != ""`),
+						SummaryFields: &gcplogurl.SummaryFields{
+							Fields: []string{
+								// fields from structured logs by sourcegraph/log
+								"jsonPayload/InstrumentationScope",
+								"jsonPayload/Body",
+								"jsonPayload/Attributes/error",
+							},
+						},
+					}).String())
+
+				default:
+					return errors.Newf("unsupported -component=%s", component)
+				}
+			},
+		},
+		{
+			Name:    "postgresql",
+			Aliases: []string{"pg"},
+			Usage:   "Interact with PostgreSQL instances provisioned by MSP",
+			Before:  msprepo.UseManagedServicesRepo,
+			Subcommands: []*cli.Command{
+				{
+					Name:  "connect",
+					Usage: "Connect to the PostgreSQL instance",
+					Description: `
+This command runs 'cloud-sql-proxy' authenticated against the specified MSP
+service environment, and provides 'psql' commands for interacting with the
+database through the proxy.
+
+If this is your first time using this command, include the '-download' flag to
+install 'cloud-sql-proxy'.
+
+By default, you will only have 'SELECT' privileges through the connection - for
+full access, use the '-write-access' flag.
+`,
+					ArgsUsage: "<service ID> <environment ID>",
+					Flags: []cli.Flag{
+						&cli.IntFlag{
+							Name:  "port",
+							Value: 5433,
+							Usage: "Port to use for the cloud-sql-proxy",
+						},
+						&cli.BoolFlag{
+							Name:  "download",
+							Usage: "Install or update the cloud-sql-proxy",
+						},
+						&cli.BoolFlag{
+							Name:  "write-access",
+							Usage: "Connect to the database with write access - by default, only select access is granted.",
+						},
+						// db proxy provides privileged access to the database,
+						// so we want to avoid having it dangling around for too long unattended
+						&cli.IntFlag{
+							Name:  "session.timeout",
+							Usage: "Timeout for the proxy session in seconds - 0 means no timeout",
+							Value: 300,
+						},
+					},
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(c *cli.Context) error {
+						service, env, err := useServiceAndEnvironmentArguments(c)
+						if err != nil {
+							return err
+						}
+						if env.Resources.PostgreSQL == nil {
+							return errors.New("no postgresql instance provisioned")
+						}
+
+						err = cloudsqlproxy.Init(c.Bool("download"))
+						if err != nil {
+							return err
+						}
+
+						tfcClient, err := getTFCRunsClient(c)
+						if err != nil {
+							return err
+						}
+						iamOutputs, err := tfcClient.GetOutputs(c.Context,
+							terraformcloud.WorkspaceName(service.Service, *env,
+								managedservicesplatform.StackNameIAM))
+						if err != nil {
+							return errors.Wrap(err, "get IAM outputs")
+						}
+						var serviceAccountEmail string
+						if c.Bool("write-access") {
+							// Use the workload identity if all access is requested
+							workloadSA, err := iamOutputs.Find("cloud_run_service_account")
+							if err != nil {
+								return errors.Wrap(err, "find IAM output")
+							}
+							serviceAccountEmail = workloadSA.Value.(string)
+						} else {
+							// Otherwise, use the operator access account which
+							// is a bit more limited.
+							operatorAccessSA, err := iamOutputs.Find("operator_access_service_account")
+							if err != nil {
+								return errors.Wrap(err, "find IAM output")
+							}
+							serviceAccountEmail = operatorAccessSA.Value.(string)
+						}
+
+						cloudRunOutputs, err := tfcClient.GetOutputs(c.Context,
+							terraformcloud.WorkspaceName(service.Service, *env,
+								managedservicesplatform.StackNameCloudRun))
+						if err != nil {
+							return errors.Wrap(err, "get Cloud Run outputs")
+						}
+						connectionName, err := cloudRunOutputs.Find("cloudsql_connection_name")
+						if err != nil {
+							return errors.Wrap(err, "find Cloud Run output")
+						}
+
+						proxyPort := c.Int("port")
+						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
+							connectionName.Value.(string),
+							serviceAccountEmail,
+							proxyPort)
+						if err != nil {
+							return err
+						}
+
+						for _, db := range env.Resources.PostgreSQL.Databases {
+							std.Out.WriteNoticef("Use this command to connect to database %q:", db)
+
+							saUsername := strings.ReplaceAll(serviceAccountEmail,
+								".gserviceaccount.com", "")
+							if err := std.Out.WriteCode("bash",
+								fmt.Sprintf(`psql -U %s -d %s -h 127.0.0.1 -p %d`,
+									saUsername,
+									db,
+									proxyPort)); err != nil {
+								return errors.Wrapf(err, "write command for db %q", db)
+							}
+						}
+
+						// Run proxy until stopped
+						return proxy.Start(c.Context, c.Int("session.timeout"))
+					},
+				},
+			},
+		},
+		{
 			Name:    "terraform-cloud",
 			Aliases: []string{"tfc"},
 			Usage:   "Manage Terraform Cloud workspaces for a service",
 			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
+				{
+					Name:        "view",
+					Usage:       "View MSP Terraform Cloud workspaces",
+					Description: "You may need to request access to the workspaces - see https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#terraform-cloud",
+					UsageText: `
+# View all workspaces for all MSP services
+sg msp tfc view
+
+# View all workspaces for all environments for a MSP service
+sg msp tfc view <service>
+
+# View all workspaces for a specific MSP service environment
+sg msp tfc view <service> <environment>
+`,
+					ArgsUsage:    "[service ID] [environment ID]",
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+					Action: func(c *cli.Context) error {
+						if c.Args().Len() == 0 {
+							std.Out.WriteNoticef("Opening link to all MSP Terraform Cloud workspaces in browser...")
+							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+								terraformcloud.MSPWorkspaceTag))
+						}
+
+						service, err := useServiceArgument(c)
+						if err != nil {
+							return err
+						}
+						if c.Args().Len() == 1 {
+							std.Out.WriteNoticef("Opening link to service Terraform Cloud workspaces in browser...")
+							return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+								terraformcloud.ServiceWorkspaceTag(service.Service)))
+						}
+
+						env := service.GetEnvironment(c.Args().Get(1))
+						if env == nil {
+							return errors.Wrapf(err, "environment %q not found", c.Args().Get(1))
+						}
+						std.Out.WriteNoticef("Opening link to service environment Terraform Cloud workspaces in browser...")
+						return open.URL(fmt.Sprintf("https://app.terraform.io/app/sourcegraph/workspaces?tag=%s",
+							terraformcloud.EnvironmentWorkspaceTag(service.Service, *env)))
+					},
+				},
 				{
 					Name:  "sync",
 					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
@@ -230,13 +500,7 @@ Supports completions on services and environments.`,
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						serviceID := c.Args().First()
-						if serviceID == "" {
-							return errors.New("argument service is required")
-						}
-						serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
-
-						service, err := spec.Open(serviceSpecPath)
+						service, err := useServiceArgument(c)
 						if err != nil {
 							return err
 						}
@@ -246,7 +510,7 @@ Supports completions on services and environments.`,
 							return err
 						}
 						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCAccessToken,
+							Name:    googlesecretsmanager.SecretTFCOrgToken,
 							Project: googlesecretsmanager.ProjectID,
 						})
 						if err != nil {
@@ -310,7 +574,7 @@ Supports completions on services and environments.`,
 				}
 				if output := c.String("output"); output != "" {
 					_ = os.Remove(output)
-					if err := os.WriteFile(output, jsonSchema, 0644); err != nil {
+					if err := os.WriteFile(output, jsonSchema, 0o644); err != nil {
 						return err
 					}
 					std.Out.WriteSuccessf("Rendered service spec JSON schema in %s", output)
@@ -320,151 +584,5 @@ Supports completions on services and environments.`,
 				return std.Out.WriteCode("json", string(jsonSchema))
 			},
 		},
-	}
-}
-
-func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
-	if os.TempDir() == "" {
-		return errors.New("no temp dir available")
-	}
-
-	renderer := &managedservicesplatform.Renderer{
-		// Even though we're not synthesizing we still
-		// need an output dir or CDKTF will not work
-		OutputDir: filepath.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
-			service.ID, env.ID, time.Now().Unix())),
-		GCP: managedservicesplatform.GCPOptions{},
-		TFC: managedservicesplatform.TerraformCloudOptions{},
-	}
-	defer os.RemoveAll(renderer.OutputDir)
-
-	renderPending := std.Out.Pending(output.Styledf(output.StylePending,
-		"[%s] Rendering required Terraform Cloud workspaces for environment %q",
-		service.ID, env.ID))
-	cdktf, err := renderer.RenderEnvironment(service, build, env, monitoring)
-	if err != nil {
-		return err
-	}
-	renderPending.Destroy() // We need to destroy this pending so we can prompt on deletion.
-
-	if c.Bool("delete") {
-		std.Out.Promptf("[%s] Deleting workspaces for environment %q - are you sure? (y/N) ",
-			service.ID, env.ID)
-		var input string
-		if _, err := fmt.Scan(&input); err != nil {
-			return err
-		}
-		if input != "y" {
-			return errors.New("aborting")
-		}
-
-		pending := std.Out.Pending(output.Styledf(output.StylePending,
-			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-		if errs := tfc.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
-			for _, err := range errs {
-				std.Out.WriteWarningf(err.Error())
-			}
-			return errors.New("some errors occurred when deleting workspaces")
-		}
-		pending.Complete(output.Styledf(output.StyleSuccess,
-			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-
-		return nil // exit early for deletion, we are done
-	}
-
-	pending := std.Out.Pending(output.Styledf(output.StylePending,
-		"[%s] Synchronizing Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
-	if err != nil {
-		return errors.Wrap(err, "sync Terraform Cloud workspace")
-	}
-	pending.Complete(output.Styledf(output.StyleSuccess,
-		"[%s] Synchronized Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-
-	var summary strings.Builder
-	for _, ws := range workspaces {
-		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name, ws.URL()))
-		if ws.Created {
-			summary.WriteString(" (created)")
-		} else {
-			summary.WriteString(" (updated)")
-		}
-		summary.WriteString("\n")
-	}
-	std.Out.WriteMarkdown(summary.String())
-	return nil
-}
-
-type generateTerraformOptions struct {
-	// targetEnv generates the specified env only, otherwise generates all
-	targetEnv string
-	// stableGenerate disables updating of any values that are evaluated at
-	// generation time
-	stableGenerate bool
-	// useTFC enables Terraform Cloud integration
-	useTFC bool
-}
-
-func generateTerraform(serviceID string, opts generateTerraformOptions) error {
-	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
-
-	service, err := spec.Open(serviceSpecPath)
-	if err != nil {
-		return err
-	}
-
-	var envs []spec.EnvironmentSpec
-	if opts.targetEnv != "" {
-		deployEnv := service.GetEnvironment(opts.targetEnv)
-		if deployEnv == nil {
-			return errors.Newf("environment %q not found in service spec", opts.targetEnv)
-		}
-		envs = append(envs, *deployEnv)
-	} else {
-		envs = service.Environments
-	}
-
-	for _, env := range envs {
-		env := env
-
-		pending := std.Out.Pending(output.Styledf(output.StylePending,
-			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
-		renderer := managedservicesplatform.Renderer{
-			OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
-			GCP:       managedservicesplatform.GCPOptions{},
-			TFC: managedservicesplatform.TerraformCloudOptions{
-				Enabled: opts.useTFC,
-			},
-			StableGenerate: opts.stableGenerate,
-		}
-
-		// CDKTF needs the output dir to exist ahead of time, even for
-		// rendering. If it doesn't exist yet, create it
-		if f, err := os.Lstat(renderer.OutputDir); err != nil {
-			if !os.IsNotExist(err) {
-				return errors.Wrap(err, "check output directory")
-			}
-			if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
-				return errors.Wrap(err, "prepare output directory")
-			}
-		} else if !f.IsDir() {
-			return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
-		}
-
-		// Render environment
-		cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, env, *service.Monitoring)
-		if err != nil {
-			return err
-		}
-
-		pending.Updatef("[%s] Generating Terraform assets in %q for environment %q...",
-			serviceID, renderer.OutputDir, env.ID)
-		if err := cdktf.Synthesize(); err != nil {
-			return err
-		}
-		pending.Complete(output.Styledf(output.StyleSuccess,
-			"[%s] Terraform assets generated in %q!", serviceID, renderer.OutputDir))
-	}
-
-	return nil
+	},
 }

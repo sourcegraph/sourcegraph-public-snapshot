@@ -5,7 +5,7 @@
 
     import styles from './Button.module.scss'
 
-    export let direction: (typeof BUTTON_GROUP_DIRECTION)[number] = 'horizontal'
+    export let direction: typeof BUTTON_GROUP_DIRECTION[number] = 'horizontal'
 
     $: className = classNames(styles.btnGroup, direction === 'vertical' && styles.btnGroupVertical)
 </script>

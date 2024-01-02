@@ -1,9 +1,17 @@
 package search
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+)
 
 func TestCompilePathPatterns(t *testing.T) {
-	match, err := compilePathPatterns([]string{`main\.go`, `m`}, `README\.md`, false)
+	match, err := compilePathPatterns(&protocol.PatternInfo{
+		IncludePatterns: []string{`main\.go`, `m`},
+		ExcludePattern:  `README\.md`,
+		IsCaseSensitive: false,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -13,7 +21,7 @@ func TestCompilePathPatterns(t *testing.T) {
 		"main.go":   true,
 	}
 	for path, want := range want {
-		got := match.MatchPath(path)
+		got := match.Matches(path)
 		if got != want {
 			t.Errorf("path %q: got %v, want %v", path, got, want)
 			continue

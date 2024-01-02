@@ -56,13 +56,13 @@ For Sourcegraph Enterprise customers, model availability depends on your Sourceg
 Rate limits, quotas, and model availability are tied to one of the following:
 
 - your Sourcegraph Enterprise product subscription for Sourcegraph Enterprise instances
-- your Sourcegraph.com account, for [Cody App users](../overview/app/index.md)
+- your Sourcegraph.com account, for Cody Free and Pro
 
 All successful requests to Cody Gateway will count toward your rate limits. Unsuccessful requests are not counted as usage.
 
 Rate limits, quotas, and model availability are also configured per Cody feature - for example, you will have separate rate limits for Cody chat, Cody completions, and Cody embeddings.
 
-In addition to the above, we may throttle concurrent requests to Cody Gateway per Sourcegraph Enterprise instance or Cody App user to prevent excessive burst consumption.
+In addition to the above, we may throttle concurrent requests to Cody Gateway per Sourcegraph Enterprise instance or Cody Free/Pro user to prevent excessive burst consumption.
 
 >NOTE: You can reach out for more details about Sourcegraph Cody Gateway access available to you and how you can gain access to higher rate limits, quotas, and/or model options.
 

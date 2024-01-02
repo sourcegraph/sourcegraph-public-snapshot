@@ -26,7 +26,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//internal/accesstoken",
         "//internal/api/internalapi",
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",

@@ -9,6 +9,7 @@ go_library(
         "//dev/linters/nolint",
         "@com_github_ashanbrown_forbidigo//forbidigo:go_default_library",  #keep
         "@com_github_ashanbrown_forbidigo//pkg/analyzer:go_default_library",  #keep
+        "@com_github_gobwas_glob//:glob",
         "@org_golang_x_tools//go/analysis",
     ],
 )

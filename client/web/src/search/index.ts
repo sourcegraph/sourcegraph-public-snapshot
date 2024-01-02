@@ -6,7 +6,7 @@ import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 import { memoizeObservable } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
-import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
+import { discreteValueAliases, escapeSpaces, quoteIfWhitespace } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -144,12 +144,26 @@ export function parseSearchURL(
     }
 }
 
-export function repoFilterForRepoRevision(repoName: string, revision?: string): string {
+export function filterValueForRepoRevision(repoName: string, revision?: string): string {
     return `${escapeSpaces(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function searchQueryForRepoRevision(repoName: string, revision?: string): string {
-    return `repo:${repoFilterForRepoRevision(repoName, revision)} `
+export function repoFilterForRepoRevision(
+    repoName: string,
+    revision?: string,
+    patternType?: SearchPatternType
+): string {
+    if (patternType === SearchPatternType.newStandardRC1) {
+        return `repo:${quoteIfWhitespace(repoName)}${revision ? `@${abbreviateOID(revision)}` : ''} `
+    }
+    return `repo:${filterValueForRepoRevision(repoName, revision)} `
+}
+
+export function fileFilterForFilePath(filePath: string, patternType?: SearchPatternType): string {
+    if (patternType === SearchPatternType.newStandardRC1) {
+        return `file:${quoteIfWhitespace(filePath)}`
+    }
+    return `file:${escapeSpaces('^' + escapeRegExp(filePath))}`
 }
 
 function abbreviateOID(oid: string): string {

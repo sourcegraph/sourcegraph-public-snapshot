@@ -9,10 +9,7 @@ import (
 
 func DeleteOldCacheDataInRedis() {
 	for _, kv := range []redispool.KeyValue{redispool.Store, redispool.Cache} {
-		pool, ok := kv.Pool()
-		if !ok { // redis disabled, nothing to delete
-			continue
-		}
+		pool := kv.Pool()
 
 		c := pool.Get()
 		defer c.Close()

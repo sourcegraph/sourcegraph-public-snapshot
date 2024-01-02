@@ -1,15 +1,25 @@
 package runtime
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 )
 
 // passSanityCheck exits with a code zero if the environment variable SANITY_CHECK equals
 // to "true". See internal/sanitycheck.
-func passSanityCheck() {
+func passSanityCheck(svc ServiceMetadata) {
 	if os.Getenv("SANITY_CHECK") == "true" {
-		fmt.Println("Sanity check passed, exiting without error")
+		// dump metadata to stdout
+		if err := json.NewEncoder(os.Stdout).Encode(map[string]string{
+			"name":    svc.Name(),
+			"version": svc.Version(),
+		}); err != nil {
+			fmt.Fprintf(os.Stderr, "Dump metadata: %s", err)
+			os.Exit(1)
+		}
+		// report success in stderr
+		fmt.Fprint(os.Stderr, "Sanity check passed, exiting without error")
 		os.Exit(0)
 	}
 }

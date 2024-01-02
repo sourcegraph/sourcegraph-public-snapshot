@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "terraformcloud",
-    srcs = ["terraformcloud.go"],
+    srcs = [
+        "runs.go",
+        "terraformcloud.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud",
     visibility = ["//visibility:public"],
     deps = [

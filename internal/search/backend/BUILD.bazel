@@ -13,6 +13,7 @@ go_library(
         "index_options.go",
         "indexers.go",
         "metered_searcher.go",
+        "retry.go",
         "zoekt.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/backend",

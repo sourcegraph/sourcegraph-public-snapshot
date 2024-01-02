@@ -7,7 +7,6 @@ package router
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
@@ -55,8 +54,6 @@ const (
 	GopherconLiveBlog = "gophercon.live.blog"
 
 	UI = "ui"
-
-	AppUpdateCheck = codyapp.RouteAppUpdateCheck
 )
 
 // Router returns the frontend app router.

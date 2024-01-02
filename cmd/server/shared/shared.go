@@ -290,7 +290,7 @@ func runMigrator() {
 	log.Println("Migrated postgres schemas.")
 }
 
-func shouldPostgresReindex() (shouldReindex bool) {
+func shouldPostgresReindex() bool {
 	fmt.Printf("Checking whether a Postgres reindex is required...\n")
 
 	// Check for presence of the reindex marker file
@@ -305,7 +305,7 @@ func shouldPostgresReindex() (shouldReindex bool) {
 	// Check PGHOST variable to see whether it refers to a local address or path
 	// If an external database is used, reindexing can be skipped
 	pgHost := os.Getenv("PGHOST")
-	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost" || string(pgHost[0]) == "/") {
+	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost" || string(pgHost[0]) == "/") { // CI:LOCALHOST_OK
 		fmt.Printf("Using a non-local Postgres database '%s', reindexing not required\n", pgHost)
 		return false
 	}

@@ -37,13 +37,13 @@ var Targets = []Target{
 		Description: "Check go code for linting errors, forbidden imports, generated files, etc",
 		Checks: []*linter{
 			goGenerateLinter,
-			goDBConnImport,
-			noLocalHost,
+			onlyLocal(goDBConnImport),
+			onlyLocal(noLocalHost),
 			lintGoDirectives(),
 			lintLoggingLibraries(),
-			lintTracingLibraries(),
+			onlyLocal(lintTracingLibraries()),
 			goModGuards(),
-			lintSGExit(),
+			onlyLocal(lintSGExit()),
 		},
 	},
 	{
@@ -58,6 +58,7 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
+			docChangesLint(),
 		},
 	},
 	{

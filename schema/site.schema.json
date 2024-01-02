@@ -73,6 +73,16 @@
           "description": "Maximum number of estimated fields allowed in a GraphQL response",
           "type": "integer",
           "default": 500000
+        },
+        "graphQLMaxDuplicateFieldCount": {
+          "description": "Maximum number of duplicate fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxUniqueFieldCount": {
+          "description": "Maximum number of unique fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
         }
       }
     },
@@ -567,6 +577,20 @@
           "type": "boolean",
           "group": "BatchChanges",
           "default": false
+        },
+        "languageDetection": {
+          "description": "Setting for customizing language detection behavior",
+          "type": "object",
+          "required": ["graphQL"],
+          "additionalProperties": false,
+          "properties": {
+            "graphQL": {
+              "description": "What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.",
+              "type": "string",
+              "enum": ["useFileContents", "useFileNamesOnly"],
+              "default": "useFileContents"
+            }
+          }
         }
       },
       "examples": [
@@ -591,6 +615,7 @@
       ],
       "group": "Experimental"
     },
+
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
@@ -1110,6 +1135,11 @@
           "url": "https://sourcegraph.example.com"
         }
       ]
+    },
+    "auth.dailyEmailDomainSignupLimit": {
+      "type": "integer",
+      "default": 0,
+      "description": "The maximum number of users that can sign from Google using the same email domain in a 24 hour period."
     },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -2053,36 +2083,6 @@
             "type": "string"
           }
         },
-        "app.notifications": {
-          "description": "Notifications to display in the Sourcegraph app.",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["key", "message"],
-            "properties": {
-              "key": {
-                "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
-                "type": "string",
-                "minLength": 1
-              },
-              "message": {
-                "description": "The Markdown message to display",
-                "type": "string",
-                "minLength": 1
-              },
-              "version.min": {
-                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
-                "type": "string",
-                "minLength": 1
-              },
-              "version.max": {
-                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
-                "type": "string",
-                "minLength": 1
-              }
-            }
-          }
-        },
         "slackLicenseExpirationWebhook": {
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
@@ -2090,6 +2090,11 @@
         },
         "slackLicenseAnomallyWebhook": {
           "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
+        "slackLicenseCreationWebhook": {
+          "description": "Slack webhook for when a license key is created.",
           "type": "string",
           "group": "Sourcegraph.com"
         },
@@ -2168,24 +2173,6 @@
         }
       },
       "group": "Sourcegraph.com"
-    },
-    "app": {
-      "description": "Configuration options for App only.",
-      "type": "object",
-      "properties": {
-        "dotcomAuthToken": {
-          "description": "Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.",
-          "type": "string",
-          "group": "Sourcegraph.com"
-        }
-      },
-      "examples": [
-        {
-          "app": {
-            "dotcomAuthToken": "abc123"
-          }
-        }
-      ]
     },
     "notifications": {
       "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",

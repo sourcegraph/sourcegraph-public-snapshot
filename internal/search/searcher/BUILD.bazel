@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "client.go",
         "client_grpc.go",
+        "retry_grpc.go",
         "search.go",
         "stream.go",
         "symbol_search_job.go",
@@ -36,6 +37,7 @@ go_library(
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
         "@org_golang_x_sync//errgroup",
