@@ -10,7 +10,7 @@ package siteid
 
 import (
 	"context"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"sync"
 	"time"

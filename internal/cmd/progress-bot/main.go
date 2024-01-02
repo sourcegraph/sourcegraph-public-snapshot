@@ -13,7 +13,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"os"
 	"sort"

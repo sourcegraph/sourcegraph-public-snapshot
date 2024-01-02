@@ -3,7 +3,6 @@ package env
 import (
 	"expvar"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -193,7 +192,7 @@ func HandleHelpFlag() {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Print(HelpString())
+			fmt.Println(HelpString())
 			os.Exit(0)
 		}
 	}

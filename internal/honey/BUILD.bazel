@@ -18,6 +18,7 @@ go_library(
         "@com_github_honeycombio_libhoney_go//:libhoney-go",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
