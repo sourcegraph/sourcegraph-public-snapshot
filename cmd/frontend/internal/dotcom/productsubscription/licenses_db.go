@@ -92,7 +92,6 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a license is created in DotCom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
 			log.Error(err)
@@ -175,7 +174,7 @@ func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) 
 	return results[0], nil
 }
 
-// GetByLicenseKey retrieves the product license (if any) given its check license token.
+// GetByAccessToken retrieves the product license (if any) given its check license token.
 // The accessToken is of the format created by GenerateLicenseKeyBasedAccessToken.
 //
 // 🚨 SECURITY: The caller must ensure that errTokenInvalid error is handled appropriately
@@ -198,7 +197,7 @@ func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*
 	return results[0], nil
 }
 
-// GetByID retrieves the product license (if any) given its license key.
+// GetByLicenseKey retrieves the product license (if any) given its license key.
 func (s dbLicenses) GetByLicenseKey(ctx context.Context, licenseKey string) (*dbLicense, error) {
 	if mocks.licenses.GetByLicenseKey != nil {
 		return mocks.licenses.GetByLicenseKey(licenseKey)
@@ -348,8 +347,7 @@ ORDER BY created_at DESC
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-		//Log an event when liscenses list is viewed in Dotcom
+		// Log an event when liscenses list is viewed in Dotcom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args()); err != nil {
 			log.Error(err)
 		}

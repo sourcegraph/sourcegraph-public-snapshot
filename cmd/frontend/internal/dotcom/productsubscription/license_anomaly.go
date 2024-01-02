@@ -131,7 +131,7 @@ SELECT EXTRACT(EPOCH FROM p50)::int AS p50_seconds FROM percentiles
 `
 
 const slackMessageFmt = `
-The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> seems to be used on multiple customer instances with the same site ID: "%s.
+The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> seems to be used on multiple customer instances with the same site ID: "%s".
 
 To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
@@ -147,7 +147,7 @@ func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db datab
 		return
 	}
 
-	q := sqlf.Sprintf(percentileTimeDiffQuery, clock.Now().UTC(), *license.SiteID)
+	q := sqlf.Sprintf(percentileTimeDiffQuery, clock.Now().UTC(), license.LicenseKey, *license.SiteID)
 	timeDiff, ok, err := basestore.ScanFirstNullInt64(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
 		logger.Error("error getting time difference from event_logs", log.Error(err))

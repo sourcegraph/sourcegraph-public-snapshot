@@ -6,15 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
@@ -34,12 +35,14 @@ var (
 	EventNameAssigned = "license.check.api.assigned"
 )
 
-func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
+func logEvent(ctx context.Context, db database.DB, name string, siteID string, accessToken string) {
 	logger := log.Scoped("LicenseCheckHandler logEvent")
 	eArg, err := json.Marshal(struct {
-		SiteID string `json:"site_id,omitempty"`
+		SiteID      string `json:"site_id,omitempty"`
+		AccessToken string `json:"access_token,omitempty"`
 	}{
-		SiteID: siteID,
+		SiteID:      siteID,
+		AccessToken: accessToken,
 	})
 	if err != nil {
 		logger.Warn("error marshalling json body", log.Error(err))
@@ -98,6 +101,18 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string, cust
 		return
 	}
 }
+
+// Check which site IDs the license key has received pings from
+// over the last 48 hours.
+const duplicateLicenseKeyPingQuery = `
+SELECT DISTINCT
+	argument->>'site_id' AS site_id
+FROM event_logs
+WHERE
+	name = 'license.check.api.success'
+	AND timestamp > %s::timestamptz - INTERVAL '48 hours'
+	AND argument->>'access_token' = %s
+`
 
 func NewLicenseCheckHandler(db database.DB) http.Handler {
 	baseLogger := log.Scoped("LicenseCheckHandler")
@@ -164,8 +179,33 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			return
 		}
 
-		if license.SiteID != nil && !strings.EqualFold(*license.SiteID, siteID) {
-			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
+		q := sqlf.Sprintf(duplicateLicenseKeyPingQuery, token)
+		siteIDs, err := basestore.ScanStrings(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+		if err != nil {
+			logger.Error("could not query for duplicate license key pings. Responding with valid=True.", log.Error(err))
+			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
+				Data: &licensing.LicenseCheckResponseData{
+					IsValid: true,
+				},
+			})
+			return
+		}
+
+		if license.SiteID == nil {
+			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
+				logger.Warn("failed to assign site ID to license")
+				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
+					Error: ErrFailedToAssignSiteIDMsg,
+				})
+				return
+			}
+			logEvent(ctx, db, EventNameAssigned, siteID, token)
+			license.SiteID = &siteID
+		}
+
+		if len(siteIDs) > 1 || (len(siteIDs) == 1 && *license.SiteID != siteIDs[0]) {
+			duplicateSiteIDs := append(siteIDs, *license.SiteID)
+			logger.Warn("license being used with multiple site IDs", log.Strings("siteIDs", duplicateSiteIDs))
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 				// TODO: revert this to false again in the future, once most customers have a separate
 				// license key per instance
@@ -195,24 +235,13 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			return
 		}
 
-		if license.SiteID == nil {
-			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
-				logger.Warn("failed to assign site ID to license")
-				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
-					Error: ErrFailedToAssignSiteIDMsg,
-				})
-				return
-			}
-			logEvent(ctx, db, EventNameAssigned, siteID)
-		}
-
 		logger.Debug("finished license validity check")
 		replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 			Data: &licensing.LicenseCheckResponseData{
 				IsValid: true,
 			},
 		})
-		logEvent(ctx, db, EventNameSuccess, siteID)
+		logEvent(ctx, db, EventNameSuccess, siteID, token)
 	})
 }
 
