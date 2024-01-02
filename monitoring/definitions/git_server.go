@@ -560,7 +560,7 @@ func GitServer() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "gitserver",
 				InstanceFilterRegex: `${shard:regex}`,
-			}, monitoring.ObservableOwnerDevOps),
+			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),

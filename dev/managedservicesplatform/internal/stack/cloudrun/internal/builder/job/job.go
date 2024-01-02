@@ -142,10 +142,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 
 					VolumeMounts: b.volumeMounts,
 
-					// TODO: Should we do healthchecks with authorization based
-					// on MSP convention?
-					StartupProbe:  nil,
-					LivenessProbe: nil,
+					// Job does not support probes
 				}},
 
 				Volumes: b.volumes,

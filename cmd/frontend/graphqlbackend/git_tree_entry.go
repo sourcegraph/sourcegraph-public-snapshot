@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -267,16 +268,34 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 }
 
 func (r *GitTreeEntryResolver) Languages(ctx context.Context) ([]string, error) {
-	filename := r.Name()
-	languages := enry.GetLanguages(filename, nil)
-	if len(languages) <= 1 {
-		return languages, nil
+	// As of now, only GitBlob exposes a language field in the GraphQL
+	// API, but since GitTreeEntry and GitBlob are both implemented
+	// via the same GitTreeEntryResolver in the backend,
+	// add this check to be defensive instead of potentially
+	// returning an incorrect result.
+	if r.IsDirectory() {
+		return nil, nil
 	}
-	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
-	if err != nil {
-		return nil, err
-	}
-	return enry.GetLanguages(filename, r.fullContentBytes), nil
+	return languages.GetLanguages(r.Name(), func() ([]byte, error) {
+		useFileContents := true
+		exptFeatures := conf.SiteConfig().ExperimentalFeatures
+		if exptFeatures != nil && exptFeatures.LanguageDetection != nil {
+			switch exptFeatures.LanguageDetection.GraphQL {
+			case "useFileContents":
+				break
+			case "useFileNamesOnly":
+				useFileContents = false
+			}
+		}
+		if !useFileContents {
+			return nil, nil
+		}
+		_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return r.fullContentBytes, nil
+	})
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }

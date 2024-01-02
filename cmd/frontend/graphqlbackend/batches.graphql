@@ -3733,6 +3733,9 @@ type BatchSpecWorkspaceFile implements File2 & Node {
 
     The resulting array may be empty if no language could be determined,
     or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
     """
     languages: [String!]!
 }

@@ -76,6 +76,9 @@ export const fetchTreeEntries = memoizeObservable(
                     url
                     entries(first: $first) {
                         ...TreeEntryFields
+                        ... on GitBlob {
+                            languages
+                        }
                     }
                 }
                 fragment TreeEntryFields on TreeEntry {
