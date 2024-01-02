@@ -866,6 +866,16 @@ type User struct {
 	CodyProEnabledAt      *time.Time
 }
 
+// Returns a name for the user. If the user has a display name,
+// that is returned, otherwise their username is returned.
+func (u *User) Name() string {
+	if u.DisplayName != "" {
+		return u.DisplayName
+	}
+
+	return u.Username
+}
+
 // UserForSCIM extends user with email addresses and SCIM external ID.
 type UserForSCIM struct {
 	User

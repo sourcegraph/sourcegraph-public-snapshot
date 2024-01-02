@@ -88,7 +88,6 @@ INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3
 		return "", errors.Wrap(err, "insert")
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a new subscription is created.
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionCreated, "", uint32(userID), "", "BACKEND", newUUID); err != nil {
 			log.Error(err)
@@ -142,8 +141,7 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 		return mocks.subscriptions.List(ctx, opt)
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-		//Log an event when a list of subscriptions is requested.
+		// Log an event when a list of subscriptions is requested.
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionsListed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", opt); err != nil {
 			log.Error(err)
 		}
@@ -295,7 +293,6 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 		return errSubscriptionNotFound
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a subscription is updated
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
 			log.Error(err)
@@ -324,7 +321,6 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 		return errSubscriptionNotFound
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a subscription is archived
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
 			log.Error(err)
