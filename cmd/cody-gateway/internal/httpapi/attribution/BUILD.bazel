@@ -9,7 +9,9 @@ go_library(
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//internal/codygateway",
+        "//internal/trace",
         "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -17,11 +19,13 @@ go_test(
     name = "attribution_test",
     srcs = ["handler_test.go"],
     deps = [
+        ":attribution",
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/auth",
         "//cmd/cody-gateway/internal/events",
         "//cmd/cody-gateway/internal/httpapi",
         "//internal/codygateway",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
