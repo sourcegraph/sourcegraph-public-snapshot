@@ -49,8 +49,9 @@ go_test(
         "GOLDEN_FILE": "$(location operations.go)",
         "GENERATED_FILE": "$(location _operations.go)",
     },
+    rundir = ".",
     deps = [
         "@com_github_google_go_cmp//cmp",
-        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+        "@io_bazel_rules_go//go/runfiles:go_default_library",
     ],
 )

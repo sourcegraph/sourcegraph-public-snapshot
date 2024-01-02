@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/google/go-cmp/cmp"
-	"github.com/bazelbuild/rules_go/go/tools/bazel"
 )
 
 func TestGeneratedFileMatchesFoo(t *testing.T) {
@@ -18,11 +18,11 @@ func TestGeneratedFileMatchesFoo(t *testing.T) {
 	if goldenFile == "" {
 		t.Fatal("Need GOLDEN_FILE")
 	}
-	generatedFile, err := bazel.Runfile(generatedFile)
+	generatedFile, err := runfiles.Rlocation(generatedFile)
 	if err != nil {
 		t.Fatalf("Cannot resolve location of GENERATED_FILE: %s", err)
 	}
-	goldenFile, err = bazel.Runfile(goldenFile)
+	goldenFile, err = runfiles.Rlocation(goldenFile)
 	if err != nil {
 		t.Fatalf("Cannot resolve location of GOLDEN_FILE: %s", err)
 	}
