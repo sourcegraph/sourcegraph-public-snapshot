@@ -14,7 +14,6 @@ go_library(
         "@com_github_go_git_go_git_v5//plumbing/filemode",
         "@com_github_go_git_go_git_v5//plumbing/object",
         "@com_github_go_git_go_git_v5//plumbing/storer",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
 
