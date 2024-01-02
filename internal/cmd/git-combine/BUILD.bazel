@@ -32,6 +32,5 @@ go_test(
         "@com_github_go_git_go_git_v5//plumbing",
         "@com_github_go_git_go_git_v5//plumbing/object",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
