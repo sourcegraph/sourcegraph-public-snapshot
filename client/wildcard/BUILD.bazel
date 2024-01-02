@@ -259,6 +259,7 @@ ts_project(
         "src/components/Icon/constants.ts",
         "src/components/Icon/index.ts",
         "src/components/Icon/language-icon/LanguageIcon.tsx",
+        "src/components/Icon/language-icon/language-icons.ts",
         "src/components/Link/AnchorLink/AnchorLink.tsx",
         "src/components/Link/AnchorLink/index.ts",
         "src/components/Link/Link/Link.tsx",
@@ -520,6 +521,7 @@ ts_project(
         "src/components/Form/TextArea/TextArea.test.tsx",
         "src/components/Form/internal/BaseControlInput.test.tsx",
         "src/components/Icon/Icon.test.tsx",
+        "src/components/Icon/language-icon/language-icons.test.ts",
         "src/components/Link/AnchorLink/AnchorLink.test.tsx",
         "src/components/Link/LinkOrSpan/LinkOrSpan.test.tsx",
         "src/components/Link/RouterLink/RouterLink.test.tsx",
@@ -553,6 +555,7 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
+        ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/testing",
         ":wildcard_lib",
         "//:node_modules/@mdi/js",
