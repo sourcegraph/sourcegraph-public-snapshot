@@ -242,7 +242,7 @@ func NewHandler(
 	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
 		instrumentation.HTTPMiddleware("v1.attribution",
 			authr.Middleware(
-				attribution.NewHandler(attributionClient),
+				attribution.NewHandler(attributionClient, logger),
 			),
 		),
 	)
