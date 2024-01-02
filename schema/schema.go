@@ -706,8 +706,6 @@ type Embeddings struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
 	Endpoint string `json:"endpoint,omitempty"`
-	// EnterpriseOverride description: An override to enable embeddings for enterprise.
-	EnterpriseOverride *bool `json:"enterpriseOverride,omitempty"`
 	// ExcludeChunkOnError description: Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.
 	ExcludeChunkOnError *bool `json:"excludeChunkOnError,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
@@ -893,6 +891,8 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
+	// Embeddings description: Enables server side embeddings generation.
+	Embeddings *bool `json:"embeddings,omitempty"`
 	// EnableGRPC description: Enables gRPC for communication between internal services
 	EnableGRPC *bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
@@ -986,6 +986,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.enablePerforce")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
+	delete(m, "embeddings")
 	delete(m, "enableGRPC")
 	delete(m, "enableGithubInternalRepoVisibility")
 	delete(m, "enablePermissionsWebhooks")

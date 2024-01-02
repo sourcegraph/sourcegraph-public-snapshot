@@ -155,6 +155,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "embeddings": {
+          "description": "Enables server side embeddings generation.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": false
+        },
         "searchJobs": {
           "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
           "type": "boolean",
@@ -2484,14 +2492,6 @@
       "description": "Configuration for embeddings service.",
       "type": "object",
       "properties": {
-        "enterpriseOverride": {
-          "description": "An override to enable embeddings for enterprise.",
-          "type": "boolean",
-          "!go": {
-            "pointer": true
-          },
-          "default": false
-        },
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
           "type": "boolean",

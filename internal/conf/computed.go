@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -804,9 +803,9 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
-	// Enterprise should default to no embeddings
-	// This is a escape hatch if embeddings need to be re-enabled.
-	if !envvar.SourcegraphDotComMode() && (siteConfig.Embeddings == nil || siteConfig.Embeddings.EnterpriseOverride == nil || !*siteConfig.Embeddings.EnterpriseOverride) {
+	// Embeddings should be disabled by default
+	// This is a escape hatch if embeddings need to be re-enabled and for sourcegraph.com
+	if !experimentalEmbeddingsEnabled(siteConfig.ExperimentalFeatures) {
 		return nil
 	}
 
@@ -1139,4 +1138,10 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 	}
 
 	return 4_000
+}
+
+func experimentalEmbeddingsEnabled(experimentalFeatures *schema.ExperimentalFeatures) bool {
+	return experimentalFeatures != nil &&
+		experimentalFeatures.Embeddings != nil &&
+		*experimentalFeatures.Embeddings
 }
