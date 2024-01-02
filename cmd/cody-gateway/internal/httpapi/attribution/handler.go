@@ -61,23 +61,23 @@ type SnippetAttributions struct {
 	LimitHit bool
 }
 
-func snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
-	ctx, traceLogger, endObservation := c.operations.snippetAttributionDotCom.With(ctx, &err, observation.Args{})
-	defer endObservationWithResult(traceLogger, endObservation, &result)()
+// func snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+// 	ctx, traceLogger, endObservation := c.operations.snippetAttributionDotCom.With(ctx, &err, observation.Args{})
+// 	defer endObservationWithResult(traceLogger, endObservation, &result)()
 
-	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
-	if err != nil {
-		return nil, err
-	}
+// 	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	var repoNames []string
-	for _, node := range resp.SnippetAttribution.Nodes {
-		repoNames = append(repoNames, node.RepositoryName)
-	}
+// 	var repoNames []string
+// 	for _, node := range resp.SnippetAttribution.Nodes {
+// 		repoNames = append(repoNames, node.RepositoryName)
+// 	}
 
-	return &SnippetAttributions{
-		RepositoryNames: repoNames,
-		TotalCount:      resp.SnippetAttribution.TotalCount,
-		LimitHit:        resp.SnippetAttribution.LimitHit,
-	}, nil
-}
+// 	return &SnippetAttributions{
+// 		RepositoryNames: repoNames,
+// 		TotalCount:      resp.SnippetAttribution.TotalCount,
+// 		LimitHit:        resp.SnippetAttribution.LimitHit,
+// 	}, nil
+// }
