@@ -39,7 +39,6 @@ go_library(
         "external_accounts.go",
         "external_services.go",
         "feature_flags.go",
-        "gen.go",
         "gitserver_localclone_jobs.go",
         "gitserver_repos.go",
         "global_state.go",

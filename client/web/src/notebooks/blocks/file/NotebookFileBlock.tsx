@@ -81,7 +81,9 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
         const isFileSelected = input.repositoryName.length > 0 && input.filePath.length > 0
-        const blobLines = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
+        const highlightedLines = useObservable(
+            useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output])
+        )
         const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
         const fileURL = useMemo(
             () =>
@@ -186,19 +188,20 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                         {...props}
                     />
                 )}
-                {blobLines && blobLines === LOADING && (
+                {highlightedLines && highlightedLines === LOADING && (
                     <div className="d-flex justify-content-center py-3">
                         <LoadingSpinner inline={false} />
                     </div>
                 )}
-                {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
+                {highlightedLines && highlightedLines !== LOADING && !isErrorLike(highlightedLines) && (
                     <div>
                         <CodeExcerpt
                             className={styles.code}
                             repoName={input.repositoryName}
                             commitID={input.revision}
                             filePath={input.filePath}
-                            plaintextLines={blobLines}
+                            plaintextLines={[]}
+                            highlightedLines={highlightedLines}
                             highlightRanges={[]}
                             startLine={input.lineRange?.startLine ?? 0}
                             endLine={input.lineRange?.endLine ?? 1}
@@ -206,9 +209,9 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                         />
                     </div>
                 )}
-                {blobLines && blobLines !== LOADING && isErrorLike(blobLines) && (
+                {highlightedLines && highlightedLines !== LOADING && isErrorLike(highlightedLines) && (
                     <Alert className="m-3" variant="danger">
-                        {blobLines.message}
+                        {highlightedLines.message}
                     </Alert>
                 )}
             </NotebookBlock>
