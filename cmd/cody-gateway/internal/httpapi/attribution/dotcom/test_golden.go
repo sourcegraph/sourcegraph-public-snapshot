@@ -1,4 +1,4 @@
-package dotcom_test
+package dotcom
 
 import (
 	"flag"
