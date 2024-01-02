@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -212,7 +211,7 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 
 	// only log access tokens created by users
 	if !internal {
-		arg, err := json.Marshal(struct {
+		arg := struct {
 			SubjectUserId int32    `json:"subject_user_id"`
 			CreatorUserId int32    `json:"creator_user_id"`
 			Scopes        []string `json:"scopes"`
@@ -222,19 +221,10 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 			CreatorUserId: creatorUserID,
 			Scopes:        scopes,
 			Note:          note,
-		})
-		if err != nil {
-			s.logger.Error("failed to marshall the access token log argument")
 		}
-
-		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
-		securityEventStore.LogEvent(ctx, &SecurityEvent{
-			Name:      SecurityEventAccessTokenCreated,
-			UserID:    uint32(creatorUserID),
-			Argument:  arg,
-			Source:    "BACKEND",
-			Timestamp: time.Now(),
-		})
+		if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenCreated, "", uint32(creatorUserID), "", "BACKEND", arg); err != nil {
+			s.logger.Warn("Failed to log security event", log.Error(err))
+		}
 	}
 
 	return id, token, nil
@@ -431,14 +421,13 @@ func (s *accessTokenStore) DeleteByID(ctx context.Context, id int64) error {
 		return err
 	}
 
-	arg, err := json.Marshal(struct {
+	arg := struct {
 		AccessTokenId int64 `json:"access_token_id"`
-	}{AccessTokenId: id})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token log argument")
-	}
+	}{AccessTokenId: id}
 
-	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenDeleted, arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return nil
 }
@@ -456,14 +445,14 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 		return ErrAccessTokenNotFound
 	}
 
-	arg, err := json.Marshal(struct {
+	arg := struct {
 		AccessTokenId int64 `json:"access_token_id"`
-	}{AccessTokenId: id})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token log argument")
-	}
+	}{AccessTokenId: id}
 
-	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenHardDeleted, arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenHardDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+
+	}
 
 	return nil
 }
@@ -479,16 +468,15 @@ func (s *accessTokenStore) DeleteByToken(ctx context.Context, token string) erro
 		return err
 	}
 
-	arg, err := json.Marshal(struct {
+	arg := struct {
 		AccessTokenSHA256 []byte `json:"access_token_sha256"`
 	}{
 		AccessTokenSHA256: tokenHash,
-	})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token log argument")
 	}
 
-	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenDeleted, arg)
+	if err := NewDBWith(s.logger, s).SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventAccessTokenDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		s.logger.Warn("Error logging security event", log.Error(err))
+	}
 
 	return nil
 }
@@ -524,19 +512,6 @@ func tokenSHA256Hash(token string) ([]byte, error) {
 		return nil, InvalidTokenError{err}
 	}
 	return hashutil.ToSHA256Bytes(value), nil
-}
-
-func (s *accessTokenStore) logAccessTokenDeleted(ctx context.Context, deletionType SecurityEventName, arg []byte) {
-	a := actor.FromContext(ctx)
-
-	securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
-	securityEventStore.LogEvent(ctx, &SecurityEvent{
-		Name:      deletionType,
-		UserID:    uint32(a.UID),
-		Argument:  arg,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	})
 }
 
 type MockAccessTokens struct {
