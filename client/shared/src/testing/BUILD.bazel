@@ -1,4 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
 
@@ -8,7 +8,7 @@ load("//dev:defs.bzl", "ts_project")
 
 # gazelle:js_resolve sourcegraph //client/shared:node_modules/@sourcegraph/client-api
 
-js_library(
+copy_to_bin(
     name = "graphql_operations_files",
     # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
     srcs = glob(

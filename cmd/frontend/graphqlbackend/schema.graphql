@@ -5820,6 +5820,9 @@ interface File2 {
 
     The resulting array may be empty if no language could be determined,
     or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
     """
     languages: [String!]!
 }
@@ -5930,6 +5933,9 @@ type VirtualFile implements File2 {
 
     The resulting array may be empty if no language could be determined,
     or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
     """
     languages: [String!]!
 }
@@ -6080,6 +6086,9 @@ type GitBlob implements TreeEntry & File2 {
 
     The resulting array may be empty if no language could be determined,
     or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
     """
     languages: [String!]!
     """

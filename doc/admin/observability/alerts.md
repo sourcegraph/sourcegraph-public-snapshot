@@ -633,7 +633,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -817,7 +817,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_gitserv
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -848,7 +848,7 @@ Generated query for warning alert: `max((max by (owner) (observability_test_metr
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -917,7 +917,7 @@ Generated query for critical alert: `max((sum(increase(src_cloudkms_cryptographi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -951,7 +951,7 @@ Generated query for critical alert: `max((sum by (app_name, db_name) (increase(s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -983,7 +983,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1015,7 +1015,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1047,7 +1047,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1079,7 +1079,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1111,7 +1111,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1143,7 +1143,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1173,7 +1173,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1203,7 +1203,7 @@ Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1235,7 +1235,7 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1271,7 +1271,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sou
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1628,7 +1628,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1946,7 +1946,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) 
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1979,7 +1979,7 @@ Generated query for warning alert: `min((sum by (job) (pg_stat_activity_count{da
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2011,7 +2011,7 @@ Generated query for critical alert: `max((sum by (job) (pg_stat_activity_count) 
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2051,7 +2051,7 @@ Generated query for warning alert: `max((sum by (job) (pg_stat_activity_max_tx_d
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2082,7 +2082,7 @@ Generated query for critical alert: `min((pg_up) <= 0)`
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2113,7 +2113,7 @@ Generated query for critical alert: `sum((max by (relname) (pg_invalid_index_cou
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2144,7 +2144,7 @@ Generated query for warning alert: `max((pg_exporter_last_scrape_error) >= 1)`
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2176,7 +2176,7 @@ Generated query for critical alert: `max((pg_sg_migration_status) >= 1)`
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2208,7 +2208,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2240,7 +2240,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2272,7 +2272,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2304,7 +2304,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2336,7 +2336,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2440,7 +2440,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2789,7 +2789,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*precise-code-
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2820,7 +2820,7 @@ Generated query for critical alert: `min((redis_up{app="redis-store"}) < 1)`
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2852,7 +2852,7 @@ Generated query for critical alert: `min((redis_up{app="redis-cache"}) < 1)`
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2884,7 +2884,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2916,7 +2916,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2948,7 +2948,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2980,7 +2980,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3012,7 +3012,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3044,7 +3044,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3076,7 +3076,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3108,7 +3108,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3140,7 +3140,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3172,7 +3172,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3204,7 +3204,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*redis-cache"}
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3452,7 +3452,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3802,7 +3802,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4629,7 +4629,7 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5110,7 +5110,7 @@ Generated query for warning alert: `max((sum by (code) (increase(searcher_servic
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5144,7 +5144,7 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5531,7 +5531,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) /
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5565,7 +5565,7 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5952,7 +5952,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*symbols"}) / 
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5984,7 +5984,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6016,7 +6016,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6048,7 +6048,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6080,7 +6080,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6112,7 +6112,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6144,7 +6144,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6176,7 +6176,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6833,7 +6833,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*indexed-searc
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6866,7 +6866,7 @@ Generated query for warning alert: `max((sum by (rule_group) (avg_over_time(prom
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6899,7 +6899,7 @@ Generated query for warning alert: `max((sum by (rule_group) (rate(prometheus_ru
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6931,7 +6931,7 @@ Generated query for warning alert: `max((sum by (integration) (rate(alertmanager
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6963,7 +6963,7 @@ Generated query for warning alert: `max((sum by (integration) (rate(alertmanager
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6994,7 +6994,7 @@ Generated query for warning alert: `min((prometheus_config_last_reload_successfu
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7025,7 +7025,7 @@ Generated query for warning alert: `min((alertmanager_config_last_reload_success
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7056,7 +7056,7 @@ Generated query for warning alert: `max((increase(label_replace({__name__=~"prom
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7087,7 +7087,7 @@ Generated query for warning alert: `max((increase(prometheus_target_scrapes_exce
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7119,7 +7119,7 @@ Generated query for warning alert: `max((increase(prometheus_target_scrapes_samp
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7151,7 +7151,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7183,7 +7183,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7215,7 +7215,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7247,7 +7247,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7279,7 +7279,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7311,7 +7311,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7343,7 +7343,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7729,7 +7729,7 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7760,7 +7760,7 @@ Generated query for warning alert: `max((sum by (receiver) (rate(otelcol_receive
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7791,7 +7791,7 @@ Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporte
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7822,7 +7822,7 @@ Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporte
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7854,7 +7854,7 @@ Generated query for warning alert: `max((sum by (processor) (rate(otelcol_proces
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7886,7 +7886,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7918,7 +7918,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7950,7 +7950,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Infrastructure Org team](https://handbook.sourcegraph.com/departments/engineering/infrastructure).*</sub>
 
 <details>
 <summary>Technical details</summary>
