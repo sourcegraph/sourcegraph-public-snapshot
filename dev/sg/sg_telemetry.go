@@ -16,10 +16,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
+const telemetryV1DeprecationWarning = `WARNING: Telemetry V1 and related mechanisms (event_logs export) have been DEPRECATED.
+This includes the 'sg telemetry' commands.
+
+It will be replaced with Telemetry V2 - code that is instrumented with the new
+Telemetry SDKs will automatically export safe telemetry in accordance with the
+Sourcegraph instance's allowed policies.
+
+For more details, see https://docs.sourcegraph.com/dev/background-information/telemetry
+or reach out in #discuss-analytics.`
+
+func renderTelemetryV1DeprecationWarning() {
+	std.Out.WriteWarningf(telemetryV1DeprecationWarning)
+}
+
 var telemetryCommand = &cli.Command{
-	Name:     "telemetry",
-	Usage:    "Operations relating to Sourcegraph telemetry",
-	Category: category.Dev,
+	Name: "telemetry",
+	Before: func(ctx *cli.Context) error {
+		renderTelemetryV1DeprecationWarning()
+		return nil
+	},
+	Usage:       "[DEPRECATED] Operations relating to Sourcegraph telemetry v1",
+	Description: telemetryV1DeprecationWarning,
+	Category:    category.Dev,
 	Subcommands: []*cli.Command{
 		allowlistCommand,
 	},
@@ -27,7 +46,7 @@ var telemetryCommand = &cli.Command{
 
 var allowlistCommand = &cli.Command{
 	Name:  "allowlist",
-	Usage: "Edit the usage data allow list",
+	Usage: "Edit the legacy telemetry v1 usage data export allow list",
 	Flags: []cli.Flag{},
 	Description: `
 Utility that will generate SQL to add and remove events from the usage data allow list.
@@ -57,7 +76,7 @@ sg telemetry allowlist add --migration --name my_migration_name EVENT_ONE EVENT_
 var addAllowlistCommand = &cli.Command{
 	Name:      "add",
 	ArgsUsage: "[event]",
-	Usage:     "Generate the SQL required to add events to the allow list",
+	Usage:     "Generate the SQL required to add events to the legacy telemetry v1 export allow list",
 	UsageText: `
 # Generate SQL to add events from the allow list
 sg telemetry allowlist add EVENT_ONE EVENT_TWO
@@ -78,7 +97,7 @@ sg telemetry allowlist add --migration --name my_migration_name EVENT_ONE EVENT_
 var removeAllowlistCommand = &cli.Command{
 	Name:      "remove",
 	ArgsUsage: "[event]",
-	Usage:     "Generate the SQL required to remove events from the allow list",
+	Usage:     "Generate the SQL required to remove events from the legacy telemetry v1 export allow list",
 	UsageText: `
 # Generate SQL to add events from the allow list
 sg telemetry allowlist remove EVENT_ONE EVENT_TWO

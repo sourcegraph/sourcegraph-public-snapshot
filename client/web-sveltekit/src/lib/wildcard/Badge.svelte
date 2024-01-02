@@ -13,7 +13,7 @@
         'outlineSecondary',
     ] as const
 
-    export type BadgeVariantType = (typeof BADGE_VARIANTS)[number]
+    export type BadgeVariantType = typeof BADGE_VARIANTS[number]
 
     export function badgeClassName(variant: BadgeVariantType, small?: boolean, pill?: boolean): string {
         return classNames(styles.badge, styles[variant], { [styles.small]: small, [styles.pill]: pill })

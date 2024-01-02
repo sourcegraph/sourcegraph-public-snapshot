@@ -3,7 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "symbols",
-    srcs = ["client.go"],
+    srcs = [
+        "client.go",
+        "retry.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/symbols",
     visibility = ["//:__subpackages__"],
     deps = [

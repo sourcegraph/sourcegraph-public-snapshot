@@ -454,9 +454,11 @@ func PasswordPolicyEnabled() bool {
 
 func RateLimits() schema.RateLimits {
 	rl := schema.RateLimits{
-		GraphQLMaxAliases:    500,
-		GraphQLMaxFieldCount: 500_000,
-		GraphQLMaxDepth:      30,
+		GraphQLMaxAliases:             500,
+		GraphQLMaxFieldCount:          500_000,
+		GraphQLMaxDepth:               30,
+		GraphQLMaxDuplicateFieldCount: 500,
+		GraphQLMaxUniqueFieldCount:    500,
 	}
 
 	configured := Get().RateLimits
@@ -1078,7 +1080,7 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
-		return 8_000
+		return 7_500
 	case conftypes.CompletionsProviderNameAWSBedrock:
 		if strings.HasPrefix(model, "anthropic.") {
 			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
@@ -1108,7 +1110,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 func openaiDefaultMaxPromptTokens(model string) int {
 	switch model {
 	case "gpt-4":
-		return 8_000
+		return 7_500
 	case "gpt-4-32k":
 		return 32_000
 	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":

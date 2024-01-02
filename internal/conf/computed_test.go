@@ -465,7 +465,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt-4",
-				ChatModelMaxTokens:       8000,
+				ChatModelMaxTokens:       7500,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   4000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
@@ -491,11 +491,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt4-deployment",
-				ChatModelMaxTokens:       8000,
+				ChatModelMaxTokens:       7500,
 				FastChatModel:            "gpt35-turbo-deployment",
-				FastChatModelMaxTokens:   8000,
+				FastChatModelMaxTokens:   7500,
 				CompletionModel:          "gpt35-turbo-deployment",
-				CompletionModelMaxTokens: 8000,
+				CompletionModelMaxTokens: 7500,
 				AccessToken:              "asdf",
 				Provider:                 "azure-openai",
 				Endpoint:                 "https://acmecorp.openai.azure.com",

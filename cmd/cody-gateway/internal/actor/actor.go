@@ -113,10 +113,11 @@ func (a *Actor) Logger(logger log.Logger) log.Logger {
 // does not necessarily occur on every call.
 //
 // If the actor has no source, this is a no-op.
-func (a *Actor) Update(ctx context.Context) {
+func (a *Actor) Update(ctx context.Context) error {
 	if su, ok := a.Source.(SourceUpdater); ok && su != nil {
-		su.Update(ctx, a)
+		return su.Update(ctx, a)
 	}
+	return nil
 }
 
 func (a *Actor) TraceAttributes() []attribute.KeyValue {
@@ -197,7 +198,8 @@ func (a *Actor) Limiter(
 		concurrentInterval: limit.ConcurrentRequestsInterval,
 
 		nextLimiter: updateOnErrorLimiter{
-			actor: a,
+			logger: logger.Scoped("updateOnError"),
+			actor:  a,
 
 			nextLimiter: baseLimiter,
 		},

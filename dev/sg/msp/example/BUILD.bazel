@@ -7,11 +7,14 @@ go_library(
     embedsrcs = [
         "job.template.yaml",
         "service.template.yaml",
+        "environment.template.yaml",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp/example",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/managedservicesplatform/spec",
         "//lib/errors",
+        "@in_gopkg_yaml_v3//:yaml_v3",
         "@org_golang_x_text//cases",
         "@org_golang_x_text//language",
     ],
@@ -20,6 +23,7 @@ go_library(
 go_test(
     name = "example_test",
     srcs = ["example_test.go"],
+    data = glob(["testdata/**"]),
     embed = [":example"],
     deps = [
         "//dev/managedservicesplatform/spec",

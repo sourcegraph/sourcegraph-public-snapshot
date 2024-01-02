@@ -1,6 +1,7 @@
 import type { ApolloError } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { TetherAPI } from '@sourcegraph/wildcard'
 
 import type { VisibleIndexesResult, VisibleIndexesVariables } from '../../../../graphql-operations'
 import { visibleIndexesQuery } from '../backend'
@@ -20,6 +21,12 @@ export const useVisibleIndexes = (variables: VisibleIndexesVariables): UseVisibl
     const { data, error, loading } = useQuery<VisibleIndexesResult, VisibleIndexesVariables>(visibleIndexesQuery, {
         variables,
         fetchPolicy: 'cache-first',
+        onCompleted() {
+            TetherAPI.update()
+        },
+        onError() {
+            TetherAPI.update()
+        },
     })
 
     const indexes = data?.repository?.commit?.blob?.lsif?.visibleIndexes

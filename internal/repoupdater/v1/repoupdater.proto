@@ -8,13 +8,21 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 
 service RepoUpdaterService {
   // RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
-  rpc RepoUpdateSchedulerInfo(RepoUpdateSchedulerInfoRequest) returns (RepoUpdateSchedulerInfoResponse);
+  rpc RepoUpdateSchedulerInfo(RepoUpdateSchedulerInfoRequest) returns (RepoUpdateSchedulerInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // RepoLookup retrieves information about the repository on repoupdater.
-  rpc RepoLookup(RepoLookupRequest) returns (RepoLookupResponse);
+  rpc RepoLookup(RepoLookupRequest) returns (RepoLookupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // EnqueueRepoUpdate requests that the named repository be updated in the near
   // future. It does not wait for the update.
-  rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse);
-  rpc EnqueueChangesetSync(EnqueueChangesetSyncRequest) returns (EnqueueChangesetSyncResponse);
+  rpc EnqueueRepoUpdate(EnqueueRepoUpdateRequest) returns (EnqueueRepoUpdateResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  rpc EnqueueChangesetSync(EnqueueChangesetSyncRequest) returns (EnqueueChangesetSyncResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message RepoUpdateSchedulerInfoRequest {

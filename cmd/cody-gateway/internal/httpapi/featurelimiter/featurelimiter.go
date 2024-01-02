@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/authbearer"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
@@ -18,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -211,20 +210,21 @@ func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) htt
 	})
 }
 
-func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Handler {
+func RefreshLimitsHandler(baseLogger log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		token, err := authbearer.ExtractBearer(r.Header)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
+		if err := act.Update(r.Context()); err != nil {
+			logger := act.Logger(trace.Logger(r.Context(), baseLogger))
+			if actor.IsErrActorRecentlyUpdated(err) {
+				response.JSONError(logger, w, http.StatusTooManyRequests, err)
+			} else {
+				response.JSONError(logger, w, http.StatusInternalServerError, err)
+			}
+			return
 		}
 
-		err = sources.SyncOne(r.Context(), token)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
-		}
+		w.WriteHeader(http.StatusOK)
 	})
 }
 

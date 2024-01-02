@@ -8,6 +8,7 @@ import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
+import { EventName } from '../util/constants'
 import { observeQuerySelector } from '../util/dom'
 
 import { serverAdmin } from './services/serverAdminWrapper'
@@ -249,12 +250,12 @@ function handleQueryEvents(url: string): void {
     const parsedUrl = new URL(url)
     if (parsedUrl.searchParams.has('signup')) {
         const args = { serviceType: parsedUrl.searchParams.get('signup') || '' }
-        eventLogger.logInternal('web:auth:signUpCompleted', args, args)
+        eventLogger.logInternal(EventName.SIGNUP_COMPLETED, args, args)
     }
 
     if (parsedUrl.searchParams.has('signin')) {
         const args = { serviceType: parsedUrl.searchParams.get('signin') || '' }
-        eventLogger.logInternal('web:auth:signInCompleted', args, args)
+        eventLogger.logInternal(EventName.SINGIN_COMPLETED, args, args)
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'signup', 'signin'])

@@ -2,7 +2,6 @@
 @component
 Decorator for forcing the story component to be destroyed an recreated
 -->
-
 <script lang="ts">
     import type { SvelteComponent } from 'svelte'
 

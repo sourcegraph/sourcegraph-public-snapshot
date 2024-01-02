@@ -43,6 +43,10 @@ type Stack struct {
 	DynamicVariables TFVars
 }
 
+// Locals allows stack options to add local variables for reference in custom
+// Terraform and outputs.
+func (s Stack) Locals() *StackLocals { return &StackLocals{s} }
+
 // Set collects the stacks that comprise a CDKTF application.
 type Set struct {
 	// app represents a CDKTF application that is comprised of the stacks in

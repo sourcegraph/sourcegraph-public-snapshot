@@ -8,9 +8,11 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vvakame/gcplogurl"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -20,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,9 +60,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Value: "service",
 				},
 				&cli.StringFlag{
-					Name:     "owner",
-					Usage:    "Name of team owning this new service",
-					Required: true,
+					Name:  "owner",
+					Usage: "Name of team owning this new service",
 				},
 				&cli.StringFlag{
 					Name:  "name",
@@ -67,7 +69,12 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				},
 				&cli.BoolFlag{
 					Name:  "dev",
-					Usage: "Generate a dev environment as the initial environment",
+					Usage: "Generate a dev environment",
+				},
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
@@ -81,6 +88,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Name:  c.String("name"),
 					Owner: c.String("owner"),
 					Dev:   c.Bool("dev"),
+
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
 				}
 
 				var exampleSpec []byte
@@ -103,13 +112,71 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 				outputPath := msprepo.ServiceYAMLPath(c.Args().First())
 
-				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
-				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
+				_ = os.MkdirAll(filepath.Dir(outputPath), 0o755)
+				if err := os.WriteFile(outputPath, exampleSpec, 0o644); err != nil {
 					return err
 				}
 
 				std.Out.WriteSuccessf("Rendered %s template spec in %s",
 					c.String("kind"), outputPath)
+				return nil
+			},
+		},
+		{
+			Name:      "init-env",
+			ArgsUsage: "<service ID> <env ID>",
+			Usage:     "Add an environment to an existing Managed Services Platform service",
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
+				},
+			},
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				envID := c.Args().Get(1)
+				if envID == "" {
+					return errors.New("second argument <environment ID> is required")
+				}
+				if existing := svc.GetEnvironment(envID); existing != nil {
+					return errors.Newf("environment %q already exists", envID)
+				}
+
+				envNode, err := example.NewEnvironment(example.EnvironmentTemplate{
+					ServiceID:             svc.Service.ID,
+					EnvironmentID:         envID,
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
+				})
+				if err != nil {
+					return errors.Wrap(err, "example.NewEnvironment")
+				}
+
+				specPath := msprepo.ServiceYAMLPath(svc.Service.ID)
+				specData, err := os.ReadFile(specPath)
+				if err != nil {
+					return errors.Wrap(err, "ReadFile")
+				}
+
+				specData, err = spec.AppendEnvironment(specData, envNode)
+				if err != nil {
+					return errors.Wrap(err, "spec.AppendEnvironment")
+				}
+
+				if err := os.WriteFile(specPath, specData, 0o644); err != nil {
+					return err
+				}
+
+				std.Out.WriteSuccessf("Initialized environment %q in %s",
+					envID, specPath)
 				return nil
 			},
 		},
@@ -195,6 +262,45 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:   "logs",
+			Usage:  "Quick links for logs of various MSP components",
+			Before: msprepo.UseManagedServicesRepo,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "component",
+					Aliases: []string{"c"},
+					Value:   "service",
+				},
+			},
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+			Action: func(c *cli.Context) error {
+				_, env, err := useServiceAndEnvironmentArguments(c)
+				if err != nil {
+					return err
+				}
+
+				switch component := c.String("component"); component {
+				case "service":
+					std.Out.WriteNoticef("Opening link to service logs in browser...")
+					return open.URL((&gcplogurl.Explorer{
+						ProjectID: env.ProjectID,
+						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" jsonPayload.InstrumentationScope != ""`),
+						SummaryFields: &gcplogurl.SummaryFields{
+							Fields: []string{
+								// fields from structured logs by sourcegraph/log
+								"jsonPayload/InstrumentationScope",
+								"jsonPayload/Body",
+								"jsonPayload/Attributes/error",
+							},
+						},
+					}).String())
+
+				default:
+					return errors.Newf("unsupported -component=%s", component)
+				}
+			},
+		},
+		{
 			Name:    "postgresql",
 			Aliases: []string{"pg"},
 			Usage:   "Interact with PostgreSQL instances provisioned by MSP",
@@ -239,13 +345,9 @@ full access, use the '-write-access' flag.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c)
+						service, env, err := useServiceAndEnvironmentArguments(c)
 						if err != nil {
 							return err
-						}
-						env := service.GetEnvironment(c.Args().Get(1))
-						if env == nil {
-							return errors.Errorf("environment %q not found", c.Args().Get(1))
 						}
 						if env.Resources.PostgreSQL == nil {
 							return errors.New("no postgresql instance provisioned")
@@ -256,24 +358,10 @@ full access, use the '-write-access' flag.
 							return err
 						}
 
-						secretStore, err := secrets.FromContext(c.Context)
+						tfcClient, err := getTFCRunsClient(c)
 						if err != nil {
 							return err
 						}
-
-						// We use a team token to get workspace details
-						tfcMSPAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
-							Project: googlesecretsmanager.ProjectID,
-						})
-						if err != nil {
-							return errors.Wrap(err, "get TFC OAuth client ID")
-						}
-						tfcClient, err := terraformcloud.NewRunsClient(tfcMSPAccessToken)
-						if err != nil {
-							return errors.Wrap(err, "init Terraform Cloud client")
-						}
-
 						iamOutputs, err := tfcClient.GetOutputs(c.Context,
 							terraformcloud.WorkspaceName(service.Service, *env,
 								managedservicesplatform.StackNameIAM))
@@ -324,7 +412,7 @@ full access, use the '-write-access' flag.
 							saUsername := strings.ReplaceAll(serviceAccountEmail,
 								".gserviceaccount.com", "")
 							if err := std.Out.WriteCode("bash",
-								fmt.Sprintf(`psql -U %s -d %s -h localhost -p %d`,
+								fmt.Sprintf(`psql -U %s -d %s -h 127.0.0.1 -p %d`,
 									saUsername,
 									db,
 									proxyPort)); err != nil {
@@ -486,7 +574,7 @@ Supports completions on services and environments.`,
 				}
 				if output := c.String("output"); output != "" {
 					_ = os.Remove(output)
-					if err := os.WriteFile(output, jsonSchema, 0644); err != nil {
+					if err := os.WriteFile(output, jsonSchema, 0o644); err != nil {
 						return err
 					}
 					std.Out.WriteSuccessf("Rendered service spec JSON schema in %s", output)
