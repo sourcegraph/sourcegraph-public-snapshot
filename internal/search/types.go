@@ -294,22 +294,22 @@ type SearcherParameters struct {
 	NumContextLines int
 }
 
-// TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
-// sync with pkg/searcher/protocol.PatternInfo.
+// TextPatternInfo defines the search request for unindexed and structural search
+// (the 'searcher' service). Keep it in sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
-	Pattern         string
-	IsNegated       bool
-	IsRegExp        bool
+	// Values dependent on pattern atom.
+	Pattern   string
+	IsNegated bool
+	IsRegExp  bool
+
+	// Values dependent on parameters.
 	IsStructuralPat bool
 	CombyRule       string
-	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 	Index           query.YesNoOnly
 	Select          filter.SelectPath
 
-	// We do not support IsMultiline
-	// IsMultiline     bool
 	IncludePatterns []string
 	ExcludePattern  string
 
@@ -340,9 +340,6 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 	}
 	if p.CombyRule != "" {
 		add(attribute.String("combyRule", p.CombyRule))
-	}
-	if p.IsWordMatch {
-		add(attribute.Bool("isWordMatch", p.IsWordMatch))
 	}
 	if p.IsCaseSensitive {
 		add(attribute.Bool("isCaseSensitive", p.IsCaseSensitive))
@@ -384,9 +381,6 @@ func (p *TextPatternInfo) String() string {
 		} else {
 			args = append(args, "comby")
 		}
-	}
-	if p.IsWordMatch {
-		args = append(args, "word")
 	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")

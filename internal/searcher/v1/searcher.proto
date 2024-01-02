@@ -142,6 +142,7 @@ message PatternInfo {
   bool is_structural = 4;
 
   // is_word_match if true will only match the pattern at word boundaries.
+  // DEPRECATED: this field is no longer used
   bool is_word_match = 5;
 
   // is_case_sensitive if false will ignore the case of text and pattern
