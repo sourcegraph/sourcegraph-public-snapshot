@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"sync/atomic"
-	"text/template"
 	"time"
 
 	"github.com/derision-test/glock"
