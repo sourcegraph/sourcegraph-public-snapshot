@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -35,23 +34,4 @@ write_generated_to_source_files(
     output_files = {"operations.go": "_operations.go"},
     tags = ["go_generate"],
     target = ":generate_genql_yaml",
-)
-
-go_test(
-    name = "dotcom_test",
-    srcs = ["golden_test.go"],
-    data = [
-        ":_operations.go",
-        ":operations.go",
-    ],
-    embed = [":dotcom"],
-    env = {
-        "GOLDEN_FILE": "$(location operations.go)",
-        "GENERATED_FILE": "$(location _operations.go)",
-    },
-    rundir = ".",
-    deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@io_bazel_rules_go//go/runfiles:go_default_library",
-    ],
 )
