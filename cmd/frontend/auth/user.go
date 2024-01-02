@@ -179,7 +179,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 
 		if envvar.SourcegraphDotComMode() {
-			err = checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
+			reason, err := checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
 			if err != nil {
 				return 0, false, false, reason, err
 			}
