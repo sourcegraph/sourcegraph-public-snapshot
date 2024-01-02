@@ -1,0 +1,7 @@
+schema:
+  - ../../../../../frontend/graphqlbackend/schema.graphql
+  - ../../../../../frontend/graphqlbackend/guardrails.graphql
+operations:
+  - operations.graphql
+generated: operations.go
+optional: pointer

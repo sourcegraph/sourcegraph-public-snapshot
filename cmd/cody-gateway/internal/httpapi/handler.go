@@ -42,6 +42,7 @@ type Config struct {
 	FireworksLogSelfServeCodeCompletionRequests bool
 	EmbeddingsAllowedModels                     []string
 	AutoFlushStreamingResponses                 bool
+	EnableAttributionSearch                     bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -234,10 +235,14 @@ func NewHandler(
 		),
 	)
 
+	var attributionClient graphql.Client
+	if config.EnableAttributionSearch {
+		attributionClient = dotcomClient
+	}
 	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
 		instrumentation.HTTPMiddleware("v1.attribution",
 			authr.Middleware(
-				attribution.NewHandler(dotcomClient),
+				attribution.NewHandler(attributionClient),
 			),
 		),
 	)
