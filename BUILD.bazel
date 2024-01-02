@@ -315,6 +315,7 @@ nogo(
             "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
+            "//dev/linters/logging",
             "//dev/linters/unparam",
             "//dev/linters/tracinglibraries",
             "//dev/linters/dbconn",

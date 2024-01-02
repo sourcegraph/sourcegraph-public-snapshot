@@ -8,7 +8,7 @@ import (
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/github"
 	goauth2 "github.com/dghubble/gologin/v2/oauth2"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
 
 	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"

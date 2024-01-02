@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io/fs"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"math"
 	"math/rand"
 	"os"
