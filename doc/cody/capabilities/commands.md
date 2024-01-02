@@ -212,7 +212,6 @@ See the [examples](#examples) and [configuration properties](#configuration-prop
 
   Values:
   - `"ask"` — Focus the chat view and add to the current chat
-  - `"inline"` — Start a new inline chat
   - `"insert"` — Insert the response above the code
   - `"edit"` — Edit highlighted code with the response
 
