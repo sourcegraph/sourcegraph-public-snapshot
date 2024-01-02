@@ -51,21 +51,16 @@ func ensureBannedEmailDomainsLoaded() error {
 	return bannedEmailDomainsErr
 }
 
+// Retrieves the domain name from an email address.
+// e.g. "user@example.com" -> "example.com"
+// The email address must be valid, or else an error is returned.
 func ParseEmailDomain(email string) (string, error) {
 	addr, err := mail.ParseAddress(email)
 	if err != nil {
 		return "", err
 	}
 
-	if len(addr.Address) == 0 {
-		return "", errors.New("email address is empty")
-	}
-
 	parts := strings.Split(addr.Address, "@")
-
-	if len(parts) < 2 {
-		return "", errors.New("email address is missing domain")
-	}
 
 	return strings.ToLower(parts[len(parts)-1]), nil
 }
@@ -131,7 +126,6 @@ func ValidateRemoteAddr(raddr string) bool {
 	if err == nil {
 		raddr = host
 		_, err := strconv.Atoi(port)
-
 		// return false if port is not an int
 		if err != nil {
 			return false
@@ -175,7 +169,6 @@ const maxPasswordRunes = 256
 
 // ValidatePassword: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
-
 	if conf.PasswordPolicyEnabled() {
 		return validatePasswordUsingPolicy(passwd)
 	}
@@ -223,7 +216,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 		case unicode.IsLetter(c) || c == ' ':
 			chars++
 		default:
-			//ignore
+			// ignore
 		}
 	}
 	// Check for blank password
