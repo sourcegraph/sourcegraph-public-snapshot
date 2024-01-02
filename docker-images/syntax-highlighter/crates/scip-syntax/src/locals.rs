@@ -371,12 +371,6 @@ impl<'a> LocalResolver<'a> {
         }
     }
 
-    fn parent(&self, scope_id: ScopeId<'a>) -> ScopeId<'a> {
-        self[scope_id]
-            .parent
-            .expect("Tried to get the root node's parent")
-    }
-
     fn print_scope(&self, w: &mut dyn Write, scope_id: ScopeId<'a>, depth: usize) {
         let scope = &self[scope_id];
         writeln!(
@@ -595,7 +589,11 @@ impl<'a> LocalResolver<'a> {
                     ref_capture.node.start_byte() < scope_end_byte
                 });
 
-                current_scope = self.parent(current_scope)
+                if let Some(parent_scope) = self[current_scope].parent {
+                    current_scope = parent_scope
+                } else {
+                    break
+                }
             }
             // Before adding the new scope we first attach all
             // definitions that belong to the current scope
