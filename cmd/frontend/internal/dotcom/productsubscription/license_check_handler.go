@@ -101,6 +101,30 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, customerName string
 	}
 }
 
+func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db database.DB, license *dbLicense) string {
+	// Best effort fetch of customer name for slack message
+	customerName := "could not load customer name"
+
+	subscriptionsStore := dbSubscriptions{db: db}
+	dbSubscription, err := subscriptionsStore.GetByID(ctx, license.ProductSubscriptionID)
+	if err != nil {
+		logger.Warn("could not find subscription for license", log.String("licenseID", license.ID), log.Error(err))
+	} else {
+		user, err := db.Users().GetByID(ctx, dbSubscription.UserID)
+		if err != nil {
+			logger.Warn("could not find user for subscription", log.String("subscriptionID", dbSubscription.ID), log.Error(err))
+		} else {
+			customerName = user.Name()
+		}
+	}
+
+	return customerName
+}
+
+// Creates a new license check handler that uses the provided database.
+//
+// This handler receives requests from customer instances to check for license
+// validity.
 func NewLicenseCheckHandler(db database.DB) http.Handler {
 	baseLogger := log.Scoped("LicenseCheckHandler")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -177,8 +201,8 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			logEvent(ctx, db, EventNameAssigned, siteID)
 			license.SiteID = &siteID
 		} else if !strings.EqualFold(*license.SiteID, siteID) {
-			fmt.Println(*license.SiteID, siteID)
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
+
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 				// TODO: revert this to false again in the future, once most customers have a separate
 				// license key per instance
@@ -195,21 +219,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			}
 			license.SiteID = &siteID
 
-			// Best effort fetch of customer name for slack message
-			customerName := "could not load customer name"
-
-			subscriptionsStore := dbSubscriptions{db: db}
-			dbSubscription, err := subscriptionsStore.GetByID(ctx, license.ProductSubscriptionID)
-			if err != nil {
-				logger.Warn("could not find subscription for license", log.String("licenseID", license.ID), log.Error(err))
-			} else {
-				user, err := db.Users().GetByID(ctx, dbSubscription.UserID)
-				if err != nil {
-					logger.Warn("could not find user for subscription", log.String("subscriptionID", dbSubscription.ID), log.Error(err))
-				} else {
-					customerName = user.Name()
-				}
-			}
+			customerName := getCustomerNameFromLicense(r.Context(), logger, db, license)
 
 			sendSlackMessage(logger, license, customerName, oldSiteID)
 			return
