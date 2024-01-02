@@ -2,7 +2,7 @@ package licensing
 
 import (
 	"bytes"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"sync"
 	"time"
 

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"

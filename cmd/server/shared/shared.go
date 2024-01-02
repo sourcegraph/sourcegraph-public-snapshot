@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -290,7 +290,7 @@ func runMigrator() {
 	log.Println("Migrated postgres schemas.")
 }
 
-func shouldPostgresReindex() (shouldReindex bool) {
+func shouldPostgresReindex() bool {
 	fmt.Printf("Checking whether a Postgres reindex is required...\n")
 
 	// Check for presence of the reindex marker file

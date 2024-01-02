@@ -577,6 +577,20 @@
           "type": "boolean",
           "group": "BatchChanges",
           "default": false
+        },
+        "languageDetection": {
+          "description": "Setting for customizing language detection behavior",
+          "type": "object",
+          "required": ["graphQL"],
+          "additionalProperties": false,
+          "properties": {
+            "graphQL": {
+              "description": "What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.",
+              "type": "string",
+              "enum": ["useFileContents", "useFileNamesOnly"],
+              "default": "useFileContents"
+            }
+          }
         }
       },
       "examples": [
@@ -601,6 +615,7 @@
       ],
       "group": "Experimental"
     },
+
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
@@ -1120,6 +1135,11 @@
           "url": "https://sourcegraph.example.com"
         }
       ]
+    },
+    "auth.dailyEmailDomainSignupLimit": {
+      "type": "integer",
+      "default": 0,
+      "description": "The maximum number of users that can sign from Google using the same email domain in a 24 hour period."
     },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -2070,6 +2090,11 @@
         },
         "slackLicenseAnomallyWebhook": {
           "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
+        "slackLicenseCreationWebhook": {
+          "description": "Slack webhook for when a license key is created.",
           "type": "string",
           "group": "Sourcegraph.com"
         },

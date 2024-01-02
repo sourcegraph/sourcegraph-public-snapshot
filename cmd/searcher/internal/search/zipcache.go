@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"sort"
 	"sync"

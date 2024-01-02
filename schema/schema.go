@@ -674,6 +674,8 @@ type Dotcom struct {
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
+	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
+	SlackLicenseCreationWebhook string `json:"slackLicenseCreationWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -913,6 +915,8 @@ type ExperimentalFeatures struct {
 	InsightsDataRetention *bool `json:"insightsDataRetention,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// LanguageDetection description: Setting for customizing language detection behavior
+	LanguageDetection *LanguageDetection `json:"languageDetection,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
@@ -995,6 +999,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "insightsBackfillerV2")
 	delete(m, "insightsDataRetention")
 	delete(m, "jvmPackages")
+	delete(m, "languageDetection")
 	delete(m, "npmPackages")
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
@@ -1512,6 +1517,12 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
+}
+
+// LanguageDetection description: Setting for customizing language detection behavior
+type LanguageDetection struct {
+	// GraphQL description: What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.
+	GraphQL string `json:"graphQL"`
 }
 
 // LinkStep description: Link step
@@ -2607,6 +2618,8 @@ type SiteConfiguration struct {
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
 	AuthAllowedIpAddress *AuthAllowedIpAddress `json:"auth.allowedIpAddress,omitempty"`
+	// AuthDailyEmailDomainSignupLimit description: The maximum number of users that can sign from Google using the same email domain in a 24 hour period.
+	AuthDailyEmailDomainSignupLimit int `json:"auth.dailyEmailDomainSignupLimit,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
 	// AuthLockout description: The config options for account lockout
@@ -2912,6 +2925,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.allowedIpAddress")
+	delete(m, "auth.dailyEmailDomainSignupLimit")
 	delete(m, "auth.enableUsernameChanges")
 	delete(m, "auth.lockout")
 	delete(m, "auth.minPasswordLength")

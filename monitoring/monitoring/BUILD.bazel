@@ -11,6 +11,7 @@ go_library(
         "generator.go",
         "monitoring.go",
         "multi_instance.go",
+        "owners.go",
         "panel.go",
         "panel_options.go",
         "prometheus.go",
@@ -42,13 +43,23 @@ go_test(
     timeout = "short",
     srcs = [
         "generator_test.go",
+        "owners_test.go",
         "variables_test.go",
     ],
     embed = [":monitoring"],
+    tags = [
+        # We validate that external resources are valid
+        "requires-network",
+    ],
     deps = [
         "//monitoring/definitions",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
+        "@com_github_opsgenie_opsgenie_go_sdk_v2//team",
         "@com_github_prometheus_prometheus//model/labels",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//maps",
     ],
 )

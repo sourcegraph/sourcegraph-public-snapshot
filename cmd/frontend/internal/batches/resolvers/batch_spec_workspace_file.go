@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -94,7 +94,7 @@ func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context, args *grap
 }
 
 func (r *batchSpecWorkspaceFileResolver) Languages() ([]string, error) {
-	return enry.GetLanguages(r.file.FileName, r.file.Content), nil
+	return languages.GetLanguages(r.file.FileName, func() ([]byte, error) { return r.file.Content, nil })
 }
 
 func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, error) {

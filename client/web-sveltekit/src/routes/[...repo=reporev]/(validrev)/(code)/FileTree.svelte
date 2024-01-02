@@ -5,13 +5,13 @@
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
+    import { getFileIconInfo, DEFAULT_FILE_ICON } from '$lib/fileIcons'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
-    import { getFileInfo } from '$lib/fileIcons'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
@@ -126,10 +126,10 @@
                     {#if entry.isDirectory}
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
-                        {@const {
-                            icon: { svgPath, color },
-                        } = getFileInfo(entry.name)}
-                        <Icon {svgPath} inline --color={color} />
+                        {@const icon =
+                            (entry.__typename === 'GitBlob' && getFileIconInfo(entry.name, entry.languages)?.svg) ||
+                            DEFAULT_FILE_ICON}
+                        <Icon svgPath={icon.path} inline --color={icon.color} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>

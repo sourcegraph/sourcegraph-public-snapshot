@@ -3,6 +3,8 @@ package productsubscription
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,11 +13,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/slack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -94,7 +98,64 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 			log.Error(err)
 		}
 	}
+
+	postLicenseCreationToSlack(ctx, subscriptionID, version, expiresAt, info)
+
 	return id, nil
+}
+
+const slackLicenseCreationMessageFmt = `
+A new license was created by *%s* for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|%s>:
+
+• *License version*: %s
+• *Expiration (UTC)*: %s (%s days remaining)
+• *Expiration (PT)*: %s
+• *User count*: %s
+• *License tags*: %s
+• *Salesforce subscription ID*: %s
+• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s|%s>
+
+Reply with a :approved_stamp: when this is approved
+Reply with a :white_check_mark: when this has been sent to the customer
+`
+
+func postLicenseCreationToSlack(ctx context.Context, subscriptionID string, version int, expiresAt *time.Time, info license.Info) {
+	dotcom := conf.Get().Dotcom
+	if dotcom == nil {
+		return
+	}
+
+	logger := log.Scoped("license creation Slack notification")
+
+	licenseCreator, err := actor.FromContext(ctx).User(ctx, database.Users(logger))
+	if err != nil {
+		logger.Error("error looking up license creator user", log.Error(err))
+		return
+	}
+
+	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
+
+	client := slack.New(dotcom.SlackLicenseCreationWebhook)
+	err = client.Post(ctx, &slack.Payload{
+		Text: fmt.Sprintf(slackLicenseCreationMessageFmt,
+			licenseCreator.Username,
+			subscriptionID,
+			subscriptionID,
+			strconv.Itoa(version),
+			expiresAt.Format("Jan 2, 2006 3:04pm MST"),
+			strconv.FormatFloat(time.Until(*expiresAt).Hours()/24, 'f', 1, 64),
+			expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
+			strconv.FormatUint(uint64(info.UserCount), 10),
+			"`"+strings.Join(info.Tags, "`, `")+"`",
+			*info.SalesforceSubscriptionID,
+			*info.SalesforceOpportunityID,
+			*info.SalesforceOpportunityID,
+		),
+	})
+	if err != nil {
+		logger.Error("error sending Slack message", log.Error(err))
+		return
+	}
 }
 
 // GetByID retrieves the product license (if any) given its ID.

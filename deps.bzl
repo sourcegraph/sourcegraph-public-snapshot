@@ -4761,8 +4761,8 @@ def go_dependencies():
         name = "com_github_onsi_ginkgo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/onsi/ginkgo",
-        sum = "h1:29JGrr5oVBm5ulCWet69zQkzWipVXIol6ygQUe/EzNc=",
-        version = "v1.16.4",
+        sum = "h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=",
+        version = "v1.16.5",
     )
     go_repository(
         name = "com_github_onsi_ginkgo_v2",
@@ -4834,8 +4834,8 @@ def go_dependencies():
         name = "com_github_opsgenie_opsgenie_go_sdk_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/opsgenie/opsgenie-go-sdk-v2",
-        sum = "h1:nV98dkBpqaYbDnhefmOQ+Rn4hE+jD6AtjYHXaU5WyJI=",
-        version = "v1.2.13",
+        sum = "h1:0h+YoXSyipf6XQGyIaDg6z5jwRik1JSm+sQetnD7vGY=",
+        version = "v1.2.22",
     )
     go_repository(
         name = "com_github_oschwald_maxminddb_golang",

@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
+	"log" //nolint:logging // Expected usage; inits old loggers for interop
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // Expected usage; inits old loggers for interop
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
