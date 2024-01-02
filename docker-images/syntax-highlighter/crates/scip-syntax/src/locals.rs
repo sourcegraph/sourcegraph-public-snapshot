@@ -238,7 +238,7 @@ struct LocalResolver<'a> {
     // This is a hack to not record references that overlap with
     // definitions. Ideally we'd fix our queries to prevent these
     // overlaps.
-    definition_start_bytes: HashSet<usize>,
+    skip_references_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -263,7 +263,7 @@ impl<'a> LocalResolver<'a> {
             interner: StringInterner::default(),
             source_bytes,
             definition_id_supply: 0,
-            definition_start_bytes: HashSet::new(),
+            skip_references_at_offsets: HashSet::new(),
             occurrences: vec![],
         }
     }
@@ -288,7 +288,7 @@ impl<'a> LocalResolver<'a> {
         hoist: &Option<String>,
         is_def_ref: bool,
     ) {
-        self.definition_start_bytes.insert(node.start_byte());
+        self.skip_references_at_offsets.insert(node.start_byte());
 
         // We delay creation of this definition behind a closure, so
         // that we don't generate fresh definition_id's for def_ref's
@@ -594,7 +594,7 @@ impl<'a> LocalResolver<'a> {
                 if let Some(parent_scope) = self[current_scope].parent {
                     current_scope = parent_scope
                 } else {
-                    break
+                    break;
                 }
             }
             // Before adding the new scope we first attach all
@@ -676,25 +676,25 @@ impl<'a> LocalResolver<'a> {
         let mut ref_occurrences = vec![];
 
         for (scope_ref, scope) in self.arena.iter() {
-            for Reference {
-                name,
-                node,
-                resolves_to,
-            } in scope.references.iter()
-            {
-                let def_id = if let Some(resolved) = resolves_to {
-                    *resolved
-                } else if self.definition_start_bytes.contains(&node.start_byte()) {
+            for reference in scope.references.iter() {
+                let def_id = if let Some(resolved) = reference.resolves_to {
+                    resolved
+                } else if self
+                    .skip_references_at_offsets
+                    .contains(&reference.node.start_byte())
+                {
                     // See the comment on LocalResolver.definition_start_bytes
                     continue;
-                } else if let Some(def) = self.find_def(scope_ref, *name, node.start_byte()) {
+                } else if let Some(def) =
+                    self.find_def(scope_ref, reference.name, reference.node.start_byte())
+                {
                     def.id
                 } else {
                     continue;
                 };
 
                 ref_occurrences.push(scip::types::Occurrence {
-                    range: node.scip_range(),
+                    range: reference.node.scip_range(),
                     symbol: format_symbol(def_id.as_local_symbol()),
                     ..Default::default()
                 });
