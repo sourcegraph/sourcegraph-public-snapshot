@@ -155,7 +155,8 @@ func regexSearch(
 					casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
 				}
 
-				match, locs := m.MatchesFile(fileMatchBuf, sender.Remaining())
+				// find limit+1 matches so we know whether we hit the limit
+				match, locs := m.MatchesFile(fileMatchBuf, sender.Remaining() + 1)
 				fm := locsToFileMatch(fileBuf, f.Name, locs, contextLines)
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.

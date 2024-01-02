@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp/syntax"
+	"sort"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -194,8 +195,7 @@ func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
 		return nil
 	}
 
-	// find limit+1 matches so we know whether we hit the limit
-	return rm.re.FindAllIndex(fileBuf, limit+1)
+	return rm.re.FindAllIndex(fileBuf, limit)
 }
 
 func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
@@ -236,4 +236,108 @@ func (rm *regexMatcher) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
 		return &zoektquery.Not{Child: q}
 	}
 	return q
+}
+
+type andMatcher struct {
+	children []matcher
+}
+
+func (am *andMatcher) MatchesString(s string) bool {
+	for _, m := range am.children {
+		if !m.MatchesString(s) {
+			return false
+		}
+	}
+	return true
+}
+
+// TODO(jtibs): remove overlapping ranges
+func (am *andMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+	var matches [][]int
+	for _, m := range am.children {
+		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
+		if !childMatch {
+			return false, nil
+		}
+
+		matches = append(matches, childMatches...)
+		limit -= len(childMatches)
+	}
+
+	sort.Sort(matchSlice(matches))
+	return true, matches
+}
+
+func (am *andMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+	var children []zoektquery.Q
+	for _, m := range am.children {
+		q, err := m.ToZoektQuery(matchContent, matchPath)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, q)
+	}
+	return &zoektquery.And{Children: children}, nil
+}
+
+func (am *andMatcher) String() string {
+	return fmt.Sprintf("AND (%d children)", len(am.children))
+}
+
+type orMatcher struct {
+	children []matcher
+}
+
+func (om *orMatcher) MatchesString(s string) bool {
+	for _, m := range om.children {
+		if m.MatchesString(s) {
+			return true
+		}
+	}
+	return false
+}
+
+// TODO(jtibs): remove overlapping ranges
+func (om *orMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+	match := false
+	var matches [][]int
+	for _, m := range om.children {
+		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
+		match = match || childMatch
+		matches = append(matches, childMatches...)
+		limit -= len(childMatches)
+	}
+
+	sort.Sort(matchSlice(matches))
+	return match, matches
+}
+
+func (om *orMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+	var children []zoektquery.Q
+	for _, m := range om.children {
+		q, err := m.ToZoektQuery(matchContent, matchPath)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, q)
+	}
+	return &zoektquery.Or{Children: children}, nil
+}
+
+func (om *orMatcher) String() string {
+	return fmt.Sprintf("OR (%d children)", len(om.children))
+}
+
+type matchSlice [][]int
+
+func (ms matchSlice) Len() int {
+	return len(ms)
+}
+
+func (ms matchSlice) Swap(i, j int) {
+	ms[i], ms[j] = ms[j], ms[i]
+}
+
+func (ms matchSlice) Less(i, j int) bool {
+	return ms[i][0] < ms[j][0]
 }

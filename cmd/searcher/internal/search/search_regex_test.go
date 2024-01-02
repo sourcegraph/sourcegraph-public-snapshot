@@ -12,6 +12,7 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -427,6 +428,13 @@ func TestRegexSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	zipData, _ := createZip(map[string]string{
+		"a.go": "aaaaa11111",
+		"b.go": "bbbbb22222",
+		"c.go": "ccccc3333",
+	})
+	file, _ := mockZipFile(zipData)
+
 	type args struct {
 		ctx                   context.Context
 		m                     matcher
@@ -450,18 +458,119 @@ func TestRegexSearch(t *testing.T) {
 				// Check this case specifically.
 				m:  &allMatcher{},
 				pm: match,
-				zf: &zipFile{
-					Files: []srcFile{
-						{
-							Name: "a.go",
-						},
-					},
-				},
+				zf: file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
 			},
 			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+		},
+		{
+			name: "and matcher with matches",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatcher{
+					children: []matcher{
+						&regexMatcher{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatcher{
+							re: regexp.MustCompile("11111"),
+						},
+					}},
+				pm: match,
+				zf: file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{
+				Path: "a.go",
+				ChunkMatches: []protocol.ChunkMatch{{
+					Content: "aaaaa11111",
+					ContentStart: protocol.Location{0, 0, 0},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{0, 0, 0},
+						End: protocol.Location{5, 0, 5},
+					}, {
+						Start: protocol.Location{5, 0, 5},
+						End: protocol.Location{10, 0, 10},
+					}},
+				}},
+			}},
+		},
+		{
+			name: "and matcher with no match",
+			args: args{
+				ctx: context.Background(),
+				m: &andMatcher{
+					children: []matcher{
+						&regexMatcher{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatcher{
+							re: regexp.MustCompile("22222"),
+						},
+					}},
+				pm: match,
+				zf: file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "or matcher with matches",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatcher{
+					children: []matcher{
+						&regexMatcher{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatcher{
+							re: regexp.MustCompile("99999"),
+						},
+					}},
+				pm: match,
+				zf: file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{
+				Path: "a.go",
+				ChunkMatches: []protocol.ChunkMatch{{
+					Content: "aaaaa11111",
+					ContentStart: protocol.Location{0, 0, 0},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{0, 0, 0},
+						End: protocol.Location{5, 0, 5},
+					}},
+				}},
+			}},
+		},
+		{
+			name: "or matcher with no match",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatcher{
+					children: []matcher{
+						&regexMatcher{
+							re: regexp.MustCompile("jjjjj"),
+						},
+						&regexMatcher{
+							re: regexp.MustCompile("99999"),
+						},
+					}},
+				pm: match,
+				zf: file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
 		},
 	}
 	for _, tt := range tests {
