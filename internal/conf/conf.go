@@ -3,7 +3,7 @@ package conf
 
 import (
 	"context"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"path/filepath"
 	"strings"

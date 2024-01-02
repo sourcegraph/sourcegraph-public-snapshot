@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/russellhaering/gosaml2/uuid"
 	"golang.org/x/oauth2"
 

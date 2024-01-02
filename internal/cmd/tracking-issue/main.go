@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"strings"
 

@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/mod/module"
 	"golang.org/x/time/rate"
 
