@@ -7,7 +7,7 @@ go_library(
         "dotcom.go",
         "operations.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution/dotcom",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/httpcli",
