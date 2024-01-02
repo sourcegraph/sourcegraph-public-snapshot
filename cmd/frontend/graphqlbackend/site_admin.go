@@ -319,22 +319,6 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 		eventArgs.Reason = (*parentErr).Error()
 	}
 
-	// args, err := json.Marshal(eventArgs)
-	// if err != nil {
-	// 	log15.Error("logRoleChangeAttempt: failed to marshal JSON", "eventArgs", eventArgs)
-	// }
-
-	// event := &database.SecurityEvent{
-	// 	Name:            *name,
-	// 	URL:             "",
-	// 	UserID:          uint32(eventArgs.By),
-	// 	AnonymousUserID: "",
-	// 	Argument:        args,
-	// 	Source:          "BACKEND",
-	// 	Timestamp:       time.Now(),
-	// }
-
-	// db.SecurityEventLogs().LogEvent(ctx, event)
 	db.SecurityEventLogs().LogSecurityEvent(ctx, *name, "", uint32(eventArgs.By), "", "BACKEND", eventArgs)
 }
 

@@ -432,7 +432,6 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
 			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
-			securityLogEvents.LogEventFunc.SetDefaultReturn()
 			securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
 
 			db := dbmocks.NewMockDB()
@@ -457,7 +456,6 @@ func TestSetIsSiteAdmin(t *testing.T) {
 				t.Errorf("result: want %v but got %v", tc.result, result)
 			}
 
-			//mockrequire.CalledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCalls)
 			mockrequire.CalledN(t, securityLogEvents.LogSecurityEventFunc, tc.securityLogEventCalls)
 			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
 		})
