@@ -8,7 +8,6 @@ var diffsWithLinters = []Diff{
 	Go,
 	Dockerfiles,
 	Docs,
-	SVG,
 	Client,
 	Shell,
 	Protobuf,
