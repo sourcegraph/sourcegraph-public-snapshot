@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -6,14 +7,12 @@ go_library(
     srcs = [
         "dotcom.go",
         "operations.go",
-        "test_golden.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution/dotcom",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/httpcli",
         "//internal/trace",
-        "@com_github_google_go_cmp//cmp",
         "@com_github_khan_genqlient//graphql",
     ],
 )
@@ -36,4 +35,10 @@ write_generated_to_source_files(
     output_files = {"operations.go": "_operations.go"},
     tags = ["go_generate"],
     target = ":generate_genql_yaml",
+)
+
+go_test(
+    name = "dotcom_test",
+    srcs = ["golden_test.go"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )
