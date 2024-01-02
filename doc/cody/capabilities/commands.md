@@ -214,7 +214,7 @@ See the [examples](#examples) and [configuration properties](#configuration-prop
   - `"ask"` — Focus the chat view and add to the current chat
   - `"inline"` — Start a new inline chat
   - `"insert"` — Insert the response above the code
-  - `"replace"` — Replace the code with the response
+  - `"edit"` — Edit highlighted code with the response
 
 #### `commands.<id>.context`
 
