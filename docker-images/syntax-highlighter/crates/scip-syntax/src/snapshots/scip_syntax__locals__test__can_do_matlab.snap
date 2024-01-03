@@ -6,124 +6,125 @@ expression: dumped
 //^ definition local 1
   
   function myFunc()
-//         ^^^^^^ definition local 10
+//         ^^^^^^ definition local 2
       e = 5;
-//    ^ definition local 11
+//    ^ definition local 3
       f = 6;
-//    ^ definition local 12
+//    ^ definition local 4
   end
   
   function myNestedFunc()
-//         ^^^^^^^^^^^^ definition local 13
+//         ^^^^^^^^^^^^ definition local 5
       g = 7;
-//    ^ definition local 14
+//    ^ definition local 6
       
       function nestedChildFunc()
-//             ^^^^^^^^^^^^^^^ definition local 15
+//             ^^^^^^^^^^^^^^^ definition local 7
           h = 8;
-//        ^ definition local 16
+//        ^ definition local 8
       end
   end
   
   global i j
-//       ^ definition local 2
-//         ^ definition local 3
+//       ^ definition local 9
+//         ^ definition local 10
   i = 9;
-//^ reference local 2
+//^ reference local 9
   j = 10;
-//^ reference local 3
+//^ reference local 10
   
   function myPersistFunc()
-//         ^^^^^^^^^^^^^ definition local 17
+//         ^^^^^^^^^^^^^ definition local 11
       persistent k 
-//               ^ definition local 18
+//               ^ definition local 12
       if isempty(k)
-//               ^ reference local 18
+//               ^ reference local 12
           k = 11;
-//        ^ reference local 18
+//        ^ reference local 12
       end
   end
   
   function myScopeFunc()
-//         ^^^^^^^^^^^ definition local 19
+//         ^^^^^^^^^^^ definition local 13
       m = 12;
-//    ^ definition local 20
+//    ^ definition local 14
       
       n = 13;
-//    ^ definition local 21
+//    ^ definition local 15
       global n
-//           ^ reference local 21
+//           ^ reference local 15
       
       o = 14;
-//    ^ definition local 22
+//    ^ definition local 16
       persistent o
-//               ^ reference local 22
+//               ^ reference local 16
   end
   
   function [a, b] = myFunction()
-//          ^ definition local 23
-//             ^ definition local 24
-//                  ^^^^^^^^^^ definition local 25
+//          ^ definition local 17
+//             ^ definition local 18
+//                  ^^^^^^^^^^ definition local 19
       a = 1;
-//    ^ reference local 23
+//    ^ reference local 17
       b = [2, 3];
-//    ^ reference local 24
+//    ^ reference local 18
   end
   
   classdef MyClass
-//         ^^^^^^^ definition local 4
+//         ^^^^^^^ definition local 20
       properties
           Prop1
       end
       
       methods
           function obj = MyClass(prop1)
-//                 ^^^ definition local 26
-//                       ^^^^^^^ definition local 27
-//                               ^^^^^ definition local 28
+//                 ^^^ definition local 21
+//                       ^^^^^^^ definition local 22
+//                               ^^^^^ definition local 23
               obj.Prop1 = prop1;
-//            ^^^ reference local 26
-//                        ^^^^^ reference local 28
+//            ^^^ reference local 21
+//                        ^^^^^ reference local 23
           end
           
           function result = method1(obj)
-//                 ^^^^^^ definition local 29
-//                          ^^^^^^^ definition local 30
-//                                  ^^^ definition local 31
+//                 ^^^^^^ definition local 24
+//                          ^^^^^^^ definition local 25
+//                                  ^^^ definition local 26
               result = obj.Prop1;
-//            ^^^^^^ reference local 29
-//                     ^^^ reference local 31
+//            ^^^^^^ reference local 24
+//                     ^^^ reference local 26
           end
       end
   end
   
   myObject = MyClass(5);
-//^^^^^^^^ definition local 5
-//           ^^^^^^^ reference local 4
+//^^^^^^^^ definition local 27
+//           ^^^^^^^ reference local 22
   result = myObject.method1();
-//^^^^^^ definition local 6
-//         ^^^^^^^^ reference local 5
+//^^^^^^ definition local 28
+//         ^^^^^^^^ reference local 27
+//                  ^^^^^^^ reference local 25
   
   addTwoNumbers = @(x, y) x + y;
-//^^^^^^^^^^^^^ definition local 7
-//                  ^ definition local 32
-//                     ^ definition local 33
-//                        ^ reference local 32
-//                            ^ reference local 33
+//^^^^^^^^^^^^^ definition local 29
+//                  ^ definition local 30
+//                     ^ definition local 31
+//                        ^ reference local 30
+//                            ^ reference local 31
   
   % TODO handle clear
   % See https://github.com/sourcegraph/sourcegraph/issues/57399
   
   slay = 12 % definition is here
-//^^^^ definition local 8
+//^^^^ definition local 32
   clear slay
   slay = 10 % and now it's here!
-//^^^^ reference local 8
+//^^^^ reference local 32
   
   pog1 = 10
-//^^^^ definition local 9
+//^^^^ definition local 33
   pog1 = 20
-//^^^^ reference local 9
+//^^^^ reference local 33
   
   function f()
 //         ^ definition local 34

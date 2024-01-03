@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
@@ -40,6 +42,7 @@ type Config struct {
 	FireworksLogSelfServeCodeCompletionRequests bool
 	EmbeddingsAllowedModels                     []string
 	AutoFlushStreamingResponses                 bool
+	EnableAttributionSearch                     bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -59,6 +62,7 @@ func NewHandler(
 	authr *auth.Authenticator,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
+	dotcomClient graphql.Client,
 ) (http.Handler, error) {
 	// Initialize metrics
 	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
@@ -226,6 +230,19 @@ func NewHandler(
 					logger,
 					featurelimiter.RefreshLimitsHandler(logger),
 				),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
+
+	var attributionClient graphql.Client
+	if config.EnableAttributionSearch {
+		attributionClient = dotcomClient
+	}
+	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.attribution",
+			authr.Middleware(
+				attribution.NewHandler(attributionClient, logger),
 			),
 			otelhttp.WithPublicEndpoint(),
 		),

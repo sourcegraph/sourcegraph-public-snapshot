@@ -51,7 +51,7 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			stepOpts = append(stepOpts,
 				// Soft-fail with code 222 if nothing has changed
 				bk.SoftFail(222),
-				bk.Cmd("if ! ./cmd/executors/ci-should-rebuild.sh; then exit 222; fi"))
+				bk.Cmd("if ! ./cmd/executor/ci-should-rebuild.sh; then exit 222; fi"))
 		}
 
 		stepOpts = append(stepOpts, bk.Cmd(cmd))
