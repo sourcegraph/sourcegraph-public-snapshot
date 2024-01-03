@@ -34,21 +34,15 @@ export interface RepositoryBadge {
     urlQuery: string
 }
 
-export function getRepositoryBadges(
-    queryState: QueryState,
-    repo: RepositoryMatch,
-    enableMetadata: boolean
-): RepositoryBadge[] {
+export function getRepositoryBadges(queryState: QueryState, repo: RepositoryMatch): RepositoryBadge[] {
     const topicBadges = (repo.topics ?? []).map(topic => ({
         label: topic,
         urlQuery: buildSearchURLQueryForTopic(queryState, topic),
     }))
-    const metaBadges = enableMetadata
-        ? Object.entries(repo.metadata ?? {}).map(([key, value]) => ({
-            label: `${key}:${value}`,
-            urlQuery: buildSearchURLQueryForMeta(queryState, key, value),
-        }))
-        : []
+    const metaBadges = Object.entries(repo.metadata ?? {}).map(([key, value]) => ({
+        label: `${key}:${value}`,
+        urlQuery: buildSearchURLQueryForMeta(queryState, key, value),
+    }))
     return sortBy([...topicBadges, ...metaBadges], ['label'])
 }
 

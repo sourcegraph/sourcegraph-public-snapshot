@@ -39,7 +39,6 @@ func TestAggregatedRepoMetadataSummary(t *testing.T) {
 		require.Equal(t, &types.RepoMetadataAggregatedSummary{
 			RepoMetadataCount:      int32Ptr(0),
 			ReposWithMetadataCount: int32Ptr(0),
-			IsEnabled:              true,
 		}, summary)
 	})
 
@@ -63,34 +62,6 @@ func TestAggregatedRepoMetadataSummary(t *testing.T) {
 		require.Equal(t, &types.RepoMetadataAggregatedSummary{
 			RepoMetadataCount:      int32Ptr(2),
 			ReposWithMetadataCount: int32Ptr(1),
-			IsEnabled:              true,
-		}, summary)
-	})
-
-	t.Run("feature flag is set to true", func(t *testing.T) {
-		db.FeatureFlags().CreateBool(ctx, "repository-metadata", true)
-
-		summary, err := getAggregatedRepoMetadataSummary(ctx, db)
-
-		require.NoError(t, err)
-		require.Equal(t, &types.RepoMetadataAggregatedSummary{
-			RepoMetadataCount:      int32Ptr(2),
-			ReposWithMetadataCount: int32Ptr(1),
-			IsEnabled:              true,
-		}, summary)
-	})
-
-	t.Run("feature flag is set to false", func(t *testing.T) {
-		db.FeatureFlags().DeleteFeatureFlag(ctx, "repository-metadata")
-		db.FeatureFlags().CreateBool(ctx, "repository-metadata", false)
-
-		summary, err := getAggregatedRepoMetadataSummary(ctx, db)
-
-		require.NoError(t, err)
-		require.Equal(t, &types.RepoMetadataAggregatedSummary{
-			RepoMetadataCount:      int32Ptr(2),
-			ReposWithMetadataCount: int32Ptr(1),
-			IsEnabled:              false,
 		}, summary)
 	})
 }

@@ -8,9 +8,7 @@ import type { FeatureFlag } from './api'
 const MINUTE = 60000
 const FEATURE_FLAG_CACHE_TTL = MINUTE * 10
 
-const defaultValues: Partial<Record<FeatureFlagName, boolean>> = {
-    'repository-metadata': true,
-}
+const defaultValues: Partial<Record<FeatureFlagName, boolean>> = {}
 
 export function createFeatureFlagStore(
     initialFeatureFlags: FeatureFlag[],

@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type KeyValuePair struct {
@@ -30,8 +29,6 @@ func (k KeyValuePair) Key() string {
 func (k KeyValuePair) Value() *string {
 	return k.value
 }
-
-var featureDisabledError = errors.New("'repository-metadata' feature flag is not enabled")
 
 type emptyNonNilValueError struct {
 	value string
@@ -59,10 +56,6 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 ) (*EmptyResponse, error) {
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -102,10 +95,6 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
-	}
-
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, err
@@ -138,10 +127,6 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 ) (*EmptyResponse, error) {
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -194,10 +179,6 @@ type RepoMetadataKeysArgs struct {
 func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs) (*graphqlutil.ConnectionResolver[string], error) {
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return nil, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
 	}
 
 	listOptions := &args.RepoKVPListKeysOptions
@@ -267,10 +248,6 @@ type RepoMetadataValuesArgs struct {
 func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValuesArgs) (*graphqlutil.ConnectionResolver[string], error) {
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return nil, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
 	}
 
 	connectionStore := &repoMetaValuesConnectionStore{

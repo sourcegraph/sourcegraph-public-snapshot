@@ -80,8 +80,6 @@ const ExtraInfoSection: React.FC<{
     className?: string
     hasWritePermissions?: boolean
 }> = ({ repo, className, hasWritePermissions }) => {
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-
     const queryState = useNavbarQueryState(state => state.queryState)
 
     const metadataTags = useMemo(
@@ -107,40 +105,34 @@ const ExtraInfoSection: React.FC<{
                     <TagList tags={topicTags} />
                 </ExtraInfoSectionItem>
             )}
-            {enableRepositoryMetadata && (
-                <ExtraInfoSectionItem>
-                    <ExtraInfoSectionItemHeader
-                        title="Metadata"
-                        tooltip={
-                            <>
-                                Repository metadata allows you to search, filter and navigate between repositories.
-                                Users with the Repository metadata write role can add repository metadata via the web,
-                                cli or API. Learn more about{' '}
-                                <Link to="/help/admin/repo/metadata" className={styles.linkDark}>
-                                    Repository Metadata
-                                </Link>
-                                .
-                            </>
-                        }
-                    >
-                        {hasWritePermissions && (
-                            <Tooltip content="Edit repository metadata">
-                                <ButtonLink
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/metadata`}
-                                    className={classNames('p-0', styles.extraInfoSectionItemHeaderIcon)}
-                                >
-                                    <Icon
-                                        svgPath={mdiCog}
-                                        aria-label="Edit repository metadata"
-                                        className="text-muted"
-                                    />
-                                </ButtonLink>
-                            </Tooltip>
-                        )}
-                    </ExtraInfoSectionItemHeader>
-                    {metadataTags.length ? <TagList tags={metadataTags} /> : <Text className="text-muted">None</Text>}
-                </ExtraInfoSectionItem>
-            )}
+            <ExtraInfoSectionItem>
+                <ExtraInfoSectionItemHeader
+                    title="Metadata"
+                    tooltip={
+                        <>
+                            Repository metadata allows you to search, filter and navigate between repositories. Users
+                            with the Repository metadata write role can add repository metadata via the web, cli or API.
+                            Learn more about{' '}
+                            <Link to="/help/admin/repo/metadata" className={styles.linkDark}>
+                                Repository Metadata
+                            </Link>
+                            .
+                        </>
+                    }
+                >
+                    {hasWritePermissions && (
+                        <Tooltip content="Edit repository metadata">
+                            <ButtonLink
+                                to={`/${encodeURIPathComponent(repo.name)}/-/metadata`}
+                                className={classNames('p-0', styles.extraInfoSectionItemHeaderIcon)}
+                            >
+                                <Icon svgPath={mdiCog} aria-label="Edit repository metadata" className="text-muted" />
+                            </ButtonLink>
+                        </Tooltip>
+                    )}
+                </ExtraInfoSectionItemHeader>
+                {metadataTags.length ? <TagList tags={metadataTags} /> : <Text className="text-muted">None</Text>}
+            </ExtraInfoSectionItem>
         </Card>
     )
 }
@@ -262,7 +254,7 @@ const CONTRIBUTORS_QUERY = gql`
     }
 `
 
-interface ContributorsProps extends TreePageContentProps {}
+interface ContributorsProps extends TreePageContentProps { }
 
 const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
     const spec: QuerySpec = {
@@ -327,9 +319,8 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                         {connection.pageInfo.hasNextPage && (
                             <small>
                                 <Link
-                                    to={`${repo.url}/-/stats/contributors?${
-                                        filePath ? 'path=' + encodeURIComponent(filePath) : ''
-                                    }`}
+                                    to={`${repo.url}/-/stats/contributors?${filePath ? 'path=' + encodeURIComponent(filePath) : ''
+                                        }`}
                                 >
                                     Show more
                                 </Link>
@@ -384,7 +375,7 @@ const OWNERS_QUERY = gql`
     }
 `
 
-interface OwnershipProps extends TreePageContentProps {}
+interface OwnershipProps extends TreePageContentProps { }
 
 const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
     const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
@@ -399,7 +390,7 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
     const connection =
         node?.commit?.path?.__typename === 'GitTree' &&
-        node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
+            node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
             ? node.commit.path.ownership
             : null
     return (
@@ -418,8 +409,8 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
                                         node.owner.__typename === 'Person'
                                             ? node.owner.email
                                             : node.owner.__typename === 'Team'
-                                            ? node.owner.name
-                                            : null
+                                                ? node.owner.name
+                                                : null
                                     }
                                     node={node}
                                 />

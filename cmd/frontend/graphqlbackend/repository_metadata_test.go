@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -184,44 +183,6 @@ func TestRepositoryMetadata(t *testing.T) {
 			return kvps[i].key < kvps[j].key
 		})
 		require.Empty(t, kvps)
-	})
-
-	t.Run("handles feature flag", func(t *testing.T) {
-		flags := map[string]bool{"repository-metadata": false}
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: pointers.Ptr("val1"),
-		})
-		require.Error(t, err)
-		require.Equal(t, featureDisabledError, err)
-
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: pointers.Ptr("val2"),
-		})
-		require.Error(t, err)
-		require.Equal(t, featureDisabledError, err)
-
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
-			Key  string
-		}{
-			Repo: gqlID,
-			Key:  "key1",
-		})
-		require.Error(t, err)
-		require.Equal(t, featureDisabledError, err)
 	})
 
 	t.Run("handles rbac", func(t *testing.T) {

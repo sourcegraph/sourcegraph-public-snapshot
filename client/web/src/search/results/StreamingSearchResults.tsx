@@ -18,7 +18,6 @@ import type { SearchAggregationProps, SearchStreamingProps } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import type { CodeMonitoringProps } from '../../codeMonitoring'
 import { formatUrlOverrideFeatureFlags } from '../../featureFlags/lib/parseUrlOverrideFeatureFlags'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
 import type { CodeInsightsProps } from '../../insights/types'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
@@ -34,15 +33,15 @@ import { useStreamingSearchPings } from './useStreamingSearchPings'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        CodeInsightsProps,
-        SearchAggregationProps,
-        CodeMonitoringProps,
-        OwnConfigProps,
-        ExtensionsControllerProps {
+    Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+    SettingsCascadeProps,
+    PlatformContextProps,
+    TelemetryProps,
+    CodeInsightsProps,
+    SearchAggregationProps,
+    CodeMonitoringProps,
+    OwnConfigProps,
+    ExtensionsControllerProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -66,7 +65,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     // Feature flags
     const featureOverrides = useFeatureFlagOverrides()
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
     const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI)
 
     // Global state
@@ -235,7 +233,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             caseSensitive={caseSensitive}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
-            enableRepositoryMetadata={enableRepositoryMetadata}
             options={options}
             codeMonitoringEnabled={codeMonitoringEnabled}
             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
@@ -267,7 +264,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             caseSensitive={caseSensitive}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
-            enableRepositoryMetadata={enableRepositoryMetadata}
             options={options}
             codeMonitoringEnabled={codeMonitoringEnabled}
             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}

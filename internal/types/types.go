@@ -1081,7 +1081,6 @@ type RepoMetadataAggregatedStats struct {
 }
 
 type RepoMetadataAggregatedSummary struct {
-	IsEnabled              bool
 	RepoMetadataCount      *int32
 	ReposWithMetadataCount *int32
 }

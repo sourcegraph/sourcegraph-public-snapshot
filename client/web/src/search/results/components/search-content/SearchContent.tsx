@@ -37,8 +37,8 @@ import styles from './SearchContent.module.scss'
 
 interface SearchContentProps
     extends SettingsCascadeProps,
-        TelemetryProps,
-        PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'> {
+    TelemetryProps,
+    PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'> {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -54,7 +54,6 @@ interface SearchContentProps
     caseSensitive: boolean
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    enableRepositoryMetadata: boolean
     options: StreamSearchOptions
     codeMonitoringEnabled: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -87,7 +86,6 @@ export const SearchContent: FC<SearchContentProps> = props => {
         caseSensitive,
         authenticatedUser,
         isSourcegraphDotCom,
-        enableRepositoryMetadata,
         codeMonitoringEnabled,
         options,
         platformContext,
@@ -236,7 +234,6 @@ export const SearchContent: FC<SearchContentProps> = props => {
                             searchContextsEnabled={searchContextsEnabled}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
                             executedQuery={location.search}

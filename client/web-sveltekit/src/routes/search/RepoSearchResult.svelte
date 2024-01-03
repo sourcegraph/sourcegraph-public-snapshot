@@ -4,7 +4,6 @@
     import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
 
     import { highlightRanges } from '$lib/dom'
-    import { featureFlag } from '$lib/featureflags'
     import Icon from '$lib/Icon.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
     import { displayRepoName, getRepoMatchUrl, type RepositoryMatch } from '$lib/shared'
@@ -16,11 +15,10 @@
 
     export let result: RepositoryMatch
 
-    const enableRepositoryMetadata = featureFlag('repository-metadata')
     const queryState = getSearchResultsContext().queryState
 
     $: repoAtRevisionURL = getRepoMatchUrl(result)
-    $: badges = getRepositoryBadges($queryState, result, $enableRepositoryMetadata)
+    $: badges = getRepositoryBadges($queryState, result)
     $: description = limitDescription(result.description ?? '')
     $: repoName = displayRepoName(result.repository)
 

@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -51,14 +50,5 @@ func getAggregatedRepoMetadataSummary(ctx context.Context, db database.DB) (*typ
 	if err != nil {
 		return nil, err
 	}
-
-	flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "repository-metadata")
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return nil, err
-		}
-	}
-	summary.IsEnabled = flag == nil || flag.Bool.Value
-
 	return &summary, nil
 }

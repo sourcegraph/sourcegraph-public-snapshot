@@ -24,7 +24,6 @@ export interface RepoSearchResultProps {
     containerClassName?: string
     as?: React.ElementType
     index: number
-    enableRepositoryMetadata?: boolean
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -33,7 +32,6 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
-    enableRepositoryMetadata,
     buildSearchURLQueryFromQueryState,
     queryState,
 }) => {
@@ -78,13 +76,13 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const tags = [
         ...(metadata
             ? Object.entries(metadata).map(([key, value]) =>
-                  metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
-              )
+                metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
+            )
             : []),
         ...(topics ? topics.map(topic => topicToTag(topic, queryState, false, buildSearchURLQueryFromQueryState)) : []),
     ]
 
-    const showRepoMetadata = enableRepositoryMetadata && tags.length > 0
+    const showRepoMetadata = tags.length > 0
 
     return (
         <ResultContainer

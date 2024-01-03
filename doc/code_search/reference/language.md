@@ -556,10 +556,6 @@ ComplexDiagram(
 
 ### Repo has meta
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> Tagging repositories with key-value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
-</aside>
-
 <script>
 ComplexDiagram(
     Terminal("has.meta"),

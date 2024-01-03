@@ -1,7 +1,5 @@
 import { type FC, useCallback, useMemo, useState, useEffect } from 'react'
 
-import { Navigate } from 'react-router-dom'
-
 import { RepoMetadata, type RepoMetadataItem } from '@sourcegraph/branded'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,7 +8,6 @@ import { Container, PageHeader, ErrorAlert, Input, Text, LoadingSpinner, Link } 
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
     GetRepoMetadataResult,
     GetRepoMetadataVariables,
@@ -33,13 +30,10 @@ interface RepoMetadataPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>
  */
 export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, useBreadcrumb, repo, ...props }) => {
     useBreadcrumb(BREADCRUMB)
-    const [repoMetadataEnabled, status] = useFeatureFlag('repository-metadata', true)
 
     useEffect(() => {
-        if (repoMetadataEnabled) {
-            telemetryService.log('repoPage:ownershipPage:viewed')
-        }
-    }, [repoMetadataEnabled, telemetryService])
+        telemetryService.log('repoPage:ownershipPage:viewed')
+    }, [telemetryService])
 
     const {
         data,
@@ -97,10 +91,6 @@ export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, 
 
     if (status !== 'loaded') {
         return <div>Loading...</div>
-    }
-
-    if (!repoMetadataEnabled) {
-        return <Navigate to={repo.url} replace={true} />
     }
 
     return (

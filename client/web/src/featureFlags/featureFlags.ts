@@ -20,7 +20,6 @@ export const FEATURE_FLAGS = [
     'blob-page-switch-areas-shortcuts',
     'clone-progress-logging',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'repository-metadata',
     'cody-web-search',
     'own-promote',
     'own-analytics',

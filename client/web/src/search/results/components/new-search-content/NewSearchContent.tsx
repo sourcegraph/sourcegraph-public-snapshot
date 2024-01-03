@@ -69,9 +69,9 @@ type SearchResultPreview = ContentMatch | PathMatch
 
 interface NewSearchContentProps
     extends TelemetryProps,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        ExtensionsControllerProps {
+    SettingsCascadeProps,
+    PlatformContextProps,
+    ExtensionsControllerProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -87,7 +87,6 @@ interface NewSearchContentProps
     caseSensitive: boolean
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    enableRepositoryMetadata: boolean
     options: StreamSearchOptions
     codeMonitoringEnabled: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -120,7 +119,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         caseSensitive,
         authenticatedUser,
         isSourcegraphDotCom,
-        enableRepositoryMetadata,
         codeMonitoringEnabled,
         options,
         platformContext,
@@ -301,7 +299,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             searchContextsEnabled={searchContextsEnabled}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
                             executedQuery={location.search}
