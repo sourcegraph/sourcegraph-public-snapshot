@@ -96,7 +96,7 @@ fn measure_parsing() {
     println!("Slowest files:");
     for timing in timings.iter().rev().take(10) {
         println!(
-            "{} ({}kb): {:?} ",
+            "{} ({}kb): {:?}",
             timing.file_path,
             timing.file_size / 1000,
             timing.duration
