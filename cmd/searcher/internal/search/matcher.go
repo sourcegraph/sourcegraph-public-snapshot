@@ -62,9 +62,6 @@ func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 		if !p.IsRegExp {
 			expr = regexp.QuoteMeta(expr)
 		}
-		if p.IsWordMatch {
-			expr = `\b` + expr + `\b`
-		}
 		if p.IsRegExp {
 			// We don't do the search line by line, therefore we want the
 			// regex engine to consider newlines for anchors (^$).

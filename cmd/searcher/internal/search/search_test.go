@@ -147,16 +147,6 @@ fmt.Println("Hello world")
 		arg:  protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true},
 		want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 	}, {
-		arg:  protocol.PatternInfo{Pattern: "mai", IsWordMatch: true},
-		want: autogold.Expect(""),
-	}, {
-		arg: protocol.PatternInfo{Pattern: "main", IsWordMatch: true},
-		want: autogold.Expect(`main.go:1:1:
-package main
-main.go:5:5:
-func main() {
-`),
-	}, {
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
 		arg: protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true},
