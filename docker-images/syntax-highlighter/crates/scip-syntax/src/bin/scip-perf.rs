@@ -8,8 +8,18 @@ use walkdir::WalkDir;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
+    /// What language to parse.
+    language: Language,
+
     /// Root directory to run local navigation over
     root_dir: String,
+}
+
+#[derive(clap::ValueEnum, Clone, Copy)]
+enum Language {
+    Go,
+    Java,
+    Matlab,
 }
 
 struct ParseTiming {
@@ -18,9 +28,21 @@ struct ParseTiming {
     pub duration: std::time::Duration,
 }
 
-fn parse_files(dir: &Path) -> Vec<ParseTiming> {
-    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
-    let extension = "go";
+fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
+    let (config, extension) = match language {
+        Language::Go => (
+            scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap(),
+            "go",
+        ),
+        Language::Java => (
+            scip_syntax::languages::get_local_configuration(BundledParser::Java).unwrap(),
+            "java",
+        ),
+        Language::Matlab => (
+            scip_syntax::languages::get_local_configuration(BundledParser::Matlab).unwrap(),
+            "m",
+        ),
+    };
 
     let mut timings = vec![];
 
@@ -69,7 +91,7 @@ fn measure_parsing() {
 
     let root = Path::new(&args.root_dir);
 
-    let mut timings = parse_files(root);
+    let mut timings = parse_files(root, args.language);
     timings.sort_by(|a, b| a.duration.cmp(&b.duration));
     println!("Slowest files:");
     for timing in timings.iter().rev().take(10) {
