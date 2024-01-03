@@ -245,6 +245,7 @@ func NewHandler(
 				attribution.NewHandler(attributionClient, logger),
 			),
 		),
+		otelhttp.WithPublicEndpoint(),
 	)
 	return r, nil
 }
