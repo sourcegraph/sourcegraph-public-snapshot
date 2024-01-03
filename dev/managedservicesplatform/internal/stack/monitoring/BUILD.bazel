@@ -20,6 +20,6 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringnotificationchannel",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//apiintegration",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//dataopsgenieteam",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_slack//conversation:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_slack//conversation",
     ],
 )
