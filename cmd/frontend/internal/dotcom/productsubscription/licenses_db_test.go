@@ -384,13 +384,18 @@ func TestRevokeLicense(t *testing.T) {
 }
 
 func TestRenderLicenseCreationSlackMessage(t *testing.T) {
-	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+	staticExpiresAt, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
+	// Typical case is that license expires in the future, so emulate now to
+	// be some time before that
+	staticNow := staticExpiresAt.Add(-72 * time.Hour)
+
 	message := renderLicenseCreationSlackMessage(
+		staticNow,
 		&types.User{},
 		"1234", 123,
-		&staticTime,
+		&staticExpiresAt,
 		license.Info{})
-	autogold.Expect("\nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:\n\n• *License version*: 123\n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (-313.1 days remaining)\n• *Expiration (PT)*: Feb 24, 2023 6:48am PST\n• *User count*: 0\n• *License tags*: ``\n• *Salesforce subscription ID*: unknown\n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown|unknown>\n\nReply with a :approved_stamp: when this is approved\nReply with a :white_check_mark: when this has been sent to the customer\n").Equal(t, message)
+	autogold.Expect("\nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:\n\n• *License version*: 123\n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (3.0 days remaining)\n• *Expiration (PT)*: Feb 24, 2023 6:48am PST\n• *User count*: 0\n• *License tags*: ``\n• *Salesforce subscription ID*: unknown\n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown|unknown>\n\nReply with a :approved_stamp: when this is approved\nReply with a :white_check_mark: when this has been sent to the customer\n").Equal(t, message)
 }
