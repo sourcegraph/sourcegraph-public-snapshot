@@ -340,7 +340,7 @@ func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 
 		// Log an event when a subscription is archived
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComSubscriptionArchived, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", id); err != nil {
-			logger.Error("Error logging security event", log.Error(err))
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return nil
