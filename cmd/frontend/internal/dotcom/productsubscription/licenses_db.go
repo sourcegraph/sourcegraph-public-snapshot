@@ -134,6 +134,14 @@ func postLicenseCreationToSlack(ctx context.Context, subscriptionID string, vers
 	}
 
 	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
+	salesforceSubscriptionID := ""
+	if info.salesforceSubscriptionID != nil {
+		salesforceSubscriptionID = *info.SalesforceSubscriptionID
+	}
+	salesforceOpportunityID := ""
+	if info.SalesforceOpportunityID != nil {
+		salesforceOpportunityID = *info.SalesforceOpportunityID
+	}
 
 	client := slack.New(dotcom.SlackLicenseCreationWebhook)
 	err = client.Post(ctx, &slack.Payload{
@@ -147,9 +155,9 @@ func postLicenseCreationToSlack(ctx context.Context, subscriptionID string, vers
 			expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
 			strconv.FormatUint(uint64(info.UserCount), 10),
 			"`"+strings.Join(info.Tags, "`, `")+"`",
-			*info.SalesforceSubscriptionID,
-			*info.SalesforceOpportunityID,
-			*info.SalesforceOpportunityID,
+			salesforceSubscriptionID,
+			salesforceOpportunityID,
+			salesforceOpportunityID,
 		),
 	})
 	if err != nil {
