@@ -1,11 +1,10 @@
 package languages
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/exp/slices"
 )
 
 // Make sure all names are lowercase here, since they are normalized
@@ -22,62 +21,96 @@ func NormalizeLanguage(filetype string) string {
 	return normalized
 }
 
-// GetLanguage returns the language for the given path and contents.
-func GetLanguage(path, contents string) (lang string, found bool) {
-	// Force the use of the shebang.
-	if shebangLang, ok := overrideViaShebang(path, contents); ok {
-		return shebangLang, true
-	}
-
-	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
-
-	c := contents
-	// classifier is faster on small files without losing much accuracy
-	if len(c) > 2048 {
-		c = c[:2048]
-	}
-
-	lang, err := firstLanguage(enry.GetLanguages(path, []byte(c)))
-	if err == nil {
-		return NormalizeLanguage(lang), true
-	}
-
-	return NormalizeLanguage(lang), false
-}
-
-func firstLanguage(languages []string) (string, error) {
-	for _, l := range languages {
-		if l != "" {
-			return l, nil
+// GetMostLikelyLanguage returns the language for the given path and contents.
+//
+// Prefer using GetLanguages instead of this function.
+//
+// TODO: Remove the extra normalization this functiond does over GetLanguages
+func GetMostLikelyLanguage(path, contents string) (lang string, found bool) {
+	languages, _ := GetLanguages(path, func() ([]byte, error) {
+		if len(contents) > 2048 {
+			return []byte(contents[:2048]), nil
+		}
+		return []byte(contents), nil
+	})
+	for _, lang := range languages {
+		if lang != "" {
+			return NormalizeLanguage(lang), true
 		}
 	}
-	return "", errors.New("UnrecognizedLanguage")
+	return "", false
 }
 
-// overrideViaShebang handles explicitly using the shebang whenever possible.
+// GetLanguages is a replacement for enry.GetLanguages which
+// avoids incorrect fallback behavior that is present in DefaultStrategies,
+// where it will misclassify '.h' header files as C when file contents
+// are not available.
 //
-// It also covers some edge cases when enry eagerly returns more languages
-// than necessary, which ends up overriding the shebang completely (which,
-// IMO is the highest priority match we can have).
+// The content can be optionally passed via a callback instead of
+// directly, so that in the common case, the caller can avoid fetching
+// the content.
 //
-// For example, enry will return "Perl" and "Pod" for a shebang of `#!/usr/bin/env perl`.
-// This is actually unhelpful, because then enry will *not* select "Perl" as the
-// language (which is our desired behavior).
-func overrideViaShebang(path, content string) (lang string, ok bool) {
-	shebangs := enry.GetLanguagesByShebang(path, []byte(content), []string{})
-	if len(shebangs) == 0 {
-		return "", false
+// Only returns an error if getContent returns an error.
+func GetLanguages(path string, getContent func() ([]byte, error)) ([]string, error) {
+	langs := enry.GetLanguagesByFilename(path, nil, nil)
+	if len(langs) == 1 {
+		return langs, nil
+	}
+	newLangs := enry.GetLanguagesByExtension(path, nil, langs)
+	switch len(newLangs) {
+	case 0:
+		break
+	case 1:
+		return newLangs, nil
+	default:
+		langs = newLangs
+	}
+	if getContent == nil {
+		return langs, nil
+	}
+	content, err := getContent()
+	if err != nil {
+		return nil, err
+	}
+	if len(content) == 0 {
+		return langs, nil
+	}
+	if enry.IsBinary(content) {
+		return nil, nil
 	}
 
-	if len(shebangs) == 1 {
-		return shebangs[0], true
+	// enry doesn't expose a way to call GetLanguages with a specific set of
+	// strategies, so just hand-roll that code here.
+	var languages = langs
+	for _, strategy := range []enry.Strategy{enry.GetLanguagesByModeline, getLanguagesByShebang, enry.GetLanguagesByContent, enry.GetLanguagesByClassifier} {
+		candidates := strategy(path, content, languages)
+		switch len(candidates) {
+		case 0:
+			continue
+		case 1:
+			return candidates, nil
+		default:
+			languages = candidates
+		}
 	}
 
-	// There are some shebangs that enry returns that are not really
-	// useful for our syntax highlighters to distinguish between.
-	if slices.Equal(shebangs, []string{"Perl", "Pod"}) {
-		return "Perl", true
-	}
+	return languages, nil
+}
 
-	return "", false
+// getLanguagesByShebang is a replacement for enry.GetLanguagesByShebang.
+//
+// The enry function considers non-programming languages such as 'Pod'/'Pod 6'
+// also for shebangs, so work around that.
+func getLanguagesByShebang(path string, content []byte, candidates []string) []string {
+	languages := enry.GetLanguagesByShebang(path, content, candidates)
+	if len(languages) == 2 {
+		// See https://sourcegraph.com/github.com/go-enry/go-enry@40f2a1e5b90eec55c20441c2a5911dcfc298a447/-/blob/data/interpreter.go?L95-96
+		if slices.Equal(languages, []string{"Perl", "Pod"}) {
+			return []string{"Perl"}
+		}
+		if slices.Equal(languages, []string{"Pod 6", "Raku"}) {
+			return []string{"Raku"}
+		}
+	}
+	return languages
 }

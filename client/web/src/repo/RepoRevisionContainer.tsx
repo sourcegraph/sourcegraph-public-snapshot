@@ -31,7 +31,7 @@ import type { OwnConfigProps } from '../own/OwnConfigProps'
 import type { SearchStreamingProps } from '../search'
 import type { RouteV6Descriptor } from '../util/contributions'
 
-import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import { CopyPermalinkAction } from './actions/CopyPermalinkAction'
 import type { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { isPackageServiceType } from './packages/isPackageServiceType'
@@ -217,19 +217,19 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         )
                 )}
             </Routes>
-            {resolvedRevision && !isPackage && (
+            {!isPackage && (
                 <RepoHeaderContributionPortal
-                    id="go-to-permalink"
-                    priority={3}
                     position="right"
+                    priority={2}
+                    id="copy-permalink"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (
-                        <GoToPermalinkAction
-                            key="go-to-permalink"
+                        <CopyPermalinkAction
+                            key="copy-permalink"
                             telemetryService={props.telemetryService}
                             revision={props.revision}
-                            commitID={resolvedRevision.commitID}
+                            commitID={resolvedRevision?.commitID}
                             {...context}
                         />
                     )}

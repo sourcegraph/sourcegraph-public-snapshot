@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/dghubble/gologin/v2/github"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"

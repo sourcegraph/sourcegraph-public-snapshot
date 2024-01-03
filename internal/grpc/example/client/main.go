@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 )
 
 // From https://commons.wikimedia.org/w/index.php?title=File:Sun-soleil.svg&oldid=456041378
@@ -40,13 +42,21 @@ func main() {
 	defer conn.Close()
 
 	client := pb.NewWeatherServiceClient(conn)
+	client = &automaticRetryClient{base: client} // Wrap the client with our automatic retry logic
 
 	// Demonstrate Unary RPCs (single request, single response): Get weather for a specific location
 	//
 	// This example demonstrates a basic client server RPC, as well as error handling tactics.
 	{
+
+		// You can pass call options to each unique RPC invocation.
+		// In this example, we use this to demonstrate the automatic retry logic.
+		retryCallback := func(ctx context.Context, attempt uint, err error) {
+			logger.Info("The call to GetCurrentWeather for New York failed. Retrying...", log.Uint("attempt", attempt), log.Error(err))
+		}
+
 		// Normal case
-		weather, err := client.GetCurrentWeather(context.Background(), &pb.GetCurrentWeatherRequest{Location: "New York"})
+		weather, err := client.GetCurrentWeather(context.Background(), &pb.GetCurrentWeatherRequest{Location: "New York"}, retry.WithOnRetryCallback(retryCallback))
 		if err != nil {
 			logger.Fatal("Could not get weather", log.Error(err))
 		}

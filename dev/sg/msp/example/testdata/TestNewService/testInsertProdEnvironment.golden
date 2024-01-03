@@ -1,0 +1,53 @@
+service:
+  id: msp-example
+  name: Msp Example
+  owners:
+    - core-services
+build:
+  # TODO: Configure the correct image for your service here. If you use a private
+  # registry like us.gcr.io or Artifact Registry, access will automatically be
+  # granted for your service to pull the correct image.
+  image: us.gcr.io/sourcegraph-dev/msp-example
+  # TODO: Configure where the source code for your service lives here.
+  source:
+    repo: github.com/sourcegraph/sourcegraph
+    dir: cmd/msp-example
+environments:
+  - id: dev
+    projectID: msp-example-dev-TestNewService
+    # TODO: We initially provision in 'test' to make it easy to access the project
+    # during setup. Once done, you should change this to 'external' or 'internal'.
+    category: test
+    # Specify a deployment strategy for upgrades.
+    deploy:
+      type: manual
+      manual:
+        tag: insiders
+    # Specify an externally facing domain.
+    domain:
+      type: cloudflare
+      cloudflare:
+        subdomain: msp-example
+        zone: sgdev.org
+    # Specify environment configuration your service needs to operate.
+    env:
+      SRC_LOG_LEVEL: info
+      SRC_LOG_FORMAT: json_gcp
+    # Specify how your service should scale.
+    instances:
+      resources:
+        cpu: 1
+        memory: 1Gi
+      scaling:
+        maxCount: 3
+        minCount: 1
+    startupProbe:
+      # Only enable if your service implements MSP /-/healthz conventions.
+      disabled: true
+  - id: prod
+    projectID: msp-example-prod-TestNewService
+    # TODO: We initially provision in 'test' to make it easy to access the project
+    # during setup. Once done, you should change this to 'external' or 'internal'.
+    category: test
+    # TODO: Fill out the rest of your configuration here!
+    # ...

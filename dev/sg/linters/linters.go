@@ -81,14 +81,6 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "svg",
-		Description: "Check svg assets",
-		Enabled:     disabled("reported as unreliable"),
-		Checks: []*linter{
-			checkSVGCompression(),
-		},
-	},
-	{
 		Name:        "shell",
 		Description: "Check shell code for linting errors, formatting, etc",
 		Checks: []*linter{

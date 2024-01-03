@@ -3,6 +3,8 @@ package productsubscription
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,12 +13,17 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // dbLicense describes an product license row in the product_licenses DB table.
@@ -62,6 +69,10 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return mocks.licenses.Create(subscriptionID, licenseKey)
 	}
 
+	// TODO: put a logger on dbLicenses and scope from that
+	logger := log.Scoped("dbLicenses.Create")
+	logger = trace.Logger(ctx, logger)
+
 	newUUID, err := uuid.NewRandom()
 	if err != nil {
 		return "", errors.Wrap(err, "new UUID")
@@ -91,10 +102,73 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 
 		// Log an event when a license is created in DotCom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-			log.Error(err)
+			logger.Error("LogSecurityEvent", log.Error(err))
 		}
 	}
+
+	postLicenseCreationToSlack(ctx, logger, subscriptionID, version, expiresAt, info)
+
 	return id, nil
+}
+
+func postLicenseCreationToSlack(ctx context.Context, logger log.Logger, subscriptionID string, version int, expiresAt *time.Time, info license.Info) {
+	dotcom := conf.Get().Dotcom
+	if dotcom == nil {
+		return
+	}
+
+	licenseCreator, err := actor.FromContext(ctx).User(ctx, database.Users(logger))
+	if err != nil {
+		logger.Error("error looking up license creator user", log.Error(err))
+		return
+	}
+
+	client := slack.New(dotcom.SlackLicenseCreationWebhook)
+	err = client.Post(ctx, &slack.Payload{
+		Text: renderLicenseCreationSlackMessage(licenseCreator, subscriptionID, version, expiresAt, info),
+	})
+	if err != nil {
+		logger.Error("error sending Slack message", log.Error(err))
+		return
+	}
+}
+
+const slackLicenseCreationMessageFmt = `
+A new license was created by *%s* for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|%s>:
+
+• *License version*: %s
+• *Expiration (UTC)*: %s (%s days remaining)
+• *Expiration (PT)*: %s
+• *User count*: %s
+• *License tags*: %s
+• *Salesforce subscription ID*: %s
+• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s|%s>
+
+Reply with a :approved_stamp: when this is approved
+Reply with a :white_check_mark: when this has been sent to the customer
+`
+
+func renderLicenseCreationSlackMessage(licenseCreator *types.User, subscriptionID string, version int, expiresAt *time.Time, info license.Info) string {
+	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
+
+	// Safely dereference optional properties
+	sfSubscriptionID := pointers.Deref(info.SalesforceSubscriptionID, "unknown")
+	sfOpportunityID := pointers.Deref(info.SalesforceOpportunityID, "unknown")
+
+	return fmt.Sprintf(slackLicenseCreationMessageFmt,
+		licenseCreator.Username,
+		subscriptionID,
+		subscriptionID,
+		strconv.Itoa(version),
+		expiresAt.Format("Jan 2, 2006 3:04pm MST"),
+		strconv.FormatFloat(time.Until(*expiresAt).Hours()/24, 'f', 1, 64),
+		expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
+		strconv.FormatUint(uint64(info.UserCount), 10),
+		"`"+strings.Join(info.Tags, "`, `")+"`",
+		sfSubscriptionID,
+		sfOpportunityID,
+		sfOpportunityID,
+	)
 }
 
 // GetByID retrieves the product license (if any) given its ID.

@@ -25,7 +25,7 @@ import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
-import { FILE_ICONS, FileExtension, getFileInfo } from '../fileIcons'
+import { getFileIconInfo } from '../fileIcons'
 
 import styles from './TreePagePanels.module.scss'
 
@@ -148,7 +148,7 @@ export interface DiffStat {
 }
 
 export interface FilePanelProps {
-    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
+    entries: TreeFields['entries']
     historyEntries?: TreeHistoryFields[]
     className?: string
 }
@@ -178,8 +178,8 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const fileInfo = getFileInfo(entry.name, entry.isDirectory)
-                    const fileIcon = FILE_ICONS.get(fileInfo.extension)
+                    const iconInfo =
+                        entry.__typename === 'GitBlob' ? getFileIconInfo(entry.name, entry.languages) : undefined
 
                     return (
                         <tr key={entry.name}>
@@ -194,10 +194,10 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     title={entry.path}
                                     data-testid="tree-entry"
                                 >
-                                    {fileInfo.extension !== FileExtension.DEFAULT ? (
+                                    {iconInfo !== undefined ? (
                                         <Icon
-                                            as={fileIcon?.icon}
-                                            className={classNames('mr-1', fileIcon?.iconClass)}
+                                            as={iconInfo.react.icon}
+                                            className={classNames('mr-1', iconInfo.react.className)}
                                             aria-hidden={true}
                                         />
                                     ) : (

@@ -63,7 +63,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@melt-ui/svelte": "^0.34.3",
+    "@melt-ui/svelte": "^0.66.2",
     "@popperjs/core": "^2.11.8",
     "@remix-run/router": "~1.3.3",
     "@sourcegraph/branded": "workspace:*",

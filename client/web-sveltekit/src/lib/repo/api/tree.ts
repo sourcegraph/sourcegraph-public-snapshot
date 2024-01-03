@@ -31,6 +31,9 @@ const treeEntriesQuery = gql`
                 name
                 path
                 isDirectory
+                ... on GitBlob {
+                    languages
+                }
             }
         }
     }

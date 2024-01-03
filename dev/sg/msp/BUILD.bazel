@@ -21,8 +21,10 @@ go_library(
         "//dev/sg/msp/example",
         "//dev/sg/msp/repo",
         "//dev/sg/msp/schema",
+        "//lib/cliutil/completions",
         "//lib/errors",
         "//lib/output",
         "@com_github_urfave_cli_v2//:cli",
+        "@com_github_vvakame_gcplogurl//:gcplogurl",
     ],
 )

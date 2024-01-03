@@ -2,6 +2,7 @@ package linters
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -10,6 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+var (
+	allowDocChangesPrefixAllowlist = []string{
+		"doc/cloud/",
+	}
 )
 
 func docChangesLint() *linter {
@@ -24,6 +31,12 @@ func docChangesLint() *linter {
 		}
 		diffset := make(map[string]struct{}, len(diff))
 		for filename := range diff {
+			// ignore exceptions
+			if slices.ContainsFunc(allowDocChangesPrefixAllowlist, func(s string) bool {
+				return strings.HasPrefix(filename, s)
+			}) {
+				continue
+			}
 			diffset[filename] = struct{}{}
 		}
 
