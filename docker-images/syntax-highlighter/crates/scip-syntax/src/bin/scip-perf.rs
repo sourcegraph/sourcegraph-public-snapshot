@@ -71,7 +71,7 @@ fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        locals::parse_tree(config, &tree, source_bytes);
+        locals::find_locals(config, &tree, source_bytes);
         let finish = Instant::now();
 
         timings.push(ParseTiming {

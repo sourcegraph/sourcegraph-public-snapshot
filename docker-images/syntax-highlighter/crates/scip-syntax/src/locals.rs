@@ -58,7 +58,7 @@ use tree_sitter::Node;
 // prevent infinite loops
 const MAX_SCOPE_DEPTH: i32 = 10000;
 
-pub fn parse_tree(
+pub fn find_locals(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
     source_bytes: &[u8],

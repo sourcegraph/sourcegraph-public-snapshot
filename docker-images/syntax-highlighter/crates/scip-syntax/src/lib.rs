@@ -35,7 +35,7 @@ pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Vec<Occu
     let config = languages::get_local_configuration(parser)?;
     let mut parser = config.get_parser();
     let tree = parser.parse(source_bytes, None)?;
-    Some(locals::parse_tree(config, &tree, source_bytes))
+    Some(locals::find_locals(config, &tree, source_bytes))
 }
 
 #[cfg(test)]
