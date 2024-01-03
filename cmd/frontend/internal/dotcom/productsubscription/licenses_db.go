@@ -102,7 +102,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 
 		// Log an event when a license is created in DotCom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-			logger.Error("LogSecurityEvent", log.Error(err))
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 
@@ -303,6 +303,7 @@ WHERE id = %s
 
 // List lists all product licenses that satisfy the options.
 func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
+
 	if mocks.licenses.List != nil {
 		return mocks.licenses.List(ctx, opt)
 	}
@@ -311,6 +312,10 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 }
 
 func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
+	// TODO: put a logger on dbLicenses and scope from that
+	logger := log.Scoped("dbLicenses.List")
+	logger = trace.Logger(ctx, logger)
+
 	q := sqlf.Sprintf(`
 SELECT
 	id,
@@ -371,7 +376,7 @@ ORDER BY created_at DESC
 
 		//Log an event when liscenses list is viewed in Dotcom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args()); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return results, nil
