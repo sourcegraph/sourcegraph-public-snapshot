@@ -44,8 +44,7 @@ func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := actor.FromContext(r.Context())
 		if got, want := a.GetSource(), codygateway.ActorSourceProductSubscription; got != want {
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "only available for enterprise product subscriptions")
+            response.JSONError(logger, w, errors.New("only available for enterprise product subscriptions")
 			return
 		}
 		if client == nil {
