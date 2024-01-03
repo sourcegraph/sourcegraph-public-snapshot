@@ -34,15 +34,15 @@ import { useStreamingSearchPings } from './useStreamingSearchPings'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        CodeInsightsProps,
-        SearchAggregationProps,
-        CodeMonitoringProps,
-        OwnConfigProps,
-        ExtensionsControllerProps {
+    Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+    SettingsCascadeProps,
+    PlatformContextProps,
+    TelemetryProps,
+    CodeInsightsProps,
+    SearchAggregationProps,
+    CodeMonitoringProps,
+    OwnConfigProps,
+    ExtensionsControllerProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -115,6 +115,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     })
 
     useEffect(() => {
+        console.log(results)
         if (results?.state === 'complete') {
             // Add the recent search in the next queue execution to avoid updating a React component while rendering another component.
             setTimeout(

@@ -155,6 +155,26 @@ func TestSymbolCounts(t *testing.T) {
 										Kind: "variable",
 									},
 								},
+								{
+									Symbol: result.Symbol{
+										Kind: "constant",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "constant",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "constant",
+									},
+								},
+								{
+									Symbol: result.Symbol{
+										Kind: "constant",
+									},
+								},
 							},
 						},
 					},
@@ -172,6 +192,13 @@ func TestSymbolCounts(t *testing.T) {
 					Value:      "select:symbol.variable",
 					Label:      "variable",
 					Count:      2,
+					IsLimitHit: false,
+					Kind:       "symbol type",
+				},
+				"select:symbol.constant": &Filter{
+					Value:      "select:symbol.constant",
+					Label:      "constant",
+					Count:      4,
 					IsLimitHit: false,
 					Kind:       "symbol type",
 				},
