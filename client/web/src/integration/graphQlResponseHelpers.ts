@@ -20,6 +20,8 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
                 isRoot: true,
                 url,
                 entries: toplevelFiles.map(name => ({
+                    __typename: 'GitBlob',
+                    languages: [],
                     name,
                     path: name,
                     isDirectory: false,

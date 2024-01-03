@@ -123,8 +123,19 @@ func (o ObservableOwner) getHandbookPageURL() string {
 	return "https://" + path.Join("handbook.sourcegraph.com", basePath, o.handbookSlug)
 }
 
+// allKnownOwners is used for testing, mapping all known observable owner names
+// to their respective definitions - see registerObservableOwner()
 var allKnownOwners = make(map[string]ObservableOwner)
 
+// registerObservableOwner should be used over all ObservableOwner declarations.
+// It validates the declaration at init time and also registers in allKnownOwners,
+// which is used for additional testing on all registered ObservableOwners,
+// namely a set of opt-in tests to check external resources associated with
+// ObservableOwners:
+//
+//	go test -run TestOwners github.com/sourcegraph/sourcegraph/monitoring/monitoring -update -online
+//
+// See owners_test.go for more details.
 func registerObservableOwner(o ObservableOwner) ObservableOwner {
 	if err := o.validate(); err != nil {
 		panic(err)

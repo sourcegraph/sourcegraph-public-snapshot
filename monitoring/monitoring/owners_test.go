@@ -19,6 +19,12 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+// onlineCheck flags whether or not checks against external ObservableOwner
+// resources like Opsgenie and handbook pages should run:
+//
+//	go test -run TestOwners github.com/sourcegraph/sourcegraph/monitoring/monitoring -update -online
+//
+// OPSGENIE_API_KEY is required to check Opsgenie resources.
 var onlineCheck = flag.Bool("online", false, "Run online checks")
 
 type opsgenieResponderConfig struct {
@@ -37,7 +43,8 @@ type notifierConfig struct {
 	Owners   []string               `json:"owners"` // owner.opsgenieTeam
 }
 
-// TestOwnersOpsgenieTeam checks Opsgenie team details of each owner.
+// TestOwnersOpsgenieTeam checks Opsgenie team details of each owner. It also
+// outputs usable site-config for 'observability.alerts' in Sourcegraph.com.
 func TestOwnersOpsgenieTeam(t *testing.T) {
 	if !*onlineCheck {
 		t.Skip("MONITORING_OWNERS_ONLINE_CHECK not set to true, skipping online checks")
@@ -104,7 +111,7 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
 	enc := json.NewEncoder(&data)
 	enc.SetIndent("    ", "  ")
 	assert.NoError(t, enc.Encode(observabilityAlertsConfig))
-	// The below can be copy-pasted into
+	// The below can be copy-pasted into site-config 'observability.alerts':
 	// https://sourcegraph.sourcegraph.com/search?q=context:global+repo:github.com/sourcegraph/deploy-sourcegraph-cloud+file:overlays/prod/frontend/files/site.json+%22observability.alerts%22:+%5B...%5D&patternType=structural&sm=1&groupBy=repo
 	autogold.Expect(`[
       {
