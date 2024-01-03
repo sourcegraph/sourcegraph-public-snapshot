@@ -33,9 +33,9 @@ var (
 	})
 
 	ObservableOwnerSearch = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "search",
-		handbookSlug: "search/product",
-		teamName:     "Search",
+		opsgenieTeam: "code-search",
+		handbookSlug: "code-search",
+		teamName:     "Code Search",
 	})
 	ObservableOwnerSearchCore = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "search-core",
@@ -43,9 +43,9 @@ var (
 		teamName:     "Search Core",
 	})
 	ObservableOwnerBatches = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "batch-changes",
-		handbookSlug: "batch-changes",
-		teamName:     "Batch Changes",
+		opsgenieTeam: "code-search",
+		handbookSlug: "code-search",
+		teamName:     "Code Search",
 	})
 	ObservableOwnerCodeIntel = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "code-intel",
@@ -58,9 +58,9 @@ var (
 		teamName:     "Source",
 	})
 	ObservableOwnerCodeInsights = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "code-insights",
-		handbookSlug: "code-insights",
-		teamName:     "Code Insights",
+		opsgenieTeam: "code-search",
+		handbookSlug: "code-search",
+		teamName:     "Code Search",
 	})
 	ObservableOwnerDataAnalytics = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "data-analytics",
