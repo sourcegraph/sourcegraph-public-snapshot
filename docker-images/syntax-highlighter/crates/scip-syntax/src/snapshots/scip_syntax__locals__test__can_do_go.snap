@@ -21,6 +21,19 @@ expression: dumped
   
   func Another(local int) int {
 //             ^^^^^ definition local 4
+   if local := 9; local < 0 {
+//    ^^^^^ definition local 5
+//                ^^^^^ reference local 5
+    fmt.Println(local, "is negative")
+//              ^^^^^ reference local 5
+   } else if local < 10 {
+//           ^^^^^ reference local 5
+    fmt.Println(local, "has 1 digit")
+//              ^^^^^ reference local 5
+   } else {
+    fmt.Println(local, "has multiple digits")
+//              ^^^^^ reference local 5
+   }
    return local
 //        ^^^^^ reference local 4
   }
