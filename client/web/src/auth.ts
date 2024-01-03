@@ -7,7 +7,6 @@ import type { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-ope
 
 import { requestGraphQL } from './backend/graphql'
 
-// REMOVE ME
 /**
  * Always represents the latest state of the currently authenticated user.
  *
