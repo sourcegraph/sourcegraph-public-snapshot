@@ -137,13 +137,18 @@ func (r *Renderer) RenderEnvironment(
 		ProjectID:  *projectOutput.Project.ProjectId(),
 		Service:    svc,
 		Monitoring: monitoringSpec,
-		MaxCount: func() *int {
+		MaxInstanceCount: func() *int {
 			if env.Instances.Scaling != nil {
 				return env.Instances.Scaling.MaxCount
 			}
 			return nil
 		}(),
 		RedisInstanceID: cloudrunOutput.RedisInstanceID,
+
+		// Notification configuration
+		EnvironmentCategory: env.Category,
+		EnvironmentID:       env.ID,
+		Owners:              svc.Owners,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}

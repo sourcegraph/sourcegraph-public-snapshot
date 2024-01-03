@@ -74,7 +74,7 @@ type Variables struct {
 	Labels map[string]string
 
 	// Category determines what folder the project will be created in.
-	Category *spec.EnvironmentCategory
+	Category spec.EnvironmentCategory
 
 	// EnableAuditLogs ships GCP audit logs to security cluster.
 	// TODO: Not yet implemented
@@ -116,7 +116,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			AutoCreateNetwork: false,
 			BillingAccount:    pointers.Ptr(BillingAccountID),
 			FolderId: func() *string {
-				folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
+				folder, ok := EnvironmentCategoryFolders[vars.Category]
 				if ok {
 					return &folder
 				}

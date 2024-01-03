@@ -28,8 +28,24 @@ type EnvironmentSpec struct {
 	// initialized!
 	ProjectID string `yaml:"projectID"`
 
-	// Category is either "test", "internal", or "external".
-	Category *EnvironmentCategory `yaml:"category,omitempty"`
+	// Category is either "test", "internal", or "external". It informs the
+	// which GCP project folder the environment lives in:
+	//
+	// - 'test': 'Engineering Projects' folder (liberal access)
+	// - 'internal': 'Internal Services' folder (restricted access)
+	// - 'external': 'Managed Services' folder (restricted access)
+	//
+	// It also informs what kind of notification channels are set up out-of-the-box:
+	//
+	// 1. 'test' services only generate Slack notifications.
+	// 2. 'internal' and 'external' services generate Slack and Opsgenie notifications.
+	//
+	// Slack channels are expected to be named '#alerts-<service>-<environmentName>'.
+	// Opsgenie teams are expected to correspond to service owners.
+	//
+	// Both Slack channels and Opsgenie teams are currently expected to be manually
+	// configured.
+	Category EnvironmentCategory `yaml:"category"`
 
 	// Deploy specifies how to deploy revisions.
 	Deploy EnvironmentDeploySpec `yaml:"deploy"`
@@ -75,6 +91,9 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 
+	if s.ID == "" {
+		errs = append(errs, errors.New("id is required"))
+	}
 	if s.ProjectID == "" {
 		errs = append(errs, errors.New("projectID is required"))
 	}
@@ -84,6 +103,9 @@ func (s EnvironmentSpec) Validate() []error {
 	if !strings.Contains(s.ProjectID, fmt.Sprintf("-%s-", s.ID)) {
 		errs = append(errs, errors.Newf("projectID %q must contain environment ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 			s.ProjectID))
+	}
+	if err := s.Category.Validate(); err != nil {
+		return append(errs, errors.Wrap(err, "category"))
 	}
 
 	errs = append(errs, s.Deploy.Validate()...)
@@ -102,6 +124,19 @@ const (
 	// EnvironmentCategoryExternal is the default category if none is specified.
 	EnvironmentCategoryExternal EnvironmentCategory = "external"
 )
+
+func (c EnvironmentCategory) Validate() error {
+	switch c {
+	case EnvironmentCategoryTest,
+		EnvironmentCategoryInternal,
+		EnvironmentCategoryExternal:
+	case "":
+		return errors.New("no category provided")
+	default:
+		return errors.Newf("invalid category %q", c)
+	}
+	return nil
+}
 
 type EnvironmentDeploySpec struct {
 	Type         EnvironmentDeployType                  `yaml:"type"`

@@ -1,4 +1,4 @@
-package monitoringalertpolicy
+package alertpolicy
 
 import (
 	"testing"
