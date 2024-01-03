@@ -1,25 +1,48 @@
 use std::{path::Path, time::Instant};
 
 use clap::Parser;
-use scip_syntax::locals::parse_tree;
+use scip_syntax::locals;
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {
+    /// What language to parse.
+    language: Language,
+
     /// Root directory to run local navigation over
     root_dir: String,
 }
 
+#[derive(clap::ValueEnum, Clone, Copy)]
+enum Language {
+    Go,
+    Java,
+    Matlab,
+}
+
 struct ParseTiming {
-    pub filepath: String,
+    pub file_path: String,
+    pub file_size: usize,
     pub duration: std::time::Duration,
 }
 
-fn parse_files(dir: &Path) -> Vec<ParseTiming> {
-    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
-    let extension = "go";
+fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
+    let (config, extension) = match language {
+        Language::Go => (
+            scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap(),
+            "go",
+        ),
+        Language::Java => (
+            scip_syntax::languages::get_local_configuration(BundledParser::Java).unwrap(),
+            "java",
+        ),
+        Language::Matlab => (
+            scip_syntax::languages::get_local_configuration(BundledParser::Matlab).unwrap(),
+            "m",
+        ),
+    };
 
     let mut timings = vec![];
 
@@ -33,17 +56,27 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
         }
 
         let start = Instant::now();
-
-        let source = std::fs::read_to_string(entry).unwrap();
+        let source = match std::fs::read_to_string(entry) {
+            Ok(source) => source,
+            Err(err) => {
+                eprintln!(
+                    "Skipping '{}', because '{}'",
+                    entry.strip_prefix(dir).unwrap().display(),
+                    err
+                );
+                continue;
+            }
+        };
         let source_bytes = source.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
-        parse_tree(config, &tree, source_bytes).unwrap();
 
+        locals::find_locals(config, &tree, source_bytes);
         let finish = Instant::now();
 
         timings.push(ParseTiming {
-            filepath: entry.file_stem().unwrap().to_string_lossy().to_string(),
+            file_path: entry.file_stem().unwrap().to_string_lossy().to_string(),
+            file_size: source_bytes.len(),
             duration: finish - start,
         });
     }
@@ -58,11 +91,16 @@ fn measure_parsing() {
 
     let root = Path::new(&args.root_dir);
 
-    let mut timings = parse_files(root);
+    let mut timings = parse_files(root, args.language);
     timings.sort_by(|a, b| a.duration.cmp(&b.duration));
     println!("Slowest files:");
     for timing in timings.iter().rev().take(10) {
-        println!("{}: {:?}", timing.filepath, timing.duration);
+        println!(
+            "{} ({}kb): {:?}",
+            timing.file_path,
+            timing.file_size / 1000,
+            timing.duration
+        );
     }
 
     let finish = Instant::now();

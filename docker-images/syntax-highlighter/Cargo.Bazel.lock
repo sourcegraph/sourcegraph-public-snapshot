@@ -1,5 +1,5 @@
 {
-  "checksum": "f91b0f4ca641c1e530932381b5fe9a9dca4aebd5ea9bc7dc5d4a17931a597a36",
+  "checksum": "f167ad9ef78fe19a1b605ef87ab0329d0e765ac28ac79b9d599ab24583f5078e",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -5045,6 +5045,73 @@
         "version": "0.14.27"
       },
       "license": "MIT"
+    },
+    "id-arena 2.2.1": {
+      "name": "id-arena",
+      "version": "2.2.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/id-arena/2.2.1/download",
+          "sha256": "25a2bc672d1148e28034f176e01fffebb08b35768468cc954630da77a1449005"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "id_arena",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "id_arena",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "edition": "2015",
+        "version": "2.2.1"
+      },
+      "license": "MIT/Apache-2.0"
+    },
+    "if_chain 1.0.2": {
+      "name": "if_chain",
+      "version": "1.0.2",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/if_chain/1.0.2/download",
+          "sha256": "cb56e1aa765b4b4f3aadfab769793b7087bb03a4ea4920644a6d238e2df5b9ed"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "if_chain",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "if_chain",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "edition": "2015",
+        "version": "1.0.2"
+      },
+      "license": "MIT/Apache-2.0"
     },
     "indexmap 1.9.3": {
       "name": "indexmap",
@@ -10435,6 +10502,14 @@
               "target": "clap"
             },
             {
+              "id": "id-arena 2.2.1",
+              "target": "id_arena"
+            },
+            {
+              "id": "if_chain 1.0.2",
+              "target": "if_chain"
+            },
+            {
               "id": "insta 1.34.0",
               "target": "insta"
             },
@@ -10469,6 +10544,10 @@
             {
               "id": "serde_json 1.0.99",
               "target": "serde_json"
+            },
+            {
+              "id": "string-interner 0.14.0",
+              "target": "string_interner"
             },
             {
               "id": "tree-sitter 0.20.10",
@@ -17759,6 +17838,8 @@
     "futures 0.3.28",
     "futures-task 0.3.28",
     "futures-util 0.3.28",
+    "id-arena 2.2.1",
+    "if_chain 1.0.2",
     "indicatif 0.17.7",
     "insta 1.34.0",
     "itertools 0.10.5",

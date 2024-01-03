@@ -940,6 +940,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "id-arena"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25a2bc672d1148e28034f176e01fffebb08b35768468cc954630da77a1449005"
+
+[[package]]
+name = "if_chain"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb56e1aa765b4b4f3aadfab769793b7087bb03a4ea4920644a6d238e2df5b9ed"
+
+[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1890,6 +1902,8 @@ dependencies = [
  "anyhow",
  "bitvec",
  "clap 4.3.23",
+ "id-arena",
+ "if_chain",
  "insta",
  "itertools 0.10.5",
  "once_cell",
@@ -1902,6 +1916,7 @@ dependencies = [
  "scip-treesitter-languages",
  "serde",
  "serde_json",
+ "string-interner",
  "tree-sitter",
  "walkdir",
 ]
