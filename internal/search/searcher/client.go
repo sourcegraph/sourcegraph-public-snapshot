@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -63,7 +64,6 @@ func Search(
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,
 			IsStructuralPat:              p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
 			IsCaseSensitive:              p.IsCaseSensitive,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 			IsNegated:                    p.IsNegated,
