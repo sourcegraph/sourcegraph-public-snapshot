@@ -1,7 +1,9 @@
 package streaming
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -217,5 +219,94 @@ func TestSymbolCounts(t *testing.T) {
 				require.Equal(t, filter, s.filters[key])
 			}
 		})
+	}
+}
+
+/* func TestIsLimitHit(t *testing.T) {
+	cases := []struct {
+		name        string
+		events      []SearchEvent
+		wantFilters map[string]*Filter
+	}{
+		{
+			name:   "isLimitHit should be true",
+			events: generateLargeResultSet("class"),
+			wantFilters: map[string]*Filter{
+				"select:symbol.enum": &Filter{
+					Value:      "select:symbol.enum",
+					Label:      "enum",
+					Count:      500,
+					IsLimitHit: true,
+					Kind:       "symbol type",
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &SearchFilters{}
+			for _, event := range tc.events {
+				s.Update(event)
+			}
+
+			for key, filter := range tc.wantFilters {
+				require.Equal(t, filter, s.filters[key])
+			}
+		})
+	}
+} */
+
+/* func generateLargeResultSet(symbolKind string) []SearchEvent {
+	symbolMatches := []*result.SymbolMatch{}
+	for i := 0; i <= 500; i++ {
+		symbolMatches = append(symbolMatches,
+			&result.SymbolMatch{
+				Symbol: result.Symbol{
+					Kind: symbolKind,
+				},
+			},
+		)
+	}
+
+	return []SearchEvent{
+		{
+			Results: result.Matches{
+				&result.FileMatch{
+					Symbols: symbolMatches,
+				},
+			},
+		},
+	}
+} */
+
+func TestDetermineTimeframe(t *testing.T) {
+	now := time.Now()
+	cases := []struct {
+		date time.Time
+		want DateFilterInfo
+	}{
+		{now.Add(-13 * time.Hour), DateFilterInfo{AFTER, TODAY, "today"}},
+		{now.Add(-24 * time.Hour), DateFilterInfo{AFTER, TODAY, "today"}},
+		{now.Add(-2 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_WEEK_AGO, "this week"}},
+		{now.Add(-7 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_WEEK_AGO, "this week"}},
+		{now.Add(-10 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_WEEKS_AGO, "since last week"}},
+		{now.Add(-14 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_WEEKS_AGO, "since last week"}},
+		{now.Add(-27 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_MONTH_AGO, "this month"}},
+		{now.Add(-30 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_MONTH_AGO, "this month"}},
+		{now.Add(-44 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_MONTHS_AGO, "since two months ago"}},
+		{now.Add(-60 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_MONTHS_AGO, "since two months ago"}},
+		{now.Add(-72 * 24 * time.Hour), DateFilterInfo{AFTER, THREE_MONTHS_AGO, "since three months ago"}},
+		{now.Add(-90 * 24 * time.Hour), DateFilterInfo{AFTER, THREE_MONTHS_AGO, "since three months ago"}},
+		{now.Add(-288 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_YEAR_AGO, "since one year ago"}},
+		{now.Add(-365 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_YEAR_AGO, "since one year ago"}},
+		{now.Add(-400 * 24 * time.Hour), DateFilterInfo{BEFORE, ONE_YEAR_AGO, "before one year ago"}},
+	}
+
+	for _, tc := range cases {
+		got := determineTimeframe(tc.date)
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("determineTimeframe(%v) = %v, want %v", tc.date, got, tc.want)
+		}
 	}
 }

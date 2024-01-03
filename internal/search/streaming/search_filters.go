@@ -5,10 +5,12 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -65,6 +67,92 @@ var commonFileFilters = []struct {
 	},
 }
 
+type DateFilterInfo struct {
+	Timeframe string
+	Value     string
+	Label     string
+}
+
+const (
+	AFTER            = "after"
+	BEFORE           = "before"
+	ONE_YEAR_AGO     = "1 year ago"
+	THREE_MONTHS_AGO = "3 months ago"
+	TWO_MONTHS_AGO   = "2 months ago"
+	ONE_MONTH_AGO    = "1 month ago"
+	TWO_WEEKS_AGO    = "2 weeks ago"
+	ONE_WEEK_AGO     = "1 week ago"
+	TODAY            = "today"
+)
+
+func determineTimeframe(date time.Time) DateFilterInfo {
+	now := time.Now()
+
+	switch {
+	case date.After(now.Add(-25 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     TODAY,
+			Label:     "today",
+		}
+	case date.After(now.Add(-8 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     ONE_WEEK_AGO,
+			Label:     "this week",
+		}
+	case date.After(now.Add(-15 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     TWO_WEEKS_AGO,
+			Label:     "since last week",
+		}
+	case date.After(now.Add(-31 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     ONE_MONTH_AGO,
+			Label:     "this month",
+		}
+	case date.After(now.Add(-61 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     TWO_MONTHS_AGO,
+			Label:     "since two months ago",
+		}
+	case date.After(now.Add(-91 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     THREE_MONTHS_AGO,
+			Label:     "since three months ago",
+		}
+	case date.After(now.Add(-366 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: AFTER,
+			Value:     ONE_YEAR_AGO,
+			Label:     "since one year ago",
+		}
+	case date.Before(now.Add(-367 * 24 * time.Hour)):
+		return DateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     ONE_YEAR_AGO,
+			Label:     "before one year ago",
+		}
+
+	default:
+		return DateFilterInfo{}
+	}
+}
+
+var commonDateFilters = []DateFilterInfo{
+	determineTimeframe(time.Now().Add(24 * time.Hour)),
+	determineTimeframe(time.Now().Add(-7 * 24 * time.Hour)),
+	determineTimeframe(time.Now().Add(-14 * 24 * time.Hour)),
+	determineTimeframe(time.Now().Add(-30 * 24 * time.Hour)),
+	determineTimeframe(time.Now().Add(-60 * 24 * time.Hour)),
+	determineTimeframe(time.Now().Add(-365 * 24 * time.Hour)),
+	determineTimeframe(time.Now().Add(-366 * 24 * time.Hour)),
+}
+
 // Update internal state for the results in event.
 func (s *SearchFilters) Update(event SearchEvent) {
 	// Initialize state on first call.
@@ -93,14 +181,6 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
-	addSymbolFilter := func(symbols []*result.SymbolMatch, limitHit bool) {
-		for _, sym := range symbols {
-			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
-			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
-			s.filters.Add(filter, selectKind, 1, limitHit, "symbol type")
-		}
-	}
-
 	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
 		if ext := path.Ext(fileMatchPath); ext != "" {
 			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
@@ -112,6 +192,28 @@ func (s *SearchFilters) Update(event SearchEvent) {
 				value := fmt.Sprintf(`lang:%s`, language)
 				s.filters.Add(value, rawLanguage, lineMatchCount, limitHit, "lang")
 			}
+		}
+	}
+
+	addSymbolFilter := func(symbols []*result.SymbolMatch, limitHit bool) {
+		for _, sym := range symbols {
+			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
+			s.filters.Add(filter, selectKind, 1, limitHit, "symbol type")
+		}
+	}
+
+	addCommitAuthorFilter := func(commit gitdomain.Commit) {
+		author := fmt.Sprintf(`author:%s`, commit.Author.Email)
+		filter := fmt.Sprintf(`type:commit %s`, author)
+		s.filters.Add(filter, commit.Author.Name, 1, false, "author")
+	}
+
+	addCommitDateFilter := func(commit gitdomain.Commit) {
+		for _, df := range commonDateFilters {
+			filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
+			// filter := fmt.Sprintf("type:commit %s", timeframe)
+			s.filters.Add(filter, df.Label, 1, false, "date")
 		}
 	}
 
@@ -146,6 +248,15 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
 			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
 			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
+			addCommitAuthorFilter(v.Commit)
+			addCommitDateFilter(v.Commit)
+
+			// ===========TODO============
+			// TODO: commit date also in Author signature
+			// v.Commit.Author.Date
+
+			// ===========TODO============
+			// file paths are in v.ModifiedFiles which is a []string
 		}
 	}
 }
