@@ -23,7 +23,10 @@ const (
 
 	SecretCloudflareAPIToken = "CLOUDFLARE_API_TOKEN"
 	SecretOpsgenieAPIToken   = "MSP_OPSGENIE_API_TOKEN"
-	SecretSlackOAuthToken    = "SLACK_BOT_USER_OAUTH_TOKEN"
+	// SecretSlackOAuthToken is used for managing Slack notification integrations.
+	SecretSlackOAuthToken = "SLACK_BOT_USER_OAUTH_TOKEN"
+	// SecretSlackOperatorOAuthToken is used for managing public Slack channels.
+	SecretSlackOperatorOAuthToken = "SLACK_OPERATOR_BOT_OAUTH_TOKEN"
 
 	SecretSourcegraphWildcardKey  = "SOURCEGRAPH_WILDCARD_KEY"
 	SecretSourcegraphWildcardCert = "SOURCEGRAPH_WILDCARD_CERT"

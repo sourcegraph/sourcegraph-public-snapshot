@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
+	slackconversation "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack/conversation"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/opsgenieprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/slackprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -92,11 +94,17 @@ type Variables struct {
 
 const StackName = "monitoring"
 
+const sharedAlertsSlackChannel = "#alerts-msp"
+
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, _, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
 		opsgenieprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretOpsgenieAPIToken,
+			ProjectID: googlesecretsmanager.ProjectID,
+		}),
+		slackprovider.With(gsmsecret.DataConfig{
+			Secret:    googlesecretsmanager.SecretSlackOperatorOAuthToken,
 			ProjectID: googlesecretsmanager.ProjectID,
 		}))
 	if err != nil {
@@ -175,25 +183,61 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		Secret:    googlesecretsmanager.SecretSlackOAuthToken,
 		ProjectID: googlesecretsmanager.ProjectID,
 	})
-	for _, channelName := range []string{
-		"#alerts-msp", // central channel
-		fmt.Sprintf("#alerts-%s-%s", // service-env-specific channel
-			vars.Service.ID, vars.EnvironmentID),
+	for _, channel := range []struct {
+		Name             string
+		ProvisionChannel bool
+	}{
+		{
+			Name: sharedAlertsSlackChannel,
+			// Do not try to provision preexisting shared channel
+			ProvisionChannel: false,
+		},
+		{
+			// service-env-specific channel
+			Name: fmt.Sprintf("#alerts-%s-%s",
+				vars.Service.ID, vars.EnvironmentID),
+			ProvisionChannel: true,
+		},
 	} {
-		id := id.Group("slack_%s", strings.TrimPrefix(channelName, "#"))
+		id := id.Group("slack_%s", strings.TrimPrefix(channel.Name, "#"))
+
+		var slackChannel slackconversation.Conversation
+		if channel.ProvisionChannel {
+			description := pointers.Stringf(
+				"Alerts from %s (%s) deployed on Managed Services Platform",
+				pointers.Deref(vars.Service.Name, vars.Service.ID),
+				vars.EnvironmentID)
+			// https://registry.terraform.io/providers/pablovarela/slack/latest/docs/resources/conversation#argument-reference
+			slackChannel = slackconversation.NewConversation(stack, id.TerraformID("channel"), &slackconversation.ConversationConfig{
+				Name:      pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
+				Topic:     description,
+				Purpose:   description,
+				IsPrivate: pointers.Ptr(false),
+
+				// In case it already exists
+				AdoptExistingChannel: pointers.Ptr(true),
+			})
+		}
+
 		channels = append(channels,
 			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
 				id.TerraformID("notification_channel"),
 				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
 					Project:     &vars.ProjectID,
-					DisplayName: pointers.Stringf("Slack - %s", channelName),
+					DisplayName: pointers.Stringf("Slack - %s", channel.Name),
 					Type:        pointers.Ptr("slack"),
 					Labels: &map[string]*string{
-						"channel_name": pointers.Ptr(channelName),
+						"channel_name": &channel.Name,
 					},
 					SensitiveLabels: &monitoringnotificationchannel.MonitoringNotificationChannelSensitiveLabels{
 						AuthToken: &slackToken.Value,
 					},
+					DependsOn: func() *[]cdktf.ITerraformDependable {
+						if slackChannel != nil {
+							return pointers.Ptr([]cdktf.ITerraformDependable{slackChannel})
+						}
+						return nil
+					}(),
 				}))
 	}
 

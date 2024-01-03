@@ -5689,6 +5689,13 @@ def go_dependencies():
         version = "v0.0.0-20230822024612-edb48c530722",
     )
     go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_slack",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack",
+        sum = "h1:Iip3TVeiTF8HyeRsK0MKMZ1vQ87fqFqwz0cVq1dib6E=",
+        version = "v0.0.0-20240103014439-025608ddf849",
+    )
+    go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe",
