@@ -16,8 +16,8 @@
 
     export let result: RepositoryMatch
 
-    const queryState = getSearchResultsContext().queryState
     const enableRepositoryMetadata = featureFlag('repository-metadata')
+    const queryState = getSearchResultsContext().queryState
 
     $: repoAtRevisionURL = getRepoMatchUrl(result)
     $: badges = getRepositoryBadges($queryState, result, $enableRepositoryMetadata)
