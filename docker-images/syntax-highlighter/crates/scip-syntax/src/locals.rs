@@ -50,6 +50,9 @@ use tree_sitter::Node;
 // underneath `source_file`. This makes it very difficult to talk
 // about "toplevel" items. We might need to extend our DSL a little
 // further and do some custom tree-traversal logic to implement this.
+//
+// One possible idea could be to subtract any matches we'd get from
+// scip-ctags
 
 // The maximum number of parent scopes we traverse before giving up to
 // prevent infinite loops
@@ -162,13 +165,12 @@ impl<'a> Scope<'a> {
 // B.cmp(C) = Less
 // Because C is contained within B we want to make sure to visit B first.
 fn compare_range(a: Range<usize>, b: Range<usize>) -> Ordering {
-    // TODO: This assert fails for Java, ideally we'd fix the query to
-    // not report duplicate scopes
-    // assert!(
-    //     result != Ordering::Equal,
-    //     "Two scopes must never span the exact same range: {a:?}"
-    // );
-    (a.start, b.end).cmp(&(b.start, a.end))
+    let result = (a.start, b.end).cmp(&(b.start, a.end));
+    debug_assert!(
+        result != Ordering::Equal,
+        "Two scopes must never span the exact same range: {a:?}",
+    );
+    result
 }
 
 /// Before building the scope tree and resolving references, we first
