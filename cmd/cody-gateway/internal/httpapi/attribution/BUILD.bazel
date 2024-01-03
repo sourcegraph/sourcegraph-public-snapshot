@@ -11,6 +11,7 @@ go_library(
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
         "//internal/trace",
+        "//lib/errors",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
     ],

@@ -2,7 +2,6 @@ package attribution
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/Khan/genqlient/graphql"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Request for attribution search. Expected in JSON form as the body of POST request.
