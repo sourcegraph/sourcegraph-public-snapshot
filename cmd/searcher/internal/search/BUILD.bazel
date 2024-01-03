@@ -141,7 +141,6 @@ go_test(
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/observation",
-        "//internal/search",
         "//internal/search/backend",
         "//internal/searcher/v1:searcher",
         "//lib/errors",

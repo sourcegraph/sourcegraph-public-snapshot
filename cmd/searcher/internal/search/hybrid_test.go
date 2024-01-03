@@ -151,7 +151,7 @@ Hello world example in go`, typeFile},
 		Want    string
 	}{{
 		Name:    "all",
-		Pattern: protocol.PatternInfo{Pattern: "world"},
+		Pattern: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}},
 		Want: `
 added.md:1:1:
 hello world I am added
@@ -165,7 +165,9 @@ Hello world example in go
 	}, {
 		Name: "added",
 		Pattern: protocol.PatternInfo{
-			Pattern:         "world",
+			Query: &protocol.PatternNode{
+				Value: "world",
+			},
 			IncludePatterns: []string{"added"},
 		},
 		Want: `
@@ -173,8 +175,12 @@ added.md:1:1:
 hello world I am added
 `,
 	}, {
-		Name:    "example",
-		Pattern: protocol.PatternInfo{Pattern: "example"},
+		Name: "example",
+		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{
+				Value: "example",
+			},
+		},
 		Want: `
 unchanged.md:3:3:
 Hello world example in go
@@ -182,8 +188,10 @@ Hello world example in go
 	}, {
 		Name: "negated-pattern-example",
 		Pattern: protocol.PatternInfo{
-			Pattern:   "example",
-			IsNegated: true,
+			Query: &protocol.PatternNode{
+				Value:     "example",
+				IsNegated: true,
+			},
 		},
 		Want: `
 added.md
@@ -192,6 +200,9 @@ changed.go
 	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{
+				Value: "",
+			},
 			IncludePatterns: []string{"^added"},
 		},
 		Want: `
@@ -200,6 +211,9 @@ added.md
 	}, {
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{
+				Value: "",
+			},
 			ExcludePattern: "added",
 		},
 		Want: `
@@ -209,6 +223,9 @@ unchanged.md
 	}, {
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{
+				Value: "",
+			},
 			ExcludePattern: "unchanged",
 		},
 		Want: `
@@ -218,6 +235,9 @@ changed.go
 	}, {
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{
+				Value: "",
+			},
 			IncludePatterns: []string{"."},
 		},
 		Want: `
@@ -228,7 +248,9 @@ unchanged.md
 	}, {
 		Name: "pattern-path",
 		Pattern: protocol.PatternInfo{
-			Pattern:               "go",
+			Query: &protocol.PatternNode{
+				Value: "go",
+			},
 			PatternMatchesContent: true,
 			PatternMatchesPath:    true,
 		},
@@ -240,8 +262,10 @@ Hello world example in go
 	}, {
 		Name: "negated-pattern-path",
 		Pattern: protocol.PatternInfo{
-			Pattern:            "go",
-			IsNegated:          true,
+			Query: &protocol.PatternNode{
+				Value:     "go",
+				IsNegated: true,
+			},
 			PatternMatchesPath: true,
 		},
 		Want: `
