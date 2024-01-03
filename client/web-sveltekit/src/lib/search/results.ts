@@ -45,9 +45,9 @@ export function getRepositoryBadges(
     }))
     const metaBadges = enableMetadata
         ? Object.entries(repo.metadata ?? {}).map(([key, value]) => ({
-            label: `${key}:${value}`,
-            urlQuery: buildSearchURLQueryForMeta(queryState, key, value),
-        }))
+              label: `${key}:${value}`,
+              urlQuery: buildSearchURLQueryForMeta(queryState, key, value),
+          }))
         : []
     return sortBy([...topicBadges, ...metaBadges], ['label'])
 }
