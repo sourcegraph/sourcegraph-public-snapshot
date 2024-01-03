@@ -5,7 +5,11 @@ import { subDays } from 'date-fns'
 import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { RepositoryType, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    RepositoryType,
+    type SharedGraphQlOperations,
+    TreeEntriesResult,
+} from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -339,7 +343,7 @@ describe('Repository', () => {
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
-            const TreeEntries = {
+            const TreeEntries: TreeEntriesResult = {
                 repository: {
                     id: 'test-repo-id',
                     commit: {
@@ -348,6 +352,8 @@ describe('Repository', () => {
                             url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
                             entries: [
                                 {
+                                    __typename: 'GitBlob',
+                                    languages: ['SQL'],
                                     name: fileName,
                                     path: filePath,
                                     isDirectory: false,
