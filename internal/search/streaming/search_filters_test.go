@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
@@ -29,10 +30,31 @@ func TestSearchFiltersUpdate(t *testing.T) {
 					Results: []result.Match{
 						&result.CommitMatch{
 							Repo:           repo,
-							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 2)}},
+							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 2)},
+							Commit: gitdomain.Commit{
+								Committer: &gitdomain.Signature{
+									Name:  "test committer",
+									Email: "test@committer.com",
+									Date:  time.Now(),
+								},
+							},
+						},
+						// We prefer Committer, but it could be nil
+						// so we fallback to Author which cannot be nil.
+						// Author also has a Date property, but it is
+						// less accurrate.
 						&result.CommitMatch{
 							Repo:           repo,
-							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)}},
+							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)},
+							Commit: gitdomain.Commit{
+								Committer: nil,
+								Author: gitdomain.Signature{
+									Name:  "test author",
+									Email: "test@author.com",
+									Date:  time.Now(),
+								},
+							},
+						},
 					},
 				}},
 			wantFilterValue: "repo:^foo$",
@@ -107,7 +129,6 @@ func TestSearchFiltersUpdate(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-
 			s := &SearchFilters{}
 			for _, event := range c.events {
 				s.Update(event)

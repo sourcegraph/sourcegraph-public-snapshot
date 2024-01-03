@@ -200,8 +200,18 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addCommitDateFilter := func(commit gitdomain.Commit) {
-		df := determineTimeframe(commit.Committer.Date)
-		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
+		var cd time.Time
+		var df DateFilterInfo
+		var filter string
+
+		if commit.Committer != nil {
+			cd = commit.Committer.Date
+		} else {
+			cd = commit.Author.Date
+		}
+
+		df = determineTimeframe(cd)
+		filter = fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
 		s.filters.Add(filter, df.Label, 1, false, "date")
 	}
 
