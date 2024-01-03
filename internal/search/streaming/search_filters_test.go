@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -222,7 +223,7 @@ func TestSymbolCounts(t *testing.T) {
 	}
 }
 
-/* func TestIsLimitHit(t *testing.T) {
+func TestIsLimitHit(t *testing.T) {
 	cases := []struct {
 		name        string
 		events      []SearchEvent
@@ -230,7 +231,7 @@ func TestSymbolCounts(t *testing.T) {
 	}{
 		{
 			name:   "isLimitHit should be true",
-			events: generateLargeResultSet("class"),
+			events: generateLargeResultSet("enum"),
 			wantFilters: map[string]*Filter{
 				"select:symbol.enum": &Filter{
 					Value:      "select:symbol.enum",
@@ -244,20 +245,21 @@ func TestSymbolCounts(t *testing.T) {
 	}
 
 	for _, tc := range cases {
+		fmt.Printf("length of generated filters: %d\n", len(tc.events[0]))
 		t.Run(tc.name, func(t *testing.T) {
-			s := &SearchFilters{}
+			sf := &SearchFilters{}
 			for _, event := range tc.events {
-				s.Update(event)
+				sf.Update(event)
 			}
 
 			for key, filter := range tc.wantFilters {
-				require.Equal(t, filter, s.filters[key])
+				require.Equal(t, filter, sf.filters[key])
 			}
 		})
 	}
-} */
+}
 
-/* func generateLargeResultSet(symbolKind string) []SearchEvent {
+func generateLargeResultSet(symbolKind string) []SearchEvent {
 	symbolMatches := []*result.SymbolMatch{}
 	for i := 0; i <= 500; i++ {
 		symbolMatches = append(symbolMatches,
@@ -278,7 +280,7 @@ func TestSymbolCounts(t *testing.T) {
 			},
 		},
 	}
-} */
+}
 
 func TestDetermineTimeframe(t *testing.T) {
 	now := time.Now()
