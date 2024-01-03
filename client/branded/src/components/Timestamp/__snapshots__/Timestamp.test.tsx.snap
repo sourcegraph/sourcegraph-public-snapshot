@@ -15,7 +15,7 @@ exports[`Timestamp > mocked current time 1`] = `
   <span
     class="timestamp"
   >
-    about 18 years ago
+    almost 18 years ago
   </span>
 </DocumentFragment>
 `;
@@ -25,7 +25,7 @@ exports[`Timestamp > noAbout 1`] = `
   <span
     class="timestamp"
   >
-    18 years ago
+    almost 18 years ago
   </span>
 </DocumentFragment>
 `;
@@ -35,7 +35,7 @@ exports[`Timestamp > noAgo 1`] = `
   <span
     class="timestamp"
   >
-    about 18 years
+    almost 18 years
   </span>
 </DocumentFragment>
 `;
@@ -45,7 +45,7 @@ exports[`Timestamp > with time time 1`] = `
   <span
     class="timestamp"
   >
-    about 18 years ago
+    almost 18 years ago
   </span>
 </DocumentFragment>
 `;
