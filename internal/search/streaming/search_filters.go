@@ -210,11 +210,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addCommitDateFilter := func(commit gitdomain.Commit) {
-		for _, df := range commonDateFilters {
-			filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
-			// filter := fmt.Sprintf("type:commit %s", timeframe)
-			s.filters.Add(filter, df.Label, 1, false, "date")
-		}
+		df := determineTimeframe(commit.Committer.Date)
+		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
+		s.filters.Add(filter, df.Label, 1, false, "date")
 	}
 
 	if event.Stats.ExcludedForks > 0 {
@@ -249,11 +247,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
 			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
 			addCommitAuthorFilter(v.Commit)
-			addCommitDateFilter(v.Commit)
 
-			// ===========TODO============
-			// TODO: commit date also in Author signature
-			// v.Commit.Author.Date
+			// Add more filters to commonDateFilters.
+			addCommitDateFilter(v.Commit)
 
 			// ===========TODO============
 			// file paths are in v.ModifiedFiles which is a []string
