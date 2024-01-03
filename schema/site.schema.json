@@ -1136,6 +1136,11 @@
         }
       ]
     },
+    "auth.dailyEmailDomainSignupLimit": {
+      "type": "integer",
+      "default": 0,
+      "description": "The maximum number of users that can sign from Google using the same email domain in a 24 hour period."
+    },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
       "type": "object",
@@ -2085,6 +2090,11 @@
         },
         "slackLicenseAnomallyWebhook": {
           "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
+        "slackLicenseCreationWebhook": {
+          "description": "Slack webhook for when a license key is created.",
           "type": "string",
           "group": "Sourcegraph.com"
         },

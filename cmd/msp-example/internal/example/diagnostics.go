@@ -23,5 +23,10 @@ func (s serviceState) Healthy(ctx context.Context, _ url.Values) error {
 		return errors.Wrap(err, "writeBigQueryEvent")
 	}
 
+	// Check redis connection
+	if err := testRedisConnection(ctx, s.contract); err != nil {
+		return errors.Wrap(err, "newRedisConnection")
+	}
+
 	return nil
 }

@@ -143,7 +143,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				if err != nil {
 					return err
 				}
-				envID := c.Args().Get(0)
+				envID := c.Args().Get(1)
 				if envID == "" {
 					return errors.New("second argument <environment ID> is required")
 				}
@@ -160,7 +160,7 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					return errors.Wrap(err, "example.NewEnvironment")
 				}
 
-				specPath := msprepo.ServiceYAMLPath(msprepo.ServiceYAMLPath(svc.Service.ID))
+				specPath := msprepo.ServiceYAMLPath(svc.Service.ID)
 				specData, err := os.ReadFile(specPath)
 				if err != nil {
 					return errors.Wrap(err, "ReadFile")

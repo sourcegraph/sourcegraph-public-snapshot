@@ -24,5 +24,6 @@ write_source_files(
         "//migrations/codeintel:write_squashed",
         "//migrations/frontend:write_squashed",
         "//schema:write_generated_schema",
+        "//dev/linters/staticcheck:write_generated_bazelfile",
     ],
 )

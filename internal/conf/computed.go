@@ -2,7 +2,7 @@ package conf
 
 import (
 	"encoding/hex"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"strings"
 	"time"
 

@@ -1,5 +1,5 @@
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
-load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
@@ -88,7 +88,7 @@ sass(
     ],
 )
 
-js_library(
+copy_to_bin(
     name = "graphql_operations_files",
     # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
     srcs = glob(

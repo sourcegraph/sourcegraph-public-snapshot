@@ -2,7 +2,7 @@ package main
 
 import (
 	"io"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
