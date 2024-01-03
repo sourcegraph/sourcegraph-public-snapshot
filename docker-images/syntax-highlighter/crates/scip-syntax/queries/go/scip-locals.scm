@@ -15,10 +15,13 @@
 (parameter_declaration name: (identifier) @definition.term)
 (variadic_parameter_declaration (identifier) @definition.var)
 
-(function_declaration
- name: ((identifier) @definition.function
-        (#set! "hoist" "function")
-        (#set! "scope" "global")))
+;; This syntax is only allowed to define top-level functions,
+;; which we consider as non-locals, so we don't want to track these
+;; here.
+;;
+;; (function_declaration
+;;  name: ((identifier) @definition.function)
+;;  (#set! "hoist" "function"))
 
 ((method_declaration name: (field_identifier) @definition.method))
 
@@ -50,26 +53,3 @@
 (identifier) @reference
 (type_identifier) @reference
 (field_identifier) @reference
-
-; ;; Call references
-; ((call_expression
-;    function: (identifier) @reference)
-;  (set! reference.kind "call"))
-;
-; ((call_expression
-;     function: (selector_expression
-;                 field: (field_identifier) @reference))
-;  (set! reference.kind "call"))
-;
-;
-; ((call_expression
-;     function: (parenthesized_expression
-;                 (identifier) @reference))
-;  (set! reference.kind "call"))
-;
-; ((call_expression
-;    function: (parenthesized_expression
-;                (selector_expression
-;                  field: (field_identifier) @reference)))
-;  (set! reference.kind "call"))
-;

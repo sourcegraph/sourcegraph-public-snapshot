@@ -5,25 +5,23 @@ expression: dumped
   package main
   
   func main() {
-//     ^^^^ definition local 1
    local := true
-// ^^^^^ definition local 2
+// ^^^^^ definition local 1
    something := func(local int) int {
-// ^^^^^^^^^ definition local 3
-//                   ^^^^^ definition local 4
+// ^^^^^^^^^ definition local 2
+//                   ^^^^^ definition local 3
     return local
-//         ^^^^^ reference local 4
+//         ^^^^^ reference local 3
    }
   
    println(local, something)
-//         ^^^^^ reference local 2
-//                ^^^^^^^^^ reference local 3
+//         ^^^^^ reference local 1
+//                ^^^^^^^^^ reference local 2
   }
   
   func Another(local int) int {
-//     ^^^^^^^ definition local 5
-//             ^^^^^ definition local 6
+//             ^^^^^ definition local 4
    return local
-//        ^^^^^ reference local 6
+//        ^^^^^ reference local 4
   }
 

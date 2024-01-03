@@ -3,8 +3,6 @@ source: crates/scip-syntax/src/locals.rs
 expression: scope_tree
 ---
 scope global (0, 0)-(14, 0)
-  hoisted_def main (2, 5)-(2, 9)
-  hoisted_def Another (11, 5)-(11, 12)
   scope scope (2, 0)-(9, 1)
     ref main (2, 5)-(2, 9)
     scope scope (2, 12)-(9, 1)

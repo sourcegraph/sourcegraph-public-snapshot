@@ -11,33 +11,30 @@ expression: dumped
   )
   
   func Something() {
-//     ^^^^^^^^^ definition local 2
    y := ", world"
-// ^ definition local 3
+// ^ definition local 2
    f.Println("hello", y)
 // ^ reference local 1
-//                    ^ reference local 3
+//                    ^ reference local 2
   }
   
   func Another() {
-//     ^^^^^^^ definition local 4
    Something()
-// ^^^^^^^^^ reference local 2
    if true {
     x := true
-//  ^ definition local 5
+//  ^ definition local 3
    }
    if true {
     x := true
-//  ^ definition local 6
+//  ^ definition local 4
     if true {
      x := true
-//   ^ definition local 7
+//   ^ definition local 5
     }
    }
    if true {
     x := true
-//  ^ definition local 8
+//  ^ definition local 6
    }
   }
 
