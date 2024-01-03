@@ -125,7 +125,7 @@ func postLicenseCreationToSlack(ctx context.Context, logger log.Logger, subscrip
 
 	client := slack.New(dotcom.SlackLicenseCreationWebhook)
 	err = client.Post(ctx, &slack.Payload{
-		Text: renderLicenseCreationSlackMessage(licenseCreator, subscriptionID, version, expiresAt, info),
+		Text: renderLicenseCreationSlackMessage(time.Now(), licenseCreator, subscriptionID, version, expiresAt, info),
 	})
 	if err != nil {
 		logger.Error("error sending Slack message", log.Error(err))
@@ -148,7 +148,14 @@ Reply with a :approved_stamp: when this is approved
 Reply with a :white_check_mark: when this has been sent to the customer
 `
 
-func renderLicenseCreationSlackMessage(licenseCreator *types.User, subscriptionID string, version int, expiresAt *time.Time, info license.Info) string {
+func renderLicenseCreationSlackMessage(
+	now time.Time,
+	licenseCreator *types.User,
+	subscriptionID string,
+	version int,
+	expiresAt *time.Time,
+	info license.Info,
+) string {
 	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
 
 	// Safely dereference optional properties
@@ -161,7 +168,7 @@ func renderLicenseCreationSlackMessage(licenseCreator *types.User, subscriptionI
 		subscriptionID,
 		strconv.Itoa(version),
 		expiresAt.Format("Jan 2, 2006 3:04pm MST"),
-		strconv.FormatFloat(time.Until(*expiresAt).Hours()/24, 'f', 1, 64),
+		strconv.FormatFloat(expiresAt.Sub(now).Hours()/24, 'f', 1, 64),
 		expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
 		strconv.FormatUint(uint64(info.UserCount), 10),
 		"`"+strings.Join(info.Tags, "`, `")+"`",
