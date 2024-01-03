@@ -445,13 +445,11 @@ func TestRegexSearch(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "nil re returns a FileMatch with no LineMatches",
+			name: "nil matcher returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
-				m: &regexMatcher{
-					// Check this case specifically.
-					re: nil,
-				},
+				// Check this case specifically.
+				m:  nil,
 				pm: match,
 				zf: &zipFile{
 					Files: []srcFile{
