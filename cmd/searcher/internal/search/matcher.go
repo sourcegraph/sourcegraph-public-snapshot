@@ -15,9 +15,6 @@ import (
 )
 
 type matcher interface {
-	// IgnoreCase returns whether matches will ignore case
-	IgnoreCase() bool
-
 	// MatchesString returns whether the string matches
 	MatchesString(s string) bool
 
@@ -148,10 +145,6 @@ func longestLiteral(re *syntax.Regexp) string {
 
 func (rm *regexMatcher) String() string {
 	return fmt.Sprintf("re: %q", rm.re)
-}
-
-func (rm *regexMatcher) IgnoreCase() bool {
-	return rm.ignoreCase
 }
 
 func (rm *regexMatcher) MatchesString(s string) bool {
