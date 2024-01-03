@@ -34,11 +34,12 @@ export function getPreviousVersion(
 ): SemVer {
     const lowest = new SemVer('0.0.1')
     const tags = getReleaseTags(repoDir, prefix)
-    if (tags.length === 0) {
+    const lowestTag = tags.at(-1)
+    if (!lowestTag) {
         return lowest
     }
     if (!version) {
-        return new SemVer(tags.at(-1))
+        return new SemVer(lowestTag)
     }
 
     for (

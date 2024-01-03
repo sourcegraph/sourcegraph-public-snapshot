@@ -48,8 +48,8 @@ export const Default: StoryFn = () => (
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
-                onSerializeBlocks={() => {}}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
+                onSerializeBlocks={() => { }}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
@@ -72,8 +72,8 @@ export const DefaultReadOnly: StoryFn = () => (
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
-                onSerializeBlocks={() => {}}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
+                onSerializeBlocks={() => { }}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
