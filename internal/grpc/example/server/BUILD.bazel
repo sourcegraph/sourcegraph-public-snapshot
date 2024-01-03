@@ -5,6 +5,7 @@ go_library(
     name = "server_lib",
     srcs = [
         "conversion.go",
+        "faulty.go",
         "main.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/server",

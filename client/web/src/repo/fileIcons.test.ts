@@ -1,50 +1,64 @@
+import { mdiFilePngBox, mdiLanguageJavascript } from '@mdi/js'
 import { describe, expect, it } from 'vitest'
 
-import { FileExtension, containsTest, getFileInfo } from './fileIcons'
+import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 
-describe('getFileInfo', () => {
+import { isProbablyTestFile, getFileIconInfo, onlyForTesting } from './fileIcons'
+
+describe('checkValidLanguageNames', () => {
+    const allLanguagesSet = new Set(ALL_LANGUAGES)
+    for (const [languageName, _] of onlyForTesting.FILE_ICONS_BY_LANGUAGE) {
+        it(languageName, () => {
+            expect(allLanguagesSet.has(languageName)).toBeTruthy()
+        })
+    }
+})
+
+describe('getFileIconInfo', () => {
     const tests: {
         name: string
         file: string
-        isDirectory: boolean
-        expectedExtension: FileExtension
+        languages: string[]
+        expectedSvgPath: string | undefined
         expectedIsTest: boolean
     }[] = [
         {
+            name: 'check that png works',
+            file: 'myfile.png',
+            languages: [],
+            expectedSvgPath: mdiFilePngBox,
+            expectedIsTest: false,
+        },
+        {
             name: 'works with simple file name',
             file: 'my-file.js',
-            isDirectory: false,
-            expectedExtension: 'js' as FileExtension,
+            languages: ['JavaScript'],
+            expectedSvgPath: mdiLanguageJavascript,
             expectedIsTest: false,
         },
         {
-            name: 'works with complex file name',
-            file: 'my-file.module.scss',
-            isDirectory: false,
-            expectedExtension: 'scss' as FileExtension,
+            name: 'check fallback behavior',
+            file: 'placeholder',
+            languages: ['Vim Script'],
+            expectedSvgPath: onlyForTesting.DEFAULT_CODE_FILE_ICON.path,
             expectedIsTest: false,
         },
         {
-            name: 'returns isTest as true if file name contains test',
-            file: 'my-file.test.tsx',
-            isDirectory: false,
-            expectedExtension: 'tsx' as FileExtension,
+            name: 'check unknown language',
+            file: 'my-file.test.unknown',
+            languages: ['Unknown'],
+            expectedSvgPath: undefined,
             expectedIsTest: true,
-        },
-        {
-            name: 'returns isTest as true if file name contains test',
-            file: '.eslintrc',
-            isDirectory: false,
-            expectedExtension: 'default' as FileExtension,
-            expectedIsTest: false,
         },
     ]
 
     for (const t of tests) {
         it(t.name, () => {
-            const fileInfo = getFileInfo(t.file, t.isDirectory)
-            expect(fileInfo.extension).toBe(t.expectedExtension)
-            expect(fileInfo.isTest).toBe(t.expectedIsTest)
+            const iconInfo = getFileIconInfo(t.file, t.languages)
+            expect(iconInfo?.svg.path).toBe(t.expectedSvgPath)
+
+            const isLikelyTest = isProbablyTestFile(t.file)
+            expect(isLikelyTest).toBe(t.expectedIsTest)
         })
     }
 })
@@ -89,7 +103,7 @@ describe('containsTest', () => {
 
     for (const t of tests) {
         it(t.name, () => {
-            expect(containsTest(t.file)).toBe(t.expected)
+            expect(isProbablyTestFile(t.file)).toBe(t.expected)
         })
     }
 })

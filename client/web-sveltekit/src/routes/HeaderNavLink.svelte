@@ -31,6 +31,7 @@
         align-items: stretch;
         border-bottom: 2px solid transparent;
         margin: 0 0.5rem;
+        white-space: nowrap;
 
         &:hover {
             border-color: var(--border-color-2);

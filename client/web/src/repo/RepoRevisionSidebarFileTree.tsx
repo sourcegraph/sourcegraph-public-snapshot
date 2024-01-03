@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { useApolloClient, gql as apolloGql, ApolloError } from '@apollo/client'
-import {
-    mdiFileDocumentOutline,
-    mdiSourceRepository,
-    mdiFolderOutline,
-    mdiFolderOpenOutline,
-    mdiFolderArrowUp,
-} from '@mdi/js'
+import { useApolloClient, gql as apolloGql, type ApolloError } from '@apollo/client'
+import { mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline, mdiFolderArrowUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -27,7 +21,7 @@ import {
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
-import { FILE_ICONS, FileExtension, getFileInfo } from './fileIcons'
+import { DEFAULT_FILE_ICON, getFileIconInfo, isProbablyTestFile } from './fileIcons'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
@@ -57,6 +51,9 @@ const QUERY = gql`
                         submodule {
                             url
                             commit
+                        }
+                        ... on GitBlob {
+                            languages
                         }
                     }
                 }
@@ -396,8 +393,10 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fileInfo = getFileInfo(name, isBranch)
-    const fileIcon = FILE_ICONS.get(fileInfo.extension)
+    const iconInfo = entry?.__typename === 'GitBlob' ? getFileIconInfo(element.name, entry.languages) : undefined
+    const isLikelyTest = entry?.isDirectory ? false : isProbablyTestFile(element.name)
+
+    // const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -481,10 +480,10 @@ function renderNode({
         >
             <div className={styles.fileContainer}>
                 <div className={styles.iconContainer}>
-                    {fileInfo.extension !== FileExtension.DEFAULT ? (
+                    {iconInfo !== undefined ? (
                         <Icon
-                            as={fileIcon?.icon}
-                            className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
+                            as={iconInfo.react.icon}
+                            className={classNames('mr-1', styles.icon, iconInfo.react.className)}
                             aria-hidden={true}
                         />
                     ) : (
@@ -494,13 +493,13 @@ function renderNode({
                                     ? isExpanded
                                         ? mdiFolderOpenOutline
                                         : mdiFolderOutline
-                                    : mdiFileDocumentOutline
+                                    : DEFAULT_FILE_ICON.path
                             }
                             className={classNames('mr-1', styles.icon)}
                             aria-hidden={true}
                         />
                     )}
-                    {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                    {isLikelyTest && <div className={classNames(styles.testIndicator)} />}
                 </div>
                 {name}
             </div>

@@ -5,17 +5,15 @@ import (
 
 	"github.com/aws/jsii-runtime-go"
 	"github.com/grafana/regexp"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -65,13 +63,9 @@ type CrossStackOutput struct {
 }
 
 type Variables struct {
-	// ProjectIDPrefix is the prefix for a project ID. A suffix of the format
-	// '-${randomizedSuffix}' will be added, as project IDs must be unique.
-	ProjectIDPrefix string
-
-	// ProjectIDSuffixLength is the length of the randomized suffix added to
-	// to the project.
-	ProjectIDSuffixLength *int
+	// ProjectIDPrefix is the generated project ID. A suffix of the format
+	// '-${randomizedSuffix}' should be added, as project IDs must be unique.
+	ProjectID string
 
 	// DisplayName is a display name for the project. It does not need to be unique.
 	DisplayName string
@@ -88,50 +82,37 @@ type Variables struct {
 
 	// Services is a list of additional GCP services to enable.
 	Services []string
+
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
 }
 
 const StackName = "project"
 
-const (
-	// https://cloud.google.com/resource-manager/reference/rest/v1/projects
-	projectIDMaxLength                  = 30
-	projectIDRandomizedSuffixByteLength = 2 // real length 4
-	projectIDMinRandomizedSuffixLength  = 2
-)
-
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, locals, err := stacks.New(StackName,
-		randomprovider.With(),
-		// ID is not known ahead of time, we can omit it
+		// The project we want might not exist yet, so omit it when initializing
+		// the provider.
 		googleprovider.With(""))
 	if err != nil {
 		return nil, err
 	}
 
-	// Name all stack resources after the desired project ID
-	id := resourceid.New(vars.ProjectIDPrefix)
-
-	// The project ID must leave room for a randomized suffix and a separator.
-	suffixByteLength := projectIDRandomizedSuffixByteLength
-	if vars.ProjectIDSuffixLength != nil {
-		suffixByteLength = *vars.ProjectIDSuffixLength / 2
-	}
-	realSuffixLength := suffixByteLength * 2 // after converting to hex
-	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + realSuffixLength; afterSuffixLength > projectIDMaxLength {
-		return nil, errors.Newf("project ID prefix %q is too long after adding random suffix (%d characters) - got %d characters, but maximum is %d characters",
-			vars.ProjectIDPrefix, projectIDRandomizedSuffixByteLength, afterSuffixLength, projectIDMaxLength)
-	}
-	projectID := random.New(stack, id, random.Config{
-		ByteLength: suffixByteLength,
-		Prefix:     vars.ProjectIDPrefix,
-	})
+	// Name all stack resources after the desired project ID.
+	// HACK: For consistency with what used to be here, we extract the "prefix"
+	// (everything before the last component, '-${randomsuffix}') and use that
+	// as the root resourceid.
+	parts := strings.Split(vars.ProjectID, "-")
+	prefix := parts[:len(parts)-1]
+	id := resourceid.New(strings.Join(prefix, "-"))
 
 	project := project.NewProject(stack,
 		id.TerraformID("project"),
 		&project.ProjectConfig{
 			Name:              pointers.Ptr(vars.DisplayName),
-			ProjectId:         &projectID.HexValue,
+			ProjectId:         &vars.ProjectID,
 			AutoCreateNetwork: false,
 			BillingAccount:    pointers.Ptr(BillingAccountID),
 			FolderId: func() *string {
@@ -148,6 +129,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}
 				return &labels
 			}(vars.Labels),
+
+			// Critical resource that cannot be replaced.
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				PreventDestroy: &vars.PreventDestroys,
+			},
 		})
 
 	for _, service := range append(gcpServices, vars.Services...) {
