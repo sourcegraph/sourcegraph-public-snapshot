@@ -154,6 +154,9 @@ export interface FilePanelProps {
 }
 
 export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, className }) => {
+    const s = 'hell0'
+    entries.title = s.Archibald
+    entries.name = 10
     const hasHistoryEntries = historyEntries && historyEntries.length > 0
     const fileHistoryByPath = useMemo(() => {
         const fileHistoryByPath: Record<string, TreeHistoryFields['history']['nodes'][number]['commit']> = {}
