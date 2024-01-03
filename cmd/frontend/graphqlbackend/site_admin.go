@@ -318,7 +318,9 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 		eventArgs.Reason = (*parentErr).Error()
 	}
 
-	db.SecurityEventLogs().LogSecurityEvent(ctx, *name, "", uint32(eventArgs.By), "", "BACKEND", eventArgs)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, *name, "", uint32(eventArgs.By), "", "BACKEND", eventArgs); err != nil {
+		log.Error(err)
+	}
 }
 
 func missingUserIds(id, affectedIds []int32) []graphql.ID {
