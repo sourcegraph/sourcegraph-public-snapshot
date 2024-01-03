@@ -173,7 +173,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			FireworksDisableSingleTenant:                config.Fireworks.DisableSingleTenant,
 			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses:                 config.AutoFlushStreamingResponses,
-			EnableAttributionSearch:                     os.Getenv("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH") == "true",
+			EnableAttributionSearch:                     config.Attribution.Enabled,
 		},
 		dotcomClient)
 	if err != nil {
