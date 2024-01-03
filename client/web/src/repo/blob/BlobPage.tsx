@@ -28,7 +28,7 @@ import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { type ModeSpec, parseQueryAndHash, type RepoFile } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash, type RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Alert,
     Button,

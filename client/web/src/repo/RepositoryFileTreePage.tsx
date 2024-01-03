@@ -4,7 +4,6 @@ import { Navigate, useLocation } from 'react-router-dom'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
