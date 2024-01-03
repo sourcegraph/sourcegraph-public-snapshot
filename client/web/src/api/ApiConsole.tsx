@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+// REMOVE ME
 // type only
 import type * as _graphiqlModule from 'graphiql'
 import type * as H from 'history'
