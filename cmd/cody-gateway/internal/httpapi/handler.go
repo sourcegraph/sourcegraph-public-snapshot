@@ -244,8 +244,8 @@ func NewHandler(
 			authr.Middleware(
 				attribution.NewHandler(attributionClient, logger),
 			),
+			otelhttp.WithPublicEndpoint(),
 		),
-		otelhttp.WithPublicEndpoint(),
 	)
 	return r, nil
 }

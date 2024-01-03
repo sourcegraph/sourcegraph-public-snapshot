@@ -2,7 +2,7 @@ package attribution
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 
 	"github.com/Khan/genqlient/graphql"
@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -43,21 +44,18 @@ type Repository struct {
 func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		a := actor.FromContext(r.Context())
+		logger := a.Logger(trace.Logger(r.Context(), baseLogger))
 		if got, want := a.GetSource(), codygateway.ActorSourceProductSubscription; got != want {
-            response.JSONError(logger, w, errors.New("only available for enterprise product subscriptions")
+			response.JSONError(logger, w, http.StatusUnauthorized, errors.New("only available for enterprise product subscriptions"))
 			return
 		}
 		if client == nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			fmt.Fprintln(w, "attribution search not enabled")
+			response.JSONError(logger, w, http.StatusServiceUnavailable, errors.New("attribution search not enabled"))
 			return
 		}
-		logger := a.Logger(trace.Logger(r.Context(), baseLogger))
 		var request Request
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "cannot understand the request")
-			logger.Debug("failed to unmarshal json request", log.Error(err))
+			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return
 		}
 		// TODO(#59244): Actually query dotcom for attribution.
