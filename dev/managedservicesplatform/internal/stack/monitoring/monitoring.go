@@ -72,6 +72,9 @@ type Variables struct {
 	MaxInstanceCount *int
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
+	// ServiceStartupProbe is used to determine the threshold for service
+	// startup latency alerts.
+	ServiceStartupProbe *spec.EnvironmentServiceStartupProbeSpec
 
 	// EnvironmentCategory dictates what kind of notifications are set up:
 	//
@@ -283,7 +286,7 @@ func createCommonAlerts(
 ) error {
 	// Convert a spec.ServiceKind into a alertpolicy.ServiceKind
 	serviceKind := alertpolicy.CloudRunService
-	kind := pointers.Deref(vars.Service.Kind, "service")
+	kind := pointers.Deref(vars.Service.Kind, spec.ServiceKindService)
 	if kind == spec.ServiceKindJob {
 		serviceKind = alertpolicy.CloudRunJob
 	}
@@ -316,13 +319,22 @@ func createCommonAlerts(
 		{
 			ID:          "startup",
 			Name:        "Container Startup Latency",
-			Description: pointers.Ptr("Instance is taking a long time to start up - something may be blocking startup"),
+			Description: pointers.Ptr("Service containers are taking too long to start up - something may be blocking startup"),
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
-				Aligner:   alertpolicy.MonitoringAlignPercentile99,
-				Reducer:   alertpolicy.MonitoringReduceMax,
-				Period:    "60s",
-				Threshold: 10000,
+				Filters: map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
+				Aligner: alertpolicy.MonitoringAlignPercentile99,
+				Reducer: alertpolicy.MonitoringReduceMax,
+				Period:  "60s",
+				Threshold: func() float64 {
+					if serviceKind == alertpolicy.CloudRunJob {
+						// jobs measure container startup, not service startup,
+						// this should never take very long
+						return 10 * 1000 // ms
+					}
+					// otherwise, use the startup probe configuration to
+					// determine the threshold for how long we should be waiting
+					return float64(vars.ServiceStartupProbe.MaximumLatencySeconds()) * 1000 // ms
+				}(),
 			},
 		},
 	} {
