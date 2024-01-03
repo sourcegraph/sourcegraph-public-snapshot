@@ -83,7 +83,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
     const { query, patternType, authenticatedUser, results, options, sourcegraphURL, telemetryService } = props
 
     const navigate = useNavigate()
-    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFilters)
+    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
 
     const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
     const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
@@ -277,14 +277,13 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                         <Icon aria-hidden={true} className="ml-2" svgPath={mdiChevronDoubleDown} />
                     </Button>
                 )}
-
                 {newFiltersEnabled && (
                     <Button
                         size="sm"
                         variant="secondary"
                         outline={true}
                         aria-label="Show aggregation results"
-                        className={classNames('align-items-center d-lg-flex')}
+                        className="align-items-center d-lg-flex"
                         onClick={() =>
                             setAggregationUIMode(
                                 aggregationUIMode === AggregationUIMode.SearchPage
