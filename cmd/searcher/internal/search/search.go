@@ -64,8 +64,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		p.Repo.Attr(),
 		p.Commit.Attr(),
 		attribute.String("url", p.URL),
-		attribute.String("pattern", p.Pattern),
-		attribute.Bool("isRegExp", p.IsRegExp),
+		attribute.String("query", p.Query.String()),
 		attribute.StringSlice("languages", p.Languages),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
 		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
@@ -100,8 +99,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		s.Log.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
-			log.String("pattern", p.Pattern),
-			log.Bool("isRegExp", p.IsRegExp),
+			log.String("query", p.String()),
 			log.Bool("isStructuralPat", p.IsStructuralPat),
 			log.Strings("languages", p.Languages),
 			log.Bool("isCaseSensitive", p.IsCaseSensitive),
@@ -132,13 +130,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender, int32(p.NumContextLines))
 	}
 
-	// Compile pattern before fetching from store in case it's invalid.
-	rm, err := compilePattern(&p.PatternInfo)
+	// Process the query before fetching from store in case it's invalid.
+	rm, err := toMatchTree(p.Query, p.IsCaseSensitive)
 	if err != nil {
 		return badRequestError{err.Error()}
 	}
 
-	pm, err := compilePathPatterns(&p.PatternInfo)
+	pm, err := toPathMatcher(&p.PatternInfo)
 	if err != nil {
 		return badRequestError{err.Error()}
 	}
@@ -209,11 +207,8 @@ func validateParams(p *protocol.Request) error {
 	if len(p.Commit) != 40 {
 		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
+	if p.Query == nil && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
 		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
-	}
-	if p.IsNegated && p.IsStructuralPat {
-		return errors.New("Negated patterns are not supported for structural searches")
 	}
 	return nil
 }
