@@ -558,3 +558,11 @@ export const scanSearchQuery = (
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)
 }
+
+export const succeedScan = (query: string): Token[] => {
+    const result = scanSearchQuery(query)
+    if (result.type !== 'success') {
+        throw new Error('Internal error: invariant broken: succeedScan callers must be called with a valid query')
+    }
+    return result.term
+}

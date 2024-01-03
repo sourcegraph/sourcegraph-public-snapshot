@@ -1,11 +1,11 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import {mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline} from '@mdi/js'
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { getFileIconInfo, DEFAULT_FILE_ICON } from '$lib/fileIcons'
+    import {getFileIconInfo} from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
@@ -127,8 +127,8 @@
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
                         {@const icon =
-                            (entry.__typename === 'GitBlob' && getFileIconInfo(entry.name, entry.languages)?.svg) ||
-                            DEFAULT_FILE_ICON}
+                        (entry.__typename === 'GitBlob' && getFileIconInfo(entry.name, entry.languages.at(0) ?? '')?.svg) ||
+                        {path: mdiFileCodeOutline, color: 'var(--gray-05)'}}
                         <Icon svgPath={icon.path} inline --color={icon.color} />
                     {/if}
                     {isRoot ? '..' : entry.name}

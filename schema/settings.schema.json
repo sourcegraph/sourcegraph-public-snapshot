@@ -13,6 +13,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "newSearchResultFiltersPanel": {
+          "description": "Enables new experimental search results filters panel",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "newSearchNavigationUI": {
           "description": "Enables new experimental search UI navigation",
           "type": "boolean",
