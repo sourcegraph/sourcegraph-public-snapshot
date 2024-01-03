@@ -10,7 +10,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
