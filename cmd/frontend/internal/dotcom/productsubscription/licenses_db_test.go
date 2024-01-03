@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -380,4 +381,16 @@ func TestRevokeLicense(t *testing.T) {
 	// Revoke non-existent license
 	err = store.Revoke(ctx, "12345678-1234-5678-1234-567812345678", "reason")
 	require.Error(t, err, "product license not found")
+}
+
+func TestRenderLicenseCreationSlackMessage(t *testing.T) {
+	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+	require.NoError(t, err)
+
+	message := renderLicenseCreationSlackMessage(
+		&types.User{},
+		"1234", 123,
+		&staticTime,
+		license.Info{})
+	autogold.Expect("\nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:\n\n• *License version*: 123\n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (-312.6 days remaining)\n• *Expiration (PT)*: Feb 24, 2023 6:48am PST\n• *User count*: 0\n• *License tags*: ``\n• *Salesforce subscription ID*: unknown\n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown|unknown>\n\nReply with a :approved_stamp: when this is approved\nReply with a :white_check_mark: when this has been sent to the customer\n").Equal(t, message)
 }

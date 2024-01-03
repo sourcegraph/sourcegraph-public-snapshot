@@ -15,6 +15,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/backend",
+        "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui/router",
@@ -30,6 +31,7 @@ go_library(
         "//internal/extsvc",
         "//internal/featureflag",
         "//internal/lazyregexp",
+        "//internal/security",
         "//internal/session",
         "//internal/telemetry",
         "//internal/telemetry/teestore",
