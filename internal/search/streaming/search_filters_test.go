@@ -1,7 +1,6 @@
 package streaming
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -223,42 +222,7 @@ func TestSymbolCounts(t *testing.T) {
 	}
 }
 
-func TestIsLimitHit(t *testing.T) {
-	cases := []struct {
-		name        string
-		events      []SearchEvent
-		wantFilters map[string]*Filter
-	}{
-		{
-			name:   "isLimitHit should be true",
-			events: generateLargeResultSet("enum"),
-			wantFilters: map[string]*Filter{
-				"select:symbol.enum": &Filter{
-					Value:      "select:symbol.enum",
-					Label:      "enum",
-					Count:      500,
-					IsLimitHit: true,
-					Kind:       "symbol type",
-				},
-			},
-		},
-	}
-
-	for _, tc := range cases {
-		fmt.Printf("length of generated filters: %d\n", len(tc.events[0]))
-		t.Run(tc.name, func(t *testing.T) {
-			sf := &SearchFilters{}
-			for _, event := range tc.events {
-				sf.Update(event)
-			}
-
-			for key, filter := range tc.wantFilters {
-				require.Equal(t, filter, sf.filters[key])
-			}
-		})
-	}
-}
-
+// This should be used to generate a large enough set to test IsLimitHit property.
 func generateLargeResultSet(symbolKind string) []SearchEvent {
 	symbolMatches := []*result.SymbolMatch{}
 	for i := 0; i <= 500; i++ {

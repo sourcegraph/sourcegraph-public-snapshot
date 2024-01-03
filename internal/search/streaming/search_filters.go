@@ -17,62 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-// SearchFilters computes the filters to show a user based on results.
-//
-// Note: it currently live in graphqlbackend. However, once we have a non
-// resolver based SearchResult type it can be extracted. It lives in its own
-// file to make that more obvious. We already have the filter type extracted
-// (Filter).
-type SearchFilters struct {
-	filters filters
-}
-
-// commonFileFilters are common filters used. It is used by SearchFilters to
-// propose them if they match shown results.
-var commonFileFilters = []struct {
-	label       string
-	regexp      *lazyregexp.Regexp
-	regexFilter string
-	globFilter  string
-}{
-	{
-		label:       "Exclude Go tests",
-		regexp:      lazyregexp.New(`_test\.go$`),
-		regexFilter: `-file:_test\.go$`,
-		globFilter:  `-file:**_test.go`,
-	},
-	{
-		label:       "Exclude Go vendor",
-		regexp:      lazyregexp.New(`(^|/)vendor/`),
-		regexFilter: `-file:(^|/)vendor/`,
-		globFilter:  `-file:vendor/** -file:**/vendor/**`,
-	},
-	{
-		label:       "Exclude node_modules",
-		regexp:      lazyregexp.New(`(^|/)node_modules/`),
-		regexFilter: `-file:(^|/)node_modules/`,
-		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
-	},
-	{
-		label:       "Exclude minified JavaScript",
-		regexp:      lazyregexp.New(`\.min\.js$`),
-		regexFilter: `-file:\.min\.js$`,
-		globFilter:  `-file:**.min.js`,
-	},
-	{
-		label:       "Exclude JavaScript maps",
-		regexp:      lazyregexp.New(`\.js\.map$`),
-		regexFilter: `-file:\.js\.map$`,
-		globFilter:  `-file:**.js.map`,
-	},
-}
-
-type DateFilterInfo struct {
-	Timeframe string
-	Value     string
-	Label     string
-}
-
 const (
 	AFTER            = "after"
 	BEFORE           = "before"
@@ -84,6 +28,12 @@ const (
 	ONE_WEEK_AGO     = "1 week ago"
 	TODAY            = "today"
 )
+
+type DateFilterInfo struct {
+	Timeframe string
+	Value     string
+	Label     string
+}
 
 func determineTimeframe(date time.Time) DateFilterInfo {
 	now := time.Now()
@@ -143,14 +93,54 @@ func determineTimeframe(date time.Time) DateFilterInfo {
 	}
 }
 
-var commonDateFilters = []DateFilterInfo{
-	determineTimeframe(time.Now().Add(24 * time.Hour)),
-	determineTimeframe(time.Now().Add(-7 * 24 * time.Hour)),
-	determineTimeframe(time.Now().Add(-14 * 24 * time.Hour)),
-	determineTimeframe(time.Now().Add(-30 * 24 * time.Hour)),
-	determineTimeframe(time.Now().Add(-60 * 24 * time.Hour)),
-	determineTimeframe(time.Now().Add(-365 * 24 * time.Hour)),
-	determineTimeframe(time.Now().Add(-366 * 24 * time.Hour)),
+// SearchFilters computes the filters to show a user based on results.
+//
+// Note: it currently lives in graphqlbackend. However, once we have a non
+// resolver based SearchResult type it can be extracted. It lives in its own
+// file to make that more obvious. We already have the filter type extracted
+// (Filter).
+type SearchFilters struct {
+	filters filters
+}
+
+// commonFileFilters are common filters used. It is used by SearchFilters to
+// propose them if they match shown results.
+var commonFileFilters = []struct {
+	label       string
+	regexp      *lazyregexp.Regexp
+	regexFilter string
+	globFilter  string
+}{
+	{
+		label:       "Exclude Go tests",
+		regexp:      lazyregexp.New(`_test\.go$`),
+		regexFilter: `-file:_test\.go$`,
+		globFilter:  `-file:**_test.go`,
+	},
+	{
+		label:       "Exclude Go vendor",
+		regexp:      lazyregexp.New(`(^|/)vendor/`),
+		regexFilter: `-file:(^|/)vendor/`,
+		globFilter:  `-file:vendor/** -file:**/vendor/**`,
+	},
+	{
+		label:       "Exclude node_modules",
+		regexp:      lazyregexp.New(`(^|/)node_modules/`),
+		regexFilter: `-file:(^|/)node_modules/`,
+		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
+	},
+	{
+		label:       "Exclude minified JavaScript",
+		regexp:      lazyregexp.New(`\.min\.js$`),
+		regexFilter: `-file:\.min\.js$`,
+		globFilter:  `-file:**.min.js`,
+	},
+	{
+		label:       "Exclude JavaScript maps",
+		regexp:      lazyregexp.New(`\.js\.map$`),
+		regexFilter: `-file:\.js\.map$`,
+		globFilter:  `-file:**.js.map`,
+	},
 }
 
 // Update internal state for the results in event.
@@ -247,11 +237,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
 			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
 			addCommitAuthorFilter(v.Commit)
-
-			// Add more filters to commonDateFilters.
 			addCommitDateFilter(v.Commit)
 
-			// ===========TODO============
+			// =========== TODO: @jasonhawkharris ============
 			// file paths are in v.ModifiedFiles which is a []string
 		}
 	}
