@@ -77,6 +77,14 @@ expression: dumped
     fmt.Println("something")
    }
   
+   for i := 0; i < 3; i++ {
+//     ^ definition local 12
+//             ^ reference local 12
+//                    ^ reference local 12
+    fmt.Println(i)
+//              ^ reference local 12
+   }
+  
    return local
 //        ^^^^^ reference local 8
   }

@@ -44,5 +44,9 @@ func Another(local int) int {
 		fmt.Println("something")
 	}
 
+	for i := 0; i < 3; i++ {
+		fmt.Println(i)
+	}
+
 	return local
 }
