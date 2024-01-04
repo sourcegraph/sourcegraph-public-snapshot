@@ -8,7 +8,7 @@ set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
 echo "RUNNING"
 
-if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" && "$BUILDKITE_PIPELINE_NAME" != "aspect-experimental" ]]; then
+if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" && "$BUILDKITE_PIPELINE_SLUG" != "aspect-experimental" ]]; then
   echo "QUITING ... BOOOO"
   exit 0
 fi
