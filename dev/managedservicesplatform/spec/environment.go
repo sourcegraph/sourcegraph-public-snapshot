@@ -321,9 +321,14 @@ type EnvironmentServiceAuthenticationSpec struct {
 }
 
 type EnvironmentServiceStartupProbeSpec struct {
-	// Disabled configures whether the startup probe should be disabled.
+	// Disabled configures whether the MSP startup probe should be disabled.
 	// We recommend disabling it when creating a service, and re-enabling it
 	// once the service is healthy.
+	//
+	// - When disabled, the default probe is a very generous one that waits 240s
+	//   for your service to respond with anything at all on '/'
+	// - When enabled, the MSP-standard '/-/healthz' diagnostic check is used
+	//   with a generated diagnostics secret.
 	//
 	// This prevents the first Terraform apply from failing if your healthcheck
 	// is comprehensive.
@@ -334,11 +339,23 @@ type EnvironmentServiceStartupProbeSpec struct {
 	//
 	// Defaults to 1 second.
 	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
-	// probe the deployed service.
+	// Interval configures the frequency, in seconds, at which to
+	// probe the deployed service. Must be greater than or equal to timeout.
 	//
-	// Defaults to 1 second.
+	// Defaults to timeout.
 	Interval *int `yaml:"interval,omitempty"`
+}
+
+func (s *EnvironmentServiceStartupProbeSpec) MaximumLatencySeconds() int {
+	if s == nil {
+		s = &EnvironmentServiceStartupProbeSpec{}
+	}
+	if pointers.DerefZero(s.Disabled) {
+		return 240 // maximum Cloud Run timeout
+	}
+	// Maximum startup latency is retries x interval.
+	const maxRetries = 3
+	return maxRetries * pointers.Deref(s.Interval, 1)
 }
 
 type EnvironmentJobSpec struct {
