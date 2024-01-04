@@ -33,9 +33,9 @@ var (
 	})
 
 	ObservableOwnerSearch = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "search",
-		handbookSlug: "search/product",
-		teamName:     "Search",
+		opsgenieTeam: "code-search",
+		handbookSlug: "code-search",
+		teamName:     "Code Search",
 	})
 	ObservableOwnerSearchCore = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "search-core",
@@ -43,9 +43,9 @@ var (
 		teamName:     "Search Core",
 	})
 	ObservableOwnerBatches = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "batch-changes",
-		handbookSlug: "batch-changes",
-		teamName:     "Batch Changes",
+		opsgenieTeam: "code-search",
+		handbookSlug: "code-search",
+		teamName:     "Code Search",
 	})
 	ObservableOwnerCodeIntel = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "code-intel",
@@ -58,9 +58,9 @@ var (
 		teamName:     "Source",
 	})
 	ObservableOwnerCodeInsights = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "code-insights",
-		handbookSlug: "code-insights",
-		teamName:     "Code Insights",
+		opsgenieTeam: "code-search",
+		handbookSlug: "code-search",
+		teamName:     "Code Search",
 	})
 	ObservableOwnerDataAnalytics = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "data-analytics",
@@ -125,7 +125,7 @@ func (o ObservableOwner) getHandbookPageURL() string {
 
 // allKnownOwners is used for testing, mapping all known observable owner names
 // to their respective definitions - see registerObservableOwner()
-var allKnownOwners = make(map[string]ObservableOwner)
+var allKnownOwners = []ObservableOwner{}
 
 // registerObservableOwner should be used over all ObservableOwner declarations.
 // It validates the declaration at init time and also registers in allKnownOwners,
@@ -140,9 +140,6 @@ func registerObservableOwner(o ObservableOwner) ObservableOwner {
 	if err := o.validate(); err != nil {
 		panic(err)
 	}
-	if _, exists := allKnownOwners[o.teamName]; exists {
-		panic(errors.Newf("duplicate ObservableOwner %+v", o))
-	}
-	allKnownOwners[o.teamName] = o
+	allKnownOwners = append(allKnownOwners, o)
 	return o
 }
