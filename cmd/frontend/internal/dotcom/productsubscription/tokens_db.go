@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"

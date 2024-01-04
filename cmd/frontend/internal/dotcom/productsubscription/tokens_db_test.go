@@ -97,7 +97,8 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 
 		dbTokens := newDBTokens(db)
 
-		// Confirm that a side effect of LookupDotcomUserIDByAccessToken sets last_used_at.
+		// Call LookupDotcomUserIDByAccessToken. This will have a side-effect of updating the
+		// token's last_used_at column.
 		token, err := accesstoken.GenerateDotcomUserGatewayAccessToken(testTokenValue)
 		if err != nil {
 			t.Fatalf("Generating dotcom user gateway token: %v", err)
