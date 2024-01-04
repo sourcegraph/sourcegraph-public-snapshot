@@ -17,82 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-const (
-	AFTER            = "after"
-	BEFORE           = "before"
-	ONE_YEAR_AGO     = "1 year ago"
-	THREE_MONTHS_AGO = "3 months ago"
-	TWO_MONTHS_AGO   = "2 months ago"
-	ONE_MONTH_AGO    = "1 month ago"
-	TWO_WEEKS_AGO    = "2 weeks ago"
-	ONE_WEEK_AGO     = "1 week ago"
-	TODAY            = "today"
-)
-
-type DateFilterInfo struct {
-	Timeframe string
-	Value     string
-	Label     string
-}
-
-func determineTimeframe(date time.Time) DateFilterInfo {
-	now := time.Now()
-
-	switch {
-	case date.After(now.Add(-25 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     TODAY,
-			Label:     "today",
-		}
-	case date.After(now.Add(-8 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     ONE_WEEK_AGO,
-			Label:     "this week",
-		}
-	case date.After(now.Add(-15 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     TWO_WEEKS_AGO,
-			Label:     "since last week",
-		}
-	case date.After(now.Add(-31 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     ONE_MONTH_AGO,
-			Label:     "this month",
-		}
-	case date.After(now.Add(-61 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     TWO_MONTHS_AGO,
-			Label:     "since two months ago",
-		}
-	case date.After(now.Add(-91 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     THREE_MONTHS_AGO,
-			Label:     "since three months ago",
-		}
-	case date.After(now.Add(-366 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: AFTER,
-			Value:     ONE_YEAR_AGO,
-			Label:     "since one year ago",
-		}
-	case date.Before(now.Add(-367 * 24 * time.Hour)):
-		return DateFilterInfo{
-			Timeframe: BEFORE,
-			Value:     ONE_YEAR_AGO,
-			Label:     "before one year ago",
-		}
-
-	default:
-		return DateFilterInfo{}
-	}
-}
-
 // SearchFilters computes the filters to show a user based on results.
 //
 // Note: it currently lives in graphqlbackend. However, once we have a non
@@ -141,6 +65,55 @@ var commonFileFilters = []struct {
 		regexFilter: `-file:\.js\.map$`,
 		globFilter:  `-file:**.js.map`,
 	},
+}
+
+const (
+	// After/Before Filters
+	AFTER  = "after"
+	BEFORE = "before"
+
+	// After/Before Values
+	YESTERDAY     = "yesterday"
+	ONE_WEEK_AGO  = "1 week ago"
+	ONE_MONTH_AGO = "1 month ago"
+)
+
+type dateFilterInfo struct {
+	Timeframe string
+	Value     string
+	Label     string
+}
+
+func determineTimeframe(date time.Time) dateFilterInfo {
+	now := time.Now()
+
+	switch {
+	case date.After(now.Add(-25 * time.Hour)):
+		return dateFilterInfo{
+			Timeframe: AFTER,
+			Value:     YESTERDAY,
+			Label:     "Last 24 hours",
+		}
+	case date.After(now.Add(-8 * 24 * time.Hour)):
+		return dateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     ONE_WEEK_AGO,
+			Label:     "Last week",
+		}
+	case date.After(now.Add(-31 * 24 * time.Hour)):
+		return dateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     ONE_MONTH_AGO,
+			Label:     "Last month",
+		}
+
+	default:
+		return dateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     "2 months ago",
+			Label:     "Older than 2 months",
+		}
+	}
 }
 
 // Update internal state for the results in event.
@@ -194,15 +167,12 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addCommitAuthorFilter := func(commit gitdomain.Commit) {
-		author := fmt.Sprintf(`author:%s`, commit.Author.Email)
-		filter := fmt.Sprintf(`type:commit %s`, author)
+		filter := fmt.Sprintf(`author:%s`, commit.Author.Email)
 		s.filters.Add(filter, commit.Author.Name, 1, false, "author")
 	}
 
 	addCommitDateFilter := func(commit gitdomain.Commit) {
 		var cd time.Time
-		var df DateFilterInfo
-		var filter string
 
 		if commit.Committer != nil {
 			cd = commit.Committer.Date
@@ -210,8 +180,8 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			cd = commit.Author.Date
 		}
 
-		df = determineTimeframe(cd)
-		filter = fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
+		df := determineTimeframe(cd)
+		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
 		s.filters.Add(filter, df.Label, 1, false, "date")
 	}
 
@@ -249,7 +219,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addCommitAuthorFilter(v.Commit)
 			addCommitDateFilter(v.Commit)
 
-			// =========== TODO: @jasonhawkharris ============
+			// =========== TODO: Jason Repo Metadata filters ============
 			// file paths are in v.ModifiedFiles which is a []string
 		}
 	}

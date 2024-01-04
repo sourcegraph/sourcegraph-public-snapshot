@@ -271,23 +271,14 @@ func TestDetermineTimeframe(t *testing.T) {
 	now := time.Now()
 	cases := []struct {
 		date time.Time
-		want DateFilterInfo
+		want dateFilterInfo
 	}{
-		{now.Add(-13 * time.Hour), DateFilterInfo{AFTER, TODAY, "today"}},
-		{now.Add(-24 * time.Hour), DateFilterInfo{AFTER, TODAY, "today"}},
-		{now.Add(-2 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_WEEK_AGO, "this week"}},
-		{now.Add(-7 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_WEEK_AGO, "this week"}},
-		{now.Add(-10 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_WEEKS_AGO, "since last week"}},
-		{now.Add(-14 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_WEEKS_AGO, "since last week"}},
-		{now.Add(-27 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_MONTH_AGO, "this month"}},
-		{now.Add(-30 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_MONTH_AGO, "this month"}},
-		{now.Add(-44 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_MONTHS_AGO, "since two months ago"}},
-		{now.Add(-60 * 24 * time.Hour), DateFilterInfo{AFTER, TWO_MONTHS_AGO, "since two months ago"}},
-		{now.Add(-72 * 24 * time.Hour), DateFilterInfo{AFTER, THREE_MONTHS_AGO, "since three months ago"}},
-		{now.Add(-90 * 24 * time.Hour), DateFilterInfo{AFTER, THREE_MONTHS_AGO, "since three months ago"}},
-		{now.Add(-288 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_YEAR_AGO, "since one year ago"}},
-		{now.Add(-365 * 24 * time.Hour), DateFilterInfo{AFTER, ONE_YEAR_AGO, "since one year ago"}},
-		{now.Add(-400 * 24 * time.Hour), DateFilterInfo{BEFORE, ONE_YEAR_AGO, "before one year ago"}},
+		{now.Add(-13 * time.Hour), dateFilterInfo{AFTER, YESTERDAY, "Last 24 hours"}},
+		{now.Add(-24 * time.Hour), dateFilterInfo{AFTER, YESTERDAY, "Last 24 hours"}},
+		{now.Add(-2 * 24 * time.Hour), dateFilterInfo{BEFORE, ONE_WEEK_AGO, "Last week"}},
+		{now.Add(-7 * 24 * time.Hour), dateFilterInfo{BEFORE, ONE_WEEK_AGO, "Last week"}},
+		{now.Add(-27 * 24 * time.Hour), dateFilterInfo{BEFORE, ONE_MONTH_AGO, "Last month"}},
+		{now.Add(-30 * 24 * time.Hour), dateFilterInfo{BEFORE, ONE_MONTH_AGO, "Last month"}},
 	}
 
 	for _, tc := range cases {
