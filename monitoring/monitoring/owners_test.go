@@ -145,6 +145,21 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
           "responders": [
             {
               "type": "team",
+              "name": "search-platform"
+            }
+          ]
+        },
+        "owners": [
+          "search-platform"
+        ]
+      },
+      {
+        "level": "critical",
+        "notifier": {
+          "type": "opsgenie",
+          "responders": [
+            {
+              "type": "team",
               "name": "code-search"
             }
           ]
