@@ -13,7 +13,7 @@ func sonarcloudScan() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
 			"Sonarcloud Scan",
-			bk.Cmd("dev/ci/sonarcloud-scan.sh"),
+			bk.Cmd("dev/ci/semgrep-scan.sh"),
 		)
 	}
 
