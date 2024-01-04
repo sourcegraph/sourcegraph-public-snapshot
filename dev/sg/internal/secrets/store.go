@@ -22,10 +22,6 @@ const (
 
 var (
 	ErrSecretNotFound = errors.New("secret not found")
-
-	// externalSecretTTL declares how long external secrets are allowed to be persisted
-	// once fetched.
-	externalSecretTTL = 24 * time.Hour
 )
 
 type FallbackFunc func(context.Context) (string, error)
@@ -125,11 +121,9 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 
 	// Check if we already have this secret
 	if err := s.Get(secret.id(), &value); err == nil {
-		if time.Since(value.Fetched) < externalSecretTTL {
-			return value.Value, nil
-		}
-
-		// If expired, remove the secret and fetch a new one.
+		// If expired, remove the secret
+		// NOTE: We don't save external secrets any more, but we want to make
+		// sure to remove them.
 		_ = s.Remove(secret.id())
 		value = externalSecretValue{}
 	}
@@ -176,9 +170,8 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 		return "", errors.Wrap(err, errMessage)
 	}
 
-	// Return and persist the fetched secret
 	value.Fetched = time.Now()
-	return value.Value, s.PutAndSave(secret.id(), &value)
+	return value.Value, nil
 }
 
 // Remove deletes a value from memory.

@@ -50,7 +50,7 @@ func TestSecrets(t *testing.T) {
 			t.Fatalf("%v", err)
 		}
 		data := map[string]any{"key": "val"}
-		s.Put("foo", data)
+		_ = s.Put("foo", data)
 		err = s.SaveFile()
 		if err != nil {
 			t.Fatalf("%v", err)
