@@ -22,10 +22,12 @@ func TestOverrideExtensions(t *testing.T) {
 func TestNonAmbiguousExtensions(t *testing.T) {
 	// Languages/extensions that we don't want to regress
 	nonAmbiguousExtensionsCheck := map[string]string{
-		".js":    "JavaScript",
+		".js": "JavaScript",
+		// Linguist removed JSX (but not TSX) as a separate language:
+		// https://github.com/github-linguist/linguist/pull/5133
 		".jsx":   "JavaScript",
 		".ts":    "TypeScript",
-		".tsx":   "TypeScript",
+		".tsx":   "TSX",
 		".py":    "Python",
 		".rb":    "Ruby",
 		".go":    "Go",

@@ -47,8 +47,8 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 	".rs": "Rust",
 	// In i18n contexts, there are XML files with '.ts' and '.tsx' extensions,
 	// but we ignore those for now to avoid penalizing the common case.
+	".tsx": "TSX",
 	".ts":  "TypeScript",
-	".tsx": "TypeScript",
 	// Ignoring "Adblock Filter List" and "Vim Help File".
 	".txt": "Text",
 	// Ignoring other variants of YAML.
