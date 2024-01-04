@@ -107,11 +107,61 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). Cody Free and Cody Pro users can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
+After a successful installation, the Cody icon appears in the [Activity sidebar](https://code.visualstudio.com/api/ux-guidelines/activity-bar). 
+
+### Cody Free or Cody Pro Users
+
+Cody Free and Cody Pro users can sign in to their Sourcegraph.com accounts through GitHub, GitLab, or Google.
 
 ![cody-sign-flow](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-new-ui.png)
 
-You can use Sourcegraph Enterprise with the Cody VS Code extension. Click the **Sign In to Your Enterprise Instance**, and it connects to your enterprise environment. For Enterprise users, please sign in with your custom Sourcegraph instance URL and access token.
+### Sourcegraph Enterprise Cody Users
+
+Note: if you currently installed a previous version of Cody, uninstall it and reload VS Code before proceeding to the next steps. Search for "Cody AI” in your VS Code extension marketplace, install it again, and reload VSCode.
+
+Sourcegraph Enterprise users should connect Cody to their Enterprise instance by clicking **Sign In to Your Enterprise Instance**.
+
+You'll be prompted to choose how to sign-in, select **Sign In to Sourcegraph Instances v5.1 and above**.
+
+![sign-in-option](../../../images/927fb401aa80af47f4384a854309b0ed5ac58da34507ed4c0dfd72da61e1edfb.png)  
+
+Enter the URL of your Enterprise instance. If you are unsure, please contact your adminstrator.
+
+![instance-url](../../../images/c8fc65594ac718cfc6e6d67e76af8dd8989c8dd6300725f5afd872210f76e786.png)  
+
+A pop-up will ask if you want to Open the URL in a new window. Click **Open** to open the URL in a new window.
+
+<img src="../../../images/0c72d6a8e48a28bb6543d5dd333187ae130743937e584b67bd3a42b810e9ec69.png" width="300">
+<br>
+<br>
+Sign in to your instance. If you do not yet have a login, please contact your adminstrator. <br><br>
+
+<img src="../../../images/3b66de59129d19d8e71ed4d07b1e369ac956b7e3177cb8d3af60765559842431.png" width="350">
+
+Create an access token from Account Settings - Access Tokens. Click **+ Generate new token**
+
+![picture 4](../../../images/a88d828e082067ac6c57f8c32d67de3bf093732689578a4aa29c5b2f67fd53ba.png)  
+
+Name the token and click **+ Generate token**.
+
+![picture 5](../../../images/6e2255ea122a5b1840d0ce7c032e26742540b7a2a610ab95d47e969b9f94e3f4.png)  
+
+Copy the token and return to VSCode.
+
+![picture 6](../../../images/707e642d4cf84aba4134cb83d2bdc0c1280f847d0909c144aaf43e004de3a945.png)  
+
+Again, click **Sign In to Your Enterprise Instance** and choose **Sign In to Sourcegraph Instances v5.1 and above**. Enter the URL of your instance.
+
+You should now be prompted to authorize Sourcegraph to connect to your VSCode extension using the token you created. Click **Authorize**.
+
+<img src="../../../images/78651f94c061ba7a63041893a73705b5b5568587830831f68b3afee1f02ca744.png" width="300">
+
+Finally, you will be asked to allow the extension access. CLick **Open**.
+
+<img src="../../../images/946384c3bbce7790dc119ecec2d1540fcb3e50dc007eee4472c0bcac8b14c251.png" width="300">
+
+VSCode should now display the Cody panel and you're ready to go. 
+
 
 ## Verifying the installation
 

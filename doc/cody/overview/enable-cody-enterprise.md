@@ -144,27 +144,6 @@ This requires site-admin privileges. To do so,
 
 Cody is now fully enabled on your self-hosted Sourcegraph enterprise instance!
 
-### Configure the VS Code extension
-
-With Cody enabled on your Sourcegraph instance, any user can configure and use the [Cody VS Code extension](./../overview/install-vscode.md). This does not require admin privilege. However,
-
-- If you currently installed a previous version of Cody, uninstall it and reload VS Code before proceeding to the next steps
-- Search for "Cody AI” in your VS Code extension marketplace, and install it again
-- Reload VS Code, and open the Cody extension <!-- Review and accept the terms. (this has been removed?) -->
-- Next, to connect the Cody extension with your Sourcegraph instance, click the "Other Sign In Options..." and select your enterprise option depending on your Sourcegraph version (go to **Sourcegraph > Settings**, and the version will be in the bottom left)
-
-  <img width="1369" alt="image" src="https://storage.googleapis.com/sourcegraph-assets/cody-sign-in-options.png">
-
-- If you are on version 5.1 and above, you will need to follow an authorization flow to give Cody access to your enterprise instance
-  - For Sourcegraph 5.0 and above, you'll need to generate an access token. From your Sourcegraph account, go to **Settings > Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`)
-
-  <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
-
-  - Create and copy your access token and return to VS code. Once again, click on the "Other Sign In Options..." and select "Sign in to Sourcegraph Enterprise instance via Access Token"
-  - Enter the URL for your sourcegraph instance and then paste in your access token
-
-You're all set to use Cody on your self-hosted Sourcegraph instance. You can learn more about the Cody use cases [here](./../use-cases.md).
-
 ## Cody on Sourcegraph Cloud
 
 - With [Sourcegraph Cloud](../../cloud/index.md), you get Cody as a managed service, and you **do not** need to [enable Cody as is required for self-hosted setup](#enable-cody-on-your-sourcegraph-instance)
