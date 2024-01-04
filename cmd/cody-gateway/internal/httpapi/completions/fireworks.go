@@ -211,6 +211,12 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 		if len(event.Choices) > 0 {
 			completionUsage.characters += len(event.Choices[0].Text)
 		}
+		if event.Usage.PromptTokens > 0 {
+			promptUsage.tokens = event.Usage.PromptTokens
+		}
+		if event.Usage.CompletionTokens > 0 {
+			completionUsage.tokens = event.Usage.CompletionTokens
+		}
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Fireworks streaming response", log.Error(err))
