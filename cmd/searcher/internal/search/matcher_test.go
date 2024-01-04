@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/zoekt/query"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLongestLiteral(t *testing.T) {
@@ -44,5 +46,184 @@ func TestLongestLiteral(t *testing.T) {
 		if want != got {
 			t.Errorf("longestLiteral(%q) == %q != %q", expr, got, want)
 		}
+	}
+}
+
+func TestToZoektQuery(t *testing.T) {
+	m := &andMatcher{
+		children: []matcher{
+			&orMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re:        regexp.MustCompile("aaaaa"),
+						isNegated: true,
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("bbbb*"),
+					},
+				},
+			},
+			&regexMatcher{
+				re:         regexp.MustCompile("cccc?"),
+				ignoreCase: true,
+			},
+		},
+	}
+
+	cases := []struct {
+		name         string
+		matchContent bool
+		matchPath    bool
+		want         string
+	}{{
+		name:         "matches content only",
+		matchContent: true,
+		matchPath:    false,
+		want:         `(and (or (not case_regex:"aaaaa") case_regex:"bbbb*") regex:"cccc?")`,
+	},{
+		name:         "matches path only",
+		matchContent: false,
+		matchPath:    true,
+		want:         `(and (or (not case_file_regex:"aaaaa") case_file_regex:"bbbb*") file_regex:"cccc?")`,
+	},
+	{
+		name:         "matches content and path",
+		matchContent: true,
+		matchPath:    true,
+		want:         `(and (or (not case_regex:"aaaaa") (not case_file_regex:"aaaaa") case_regex:"bbbb*" case_file_regex:"bbbb*") (or regex:"cccc?" file_regex:"cccc?"))`,
+	},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := m.ToZoektQuery(c.matchContent, c.matchPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, c.want, query.Simplify(got).String())
+		})
+	}
+}
+
+func TestMatchesString(t *testing.T) {
+	m := &orMatcher{
+		children: []matcher{
+			&andMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re:        regexp.MustCompile("aaa"),
+						isNegated: true,
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("bbb*"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("ccc*"),
+					},
+				},
+			},
+			&regexMatcher{
+				re:         regexp.MustCompile("ddd?"),
+				ignoreCase: true,
+			},
+		},
+	}
+
+	cases := []struct {
+		name      string
+		test      string
+		wantMatch bool
+	}{
+		{
+			name:      "first 'or' clause matches",
+			test:      "bbbbbccc",
+			wantMatch: true,
+		},
+		{
+			name:      "negated 'and' clause does not match",
+			test:      "aaabbbccc",
+			wantMatch: false,
+		},
+		{
+			name:      "case insensitive 'or' clause matches",
+			test:      "zzzzzDDD",
+			wantMatch: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.test, func(t *testing.T) {
+			match := m.MatchesString(c.test)
+			require.Equal(t, c.wantMatch, match)
+		})
+	}
+}
+
+func TestMatchesFile(t *testing.T) {
+	m := &orMatcher{
+		children: []matcher{
+			&andMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re:        regexp.MustCompile("and"),
+						isNegated: true,
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("file"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("the"),
+					},
+				},
+			},
+			&regexMatcher{
+				re:         regexp.MustCompile("here"),
+				ignoreCase: true,
+			},
+		},
+	}
+
+	cases := []struct {
+		m matcher
+		file        string
+		wantMatch   bool
+		wantMatches int
+	}{
+		{
+			m: m,
+			file:      "this is the first file",
+			wantMatch: true,
+			wantMatches: 2,
+		},
+		{
+			m: m,
+			file:      "here is the second fileee",
+			wantMatch: true,
+			wantMatches: 3,
+		},
+		{
+			m: m,
+			file:      "... and another file!",
+			wantMatch: false,
+			wantMatches: 0,
+		},
+		{
+			m: &regexMatcher{
+				re: regexp.MustCompile("excluded"),
+				isNegated: true,
+			},
+			file:      "here's a file",
+			// this matches, but produces no matched ranges
+			wantMatch: true,
+			wantMatches: 0,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.file, func(t *testing.T) {
+			match, matches := c.m.MatchesFile([]byte(c.file), 1000)
+			require.Equal(t, c.wantMatch, match)
+			require.Equal(t, c.wantMatches, len(matches))
+		})
 	}
 }
