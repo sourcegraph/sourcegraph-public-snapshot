@@ -2,12 +2,14 @@ package stack
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"strconv"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"golang.org/x/exp/maps"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -84,20 +86,40 @@ func NewSet(renderDir string, opts ...NewStackOption) *Set {
 // local variables for reference by custom resources.
 type StackLocals struct{ s Stack }
 
+// MetadataKeyStackLocalsGSMProjectID, if set on stack.Metadata, configures
+// StackLocals to also add locals to GSM in the given project.
+const MetadataKeyStackLocalsGSMProjectID = "locals_gsm_project_id"
+
 // Add renders a non-sensitive key-value pair as part of the workspace outputs,
 // under the resource ID 'output-${name}'.
 //
 // The value is also available to locals under '${name}', so that they can
 // accessed under 'local.${name}' in custom resources.
-func (l *StackLocals) Add(name string, value any, description string) {
+//
+// If a StackOption is used to create the stack that configures
+// MetadataKeyStackLocalsGSMProjectID, then the added value will also be stored
+// in GSM. This allows tooling to access stack outputs and locals from GSM.
+func (l *StackLocals) Add(name string, value string, description string) {
+	id := resourceid.New("output")
 	_ = cdktf.NewTerraformOutput(l.s.Stack,
-		resourceid.New("output").TerraformID(name),
+		id.TerraformID(name),
 		&cdktf.TerraformOutputConfig{
 			Value:       value,
 			Sensitive:   pointers.Ptr(false),
 			Description: &description,
 		})
 	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
+
+	// If MetadataKeyStackLocalsGSMProjectID is set, emit to GSM
+	if project, ok := l.s.Metadata[MetadataKeyStackLocalsGSMProjectID]; ok {
+		_ = gsmsecret.New(l.s.Stack, id.Group("gsm").Group(name), gsmsecret.Config{
+			// Scope the secret ID under stack name to avoid conflicts across
+			// stacks
+			ID:        fmt.Sprintf("%s_%s", l.s.Name, name),
+			ProjectID: project,
+			Value:     value,
+		})
+	}
 }
 
 // New creates a new stack belonging to this set.
