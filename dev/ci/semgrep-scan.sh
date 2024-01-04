@@ -12,7 +12,7 @@ echo -e "--- :lock: running Semgrep scan\n"
 set -x
 
 # run semgrep
-semgrep ci -f semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules'
+semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main
 
 echo -e "--- :rocket: uploading Semgrep scan results\n"
 
