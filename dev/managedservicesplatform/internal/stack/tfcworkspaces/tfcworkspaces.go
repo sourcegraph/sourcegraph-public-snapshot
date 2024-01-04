@@ -33,11 +33,10 @@ const StackName = "tfcworkspaces"
 // configurations.
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	scope, _, err := stacks.New(StackName,
-		// googleprovider only needed for GSM access to set up tfeprovider
-		googleprovider.With(googlesecretsmanager.ProjectID),
+		googleprovider.With(""),
 		tfeprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretTFCMSPTeamToken,
-			ProjectID: googlesecretsmanager.ProjectID,
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 		}))
 	if err != nil {
 		return nil, err
@@ -51,7 +50,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			Organization: pointers.Ptr(terraformcloud.Organization),
 			Token: &gsmsecret.Get(scope, resourceid.New("tfe-org-provider-token"), gsmsecret.DataConfig{
 				Secret:    googlesecretsmanager.SecretTFCOrgToken,
-				ProjectID: googlesecretsmanager.ProjectID,
+				ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 			}).Value,
 		})
 
@@ -159,7 +158,7 @@ func getAndConfigureWorkspace(
 			DestinationType: pointers.Ptr("slack"),
 			Url: &gsmsecret.Get(scope, id.Group("slack_webhook"), gsmsecret.DataConfig{
 				Secret:    googlesecretsmanager.SecretTFCMSPSlackWebhook,
-				ProjectID: googlesecretsmanager.ProjectID,
+				ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 			}).Value,
 			// Trigger options are documented here:
 			// https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/notification_configuration#triggers

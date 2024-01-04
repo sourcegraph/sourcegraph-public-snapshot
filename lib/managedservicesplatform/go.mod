@@ -7,6 +7,7 @@ replace github.com/sourcegraph/sourcegraph/lib => ../
 require (
 	cloud.google.com/go/bigquery v1.57.1
 	cloud.google.com/go/cloudsqlconn v1.5.1
+	cloud.google.com/go/profiler v0.4.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.41.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.17.0
 	github.com/getsentry/sentry-go v0.25.0
@@ -55,6 +56,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v2.0.8+incompatible // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
