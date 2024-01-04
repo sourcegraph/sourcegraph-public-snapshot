@@ -946,6 +946,18 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		return nil, err
 	}
 
+	// Capture values for logging prior to change
+	prevQuota, _ := r.db.Users().GetChatCompletionsQuota(ctx, user.ID)
+	arg := struct {
+		User      graphql.ID `json:"User"`
+		Quota     *int32     `json:"New Quota"`
+		PrevQuota *int       `json:"Previous Quota"`
+	}{
+		User:      args.User,
+		Quota:     args.Quota,
+		PrevQuota: prevQuota,
+	}
+
 	var quota *int
 	if args.Quota != nil {
 		i := int(*args.Quota)
@@ -957,7 +969,7 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when a user's Completions quota is updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", arg); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
 		}
 	}
@@ -990,6 +1002,18 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 		return nil, err
 	}
 
+	// Capture values for logging prior to change
+	prevQuota, _ := r.db.Users().GetCodeCompletionsQuota(ctx, user.ID)
+	arg := struct {
+		User      graphql.ID `json:"User"`
+		Quota     *int32     `json:"New Quota"`
+		PrevQuota *int       `json:"Previous Quota"`
+	}{
+		User:      args.User,
+		Quota:     args.Quota,
+		PrevQuota: prevQuota,
+	}
+
 	var quota *int
 	if args.Quota != nil {
 		i := int(*args.Quota)
@@ -1001,7 +1025,7 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when user's code completions quota is updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", arg); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
 		}
 	}
