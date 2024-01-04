@@ -797,62 +797,62 @@ mod test {
     }
 
     #[test]
-    fn test_can_do_go() {
+    fn go() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("go_occurrences", dumped);
+        insta::assert_snapshot!("go_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_nested_locals() {
+    fn nested_locals() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("nested_locals_occurrences", dumped);
+        insta::assert_snapshot!("nested_locals_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_functions() {
+    fn functions() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("functions_occurrences", dumped);
+        insta::assert_snapshot!("functions_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_perl() {
+    fn perl() {
         let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("perl_occurrences", dumped);
+        insta::assert_snapshot!("perl_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_matlab() {
+    fn matlab() {
         let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("matlab_occurrences", dumped);
+        insta::assert_snapshot!("matlab_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_java() {
+    fn java() {
         let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("java_occurrences", dumped);
+        insta::assert_snapshot!("java_scopes", scope_tree);
     }
 }
