@@ -371,7 +371,6 @@ func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed z
 		IsRegExp:                     p.IsRegExp,
 		IsStructuralPat:              p.IsStructuralPat,
 		CombyRule:                    p.CombyRule,
-		IsWordMatch:                  p.IsWordMatch,
 		IsCaseSensitive:              p.IsCaseSensitive,
 		FileMatchLimit:               int32(p.Limit),
 		IncludePatterns:              p.IncludePatterns,
@@ -420,7 +419,7 @@ func filteredStructuralSearch(
 		return err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, false, contextLines)
+	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, contextLines)
 	if err != nil {
 		return err
 	}

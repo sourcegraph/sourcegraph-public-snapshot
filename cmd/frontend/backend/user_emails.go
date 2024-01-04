@@ -94,11 +94,18 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
+		arguments := struct {
+			UserID int32  `json:"UserID"`
+			Email  string `json:"email"`
+		}{
+			UserID: userID,
+			Email:  email,
+		}
 		// Log action of new email being added to user profile
-		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", email); err != nil {
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", arguments); err != nil {
 			logger.Warn("Error logging security event", log.Error(err))
 		}
+
 	}
 
 	if conf.EmailVerificationRequired() {
@@ -142,11 +149,19 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 			return errors.Wrap(err, "removing user e-mail")
 		}
 		if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-			// Log action of email being removed from user profile
-			if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", email); err != nil {
-				logger.Warn("Error logging security event", log.Error(err))
+			arguments := struct {
+				UserID int32  `json:"UserID"`
+				Email  string `json:"email"`
+			}{
+				UserID: userID,
+				Email:  email,
 			}
+			// Log action of email being removed from user profile
+			if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", arguments); err != nil {
+				logger.Warn("Error logging security event", log.Error(err))
+
+			}
+
 		}
 		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
 		// tokens that may have been sent to that email.

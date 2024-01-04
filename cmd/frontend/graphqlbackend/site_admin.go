@@ -2,12 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
@@ -322,22 +318,9 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 		eventArgs.Reason = (*parentErr).Error()
 	}
 
-	args, err := json.Marshal(eventArgs)
-	if err != nil {
-		log15.Error("logRoleChangeAttempt: failed to marshal JSON", "eventArgs", eventArgs)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, *name, "", uint32(eventArgs.By), "", "BACKEND", eventArgs); err != nil {
+		log.Error(err)
 	}
-
-	event := &database.SecurityEvent{
-		Name:            *name,
-		URL:             "",
-		UserID:          uint32(eventArgs.By),
-		AnonymousUserID: "",
-		Argument:        args,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func missingUserIds(id, affectedIds []int32) []graphql.ID {

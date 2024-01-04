@@ -54,8 +54,8 @@ const config = {
       $root: '../../',
       // Used inside tests for easy access to helpers
       $testdata: 'src/testdata.ts',
-      // Makes it easier to refer to files outside packages (such as images)
       $mocks: 'src/testing/mocks.ts',
+      $testing: 'src/testing',
       // Map node-module to browser version
       path: '../../node_modules/path-browserify',
       // These are directories and cannot be imported from directly in

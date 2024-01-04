@@ -4,6 +4,10 @@
 (record_declaration) @scope
 (method_declaration) @scope
 (constructor_declaration) @scope
+(lambda_expression) @scope
+(enhanced_for_statement) @scope
+(for_statement) @scope
+(block) @scope
 
 
 ; NOTE: The definitions below are commented out
@@ -33,18 +37,13 @@
 ;     name: (identifier) @definition.function (#set! "scope" "parent")
 ; )
 
-(block) @scope
-
-
-(for_statement) @scope
 
 (enum_constant
   name: (identifier) @definition.term
 )
 
 (enhanced_for_statement
-    name: (identifier) @definition.term
-) @scope
+    name: (identifier) @definition.term)
 
 (lambda_expression
 
@@ -55,7 +54,7 @@
         (identifier) @definition.term
     )
   ]
-) @scope
+)
 
 (formal_parameter
     name: (identifier) @definition.term

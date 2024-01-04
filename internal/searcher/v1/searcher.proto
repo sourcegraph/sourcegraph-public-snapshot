@@ -126,6 +126,8 @@ message Location {
 }
 
 message PatternInfo {
+  reserved 5;
+
   // pattern is the search query. It is a regular expression if IsRegExp
   // is true, otherwise a fixed string. eg "route variable"
   string pattern = 1;
@@ -140,9 +142,6 @@ message PatternInfo {
   // is_structural if true will treat the pattern as a Comby structural search
   // pattern.
   bool is_structural = 4;
-
-  // is_word_match if true will only match the pattern at word boundaries.
-  bool is_word_match = 5;
 
   // is_case_sensitive if false will ignore the case of text and pattern
   // when finding matches.

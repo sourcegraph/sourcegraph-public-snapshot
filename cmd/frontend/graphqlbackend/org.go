@@ -53,8 +53,9 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 				if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 					// Log action for site admin vieweing an organization's details in dotcom
-					if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+					if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 						r.logger.Warn("Error logging security event", log.Error(err))
+
 					}
 				}
 				onlyOrgID := &types.Org{ID: org.ID}

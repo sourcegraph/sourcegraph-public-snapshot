@@ -236,7 +236,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                     variant={notification.isError ? 'danger' : 'success'}
                 >
                     {notification.text}
-                    <Button variant="secondary" outline={true} onClick={handleDismissNotification}>
+                    <Button variant="link" onClick={handleDismissNotification}>
                         <Icon aria-label="Close notification" svgPath={mdiClose} />
                     </Button>
                 </Alert>

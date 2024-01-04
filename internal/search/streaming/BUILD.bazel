@@ -13,6 +13,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/gitserver/gitdomain",
         "//internal/inventory",
         "//internal/lazyregexp",
         "//internal/search",
@@ -32,6 +33,7 @@ go_test(
     ],
     embed = [":streaming"],
     deps = [
+        "//internal/gitserver/gitdomain",
         "//internal/search/result",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",

@@ -17,7 +17,6 @@ go_library(
         "prettier.go",
         "runner.go",
         "shell.go",
-        "svg.go",
         "usage_linter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/linters",

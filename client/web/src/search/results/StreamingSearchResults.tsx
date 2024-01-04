@@ -3,7 +3,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
-import { limitHit } from '@sourcegraph/branded'
+import { limitHit, useFilterQuery } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -76,6 +76,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
     const queryState = useNavbarQueryState(state => state.queryState)
+    const [filterQuery] = useFilterQuery()
+
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
     const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
     const [aggregationUIMode] = useAggregationUIMode()
@@ -97,7 +99,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         }),
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
-    const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
+    const results = useCachedSearchResults({
+        query: submittedURLQuery,
+        filterQuery,
+        options,
+        streamSearch,
+        telemetryService,
+    })
 
     const { logSearchResultClicked } = useStreamingSearchPings({
         telemetryService,

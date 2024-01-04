@@ -69,6 +69,10 @@ type Config struct {
 	ActorConcurrencyLimit       codygateway.ActorConcurrencyLimitConfig
 	ActorRateLimitNotify        codygateway.ActorRateLimitNotifyConfig
 	AutoFlushStreamingResponses bool
+
+	Attribution struct {
+		Enabled bool
+	}
 }
 
 type OpenTelemetryConfig struct {
@@ -187,6 +191,8 @@ func (c *Config) Load() {
 
 	c.ActorRateLimitNotify.SlackWebhookURL = c.GetOptional("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_SLACK_WEBHOOK_URL", "The Slack webhook URL to send notifications to.")
 	c.AutoFlushStreamingResponses = c.GetBool("CODY_GATEWAY_AUTO_FLUSH_STREAMING_RESPONSES", "false", "Whether we should flush streaming responses after every write.")
+
+	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input

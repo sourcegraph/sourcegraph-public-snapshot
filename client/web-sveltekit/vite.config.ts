@@ -22,7 +22,7 @@ function generateGraphQLTypes(): Plugin {
                 documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts'],
                 config: {
                     onlyOperationTypes: true,
-                    enumValues: '$lib/graphql-types.ts',
+                    enumValues: '$lib/graphql-types',
                     //interfaceNameForOperations: 'SvelteKitGraphQlOperations',
                 },
                 plugins: ['typescript', 'typescript-operations'],
@@ -34,7 +34,7 @@ function generateGraphQLTypes(): Plugin {
                 documents: ['src/**/*.gql', '!src/**/*.gql.d.ts'],
                 preset: 'near-operation-file',
                 presetConfig: {
-                    baseTypesPath: 'lib/graphql-types.ts',
+                    baseTypesPath: 'lib/graphql-types',
                     extension: '.gql.d.ts',
                 },
                 config: {
