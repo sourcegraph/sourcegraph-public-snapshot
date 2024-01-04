@@ -149,7 +149,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Collect outputs
-	locals.Add("project_id", project.ProjectId(), "Generated project ID")
+	locals.Add("project_id", *project.ProjectId(), "Generated project ID")
 	return &CrossStackOutput{Project: project}, nil
 }
 

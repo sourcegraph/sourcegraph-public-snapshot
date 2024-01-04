@@ -104,11 +104,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		googleprovider.With(vars.ProjectID),
 		opsgenieprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretOpsgenieAPIToken,
-			ProjectID: googlesecretsmanager.ProjectID,
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 		}),
 		slackprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretSlackOperatorOAuthToken,
-			ProjectID: googlesecretsmanager.ProjectID,
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 		}))
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	// Configure Slack channels
 	slackToken := gsmsecret.Get(stack, id.Group("slack_token"), gsmsecret.DataConfig{
 		Secret:    googlesecretsmanager.SecretSlackOAuthToken,
-		ProjectID: googlesecretsmanager.ProjectID,
+		ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 	})
 	for _, channel := range []struct {
 		Name             string

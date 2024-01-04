@@ -72,7 +72,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		googleprovider.With(vars.ProjectID),
 		cloudflareprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
-			ProjectID: googlesecretsmanager.ProjectID,
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 		}),
 		randomprovider.With(),
 		dynamicvariables.With(vars.StableGenerate, func() (stack.TFVars, error) {
@@ -228,7 +228,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		cloudRunBuilder.AddDependency(pgRoles.WorkloadSuperuserGrant)
 
 		// Add output for connecting to the instance
-		locals.Add("cloudsql_connection_name", sqlInstance.Instance.ConnectionName(),
+		locals.Add("cloudsql_connection_name", *sqlInstance.Instance.ConnectionName(),
 			"Cloud SQL database connection name")
 	}
 
@@ -284,7 +284,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		"Cloud Run resource name")
 	locals.Add("cloud_run_location", *cloudRunResource.Location(),
 		"Cloud Run resource location")
-	locals.Add("image_tag", imageTag.StringValue,
+	locals.Add("image_tag", *imageTag.StringValue,
 		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
 		RedisInstanceID: redisInstanceID,

@@ -511,14 +511,14 @@ Supports completions on services and environments.`,
 						}
 						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOrgToken,
-							Project: googlesecretsmanager.ProjectID,
+							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get AccessToken")
 						}
 						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
-							Project: googlesecretsmanager.ProjectID,
+							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get TFC OAuth client ID")
