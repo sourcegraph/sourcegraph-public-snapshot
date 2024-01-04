@@ -12,6 +12,8 @@ go_library(
         "//dev/managedservicesplatform",
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/spec",
+        "//dev/managedservicesplatform/stacks/cloudrun",
+        "//dev/managedservicesplatform/stacks/iam",
         "//dev/managedservicesplatform/terraformcloud",
         "//dev/sg/cloudsqlproxy",
         "//dev/sg/internal/category",
