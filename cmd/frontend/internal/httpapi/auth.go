@@ -117,7 +117,9 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
+			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, database.TokenLookupOpts{
+				RequiredScope: requiredScope,
+			})
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)

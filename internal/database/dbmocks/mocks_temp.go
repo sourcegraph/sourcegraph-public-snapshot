@@ -2500,15 +2500,15 @@ func (c AccessTokenStoreListFuncCall) Results() []interface{} {
 // AccessTokenStoreLookupFunc describes the behavior when the Lookup method
 // of the parent MockAccessTokenStore instance is invoked.
 type AccessTokenStoreLookupFunc struct {
-	defaultHook func(context.Context, string, string) (int32, error)
-	hooks       []func(context.Context, string, string) (int32, error)
+	defaultHook func(context.Context, string, database.TokenLookupOpts) (int32, error)
+	hooks       []func(context.Context, string, database.TokenLookupOpts) (int32, error)
 	history     []AccessTokenStoreLookupFuncCall
 	mutex       sync.Mutex
 }
 
 // Lookup delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 string) (int32, error) {
+func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 database.TokenLookupOpts) (int32, error) {
 	r0, r1 := m.LookupFunc.nextHook()(v0, v1, v2)
 	m.LookupFunc.appendCall(AccessTokenStoreLookupFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -2546,7 +2546,7 @@ func (f *AccessTokenStoreLookupFunc) PushReturn(r0 int32, r1 error) {
 	})
 }
 
-func (f *AccessTokenStoreLookupFunc) nextHook() func(context.Context, string, string) (int32, error) {
+func (f *AccessTokenStoreLookupFunc) nextHook() func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2587,7 +2587,7 @@ type AccessTokenStoreLookupFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2  database.TokenLookupOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int32

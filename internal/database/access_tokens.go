@@ -40,6 +40,10 @@ type AccessToken struct {
 // but it does not exist.
 var ErrAccessTokenNotFound = errors.New("access token not found")
 
+// MaxAccessTokenLastUsedAtAge is the maximum amount of time we will wait before updating an access token's
+// last_used_at column. We are OK letting the value get a little stale in order to cut down on database writes.
+const MaxAccessTokenLastUsedAtAge = 5 * time.Minute
+
 // InvalidTokenError is returned when decoding the hex encoded token passed to any
 // of the methods on AccessTokenStore.
 type InvalidTokenError struct {
@@ -119,11 +123,11 @@ type AccessTokenStore interface {
 	//
 	// The token prefix "sgp_", if present, is stripped.
 	//
-	// Calling Lookup also updates the access token's last-used-at date.
+	// Calling Lookup also updates the access token's last-used-at date as applicable.
 	//
 	// 🚨 SECURITY: This returns a user ID if and only if the token corresponds to a valid,
 	// non-deleted access token.
-	Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error)
+	Lookup(ctx context.Context, token string, opts TokenLookupOpts) (subjectUserID int32, err error)
 
 	WithTransact(context.Context, func(AccessTokenStore) error) error
 	With(basestore.ShareableStore) AccessTokenStore
@@ -233,8 +237,84 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
-func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope string) (subjectUserID int32, err error) {
-	if requiredScope == "" {
+func (s *accessTokenStore) GetOrCreateInternalToken(ctx context.Context, subjectUserID int32, scopes []string) ([]byte, error) {
+	sha256, err := s.getInternalToken(ctx, subjectUserID)
+	if err != nil {
+		_, _, err = s.CreateInternal(ctx, subjectUserID, scopes, "Created by GetOrCreateInternalToken", subjectUserID)
+		if err != nil {
+			return nil, err
+		}
+		return s.getInternalToken(ctx, subjectUserID)
+	}
+	return sha256, nil
+}
+
+// getInternalToken returns the SHA256 hash of a random internal access token for the given user.
+func (s *accessTokenStore) getInternalToken(ctx context.Context, subjectUserID int32) ([]byte, error) {
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("subject_user_id=%d", subjectUserID),
+		sqlf.Sprintf("deleted_at IS NULL"),
+		sqlf.Sprintf("internal IS TRUE"),
+	}
+	q := sqlf.Sprintf(`SELECT value_sha256 FROM access_tokens WHERE (%s) LIMIT 1`,
+		sqlf.Join(conds, ") AND ("),
+	)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var sha256 []byte
+	rows.Next()
+	err = rows.Scan(&sha256)
+	if err != nil {
+		return nil, err
+	}
+	return sha256, nil
+}
+
+type TokenLookupOpts struct {
+	OnlyAdmin     bool
+	RequiredScope string
+}
+
+// Returns a query to upload the token's LastUsedAt column to "now". The returned query
+// requires one parameter: the token ID to update.
+func (o TokenLookupOpts) toUpdateLastUsedQuery() string {
+	return `
+	UPDATE access_tokens t SET last_used_at=now()
+	WHERE t.id=$1 AND t.deleted_at IS NULL
+`
+}
+
+// toGetQuery returns a SQL query that will return the following columns from
+// the access_tokens table.
+// - id
+// - subject_user_id
+// - last_used_at
+//
+// The query requires two parameters: the token's value_sha256 and scopes.
+func (o TokenLookupOpts) toGetQuery() string {
+	query := `
+	SELECT t.id, t.subject_user_id, t.last_used_at
+	FROM access_tokens t
+	JOIN users subject_user ON t.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE t.value_sha256=$1 AND t.deleted_at IS NULL AND
+	$2 = ANY (t.scopes)
+`
+
+	if o.OnlyAdmin {
+		query += "AND subject_user.site_admin"
+	}
+
+	return query
+}
+
+func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenLookupOpts) (subjectUserID int32, err error) {
+	if opts.RequiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
 	}
 
@@ -243,27 +323,34 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token, requiredScope stri
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := s.Handle().QueryRowContext(ctx,
+	var (
+		tokenID    int64
+		subjectID  int32
+		lastUsedAt *time.Time
+	)
+	row := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
-		`
-UPDATE access_tokens t SET last_used_at=now()
-WHERE t.id IN (
-	SELECT t2.id FROM access_tokens t2
-	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
-	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
-	$2 = ANY (t2.scopes)
-)
-RETURNING t.subject_user_id
-`,
-		tokenHash, requiredScope,
-	).Scan(&subjectUserID); err != nil {
-		if err == sql.ErrNoRows {
+		opts.toGetQuery(),
+		tokenHash, opts.RequiredScope)
+	err = row.Scan(&tokenID, &subjectID, &lastUsedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return 0, ErrAccessTokenNotFound
 		}
 		return 0, err
 	}
-	return subjectUserID, nil
+
+	if lastUsedAt == nil || time.Until(*lastUsedAt) < -MaxAccessTokenLastUsedAtAge {
+		logger := s.logger.With(log.Int64("tokenID", tokenID), log.Int32("subjectID", subjectID))
+		_, err := s.Handle().ExecContext(ctx, opts.toUpdateLastUsedQuery(), tokenID)
+		if err != nil {
+			logger.Warn("error trying to update token's last_used_at value", log.Error(err))
+		} else {
+			logger.Debug("updated access token's last_used_at value")
+		}
+	}
+
+	return subjectID, nil
 }
 
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
