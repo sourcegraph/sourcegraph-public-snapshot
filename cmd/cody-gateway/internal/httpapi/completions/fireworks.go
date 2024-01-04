@@ -212,6 +212,7 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 		if len(event.Choices) > 0 {
 			completionUsage.characters += len(event.Choices[0].Text)
 		}
+		// these are only included in the last message, so we're not worried about overwriting
 		if event.Usage.PromptTokens > 0 {
 			promptUsage.tokens = event.Usage.PromptTokens
 		}
@@ -221,6 +222,9 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Fireworks streaming response", log.Error(err))
+	}
+	if completionUsage.tokens <= 0 || promptUsage.tokens <= 0 {
+		logger.Warn("did not extract token counts from Fireworks streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
 
 	return promptUsage, completionUsage
