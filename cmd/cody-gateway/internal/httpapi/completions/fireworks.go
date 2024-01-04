@@ -223,7 +223,7 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Fireworks streaming response", log.Error(err))
 	}
-	if completionUsage.tokens <= 0 || promptUsage.tokens <= 0 {
+	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
 		logger.Warn("did not extract token counts from Fireworks streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
 
