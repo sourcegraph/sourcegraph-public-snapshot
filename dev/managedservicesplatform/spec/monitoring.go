@@ -25,10 +25,10 @@ func (s *MonitoringSpec) Validate() []error {
 }
 
 type MonitoringAlertsSpec struct {
-	ResponseCodeRatios []ResponseCodeRatioSpec `yaml:"responseCodeRatios"`
+	ResponseCodeRatios []ResponseCodeRatioAlertSpec `yaml:"responseCodeRatios"`
 }
 
-type ResponseCodeRatioSpec struct {
+type ResponseCodeRatioAlertSpec struct {
 	ID           string   `yaml:"id"`
 	Name         string   `yaml:"name"`
 	Description  *string  `yaml:"description,omitempty"`
@@ -56,7 +56,7 @@ func (s *MonitoringAlertsSpec) Validate() []error {
 	return errs
 }
 
-func (r *ResponseCodeRatioSpec) Validate() []error {
+func (r *ResponseCodeRatioAlertSpec) Validate() []error {
 	var errs []error
 
 	if r.ID == "" {

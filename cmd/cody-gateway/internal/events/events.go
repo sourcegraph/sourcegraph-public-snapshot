@@ -155,3 +155,12 @@ func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 	)
 	return nil
 }
+
+func MergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
+	for _, src := range srcs {
+		for k, v := range src {
+			dst[k] = v
+		}
+	}
+	return dst
+}

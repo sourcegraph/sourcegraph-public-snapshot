@@ -1459,8 +1459,8 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
-// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
+// ReadFile returns the full contents of the named file at commit.
+// (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
 	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},

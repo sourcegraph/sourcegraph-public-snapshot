@@ -164,6 +164,16 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 		return nil, errors.Newf("invalid service kind %q", config.ServiceKind)
 	}
 
+	if pointers.DerefZero(config.Description) == "" {
+		return nil, errors.New("description is required")
+	} else {
+		config.Description = pointers.Stringf(`%s
+
+See https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#operating-services for service and infrastructure access details.
+If you have any questions, reach out to #discuss-core-services.`,
+			*config.Description)
+	}
+
 	if config.ThresholdAggregation.Comparison == "" {
 		config.ThresholdAggregation.Comparison = ComparisonGT
 	}
@@ -179,6 +189,12 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
 				Content:  config.Description,
 				MimeType: pointers.Ptr("text/markdown"),
+			},
+			UserLabels: &map[string]*string{
+				"source":          pointers.Ptr("managed-services-platform"),
+				"msp_alert_id":    pointers.Ptr(config.ID),
+				"msp_service":     pointers.Ptr(config.ServiceName),
+				"msp_gcp_project": pointers.Ptr(config.ProjectID),
 			},
 			Combiner: pointers.Ptr("OR"),
 			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
