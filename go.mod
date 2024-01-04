@@ -59,7 +59,7 @@ require (
 	cloud.google.com/go/bigquery v1.57.1
 	cloud.google.com/go/kms v1.15.5
 	cloud.google.com/go/monitoring v1.16.3
-	cloud.google.com/go/profiler v0.3.1
+	cloud.google.com/go/profiler v0.4.0
 	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/secretmanager v1.11.4
 	cloud.google.com/go/storage v1.30.1

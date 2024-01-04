@@ -6998,8 +6998,8 @@ def go_dependencies():
         name = "com_google_cloud_go_profiler",
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/profiler",
-        sum = "h1:b5got9Be9Ia0HVvyt7PavWxXEht15B9lWnigdvHtxOc=",
-        version = "v0.3.1",
+        sum = "h1:ZeRDZbsOBDyRG0OiK0Op1/XWZ3xeLwJc9zjkzczUxyY=",
+        version = "v0.4.0",
     )
     go_repository(
         name = "com_google_cloud_go_pubsub",
