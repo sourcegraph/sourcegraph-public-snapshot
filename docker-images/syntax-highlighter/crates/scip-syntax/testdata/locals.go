@@ -5,9 +5,17 @@ var local = 10
 
 func main() {
 	local = 20
-	local := true
-	something := func(local int) int {
-		return local
+	local := 5
+	something := func(unrelated int) int {
+		superNested := func(deeplyNested int) int {
+			return local + unrelated + deeplyNested
+		}
+
+		overwriteName := func(local int) int {
+			return local + unrelated
+		}
+
+		return superNested(1) + overwriteName(1)
 	}
 
 	println(local, something)

@@ -807,26 +807,6 @@ mod test {
     }
 
     #[test]
-    fn nested_locals() {
-        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
-        let source_code = include_str!("../testdata/locals-nested.go");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
-        let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!("nested_locals_occurrences", dumped);
-        insta::assert_snapshot!("nested_locals_scopes", scope_tree);
-    }
-
-    #[test]
-    fn functions() {
-        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
-        let source_code = include_str!("../testdata/funcs.go");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
-        let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!("functions_occurrences", dumped);
-        insta::assert_snapshot!("functions_scopes", scope_tree);
-    }
-
-    #[test]
     fn perl() {
         let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
