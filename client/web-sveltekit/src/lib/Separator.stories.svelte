@@ -1,15 +1,24 @@
-<script lang="ts">
+<script lang="ts" context="module">
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import { Story } from '@storybook/addon-svelte-csf'
 
+    export const meta = {
+        component: Separator,
+    }
+</script>
+
+<script lang="ts">
     const currentPosition = getSeparatorPosition('separator-example', 0.5)
     $: width = `${$currentPosition * 100}%`
 </script>
 
-<section>
-    <div class="left match-highlight" style:min-width={width} style:max-width={width}>Left content</div>
-    <Separator {currentPosition} />
-    <div class="right">Right content</div>
-</section>
+<Story name="Default">
+    <section>
+        <div class="left match-highlight" style:min-width={width} style:max-width={width}>Left content</div>
+        <Separator {currentPosition} />
+        <div class="right">Right content</div>
+    </section>
+</Story>
 
 <style lang="scss">
     section {

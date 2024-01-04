@@ -1,8 +1,16 @@
-<script lang="ts">
+<script lang="ts" context="module">
     import Timestamp from '$lib/Timestamp.svelte'
     import { faker } from '@faker-js/faker'
+    import { Story } from '@storybook/addon-svelte-csf'
     import type { ComponentProps } from 'svelte'
 
+    export const meta = {
+        component: Timestamp,
+    }
+</script>
+
+<script lang="ts">
+    faker.seed(1)
     const date = faker.date.recent()
     const cases: [string, Partial<ComponentProps<Timestamp>>][] = [
         ['default', {}],
@@ -15,15 +23,17 @@
     ]
 </script>
 
-<h2>Timestamp props</h2>
-<table>
-    {#each cases as [title, props]}
-        <tr>
-            <th>{title}</th>
-            <td><Timestamp {date} {...props} /></td>
-        </tr>
-    {/each}
-</table>
+<Story name="Default">
+    <h2>Timestamp props</h2>
+    <table>
+        {#each cases as [title, props]}
+            <tr>
+                <th>{title}</th>
+                <td><Timestamp {date} {...props} /></td>
+            </tr>
+        {/each}
+    </table>
+</Story>
 
 <style lang="scss">
     td,
