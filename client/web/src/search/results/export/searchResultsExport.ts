@@ -126,9 +126,15 @@ export const searchResultsToFileContent = (
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
                         ...(enableRepositoryMetadata
                             ? [
-                                  Object.entries(result.metadata ?? {})
-                                      .map(([key, value]) => (value ? `${key}:${value}` : key))
-                                      .join('\n'),
+                                  JSON.stringify(
+                                      Object.entries(result.metadata ?? {}).reduce(
+                                          (obj: { [key: string]: string | null }, [key, value]) => {
+                                              obj[key] = value ?? null
+                                              return obj
+                                          },
+                                          {}
+                                      )
+                                  ),
                               ]
                             : []),
                     ]),
