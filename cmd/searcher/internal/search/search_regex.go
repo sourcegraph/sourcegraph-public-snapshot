@@ -24,12 +24,11 @@ func regexSearchBatch(
 	zf *zipFile,
 	limit int,
 	patternMatchesContent, patternMatchesPaths bool,
-	isPatternNegated bool,
 	contextLines int32,
 ) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender, contextLines)
+	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, sender, contextLines)
 	return sender.collected, sender.LimitHit(), err
 }
 
@@ -53,7 +52,6 @@ func regexSearch(
 	pm *pathMatcher,
 	zf *zipFile,
 	patternMatchesContent, patternMatchesPaths bool,
-	isPatternNegated bool,
 	sender matchSender,
 	contextLines int32,
 ) (err error) {
@@ -87,7 +85,7 @@ func regexSearch(
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if match := pm.Matches(f.Name) && m.MatchesString(f.Name); match == !isPatternNegated {
+			if pm.Matches(f.Name) && m.MatchesString(f.Name) {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
@@ -155,9 +153,8 @@ func regexSearch(
 					casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
 				}
 
-				locs := m.MatchesFile(fileMatchBuf, sender.Remaining())
+				match, locs := m.MatchesFile(fileMatchBuf, sender.Remaining())
 				fm := locsToFileMatch(fileBuf, f.Name, locs, contextLines)
-				match := len(fm.ChunkMatches) > 0
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
 					match = m.MatchesString(f.Name)
@@ -165,7 +162,7 @@ func regexSearch(
 						fm.Path = f.Name
 					}
 				}
-				if match == !isPatternNegated {
+				if match {
 					sender.Send(fm)
 				}
 			}

@@ -89,13 +89,6 @@
         }
     }
 
-    .divider {
-        width: 1px;
-        height: 1rem;
-        background-color: var(--border-color-2);
-        margin: 0 0.5rem;
-    }
-
     button.icon {
         padding: 0;
         margin: 0;

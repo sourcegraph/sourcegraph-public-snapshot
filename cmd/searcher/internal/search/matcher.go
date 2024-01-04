@@ -26,12 +26,11 @@ type matcher interface {
 	// IgnoreCase returns whether matches will ignore case
 	IgnoreCase() bool
 
-	// MatchesString returns whether the pattern matches the given string
+	// MatchesString returns whether the string matches
 	MatchesString(s string) bool
 
-	// MatchesFile returns a LineMatch for each line that matches rm in reader.
-	// LimitHit is true if some matches may not have been included in the result.
-	MatchesFile(fileBuf []byte, limit int) [][]int
+	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches
+	MatchesFile(fileBuf []byte, limit int) (match bool, matches [][]int)
 
 	// ToZoektQuery returns a zoekt query representing the same rules as as this matcher
 	ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error)
@@ -43,6 +42,9 @@ type regexMatcher struct {
 
 	// ignoreCase if true means we need to do case insensitive matching.
 	ignoreCase bool
+
+	// isNegated indicates whether matches on the pattern should be negated (representing a 'NOT' in the query)
+	isNegated bool
 
 	// literalSubstring is used to test if a file is worth considering for
 	// matches. literalSubstring is guaranteed to appear in any match found by
@@ -110,6 +112,7 @@ func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 	return &regexMatcher{
 		re:               re,
 		ignoreCase:       !p.IsCaseSensitive,
+		isNegated:        p.IsNegated,
 		literalSubstring: literalSubstring,
 	}, nil
 }
@@ -158,6 +161,11 @@ func (rm *regexMatcher) IgnoreCase() bool {
 }
 
 func (rm *regexMatcher) MatchesString(s string) bool {
+	matches := rm.matchesString(s)
+	return matches == !rm.isNegated
+}
+
+func (rm *regexMatcher) matchesString(s string) bool {
 	if rm.re == nil {
 		return true
 	}
@@ -167,7 +175,13 @@ func (rm *regexMatcher) MatchesString(s string) bool {
 	return rm.re.MatchString(s)
 }
 
-func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) [][]int {
+func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+	matches := rm.matchesFile(fileBuf, limit)
+	match := len(matches) > 0
+	return match == !rm.isNegated, matches
+}
+
+func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
 	// Most files will not have a match and we bound the number of matched
 	// files we return. So we can avoid the overhead of parsing out new lines
 	// and repeatedly running the regex engine by running a single match over
@@ -189,24 +203,36 @@ func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektqu
 		return nil, err
 	}
 	re = zoektquery.OptimizeRegexp(re, syntax.Perl)
+
 	if matchContent && matchPath {
 		return zoektquery.NewOr(
-			&zoektquery.Regexp{
-				Regexp:        re,
-				Content:       true,
-				CaseSensitive: !rm.ignoreCase,
-			},
-			&zoektquery.Regexp{
-				Regexp:        re,
-				FileName:      true,
-				CaseSensitive: !rm.ignoreCase,
-			},
+			rm.negateIfNeeded(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					Content:       true,
+					CaseSensitive: !rm.ignoreCase,
+				}),
+			rm.negateIfNeeded(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					FileName:      true,
+					CaseSensitive: !rm.ignoreCase,
+				}),
 		), nil
 	}
-	return &zoektquery.Regexp{
-		Regexp:        re,
-		Content:       matchContent,
-		FileName:      matchPath,
-		CaseSensitive: !rm.ignoreCase,
-	}, nil
+
+	return rm.negateIfNeeded(
+		&zoektquery.Regexp{
+			Regexp:        re,
+			Content:       matchContent,
+			FileName:      matchPath,
+			CaseSensitive: !rm.ignoreCase,
+		}), nil
+}
+
+func (rm *regexMatcher) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
+	if rm.isNegated {
+		return &zoektquery.Not{Child: q}
+	}
+	return q
 }

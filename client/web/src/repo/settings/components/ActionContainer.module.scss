@@ -44,3 +44,8 @@
         opacity: 1;
     }
 }
+
+.content {
+    flex-shrink: 1;
+    min-width: 0;
+}

@@ -419,7 +419,7 @@ func filteredStructuralSearch(
 		return err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, false, contextLines)
+	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, contextLines)
 	if err != nil {
 		return err
 	}

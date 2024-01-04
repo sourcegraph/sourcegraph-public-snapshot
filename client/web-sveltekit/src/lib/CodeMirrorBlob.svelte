@@ -107,7 +107,7 @@
         temporaryTooltip,
     } from '$lib/web'
     import { goto } from '$app/navigation'
-    import { type CodeIntelAPI } from '$lib/shared'
+    import type { CodeIntelAPI } from '$lib/shared'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
     import type { LineOrPositionOrRange } from '$lib/common'
 

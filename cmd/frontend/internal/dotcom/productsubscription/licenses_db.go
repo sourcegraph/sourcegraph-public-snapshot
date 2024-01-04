@@ -99,10 +99,9 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a license is created in DotCom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
-			logger.Error("LogSecurityEvent", log.Error(err))
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 
@@ -125,7 +124,7 @@ func postLicenseCreationToSlack(ctx context.Context, logger log.Logger, subscrip
 
 	client := slack.New(dotcom.SlackLicenseCreationWebhook)
 	err = client.Post(ctx, &slack.Payload{
-		Text: renderLicenseCreationSlackMessage(licenseCreator, subscriptionID, version, expiresAt, info),
+		Text: renderLicenseCreationSlackMessage(time.Now(), licenseCreator, subscriptionID, version, expiresAt, info),
 	})
 	if err != nil {
 		logger.Error("error sending Slack message", log.Error(err))
@@ -148,7 +147,14 @@ Reply with a :approved_stamp: when this is approved
 Reply with a :white_check_mark: when this has been sent to the customer
 `
 
-func renderLicenseCreationSlackMessage(licenseCreator *types.User, subscriptionID string, version int, expiresAt *time.Time, info license.Info) string {
+func renderLicenseCreationSlackMessage(
+	now time.Time,
+	licenseCreator *types.User,
+	subscriptionID string,
+	version int,
+	expiresAt *time.Time,
+	info license.Info,
+) string {
 	pacificLoc, _ := time.LoadLocation("America/Los_Angeles")
 
 	// Safely dereference optional properties
@@ -161,7 +167,7 @@ func renderLicenseCreationSlackMessage(licenseCreator *types.User, subscriptionI
 		subscriptionID,
 		strconv.Itoa(version),
 		expiresAt.Format("Jan 2, 2006 3:04pm MST"),
-		strconv.FormatFloat(time.Until(*expiresAt).Hours()/24, 'f', 1, 64),
+		strconv.FormatFloat(expiresAt.Sub(now).Hours()/24, 'f', 1, 64),
 		expiresAt.In(pacificLoc).Format("Jan 2, 2006 3:04pm MST"),
 		strconv.FormatUint(uint64(info.UserCount), 10),
 		"`"+strings.Join(info.Tags, "`, `")+"`",
@@ -188,7 +194,7 @@ func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) 
 	return results[0], nil
 }
 
-// GetByLicenseKey retrieves the product license (if any) given its check license token.
+// GetByAccessToken retrieves the product license (if any) given its check license token.
 // The accessToken is of the format created by GenerateLicenseKeyBasedAccessToken.
 //
 // 🚨 SECURITY: The caller must ensure that errTokenInvalid error is handled appropriately
@@ -211,7 +217,7 @@ func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*
 	return results[0], nil
 }
 
-// GetByID retrieves the product license (if any) given its license key.
+// GetByLicenseKey retrieves the product license (if any) given its license key.
 func (s dbLicenses) GetByLicenseKey(ctx context.Context, licenseKey string) (*dbLicense, error) {
 	if mocks.licenses.GetByLicenseKey != nil {
 		return mocks.licenses.GetByLicenseKey(licenseKey)
@@ -279,23 +285,31 @@ func (s dbLicenses) Active(ctx context.Context, subscriptionID string) (*dbLicen
 	return licenses[0], nil
 }
 
-// AssignSiteID marks the existing license as used by a specific siteID
-func (s dbLicenses) AssignSiteID(ctx context.Context, id, siteID string) error {
+// AssignSiteID marks the existing license as used by a specific siteID, and
+// returns the updated license. The original dbLicense struct is modified.
+func (s dbLicenses) AssignSiteID(ctx context.Context, license *dbLicense, siteID string) (*dbLicense, error) {
 	q := sqlf.Sprintf(`
 UPDATE product_licenses
 SET site_id = %s
 WHERE id = %s
 	`,
 		siteID,
-		id,
+		license.ID,
 	)
 
 	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	license.SiteID = &siteID
+
+	return license, nil
 }
 
 // List lists all product licenses that satisfy the options.
 func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
+
 	if mocks.licenses.List != nil {
 		return mocks.licenses.List(ctx, opt)
 	}
@@ -304,6 +318,10 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 }
 
 func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
+	// TODO: put a logger on dbLicenses and scope from that
+	logger := log.Scoped("dbLicenses.List")
+	logger = trace.Logger(ctx, logger)
+
 	q := sqlf.Sprintf(`
 SELECT
 	id,
@@ -361,10 +379,9 @@ ORDER BY created_at DESC
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-		//Log an event when liscenses list is viewed in Dotcom
+		// Log an event when liscense list is viewed in Dotcom
 		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", q.Args()); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
 	return results, nil

@@ -254,7 +254,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 	defer zf.Close()
 
-	return regexSearch(ctx, rm, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender, int32(p.NumContextLines))
+	return regexSearch(ctx, rm, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, sender, p.NumContextLines)
 }
 
 func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Request, paths []string) (string, *zipFile, error) {

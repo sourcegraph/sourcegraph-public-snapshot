@@ -227,6 +227,7 @@ export const FILE_ICONS_BY_LANGUAGE: Map<string, UnifiedIcon> = new Map([
     ['SVG', { react: { icon: SiSvg, className: styles.yellow }, svg: mdiSvg }],
     ['Swift', { react: { icon: SiSwift, className: styles.blue }, svg: mdiLanguageSwift }],
     ['Terraform', { react: { icon: SiTerraform, className: styles.blue } }],
+    ['TSX', { react: { icon: SiTypescript, className: styles.blue }, svg: mdiLanguageTypescript }],
     ['TypeScript', { react: { icon: SiTypescript, className: styles.blue }, svg: mdiLanguageTypescript }],
     ['Text', { react: { icon: CiTextAlignLeft, className: styles.defaultIcon }, svg: mdiText }],
 

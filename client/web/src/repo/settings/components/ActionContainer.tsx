@@ -20,7 +20,7 @@ export const BaseActionContainer: React.FunctionComponent<
 > = ({ title, description, action, details, className, titleAs = 'h4', titleStyleAs = titleAs }) => (
     <div className={classNames(styles.actionContainer, className)}>
         <div className={styles.row}>
-            <div>
+            <div className={styles.content}>
                 <Heading as={titleAs} styleAs={titleStyleAs} className={styles.title}>
                     {title}
                 </Heading>
