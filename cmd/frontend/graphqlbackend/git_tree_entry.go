@@ -231,7 +231,6 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 
 var (
 	syntaxHighlightFileBlocklist = []string{
-		"package.json",
 		"yarn.lock",
 		"pnpm-lock.yaml",
 		"package-lock.json",
@@ -250,7 +249,7 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 
-	// special handling in dotcom to prevent syntax highlighting large files
+	// special handling in dotcom to prevent syntax highlighting large lock files
 	if envvar.SourcegraphDotComMode() {
 		for _, f := range syntaxHighlightFileBlocklist {
 			if strings.HasSuffix(r.Path(), f) {
