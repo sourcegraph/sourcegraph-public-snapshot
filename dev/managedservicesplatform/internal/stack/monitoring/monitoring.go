@@ -295,7 +295,7 @@ func createCommonAlerts(
 		{
 			ID:          "cpu",
 			Name:        "High Container CPU Utilization",
-			Description: pointers.Ptr("High CPU Usage - it may be neccessaru to reduce load or increase CPU allocation"),
+			Description: pointers.Ptr("High CPU Usage - it may be neccessary to reduce load or increase CPU allocation"),
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
 				Aligner:   alertpolicy.MonitoringAlignPercentile99,
