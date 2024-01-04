@@ -1,0 +1,35 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "attribution",
+    srcs = ["handler.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/response",
+        "//internal/codygateway",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "attribution_test",
+    srcs = ["handler_test.go"],
+    deps = [
+        ":attribution",
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/auth",
+        "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/httpapi",
+        "//internal/codygateway",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -371,7 +371,6 @@ func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed z
 		IsRegExp:                     p.IsRegExp,
 		IsStructuralPat:              p.IsStructuralPat,
 		CombyRule:                    p.CombyRule,
-		IsWordMatch:                  p.IsWordMatch,
 		IsCaseSensitive:              p.IsCaseSensitive,
 		FileMatchLimit:               int32(p.Limit),
 		IncludePatterns:              p.IncludePatterns,

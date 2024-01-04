@@ -1,26 +1,24 @@
-;; (source
-  ;; (scope: Something)
-  ;; (scope: Another
-    ;; call Something))
-
 (func_literal) @scope
 (function_declaration) @scope
 (method_declaration) @scope
 (expression_switch_statement) @scope
+;: See https://gobyexample.com/if-else for why if_statements need an
+;; extra scope other than the blocks they open
 (if_statement) @scope
 (for_statement) @scope
 (block) @scope
 
 (short_var_declaration
-  left: (expression_list (identifier) @definition.term))
+ left: (expression_list (identifier) @definition.term))
 
 ;; TODO: We should talk about these: they could be params instead
 (parameter_declaration name: (identifier) @definition.term)
 (variadic_parameter_declaration (identifier) @definition.var)
 
 (function_declaration
-    name: ((identifier) @definition.function
-           (#set! "scope" "global")))
+ name: ((identifier) @definition.function
+        (#set! "hoist" "function")
+        (#set! "scope" "global")))
 
 ((method_declaration name: (field_identifier) @definition.method))
 
@@ -34,7 +32,7 @@
     name: (package_identifier) @definition.namespace))
 
 (var_spec
-  name: (identifier) @definition.var)
+ name: (identifier) @definition.var)
 
 (for_statement
  (range_clause
@@ -49,7 +47,6 @@
   (type_spec
     name: (type_identifier) @definition.type))
 
-;; reference
 (identifier) @reference
 (type_identifier) @reference
 (field_identifier) @reference
@@ -76,11 +73,3 @@
 ;                  field: (field_identifier) @reference)))
 ;  (set! reference.kind "call"))
 ;
-
-;; TODO: These may not make much sense to have for locals... {{{
-((package_identifier) @reference
-  (set! reference.kind "namespace"))
-
-(package_clause
-   (package_identifier) @definition.namespace)
-;; }}}

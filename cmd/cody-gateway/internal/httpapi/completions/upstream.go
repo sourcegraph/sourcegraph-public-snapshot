@@ -180,7 +180,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							Name:       codygateway.EventNameRequestBlocked,
 							Source:     act.Source.Name(),
 							Identifier: act.ID,
-							Metadata: mergeMaps(requestMetadata, map[string]any{
+							Metadata: events.MergeMaps(requestMetadata, map[string]any{
 								codygateway.CompletionsEventFeatureMetadataField: feature,
 								"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
 								"provider": upstreamName,
@@ -264,7 +264,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
 				if flaggingResult.IsFlagged() {
-					requestMetadata = mergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
+					requestMetadata = events.MergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 				}
 				usageData := map[string]any{
 					"prompt_character_count":     promptUsage.characters,
@@ -286,7 +286,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						Name:       codygateway.EventNameCompletionsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
+						Metadata: events.MergeMaps(requestMetadata, usageData, map[string]any{
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"model":    gatewayModel,
 							"provider": upstreamName,
@@ -428,15 +428,6 @@ func intersection(a, b []string) (c []string) {
 		}
 	}
 	return c
-}
-
-func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
-	for _, src := range srcs {
-		for k, v := range src {
-			dst[k] = v
-		}
-	}
-	return dst
 }
 
 type flaggingResult struct {

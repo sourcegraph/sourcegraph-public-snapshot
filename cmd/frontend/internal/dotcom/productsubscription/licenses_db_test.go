@@ -166,7 +166,7 @@ func TestAssignSiteID(t *testing.T) {
 	license := insertLicense(t, ctx, db, u, "key")
 
 	siteID := uuid.NewString()
-	err = store.AssignSiteID(ctx, license.ID, siteID)
+	_, err = store.AssignSiteID(ctx, license, siteID)
 	require.NoError(t, err)
 
 	license, err = store.GetByID(ctx, license.ID)
@@ -268,7 +268,7 @@ func TestProductLicenses_List(t *testing.T) {
 			require.NoError(t, err)
 		}
 		if l.siteID != "" {
-			err = store.AssignSiteID(ctx, id, l.siteID)
+			_, err = store.AssignSiteID(ctx, &dbLicense{ID: id}, l.siteID)
 			require.NoError(t, err)
 		}
 	}
@@ -384,13 +384,18 @@ func TestRevokeLicense(t *testing.T) {
 }
 
 func TestRenderLicenseCreationSlackMessage(t *testing.T) {
-	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+	staticExpiresAt, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
+	// Typical case is that license expires in the future, so emulate now to
+	// be some time before that
+	staticNow := staticExpiresAt.Add(-72 * time.Hour)
+
 	message := renderLicenseCreationSlackMessage(
+		staticNow,
 		&types.User{},
 		"1234", 123,
-		&staticTime,
+		&staticExpiresAt,
 		license.Info{})
-	autogold.Expect("\nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:\n\n• *License version*: 123\n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (-312.6 days remaining)\n• *Expiration (PT)*: Feb 24, 2023 6:48am PST\n• *User count*: 0\n• *License tags*: ``\n• *Salesforce subscription ID*: unknown\n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown|unknown>\n\nReply with a :approved_stamp: when this is approved\nReply with a :white_check_mark: when this has been sent to the customer\n").Equal(t, message)
+	autogold.Expect("\nA new license was created by ** for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/1234|1234>:\n\n• *License version*: 123\n• *Expiration (UTC)*: Feb 24, 2023 2:48pm UTC (3.0 days remaining)\n• *Expiration (PT)*: Feb 24, 2023 6:48am PST\n• *User count*: 0\n• *License tags*: ``\n• *Salesforce subscription ID*: unknown\n• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/unknown|unknown>\n\nReply with a :approved_stamp: when this is approved\nReply with a :white_check_mark: when this has been sent to the customer\n").Equal(t, message)
 }
