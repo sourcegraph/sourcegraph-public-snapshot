@@ -340,7 +340,7 @@ const SearchJob: FC<SearchJobProps> = props => {
             {withCreatorColumn && (
                 <span className={styles.jobCreator}>
                     <UserAvatar user={job.creator!} className={styles.jobAvatar} />
-                    {job.creator?.displayName ?? job.creator?.username}
+                    {job.creator?.displayName ?? job.creator?.username ?? 'UNKNOWN'}
                 </span>
             )}
 
