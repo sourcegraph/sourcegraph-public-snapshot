@@ -329,6 +329,13 @@ nonutf8.txt
 symlink
 `),
 	}, {
+		arg: protocol.PatternInfo{Pattern: "go", IsNegated: true, PatternMatchesPath: true, ExcludePattern: "\\.txt"},
+		want: autogold.Expect(`README.md
+file++.plus
+milton.png
+symlink
+`),
+	}, {
 		arg:  protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true},
 		want: autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n"),
 	}, {
