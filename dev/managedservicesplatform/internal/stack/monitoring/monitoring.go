@@ -151,7 +151,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				// this allows us to see the alerts, but not necessarily get
 				// paged by it.
 				// TODO: Enable after we dogfood the alerts for a while.
-				SuppressNotifications: pointers.Ptr(false),
+				SuppressNotifications: pointers.Ptr(true),
 
 				// Point alerts sent through this integration at the Opsgenie team.
 				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
