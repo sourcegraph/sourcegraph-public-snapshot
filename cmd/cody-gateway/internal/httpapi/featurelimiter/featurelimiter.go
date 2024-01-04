@@ -100,10 +100,10 @@ func HandleFeature(
 			limitedCause := "quota"
 			defer func() {
 				limitMap := map[string]any{}
-				var rlErr limiter.RateLimitExceededError
-				if errors.As(err, &rlErr) {
-					limitMap["limit"] = rlErr.Limit
-					limitMap["retry_after"] = rlErr.RetryAfter
+				var limitExceededError limiter.RateLimitExceededError
+				if errors.As(err, &limitExceededError) {
+					limitMap["limit"] = limitExceededError.Limit
+					limitMap["retry_after"] = limitExceededError.RetryAfter
 				}
 				if loggerErr := eventLogger.LogEvent(
 					r.Context(),
