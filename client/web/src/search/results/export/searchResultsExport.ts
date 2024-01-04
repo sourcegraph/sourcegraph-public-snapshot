@@ -124,7 +124,6 @@ export const searchResultsToFileContent = (
                         result.type,
                         result.repository,
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
-                        // DEPRECATED: remove this field in 7.0.0
                         ...(enableRepositoryMetadata
                             ? [
                                   Object.entries(result.metadata ?? {})
