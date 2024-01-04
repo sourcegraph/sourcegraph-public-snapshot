@@ -20,8 +20,18 @@
 
 (var_spec
  name: (identifier) @definition.var)
+
 (short_var_declaration
  left: (expression_list (identifier) @definition.term))
+
+(source_file
+ (const_declaration
+  (const_spec
+   name: (identifier) @definition.skip)))
+
+(const_declaration
+ (const_spec
+  name: (identifier) @definition.var))
 
 (parameter_declaration name: (identifier) @definition.term)
 (variadic_parameter_declaration (identifier) @definition.var)
@@ -33,8 +43,6 @@
 ;; (function_declaration
 ;;  name: ((identifier) @definition.function)
 ;;  (#set! "hoist" "function"))
-
-((method_declaration name: (field_identifier) @definition.method))
 
 ;; import (
 ;;   f "fmt"
@@ -49,14 +57,6 @@
  (range_clause
    left: (expression_list
            (identifier) @definition.var)))
-
-(const_declaration
- (const_spec
-  name: (identifier) @definition.var))
-
-(type_declaration
-  (type_spec
-    name: (type_identifier) @definition.type))
 
 (identifier) @reference
 (type_identifier) @reference

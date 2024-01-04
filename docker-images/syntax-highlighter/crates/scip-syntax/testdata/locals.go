@@ -50,3 +50,23 @@ func Another(local int) int {
 
 	return local
 }
+
+func constFunc() int {
+	const LOCAL_CONST = 10
+	return LOCAL_CONST
+}
+
+type MyStruct struct {
+	field1 int
+	field2 string
+}
+
+type MyInterface interface {
+	method(param int) int
+}
+
+func (m *MyStruct) method(local int) int {
+	return m.field1 + local
+}
+
+const MYCONST int = 10

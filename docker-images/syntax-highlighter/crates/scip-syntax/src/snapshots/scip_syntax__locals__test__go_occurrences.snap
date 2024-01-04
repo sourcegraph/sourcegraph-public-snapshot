@@ -88,4 +88,31 @@ expression: dumped
    return local
 //        ^^^^^ reference local 8
   }
+  
+  func constFunc() int {
+   const LOCAL_CONST = 10
+//       ^^^^^^^^^^^ definition local 13
+   return LOCAL_CONST
+//        ^^^^^^^^^^^ reference local 13
+  }
+  
+  type MyStruct struct {
+   field1 int
+   field2 string
+  }
+  
+  type MyInterface interface {
+   method(param int) int
+//        ^^^^^ definition local 14
+  }
+  
+  func (m *MyStruct) method(local int) int {
+//      ^ definition local 15
+//                          ^^^^^ definition local 16
+   return m.field1 + local
+//        ^ reference local 15
+//                   ^^^^^ reference local 16
+  }
+  
+  const MYCONST int = 10
 
