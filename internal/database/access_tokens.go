@@ -338,10 +338,12 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 	}
 
 	if lastUsedAt == nil || time.Until(*lastUsedAt) < -MaxAccessTokenLastUsedAtAge {
-		s.logger.Debug("Updating access token's last_used_at value.")
+        logger := s.logger.With(log.Int64("tokenID", tokenID), log.Int32("subjectID", subjectID)) 
 		_, err := s.Handle().ExecContext(ctx, opts.toUpdateLastUsedQuery(), tokenID)
 		if err != nil {
-			s.logger.Warn("Error trying to update token's last_used_at value.", log.Error(err))
+			logger.Warn("error trying to update token's last_used_at value", log.Error(err))
+		} else {
+		    logger.Debug("updated access token's last_used_at value")
 		}
 	}
 
