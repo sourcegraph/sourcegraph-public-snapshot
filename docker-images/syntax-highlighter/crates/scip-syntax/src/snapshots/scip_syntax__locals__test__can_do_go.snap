@@ -4,7 +4,11 @@ expression: dumped
 ---
   package main
   
+  // Not actually local
+  var local = 10
+  
   func main() {
+   local = 20
    local := true
 // ^^^^^ definition local 1
    something := func(local int) int {

@@ -2,16 +2,27 @@
 (function_declaration) @scope
 (method_declaration) @scope
 (expression_switch_statement) @scope
-;: See https://gobyexample.com/if-else for why if_statements need an
-;; extra scope other than the blocks they open
+;; if_statement needs to open an extra scope, because you can define
+;; variables inside an if in go:
+;; if num := 10; num > 3 {
+;;     ..
+;; } else {
+;;     ..
+;; }
 (if_statement) @scope
 (for_statement) @scope
 (block) @scope
 
+;; We want to skip global definitions as they're non-local.
+(source_file
+ (var_declaration
+  (var_spec name: (identifier) @definition.skip)))
+
+(var_spec
+ name: (identifier) @definition.var)
 (short_var_declaration
  left: (expression_list (identifier) @definition.term))
 
-;; TODO: We should talk about these: they could be params instead
 (parameter_declaration name: (identifier) @definition.term)
 (variadic_parameter_declaration (identifier) @definition.var)
 
@@ -33,9 +44,6 @@
 (import_spec_list
   (import_spec
     name: (package_identifier) @definition.namespace))
-
-(var_spec
- name: (identifier) @definition.var)
 
 (for_statement
  (range_clause

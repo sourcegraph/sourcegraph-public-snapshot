@@ -241,6 +241,10 @@ struct LocalResolver<'a> {
     // definitions. Ideally we'd fix our queries to prevent these
     // overlaps.
     skip_references_at_offsets: HashSet<usize>,
+    // When marking captures as @definition.skip we record them here,
+    // to not record any subsequent matches. This is used to filter
+    // out non-local definitions
+    skip_definitions_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -266,6 +270,7 @@ impl<'a> LocalResolver<'a> {
             source_bytes,
             definition_id_supply: 0,
             skip_references_at_offsets: HashSet::new(),
+            skip_definitions_at_offsets: HashSet::new(),
             occurrences: vec![],
         }
     }
@@ -510,6 +515,7 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn collect_captures(
+        &mut self,
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
         source_bytes: &'a [u8],
@@ -534,6 +540,18 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
+                    let offset = capture.node.start_byte();
+                    if self.skip_definitions_at_offsets.contains(&offset) {
+                        continue;
+                    }
+                    let kind = capture_name
+                        .strip_prefix("definition.")
+                        .unwrap_or(capture_name);
+                    if kind == "skip" {
+                        self.skip_references_at_offsets.insert(offset);
+                        self.skip_definitions_at_offsets.insert(offset);
+                        continue;
+                    }
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
@@ -716,7 +734,7 @@ impl<'a> LocalResolver<'a> {
         test_writer: Option<&mut dyn Write>,
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
-        let captures = Self::collect_captures(config, tree, self.source_bytes);
+        let captures = self.collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
         let top_scope = self

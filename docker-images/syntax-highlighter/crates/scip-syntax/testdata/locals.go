@@ -1,6 +1,10 @@
 package main
 
+// Not actually local
+var local = 10
+
 func main() {
+	local = 20
 	local := true
 	something := func(local int) int {
 		return local
