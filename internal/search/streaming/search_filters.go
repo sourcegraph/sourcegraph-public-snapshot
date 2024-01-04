@@ -5,10 +5,12 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -17,7 +19,7 @@ import (
 
 // SearchFilters computes the filters to show a user based on results.
 //
-// Note: it currently live in graphqlbackend. However, once we have a non
+// Note: it currently lives in graphqlbackend. However, once we have a non
 // resolver based SearchResult type it can be extracted. It lives in its own
 // file to make that more obvious. We already have the filter type extracted
 // (Filter).
@@ -65,6 +67,55 @@ var commonFileFilters = []struct {
 	},
 }
 
+const (
+	// After/Before Filters
+	AFTER  = "after"
+	BEFORE = "before"
+
+	// After/Before Values
+	YESTERDAY     = "yesterday"
+	ONE_WEEK_AGO  = "1 week ago"
+	ONE_MONTH_AGO = "1 month ago"
+)
+
+type dateFilterInfo struct {
+	Timeframe string
+	Value     string
+	Label     string
+}
+
+func determineTimeframe(date time.Time) dateFilterInfo {
+	now := time.Now()
+
+	switch {
+	case date.After(now.Add(-25 * time.Hour)):
+		return dateFilterInfo{
+			Timeframe: AFTER,
+			Value:     YESTERDAY,
+			Label:     "Last 24 hours",
+		}
+	case date.After(now.Add(-8 * 24 * time.Hour)):
+		return dateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     ONE_WEEK_AGO,
+			Label:     "Last week",
+		}
+	case date.After(now.Add(-31 * 24 * time.Hour)):
+		return dateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     ONE_MONTH_AGO,
+			Label:     "Last month",
+		}
+
+	default:
+		return dateFilterInfo{
+			Timeframe: BEFORE,
+			Value:     "2 months ago",
+			Label:     "Older than 2 months",
+		}
+	}
+}
+
 // Update internal state for the results in event.
 func (s *SearchFilters) Update(event SearchEvent) {
 	// Initialize state on first call.
@@ -107,6 +158,32 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
+	addSymbolFilter := func(symbols []*result.SymbolMatch, limitHit bool) {
+		for _, sym := range symbols {
+			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
+			s.filters.Add(filter, selectKind, 1, limitHit, "symbol type")
+		}
+	}
+
+	addCommitAuthorFilter := func(commit gitdomain.Commit) {
+		filter := fmt.Sprintf(`author:%s`, commit.Author.Email)
+		s.filters.Add(filter, commit.Author.Name, 1, false, "author")
+	}
+
+	addCommitDateFilter := func(commit gitdomain.Commit) {
+		var cd time.Time
+		if commit.Committer != nil {
+			cd = commit.Committer.Date
+		} else {
+			cd = commit.Author.Date
+		}
+
+		df := determineTimeframe(cd)
+		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
+		s.filters.Add(filter, df.Label, 1, false, "date")
+	}
+
 	if event.Stats.ExcludedForks > 0 {
 		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "utility")
 		s.filters.MarkImportant("fork:yes")
@@ -124,9 +201,11 @@ func (s *SearchFilters) Update(event SearchEvent) {
 				rev = *v.InputRev
 			}
 			lines := int32(v.ResultCount())
+
 			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
 			addLangFilter(v.Path, lines, v.LimitHit)
 			addFileFilter(v.Path, lines, v.LimitHit)
+			addSymbolFilter(v.Symbols, v.LimitHit)
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
@@ -136,6 +215,11 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
 			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
 			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
+			addCommitAuthorFilter(v.Commit)
+			addCommitDateFilter(v.Commit)
+
+			// =========== TODO: Jason Repo Metadata filters ============
+			// file paths are in v.ModifiedFiles which is a []string
 		}
 	}
 }
