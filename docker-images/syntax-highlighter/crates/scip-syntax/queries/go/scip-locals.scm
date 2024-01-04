@@ -2,6 +2,7 @@
 (function_declaration) @scope
 (method_declaration) @scope
 (expression_switch_statement) @scope
+(expression_case) @scope
 ;; if_statement needs to open an extra scope, because you can define
 ;; variables inside an if in go:
 ;; if num := 10; num > 3 {
@@ -13,7 +14,6 @@
 (for_statement) @scope
 (block) @scope
 
-;; We want to skip global definitions as they're non-local.
 (source_file
  (var_declaration
   (var_spec name: (identifier) @definition.skip)))
