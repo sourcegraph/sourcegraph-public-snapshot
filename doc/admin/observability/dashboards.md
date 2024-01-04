@@ -149,7 +149,9 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 #### frontend: blob_load_latency
 
-<p class="subtitle">90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.</p>
+<p class="subtitle">90th percentile blob load latency over 10m</p>
+
+- The blob API route provides the files and code snippets that the UI displays.
 
 Refer to the [alerts reference](./alerts.md#frontend-blob-load-latency) for 1 alert related to this panel.
 
