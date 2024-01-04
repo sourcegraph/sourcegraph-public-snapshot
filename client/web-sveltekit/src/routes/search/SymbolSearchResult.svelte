@@ -21,7 +21,7 @@
     }))
 
     let hasBeenVisible = false
-    let highlightedHTMLRows: string[][] = undefined
+    let highlightedHTMLRows: string[][] = []
     async function onIntersection(event: { detail: boolean }) {
         if (hasBeenVisible) {
             return
@@ -50,7 +50,7 @@
                         <CodeExcerpt
                             startLine={symbol.line - 1}
                             plaintextLines={['']}
-                            highlightedHTMLRows={highlightedHTMLRows?.[index]}
+                            highlightedHTMLRows={highlightedHTMLRows[index]}
                             --background-color="transparent"
                         />
                     </div>

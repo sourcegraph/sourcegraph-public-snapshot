@@ -2,8 +2,6 @@ import { query, gql } from '$lib/graphql'
 import type {
     RepositoryCommitResult,
     Scalars,
-    RepositoryComparisonDiffResult,
-    RepositoryComparisonDiffVariables,
     HistoryResult,
     GitHistoryResult,
     GitHistoryVariables,
@@ -57,14 +55,6 @@ const gitCommitFragment = gql`
     fragment ExternalLinkFields on ExternalLink {
         url
         serviceKind
-    }
-`
-
-const diffStatFields = gql`
-    fragment DiffStatFields on DiffStat {
-        __typename
-        added
-        deleted
     }
 `
 
@@ -208,65 +198,6 @@ export async function fetchRepoCommit(repoId: string, revision: string): Promise
         repo: repoId,
         revspec: revision,
     })
-}
-
-export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
-
-export async function queryRepositoryComparisonFileDiffs(args: {
-    repo: Scalars['ID']['input']
-    base: string | null
-    head: string | null
-    first: number | null
-    after: string | null
-    paths: string[] | null
-}): Promise<RepositoryComparisonDiff['comparison']['fileDiffs']> {
-    const data = await query<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>(
-        gql`
-            query RepositoryComparisonDiff(
-                $repo: ID!
-                $base: String
-                $head: String
-                $first: Int
-                $after: String
-                $paths: [String!]
-            ) {
-                node(id: $repo) {
-                    id
-                    ... on Repository {
-                        comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first, after: $after, paths: $paths) {
-                                nodes {
-                                    ...FileDiffFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    endCursor
-                                    hasNextPage
-                                }
-                                diffStat {
-                                    ...DiffStatFields
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${fileDiffFields}
-
-            ${diffStatFields}
-        `,
-        args
-    )
-
-    const repo = data.node
-    if (repo === null) {
-        throw new Error('Repository not found')
-    }
-    if (repo.__typename !== 'Repository') {
-        throw new Error('Not a repository')
-    }
-    return repo.comparison.fileDiffs
 }
 
 export async function fetchDiff(

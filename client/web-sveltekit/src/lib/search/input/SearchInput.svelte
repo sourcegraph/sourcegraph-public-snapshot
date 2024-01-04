@@ -324,18 +324,4 @@
         background-color: transparent;
         cursor: pointer;
     }
-
-    .popover-content {
-        input {
-            margin-left: 0;
-        }
-
-        label {
-            max-width: 17rem;
-            display: flex;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-top: 1px solid var(--border-color);
-        }
-    }
 </style>
