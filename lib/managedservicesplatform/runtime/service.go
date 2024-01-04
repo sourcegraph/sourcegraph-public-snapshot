@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 
+	"cloud.google.com/go/profiler"
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
@@ -94,6 +95,21 @@ func Start[
 		logger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
 	}
 	defer otelCleanup()
+
+	if contract.MSP {
+		if err := profiler.Start(profiler.Config{
+			Service:        service.Name(),
+			ServiceVersion: service.Version(),
+			// Options used in sourcegraph/sourcegraph
+			MutexProfiling: true,
+			AllocForceGC:   true,
+		}); err != nil {
+			// For now, keep this optional and don't prevent startup
+			logger.Error("failed to initialize profiler", log.Error(err))
+		} else {
+			logger.Debug("Cloud Profiler enabled")
+		}
+	}
 
 	// Initialize the service
 	routine, err := service.Initialize(
