@@ -37,25 +37,9 @@ use tree_sitter::Node;
 // references we'll probably make it so `@reference` with no
 // namespace matches definitions in any namespace and
 // `@definition` matches any `@reference.namespace`
-//
-// b) Marking globals to avoid emitting them into occurrences
-//
-// https://github.com/sourcegraph/sourcegraph/issues/57791
-//
-// I've given this an initial try, but tree-sitter queries are
-// difficult to work with.
-//
-// The main problem is that `(source_file (child) @global)` captures
-// all occurences of `(child)` regardless of depth and nesting
-// underneath `source_file`. This makes it very difficult to talk
-// about "toplevel" items. We might need to extend our DSL a little
-// further and do some custom tree-traversal logic to implement this.
-//
-// One possible idea could be to subtract any matches we'd get from
-// scip-ctags
 
-// The maximum number of parent scopes we traverse before giving up to
-// prevent infinite loops
+/// The maximum number of parent scopes we traverse before giving up to
+/// prevent infinite loops
 const MAX_SCOPE_DEPTH: i32 = 10000;
 
 pub fn find_locals(
