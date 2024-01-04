@@ -6,9 +6,14 @@
 
 set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
+echo "RUNNING"
+
 if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" && "$BUILDKITE_PIPELINE_NAME" != "aspect-experimental" ]]; then
+  echo "QUITING ... BOOOO"
   exit 0
 fi
+
+echo "WHOOOOOOOOO"
 
 # The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" || "$BUILDKITE_AGENT_META_DATA_QUEUE" == "aspect-default" ]]; then
