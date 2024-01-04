@@ -117,13 +117,21 @@ export const searchResultsToFileContent = (
 
         case 'repo': {
             content = [
-                enableRepositoryMetadata ? [...headers, 'Repository metadata'] : headers,
+                enableRepositoryMetadata ? [...headers, 'Repository metadata', 'Repository metadata JSON'] : headers,
                 ...searchResults
                     .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
                     .map(result => [
                         result.type,
                         result.repository,
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
+                        // DEPRECATED: remove this field in 7.0.0
+                        ...(enableRepositoryMetadata
+                            ? [
+                                  Object.entries(result.metadata ?? {})
+                                      .map(([key, value]) => (value ? `${key}:${value}` : key))
+                                      .join('\n'),
+                              ]
+                            : []),
                         ...(enableRepositoryMetadata
                             ? [
                                   JSON.stringify(
