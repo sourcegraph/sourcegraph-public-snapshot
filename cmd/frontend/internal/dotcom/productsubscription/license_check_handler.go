@@ -191,7 +191,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		if license.SiteID == nil {
-			if license, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
+			if _, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
 				logger.Warn("failed to assign site ID to license")
 				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
 					Error: ErrFailedToAssignSiteIDMsg,
