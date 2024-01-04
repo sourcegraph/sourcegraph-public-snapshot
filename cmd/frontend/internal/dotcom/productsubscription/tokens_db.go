@@ -115,7 +115,7 @@ func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token str
 	var (
 		tokenID    int64
 		subjectID  int
-		lastUsedAt time.Time
+		lastUsedAt *time.Time
 	)
 	row := t.store.QueryRow(ctx, query)
 	err = row.Scan(&tokenID, &subjectID, &lastUsedAt)
@@ -128,7 +128,7 @@ func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token str
 
 	// If the token hasn't been used recently, update the last_used_at value
 	// so indicate it is still in-use.
-	if time.Since(lastUsedAt) > database.MaxAccessTokenLastUsedAtAge {
+	if lastUsedAt == nil || time.Since(*lastUsedAt) > database.MaxAccessTokenLastUsedAtAge {
 		// We ignore the error on updating the token, since hopefully we can just
 		// update the last used at time successfully the next time the token gets used.
 		updateQuery := sqlf.Sprintf(

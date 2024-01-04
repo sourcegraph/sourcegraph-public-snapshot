@@ -5,7 +5,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -327,7 +329,17 @@ func testAccessTokens_Lookup(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
+
+	// Create the DB instance as well as a handle to the underlying implementation,
+	// so we can modify the table directly. We alias db because the local variable
+	// db will shadow the type without any way to disambiguate.
+	type dbType = db
 	db := NewDB(logger, dbtest.NewDB(t))
+	rawDB, ok := db.(*dbType)
+	if !ok {
+		t.Fatal("NewDB returns a DB handle that is using unexpected implementation.")
+	}
+
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -387,6 +399,84 @@ func testAccessTokens_Lookup(t *testing.T) {
 	if _, err := db.AccessTokens().Lookup(ctx, "abcdefg" /* this token value was never created */, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal(err)
 	}
+
+	// Calls to .Lookup() will automatically refresh the last_used_at column, but no more than a fixed
+	// frequency.
+	t.Run("last_used_at Updates", func(t *testing.T) {
+		// Create a new access token.
+		testTokenID, testTokenValue, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b", "c"}, "n0", creator.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Fetches the test access token. On any error aborts the test.
+		mustGetTestToken := func() *AccessToken {
+			token, err := db.AccessTokens().GetByID(ctx, testTokenID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return token
+		}
+
+		assertLastUsedSinceShorterThan := func(lastUsedAt *time.Time, maxTimeSince time.Duration) {
+			t.Helper()
+			if lastUsedAt == nil {
+				t.Fatal("time passed was nil.")
+			}
+			if time.Since(*lastUsedAt) > maxTimeSince {
+				t.Fatalf("last_used_at value is more recent than %v", maxTimeSince)
+			}
+		}
+
+		// Check the current value. last_used_at is initialized to be nil.
+		initialState := mustGetTestToken()
+		if initialState.LastUsedAt != nil {
+			t.Fatal("last_used_at was not nil upon token creation")
+		}
+
+		// Confirm that a side-effect of Lookup will initialize last_used_at.
+		// When we fetch the token again, it's value should be recent.
+		_, err = db.AccessTokens().Lookup(ctx, testTokenValue, TokenLookupOpts{RequiredScope: "a"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		postLookup := mustGetTestToken()
+		assertLastUsedSinceShorterThan(postLookup.LastUsedAt, 2*time.Second)
+
+		// Update the token's last_used_at to be old enough to force an update
+		// on the next call to .Lookup()
+		now := time.Now()
+		updateQuery := sqlf.Sprintf(
+			`UPDATE access_tokens SET last_used_at = %s WHERE id = %d`,
+			now.Add(-MaxAccessTokenLastUsedAtAge-2*time.Second), testTokenID)
+		err = rawDB.Store.Exec(ctx, updateQuery)
+		if err != nil {
+			t.Fatalf("Updating test token's last_used_at: %v", err)
+		}
+
+		// Confirm the token was updated, and last_used_at is old.
+		staleState := mustGetTestToken()
+		if staleState.LastUsedAt == nil {
+			t.Fatal("token did not have last_used_at")
+		}
+		if time.Since(*staleState.LastUsedAt) < MaxAccessTokenLastUsedAtAge {
+			t.Fatalf("last_used_at value should be older than %v", *staleState.LastUsedAt)
+		}
+
+		// Now lookup the token. A side-effect of this will update the last_used_at.
+		_, err = db.AccessTokens().Lookup(ctx, testTokenValue, TokenLookupOpts{RequiredScope: "a"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		currentState := mustGetTestToken()
+		assertLastUsedSinceShorterThan(currentState.LastUsedAt, 2*time.Second)
+
+		err = db.AccessTokens().DeleteByID(ctx, testTokenID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 // 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates

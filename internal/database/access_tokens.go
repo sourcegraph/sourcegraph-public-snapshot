@@ -295,10 +295,10 @@ func (o TokenLookupOpts) toUpdateLastUsedQuery() string {
 // The query requires two parameters: the token's value_sha256 and scopes.
 func (o TokenLookupOpts) toGetQuery() string {
 	query := `
-	SELECT id, subject_user_id, last_used_at
+	SELECT t.id, t.subject_user_id, t.last_used_at
 	FROM access_tokens t
-	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
-	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	JOIN users subject_user ON t.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
 	WHERE t.value_sha256=$1 AND t.deleted_at IS NULL AND
 	$2 = ANY (t.scopes)
 `
@@ -322,8 +322,8 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 
 	var (
 		tokenID    int64
-		subjectID  int64
-		lastUsedAt time.Time
+		subjectID  int32
+		lastUsedAt *time.Time
 	)
 	row := s.Handle().QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
@@ -337,7 +337,7 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 		return 0, err
 	}
 
-	if time.Until(lastUsedAt) < -MaxAccessTokenLastUsedAtAge {
+	if lastUsedAt == nil || time.Until(*lastUsedAt) < -MaxAccessTokenLastUsedAtAge {
 		s.logger.Debug("Updating access token's last_used_at value.")
 		_, err := s.Handle().ExecContext(ctx, opts.toUpdateLastUsedQuery(), tokenID)
 		if err != nil {
@@ -345,7 +345,7 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 		}
 	}
 
-	return subjectUserID, nil
+	return subjectID, nil
 }
 
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
