@@ -1,13 +1,13 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("//dev:esbuild.bzl", "esbuild_web_app")
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
 # TODO(bazel): storybook build
@@ -40,6 +40,31 @@ eslint_config_and_lint_root(
         "//client/web/dev:dev",
     ],
 )
+
+# bin.tsc_test(
+#     name = "typecheck_stories",
+#     args = [
+#         "-p $(location :storybook_tsconfig)",
+#     ],
+#     data = glob([
+#         "src/**/*.story.tsx",
+#         "src/**/*.fixtures.ts",  # required for import/extensions rule not to fail.
+#     ]) + [
+#         ":storybook_tsconfig",
+#         ":web_tests",
+#         "//:node_modules/@storybook",
+#         "//:tsconfig",
+#     ],
+# )
+#
+# ts_config(
+#     name = "storybook_tsconfig",
+#     src = "tsconfig.storybook.json",
+#     visibility = ["//client:__subpackages__"],
+#     deps = [
+#         "//:tsconfig",
+#     ],
+# )
 
 # Temporary ESLint target to lint stories. This will be removed once we have a
 # custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
