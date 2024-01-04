@@ -144,7 +144,7 @@ func (r *Renderer) RenderEnvironment(
 			return nil
 		}(),
 		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
-		ServiceStartupProbe: env.StatupProbe,
+		ServiceStartupProbe: pointers.DerefZero(env.EnvironmentServiceSpec).StatupProbe,
 
 		// Notification configuration
 		EnvironmentCategory: env.Category,
