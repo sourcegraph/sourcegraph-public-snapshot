@@ -6,18 +6,15 @@
 
 set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
-echo "RUNNING"
-
 if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" && "$BUILDKITE_PIPELINE_SLUG" != "aspect-experimental" ]]; then
-  echo "QUITING ... BOOOO"
   exit 0
 fi
-
-echo "WHOOOOOOOOO"
 
 # The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" || "$BUILDKITE_AGENT_META_DATA_QUEUE" == "aspect-default" ]]; then
   # Ensure all test databases are wiped, in case a test process was interrupted.
+  # This might not be availbe on the Aspect agents so we export it for good measure
+  export PGUSER=postgres
   for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
 
   # Remove any hanging containers and/or volumes to ensure the next tests are able to run.
