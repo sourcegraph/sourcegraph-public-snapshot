@@ -339,7 +339,7 @@ type EnvironmentServiceStartupProbeSpec struct {
 	//
 	// Defaults to 1 second.
 	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
+	// Interval configures the frequency, in seconds, at which to
 	// probe the deployed service. Must be greater than or equal to timeout.
 	//
 	// Defaults to timeout.
