@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//cmd/frontend/hubspot/hubspotutil",
         "//internal/httpserver",
-        "//internal/profiler",
         "//internal/pubsub",
         "//internal/updatecheck",
         "//internal/version",
