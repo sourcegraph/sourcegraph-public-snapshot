@@ -5048,7 +5048,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*repo-updater"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5078,7 +5078,7 @@ Generated query for warning alert: `max((sum by (instance) (rate(searcher_servic
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5183,7 +5183,7 @@ Generated query for critical alert: `max((sum by (app_name, db_name) (increase(s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5215,7 +5215,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5247,7 +5247,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5279,7 +5279,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5311,7 +5311,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5343,7 +5343,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5375,7 +5375,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5407,7 +5407,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5437,7 +5437,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5467,7 +5467,7 @@ Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5499,7 +5499,7 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6206,7 +6206,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*syntect-serve
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6241,7 +6241,7 @@ Generated query for warning alert: `max((sum(rate(resolve_revision_seconds_sum[5
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6273,7 +6273,7 @@ Generated query for critical alert: `max((sum(increase(get_index_options_error_t
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6318,7 +6318,7 @@ on your environment. See https://kernel.org/doc/Documentation/sysctl/vm.txt for 
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6352,7 +6352,7 @@ Generated query for critical alert: `max(((proc_metrics_memory_map_current_count
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6384,7 +6384,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6416,7 +6416,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6448,7 +6448,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6480,7 +6480,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6512,7 +6512,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6544,7 +6544,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6576,7 +6576,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6608,7 +6608,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6640,7 +6640,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6672,7 +6672,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6704,7 +6704,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6736,7 +6736,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6768,7 +6768,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6800,7 +6800,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Platform team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
