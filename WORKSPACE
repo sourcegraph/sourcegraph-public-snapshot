@@ -347,12 +347,12 @@ crate_repositories()
 load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains(
-    # Fixes flakiness with zig 0.11.0
-    # https://bazelbuild.slack.com/archives/C04N6NE1GRM/p1704306009190609?thread_ts=1704306009.190609&cid=C04N6NE1GRM
-    version = "0.12.0-dev.2030+2ac315c24",
     host_platform_sha256 = {
         "macos-aarch64": "ed946cd65d00b18342d9a9ee9666b0869025ac2cd544a0fec3c337b5b0ee53c3",
     },
+    # Fixes flakiness with zig 0.11.0
+    # https://bazelbuild.slack.com/archives/C04N6NE1GRM/p1704306009190609?thread_ts=1704306009.190609&cid=C04N6NE1GRM
+    version = "0.12.0-dev.2030+2ac315c24",
 )
 
 # containers steup       ===============================
