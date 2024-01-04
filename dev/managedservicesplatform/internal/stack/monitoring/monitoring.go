@@ -121,11 +121,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	var channels []monitoringnotificationchannel.MonitoringNotificationChannel
 
 	// Configure opsgenie channels
-	var opsgenieAlerts bool
-	switch vars.EnvironmentCategory {
-	case spec.EnvironmentCategoryInternal, spec.EnvironmentCategoryExternal:
-		opsgenieAlerts = true
-	}
+	// TODO: Enable after we dogfood the alerts for a while.
+	// var opsgenieAlerts bool
+	// switch vars.EnvironmentCategory {
+	// case spec.EnvironmentCategoryInternal, spec.EnvironmentCategoryExternal:
+	// 	opsgenieAlerts = true
+	// }
 	for i, owner := range vars.Owners {
 		// Use index because Opsgenie team names has lax character requirements
 		id := id.Group("opsgenie_owner_%d", i)
@@ -152,7 +153,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				// Supress all notifications if opsgenieAlerts is disabled -
 				// this allows us to see the alerts, but not necessarily get
 				// paged by it.
-				SuppressNotifications: pointers.Ptr(!opsgenieAlerts),
+				// TODO: Enable after we dogfood the alerts for a while.
+				SuppressNotifications: pointers.Ptr(true),
 
 				// Point alerts sent through this integration at the Opsgenie team.
 				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
