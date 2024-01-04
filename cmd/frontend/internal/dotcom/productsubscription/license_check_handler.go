@@ -108,11 +108,11 @@ func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db datab
 	subscriptionsStore := dbSubscriptions{db: db}
 	dbSubscription, err := subscriptionsStore.GetByID(ctx, license.ProductSubscriptionID)
 	if err != nil {
-		logger.Warn("could not find subscription for license", log.String("licenseID", license.ID), log.Error(err))
+		logger.Warn("could not find subscription for license", log.String("licenseID", license.ID), log.String("productSubscriptionID", license.ProductSubscriptionID), log.Error(err))
 	} else {
 		user, err := db.Users().GetByID(ctx, dbSubscription.UserID)
 		if err != nil {
-			logger.Warn("could not find user for subscription", log.String("subscriptionID", dbSubscription.ID), log.Error(err))
+			logger.Warn("could not find user for subscription", log.String("licenseID", license.ID), log.String("subscriptionID", dbSubscription.ID), log.Int32("userID", dbSubscription.UserID), log.Error(err))
 		} else {
 			customerName = user.Name()
 		}
@@ -121,7 +121,7 @@ func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db datab
 	return customerName
 }
 
-// Creates a new license check handler that uses the provided database.
+// NewLicenseCheckHandler creates a new license check handler that uses the provided database.
 //
 // This handler receives requests from customer instances to check for license
 // validity.
@@ -191,7 +191,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		if license.SiteID == nil {
-			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
+			if license, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
 				logger.Warn("failed to assign site ID to license")
 				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
 					Error: ErrFailedToAssignSiteIDMsg,
@@ -199,7 +199,6 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 				return
 			}
 			logEvent(ctx, db, EventNameAssigned, siteID)
-			license.SiteID = &siteID
 		} else if !strings.EqualFold(*license.SiteID, siteID) {
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 
@@ -213,11 +212,10 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			})
 
 			oldSiteID := *license.SiteID
-			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
+			if license, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
 				logger.Error("failed to update site ID associated with license", log.String("licenseID", license.ID), log.String("siteID", siteID), log.Error(err))
 				return
 			}
-			license.SiteID = &siteID
 
 			customerName := getCustomerNameFromLicense(r.Context(), logger, db, license)
 

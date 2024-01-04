@@ -165,7 +165,7 @@ func TestAssignSiteID(t *testing.T) {
 	license := insertLicense(t, ctx, db, u, "key")
 
 	siteID := uuid.NewString()
-	err = store.AssignSiteID(ctx, license.ID, siteID)
+	_, err = store.AssignSiteID(ctx, license, siteID)
 	require.NoError(t, err)
 
 	license, err = store.GetByID(ctx, license.ID)
@@ -267,7 +267,7 @@ func TestProductLicenses_List(t *testing.T) {
 			require.NoError(t, err)
 		}
 		if l.siteID != "" {
-			err = store.AssignSiteID(ctx, id, l.siteID)
+			_, err = store.AssignSiteID(ctx, &dbLicense{ID: id}, l.siteID)
 			require.NoError(t, err)
 		}
 	}
