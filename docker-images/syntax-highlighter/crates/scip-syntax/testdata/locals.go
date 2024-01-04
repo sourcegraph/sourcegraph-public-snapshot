@@ -1,5 +1,9 @@
 package main
 
+import (
+	"fmt"
+)
+
 // Not actually local
 var local = 10
 
@@ -29,5 +33,16 @@ func Another(local int) int {
 	} else {
 		fmt.Println(local, "has multiple digits")
 	}
+
+	switch x := 0; x {
+	case 0:
+		x := "local x"
+		fmt.Println(x)
+	case 1:
+		fmt.Println(x)
+	case x:
+		fmt.Println("something")
+	}
+
 	return local
 }

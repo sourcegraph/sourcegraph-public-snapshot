@@ -4,6 +4,10 @@ expression: dumped
 ---
   package main
   
+  import (
+   "fmt"
+  )
+  
   // Not actually local
   var local = 10
   
@@ -56,6 +60,23 @@ expression: dumped
     fmt.Println(local, "has multiple digits")
 //              ^^^^^ reference local 9
    }
+  
+   switch x := 0; x {
+//        ^ definition local 10
+//                ^ reference local 10
+   case 0:
+    x := "local x"
+//  ^ definition local 11
+    fmt.Println(x)
+//              ^ reference local 10
+   case 1:
+    fmt.Println(x)
+//              ^ reference local 10
+   case x:
+//      ^ reference local 10
+    fmt.Println("something")
+   }
+  
    return local
 //        ^^^^^ reference local 8
   }
