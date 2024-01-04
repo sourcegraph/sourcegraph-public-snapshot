@@ -810,8 +810,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       chromatic:
-        specifier: ^7.2.3
-        version: 7.2.3
+        specifier: ^10.1.0
+        version: 10.2.0
       chrome-webstore-upload-cli:
         specifier: ^1.2.0
         version: 1.2.0
@@ -6234,7 +6234,6 @@ packages:
   /@playwright/test@1.25.0:
     resolution: {integrity: sha512-j4EZhTTQI3dBeWblE21EV//swwmBtOpIrLdOIJIRv4uqsLdHgBg1z+JtTg+AeC5o2bAXIE26kDNW5A0TimG8Bg==}
     engines: {node: '>=14'}
-    deprecated: Please update to the latest version of Playwright to test up-to-date browsers.
     hasBin: true
     dependencies:
       '@types/node': 20.8.0
@@ -13617,8 +13616,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /chromatic@7.2.3:
-    resolution: {integrity: sha512-UEcHB1nkPoHWoRybPzv6BOVqPr7PqDNuz3u8NCRg7KJciouOb20HjiUQx4Dh9mgA7JUsb2WeGHE2SG/0fHH0PA==}
+  /chromatic@10.2.0:
+    resolution: {integrity: sha512-UDVGWa2Fx9CLCpwnyfvFHGr0vGF0ooB1TugUdgOcjC9pJXiFa67i7oaXMyTfVRIFxlt/QkqOJwdqDqqlLFffCw==}
     hasBin: true
     dev: true
 
