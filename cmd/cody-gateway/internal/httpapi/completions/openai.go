@@ -42,7 +42,7 @@ func NewOpenAIHandler(
 		string(conftypes.CompletionsProviderNameOpenAI),
 		func(_ codygateway.Feature) string { return openAIURL },
 		allowedModels,
-		OpenAIHandlerMethods{accessToken: accessToken, orgID: orgID},
+		&OpenAIHandlerMethods{accessToken: accessToken, orgID: orgID},
 
 		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
 		// in requests, so set a very high retry-after to discourage Sourcegraph
