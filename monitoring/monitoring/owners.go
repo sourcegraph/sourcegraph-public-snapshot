@@ -38,9 +38,9 @@ var (
 		teamName:     "Code Search",
 	})
 	ObservableOwnerSearchCore = registerObservableOwner(ObservableOwner{
-		opsgenieTeam: "search-core",
+		opsgenieTeam: "search-platform",
 		handbookSlug: "search/core",
-		teamName:     "Search Core",
+		teamName:     "Search Platform",
 	})
 	ObservableOwnerBatches = registerObservableOwner(ObservableOwner{
 		opsgenieTeam: "code-search",
