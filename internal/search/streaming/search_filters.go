@@ -173,7 +173,6 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 	addCommitDateFilter := func(commit gitdomain.Commit) {
 		var cd time.Time
-
 		if commit.Committer != nil {
 			cd = commit.Committer.Date
 		} else {
