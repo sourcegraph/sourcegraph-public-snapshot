@@ -1,0 +1,19 @@
+#import "$lib/repo/FileDiff.gql"
+
+query BlobDiffQuery($repoID: ID!, $revspec: String!, $paths: [String!]) {
+    node(id: $repoID) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                diff {
+                    fileDiffs(paths: $paths) {
+                        nodes {
+                            ...FileDiff_Diff
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

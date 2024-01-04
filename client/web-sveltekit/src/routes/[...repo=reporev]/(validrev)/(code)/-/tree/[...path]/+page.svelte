@@ -2,13 +2,10 @@
     import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createPromiseStore } from '$lib/utils'
     import type { TreeWithCommitInfo } from './page.gql'
-
-    import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
 
     import type { PageData } from './$types'
     import FileTable from '$lib/repo/FileTable.svelte'
@@ -38,17 +35,7 @@
 </FileHeader>
 
 <div class="content">
-    {#if data.deferred.compare}
-        {#await data.deferred.compare.diff}
-            <LoadingSpinner />
-        {:then nodes}
-            {#each nodes as fileDiff}
-                <FileDiff {fileDiff} expanded={false} />
-            {/each}
-        {/await}
-    {:else}
-        <FileTable revision={data.revision ?? ''} {entries} commitInfo={entriesWithCommitInfo} />
-    {/if}
+    <FileTable revision={data.revision ?? ''} {entries} commitInfo={entriesWithCommitInfo} />
     {#if $readme}
         <h4 class="header">
             <Icon svgPath={mdiFileDocumentOutline} />

@@ -1,11 +1,11 @@
 import { fetchHighlight, fetchBlobPlaintext } from '$lib/repo/api/blob'
-import { fetchDiff } from '$lib/repo/api/commits'
 
 import type { PageLoad } from './$types'
+import { BlobDiffQuery } from './page.gql'
 
 export const load: PageLoad = async ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')
-    const { resolvedRevision } = await parent()
+    const { resolvedRevision, graphqlClient } = await parent()
 
     return {
         filePath: params.path,
@@ -23,9 +23,21 @@ export const load: PageLoad = async ({ parent, params, url }) => {
             compare: revisionToCompare
                 ? {
                       revisionToCompare,
-                      diff: fetchDiff(resolvedRevision.repo.id, revisionToCompare, [params.path]).then(
-                          nodes => nodes[0]
-                      ),
+                      diff: graphqlClient
+                          .query({
+                              query: BlobDiffQuery,
+                              variables: {
+                                  repoID: resolvedRevision.repo.id,
+                                  revspec: revisionToCompare,
+                                  paths: [params.path],
+                              },
+                          })
+                          .then(result => {
+                              if (result.data.node?.__typename !== 'Repository') {
+                                  throw new Error('Expected Repository')
+                              }
+                              return result.data.node.commit?.diff.fileDiffs.nodes[0]
+                          }),
                   }
                 : null,
         },

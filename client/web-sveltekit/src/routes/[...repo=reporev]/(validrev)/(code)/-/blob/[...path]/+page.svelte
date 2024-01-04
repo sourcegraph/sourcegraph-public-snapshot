@@ -10,7 +10,7 @@
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
 
-    import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'

@@ -7,6 +7,7 @@
     import UserAvatar from '$lib/UserAvatar.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Button, ButtonGroup } from '$lib/wildcard'
+    import type { ContributorConnection } from './page.gql'
 
     import type { PageData } from './$types'
 
@@ -19,15 +20,15 @@
         ['All time', ''],
     ]
 
-    const { pending, latestValue: contributors, set } = createPromiseStore<PageData['deferred']['contributors']>()
+    const { pending, latestValue: contributorConnection, set } = createPromiseStore<ContributorConnection | null>()
     $: set(data.deferred.contributors)
 
     // We want to show stale contributors data when the user navigates to
     // the next or previous page for the current time period. When the user
     // changes the time period we want to show a loading indicator instead.
-    let currentContributors = $contributors
-    $: if (!$pending && $contributors) {
-        currentContributors = $contributors
+    let currentContributorConnection = $contributorConnection
+    $: if (!$pending && $contributorConnection) {
+        currentContributorConnection = $contributorConnection
     }
 
     $: timePeriod = data.after
@@ -38,7 +39,7 @@
         const newURL = new URL($page.url)
         newURL.search = timePeriod ? `after=${timePeriod}` : ''
         // Don't show stale contributors when switching the time period
-        currentContributors = null
+        currentContributorConnection = null
         await goto(newURL)
     }
 </script>
@@ -67,12 +68,12 @@
                 {/each}
             </ButtonGroup>
         </form>
-        {#if !currentContributors && $pending}
+        {#if !currentContributorConnection && $pending}
             <div class="mt-3">
                 <LoadingSpinner />
             </div>
-        {:else if currentContributors}
-            {@const nodes = currentContributors.nodes}
+        {:else if currentContributorConnection}
+            {@const nodes = currentContributorConnection.nodes}
             <table class="mt-3">
                 <tbody>
                     {#each nodes as contributor}
@@ -93,9 +94,9 @@
                 </tbody>
             </table>
             <div class="d-flex flex-column align-items-center">
-                <Paginator disabled={$pending} pageInfo={currentContributors.pageInfo} />
+                <Paginator disabled={$pending} pageInfo={currentContributorConnection.pageInfo} />
                 <p class="mt-1 text-muted">
-                    <small>Total contributors: {currentContributors.totalCount}</small>
+                    <small>Total contributors: {currentContributorConnection.totalCount}</small>
                 </p>
             </div>
         {/if}

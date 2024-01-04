@@ -1,5 +1,4 @@
 import { fetchBlobPlaintext } from '$lib/repo/api/blob'
-import { fetchDiff } from '$lib/repo/api/commits'
 import { fetchTreeEntries } from '$lib/repo/api/tree'
 import { findReadme } from '$lib/repo/tree'
 
@@ -7,7 +6,6 @@ import type { PageLoad } from './$types'
 import { TreeEntriesCommitInfo } from './page.gql'
 
 export const load: PageLoad = async ({ params, parent, url }) => {
-    const revisionToCompare = url.searchParams.get('rev')
     const { resolvedRevision, graphqlClient } = await parent()
 
     const treeEntries = fetchTreeEntries({
@@ -57,12 +55,6 @@ export const load: PageLoad = async ({ params, parent, url }) => {
                     ...result,
                 }))
             }),
-            compare: revisionToCompare
-                ? {
-                      revisionToCompare,
-                      diff: fetchDiff(resolvedRevision.repo.id, revisionToCompare, [params.path]),
-                  }
-                : null,
         },
     }
 }
