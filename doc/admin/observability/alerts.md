@@ -30,7 +30,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -64,7 +64,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le) (r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -94,7 +94,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -124,7 +124,7 @@ Generated query for warning alert: `max(((sum(increase(src_graphql_search_respon
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -154,7 +154,7 @@ Generated query for warning alert: `max((sum by (status) (increase(src_graphql_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -185,7 +185,7 @@ Generated query for warning alert: `max((sum by (status) (increase(src_graphql_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -286,7 +286,7 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -321,7 +321,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le) (r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -351,7 +351,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -381,7 +381,7 @@ Generated query for warning alert: `max(((sum(increase(src_graphql_search_respon
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -411,7 +411,7 @@ Generated query for warning alert: `max((sum by (status) (increase(src_graphql_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -442,7 +442,7 @@ Generated query for warning alert: `max((sum by (status) (increase(src_graphql_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -476,7 +476,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -510,7 +510,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le) (r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -540,7 +540,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -570,7 +570,7 @@ Generated query for warning alert: `max((sum by (status) (increase(src_graphql_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -601,7 +601,7 @@ Generated query for warning alert: `max((sum(increase(src_graphql_search_respons
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -664,7 +664,7 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -695,7 +695,7 @@ Generated query for warning alert: `max((sum by (code) (increase(src_zoekt_reque
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1308,7 +1308,7 @@ Generated query for critical alert: `max((sum(increase(src_email_send{success="f
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1345,7 +1345,7 @@ Generated query for critical alert: `max((sum(rate(src_search_response_latency_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1382,7 +1382,7 @@ Generated query for critical alert: `max((sum(rate(src_search_streaming_latency_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1419,7 +1419,7 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (l
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3381,7 +3381,7 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+<sub>*Managed by the [Sourcegraph Code Search team](https://handbook.sourcegraph.com/departments/engineering/teams/code-search).*</sub>
 
 <details>
 <summary>Technical details</summary>
