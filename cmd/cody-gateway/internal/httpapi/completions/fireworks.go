@@ -212,7 +212,7 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 		if len(event.Choices) > 0 {
 			completionUsage.characters += len(event.Choices[0].Text)
 		}
-		// these are only included in the last message, so we're not worried about overwriting
+		// These are only included in the last message, so we're not worried about overwriting
 		if event.Usage.PromptTokens > 0 {
 			promptUsage.tokens = event.Usage.PromptTokens
 		}
