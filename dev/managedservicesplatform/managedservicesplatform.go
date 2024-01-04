@@ -143,7 +143,8 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
-		RedisInstanceID: cloudrunOutput.RedisInstanceID,
+		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
+		ServiceStartupProbe: env.StatupProbe,
 
 		// Notification configuration
 		EnvironmentCategory: env.Category,
