@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,7 +25,10 @@ import (
 const (
 	automaticFixChoice = "Automatic fix: Please try fixing this for me automatically"
 	manualFixChoice    = "Manual fix: Let me fix this manually"
+	fixAllChoice       = "Try to fix all issues automatically"
+	selectChoice       = "Select issues one by one to fix, either manually or automatically"
 	goBackChoice       = "Go back"
+	allChoice          = "all"
 )
 
 type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
@@ -124,6 +128,16 @@ func (r *Runner[Args]) Fix(
 		return nil
 	}
 
+	return r.tryFixAllFailures(ctx, args, results)
+}
+
+// given that a set of tests have failed, tryFixAllFailures attempts to automatically fix each failing category
+func (r *Runner[Args]) tryFixAllFailures(
+	ctx context.Context,
+	args Args,
+	results *runAllCategoryChecksResult,
+
+) error {
 	r.Output.WriteNoticef("Attempting to fix %d failed categories", len(results.failed))
 	for _, i := range results.failed {
 		category := r.categories[i]
@@ -168,27 +182,43 @@ func (r *Runner[Args]) Interactive(
 			break
 		}
 
-		r.Output.WriteWarningf("Some checks failed. Which one do you want to fix?")
+		r.Output.WriteWarningf("Some checks failed. I can try to fix them all at once or would you like select fixes one at a time?")
 
-		idx, err := getNumberOutOf(r.Input, r.Output, results.failed)
+		choices := make([]string, 0, len(results.failed)+1)
+		choices = append(choices, allChoice)
+		for _, failed := range results.failed {
+			choices = append(choices, strconv.Itoa(failed+1))
+		}
+
+		choice, err := getOptionOutOf(r.Input, r.Output, choices)
+
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
 			return err
 		}
-		selectedCategory := r.categories[idx]
 
-		r.Output.ClearScreen()
-
-		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
-		if err != nil {
-			if err == io.EOF {
-				return nil // we are done
+		if choice == allChoice {
+			return r.tryFixAllFailures(ctx, args, results)
+		} else {
+			idx, err := strconv.Atoi(choice)
+			if err != nil {
+				return err
 			}
+			selectedCategory := r.categories[idx-1]
 
-			r.Output.WriteWarningf("Encountered error while fixing: %s", err.Error())
-			// continue, do not exit
+			r.Output.ClearScreen()
+
+			err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
+			if err != nil {
+				if err == io.EOF {
+					return nil // we are done
+				}
+
+				r.Output.WriteWarningf("Encountered error while fixing: %s", err.Error())
+				// continue, do not exit
+			}
 		}
 	}
 
@@ -496,14 +526,18 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 	r.printCategoryHeaderAndDependencies(categoryIdx+1, category)
 	fixableCategory := category.HasFixable()
 
-	choices := map[int]string{}
+	var choices []string
 	if fixableCategory {
-		choices[1] = automaticFixChoice
-		choices[2] = manualFixChoice
-		choices[3] = goBackChoice
+		choices = []string{
+			automaticFixChoice,
+			manualFixChoice,
+			goBackChoice,
+		}
 	} else {
-		choices[1] = manualFixChoice
-		choices[2] = goBackChoice
+		choices = []string{
+			manualFixChoice,
+			goBackChoice,
+		}
 	}
 
 	choice, err := getChoice(r.Input, r.Output, choices)
@@ -512,18 +546,14 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 	}
 
 	switch choice {
-	case 1:
-		if fixableCategory {
-			r.Output.ClearScreen()
-			if !r.fixCategoryAutomatically(ctx, categoryIdx, category, args, results) {
-				err = errors.Newf("%s: failed to fix category automatically", category.Name)
-			}
-		} else {
-			err = r.fixCategoryManually(ctx, categoryIdx, category, args)
+	case automaticFixChoice:
+		r.Output.ClearScreen()
+		if !r.fixCategoryAutomatically(ctx, categoryIdx, category, args, results) {
+			err = errors.Newf("%s: failed to fix category automatically", category.Name)
 		}
-	case 2:
+	case manualFixChoice:
 		err = r.fixCategoryManually(ctx, categoryIdx, category, args)
-	case 3:
+	case goBackChoice:
 		return nil
 	}
 	if err != nil {

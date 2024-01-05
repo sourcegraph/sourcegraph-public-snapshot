@@ -87,6 +87,61 @@ func getUnsatisfiableChecks(t *testing.T) []check.Category[any] {
 	}
 }
 
+func getSatisfiableChecks(t *testing.T) []check.Category[any] {
+	var fixedMap sync.Map
+	return []check.Category[any]{
+		{
+			Name: "broken but can be fixed",
+			Checks: []*check.Check[any]{
+				{
+					Name: "fixable",
+					Check: func(ctx context.Context, out *std.Output, args any) error {
+						if _, ok := fixedMap.Load("1"); ok {
+							return nil
+						}
+						return errors.New("needs fixing!")
+					},
+					Fix: func(ctx context.Context, cio check.IO, args any) error {
+						fixedMap.Store("1", true)
+						return nil
+					},
+				},
+			},
+		},
+		{
+			Name:      "depends on fixable",
+			DependsOn: []string{"broken but can be fixed"},
+			Checks: []*check.Check[any]{
+				{
+					Name: "also fixable",
+					Check: func(ctx context.Context, out *std.Output, args any) error {
+						if _, ok := fixedMap.Load("2"); ok {
+							return nil
+						}
+						return errors.New("needs fixing!")
+					},
+					Fix: func(ctx context.Context, cio check.IO, args any) error {
+						fixedMap.Store("2", true)
+						return nil
+					},
+				},
+				{
+					Name: "no action needed",
+					Check: func(ctx context.Context, out *std.Output, args any) error {
+						return nil
+					},
+				},
+				{
+					Name: "disabled",
+					Enabled: func(ctx context.Context, args any) error {
+						return errors.New("disabled")
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestRunnerCheck(t *testing.T) {
 	t.Run("unfixed checks", func(t *testing.T) {
 		runner := check.NewRunner(nil, getOutput(io.Discard), getUnsatisfiableChecks(t))
@@ -163,58 +218,7 @@ func TestRunnerFix(t *testing.T) {
 	})
 
 	t.Run("fix all in order", func(t *testing.T) {
-		var fixedMap sync.Map
-		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), []check.Category[any]{
-			{
-				Name: "broken but can be fixed",
-				Checks: []*check.Check[any]{
-					{
-						Name: "fixable",
-						Check: func(ctx context.Context, out *std.Output, args any) error {
-							if _, ok := fixedMap.Load("1"); ok {
-								return nil
-							}
-							return errors.New("needs fixing!")
-						},
-						Fix: func(ctx context.Context, cio check.IO, args any) error {
-							fixedMap.Store("1", true)
-							return nil
-						},
-					},
-				},
-			},
-			{
-				Name:      "depends on fixable",
-				DependsOn: []string{"broken but can be fixed"},
-				Checks: []*check.Check[any]{
-					{
-						Name: "also fixable",
-						Check: func(ctx context.Context, out *std.Output, args any) error {
-							if _, ok := fixedMap.Load("2"); ok {
-								return nil
-							}
-							return errors.New("needs fixing!")
-						},
-						Fix: func(ctx context.Context, cio check.IO, args any) error {
-							fixedMap.Store("2", true)
-							return nil
-						},
-					},
-					{
-						Name: "no action needed",
-						Check: func(ctx context.Context, out *std.Output, args any) error {
-							return nil
-						},
-					},
-					{
-						Name: "disabled",
-						Enabled: func(ctx context.Context, args any) error {
-							return errors.New("disabled")
-						},
-					},
-				},
-			},
-		})
+		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), getSatisfiableChecks(t))
 		runner.RunPostFixChecks = true
 
 		err := runner.Fix(context.Background(), nil)
@@ -234,11 +238,12 @@ func TestRunnerInteractive(t *testing.T) {
 			getOutput(&output),
 			getUnsatisfiableChecks(t))
 
-		runner.Interactive(context.Background(), nil)
+		err := runner.Interactive(context.Background(), nil)
+		assert.Nil(t, err)
 
 		got := output.String()
 		for _, c := range []string{
-			"Some checks failed. Which one do you want to fix?",
+			"Some checks failed",
 			// Our choice was invalid
 			"1 is an invalid choice :(",
 			// Our second choice was invalid
@@ -263,13 +268,36 @@ func TestRunnerInteractive(t *testing.T) {
 			getOutput(&output),
 			getUnsatisfiableChecks(t))
 
-		runner.Interactive(context.Background(), nil)
+		err := runner.Interactive(context.Background(), nil)
+		assert.Nil(t, err)
 
 		got := output.String()
 		for _, c := range []string{
-			"Some checks failed. Which one do you want to fix?",
+			"Some checks failed",
 			// Unfixable error
 			"4 cannot be fixed",
+		} {
+			assert.Contains(t, got, c)
+		}
+	})
+
+	t.Run("auto fix with all", func(t *testing.T) {
+		inputs := []string{
+			"all", // run all fixes together
+		}
+		var output strings.Builder
+		runner := check.NewRunner(
+			strings.NewReader(strings.Join(inputs, "\n")),
+			getOutput(&output),
+			getSatisfiableChecks(t))
+
+		err := runner.Interactive(context.Background(), nil)
+		assert.Nil(t, err)
+
+		got := output.String()
+		for _, c := range []string{
+			"Some checks failed",
+			"Done!",
 		} {
 			assert.Contains(t, got, c)
 		}
@@ -295,7 +323,7 @@ func TestRunnerInteractive(t *testing.T) {
 
 		scanner := bufio.NewScanner(strings.NewReader(output.String()))
 		want := []string{
-			"Some checks failed. Which one do you want to fix?",
+			"Some checks failed",
 			// description
 			"how to fix manually",
 			// failure to fix
