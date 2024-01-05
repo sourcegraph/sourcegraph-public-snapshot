@@ -10,10 +10,10 @@ import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import styles from './SearchDynamicFilter.module.scss'
 
