@@ -85,3 +85,69 @@ func TestDBPaginationWithRepoFilter(t *testing.T) {
 	})
 
 }
+
+// TestDisabledEmbeddings exercises a case where
+// having embeddings disabled in the config can nil out entire queries
+// because the gql resolvers return nil which is not allowed.
+// It should now return an empty list
+func TestDisabledEmbeddings(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	// Make a repo and an embedding job:
+	err := db.Repos().Create(ctx, &types.Repo{
+		Name: "testrepo",
+	})
+	require.NoError(t, err)
+	r, err := db.Repos().GetByName(ctx, "testrepo")
+	require.NoError(t, err)
+	jobs := repo.NewRepoEmbeddingJobsStore(db)
+	_, err = jobs.CreateRepoEmbeddingJob(ctx, r.ID, "commitID")
+	require.NoError(t, err)
+
+	// Enable embeddings, so that resolvers work:
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: pointers.Ptr(true),
+			LicenseKey:  "foobar",
+			Embeddings: &schema.Embeddings{
+				Provider: "sourcegraph",
+				Enabled:  pointers.Ptr(false),
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+	require.False(t, conf.EmbeddingsEnabled())
+
+	// Authenticate with a site-admin.
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "admin"})
+	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, user.ID, true))
+	a := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, a)
+
+	// Exercise pagination and filtering via graphQL:
+	schema, err := graphqlbackend.NewSchema(db, nil, []graphqlbackend.OptionalResolver{{EmbeddingsResolver: NewResolver(db, logger, nil, nil, jobs)}})
+	require.NoError(t, err)
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `query RepoEmbeddingJobsList($first: Int, $after: String, $query: String) {
+				repoEmbeddingJobs(first: $first, after: $after, query: $query) {
+					nodes {
+						id
+					}
+				}
+			}`,
+		// Want no error:
+		ExpectedResult: `{
+			"repoEmbeddingJobs": {
+				"nodes": []
+			}
+		}`,
+		Variables: map[string]any{
+			"first": 1,
+		},
+	})
+
+}
