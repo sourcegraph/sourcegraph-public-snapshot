@@ -43,11 +43,13 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 	md.Table(
 		[]string{"Property", "Details"},
 		[][]string{
-			{"Service ID", markdown.Code(s.Service.ID)},
+			{"Service ID", markdown.Linkf(markdown.Code(s.Service.ID),
+				"https://github.com/sourcegraph/managed-services/blob/main/services/%s/service.yaml",
+				s.Service.ID)},
 			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
 			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
 			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
-				l, h := markdown.HeadingLinkf("%s environment", markdown.Code(e.ID))
+				l, h := markdown.HeadingLinkf("%s environment", e.ID)
 				environmentHeaders = append(environmentHeaders, environmentHeader{
 					environmentID: e.ID,
 					header:        h,
@@ -78,10 +80,17 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 			return "", errors.Newf("unknown service kind %q", serviceKind)
 		}
 
+		// ResourceKind:env-specific header
+		resourceHeadings := map[string]string{}
+
 		overview := [][]string{
 			{"Project ID", markdown.Linkf(markdown.Code(env.ProjectID), cloudRunURL)},
 			{"Category", markdown.Bold(string(env.Category))},
-			{"Resources", strings.Join(env.Resources.List(), ", ")},
+			{"Resources", strings.Join(mapTo(env.Resources.List(), func(k string) string {
+				l, h := markdown.HeadingLinkf("%s %s", env.ID, k)
+				resourceHeadings[k] = h
+				return l
+			}), ", ")},
 		}
 		if env.EnvironmentServiceSpec != nil {
 			if domain := env.Domain.GetDNSName(); domain != "" {
@@ -112,17 +121,73 @@ Test environments have less stringent requirements.`)
 		})
 		// TODO: Add a comment about per-project access as well?
 
-		md.Headingf(4, "Cloud Run")
+		md.Headingf(4, "%s Cloud Run", env.ID)
 		md.Table(
 			[]string{"Property", "Details"},
 			[][]string{
 				{"Console", markdown.Linkf(
-					fmt.Sprintf("Cloud Run %ss", string(serviceKind)), cloudRunURL)},
+					fmt.Sprintf("Cloud Run %s", string(serviceKind)), cloudRunURL)},
 				{"Logs", markdown.Link("GCP logging", ServiceLogsURL(serviceKind, env.ProjectID))},
 			},
 		)
 
-		// TODO: Individual resources
+		// Individual resources - add them in the same order as (EnvironmentResourcesSpec).List()
+		if env.Resources != nil {
+			if redis := env.Resources.Redis; redis != nil {
+				md.Headingf(4, resourceHeadings[redis.ResourceKind()])
+				md.Table(
+					[]string{"Property", "Details"},
+					[][]string{
+						{"Console", markdown.Linkf("Memorystore Redis instances",
+							"https://console.cloud.google.com/memorystore/redis/instances?project=%s", env.ProjectID)},
+					},
+				)
+
+				// TODO: More details
+			}
+
+			if pg := env.Resources.PostgreSQL; pg != nil {
+				md.Headingf(4, resourceHeadings[pg.ResourceKind()])
+				md.Table(
+					[]string{"Property", "Details"},
+					[][]string{
+						{"Console", markdown.Linkf("Cloud SQL instances",
+							"https://console.cloud.google.com/sql/instances?project=%s", env.ProjectID)},
+						{"Databases", strings.Join(mapTo(pg.Databases, markdown.Code), ", ")},
+					},
+				)
+
+				managedServicesRepoLink := markdown.Link(markdown.Code("sourcegraph/managed-services"),
+					"https://github.com/sourcegraph/managed-services")
+
+				md.Paragraphf("To connect to the PostgreSQL instance in this environment, use %s in the %s repository:",
+					markdown.Code("sg msp"), managedServicesRepoLink)
+
+				md.CodeBlockf("bash", `# For read-only access
+sg msp pg connect %[1]s %[2]s
+
+# For write access - use with caution!
+sg msp pg connect -write-access %[1]s %[2]s`, s.Service.ID, env.ID)
+			}
+
+			if bq := env.Resources.BigQueryDataset; bq != nil {
+				md.Headingf(4, resourceHeadings[bq.ResourceKind()])
+				md.Table(
+					[]string{"Property", "Details"},
+					[][]string{
+						{"Dataset Project", markdown.Code(pointers.Deref(bq.ProjectID, env.ProjectID))},
+						{"Dataset ID", markdown.Code(bq.GetDatasetID(s.Service.ID))},
+						{"Tables", strings.Join(mapTo(bq.Tables, func(t string) string {
+							return markdown.Linkf(markdown.Code(t),
+								"https://github.com/sourcegraph/managed-services/blob/main/services/%s/%s.bigquerytable.json",
+								s.Service.ID, t)
+						}), ", ")},
+					},
+				)
+
+				// TODO: more details
+			}
+		}
 	}
 
 	return md.String(), nil

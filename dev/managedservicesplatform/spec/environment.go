@@ -408,13 +408,13 @@ func (s *EnvironmentResourcesSpec) List() []string {
 
 	var resources []string
 	if s.Redis != nil {
-		resources = append(resources, "Redis")
+		resources = append(resources, s.Redis.ResourceKind())
 	}
 	if s.PostgreSQL != nil {
-		resources = append(resources, "PostgreSQL")
+		resources = append(resources, s.PostgreSQL.ResourceKind())
 	}
 	if s.BigQueryDataset != nil {
-		resources = append(resources, "BigQuery dataset")
+		resources = append(resources, s.BigQueryDataset.ResourceKind())
 	}
 	return resources
 }
@@ -436,6 +436,8 @@ type EnvironmentResourceRedisSpec struct {
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
 }
 
+func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
+
 type EnvironmentResourcePostgreSQLSpec struct {
 	// Databases to provision - required.
 	Databases []string `yaml:"databases"`
@@ -445,6 +447,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
 }
+
+func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
 
 func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 	if s == nil {
@@ -492,7 +496,8 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	rawSchemaFiles map[string][]byte
 
 	// DatasetID, if provided, configures a custom dataset ID to place all tables
-	// into. By default, we use the service ID as the dataset ID.
+	// into. By default, we use the service ID as the dataset ID (with underscores
+	// replacing illegal characters).
 	//
 	// Dataset IDs must be alphanumeric (plus underscores).
 	DatasetID *string `yaml:"datasetID,omitempty"`
@@ -503,6 +508,14 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	// Location defaults to "US". Do not configure unless you know what you are
 	// doing, as BigQuery locations are not the same as standard GCP regions.
 	Location *string `yaml:"region,omitempty"`
+}
+
+func (EnvironmentResourceBigQueryDatasetSpec) ResourceKind() string { return "BigQuery dataset" }
+
+func (s *EnvironmentResourceBigQueryDatasetSpec) GetDatasetID(serviceID string) string {
+	return pointers.Deref(s.DatasetID,
+		// Dataset IDs must be alphanumeric (plus underscores)
+		strings.ReplaceAll(serviceID, "-", "_"))
 }
 
 func (s *EnvironmentResourceBigQueryDatasetSpec) Validate() []error {
