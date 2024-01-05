@@ -33,11 +33,12 @@ func (e *eventWriter) Filters(fs []*streaming.Filter) error {
 	if len(fs) > 0 {
 		buf := make([]streamhttp.EventFilter, 0, len(fs))
 		for _, f := range fs {
+
 			buf = append(buf, streamhttp.EventFilter{
 				Value:    f.Value,
 				Label:    f.Label,
-				Count:    f.Count,
 				LimitHit: f.IsLimitHit,
+				Count:    f.Count,
 				Kind:     f.Kind,
 			})
 		}
