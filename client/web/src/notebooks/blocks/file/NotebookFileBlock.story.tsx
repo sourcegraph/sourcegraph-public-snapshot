@@ -44,7 +44,7 @@ export const Default: StoryFn = () => (
                 {...noopBlockCallbacks}
                 id="file-block-1"
                 input={fileBlockInput}
-                output={of(HIGHLIGHTED_FILE_LINES_LONG)}
+                output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
                 isSelected={true}
                 isReadOnly={false}
                 showMenu={false}
