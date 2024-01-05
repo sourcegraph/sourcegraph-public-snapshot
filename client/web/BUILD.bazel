@@ -41,30 +41,20 @@ eslint_config_and_lint_root(
     ],
 )
 
-# bin.tsc_test(
-#     name = "typecheck_stories",
-#     args = [
-#         "-p $(location :storybook_tsconfig)",
-#     ],
-#     data = glob([
-#         "src/**/*.story.tsx",
-#         "src/**/*.fixtures.ts",  # required for import/extensions rule not to fail.
-#     ]) + [
-#         ":storybook_tsconfig",
-#         ":web_tests",
-#         "//:node_modules/@storybook",
-#         "//:tsconfig",
-#     ],
-# )
-#
-# ts_config(
-#     name = "storybook_tsconfig",
-#     src = "tsconfig.storybook.json",
-#     visibility = ["//client:__subpackages__"],
-#     deps = [
-#         "//:tsconfig",
-#     ],
-# )
+ts_project(
+    name = "stories_lib",
+    testonly = True,
+    srcs = glob([
+        "src/**/*.story.tsx",
+    ]),
+    tsconfig = ":tsconfig",
+    deps = [
+        ":web_lib",
+        ":web_tests",
+        "//:node_modules/@storybook",
+        "//:tsconfig",
+    ],
+)
 
 # Temporary ESLint target to lint stories. This will be removed once we have a
 # custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
