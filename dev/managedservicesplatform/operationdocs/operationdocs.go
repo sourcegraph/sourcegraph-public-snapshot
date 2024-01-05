@@ -87,7 +87,14 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 			if domain := env.Domain.GetDNSName(); domain != "" {
 				overview = append(overview, []string{"Domain", markdown.Link(domain, "https://"+domain)})
 				if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.Proxied {
-					overview = append(overview, []string{"Cloudflare WAF", markdown.Code("true")})
+					overview = append(overview, []string{"Cloudflare WAF", "✅"})
+				}
+			}
+			if env.Authentication != nil {
+				if pointers.DerefZero(env.Authentication.Sourcegraph) {
+					overview = append(overview, []string{"Authentication", "sourcegraph.com GSuite users"})
+				} else {
+					overview = append(overview, []string{"Authentication", "Restricted"})
 				}
 			}
 		}
