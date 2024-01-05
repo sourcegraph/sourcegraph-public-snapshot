@@ -21,12 +21,14 @@ copy_to_directory(
         "//client/web:bundle",
         "//client/web-sveltekit",
         "//client/web/dist/img",
+        "//client/web/dist/scripts",
     ],
     out = "dist",
     replace_prefixes = {
         "client/web/bundle": "",
         "client/web-sveltekit/build": "",
         "client/web/dist/img": "img",
+        "client/web/dist/scripts": "scripts",
         "client/browser/integration-assets": "",
     },
 )
