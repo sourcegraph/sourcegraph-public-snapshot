@@ -11,6 +11,6 @@ filegroup(
 
 copy_to_bin(
     name = "copy",
-    srcs = ["//client/web/dist/scripts"],
+    srcs = [":scripts"],
     visibility = ["//client/web-sveltekit:__pkg__"],
 )
