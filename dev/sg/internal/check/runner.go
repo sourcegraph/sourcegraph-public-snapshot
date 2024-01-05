@@ -25,8 +25,6 @@ import (
 const (
 	automaticFixChoice = "Automatic fix: Please try fixing this for me automatically"
 	manualFixChoice    = "Manual fix: Let me fix this manually"
-	fixAllChoice       = "Try to fix all issues automatically"
-	selectChoice       = "Select issues one by one to fix, either manually or automatically"
 	goBackChoice       = "Go back"
 	allChoice          = "all"
 )
