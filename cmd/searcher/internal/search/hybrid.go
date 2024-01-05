@@ -264,8 +264,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	// feels nicer than passing in a regexMatcher since handle path directly.
 	if m, err := compilePattern(p); err != nil {
 		return nil, err
-	} else if m.MatchesAllContent() { // we are just matching paths
-		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
 		q, err := m.ToZoektQuery(p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
