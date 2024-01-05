@@ -436,9 +436,9 @@ func TestRegexSearch(t *testing.T) {
 	file, _ := mockZipFile(zipData)
 
 	type args struct {
-		ctx                   context.Context
-		m                     matcher
-		pm                    *pathMatcher
+		ctx context.Context
+		m   matchTree
+		pm  *pathMatcher
 		zf                    *zipFile
 		limit                 int
 		patternMatchesContent bool
@@ -451,11 +451,11 @@ func TestRegexSearch(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "nil matcher returns a FileMatch with no LineMatches",
+			name: "nil matchTree returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
 				// Check this case specifically.
-				m:  &allMatcher{},
+				m:  &allMatchTree{},
 				pm: match,
 				zf: file,
 				patternMatchesPaths:   false,
@@ -465,15 +465,15 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 		{
-			name: "'and' matcher with matches",
+			name: "'and' matchTree with matches",
 			args: args{
 				ctx: context.Background(),
-				m: &orMatcher{
-					children: []matcher{
-						&regexMatcher{
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
 							re: regexp.MustCompile("aaaaa"),
 						},
-						&regexMatcher{
+						&regexMatchTree{
 							re: regexp.MustCompile("11111"),
 						},
 					}},
@@ -496,15 +496,15 @@ func TestRegexSearch(t *testing.T) {
 			}},
 		},
 		{
-			name: "'and' matcher with no match",
+			name: "'and' matchTree with no match",
 			args: args{
 				ctx: context.Background(),
-				m: &andMatcher{
-					children: []matcher{
-						&regexMatcher{
+				m: &andMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
 							re: regexp.MustCompile("aaaaa"),
 						},
-						&regexMatcher{
+						&regexMatchTree{
 							re: regexp.MustCompile("22222"),
 						},
 					}},
@@ -517,10 +517,10 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: nil,
 		},
 		{
-			name: "empty 'and' matcher",
+			name: "empty 'and' matchTree",
 			args: args{
 				ctx: context.Background(),
-				m: &andMatcher{},
+				m: &andMatchTree{},
 				pm: match,
 				zf: file,
 				patternMatchesPaths:   false,
@@ -530,15 +530,15 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 		{
-			name: "'or' matcher with matches",
+			name: "'or' matchTree with matches",
 			args: args{
 				ctx: context.Background(),
-				m: &orMatcher{
-					children: []matcher{
-						&regexMatcher{
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
 							re: regexp.MustCompile("aaaaa"),
 						},
-						&regexMatcher{
+						&regexMatchTree{
 							re: regexp.MustCompile("99999"),
 						},
 					}},
@@ -561,15 +561,15 @@ func TestRegexSearch(t *testing.T) {
 			}},
 		},
 		{
-			name: "'or' matcher with no match",
+			name: "'or' matchTree with no match",
 			args: args{
 				ctx: context.Background(),
-				m: &orMatcher{
-					children: []matcher{
-						&regexMatcher{
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
 							re: regexp.MustCompile("jjjjj"),
 						},
-						&regexMatcher{
+						&regexMatchTree{
 							re: regexp.MustCompile("99999"),
 						},
 					}},
@@ -582,10 +582,10 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: nil,
 		},
 		{
-			name: "empty 'or' matcher",
+			name: "empty 'or' matchTree",
 			args: args{
 				ctx: context.Background(),
-				m: &orMatcher{},
+				m: &orMatchTree{},
 				pm: match,
 				zf: file,
 				patternMatchesPaths:   false,

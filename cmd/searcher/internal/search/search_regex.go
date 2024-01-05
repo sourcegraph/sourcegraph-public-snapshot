@@ -19,7 +19,7 @@ import (
 
 func regexSearchBatch(
 	ctx context.Context,
-	m matcher,
+	m matchTree,
 	pm *pathMatcher,
 	zf *zipFile,
 	limit int,
@@ -49,7 +49,7 @@ func regexSearchBatch(
 // TODO(keegan) return search statistics
 func regexSearch(
 	ctx context.Context,
-	m matcher,
+	m matchTree,
 	pm *pathMatcher,
 	zf *zipFile,
 	patternMatchesContent, patternMatchesPaths bool,
@@ -61,7 +61,7 @@ func regexSearch(
 	defer tr.EndWithErr(&err)
 
 	tr.SetAttributes(attribute.Stringer("path", pm))
-	tr.SetAttributes(attribute.String("matcher", m.String()))
+	tr.SetAttributes(attribute.String("matchTree", m.String()))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -83,7 +83,7 @@ func regexSearch(
 		files = zf.Files
 	)
 
-	if _, ok := m.(allMatcher); ok || (patternMatchesPaths && !patternMatchesContent) {
+	if _, ok := m.(allMatchTree); ok || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {

@@ -50,20 +50,20 @@ func TestLongestLiteral(t *testing.T) {
 }
 
 func TestToZoektQuery(t *testing.T) {
-	m := &andMatcher{
-		children: []matcher{
-			&orMatcher{
-				children: []matcher{
-					&regexMatcher{
+	m := &andMatchTree{
+		children: []matchTree{
+			&orMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re:        regexp.MustCompile("aaaaa"),
 						isNegated: true,
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("bbbb*"),
 					},
 				},
 			},
-			&regexMatcher{
+			&regexMatchTree{
 				re:         regexp.MustCompile("cccc?"),
 				ignoreCase: true,
 			},
@@ -106,23 +106,23 @@ func TestToZoektQuery(t *testing.T) {
 }
 
 func TestMatchesString(t *testing.T) {
-	m := &orMatcher{
-		children: []matcher{
-			&andMatcher{
-				children: []matcher{
-					&regexMatcher{
+	m := &orMatchTree{
+		children: []matchTree{
+			&andMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re:        regexp.MustCompile("aaa"),
 						isNegated: true,
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("bbb*"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("ccc*"),
 					},
 				},
 			},
-			&regexMatcher{
+			&regexMatchTree{
 				re:         regexp.MustCompile("ddd?"),
 				ignoreCase: true,
 			},
@@ -160,23 +160,23 @@ func TestMatchesString(t *testing.T) {
 }
 
 func TestMatchesFile(t *testing.T) {
-	m := &orMatcher{
-		children: []matcher{
-			&andMatcher{
-				children: []matcher{
-					&regexMatcher{
+	m := &orMatchTree{
+		children: []matchTree{
+			&andMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re:        regexp.MustCompile("and"),
 						isNegated: true,
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("file"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("the"),
 					},
 				},
 			},
-			&regexMatcher{
+			&regexMatchTree{
 				re:         regexp.MustCompile("here"),
 				ignoreCase: true,
 			},
@@ -184,8 +184,8 @@ func TestMatchesFile(t *testing.T) {
 	}
 
 	cases := []struct {
-		m matcher
-		file        string
+		m    matchTree
+		file string
 		wantMatch   bool
 		wantMatches int
 	}{
@@ -208,7 +208,7 @@ func TestMatchesFile(t *testing.T) {
 			wantMatches: 0,
 		},
 		{
-			m: &regexMatcher{
+			m: &regexMatchTree{
 				re: regexp.MustCompile("excluded"),
 				isNegated: true,
 			},
@@ -232,19 +232,19 @@ func TestMatchesFileLimits(t *testing.T) {
 	file := []byte("the file that mentions file a lot ... the file file")
 
 	cases := []struct {
-		name        string
-		m           matcher
-		limit       int
+		name  string
+		m     matchTree
+		limit int
 		wantMatches int
 	}{
 		{
-			name: "'or' matcher with limit",
-			m: &orMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'or' matchTree with limit",
+			m: &orMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("file"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("the"),
 					},
 				},
@@ -253,13 +253,13 @@ func TestMatchesFileLimits(t *testing.T) {
 			wantMatches: 3,
 		},
 		{
-			name: "'or' matcher without limit",
-			m: &orMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'or' matchTree without limit",
+			m: &orMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("file"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("the"),
 					},
 				},
@@ -268,13 +268,13 @@ func TestMatchesFileLimits(t *testing.T) {
 			wantMatches: 6,
 		},
 		{
-			name: "'and' matcher with limit",
-			m: &andMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'and' matchTree with limit",
+			m: &andMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("file"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("the"),
 					},
 				},
@@ -283,17 +283,17 @@ func TestMatchesFileLimits(t *testing.T) {
 			wantMatches: 3,
 		},
 		{
-			name: "'and' matcher with negation",
-			m: &andMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'and' matchTree with negation",
+			m: &andMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("excluded"),
 						isNegated: true,
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("file"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("the"),
 					},
 				},
@@ -315,19 +315,19 @@ func TestMatchesFileRanges(t *testing.T) {
 	file := []byte("philodendron and monsteras")
 
 	cases := []struct {
-		name        string
-		m           matcher
-		limit       int
+		name  string
+		m     matchTree
+		limit int
 		wantMatches [][]int
 	}{
 		{
-			name: "'or' matcher with range overlap",
-			m: &orMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'or' matchTree with range overlap",
+			m: &orMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("steras"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("monster"),
 					},
 				},
@@ -336,13 +336,13 @@ func TestMatchesFileRanges(t *testing.T) {
 			wantMatches: [][]int{{17, 26}},
 		},
 		{
-			name: "'and' matcher with adjacent ranges",
-			m: &andMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'and' matchTree with adjacent ranges",
+			m: &andMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("philo"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("dendron"),
 					},
 				},
@@ -351,16 +351,16 @@ func TestMatchesFileRanges(t *testing.T) {
 			wantMatches: [][]int{{0, 12}},
 		},
 		{
-			name: "'and' matcher with one range subsuming another",
-			m: &andMatcher{
-				children: []matcher{
-					&regexMatcher{
+			name: "'and' matchTree with one range subsuming another",
+			m: &andMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("philodendron"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("lode"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("monster"),
 					},
 				},
@@ -370,18 +370,18 @@ func TestMatchesFileRanges(t *testing.T) {
 		},
 		{
 			name: "limit applied after merging",
-			m: &orMatcher{
-				children: []matcher{
-					&regexMatcher{
+			m: &orMatchTree{
+				children: []matchTree{
+					&regexMatchTree{
 						re: regexp.MustCompile("monster"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("tera"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("philo"),
 					},
-					&regexMatcher{
+					&regexMatchTree{
 						re: regexp.MustCompile("lode"),
 					},
 				},

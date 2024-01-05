@@ -15,29 +15,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 )
 
-type matcher interface {
+type matchTree interface {
 	// MatchesString returns whether the string matches
 	MatchesString(s string) bool
 
 	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches
 	MatchesFile(fileBuf []byte, limit int) (match bool, matches [][]int)
 
-	// ToZoektQuery returns a zoekt query representing the same rules as as this matcher
+	// ToZoektQuery returns a zoekt query representing the same rules as as this matchTree
 	ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error)
 
-	// String returns a simple string representation of the matcher
+	// String returns a simple string representation of the matchTree
 	String() string
 }
 
-// compilePattern returns a matcher for matching the pattern info
-func compilePattern(p *protocol.PatternInfo) (matcher, error) {
+// compilePattern returns a matchTree for matching the pattern info
+func compilePattern(p *protocol.PatternInfo) (matchTree, error) {
 	var (
 		re               *regexp.Regexp
 		literalSubstring []byte
 	)
 
 	if p.Pattern == "" {
-		return &allMatcher{}, nil
+		return &allMatchTree{}, nil
 	}
 
 	expr := p.Pattern
@@ -89,7 +89,7 @@ func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 		literalSubstring = []byte(longestLiteral(ast))
 	}
 
-	return &regexMatcher{
+	return &regexMatchTree{
 		re:               re,
 		ignoreCase:       !p.IsCaseSensitive,
 		isNegated:        p.IsNegated,
@@ -126,25 +126,25 @@ func longestLiteral(re *syntax.Regexp) string {
 	return ""
 }
 
-type allMatcher struct{}
+type allMatchTree struct{}
 
-func (a allMatcher) MatchesString(_ string) bool {
+func (a allMatchTree) MatchesString(_ string) bool {
 	return true
 }
 
-func (a allMatcher) MatchesFile(_ []byte, _ int) (match bool, matches [][]int) {
+func (a allMatchTree) MatchesFile(_ []byte, _ int) (match bool, matches [][]int) {
 	return true, nil
 }
 
-func (a allMatcher) ToZoektQuery(_ bool, _ bool) (zoektquery.Q, error) {
+func (a allMatchTree) ToZoektQuery(_ bool, _ bool) (zoektquery.Q, error) {
 	return &zoektquery.Const{Value: true}, nil
 }
 
-func (a allMatcher) String() string {
+func (a allMatchTree) String() string {
 	return "all"
 }
 
-type regexMatcher struct {
+type regexMatchTree struct {
 	// re is the regexp to match, should never be nil
 	re *regexp.Regexp
 
@@ -161,29 +161,29 @@ type regexMatcher struct {
 	literalSubstring []byte
 }
 
-func (rm *regexMatcher) String() string {
+func (rm *regexMatchTree) String() string {
 	return fmt.Sprintf("re: %q", rm.re)
 }
 
-func (rm *regexMatcher) MatchesString(s string) bool {
+func (rm *regexMatchTree) MatchesString(s string) bool {
 	matches := rm.matchesString(s)
 	return matches == !rm.isNegated
 }
 
-func (rm *regexMatcher) matchesString(s string) bool {
+func (rm *regexMatchTree) matchesString(s string) bool {
 	if rm.ignoreCase {
 		s = strings.ToLower(s)
 	}
 	return rm.re.MatchString(s)
 }
 
-func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+func (rm *regexMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	matches := rm.matchesFile(fileBuf, limit)
 	match := len(matches) > 0
 	return match == !rm.isNegated, matches
 }
 
-func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
+func (rm *regexMatchTree) matchesFile(fileBuf []byte, limit int) [][]int {
 	// Most files will not have a match and we bound the number of matched
 	// files we return. So we can avoid the overhead of parsing out new lines
 	// and repeatedly running the regex engine by running a single match over
@@ -198,7 +198,7 @@ func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
 	return rm.re.FindAllIndex(fileBuf, limit)
 }
 
-func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+func (rm *regexMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
 	re, err := syntax.Parse(rm.re.String(), syntax.Perl)
 	if err != nil {
 		return nil, err
@@ -231,18 +231,18 @@ func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektqu
 		}), nil
 }
 
-func (rm *regexMatcher) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
+func (rm *regexMatchTree) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
 	if rm.isNegated {
 		return &zoektquery.Not{Child: q}
 	}
 	return q
 }
 
-type andMatcher struct {
-	children []matcher
+type andMatchTree struct {
+	children []matchTree
 }
 
-func (am *andMatcher) MatchesString(s string) bool {
+func (am *andMatchTree) MatchesString(s string) bool {
 	for _, m := range am.children {
 		if !m.MatchesString(s) {
 			return false
@@ -251,7 +251,7 @@ func (am *andMatcher) MatchesString(s string) bool {
 	return true
 }
 
-func (am *andMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+func (am *andMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	var matches [][]int
 	for _, m := range am.children {
 		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
@@ -264,7 +264,7 @@ func (am *andMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	return true, mergeMatches(matches, limit)
 }
 
-func (am *andMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+func (am *andMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
 	var children []zoektquery.Q
 	for _, m := range am.children {
 		q, err := m.ToZoektQuery(matchContent, matchPath)
@@ -276,15 +276,15 @@ func (am *andMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquer
 	return &zoektquery.And{Children: children}, nil
 }
 
-func (am *andMatcher) String() string {
+func (am *andMatchTree) String() string {
 	return fmt.Sprintf("AND (%d children)", len(am.children))
 }
 
-type orMatcher struct {
-	children []matcher
+type orMatchTree struct {
+	children []matchTree
 }
 
-func (om *orMatcher) MatchesString(s string) bool {
+func (om *orMatchTree) MatchesString(s string) bool {
 	for _, m := range om.children {
 		if m.MatchesString(s) {
 			return true
@@ -293,7 +293,7 @@ func (om *orMatcher) MatchesString(s string) bool {
 	return false
 }
 
-func (om *orMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+func (om *orMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	match := false
 	var matches [][]int
 	for _, m := range om.children {
@@ -305,7 +305,7 @@ func (om *orMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	return match, mergeMatches(matches, limit)
 }
 
-func (om *orMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+func (om *orMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
 	var children []zoektquery.Q
 	for _, m := range om.children {
 		q, err := m.ToZoektQuery(matchContent, matchPath)
@@ -317,7 +317,7 @@ func (om *orMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery
 	return &zoektquery.Or{Children: children}, nil
 }
 
-func (om *orMatcher) String() string {
+func (om *orMatchTree) String() string {
 	return fmt.Sprintf("OR (%d children)", len(om.children))
 }
 
