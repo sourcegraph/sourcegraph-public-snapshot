@@ -40,7 +40,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters = [
         const tokens = scanSearchQuery(query)
 
         if (tokens.type === 'success') {
-            const filters = tokens.term.filter(token => token.type === 'filter') as QueryFilter[]
+            const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
             const typeFilters = filters.filter(filter => resolveFilter(filter.field.value)?.type === 'type')
 
             if (typeFilters.length === 0 || typeFilters.length > 1) {
