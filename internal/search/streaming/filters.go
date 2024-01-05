@@ -22,7 +22,7 @@ type Filter struct {
 	// This isn't set at the outset, and is set by SearchFilters.Compute().
 	// We do this because we want limitHit to apply to all filters, not just
 	// a single filter.
-	IsLimitHit bool
+	IsExhaustive bool
 
 	// Kind of filter. Should be "repo", "file", or "lang".
 	Kind string
