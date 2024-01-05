@@ -1,7 +1,7 @@
 query GitHistoryQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
     node(id: $repo) {
-        id
         ... on Repository {
+            id
             commit(rev: $revspec) {
                 id
                 ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {

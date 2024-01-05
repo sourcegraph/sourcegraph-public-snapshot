@@ -84,9 +84,9 @@ There are a couple of issues to consider with this approach and sometimes we'll 
   folder (sidebar + folder page)
 - Shared data from layout loaders: While it's very convenient that pages have access to any data from the ancestor layout loaders, that doesn't work well with data dependency co-location. The layout loaders don't know which sub-layout or sub-page is loaded and what data it needs.
   Possible solutions (to explore):
-    - Keep everything as is (query in higher up loader needs to (explicitly) include every field needed by a descendant layout/page.
-    - Have pages/layouts define dedicated fragments to be used for higher level loaders. High level loaders would then request the data for all sub-layouts/-pages, whether it's the current page or not (-> overfetching)
-    - Sub-layout/-pages don't rely on higher level loaders and instead fetch all their data on their own (-> duplicate data fetching)
+  - Keep everything as is (query in higher up loader needs to (explicitly) include every field needed by a descendant layout/page.
+  - Have pages/layouts define dedicated fragments to be used for higher level loaders. High level loaders would then request the data for all sub-layouts/-pages, whether it's the current page or not (-> overfetching)
+  - Sub-layout/-pages don't rely on higher level loaders and instead fetch all their data on their own (-> duplicate data fetching)
 
 ## Production build
 

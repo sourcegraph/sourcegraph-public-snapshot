@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Avatar_User, Avatar_Team, Avatar_Person  } from './Avatar.gql'
+    import type { Avatar_User, Avatar_Team, Avatar_Person } from './Avatar.gql'
 
     type Avatar = Avatar_User | Avatar_Team | Avatar_Person
 

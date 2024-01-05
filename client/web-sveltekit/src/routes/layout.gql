@@ -6,4 +6,5 @@ query CurrentAuthState {
 
 fragment AuthenticatedUser on User {
     ...Header_User
+    ...SearchInput_AuthenticatedUser
 }

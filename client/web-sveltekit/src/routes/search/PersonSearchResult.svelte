@@ -20,7 +20,10 @@
 </script>
 
 <SearchResult>
-    <Avatar slot="icon" avatar={{displayName, username: result.user?.username??'', avatarURL: result.user?.avatarURL??null}} />
+    <Avatar
+        slot="icon"
+        avatar={{ displayName, username: result.user?.username ?? '', avatarURL: result.user?.avatarURL ?? null }}
+    />
     <div slot="title">
         &nbsp;
         {#if ownerURL}

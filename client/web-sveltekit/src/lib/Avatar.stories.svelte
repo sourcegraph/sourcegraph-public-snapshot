@@ -21,5 +21,5 @@
     <h2>With <code>username</code> "{username}"</h2>
     <Avatar avatar={{ username, avatarURL: null, displayName: null }} />
     <h2>With <code>displayName</code> "{displayName}"</h2>
-    <Avatar avatar={{ displayName, avatarURL: null, username}} />
+    <Avatar avatar={{ displayName, avatarURL: null, username }} />
 </Story>

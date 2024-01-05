@@ -1,0 +1,3 @@
+fragment SearchInput_AuthenticatedUser on User {
+    id
+}

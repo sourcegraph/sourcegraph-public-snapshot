@@ -440,7 +440,8 @@
         "peerDependencies": {
           "@graphql-codegen/typescript": "*",
           "@graphql-codegen/typescript-operations": "*",
-          "@graphql-codegen/near-operation-file-preset": "*"
+          "@graphql-codegen/near-operation-file-preset": "*",
+          "@graphql-codegen/typed-document-node": "*"
         }
       }
     }
