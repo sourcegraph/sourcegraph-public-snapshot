@@ -4,6 +4,7 @@ service:
   name: Msp Example
   owners:
     - core-services
+
 build:
   # TODO: Configure the correct image for your job here. If you use a private
   # registry like us.gcr.io or Artifact Registry, access will automatically be
@@ -13,9 +14,10 @@ build:
   source:
     repo: github.com/sourcegraph/sourcegraph
     dir: cmd/msp-example
+
 environments:
   - id: dev
-    projectID: msp-example-dev-TestNewJob
+    projectID: msp-example-dev-xxxx
     # TODO: We initially provision in 'test' to make it easy to access the project
     # during setup. Once done, you should change this to 'external' or 'internal'.
     category: test
@@ -37,10 +39,3 @@ environments:
       resources:
         cpu: 1
         memory: 1Gi
-  - id: prod
-    projectID: msp-example-prod-TestNewJob
-    # TODO: We initially provision in 'test' to make it easy to access the project
-    # during setup. Once done, you should change this to 'external' or 'internal'.
-    category: test
-    # TODO: Fill out the rest of your configuration here!
-    # ...

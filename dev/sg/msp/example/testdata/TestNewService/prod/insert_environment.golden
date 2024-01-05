@@ -1,22 +1,20 @@
 service:
-  id: {{ .ID }}
-  name: {{ .Name }}
+  id: msp-example
+  name: Msp Example
   owners:
-    - {{ .Owner }}
-
+    - core-services
 build:
   # TODO: Configure the correct image for your service here. If you use a private
   # registry like us.gcr.io or Artifact Registry, access will automatically be
   # granted for your service to pull the correct image.
-  image: us.gcr.io/sourcegraph-dev/{{ .ID }}
+  image: us.gcr.io/sourcegraph-dev/msp-example
   # TODO: Configure where the source code for your service lives here.
   source:
     repo: github.com/sourcegraph/sourcegraph
-    dir: cmd/{{ .ID }}
-
+    dir: cmd/msp-example
 environments:
-  - id: {{ if .Dev }}dev{{ else }}prod{{ end }}
-    projectID: {{ if .Dev }}{{ newProjectID .ID "dev" .ProjectIDSuffixLength }}{{ else }}{{ newProjectID .ID "prod" .ProjectIDSuffixLength }}{{ end }}
+  - id: prod
+    projectID: msp-example-prod-xxxx
     # TODO: We initially provision in 'test' to make it easy to access the project
     # during setup. Once done, you should change this to 'external' or 'internal'.
     category: test
@@ -29,8 +27,8 @@ environments:
     domain:
       type: cloudflare
       cloudflare:
-        subdomain: {{ .ID }}
-        zone: {{ if .Dev }}sgdev.org{{ else }}sourcegraph.com{{ end }}
+        subdomain: msp-example
+        zone: sourcegraph.com
     # Specify environment configuration your service needs to operate.
     env:
       SRC_LOG_LEVEL: info
@@ -46,3 +44,10 @@ environments:
     startupProbe:
       # Only enable if your service implements MSP /-/healthz conventions.
       disabled: true
+  - id: second
+    projectID: msp-example-second-xxxx
+    # TODO: We initially provision in 'test' to make it easy to access the project
+    # during setup. Once done, you should change this to 'external' or 'internal'.
+    category: test
+    # TODO: Fill out the rest of your configuration here!
+    # ...
