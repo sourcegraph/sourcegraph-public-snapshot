@@ -4,8 +4,11 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "iam",
     srcs = ["iam.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam",
-    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam",
+    visibility = [
+        "//dev/managedservicesplatform:__subpackages__",
+        "//dev/sg/msp:__pkg__",
+    ],
     deps = [
         "//dev/managedservicesplatform/internal/resource/random",
         "//dev/managedservicesplatform/internal/resource/serviceaccount",

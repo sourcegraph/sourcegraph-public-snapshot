@@ -10,9 +10,10 @@ import (
 	"github.com/urfave/cli/v2"
 	"github.com/vvakame/gcplogurl"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -364,7 +365,7 @@ full access, use the '-write-access' flag.
 						}
 						iamOutputs, err := tfcClient.GetOutputs(c.Context,
 							terraformcloud.WorkspaceName(service.Service, *env,
-								managedservicesplatform.StackNameIAM))
+								iam.StackName))
 						if err != nil {
 							return errors.Wrap(err, "get IAM outputs")
 						}
@@ -388,7 +389,7 @@ full access, use the '-write-access' flag.
 
 						cloudRunOutputs, err := tfcClient.GetOutputs(c.Context,
 							terraformcloud.WorkspaceName(service.Service, *env,
-								managedservicesplatform.StackNameCloudRun))
+								cloudrun.StackName))
 						if err != nil {
 							return errors.Wrap(err, "get Cloud Run outputs")
 						}
