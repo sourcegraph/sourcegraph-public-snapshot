@@ -35,10 +35,12 @@ export function viewerSubjectFromSettings(
  */
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
     switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
-        case 'precise':
+        case 'precise': {
             return SearchMode.Precise
-        case 'smart':
+        }
+        case 'smart': {
             return SearchMode.SmartSearch
+        }
     }
     return undefined
 }
@@ -79,6 +81,6 @@ function getFromSettings<T>(settingsCascade: SettingsCascadeOrError, setting: st
     return undefined
 }
 
-export const prettifySystemRole = (role: string): string => startCase(role.replace(/_/g, ' ').toLowerCase())
-export const prettifyNamespace = (namespace: string): string => startCase(namespace.replace(/_/g, ' ').toLowerCase())
-export const prettifyAction = (action: string): string => startCase(action.replace(/_/g, ' ').toLowerCase())
+export const prettifySystemRole = (role: string): string => startCase(role.replaceAll('_', ' ').toLowerCase())
+export const prettifyNamespace = (namespace: string): string => startCase(namespace.replaceAll('_', ' ').toLowerCase())
+export const prettifyAction = (action: string): string => startCase(action.replaceAll('_', ' ').toLowerCase())

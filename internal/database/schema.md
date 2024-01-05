@@ -1768,6 +1768,8 @@ Foreign-key constraints:
  has_webhooks      | boolean                  |           |          | 
  token_expires_at  | timestamp with time zone |           |          | 
  code_host_id      | integer                  |           |          | 
+ creator_id        | integer                  |           |          | 
+ last_updater_id   | integer                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_unique_kind_org_id" UNIQUE, btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL
@@ -1781,6 +1783,8 @@ Check constraints:
     "external_services_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
     "external_services_code_host_id_fkey" FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+    "external_services_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "external_services_last_updater_id_fkey" FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -1974,7 +1978,7 @@ Triggers:
 ```
     Column    |  Type  | Collation | Nullable | Default 
 --------------+--------+-----------+----------+---------
- shard_id     | text   |           | not null | 
+ shard_id     | text   |           |          | 
  total        | bigint |           | not null | 0
  not_cloned   | bigint |           | not null | 0
  cloning      | bigint |           | not null | 0
@@ -1982,7 +1986,7 @@ Triggers:
  failed_fetch | bigint |           | not null | 0
  corrupted    | bigint |           | not null | 0
 Indexes:
-    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+    "gitserver_repos_statistics_shard_id" btree (shard_id)
 
 ```
 
@@ -2345,6 +2349,7 @@ Indexes:
     "lsif_indexes_dequeue_order_idx" btree ((enqueuer_user_id > 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text
     "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
+    "lsif_indexes_repository_id_indexer" btree (repository_id, indexer)
     "lsif_indexes_state" btree (state)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
@@ -2573,6 +2578,7 @@ Indexes:
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
+    "lsif_uploads_repository_id_indexer" btree (repository_id, indexer)
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at_id" btree (uploaded_at DESC, id) WHERE state <> 'deleted'::text
 Check constraints:
@@ -3521,12 +3527,12 @@ Referenced by:
 
 # Table "public.repo"
 ```
-        Column         |           Type           | Collation | Nullable |             Default              
------------------------+--------------------------+-----------+----------+----------------------------------
+        Column         |           Type           | Collation | Nullable |                                          Default                                           
+-----------------------+--------------------------+-----------+----------+--------------------------------------------------------------------------------------------
  id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
  name                  | citext                   |           | not null | 
  description           | text                     |           |          | 
- fork                  | boolean                  |           |          | 
+ fork                  | boolean                  |           | not null | false
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           |          | 
  external_id           | text                     |           |          | 
@@ -3539,11 +3545,12 @@ Referenced by:
  private               | boolean                  |           | not null | false
  stars                 | integer                  |           | not null | 0
  blocked               | jsonb                    |           |          | 
+ topics                | text[]                   |           |          | generated always as (extract_topics_from_metadata(external_service_type, metadata)) stored
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
-    "idx_repo_github_topics" gin (((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text)) WHERE external_service_type = 'github'::text
+    "idx_repo_topics" gin (topics)
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
@@ -3661,6 +3668,7 @@ Foreign-key constraints:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+    "repo_embedding_jobs_repo" btree (repo_id, revision)
 Referenced by:
     TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 
@@ -4296,7 +4304,6 @@ Foreign-key constraints:
  site_admin              | boolean                  |           | not null | false
  page_views              | integer                  |           | not null | 0
  search_queries          | integer                  |           | not null | 0
- tags                    | text[]                   |           |          | '{}'::text[]
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
@@ -4304,6 +4311,7 @@ Foreign-key constraints:
  completions_quota       | integer                  |           |          | 
  code_completions_quota  | integer                  |           |          | 
  completed_post_signup   | boolean                  |           | not null | false
+ cody_pro_enabled_at     | timestamp with time zone |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -4350,6 +4358,8 @@ Referenced by:
     TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "exhaustive_search_jobs" CONSTRAINT "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "external_services" CONSTRAINT "external_services_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "external_services" CONSTRAINT "external_services_last_updater_id_fkey" FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE

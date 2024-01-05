@@ -82,7 +82,7 @@ export const OwnStatusPage: FC = () => {
                                 },
                             })
                                 .then(result => {
-                                    if (result.errors || !result.data || !result.data.updateOwnSignalConfigurations) {
+                                    if (result.errors || !result.data?.updateOwnSignalConfigurations) {
                                         setSaveError(new Error('Failed to save configurations'))
                                     } else {
                                         setHasLocalChanges(false)

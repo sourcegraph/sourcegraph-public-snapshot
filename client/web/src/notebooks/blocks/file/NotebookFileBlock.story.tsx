@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
@@ -9,7 +9,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { NotebookFileBlock } from './NotebookFileBlock'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/search/notebooks/blocks/file/NotebookFileBlock',
@@ -36,7 +36,7 @@ const fileBlockInput: FileBlockInput = {
     lineRange: null,
 }
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebookFileBlock
@@ -54,7 +54,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const EditMode: Story = () => (
+export const EditMode: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebookFileBlock
@@ -74,7 +74,7 @@ export const EditMode: Story = () => (
 
 EditMode.storyName = 'edit mode'
 
-export const ErrorFetchingFile: Story = () => (
+export const ErrorFetchingFile: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebookFileBlock

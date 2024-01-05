@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`LicenseExpirationAlert expired 1`] = `
+exports[`LicenseExpirationAlert > expired 1`] = `
 <DocumentFragment>
   <div
     aria-live="assertive"
@@ -24,7 +24,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
        or 
       <a
         class="anchorLink site-alert__link"
-        href="https://about.sourcegraph.com/contact"
+        href="https://sourcegraph.com/contact"
       >
         <span
           class="underline"
@@ -56,7 +56,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
 </DocumentFragment>
 `;
 
-exports[`LicenseExpirationAlert expiring soon 1`] = `
+exports[`LicenseExpirationAlert > expiring soon 1`] = `
 <DocumentFragment>
   <div
     aria-live="assertive"
@@ -80,7 +80,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
        or 
       <a
         class="anchorLink site-alert__link"
-        href="https://about.sourcegraph.com/contact"
+        href="https://sourcegraph.com/contact"
       >
         <span
           class="underline"

@@ -24,7 +24,9 @@
             }
         },
         restore(data) {
-            bottomPanel.restore(data.bottomPanel)
+            if (data) {
+                bottomPanel.restore(data.bottomPanel)
+            }
         },
     }
 
@@ -42,7 +44,7 @@
         )
     let treeProvider: FileTreeProvider | null = null
 
-    async function updateFileTreeProvider(repoID: Scalars['ID'], commitID: string, parentPath: string) {
+    async function updateFileTreeProvider(repoID: Scalars['ID']['input'], commitID: string, parentPath: string) {
         const result = await data.deferred.fileTree
         if (!result) {
             treeProvider = null

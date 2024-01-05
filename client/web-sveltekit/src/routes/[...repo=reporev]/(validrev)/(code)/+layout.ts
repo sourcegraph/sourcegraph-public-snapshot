@@ -13,7 +13,7 @@ let getRootPath = (_repo: string, path: string) => path
 
 // We keep state in the browser to load the tree entries of the "highest" directory that was visited.
 if (browser) {
-    let topTreePath: Record<string, string> = {}
+    const topTreePath: Record<string, string> = {}
 
     getRootPath = (repo: string, path: string) => {
         const treePath = topTreePath[repo]

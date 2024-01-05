@@ -89,8 +89,8 @@ func NewDependencyIndexSchedulers(
 			config,
 		),
 
-		dependencies.NewIndexResetter(observationCtx.Logger.Scoped("indexResetter", ""), config.ResetterInterval, indexStore, metrics),
-		dependencies.NewDependencyIndexResetter(observationCtx.Logger.Scoped("dependencyIndexResetter", ""), config.ResetterInterval, dependencyIndexingStore, metrics),
+		dependencies.NewIndexResetter(observationCtx.Logger.Scoped("indexResetter"), config.ResetterInterval, indexStore, metrics),
+		dependencies.NewDependencyIndexResetter(observationCtx.Logger.Scoped("dependencyIndexResetter"), config.ResetterInterval, dependencyIndexingStore, metrics),
 	}
 }
 

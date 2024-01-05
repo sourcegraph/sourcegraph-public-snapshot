@@ -44,7 +44,7 @@ func TestSearchResults(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := newSchemaResolver(db, gitserver.NewClient()).Search(ctx, &SearchArgs{Query: query, Version: version})
+		r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Search(ctx, &SearchArgs{Query: query, Version: version})
 		require.Nil(t, err)
 
 		results, err := r.Results(ctx)
@@ -336,6 +336,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		query,
 		search.Precise,
 		search.Batch,
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -576,6 +577,7 @@ func TestEvaluateAnd(t *testing.T) {
 				tt.query,
 				search.Precise,
 				search.Batch,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -692,6 +694,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				tt.searchQuery,
 				search.Precise,
 				search.Batch,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)

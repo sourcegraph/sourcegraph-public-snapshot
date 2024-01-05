@@ -727,8 +727,8 @@ export async function handleCodeHost({
     // Handle theming
     subscriptions.add(
         (codeHost.isLightTheme ?? of(true)).subscribe(isLightTheme => {
-            document.body.classList.toggle('theme-light', isLightTheme)
-            document.body.classList.toggle('theme-dark', !isLightTheme)
+            document.documentElement.classList.toggle('theme-light', isLightTheme)
+            document.documentElement.classList.toggle('theme-dark', !isLightTheme)
         })
     )
 

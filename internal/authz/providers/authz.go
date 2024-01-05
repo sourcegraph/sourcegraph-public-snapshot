@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -46,7 +47,7 @@ func ProvidersFromConfig(
 	warnings []string,
 	invalidConnections []string,
 ) {
-	logger := log.Scoped("authz", " parse provider from config")
+	logger := log.Scoped("authz")
 
 	allowAccessByDefault = true
 	defer func() {
@@ -166,7 +167,7 @@ func ProvidersFromConfig(
 	initResult.Append(perforce.NewAuthzProviders(perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
-	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
+	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns, httpcli.ExternalClient))
 
 	return allowAccessByDefault, initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }

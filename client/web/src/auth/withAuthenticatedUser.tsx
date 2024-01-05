@@ -16,7 +16,6 @@ export const withAuthenticatedUser = <P extends object & { authenticatedUser: Au
     >
 > =>
     // It's important to add names to all components to avoid full reload on hot-update.
-    // https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload
     function WithAuthenticatedUser({ authenticatedUser, ...props }) {
         // If not logged in, redirect to sign in.
         if (!authenticatedUser) {

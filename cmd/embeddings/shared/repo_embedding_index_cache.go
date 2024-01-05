@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 )
 
 type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
@@ -159,7 +158,7 @@ func (c *CachedEmbeddingIndexGetter) Get(ctx context.Context, repoID api.RepoID,
 	// Run the fetch in the background, but outside the singleflight so context
 	// errors are not shared.
 	go func() {
-		detachedCtx := xcontext.Detach(ctx)
+		detachedCtx := context.WithoutCancel(ctx)
 		// Run the fetch request through a singleflight to keep from fetching the
 		// same index multiple times concurrently
 		v, err, _ = c.sf.Do(fmt.Sprintf("%d", repoID), func() (interface{}, error) {

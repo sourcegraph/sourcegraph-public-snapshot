@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -318,7 +317,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return Mocks.Code(p)
 	}
 
-	logger := log.Scoped("highlight", "Code")
+	logger := log.Scoped("highlight")
 
 	p.Filepath = normalizeFilepath(p.Filepath)
 
@@ -417,42 +416,10 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
 		LineLengthLimit:  maxLineLength,
-		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
 	query.Filetype = filetypeQuery.Language
-
-	// Single-program mode: we do not use syntect_server/syntax-highlighter
-	//
-	// 1. It makes cross-compilation harder (requires a full Rust toolchain for the target, plus
-	//    a full C/C++ toolchain for the target.) Complicates macOS code signing.
-	// 2. Requires adding a C ABI so we can invoke it via CGO. Or as an external process
-	//    complicates distribution and/or requires Docker.
-	// 3. syntect_server/syntax-highlighter still uses the absolutely awful http-server-stabilizer
-	//    hack to workaround https://github.com/trishume/syntect/issues/202 - and by extension needs
-	//    two separate binaries, and separate processes, to function semi-reliably.
-	//
-	// Instead, in single-program mode we defer to Chroma for syntax highlighting.
-	if deploy.IsSingleBinary() {
-		document, err := highlightWithChroma(code, p.Filepath)
-		if err != nil {
-			return unhighlightedCode(err, code)
-		}
-		if document == nil {
-			// Highlighting this language is not supported, so fallback to plain text.
-			plainResponse, err := generatePlainTable(code)
-			if err != nil {
-				return nil, false, err
-			}
-			return plainResponse, false, nil
-		}
-		return &HighlightedCode{
-			code:     code,
-			html:     "",
-			document: document,
-		}, false, nil
-	}
 
 	resp, err := client.Highlight(ctx, query, p.Format)
 

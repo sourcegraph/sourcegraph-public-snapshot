@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SignInPage renders "Other login methods" if primary provider count is low enough 1`] = `
+exports[`SignInPage > renders "Other login methods" if primary provider count is low enough 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -85,7 +85,7 @@ exports[`SignInPage renders "Other login methods" if primary provider count is l
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders different prefix on provider buttons 1`] = `
+exports[`SignInPage > renders different prefix on provider buttons 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -193,7 +193,7 @@ exports[`SignInPage renders different prefix on provider buttons 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders non-primary auth provider if primary provider count is low enough and showMore is in the query 1`] = `
+exports[`SignInPage > renders non-primary auth provider if primary provider count is low enough and showMore is in the query 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -282,9 +282,9 @@ exports[`SignInPage renders non-primary auth provider if primary provider count 
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
+exports[`SignInPage > renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
 
-exports[`SignInPage renders sign in page (dotcom) 1`] = `
+exports[`SignInPage > renders sign in page (dotcom) 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -400,7 +400,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) 1`] = `
+exports[`SignInPage > renders sign in page (server) 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -508,7 +508,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with email form expanded 1`] = `
+exports[`SignInPage > renders sign in page (server) with email form expanded 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -649,7 +649,7 @@ exports[`SignInPage renders sign in page (server) with email form expanded 1`] =
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with only builtin authProvider 1`] = `
+exports[`SignInPage > renders sign in page (server) with only builtin authProvider 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -767,7 +767,7 @@ exports[`SignInPage renders sign in page (server) with only builtin authProvider
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with request access link 1`] = `
+exports[`SignInPage > renders sign in page (server) with request access link 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -875,7 +875,7 @@ exports[`SignInPage renders sign in page (server) with request access link 1`] =
 </DocumentFragment>
 `;
 
-exports[`SignInPage with Gerrit auth provider does not render the Gerrit provider 1`] = `
+exports[`SignInPage > with Gerrit auth provider > does not render the Gerrit provider 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -983,7 +983,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
 </DocumentFragment>
 `;
 
-exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 providers 1`] = `
+exports[`SignInPage > with Sourcegraph operator auth provider > renders page with 2 providers 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -1091,7 +1091,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
 </DocumentFragment>
 `;
 
-exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 providers (url-param present) 1`] = `
+exports[`SignInPage > with Sourcegraph operator auth provider > renders page with 3 providers (url-param present) 1`] = `
 <DocumentFragment>
   <div
     class="wrapper"
@@ -1167,7 +1167,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
         >
           <a
             class="anchorLink btn btnPrimary btnBlock"
-            href="http://localhost/?returnTo=%2Fsearch"
+            href="http://localhost:3000/?returnTo=%2Fsearch"
           >
              Continue with Sourcegraph Operators
           </a>

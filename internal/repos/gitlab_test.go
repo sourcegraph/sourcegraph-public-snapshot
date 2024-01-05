@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -116,6 +117,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 						StarCount:     168,
 						ForksCount:    76,
 						DefaultBranch: "master",
+						Topics:        []string{"topic1", "topic2"},
 					},
 				}
 
@@ -140,12 +142,9 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url: "https://gitlab.com",
-				})),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitLab, &schema.GitLabConnection{
+				Url: "https://gitlab.com",
+			})
 
 			ctx := context.Background()
 			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), svc, cf)
@@ -205,6 +204,18 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 			schema: &schema.GitLabConnection{
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
+			},
+		}, {
+			name: "internal-repo-public",
+			schema: &schema.GitLabConnection{
+				Url:                       "https://gitlab.com",
+				MarkInternalReposAsPublic: true,
+			},
+		}, {
+			name: "internal-repo-private",
+			schema: &schema.GitLabConnection{
+				Url:                       "https://gitlab.com",
+				MarkInternalReposAsPublic: false,
 			},
 		},
 	}
@@ -298,10 +309,7 @@ func TestGitlabSource_ListRepos(t *testing.T) {
 	cf, save := NewClientFactory(t, t.Name())
 	defer save(t)
 
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindGitLab,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantGitLab, conf)
 
 	ctx := context.Background()
 	src, err := NewGitLabSource(ctx, nil, svc, cf)

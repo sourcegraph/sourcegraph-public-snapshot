@@ -93,7 +93,6 @@ sg start monitoring
 
 Here are some additional resources to help you go further:
 
-- [Full `sg` reference](../background-information/sg/reference.md)
 - [Troubleshooting local development](troubleshooting.md)
 - [Continuous integration](../background-information/ci/index.md)
 - [Background information](../index.md#background-information) for more context on various topics.

@@ -56,7 +56,7 @@ var _ actor.SourceSyncer = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
-		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
+		log:    logger.Scoped("productsubscriptions"),
 		cache:  cache,
 		dotcom: dotcomClient,
 
@@ -113,15 +113,16 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	return act, nil
 }
 
-func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
-	if time.Since(*actor.LastUpdated) < minUpdateInterval {
+func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
+	if time.Since(*act.LastUpdated) < minUpdateInterval {
 		// Last update was too recent - do it later.
-		return
+		return actor.ErrActorRecentlyUpdated{
+			RetryAt: act.LastUpdated.Add(minUpdateInterval),
+		}
 	}
 
-	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
-		sgtrace.Logger(ctx, s.log).Info("failed to update actor", log.Error(err))
-	}
+	_, err := s.fetchAndCache(ctx, act.Key)
+	return err
 }
 
 // Sync retrieves all known actors from this source and updates its cache.

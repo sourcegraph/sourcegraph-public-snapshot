@@ -89,7 +89,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 
 	uid := actor.FromContext(ctx).UID
 	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
-	logger := r.logger.Scoped("CreateAccessToken", "access token creation").
+	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
@@ -178,7 +178,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 	}
 
-	logger := r.logger.Scoped("DeleteAccessToken", "access token deletion").
+	logger := r.logger.Scoped("DeleteAccessToken").
 		With(log.Int32("userID", token.SubjectUserID))
 
 	if conf.CanSendEmail() {

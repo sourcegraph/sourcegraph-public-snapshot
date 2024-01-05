@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {() => (
             <SiteInitPage
@@ -28,7 +28,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const Authenticated: Story = () => (
+export const Authenticated: StoryFn = () => (
     <WebStory>
         {() => (
             <SiteInitPage

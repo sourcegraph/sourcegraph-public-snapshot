@@ -87,7 +87,7 @@ describe.skip('Core functionality regression test suite', () => {
             await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
                 const editor = document.querySelector('.test-settings-file .monaco-editor .view-lines') as HTMLElement
-                // eslint-disable-next-line unicorn/prefer-text-content
+
                 return editor ? editor.innerText : null
             })
         }

@@ -548,75 +548,79 @@ export const COLLAPSABLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
 }
 
 export const HIGHLIGHTED_FILE_LINES = [
-    [
-        '<tr><td class="line" data-line="1"></td><td class="code"><span style="color:#268bd2;">language</span><span style="color:#657b83;">: </span><span style="color:#2aa198;">go↵</span></td></tr>',
-        '<tr><td class="line" data-line="2"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
-        '<tr><td class="line" data-line="3"></td><td class="code"><span style="color:#268bd2;">go</span><span style="color:#657b83;">:↵</span></td></tr>',
-        '<tr><td class="line" data-line="4"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">tip↵</span></td></tr>',
-        '<tr><td class="line" data-line="5"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
-        '<tr><td class="line" data-line="6"></td><td class="code"><span style="color:#268bd2;">install</span><span style="color:#657b83;">:↵</span></td></tr>',
-        '<tr><td class="line" data-line="7"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">export GOPATH=&#34;$HOME/gopath&#34;↵</span></td></tr>',
-        '<tr><td class="line" data-line="8"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mkdir -p &#34;$GOPATH/src/golang.org/x&#34;↵</span></td></tr>',
-        '<tr><td class="line" data-line="9"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mv &#34;$TRAVIS_BUILD_DIR&#34; &#34;$GOPATH/src/golang.org/x/oauth2&#34;↵</span></td></tr>',
-        '<tr><td class="line" data-line="10"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go get -v -t -d golang.org/x/oauth2/...↵</span></td></tr><tr>',
-        '<td class="line" data-line="11"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
-        '<tr><td class="line" data-line="12"></td><td class="code"><span style="color:#268bd2;">script</span><span style="color:#657b83;">:↵</span></td></tr><tr>',
-        '<td class="line" data-line="13"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go test -v golang.org/x/oauth2/...</span></td></tr>',
-    ],
+    '<tr><td class="line" data-line="1"></td><td class="code"><span style="color:#268bd2;">language</span><span style="color:#657b83;">: </span><span style="color:#2aa198;">go↵</span></td></tr>',
+    '<tr><td class="line" data-line="2"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
+    '<tr><td class="line" data-line="3"></td><td class="code"><span style="color:#268bd2;">go</span><span style="color:#657b83;">:↵</span></td></tr>',
+    '<tr><td class="line" data-line="4"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">tip↵</span></td></tr>',
+    '<tr><td class="line" data-line="5"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
+    '<tr><td class="line" data-line="6"></td><td class="code"><span style="color:#268bd2;">install</span><span style="color:#657b83;">:↵</span></td></tr>',
+    '<tr><td class="line" data-line="7"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">export GOPATH=&#34;$HOME/gopath&#34;↵</span></td></tr>',
+    '<tr><td class="line" data-line="8"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mkdir -p &#34;$GOPATH/src/golang.org/x&#34;↵</span></td></tr>',
+    '<tr><td class="line" data-line="9"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">mv &#34;$TRAVIS_BUILD_DIR&#34; &#34;$GOPATH/src/golang.org/x/oauth2&#34;↵</span></td></tr>',
+    '<tr><td class="line" data-line="10"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go get -v -t -d golang.org/x/oauth2/...↵</span></td></tr><tr>',
+    '<td class="line" data-line="11"></td><td class="code"><span style="color:#657b83;">↵</span></td></tr>',
+    '<tr><td class="line" data-line="12"></td><td class="code"><span style="color:#268bd2;">script</span><span style="color:#657b83;">:↵</span></td></tr><tr>',
+    '<td class="line" data-line="13"></td><td class="code"><span style="color:#657b83;">  - </span><span style="color:#2aa198;">go test -v golang.org/x/oauth2/...</span></td></tr>',
 ]
 
 export const HIGHLIGHTED_FILE_LINES_SIMPLE = [
-    [
-        '<tr><td class="line" data-line="1"></td><td class="code">first line of code</td></tr>',
-        '<tr><td class="line" data-line="2"></td><td class="code">second line of code</td></tr>',
-        '<tr><td class="line" data-line="3"></td><td class="code">third line of code</td></tr>',
-        '<tr><td class="line" data-line="4"></td><td class="code">fourth</td></tr>',
-        '<tr><td class="line" data-line="5"></td><td class="code">fifth</td></tr>',
-        '<tr><td class="line" data-line="6"></td><td class="code">sixth</td></tr>',
-        '<tr><td class="line" data-line="7"></td><td class="code">seventh</td></tr>',
-        '<tr><td class="line" data-line="8"></td><td class="code">eighth</td></tr>',
-        '<tr><td class="line" data-line="9"></td><td class="code">ninth</td></tr>',
-        '<tr><td class="line" data-line="10"></td><td class="code">tenth</td></tr>',
-    ],
+    '<tr><td class="line" data-line="1"></td><td class="code">first line of code</td></tr>',
+    '<tr><td class="line" data-line="2"></td><td class="code">second line of code</td></tr>',
+    '<tr><td class="line" data-line="3"></td><td class="code">third line of code</td></tr>',
+    '<tr><td class="line" data-line="4"></td><td class="code">fourth</td></tr>',
+    '<tr><td class="line" data-line="5"></td><td class="code">fifth</td></tr>',
+    '<tr><td class="line" data-line="6"></td><td class="code">sixth</td></tr>',
+    '<tr><td class="line" data-line="7"></td><td class="code">seventh</td></tr>',
+    '<tr><td class="line" data-line="8"></td><td class="code">eighth</td></tr>',
+    '<tr><td class="line" data-line="9"></td><td class="code">ninth</td></tr>',
+    '<tr><td class="line" data-line="10"></td><td class="code">tenth</td></tr>',
 ]
 
 export const HIGHLIGHTED_FILE_LINES_LONG = [
-    [
-        '<tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#93a1a1;">// Copyright 2014 The Go Authors. All rights reserved.↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#93a1a1;">// Use of this source code is governed by a BSD-style↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#93a1a1;">// license that can be found in the LICENSE file.↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#859900;">package</span><span style="color:#657b83;"> oauth2_test↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#cb4b16;">import </span><span style="color:#657b83;">(↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="8"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">context</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="9"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">fmt</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="10"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">log</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="11"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">net/http</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="12"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">time</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="13"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="14"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">golang.org/x/oauth2</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="15"></td><td class="code"><div><span style="color:#657b83;">)↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="16"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="17"></td><td class="code"><div><span style="color:#268bd2;">func </span><span style="color:#b58900;">ExampleConfig</span><span style="color:#657b83;">() {↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="18"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#268bd2;">ctx </span><span style="color:#859900;">:=</span><span style="color:#657b83;"> context.</span><span style="color:#b58900;">Background</span><span style="color:#657b83;">()↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="19"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#268bd2;">conf </span><span style="color:#859900;">:= &amp;</span><span style="color:#657b83;">oauth2.</span><span style="color:#268bd2;">Config</span><span style="color:#657b83;">{↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="20"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">ClientID</span><span style="color:#657b83;">:     </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">YOUR_CLIENT_ID</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">,↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="21"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">ClientSecret</span><span style="color:#657b83;">: </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">YOUR_CLIENT_SECRET</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">,↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="22"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">Scopes</span><span style="color:#657b83;">:       []</span><span style="color:#268bd2;">string</span><span style="color:#657b83;">{</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">SCOPE1</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">, </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">SCOPE2</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">},↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="23"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">Endpoint</span><span style="color:#657b83;">: oauth2.</span><span style="color:#268bd2;">Endpoint</span><span style="color:#657b83;">{↵</span></div></td></tr>',
-        '<tr><td class="line" data-line="24"></td><td class="code"><div><span style="color:#657b83;">			</span><span style="color:#b58900;">AuthURL</span><span style="color:#657b83;">:  </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">https://provider.com/o/oauth2/auth</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">,↵</span></div></td></tr>',
-    ],
+    '<tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#93a1a1;">// Copyright 2014 The Go Authors. All rights reserved.↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#93a1a1;">// Use of this source code is governed by a BSD-style↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#93a1a1;">// license that can be found in the LICENSE file.↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#859900;">package</span><span style="color:#657b83;"> oauth2_test↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#cb4b16;">import </span><span style="color:#657b83;">(↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="8"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">context</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="9"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">fmt</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="10"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">log</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="11"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">net/http</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="12"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">time</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="13"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="14"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">golang.org/x/oauth2</span><span style="color:#839496;">&#34;↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="15"></td><td class="code"><div><span style="color:#657b83;">)↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="16"></td><td class="code"><div><span style="color:#657b83;">↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="17"></td><td class="code"><div><span style="color:#268bd2;">func </span><span style="color:#b58900;">ExampleConfig</span><span style="color:#657b83;">() {↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="18"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#268bd2;">ctx </span><span style="color:#859900;">:=</span><span style="color:#657b83;"> context.</span><span style="color:#b58900;">Background</span><span style="color:#657b83;">()↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="19"></td><td class="code"><div><span style="color:#657b83;">	</span><span style="color:#268bd2;">conf </span><span style="color:#859900;">:= &amp;</span><span style="color:#657b83;">oauth2.</span><span style="color:#268bd2;">Config</span><span style="color:#657b83;">{↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="20"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">ClientID</span><span style="color:#657b83;">:     </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">YOUR_CLIENT_ID</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">,↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="21"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">ClientSecret</span><span style="color:#657b83;">: </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">YOUR_CLIENT_SECRET</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">,↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="22"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">Scopes</span><span style="color:#657b83;">:       []</span><span style="color:#268bd2;">string</span><span style="color:#657b83;">{</span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">SCOPE1</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">, </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">SCOPE2</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">},↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="23"></td><td class="code"><div><span style="color:#657b83;">		</span><span style="color:#b58900;">Endpoint</span><span style="color:#657b83;">: oauth2.</span><span style="color:#268bd2;">Endpoint</span><span style="color:#657b83;">{↵</span></div></td></tr>',
+    '<tr><td class="line" data-line="24"></td><td class="code"><div><span style="color:#657b83;">			</span><span style="color:#b58900;">AuthURL</span><span style="color:#657b83;">:  </span><span style="color:#839496;">&#34;</span><span style="color:#2aa198;">https://provider.com/o/oauth2/auth</span><span style="color:#839496;">&#34;</span><span style="color:#657b83;">,↵</span></div></td></tr>',
 ]
 
+const extractText = (html: string): string => {
+    const span = document.createElement('span')
+    span.innerHTML = html
+    return span.textContent || span.innerText
+}
+
+export const FILE_LINES = HIGHLIGHTED_FILE_LINES.map(extractText)
+export const FILE_LINES_SIMPLE = HIGHLIGHTED_FILE_LINES_SIMPLE.map(extractText)
+export const FILE_LINES_LONG = HIGHLIGHTED_FILE_LINES_LONG.map(extractText)
+
 export const HIGHLIGHTED_FILE_LINES_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
-    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES[0].slice(range.startLine, range.endLine)))
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES.slice(range.startLine, range.endLine)))
 )
 export const HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
-    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_SIMPLE[0].slice(range.startLine, range.endLine)))
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_SIMPLE.slice(range.startLine, range.endLine)))
 )
 export const HIGHLIGHTED_FILE_LINES_LONG_REQUEST = sinon.fake((parameters: FetchFileParameters) =>
-    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG[0].slice(range.startLine, range.endLine)))
+    of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG.slice(range.startLine, range.endLine)))
 )
 
 export const NOOP_SETTINGS_CASCADE = {

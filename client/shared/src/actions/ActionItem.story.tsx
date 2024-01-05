@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import type * as H from 'history'
 import { NEVER } from 'rxjs'
 
@@ -37,7 +37,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-4">{story()}</div>}</BrandedStory>
+const decorator: Decorator = story => <BrandedStory>{() => <div className="p-4">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'shared/ActionItem',
@@ -45,7 +45,7 @@ const config: Meta = {
 }
 export default config
 
-export const NoopAction: Story = () => (
+export const NoopAction: StoryFn = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
@@ -55,7 +55,7 @@ export const NoopAction: Story = () => (
 
 NoopAction.storyName = 'Noop action'
 
-export const CommandAction: Story = () => (
+export const CommandAction: StoryFn = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
@@ -74,7 +74,7 @@ CommandAction.parameters = {
     },
 }
 
-export const LinkAction: Story = () => (
+export const LinkAction: StoryFn = () => (
     <ActionItem
         {...commonProps}
         action={{
@@ -90,7 +90,7 @@ export const LinkAction: Story = () => (
 
 LinkAction.storyName = 'Link action'
 
-export const Executing: Story = () => {
+export const Executing: StoryFn = () => {
     class ActionItemExecuting extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
@@ -108,7 +108,7 @@ export const Executing: Story = () => {
     )
 }
 
-export const _Error: Story = () => {
+export const _Error: StoryFn = () => {
     class ActionItemWithError extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)

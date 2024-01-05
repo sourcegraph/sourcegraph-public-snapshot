@@ -24,14 +24,16 @@ func NewRubyPackagesSyncer(
 	connection *schema.RubyPackagesConnection,
 	svc *dependencies.Service,
 	client *rubygems.Client,
+	reposDir string,
 ) VCSSyncer {
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("RubyPackagesSyncer", "sync Ruby packages"),
+		logger:      log.Scoped("RubyPackagesSyncer"),
 		typ:         "ruby_packages",
 		scheme:      dependencies.RubyPackagesScheme,
 		placeholder: reposource.NewRubyVersionedPackage("sourcegraph/placeholder", "0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
+		reposDir:    reposDir,
 		source:      &rubyDependencySource{client: client},
 	}
 }

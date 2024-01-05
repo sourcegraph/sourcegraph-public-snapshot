@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -18,4 +18,4 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => <BrandedStory styles={brandedStyles}>{AfterInstallPageContent}</BrandedStory>
+export const Default: StoryFn = () => <BrandedStory styles={brandedStyles}>{AfterInstallPageContent}</BrandedStory>

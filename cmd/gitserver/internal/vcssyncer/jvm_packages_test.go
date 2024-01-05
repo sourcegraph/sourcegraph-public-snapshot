@@ -203,7 +203,7 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(t)))
 	cacheDir := filepath.Join(dir, "cache")
-	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}}, depsSvc, cacheDir).(*vcsPackagesSyncer)
+	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}}, depsSvc, cacheDir, dir).(*vcsPackagesSyncer)
 	bareGitDirectory := path.Join(dir, "git")
 
 	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})

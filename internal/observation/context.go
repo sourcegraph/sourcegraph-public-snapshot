@@ -72,7 +72,6 @@ func ContextWithLogger(logger log.Logger, parent *Context) *Context {
 func ScopedContext(team, domain, component string, parent *Context) *Context {
 	return ContextWithLogger(log.Scoped(
 		fmt.Sprintf("%s.%s.%s", team, domain, component),
-		fmt.Sprintf("%s %s %s", team, domain, component),
 	), parent)
 }
 
@@ -82,10 +81,10 @@ func (c *Context) Operation(args Op) *Operation {
 	var logger log.Logger
 	if c.Logger != nil {
 		// Create a child logger, if a parent is provided.
-		logger = c.Logger.Scoped(args.Name, args.Description)
+		logger = c.Logger.Scoped(args.Name)
 	} else {
 		// Create a new logger.
-		logger = log.Scoped(args.Name, args.Description)
+		logger = log.Scoped(args.Name)
 	}
 	return &Operation{
 		context:      c,

@@ -19,7 +19,7 @@ export interface GettingStartedProps {
     className?: string
 }
 
-const productPageUrl = 'https://about.sourcegraph.com/batch-changes'
+const productPageUrl = 'https://sourcegraph.com/batch-changes'
 
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
     isSourcegraphDotCom,
@@ -95,7 +95,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 <CallToActionBanner variant="filled">
                     To automate changes across your team's private repositories,{' '}
                     <Link
-                        to="https://about.sourcegraph.com"
+                        to="https://sourcegraph.com"
                         onClick={() =>
                             eventLogger.log('ClickedOnEnterpriseCTA', { location: 'BatchChangesGettingStarted' })
                         }

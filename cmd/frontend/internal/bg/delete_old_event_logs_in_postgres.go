@@ -11,7 +11,7 @@ import (
 )
 
 func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) {
-	logger = logger.Scoped("deleteOldEventLogs", "background job to prune old event logs in database")
+	logger = logger.Scoped("deleteOldEventLogs")
 
 	for {
 		// We choose 93 days as the interval to ensure that we have at least the last three months
@@ -28,7 +28,7 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db dat
 }
 
 func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) {
-	logger = logger.Scoped("deleteOldSecurityEventLogs", "background job to prune old security event logs in database")
+	logger = logger.Scoped("deleteOldSecurityEventLogs")
 
 	for {
 		time.Sleep(time.Hour)

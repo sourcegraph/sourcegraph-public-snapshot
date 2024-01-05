@@ -4,15 +4,16 @@ import {
     type ReactElement,
     useCallback,
     useMemo,
-    type HTMLAttributes,
-    memo,
-    type PropsWithChildren,
+    forwardRef,
+    HTMLAttributes,
+    ComponentType,
+    PropsWithChildren,
 } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 
 import {
-    SearchSidebar,
+    StickySearchSidebar,
     SearchSidebarSection,
     getDynamicFilterLinks,
     getRepoFilterLinks,
@@ -21,6 +22,7 @@ import {
     getSearchTypeLinks,
     getFiltersOfKind,
     useLastRepoName,
+    PersistSidebarStoreProvider,
 } from '@sourcegraph/branded'
 import type { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -37,7 +39,12 @@ import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 import { getRevisions } from './Revisions'
 import { SearchAggregations } from './SearchAggregations'
 
+interface GenericSidebarProps extends HTMLAttributes<HTMLElement> {
+    onClose: () => void
+}
+
 export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCascadeProps, HTMLAttributes<HTMLElement> {
+    as?: ComponentType<PropsWithChildren<GenericSidebarProps>>
     liveQuery: string
     submittedURLQuery: string
     patternType: SearchPatternType
@@ -51,8 +58,9 @@ export interface SearchFiltersSidebarProps extends TelemetryProps, SettingsCasca
     setSidebarCollapsed: (collapsed: boolean) => void
 }
 
-export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProps>> = memo(props => {
+export const SearchFiltersSidebar = forwardRef<HTMLElement, PropsWithChildren<SearchFiltersSidebarProps>>(props => {
     const {
+        as: Component = StickySearchSidebar,
         liveQuery,
         submittedURLQuery,
         caseSensitive,
@@ -111,95 +119,97 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
     )
 
     return (
-        <SearchSidebar {...attributes} onClose={() => setSidebarCollapsed(true)}>
-            {children}
+        <Component {...attributes} onClose={() => setSidebarCollapsed(true)}>
+            <PersistSidebarStoreProvider>
+                {children}
 
-            {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
-                <SearchSidebarSection
-                    sectionId={SectionID.GROUPED_BY}
-                    header="Group results by"
-                    postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
-                    // SearchAggregations content contains component that makes a few API network requests
-                    // in order to prevent these calls if this section is collapsed we turn off force render
-                    // for collapse section component
-                    forcedRender={false}
-                    onToggle={handleGroupedByToggle}
-                >
-                    <SearchAggregations
-                        query={submittedURLQuery}
-                        patternType={patternType}
-                        proactive={proactiveSearchAggregations}
-                        caseSensitive={caseSensitive}
-                        telemetryService={telemetryService}
-                        onQuerySubmit={handleAggregationBarLinkClick}
-                    />
+                {showAggregationPanel &&
+                    enableSearchAggregations &&
+                    aggregationUIMode === AggregationUIMode.Sidebar && (
+                        <SearchSidebarSection
+                            sectionId={SectionID.GROUPED_BY}
+                            header="Group results by"
+                            postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                            // SearchAggregations content contains component that makes a few API network requests
+                            // in order to prevent these calls if this section is collapsed we turn off force render
+                            // for collapse section component
+                            forcedRender={false}
+                            onToggle={handleGroupedByToggle}
+                        >
+                            <SearchAggregations
+                                query={submittedURLQuery}
+                                patternType={patternType}
+                                proactive={proactiveSearchAggregations}
+                                caseSensitive={caseSensitive}
+                                telemetryService={telemetryService}
+                                onQuerySubmit={handleAggregationBarLinkClick}
+                            />
+                        </SearchSidebarSection>
+                    )}
+
+                <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
+                    {getSearchTypeLinks({
+                        query: liveQuery,
+                        onNavbarQueryChange,
+                        selectedSearchContextSpec,
+                        buildSearchURLQueryFromQueryState,
+                        forceButton: false,
+                    })}
                 </SearchSidebarSection>
-            )}
 
-            <SearchSidebarSection sectionId={SectionID.SEARCH_TYPES} header="Search Types">
-                {getSearchTypeLinks({
-                    query: liveQuery,
-                    onNavbarQueryChange,
-                    selectedSearchContextSpec,
-                    buildSearchURLQueryFromQueryState,
-                    forceButton: false,
-                })}
-            </SearchSidebarSection>
+                <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages" minItems={2}>
+                    {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
+                </SearchSidebarSection>
 
-            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages" minItems={2}>
-                {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
-            </SearchSidebarSection>
-
-            <SearchSidebarSection
-                sectionId={SectionID.REPOSITORIES}
-                header="Repositories"
-                searchOptions={{ ariaLabel: 'Find repositories', noResultText: getRepoFilterNoResultText }}
-                minItems={2}
-            >
-                {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
-            </SearchSidebarSection>
-
-            <SearchSidebarSection sectionId={SectionID.FILE_TYPES} header="File types">
-                {getDynamicFilterLinks(filters, ['file'], onDynamicFilterClicked)}
-            </SearchSidebarSection>
-            <SearchSidebarSection sectionId={SectionID.OTHER} header="Other">
-                {getDynamicFilterLinks(filters, ['utility'], onDynamicFilterClicked)}
-            </SearchSidebarSection>
-
-            {repoName && (
                 <SearchSidebarSection
-                    sectionId={SectionID.REVISIONS}
-                    header="Revisions"
+                    sectionId={SectionID.REPOSITORIES}
+                    header="Repositories"
+                    searchOptions={{ ariaLabel: 'Find repositories', noResultText: getRepoFilterNoResultText }}
+                    minItems={2}
+                >
+                    {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
+                </SearchSidebarSection>
+
+                <SearchSidebarSection sectionId={SectionID.FILE_TYPES} header="File types">
+                    {getDynamicFilterLinks(filters, ['file'], onDynamicFilterClicked)}
+                </SearchSidebarSection>
+                <SearchSidebarSection sectionId={SectionID.OTHER} header="Other">
+                    {getDynamicFilterLinks(filters, ['utility'], onDynamicFilterClicked)}
+                </SearchSidebarSection>
+
+                {repoName && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.REVISIONS}
+                        header="Revisions"
+                        searchOptions={{
+                            ariaLabel: 'Find revisions',
+                            clearSearchOnChange: repoName,
+                        }}
+                    >
+                        {getRevisions({ repoName, onFilterClick: onSearchSubmit })}
+                    </SearchSidebarSection>
+                )}
+
+                <SearchSidebarSection
+                    sectionId={SectionID.SEARCH_REFERENCE}
+                    header="Search reference"
                     searchOptions={{
-                        ariaLabel: 'Find revisions',
-                        clearSearchOnChange: repoName,
+                        ariaLabel: 'Find filters',
+                        // search reference should always preserve the filter
+                        // (false is just an arbitrary but static value)
+                        clearSearchOnChange: false,
                     }}
                 >
-                    {getRevisions({ repoName, onFilterClick: onSearchSubmit })}
+                    {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
                 </SearchSidebarSection>
-            )}
 
-            <SearchSidebarSection
-                sectionId={SectionID.SEARCH_REFERENCE}
-                header="Search reference"
-                searchOptions={{
-                    ariaLabel: 'Find filters',
-                    // search reference should always preserve the filter
-                    // (false is just an arbitrary but static value)
-                    clearSearchOnChange: false,
-                }}
-            >
-                {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
-            </SearchSidebarSection>
-
-            <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
-                {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
-            </SearchSidebarSection>
-        </SearchSidebar>
+                <SearchSidebarSection sectionId={SectionID.SEARCH_SNIPPETS} header="Search snippets">
+                    {getSearchSnippetLinks(settingsCascade, onSnippetClicked)}
+                </SearchSidebarSection>
+            </PersistSidebarStoreProvider>
+        </Component>
     )
 })
-
-SearchFiltersSidebar.displayName = 'SearchFiltersSidebar'
 
 const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode => (
     <span>

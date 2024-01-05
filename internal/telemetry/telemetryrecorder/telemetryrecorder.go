@@ -30,6 +30,6 @@ func New(db database.DB) *telemetry.EventRecorder {
 // as the new Telemetry Gateway export queue.
 func NewBestEffort(logger log.Logger, db database.DB) *telemetry.BestEffortEventRecorder {
 	return telemetry.NewBestEffortEventRecorder(
-		logger.Scoped("telemetry", "telemetry event recorder"),
+		logger.Scoped("telemetry"),
 		New(db))
 }

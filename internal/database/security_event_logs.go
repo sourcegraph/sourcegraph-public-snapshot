@@ -39,7 +39,10 @@ const (
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
 	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
 
-	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
+	SecurityEventNameEmailVerified       SecurityEventName = "EmailVerified"
+	SecurityEventNameEmailVerifiedToggle SecurityEventName = "EmailVerificationChanged"
+	SecurityEventNameEmailAdded          SecurityEventName = "EmailAdded"
+	SecurityEventNameEmailRemoved        SecurityEventName = "EmailRemoved"
 
 	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
@@ -67,6 +70,35 @@ const (
 
 	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
 	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
+
+	SecurityEventNameSiteConfigUpdated        SecurityEventName = "SiteConfigUpdated"
+	SecurityEventNameSiteConfigRedactedViewed SecurityEventName = "SiteConfigRedactedViewed"
+	SecurityEventNameSiteConfigViewed         SecurityEventName = "SiteConfigViewed"
+
+	SecurityEventNameDotComLicenseCreated       SecurityEventName = "DotComLicenseCreated"
+	SecurityEventNameDotComLicenseViewed        SecurityEventName = "DotComLicenseViewed"
+	SecurityEventNameDotComSubscriptionViewed   SecurityEventName = "DotComSubscriptionViewed"
+	SecurityEventNameDotComSubscriptionCreated  SecurityEventName = "DotComSubscriptionCreated"
+	SecurityEventNameDotComSubscriptionArchived SecurityEventName = "DotComSubscriptionArchived"
+	SecurityEventNameDotComSubscriptionsListed  SecurityEventName = "DotComSubscriptionsListed"
+	SecurityEventNameDotComSubscriptionUpdated  SecurityEventName = "DotComSubscriptionUpdated"
+
+	SecurityEventNameOrgViewed         SecurityEventName = "OrganizationViewed"
+	SecurityEventNameOrgListViewed     SecurityEventName = "OrganizationListViewed"
+	SecurityEventNameOrgCreated        SecurityEventName = "OrganizationCreated"
+	SecurityEventNameOrgUpdated        SecurityEventName = "OrganizationUpdated"
+	SecurityEventNameOrgSettingsViewed SecurityEventName = "OrganizationSettingsViewed"
+	SecurityEventNameDotComOrgViewed   SecurityEventName = "DotComOrganizationViewed"
+
+	SecurityEventNameOutboundReqViewed SecurityEventName = "OutboundRequestViewed"
+
+	SecurityEventNameUserCompletionQuotaUpdated     SecurityEventName = "UserCompletionQuotaUpdated"
+	SecurityEventNameUserCodeCompletionQuotaUpdated SecurityEventName = "UserCodeCompletionQuotaUpdated"
+
+	SecurityEventNameCodeHostConnectionsViewed SecurityEventName = "CodeHostConnectionsViewed"
+	SecurityEventNameCodeHostConnectionDeleted SecurityEventName = "CodeHostConnectionDeleted"
+	SecurityEventNameCodeHostConnectionAdded   SecurityEventName = "CodeHostConnectionAdded"
+	SecurityEventNameCodeHostConnectionUpdated SecurityEventName = "CodeHostConnectionUpdated"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -101,6 +133,8 @@ type SecurityEventLogsStore interface {
 	LogEvent(ctx context.Context, e *SecurityEvent)
 	// Bulk "LogEvent" action.
 	LogEventList(ctx context.Context, events []*SecurityEvent)
+	// LogSecurityEvent creates an event and logs it.
+	LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error
 }
 
 type securityEventLogsStore struct {
@@ -111,7 +145,7 @@ type securityEventLogsStore struct {
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
 // using the other store handle, and a scoped sub-logger of the passed base logger.
 func SecurityEventLogsWith(baseLogger log.Logger, other basestore.ShareableStore) SecurityEventLogsStore {
-	logger := baseLogger.Scoped("SecurityEvents", "Security events store")
+	logger := baseLogger.Scoped("SecurityEvents")
 	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -214,5 +248,26 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 		} else {
 			trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
 		}
+	}
+}
+
+func (s *securityEventLogsStore) LogSecurityEvent(ctx context.Context, eventName SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
+	event := SecurityEvent{
+		Name:            eventName,
+		URL:             url,
+		UserID:          userID,
+		AnonymousUserID: anonymousUserID,
+		Source:          source,
+		Timestamp:       time.Now(),
+	}
+	argsJSON, err := json.Marshal(arguments)
+	if err != nil {
+		event.Argument = nil
+		s.LogEvent(ctx, &event)
+		return errors.Wrap(err, "error marshalling arguments")
+	} else {
+		event.Argument = argsJSON
+		s.LogEvent(ctx, &event)
+		return nil
 	}
 }

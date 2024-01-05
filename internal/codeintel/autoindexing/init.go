@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
 
 var (
@@ -28,14 +27,12 @@ func NewService(
 	gitserverClient gitserver.Client,
 ) *Service {
 	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
-	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService(db)
 
 	return newService(
 		scopedContext("service", observationCtx),
 		store,
 		inferenceSvc,
-		repoUpdater,
 		db.Repos(),
 		gitserverClient,
 	)

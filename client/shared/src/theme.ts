@@ -123,12 +123,15 @@ function readStoredThemePreference(value?: string): ThemeSetting {
     // Handle both old and new preference values
     switch (value) {
         case 'true':
-        case 'light':
+        case 'light': {
             return ThemeSetting.Light
+        }
         case 'false':
-        case 'dark':
+        case 'dark': {
             return ThemeSetting.Dark
-        default:
+        }
+        default: {
             return ThemeSetting.System
+        }
     }
 }

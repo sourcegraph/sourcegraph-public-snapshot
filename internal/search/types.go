@@ -37,6 +37,7 @@ type Inputs struct {
 	OnSourcegraphDotCom    bool
 	Features               *Features
 	Protocol               Protocol
+	ContextLines           int32
 	SanitizeSearchPatterns []*regexp.Regexp
 }
 
@@ -189,33 +190,48 @@ const (
 
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
-	Query          zoektquery.Q
-	Typ            IndexedRequestType
-	FileMatchLimit int32
-	Select         filter.SelectPath
+	Query           zoektquery.Q
+	Typ             IndexedRequestType
+	FileMatchLimit  int32
+	Select          filter.SelectPath
+	NumContextLines int
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
 
-	// EXPERIMENTAL: If true, use keyword-style scoring instead of Zoekt's default scoring formula.
-	KeywordScoring bool
+	PatternType query.SearchType
 }
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
-func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOptions {
+func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoekt.SearchOptions) {
+	if o.Features.ZoektSearchOptionsOverride != "" {
+		defer func() {
+			old := *searchOpts
+			err := json.Unmarshal([]byte(o.Features.ZoektSearchOptionsOverride), searchOpts)
+			if err != nil {
+				searchOpts = &old
+			}
+		}()
+	}
+
 	defaultTimeout := 20 * time.Second
-	searchOpts := &zoekt.SearchOptions{
+	searchOpts = &zoekt.SearchOptions{
 		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.KeywordScoring,
+		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
+		NumContextLines:   o.NumContextLines,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
 	// replica respectively.
 	searchOpts.ShardMaxMatchCount = 10_000
 	searchOpts.TotalMaxMatchCount = 100_000
-	if o.KeywordScoring {
+	// KeywordScoring and Features.UseZoektParser represent different approaches we
+	// are evaluating to deliver a better keyword-based search experience. For now
+	// these are separate, but we might combine them in the future. Both profit from
+	// higher defaults.
+	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeNewStandardRC1 {
 		// Keyword searches tends to match much more broadly than code searches, so we need to
 		// consider more candidates to ensure we don't miss highly-ranked documents
 		searchOpts.ShardMaxMatchCount *= 10
@@ -247,10 +263,11 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 
 	// This enables our stream based ranking, where we wait a certain amount
 	// of time to collect results before ranking.
-	searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
+	searchOpts.FlushWallTime = conf.SearchFlushWallTime(searchOpts.UseKeywordScoring)
 
-	// This enables the use of document ranks in scoring, if they are available.
-	searchOpts.UseDocumentRanks = true
+	// Only use document ranks if the jobs to calculate the ranks are enabled. This
+	// is to make sure we don't use outdated ranks for scoring in Zoekt.
+	searchOpts.UseDocumentRanks = conf.CodeIntelRankingDocumentReferenceCountsEnabled()
 	searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 
 	return searchOpts
@@ -273,24 +290,26 @@ type SearcherParameters struct {
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
+
+	NumContextLines int
 }
 
-// TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
-// sync with pkg/searcher/protocol.PatternInfo.
+// TextPatternInfo defines the search request for unindexed and structural search
+// (the 'searcher' service). Keep it in sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
-	Pattern         string
-	IsNegated       bool
-	IsRegExp        bool
+	// Values dependent on pattern atom.
+	Pattern   string
+	IsNegated bool
+	IsRegExp  bool
+
+	// Values dependent on parameters.
 	IsStructuralPat bool
 	CombyRule       string
-	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 	Index           query.YesNoOnly
 	Select          filter.SelectPath
 
-	// We do not support IsMultiline
-	// IsMultiline     bool
 	IncludePatterns []string
 	ExcludePattern  string
 
@@ -321,9 +340,6 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 	}
 	if p.CombyRule != "" {
 		add(attribute.String("combyRule", p.CombyRule))
-	}
-	if p.IsWordMatch {
-		add(attribute.Bool("isWordMatch", p.IsWordMatch))
 	}
 	if p.IsCaseSensitive {
 		add(attribute.Bool("isCaseSensitive", p.IsCaseSensitive))
@@ -365,9 +381,6 @@ func (p *TextPatternInfo) String() string {
 		} else {
 			args = append(args, "comby")
 		}
-	}
-	if p.IsWordMatch {
-		args = append(args, "word")
 	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")
@@ -419,6 +432,11 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
+
+	// ZoektSearchOptionsOverride is a JSON string that overrides the Zoekt search
+	// options. This should be used for quick interactive experiments only. An
+	// invalid JSON string or unknown fields will be ignored.
+	ZoektSearchOptionsOverride string
 }
 
 func (f *Features) String() string {

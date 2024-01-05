@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Code renders a simple text code correctly 1`] = `
+exports[`Code > renders a simple text code correctly 1`] = `
 <DocumentFragment>
   <code
     class="code small fontWeightRegular"
@@ -10,7 +10,7 @@ exports[`Code renders a simple text code correctly 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Code supports rendering as different elements 1`] = `
+exports[`Code > supports rendering as different elements 1`] = `
 <DocumentFragment>
   <div
     class="code small fontWeightRegular"

@@ -1,11 +1,11 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
 import { type InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core'
 
 import { EmptyCustomDashboard } from './EmptyInsightDashboard'
 
-const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
 
 const config: Meta = {
     title: 'web/insights/EmptyInsightDashboard',
@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const EmptyInsightDashboardStory: Story = () => {
+export const EmptyInsightDashboardStory: StoryFn = () => {
     const dashboard: InsightDashboard = {
         type: InsightsDashboardType.Custom,
         id: '101',

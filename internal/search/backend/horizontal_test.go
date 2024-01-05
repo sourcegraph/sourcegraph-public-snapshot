@@ -107,19 +107,6 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 
-		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Minimal: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-		got = []string{}
-		for r := range rle.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-			got = append(got, strconv.Itoa(int(r)))
-		}
-		sort.Strings(got)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Fatalf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
-		}
-
 		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 		if err != nil {
 			t.Fatal(err)

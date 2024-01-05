@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -84,13 +84,6 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	rph.AddToRouter(r, db) // todo
 }
 
-// PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
-// the Grafana endpoint to the debug router.
-var PreMountGrafanaHook func() error
-
-// This error is returned if the current license does not support monitoring.
-const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
-
 func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
@@ -98,21 +91,8 @@ func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	r.Handle("/grafana", debugproxies.AdminOnly(db, noGrafana))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
-	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
-	})
-	r.Handle("/grafana", debugproxies.AdminOnly(db, notLicensed))
-}
-
 // addReverseProxyForService registers a reverse proxy for the specified service.
 func addGrafana(r *mux.Router, db database.DB) {
-	if PreMountGrafanaHook != nil {
-		if err := PreMountGrafanaHook(); err != nil {
-			addGrafanaNotLicensedHandler(r, db)
-			return
-		}
-	}
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
@@ -145,7 +125,7 @@ func addGrafana(r *mux.Router, db database.DB) {
 // The route only forwards known project ids, so a DSN must be defined in siteconfig.Log.Sentry.Dsn
 // to allow events to be forwarded. Sentry responses are ignored.
 func addSentry(r *mux.Router) {
-	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+	logger := sglog.Scoped("sentryTunnel")
 
 	// Helper to fetch Sentry configuration from siteConfig.
 	getConfig := func() (string, string, error) {
@@ -285,7 +265,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 		ctx      = context.Background()
 		endpoint = otlpenv.GetEndpoint()
 		protocol = otlpenv.GetProtocol()
-		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+		logger   = sglog.Scoped("otlpAdapter").
 				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 

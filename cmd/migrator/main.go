@@ -18,7 +18,7 @@ func main() {
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("migrator", "")
+	logger := log.Scoped("migrator")
 
 	if err := shared.Start(logger, register.RegisterEnterpriseMigratorsUsingConfAndStoreFactory); err != nil {
 		logger.Fatal(err.Error())

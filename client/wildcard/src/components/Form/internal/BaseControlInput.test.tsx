@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { BaseControlInput, BASE_CONTROL_TYPES } from './BaseControlInput'
 

@@ -87,3 +87,28 @@ shards are then considered for future merge operations.
 Shard merging can be monitored via the "Compound shards" panel in Zoekt's
 Grafana dashboard.
 
+## RE2 Regular Expressions
+
+The Sourcegraph search language supports [RE2](https://golang.org/s/re2syntax) syntax. If you're used to tools like Perl which uses [PCRE syntax](https://www.pcre.org/original/doc/html/pcresyntax.html), you may notice that there are some features that are missing from RE2 like backreferences and lookarounds. We choose to use RE2 for a few reasons:
+* It makes it possible to build [worst-case linear](https://swtch.com/~rsc/regexp/regexp1.html) evaluation engines, which is very desirable for building a production-ready regex search engine.
+* It's well-supported in Go, allowing us to take advantage of a rich ecosystem (notably including [Zoekt](https://github.com/sourcegraph/zoekt))
+* Our API and tooling makes it straightforward to use Sourcegraph with other tools that provide facilities not built in to the search language.
+
+As an example of how you can use Sourcegraph tooling with other tools, we can use `jq` (which supports Perl regexes) along with `src` to post-filter search results. In this case, we want to use backreferences to find go functions take a single pointer argument and return a non-pointer of the same type as the input.
+
+```bash
+re2_regex='func \w+\(\w+ \*\w+\) \w+'
+pcre2_regex='func \w+\(\w+ \*(\w+)\) \1'
+
+src search --json --stream -- "/$re2_regex/" \
+  | jq '
+    # Filter to only content events
+    select(.type == "content")
+    
+    # Flatten to a single object per match
+    | {content: .chunkMatches[].content} + del(.chunkMatches)
+
+    # Select only matches that match the PCRE regex
+    | select(.content | test($ARGS.positional[0]))
+  ' --args "$pcre2_regex"
+```

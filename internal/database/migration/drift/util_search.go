@@ -2,8 +2,8 @@ package drift
 
 import (
 	"fmt"
+	"github.com/grafana/regexp"
 	"net/url"
-	"regexp"
 	"strings"
 )
 

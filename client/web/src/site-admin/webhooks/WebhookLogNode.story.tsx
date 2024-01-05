@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 
 import { Container } from '@sourcegraph/wildcard'
@@ -17,7 +17,7 @@ import { WebhookLogNode } from './WebhookLogNode'
 
 import gridStyles from './WebhookLogPage.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <Container>
         <div className={classNames('p-3', 'container', gridStyles.logs)}>{story()}</div>
     </Container>
@@ -59,7 +59,7 @@ export default config
 
 type StoryArguments = Pick<WebhookLogFields, 'receivedAt' | 'statusCode'>
 
-export const Collapsed: Story<StoryArguments> = args => (
+export const Collapsed: StoryFn<StoryArguments> = args => (
     <WebStory>
         {() => (
             <>
@@ -93,7 +93,7 @@ export const Collapsed: Story<StoryArguments> = args => (
     </WebStory>
 )
 
-export const ExpandedRequest: Story<StoryArguments> = args => (
+export const ExpandedRequest: StoryFn<StoryArguments> = args => (
     <WebStory>
         {() => (
             <>
@@ -117,7 +117,7 @@ export const ExpandedRequest: Story<StoryArguments> = args => (
 
 ExpandedRequest.storyName = 'expanded request'
 
-export const ExpandedResponse: Story<StoryArguments> = args => (
+export const ExpandedResponse: StoryFn<StoryArguments> = args => (
     <WebStory>
         {() => (
             <>

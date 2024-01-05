@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`GlobalNavbar default 1`] = `
+exports[`GlobalNavbar > default 1`] = `
 <DocumentFragment>
   <nav
     aria-label="Main"
@@ -13,10 +13,7 @@ exports[`GlobalNavbar default 1`] = `
         class="d-flex align-items-center"
         href="/search"
       >
-        <brandlogo
-          class="logo"
-          variant="symbol"
-        />
+        BrandLogo
       </a>
     </h1>
     <hr
@@ -24,7 +21,7 @@ exports[`GlobalNavbar default 1`] = `
       class="divider"
     />
     <div
-      class="menu"
+      class="menu list"
     >
       <ul
         class="list"
@@ -89,7 +86,7 @@ exports[`GlobalNavbar default 1`] = `
         >
           <a
             class="link"
-            href="/cody"
+            href="/cody/chat"
           >
             <span
               class="linkContent"
@@ -212,13 +209,7 @@ exports[`GlobalNavbar default 1`] = `
   <div
     class="searchNavBar"
   >
-    <searchnavbaritem
-      platformcontext="[object Object]"
-      routes=""
-      selectedsearchcontextspec=""
-      settingscascade="[object Object]"
-      telemetryservice="[object Object]"
-    />
+    SearchNavbarItem
   </div>
 </DocumentFragment>
 `;

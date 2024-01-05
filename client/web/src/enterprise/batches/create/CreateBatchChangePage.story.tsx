@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import type { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -8,7 +8,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3" style={{ height: '95vh', width: '100%' }}>
         {story()}
     </div>
@@ -43,7 +43,7 @@ const mockAuthenticatedUser = {
     },
 } as AuthenticatedUser
 
-export const ExperimentalExecutionDisabled: Story = () => (
+export const ExperimentalExecutionDisabled: StoryFn = () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage
@@ -81,7 +81,7 @@ const FIXTURE_USER: UserSettingFields = {
     latestSettings: null,
 }
 
-export const ExperimentalExecutionEnabled: Story = () => (
+export const ExperimentalExecutionEnabled: StoryFn = () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage
@@ -102,7 +102,7 @@ export const ExperimentalExecutionEnabled: Story = () => (
 
 ExperimentalExecutionEnabled.storyName = 'Experimental execution enabled'
 
-export const ExperimentalExecutionEnabledFromOrgNamespace: Story = () => (
+export const ExperimentalExecutionEnabledFromOrgNamespace: StoryFn = () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage
@@ -127,7 +127,7 @@ export const ExperimentalExecutionEnabledFromOrgNamespace: Story = () => (
 
 ExperimentalExecutionEnabledFromOrgNamespace.storyName = 'Experimental execution enabled from org namespace'
 
-export const ExperimentalExecutionEnabledFromUserNamespace: Story = () => (
+export const ExperimentalExecutionEnabledFromUserNamespace: StoryFn = () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage

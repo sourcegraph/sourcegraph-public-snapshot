@@ -17,7 +17,7 @@ var historicalLimiter *ratelimit.InstrumentedLimiter
 func HistoricalWorkRate() *ratelimit.InstrumentedLimiter {
 
 	historicalOnce.Do(func() {
-		historicalLogger = log.Scoped("insights.historical.ratelimiter", "")
+		historicalLogger = log.Scoped("insights.historical.ratelimiter")
 		defaultRateLimit := rate.Limit(20.0)
 		defaultBurst := 20
 		getRateLimit := getHistoricalWorkerRateLimit(defaultRateLimit, defaultBurst)

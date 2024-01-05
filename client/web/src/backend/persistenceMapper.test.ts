@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { persistenceMapper, ROOT_QUERY_KEY } from './persistenceMapper'
 
 describe('persistenceMapper', () => {

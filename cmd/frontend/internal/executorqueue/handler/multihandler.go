@@ -62,7 +62,7 @@ func NewMultiHandler(
 		BatchesQueueHandler:   batchesQueueHandler,
 		DequeueCache:          dequeueCache,
 		dequeueCacheConfig:    dequeueCacheConfig,
-		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
+		logger:                log.Scoped("executor-multi-queue-handler"),
 	}
 	return multiHandler
 }
@@ -143,7 +143,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		DiskSpace: req.DiskSpace,
 	}
 
-	logger := m.logger.Scoped("dequeue", "Pick a job record from the database.")
+	logger := m.logger.Scoped("dequeue")
 	var job executortypes.Job
 	switch selectedQueue {
 	case m.BatchesQueueHandler.Name:
@@ -195,7 +195,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		job.Version = 2
 	}
 
-	logger = m.logger.Scoped("token", "Create or regenerate a job token.")
+	logger = m.logger.Scoped("token")
 	token, err := m.jobTokenStore.Create(ctx, job.ID, job.Queue, job.RepositoryName)
 	if err != nil {
 		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
@@ -361,7 +361,7 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 		)
 	}
 
-	logger := log.Scoped("multiqueue.heartbeat", "Write the heartbeat of multiple queues to the database")
+	logger := log.Scoped("multiqueue.heartbeat")
 
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err = m.executorStore.UpsertHeartbeat(ctx, executor); err != nil {

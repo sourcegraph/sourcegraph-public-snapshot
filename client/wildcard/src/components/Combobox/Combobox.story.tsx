@@ -1,7 +1,7 @@
 import { type ChangeEvent, useEffect, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
-import type { DecoratorFn, Meta } from '@storybook/react'
+import type { Decorator, Meta } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
@@ -20,7 +20,7 @@ import {
     ComboboxOptionGroup,
 } from './Combobox'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 

@@ -77,9 +77,9 @@ type Options struct {
 
 // NewWorker creates a worker that polls a remote job queue API for work.
 func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, options Options) (goroutine.WaitableBackgroundRoutine, error) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker"), observationCtx)
 
-	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
+	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer"), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
 	queueClient, err := queue.New(observationCtx, options.QueueOptions, gatherer)
 	if err != nil {
 		return nil, errors.Wrap(err, "building queue worker client")
@@ -105,7 +105,7 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	cmdRunner := &util.RealCmdRunner{}
 	cmd := &command.RealCommand{
 		CmdRunner: cmdRunner,
-		Logger:    log.Scoped("executor-worker.command", "command execution"),
+		Logger:    log.Scoped("executor-worker.command"),
 	}
 
 	// Configure the supported runtimes

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 import { ResizableBox } from 'react-resizable'
 
@@ -30,7 +30,7 @@ const StoryConfig: Meta = {
 
 export default StoryConfig
 
-export const LineChartsDemo: Story = () => (
+export const LineChartsDemo: StoryFn = () => (
     <main
         style={{
             display: 'flex',

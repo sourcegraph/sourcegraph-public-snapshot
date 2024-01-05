@@ -52,6 +52,8 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+
+	NumContextLines int32
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields
@@ -70,9 +72,6 @@ type PatternInfo struct {
 
 	// IsStructuralPat if true will treat the pattern as a Comby structural search pattern.
 	IsStructuralPat bool
-
-	// IsWordMatch if true will only match the pattern at word boundaries.
-	IsWordMatch bool
 
 	// IsCaseSensitive if false will ignore the case of text and pattern
 	// when finding matches.
@@ -136,9 +135,6 @@ func (p *PatternInfo) String() string {
 			args = append(args, "comby")
 		}
 	}
-	if p.IsWordMatch {
-		args = append(args, "word")
-	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")
 	}
@@ -185,7 +181,6 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			IsNegated:                    r.PatternInfo.IsNegated,
 			IsRegexp:                     r.PatternInfo.IsRegExp,
 			IsStructural:                 r.PatternInfo.IsStructuralPat,
-			IsWordMatch:                  r.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
 			ExcludePattern:               r.PatternInfo.ExcludePattern,
 			IncludePatterns:              r.PatternInfo.IncludePatterns,
@@ -197,7 +192,8 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Languages:                    r.PatternInfo.Languages,
 			Select:                       r.PatternInfo.Select,
 		},
-		FetchTimeout: durationpb.New(r.FetchTimeout),
+		FetchTimeout:    durationpb.New(r.FetchTimeout),
+		NumContextLines: int32(r.NumContextLines),
 	}
 }
 
@@ -213,7 +209,6 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			IsNegated:                    req.PatternInfo.IsNegated,
 			IsRegExp:                     req.PatternInfo.IsRegexp,
 			IsStructuralPat:              req.PatternInfo.IsStructural,
-			IsWordMatch:                  req.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
 			ExcludePattern:               req.PatternInfo.ExcludePattern,
 			IncludePatterns:              req.PatternInfo.IncludePatterns,
@@ -225,8 +220,9 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout.AsDuration(),
-		Indexed:      req.Indexed,
+		FetchTimeout:    req.FetchTimeout.AsDuration(),
+		Indexed:         req.Indexed,
+		NumContextLines: req.NumContextLines,
 	}
 }
 

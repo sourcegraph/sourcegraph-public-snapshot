@@ -33,6 +33,8 @@ interface UseShowMorePaginationConfig<TResult> {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Allows specifying the Apollo error policy */
+    errorPolicy?: 'all' | 'none' | 'ignore'
     /**
      * Set to enable polling of all the nodes currently loaded in the connection.
      *
@@ -139,6 +141,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
         onError: options?.onError,
+        errorPolicy: options?.errorPolicy,
     })
 
     /**

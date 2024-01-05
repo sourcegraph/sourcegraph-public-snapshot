@@ -63,7 +63,7 @@ const historyView = ViewPlugin.fromClass(
 
         private onKeyDown = (event: KeyboardEvent): void => {
             switch (event.key) {
-                case 'ArrowUp':
+                case 'ArrowUp': {
                     {
                         event.preventDefault()
                         const nextHistoryEntry = this.currentHistoryEntry + 1
@@ -73,7 +73,8 @@ const historyView = ViewPlugin.fromClass(
                         }
                     }
                     break
-                case 'ArrowDown':
+                }
+                case 'ArrowDown': {
                     {
                         event.preventDefault()
                         const previousHistoryEntry = this.currentHistoryEntry - 1
@@ -81,6 +82,7 @@ const historyView = ViewPlugin.fromClass(
                         this.updateInput()
                     }
                     break
+                }
             }
         }
     }

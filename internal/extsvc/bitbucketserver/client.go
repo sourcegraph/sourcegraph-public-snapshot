@@ -17,7 +17,7 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/log"
@@ -106,7 +106,7 @@ func newClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		httpClient: httpClient,
 		URL:        u,
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketServerClient", ""), urn)),
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketServerClient"), urn)),
 	}, nil
 }
 

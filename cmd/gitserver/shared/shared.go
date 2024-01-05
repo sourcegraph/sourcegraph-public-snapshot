@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os/exec"
@@ -44,13 +45,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
+type LazyDebugserverEndpoint struct {
+	lockerStatusEndpoint http.HandlerFunc
+}
+
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, config *Config) error {
 	logger := observationCtx.Logger
 
 	// Load and validate configuration.
@@ -98,6 +104,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				ReposDir:                config.ReposDir,
 				CoursierCacheDir:        config.CoursierCacheDir,
 				RecordingCommandFactory: recordingCommandFactory,
+				Logger:                  logger,
 			})
 		},
 		Hostname:                config.ExternalAddress,
@@ -132,6 +139,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
+	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, &gitserver), handler)
@@ -166,10 +174,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.NewJanitor(
 				ctx,
 				server.JanitorConfig{
-					ShardID:            gitserver.Hostname,
-					JanitorInterval:    config.JanitorInterval,
-					ReposDir:           config.ReposDir,
-					DesiredPercentFree: config.JanitorReposDesiredPercentFree,
+					ShardID:                        gitserver.Hostname,
+					JanitorInterval:                config.JanitorInterval,
+					ReposDir:                       config.ReposDir,
+					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
+					DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
 				},
 				db,
 				recordingCommandFactory,
@@ -192,6 +201,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 	rec.RegistrationDone()
+
+	debugserverEndpoints.lockerStatusEndpoint = func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewEncoder(w).Encode(locker.AllStatuses()); err != nil {
+			logger.Error("failed to encode locker statuses", log.Error(err))
+		}
+	}
 
 	logger.Info("git-server: listening", log.String("addr", config.ListenAddress))
 
@@ -216,10 +231,10 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	var additionalServerOptions []grpc.ServerOption
 
 	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog", "exec endpoint access log"),
-		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog", "archive endpoint access log"),
-		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog", "p4-exec endpoint access log"),
-		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog", "get-object endpoint access log"),
+		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog"),
+		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog"),
+		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog"),
+		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
@@ -278,7 +293,7 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
-		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
+		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }

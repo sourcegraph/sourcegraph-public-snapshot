@@ -5,8 +5,7 @@ use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
 use sg_treesitter::jsonify_err;
 use syntect::{
-    highlighting::ThemeSet,
-    html::{highlighted_html_for_string, ClassStyle},
+    html::ClassStyle,
     parsing::{SyntaxReference, SyntaxSet},
 };
 
@@ -28,9 +27,6 @@ thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
 }
 
-lazy_static::lazy_static! {
-    static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
-}
 
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
@@ -56,16 +52,8 @@ pub struct SourcegraphQuery {
     // default empty string value for backwards compat with clients who do not specify this field.
     pub filetype: Option<String>,
 
-    // If css is set, the highlighted code will be returned as a HTML table with CSS classes
-    // annotating the highlighted types.
-    #[serde(default)]
-    pub css: bool,
-
     // line_length_limit is ignored if css is false
     pub line_length_limit: Option<usize>,
-
-    // theme is ignored if css is true
-    pub theme: String,
 }
 
 // NOTE: Keep in sync: internal/gosyntect/gosyntect.go
@@ -223,14 +211,6 @@ pub fn determine_language<'a>(
 }
 
 pub fn list_features() {
-    // List embedded themes.
-    println!("## Embedded themes:");
-    println!();
-    for t in THEME_SET.themes.keys() {
-        println!("- `{}`", t);
-    }
-    println!();
-
     // List supported file extensions.
     SYNTAX_SET.with(|syntax_set| {
         println!("## Supported file extensions:");
@@ -250,35 +230,16 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             Err(e) => return e,
         };
 
-        if q.css {
-            let output = ClassedTableGenerator::new(
-                syntax_set,
-                syntax_def,
-                &q.code,
-                q.line_length_limit,
-                ClassStyle::SpacedPrefixed { prefix: "hl-" },
-            )
-            .generate();
+        let output = ClassedTableGenerator::new(
+            syntax_set,
+            syntax_def,
+            &q.code,
+            q.line_length_limit,
+            ClassStyle::SpacedPrefixed { prefix: "hl-" },
+        )
+        .generate();
 
-            json!({ "data": output, "plaintext": syntax_def.name == "Plain Text", })
-        } else {
-            // TODO(slimsag): return the theme's background color (and other info??) to caller?
-            // https://github.com/trishume/syntect/blob/c8b47758a3872d478c7fc740782cd468b2c0a96b/examples/synhtml.rs#L24
-
-            // Determine theme to use.
-            //
-            // TODO(slimsag): We could let the query specify the theme file's actual
-            // bytes? e.g. via `load_from_reader`.
-            let theme = match THEME_SET.themes.get(&q.theme) {
-                Some(v) => v,
-                None => return json!({"error": "invalid theme", "code": "invalid_theme"}),
-            };
-
-            json!({
-                "data": highlighted_html_for_string(&q.code, syntax_set, syntax_def, theme),
-                "plaintext": syntax_def.name == "Plain Text",
-            })
-        }
+        json!({ "data": output, "plaintext": syntax_def.name == "Plain Text", })
     })
 }
 
@@ -289,9 +250,7 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
                 extension: "".to_string(),
                 filepath: q.filepath.clone(),
                 filetype: q.filetype.clone(),
-                css: true,
                 line_length_limit: None,
-                theme: Default::default(),
                 code: q.code.clone(),
             };
 
@@ -342,10 +301,8 @@ mod tests {
             filepath: "foo.cls".to_string(),
             filetype: None,
             code: "%".to_string(),
-            css: false,
             line_length_limit: None,
             extension: String::new(),
-            theme: String::new(),
         };
         let result = determine_language(&query, &syntax_set);
         assert_eq!(result.unwrap().name, "TeX");
@@ -358,10 +315,8 @@ mod tests {
             filepath: "foo.cls".to_string(),
             filetype: None,
             code: "/**".to_string(),
-            css: false,
             line_length_limit: None,
             extension: String::new(),
-            theme: String::new(),
         };
         let result = determine_language(&query, &syntax_set);
         assert_eq!(result.unwrap().name, "Apex");

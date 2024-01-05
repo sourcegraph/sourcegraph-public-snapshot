@@ -1,9 +1,9 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 import { SignUpPage } from './SignUpPage'
 
@@ -43,7 +43,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
     },
 ]
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {() => (
             <SignUpPage

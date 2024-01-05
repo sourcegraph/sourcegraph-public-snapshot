@@ -14,6 +14,7 @@ go_library(
         "//internal/database",
         "//internal/embeddings",
         "//internal/embeddings/db",
+        "//internal/gitserver",
         "//internal/observation",
         "//internal/search/client",
     ],

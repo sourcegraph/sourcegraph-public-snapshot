@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "references": [{ "path": "../.." }, { "path": "../../../shared/src/testing" }],
   "compilerOptions": {
-    "types": ["mocha", "node"],
+    "types": ["node"],
     "module": "commonjs",
     "rootDir": ".",
     "outDir": "../../out/src/end-to-end",

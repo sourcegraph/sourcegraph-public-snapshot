@@ -1,11 +1,11 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/preview/CreateUpdateBatchChangeAlert',
@@ -27,7 +27,7 @@ const config: Meta = {
 
 export default config
 
-export const Create: Story = args => (
+export const Create: StoryFn = args => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -41,7 +41,7 @@ export const Create: Story = args => (
     </WebStory>
 )
 
-export const Update: Story = args => (
+export const Update: StoryFn = args => (
     <WebStory>
         {props => (
             <CreateUpdateBatchChangeAlert
@@ -55,7 +55,7 @@ export const Update: Story = args => (
     </WebStory>
 )
 
-export const Disabled: Story = args => (
+export const Disabled: StoryFn = args => (
     <WebStory>
         {props => (
             <MultiSelectContextProvider initialSelected={['id1', 'id2']}>

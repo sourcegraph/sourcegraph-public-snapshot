@@ -46,7 +46,7 @@ func newPerforceChangelistResolver(r *RepositoryResolver, changelistID, commitSH
 	canonicalURL := filepath.Join(repoURL.Path, "-", "changelist", changelistID)
 
 	return &PerforceChangelistResolver{
-		logger:             r.logger.Scoped("PerforceChangelistResolver", "resolve a specific changelist"),
+		logger:             r.logger.Scoped("PerforceChangelistResolver"),
 		repositoryResolver: r,
 		cid:                changelistID,
 		commitSHA:          commitSHA,
@@ -54,11 +54,16 @@ func newPerforceChangelistResolver(r *RepositoryResolver, changelistID, commitSH
 	}
 }
 
-func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, commit *gitdomain.Commit) (*PerforceChangelistResolver, error) {
-	if source, err := r.SourceType(ctx); err != nil {
+func toPerforceChangelistResolver(ctx context.Context, gcr *GitCommitResolver) (*PerforceChangelistResolver, error) {
+	if source, err := gcr.repoResolver.SourceType(ctx); err != nil {
 		return nil, err
 	} else if *source != PerforceDepotSourceType {
 		return nil, nil
+	}
+
+	commit, err := gcr.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	changelistID, err := perforce.GetP4ChangelistID(commit.Message.Body())
@@ -66,7 +71,7 @@ func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, co
 		return nil, errors.Wrap(err, "failed to generate perforceChangelistID")
 	}
 
-	return newPerforceChangelistResolver(r, changelistID, string(commit.ID)), nil
+	return newPerforceChangelistResolver(gcr.repoResolver, changelistID, string(commit.ID)), nil
 }
 
 func (r *PerforceChangelistResolver) CID() string {

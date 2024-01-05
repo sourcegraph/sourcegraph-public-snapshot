@@ -136,18 +136,14 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 	ratelimit.SetupForTest(t)
-	github.SetupForTest(t)
 
 	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
 	gheToken := prepareGheToken(t, fixtureName)
 
-	service := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://ghe.sgdev.org",
-			Token: gheToken,
-		})),
-	}
+	service := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+		Url:   "https://ghe.sgdev.org",
+		Token: gheToken,
+	})
 
 	factory, save := NewClientFactory(t, fixtureName)
 	defer save(t)
@@ -194,7 +190,6 @@ func prepareGheToken(t *testing.T, fixtureName string) string {
 }
 
 func TestGithubSource_GetRepo(t *testing.T) {
-	github.SetupForTest(t)
 	testCases := []struct {
 		name          string
 		nameWithOwner string
@@ -234,13 +229,14 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:     41288708,
-						NameWithOwner:  "sourcegraph/sourcegraph",
-						Description:    "Code search and navigation tool (self-hosted)",
-						URL:            "https://github.com/sourcegraph/sourcegraph",
-						StargazerCount: 2220,
-						ForkCount:      164,
+						ID:                 "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:         41288708,
+						NameWithOwner:      "sourcegraph/sourcegraph",
+						Description:        "Code search and navigation tool (self-hosted)",
+						URL:                "https://github.com/sourcegraph/sourcegraph",
+						StargazerCount:     2220,
+						ForkCount:          164,
+						DiskUsageKibibytes: 302301,
 						// We're hitting github.com here, so visibility will be empty irrespective
 						// of repository type. This is a GitHub enterprise only feature.
 						Visibility:       "",
@@ -269,12 +265,9 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
-				})),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+				Url: "https://github.com",
+			})
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
@@ -295,7 +288,6 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
-	github.SetupForTest(t)
 	testCases := []struct {
 		name          string
 		nameWithOwner string
@@ -373,13 +365,10 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 			}
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://ghe.sgdev.org",
-					Token: gheToken,
-				})),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+			})
 
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
@@ -405,16 +394,13 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 
 			// Configure external service to mark internal repositories as public
 			// and sync again
-			svc = &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://ghe.sgdev.org",
-					Token: gheToken,
-					Authorization: &schema.GitHubAuthorization{
-						MarkInternalReposAsPublic: true,
-					},
-				})),
-			}
+			svc = typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+				Authorization: &schema.GitHubAuthorization{
+					MarkInternalReposAsPublic: true,
+				},
+			})
 
 			githubSrc, err = NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
 			if err != nil {
@@ -442,7 +428,6 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
-	github.SetupForTest(t)
 
 	r := &github.Repository{
 		Description: "Fun nulls \x00\x00\x00",
@@ -464,7 +449,6 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
-	github.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -559,7 +543,6 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGitHubSource_doRecursively(t *testing.T) {
-	github.SetupForTest(t)
 	ctx := context.Background()
 
 	testCases := map[string]struct {
@@ -620,7 +603,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 
 			apiURL, err := url.Parse(srv.URL)
 			require.NoError(t, err)
-			ghCli := github.NewV4Client("", apiURL, nil, nil)
+			ghCli := github.NewV4Client("", apiURL, nil, httpcli.TestExternalDoer)
 			q := newRepositoryQuery("stars:>=5", ghCli, logtest.NoOp(t))
 			q.Limit = 5
 
@@ -643,7 +626,6 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {
-	github.SetupForTest(t)
 	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -781,6 +763,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			// uses rcache, a caching layer that uses Redis.
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
+			ratelimit.SetupForTest(t)
 
 			var (
 				cf   *httpcli.Factory
@@ -794,10 +777,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, tc.conf)
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
@@ -831,15 +811,11 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
-	github.SetupForTest(t)
 
-	svc := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+		Url:   "https://github.com",
+		Token: os.Getenv("GITHUB_TOKEN"),
+	})
 
 	ctx := context.Background()
 	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, nil)
@@ -866,15 +842,11 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
-	github.SetupForTest(t)
 
-	svc := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+		Url:   "https://github.com",
+		Token: os.Getenv("GITHUB_TOKEN"),
+	})
 
 	ctx := context.Background()
 	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, nil)
@@ -894,7 +866,6 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 }
 
 func TestGithubSource_GetVersion(t *testing.T) {
-	github.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
 		// The GitHubSource uses the github.Client under the hood, which
@@ -902,12 +873,9 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		// We need to clear the cache before we run the tests
 		rcache.SetupForTest(t)
 
-		svc := &types.ExternalService{
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-				Url: "https://github.com",
-			})),
-		}
+		svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+			Url: "https://github.com",
+		})
 
 		ctx := context.Background()
 		githubSrc, err := NewGitHubSource(ctx, logger, dbmocks.NewMockDB(), svc, nil)
@@ -940,13 +908,10 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		cf, save := NewClientFactory(t, fixtureName)
 		defer save(t)
 
-		svc := &types.ExternalService{
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-				Url:   "https://ghe.sgdev.org",
-				Token: gheToken,
-			})),
-		}
+		svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org",
+			Token: gheToken,
+		})
 
 		ctx := context.Background()
 		githubSrc, err := NewGitHubSource(ctx, logger, dbmocks.NewMockDB(), svc, cf)
@@ -966,7 +931,6 @@ func TestGithubSource_GetVersion(t *testing.T) {
 }
 
 func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
-	github.SetupForTest(t)
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -1034,7 +998,6 @@ func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 }
 
 func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
-	github.SetupForTest(t)
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -1107,7 +1070,6 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 }
 
 func TestGithubSource_SearchRepositories(t *testing.T) {
-	github.SetupForTest(t)
 	assertReposSearched := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -1277,10 +1239,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, tc.conf)
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
@@ -1300,20 +1259,11 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 	}
 }
 
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
-}
-
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
-}
-
 // TestGithubSource_ListRepos_GitHubApp tests the ListRepos function for GitHub
 // Apps specifically. We have a separate test case for this so that the VCR
 // tests for GitHub App and non-GitHub App connections can be updated separately,
 // as setting up credentials for a GitHub App VCR test is significantly more effort.
 func TestGithubSource_ListRepos_GitHubApp(t *testing.T) {
-	github.SetupForTest(t)
 	// This private key is no longer valid. If this VCR test needs to be updated,
 	// a new GitHub App with new keys and secrets will have to be created
 	// and deleted afterwards.
@@ -1422,10 +1372,7 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, tc.conf)
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), db, svc, cf)

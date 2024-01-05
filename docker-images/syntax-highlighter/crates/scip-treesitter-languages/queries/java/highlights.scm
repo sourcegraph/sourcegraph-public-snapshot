@@ -39,6 +39,10 @@
   . (identifier) @identifier.type)
  (#match? @identifier.type "^[A-Z]"))
 
+(record_pattern
+  (identifier) @identifier.type
+)
+
 (constructor_declaration
   name: (identifier) @identifier.type)
 
@@ -71,8 +75,7 @@
 
 [
   (character_literal)
-  (string_literal)
-  (text_block)]
+  (string_literal)]
 @string
 
 [

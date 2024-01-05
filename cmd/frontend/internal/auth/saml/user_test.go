@@ -11,8 +11,8 @@ import (
 
 	saml2 "github.com/russellhaering/gosaml2"
 	dsig "github.com/russellhaering/goxmldsig"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -127,7 +127,7 @@ func TestGetPublicExternalAccountData(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			assert.DeepEqual(t, tc.expected, publicData)
+			assert.Equal(t, tc.expected, publicData)
 		})
 	}
 }

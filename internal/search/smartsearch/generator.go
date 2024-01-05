@@ -3,8 +3,9 @@ package smartsearch
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"gonum.org/v1/gonum/stat/combin"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 // next is the continuation for the query generator.
@@ -159,6 +160,9 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 		generated = applyTransformation(seed, transform)
 		if generated == nil {
 			// Rule does not apply, go to next rule.
+			return n(phase, k, c, w)
+		} else if err := query.ValidatePlan([]query.Basic{*generated}); err != nil {
+			// Generated query is not valid, go to next rule.
 			return n(phase, k, c, w)
 		}
 

@@ -196,24 +196,6 @@ func nodeLength(node *sitter.Node) int {
 	return length
 }
 
-// Of course.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// When generic?
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
-}
-
 // Node is a sitter.Node plus convenient info.
 type Node struct {
 	RepoCommitPath types.RepoCommitPath
@@ -236,7 +218,9 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+// CAUTION: These error messages are checked by client-side code,
+// so make sure to update clients if changing them.
+var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
@@ -248,7 +232,18 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, unrecognizedFileExtensionError
+		// It is not uncommon to have files with upper-case extensions
+		// like .C, .H, .CPP etc., especially for code developed on
+		// case-insensitive filesystems. So check if lower-casing helps.
+		//
+		// It might be tempting to refactor this code to store all the
+		// extensions in lower-case and do one lookup instead of two,
+		// but that would be incorrect as we want to distinguish files
+		// named 'build' (a common name for shell scripts) vs BUILD
+		//// (file extension for Bazel).
+		if langName, ok = extToLang[strings.ToLower(ext)]; !ok {
+			return nil, UnrecognizedFileExtensionError
+		}
 	}
 
 	langSpec, ok := langToLangSpec[langName]
@@ -409,7 +404,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
-	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, UnrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {

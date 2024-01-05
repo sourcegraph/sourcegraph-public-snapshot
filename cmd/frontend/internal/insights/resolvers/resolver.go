@@ -80,12 +80,12 @@ func New(db edb.InsightsDB, postgres database.DB) graphqlbackend.InsightsResolve
 func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Time) *Resolver {
 	base := WithBase(db, postgres, clock)
 	return &Resolver{
-		logger:               log.Scoped("Resolver", ""),
+		logger:               log.Scoped("Resolver"),
 		baseInsightResolver:  *base,
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore, log.Scoped("resolver insight enqueuer", "")),
+		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore, log.Scoped("resolver insight enqueuer")),
 	}
 }
 
@@ -126,7 +126,7 @@ type AggregationResolver struct {
 
 func NewAggregationResolver(observationCtx *observation.Context, postgres database.DB) graphqlbackend.InsightsAggregationResolver {
 	return &AggregationResolver{
-		logger:     log.Scoped("AggregationResolver", ""),
+		logger:     log.Scoped("AggregationResolver"),
 		postgresDB: postgres,
 		operations: newAggregationsOperations(observationCtx),
 	}

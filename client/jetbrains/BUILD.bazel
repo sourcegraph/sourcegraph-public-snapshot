@@ -17,7 +17,6 @@ eslint_test_with_types(
     srcs = glob(["webview/src/**/*.story.tsx"]),
     config = ":eslint_config",
     deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )

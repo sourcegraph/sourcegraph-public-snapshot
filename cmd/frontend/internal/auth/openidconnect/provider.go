@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -27,6 +26,7 @@ type Provider struct {
 	config      schema.OpenIDConnectAuthProvider
 	authPrefix  string
 	callbackUrl string
+	httpClient  *http.Client
 
 	mu         sync.Mutex
 	oidc       *oidcProvider
@@ -35,11 +35,12 @@ type Provider struct {
 
 // NewProvider creates and returns a new OpenID Connect authentication provider
 // using the given config.
-func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string) providers.Provider {
+func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string, httpClient *http.Client) providers.Provider {
 	return &Provider{
 		config:      config,
 		authPrefix:  authPrefix,
 		callbackUrl: callbackUrl,
+		httpClient:  httpClient,
 	}
 }
 
@@ -60,7 +61,7 @@ func (p *Provider) Config() schema.AuthProviders {
 func (p *Provider) Refresh(context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.oidc, p.refreshErr = newOIDCProvider(p.config.Issuer)
+	p.oidc, p.refreshErr = newOIDCProvider(p.config.Issuer, p.httpClient)
 	return p.refreshErr
 }
 
@@ -158,12 +159,12 @@ type providerExtraClaims struct {
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newOIDCProvider(issuerURL string) (*oidcProvider, error) {
+func newOIDCProvider(issuerURL string, httpClient *http.Client) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpcli.ExternalClient), issuerURL)
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpClient), issuerURL)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +194,8 @@ func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(p.config.ClientID, p.config.ClientSecret)
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+
+	resp, err := p.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}

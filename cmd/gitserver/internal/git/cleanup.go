@@ -20,7 +20,7 @@ import (
 // very slow. Removing these files while they're in use will cause
 // an operation to fail, but not damage the repository.
 func CleanTmpPackFiles(logger log.Logger, dir common.GitDir) {
-	logger = logger.Scoped("cleanup.cleanTmpFiles", "tries to remove tmp_pack_* files from .git/objects/pack")
+	logger = logger.Scoped("cleanup.cleanTmpFiles")
 
 	now := time.Now()
 	packdir := dir.Path("objects", "pack")

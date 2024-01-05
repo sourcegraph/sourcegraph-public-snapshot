@@ -114,7 +114,7 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 	for _, c := range gt {
 		var complete cli.BashCompleteFunc
 		if c.Completer != nil {
-			complete = completions.CompleteOptions(c.Completer)
+			complete = completions.CompleteArgs(c.Completer)
 		}
 		cmds = append(cmds, &cli.Command{
 			Name:         c.Name,

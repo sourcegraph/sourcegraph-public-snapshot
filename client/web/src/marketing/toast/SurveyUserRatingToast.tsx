@@ -45,7 +45,7 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
                 <Text className="d-flex align-items-center justify-content-between mb-1">
                     <span>
                         By submitting your feedback, you agree to the{' '}
-                        <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                        <Link to="https://sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
                     </span>
                 </Text>
                 <div className="d-flex align-items-center justify-content-between">

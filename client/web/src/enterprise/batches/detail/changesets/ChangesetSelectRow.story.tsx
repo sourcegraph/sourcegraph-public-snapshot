@@ -1,4 +1,4 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
@@ -13,7 +13,7 @@ import type {
 
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const MAX_CHANGESETS = 100
 
@@ -52,7 +52,7 @@ const queryAll50ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_
 
 const allBulkOperations = Object.keys(BulkOperationType) as BulkOperationType[]
 
-export const AllStates: Story = args => {
+export const AllStates: StoryFn = args => {
     const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () =>
         of(CHANGESET_IDS.slice(0, args.selectableChangesets))
     const initialSelected = CHANGESET_IDS.slice(0, args.selectedChangesets)

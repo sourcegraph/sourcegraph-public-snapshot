@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`<ViewOnSourcegraphButton /> existence could not be determined  because of an authentication failure minimalUI = false renders a sign in button if showSignInButton = true 1`] = `
+exports[`<ViewOnSourcegraphButton /> > existence could not be determined  > because of an authentication failure > minimalUI = false > renders a sign in button if showSignInButton = true 1`] = `
 <DocumentFragment>
   <a
     aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
@@ -33,7 +33,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> existence could not be determined  because of an authentication failure minimalUI = true renders a sign in button if showSignInButton = true 1`] = `
+exports[`<ViewOnSourcegraphButton /> > existence could not be determined  > because of an authentication failure > minimalUI = true > renders a sign in button if showSignInButton = true 1`] = `
 <DocumentFragment>
   <a
     aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
@@ -66,7 +66,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> existence could not be determined  because of an unknown error renders a button with an error label 1`] = `
+exports[`<ViewOnSourcegraphButton /> > existence could not be determined  > because of an unknown error > renders a button with an error label 1`] = `
 <DocumentFragment>
   <a
     aria-label="Something unknown happened!"
@@ -100,7 +100,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance renders "Configure Sourcegraph" button when pointing at sourcegraph.com 1`] = `
+exports[`<ViewOnSourcegraphButton /> > repository does not exist on the instance > renders "Configure Sourcegraph" button when pointing at sourcegraph.com 1`] = `
 <DocumentFragment>
   <a
     aria-label="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.com"
@@ -134,7 +134,7 @@ exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance r
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance renders a "Repository not found" button when not pointing at sourcegraph.com 1`] = `
+exports[`<ViewOnSourcegraphButton /> > repository does not exist on the instance > renders a "Repository not found" button when not pointing at sourcegraph.com 1`] = `
 <DocumentFragment>
   <a
     aria-label="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.test"
@@ -168,7 +168,7 @@ exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance r
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a link to the repository on the Sourcegraph instance 1`] = `
+exports[`<ViewOnSourcegraphButton /> > repository exists on the instance > renders a link to the repository on the Sourcegraph instance 1`] = `
 <DocumentFragment>
   <a
     aria-label="View repository on Sourcegraph"
@@ -201,7 +201,7 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a link with the revision when provided 1`] = `
+exports[`<ViewOnSourcegraphButton /> > repository exists on the instance > renders a link with the revision when provided 1`] = `
 <DocumentFragment>
   <a
     aria-label="View repository on Sourcegraph"
@@ -234,4 +234,4 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
 </DocumentFragment>
 `;
 
-exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders nothing in minimal UI mode 1`] = `<DocumentFragment />`;
+exports[`<ViewOnSourcegraphButton /> > repository exists on the instance > renders nothing in minimal UI mode 1`] = `<DocumentFragment />`;

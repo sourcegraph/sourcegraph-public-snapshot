@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
 
@@ -53,7 +53,7 @@ const LANG_STATS_MOCK: MockedResponse<LangStatsInsightContentResult> = {
     },
 }
 
-export const LangStatsInsightCreationPage: Story = () => {
+export const LangStatsInsightCreationPage: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (

@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/azureoauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/confauth"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gerrit"
 	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
@@ -32,7 +32,7 @@ import (
 
 // Init must be called by the frontend to initialize the auth middlewares.
 func Init(logger log.Logger, db database.DB) {
-	logger = logger.Scoped("auth", "provides enterprise authentication middleware")
+	logger = logger.Scoped("auth")
 	azureoauth.Init(logger, db)
 	bitbucketcloudoauth.Init(logger, db)
 	gerrit.Init()
@@ -45,6 +45,7 @@ func Init(logger log.Logger, db database.DB) {
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
+		authutil.ConnectOrSignOutMiddleware(db),
 		openidconnect.Middleware(db),
 		sourcegraphoperator.Middleware(db),
 		saml.Middleware(db),
@@ -54,7 +55,6 @@ func Init(logger log.Logger, db database.DB) {
 		bitbucketcloudoauth.Middleware(db),
 		azureoauth.Middleware(db),
 		githubapp.Middleware(db),
-		confauth.Middleware(),
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
@@ -116,7 +116,7 @@ func Init(logger log.Logger, db database.DB) {
 }
 
 func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("ssoSignOutHandler", "Signing out from SSO providers")
+	logger := log.Scoped("ssoSignOutHandler")
 	for _, p := range conf.Get().AuthProviders {
 		var err error
 		switch {

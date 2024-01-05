@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`UserAvatar no avatar URL 1`] = `
+exports[`UserAvatar > no avatar URL 1`] = `
 <DocumentFragment>
   <div
     class="userAvatar"
@@ -14,7 +14,7 @@ exports[`UserAvatar no avatar URL 1`] = `
 </DocumentFragment>
 `;
 
-exports[`UserAvatar with avatar URL 1`] = `
+exports[`UserAvatar > with avatar URL 1`] = `
 <DocumentFragment>
   <img
     alt=""

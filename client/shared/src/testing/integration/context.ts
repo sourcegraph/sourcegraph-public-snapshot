@@ -18,7 +18,6 @@ import { logger, asError, keyExistsIn } from '@sourcegraph/common'
 import type { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
 
 import { getConfig } from '../config'
-import { recordCoverage } from '../coverage'
 import type { Driver } from '../driver'
 import { readEnvironmentString } from '../utils'
 
@@ -308,11 +307,6 @@ export const createSharedIntegrationTestContext = async <
             }
 
             subscriptions.unsubscribe()
-            await pTimeout(
-                recordCoverage(driver.browser),
-                DISPOSE_ACTION_TIMEOUT,
-                new Error('Recording coverage timed out')
-            )
 
             if (driver.page.url() !== 'about:blank') {
                 await pTimeout(

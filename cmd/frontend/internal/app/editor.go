@@ -29,7 +29,7 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(logger, db, gitserver.NewClient())
+	repos := backend.NewRepos(logger, db, gitserver.NewClient("http.editorrev"))
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
@@ -210,7 +210,7 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 
 	v := &editorRequest{
 		db:     db,
-		logger: log.Scoped("editor", "requests from editors."),
+		logger: log.Scoped("editor"),
 	}
 
 	if search := q.Get("search"); search != "" {

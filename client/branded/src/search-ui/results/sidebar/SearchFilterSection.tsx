@@ -9,6 +9,8 @@ import { FilterLink, type FilterLinkProps } from './FilterLink'
 
 import styles from './SearchFilterSection.module.scss'
 
+export { styles }
+
 export interface SearchFilterSectionProps {
     sectionId: string
     header: string

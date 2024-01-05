@@ -1,4 +1,5 @@
 import { BehaviorSubject } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
 import type { SettingsCascade } from '../../../settings/settings'
 import type { ClientAPI } from '../../client/api/api'
@@ -109,7 +110,7 @@ describe('ExtensionHost: Configuration', () => {
             )
             const config = extensionAPI.configuration.get<{ a: string }>()
             await config.update('a', 'aha!')
-            expect(requestedEdits).toEqual<SettingsEdit[]>([{ path: ['a'], value: 'aha!' }])
+            expect(requestedEdits).toEqual([{ path: ['a'], value: 'aha!' }] as SettingsEdit[])
             expect(config.get('a')).toBe('b') // no optimistic updates
         })
     })

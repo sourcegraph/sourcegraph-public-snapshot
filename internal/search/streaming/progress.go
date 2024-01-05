@@ -108,11 +108,3 @@ func (c *Stats) String() string {
 func (c *Stats) Equal(other *Stats) bool {
 	return reflect.DeepEqual(c, other)
 }
-
-// Deref returns the zero-valued stats if its receiver is nil
-func (c *Stats) Deref() Stats {
-	if c != nil {
-		return *c
-	}
-	return Stats{}
-}

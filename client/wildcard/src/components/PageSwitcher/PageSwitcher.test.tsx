@@ -1,5 +1,6 @@
 import { render, type RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 

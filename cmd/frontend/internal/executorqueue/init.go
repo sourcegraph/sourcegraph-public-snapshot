@@ -3,9 +3,7 @@ package executorqueue
 import (
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
@@ -24,13 +22,10 @@ func Init(
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 
 	accessToken := func() string {
-		if deploy.IsSingleBinary() {
-			return confdefaults.AppInMemoryExecutorPassword
-		}
 		return conf.SiteConfig().ExecutorsAccessToken
 	}
 
-	logger := log.Scoped("executorqueue", "")
+	logger := log.Scoped("executorqueue")
 
 	queueHandler := newExecutorQueuesHandler(
 		observationCtx,

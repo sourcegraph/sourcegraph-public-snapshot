@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import GithubIcon from 'mdi-react/GithubIcon'
+import { describe, expect, test } from 'vitest'
 
 import type { AuthProvider } from '../../../jscontext'
 

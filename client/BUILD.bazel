@@ -5,7 +5,7 @@
 # gazelle:js_files globals.d.ts
 
 # Test files, snapshots etc:
-# gazelle:js_test_files **/*.{spec,test}.{ts,tsx}
+# gazelle:js_test_files **/*.test.{ts,tsx}
 # gazelle:js_test_files **/mock*.{ts,tsx}
 # gazelle:js_test_files **/*.{mock,mocks}.{ts,tsx}
 # gazelle:js_test_files **/mocks/**
@@ -16,6 +16,10 @@
 # gazelle:js_test_files **/WebStory.{ts,tsx}
 # TODO(bazel): sveltekit tests
 # gazelle:exclude **/web-sveltekit/**/*.ts
+# gazelle:exclude **/vitest.config.ts
+
+# Otherwise it gets tripped up on the `declare module 'vitest'` directives to add custom matchers.
+# gazelle:js_resolve vitest //:node_modules/vitest
 
 # TODO(bazel): put fixtures + testutils + ? into own rules
 # js_{fixture}_files **/*.{fixture,fixtures}.{ts,tsx}

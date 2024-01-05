@@ -123,7 +123,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 var started bool
 
 func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
-	logger := log.Scoped("adminanalytics:cache-refresh", "admin analytics cache refresh")
+	logger := log.Scoped("adminanalytics:cache-refresh")
 
 	if started {
 		panic("already started")

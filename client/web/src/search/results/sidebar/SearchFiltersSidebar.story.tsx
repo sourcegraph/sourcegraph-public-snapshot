@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -127,11 +127,11 @@ const filters: Filter[] = [
     })),
 ]
 
-export const EmptySidebar: Story = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
+export const EmptySidebar: StoryFn = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
 
 EmptySidebar.storyName = 'empty sidebar'
 
-export const WithEverything: Story = () => (
+export const WithEverything: StoryFn = () => (
     <WebStory>
         {() => (
             <SearchFiltersSidebar

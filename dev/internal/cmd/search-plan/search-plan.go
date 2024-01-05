@@ -44,7 +44,7 @@ func run(w io.Writer, args []string) error {
 	// Sourcegraph infra we need
 	conf.Mock(&conf.Unified{})
 	envvar.MockSourcegraphDotComMode(*dotCom)
-	logger := log.Scoped("search-plan", "")
+	logger := log.Scoped("search-plan")
 
 	cli := client.Mocked(job.RuntimeClients{Logger: logger})
 
@@ -55,6 +55,7 @@ func run(w io.Writer, args []string) error {
 		query,
 		mode,
 		search.Streaming,
+		nil,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to plan")

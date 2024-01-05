@@ -19,11 +19,11 @@ For a comphrensive deployment guide for each option, check out our in-depth docu
 Our recommended deployment type is [Kubernetes with Helm](../deploy/kubernetes/helm.md). If this is not a viable option, we also support a number of other deployment types which are described in the [Deployment overview](../deploy/index.md).
 
 ### Self-hosted vs. Managed instances
-Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](../../cloud/index.md) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
+Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](../../cloud/index.md) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
 
 
 ## Updating your instance 
-New versions of Sourcegraph are released monthly (with patches released in between, as needed). New updates are announced in the [Sourcegraph blog](https://about.sourcegraph.com/blog), and comprehensive update notes are available in the [changelog](https://docs.sourcegraph.com/CHANGELOG). 
+New versions of Sourcegraph are released monthly (with patches released in between, as needed). New updates are announced in the [Sourcegraph blog](https://sourcegraph.com/blog), and comprehensive update notes are available in the [changelog](https://docs.sourcegraph.com/CHANGELOG). 
 
 To check the current version of your instance, go to **User menu > Site admin > Updates**.
 

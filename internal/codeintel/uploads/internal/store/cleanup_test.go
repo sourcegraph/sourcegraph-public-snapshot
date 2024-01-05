@@ -224,7 +224,7 @@ func TestProcessStaleSourcedCommits(t *testing.T) {
 	db := database.NewDB(log, sqlDB)
 	store := &store{
 		db:         basestore.NewWithHandle(db.Handle()),
-		logger:     logger.Scoped("autoindexing.store", ""),
+		logger:     logger.Scoped("autoindexing.store"),
 		operations: newOperations(&observation.TestContext),
 	}
 

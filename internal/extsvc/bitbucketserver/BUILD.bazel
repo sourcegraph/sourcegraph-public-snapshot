@@ -43,6 +43,7 @@ go_test(
     embed = [":bitbucketserver"],
     deps = [
         "//internal/extsvc/auth",
+        "//internal/httpcli",
         "//internal/ratelimit",
         "//schema",
         "@com_github_gomodule_oauth1//oauth",

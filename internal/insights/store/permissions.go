@@ -22,7 +22,7 @@ type InsightPermStore struct {
 
 func NewInsightPermissionStore(db database.DB) *InsightPermStore {
 	return &InsightPermStore{
-		logger: log.Scoped("InsightPermStore", ""),
+		logger: log.Scoped("InsightPermStore"),
 		Store:  basestore.NewWithHandle(db.Handle()),
 	}
 }

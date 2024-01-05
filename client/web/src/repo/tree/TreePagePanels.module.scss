@@ -48,69 +48,51 @@
     }
 }
 
-.file-item {
-    border-bottom: 1px solid var(--border-color);
+table.files {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+    // This is necessary to override the 'display:' property set by
+    // the Card component.
+    display: table;
 
-    &:last-child {
-        border-bottom: none;
-    }
-}
-
-.card-col-header {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.bar-svg {
-    border-radius: 5px;
-}
-
-.diff-stat-added {
-    fill: var(--diff-add-fg);
-}
-
-.diff-stat-deleted {
-    fill: var(--diff-remove-fg);
-}
-
-.meter-container {
-    padding-top: 0.125rem;
-}
-
-.tree-entry {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-
-    margin-left: -0.25rem;
-    margin-right: -0.25rem;
-    padding: 0.125rem 0.25rem;
-
-    break-inside: avoid-column;
-
-    &:hover {
-        background-color: var(--color-bg-1);
+    th {
+        padding: 0.5rem;
+        font-weight: normal;
+        box-sizing: content-box;
     }
 
-    &--no-columns {
-        max-width: 18rem;
+    td {
+        padding: 0.5rem;
     }
-}
 
-.sort-dsc-icon {
-    padding: 0;
-    margin: -0.125rem 0 0 0;
-    color: var(--icon-muted);
-}
+    .file-name-column {
+        width: 30%;
+    }
 
-.sort-asc-icon {
-    padding: 0;
-    margin: -0.625rem 0 0 0;
-    color: var(--icon-muted);
-}
+    .commit-date-column {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        width: 120px;
+    }
 
-.sort-selected-icon {
-    color: var(--icon-color);
+    th,
+    .file-name,
+    .commit-message,
+    .commit-date {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .commit-date,
+    .commit-date-column {
+        text-align: right;
+    }
+
+    tbody td {
+        border-top: 1px solid var(--border-color);
+    }
 }

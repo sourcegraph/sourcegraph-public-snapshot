@@ -15,15 +15,23 @@ type constString string
 
 // EventMetadata is secure, PII-free metadata that can be attached to events.
 // Keys must be const strings.
-type EventMetadata map[constString]int64
+type EventMetadata map[constString]float64
 
-// MetadataBool returns 1 for true and 0 for false, for use in EventMetadata's
+// Bool returns 1 for true and 0 for false, for use in EventMetadata's
 // restricted int64 values.
-func MetadataBool(value bool) int64 {
+func Bool(value bool) float64 {
 	if value {
 		return 1 // true
 	}
 	return 0 // 0
+}
+
+// Number casts the value as a float64, for use in EventMetadata values.
+func Number[T interface {
+	~float32 | ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}](value T) float64 {
+	return float64(value)
 }
 
 // EventBillingMetadata records metadata that attributes the event to product
@@ -46,6 +54,11 @@ type EventParameters struct {
 	BillingMetadata *EventBillingMetadata
 }
 
+// EventsStore backs event recorders with storage of events for export.
+// In general, prefer to use the telemetryrecorder.New() constructor for a
+// default implementation.
+//
+// In tests, you can use the telemetrytest.NewMockEventsStore() implementation.
 type EventsStore interface {
 	StoreEvents(context.Context, []*telemetrygatewayv1.Event) error
 }
@@ -58,8 +71,8 @@ type EventRecorder struct{ store EventsStore }
 // implementation. In general, prefer to use the telemetryrecorder.New()
 // constructor instead.
 //
-// If you don't care about event recording failures, consider using a
-// BestEffortEventRecorder instead.
+// In tests, you may want to use this constructor alongside the
+// the telemetrytest.NewMockEventsStore() implementation of EventsStore.
 func NewEventRecorder(store EventsStore) *EventRecorder {
 	return &EventRecorder{store: store}
 }

@@ -30,7 +30,7 @@ const pkgName = "httpheader"
 func Init() {
 	conf.ContributeValidator(validateConfig)
 
-	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
+	logger := log.Scoped(pkgName)
 	go func() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()

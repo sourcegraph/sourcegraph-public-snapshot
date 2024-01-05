@@ -31,7 +31,7 @@ func (j *usageJob) Config() []env.Config {
 }
 
 func (j *usageJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	return []goroutine.BackgroundRoutine{&usageRoutine{logger: observationCtx.Logger.Scoped("CodyGatewayUsageWorker", "")}}, nil
+	return []goroutine.BackgroundRoutine{&usageRoutine{logger: observationCtx.Logger.Scoped("CodyGatewayUsageWorker")}}, nil
 }
 
 const (

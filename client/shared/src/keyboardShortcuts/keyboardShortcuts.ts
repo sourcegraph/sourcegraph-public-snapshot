@@ -11,7 +11,6 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'fuzzyFinderRepos'
     | 'fuzzyFinderSymbols'
     | 'fuzzyFinderFiles'
-    | 'copyFullQuery'
     | 'focusCodeEditor'
     | 'focusFileTree'
     | 'focusSymbols'
@@ -80,9 +79,5 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
         title: 'Fuzzy find symbols',
         keybindings: [{ held: isSafari() ? ['Mod', 'Shift'] : ['Mod'], ordered: ['o'] }],
         hideInHelp: true,
-    },
-    copyFullQuery: {
-        title: 'Copy full query',
-        keybindings: [{ held: ['Mod', 'Shift'], ordered: ['c'] }],
     },
 }

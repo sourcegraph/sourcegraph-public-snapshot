@@ -3,8 +3,8 @@ package pointers
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 func TestPtr(t *testing.T) {
@@ -201,5 +201,13 @@ func TestDeref(t *testing.T) {
 	}
 	for _, tc := range structTests {
 		runDerefTest(t, tc)
+	}
+}
+
+func TestSlice(t *testing.T) {
+	values := []string{"1", "2", "3"}
+	pointified := Slice(values)
+	for i, p := range pointified {
+		assert.Equal(t, values[i], *p)
 	}
 }

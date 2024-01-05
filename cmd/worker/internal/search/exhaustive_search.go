@@ -27,7 +27,7 @@ func newExhaustiveSearchWorker(
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchHandler{
-		logger:      log.Scoped("exhaustive-search", "The background worker running exhaustive searches"),
+		logger:      log.Scoped("exhaustive-search"),
 		store:       exhaustiveSearchStore,
 		newSearcher: newSearcher,
 	}

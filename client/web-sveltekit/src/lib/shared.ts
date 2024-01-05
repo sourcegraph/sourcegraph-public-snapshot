@@ -39,6 +39,8 @@ export {
     type SymbolMatch,
     type PathMatch,
     type ContentMatch,
+    type ChunkMatch,
+    type LineMatch,
     type SearchMatch,
     type OwnerMatch,
     type TeamMatch,
@@ -46,21 +48,21 @@ export {
     type CommitMatch,
     type Progress,
     type Range,
+    type Filter,
 } from '@sourcegraph/shared/src/search/stream'
-export type {
-    MatchItem,
-    MatchGroupMatch,
-    MatchGroup,
-    PerFileResultRanking,
-    RankingResult,
+export {
+    type MatchItem,
+    type MatchGroupMatch,
+    type MatchGroup,
+    rankPassthrough,
+    rankByLine,
+    truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-export { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-export { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
-export { omitFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 export {
     type SettingsCascade,
     type SettingsSubject,
@@ -73,6 +75,10 @@ export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/sear
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+export { getModeFromPath } from '@sourcegraph/shared/src/languages'
+export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 
 // Copies of non-reusable code
 
@@ -94,5 +100,5 @@ export function displayRepoName(repoName: string): string {
  */
 export function splitPath(path: string): [string, string] {
     const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components[components.length - 1]]
+    return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
 }

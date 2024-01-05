@@ -14,7 +14,7 @@ To enable Search Jobs, you need to configure a managed object storage service to
 
 ## Storing search results
 
-To target a managed object storage service, you must set a handful of environment variables for configuration and authentication to the target service. 
+By default, search jobs stores results using the `blobstore` service. To target a managed object storage service, you must set a handful of environment variables for configuration and authentication to the target service.
 
 - If you are running a `sourcegraph/server` deployment, set the environment variables on the server container
 - If you are running via Docker-compose or Kubernetes, set the environment variables on the `frontend` and `worker` containers
@@ -79,7 +79,7 @@ To use Search Jobs, you need to:
 Search Jobs supports queries of `type:file` and it automatically appends this to the search query. Other result types (like `diff`, `commit`, `path`, and `repo`) will be ignored. However, there are some limitations on the supported query syntax. These include:
 
 - `OR`, `AND` operators
-- `has.content` or `has.file` predicates
+- file predicates, such as `file:has.content`, `file:has.owner`, `file:has.contributor`, `file:contains.content`
 - `.*` regexp search
 - Multiple `rev` filters
 - Queries with `index: filter`

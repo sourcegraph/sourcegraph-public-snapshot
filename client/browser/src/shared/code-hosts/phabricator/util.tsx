@@ -79,7 +79,7 @@ function getBaseCommitIDFromRevisionPage(): string {
 }
 
 export function getPhabricatorState(
-    location: Location,
+    location: URL | Location,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<any>
 ): Observable<DiffusionState | DifferentialState | RevisionState | ChangeState> {

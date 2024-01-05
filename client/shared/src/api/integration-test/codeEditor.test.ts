@@ -1,5 +1,6 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, switchMap, take, toArray } from 'rxjs/operators'
+import { describe, test } from 'vitest'
 
 import { Selection } from '@sourcegraph/extension-api-classes'
 

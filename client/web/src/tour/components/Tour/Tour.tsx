@@ -76,7 +76,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                                 }
 
                                 switch (extendedStep.action.type) {
-                                    case 'search-query':
+                                    case 'search-query': {
                                         if (!extendedStep.action.snippets) {
                                             extendedStep.action = {
                                                 ...extendedStep.action,
@@ -84,6 +84,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                                             }
                                         }
                                         break
+                                    }
                                 }
 
                                 return extendedStep

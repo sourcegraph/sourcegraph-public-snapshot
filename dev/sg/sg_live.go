@@ -45,7 +45,7 @@ sg live -n 50 s2
 			Usage:   "Number of commits to check for live version",
 		},
 	},
-	BashComplete: completions.CompleteOptions(func() (options []string) {
+	BashComplete: completions.CompleteArgs(func() (options []string) {
 		return append(environmentNames(), `https\://...`)
 	}),
 }

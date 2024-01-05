@@ -112,7 +112,7 @@ func CodeMonitorsWith(other basestore.ShareableStore) *codeMonitorStore {
 // clock for timestamps.
 func CodeMonitorsWithClock(other basestore.ShareableStore, clock func() time.Time) *codeMonitorStore {
 	handle := basestore.NewWithHandle(other.Handle())
-	return &codeMonitorStore{Store: handle, userStore: UsersWith(log.Scoped("codemonitors", ""), handle), now: clock}
+	return &codeMonitorStore{Store: handle, userStore: UsersWith(log.Scoped("codemonitors"), handle), now: clock}
 }
 
 // Clock returns the clock of the underlying store.

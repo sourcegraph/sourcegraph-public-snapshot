@@ -1,12 +1,12 @@
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 import sample from '../library/hello-world.batch.yaml'
 
 import { MonacoBatchSpecEditor } from './MonacoBatchSpecEditor'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/editor/MonacoBatchSpecEditor',
@@ -29,7 +29,7 @@ const config: Meta = {
 
 export default config
 
-export const MonacoBatchSpecEditorStory: Story = args => (
+export const MonacoBatchSpecEditorStory: StoryFn = args => (
     <WebStory>
         {props => (
             <MonacoBatchSpecEditor

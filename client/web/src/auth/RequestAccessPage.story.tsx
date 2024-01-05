@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
@@ -13,8 +13,8 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => <WebStory>{() => <RequestAccessPage />}</WebStory>
+export const Default: StoryFn = () => <WebStory>{() => <RequestAccessPage />}</WebStory>
 
-export const Done: Story = () => (
+export const Done: StoryFn = () => (
     <WebStory initialEntries={[{ pathname: '/done' }]}>{() => <RequestAccessPage />}</WebStory>
 )

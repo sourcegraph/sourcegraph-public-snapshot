@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
 
@@ -28,7 +28,7 @@ const fakeAPIRequest = async () => {
     throw new Error('Network error')
 }
 
-export const ComputeInsightCreationPage: Story = () => {
+export const ComputeInsightCreationPage: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (

@@ -46,6 +46,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/encryption",
         "//internal/types",
+        "//internal/webhooks/outbound",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_sourcegraph_log//logtest",

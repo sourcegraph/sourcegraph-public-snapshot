@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RepoSettingsLogsPage should render a waring when recording is disabled 1`] = `
+exports[`RepoSettingsLogsPage > should render a warning when recording is disabled 1`] = `
 <DocumentFragment>
   <div
     class="container mb-3"
@@ -45,14 +45,14 @@ exports[`RepoSettingsLogsPage should render a waring when recording is disabled 
           role="tablist"
         >
           <button
-            aria-controls="tabs--15--panel--0"
+            aria-controls="tabs--14--panel--0"
             aria-selected="true"
             class="medium"
             data-orientation="horizontal"
             data-reach-tab=""
             data-selected=""
             data-testid="wildcard-tab"
-            id="tabs--15--tab--0"
+            id="tabs--14--tab--0"
             role="tab"
             tabindex="0"
             type="button"
@@ -64,13 +64,13 @@ exports[`RepoSettingsLogsPage should render a waring when recording is disabled 
             </span>
           </button>
           <button
-            aria-controls="tabs--15--panel--1"
+            aria-controls="tabs--14--panel--1"
             aria-selected="false"
             class="medium"
             data-orientation="horizontal"
             data-reach-tab=""
             data-testid="wildcard-tab"
-            id="tabs--15--tab--1"
+            id="tabs--14--tab--1"
             role="tab"
             tabindex="-1"
             type="button"
@@ -88,10 +88,10 @@ exports[`RepoSettingsLogsPage should render a waring when recording is disabled 
         data-testid="wildcard-tab-panel-list"
       >
         <div
-          aria-labelledby="tabs--15--tab--0"
+          aria-labelledby="tabs--14--tab--0"
           data-reach-tab-panel=""
           data-testid="wildcard-tab-panel"
-          id="tabs--15--panel--0"
+          id="tabs--14--panel--0"
           role="tabpanel"
           tabindex="0"
         >
@@ -121,11 +121,11 @@ exports[`RepoSettingsLogsPage should render a waring when recording is disabled 
           </div>
         </div>
         <div
-          aria-labelledby="tabs--15--tab--1"
+          aria-labelledby="tabs--14--tab--1"
           data-reach-tab-panel=""
           data-testid="wildcard-tab-panel"
           hidden=""
-          id="tabs--15--panel--1"
+          id="tabs--14--panel--1"
           role="tabpanel"
           tabindex="-1"
         />
@@ -135,7 +135,7 @@ exports[`RepoSettingsLogsPage should render a waring when recording is disabled 
 </DocumentFragment>
 `;
 
-exports[`RepoSettingsLogsPage should render correctly when there are no recorded commands 1`] = `
+exports[`RepoSettingsLogsPage > should render correctly when there are no recorded commands 1`] = `
 <DocumentFragment>
   <div
     class="container mb-3"
@@ -180,14 +180,14 @@ exports[`RepoSettingsLogsPage should render correctly when there are no recorded
           role="tablist"
         >
           <button
-            aria-controls="tabs--11--panel--0"
+            aria-controls="tabs--10--panel--0"
             aria-selected="true"
             class="medium"
             data-orientation="horizontal"
             data-reach-tab=""
             data-selected=""
             data-testid="wildcard-tab"
-            id="tabs--11--tab--0"
+            id="tabs--10--tab--0"
             role="tab"
             tabindex="0"
             type="button"
@@ -199,13 +199,13 @@ exports[`RepoSettingsLogsPage should render correctly when there are no recorded
             </span>
           </button>
           <button
-            aria-controls="tabs--11--panel--1"
+            aria-controls="tabs--10--panel--1"
             aria-selected="false"
             class="medium"
             data-orientation="horizontal"
             data-reach-tab=""
             data-testid="wildcard-tab"
-            id="tabs--11--tab--1"
+            id="tabs--10--tab--1"
             role="tab"
             tabindex="-1"
             type="button"
@@ -223,10 +223,10 @@ exports[`RepoSettingsLogsPage should render correctly when there are no recorded
         data-testid="wildcard-tab-panel-list"
       >
         <div
-          aria-labelledby="tabs--11--tab--0"
+          aria-labelledby="tabs--10--tab--0"
           data-reach-tab-panel=""
           data-testid="wildcard-tab-panel"
-          id="tabs--11--panel--0"
+          id="tabs--10--panel--0"
           role="tabpanel"
           tabindex="0"
         >
@@ -241,11 +241,11 @@ exports[`RepoSettingsLogsPage should render correctly when there are no recorded
           </div>
         </div>
         <div
-          aria-labelledby="tabs--11--tab--1"
+          aria-labelledby="tabs--10--tab--1"
           data-reach-tab-panel=""
           data-testid="wildcard-tab-panel"
           hidden=""
-          id="tabs--11--panel--1"
+          id="tabs--10--panel--1"
           role="tabpanel"
           tabindex="-1"
         />
@@ -255,7 +255,7 @@ exports[`RepoSettingsLogsPage should render correctly when there are no recorded
 </DocumentFragment>
 `;
 
-exports[`RepoSettingsLogsPage should render correctly when there are recorded commands 1`] = `
+exports[`RepoSettingsLogsPage > should render correctly when there are recorded commands 1`] = `
 <DocumentFragment>
   <div
     class="container mb-3"

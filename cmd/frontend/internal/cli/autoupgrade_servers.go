@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,23 +32,23 @@ func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, erro
 
 	internalRouter := mux.NewRouter().PathPrefix("/.internal").Subrouter()
 	internalRouter.StrictSlash(true)
-	internalRouter.Path("/configuration").Methods("POST").Name(apirouter.Configuration)
-	internalRouter.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
-		configuration := conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{},
-			ServiceConnectionConfig: conftypes.ServiceConnections{
-				PostgresDSN:          dbconn.MigrationInProgressSentinelDSN,
-				CodeIntelPostgresDSN: dbconn.MigrationInProgressSentinelDSN,
-				CodeInsightsDSN:      dbconn.MigrationInProgressSentinelDSN,
-			},
-		}
-		b, _ := json.Marshal(configuration.SiteConfiguration)
-		raw := conftypes.RawUnified{
-			Site:               string(b),
-			ServiceConnections: configuration.ServiceConnections(),
-		}
-		return json.NewEncoder(w).Encode(raw)
-	}))
+	internalRouter.Path("/configuration").Methods("POST").
+		Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
+			configuration := conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{},
+				ServiceConnectionConfig: conftypes.ServiceConnections{
+					PostgresDSN:          dbconn.MigrationInProgressSentinelDSN,
+					CodeIntelPostgresDSN: dbconn.MigrationInProgressSentinelDSN,
+					CodeInsightsDSN:      dbconn.MigrationInProgressSentinelDSN,
+				},
+			}
+			b, _ := json.Marshal(configuration.SiteConfiguration)
+			raw := conftypes.RawUnified{
+				Site:               string(b),
+				ServiceConnections: configuration.ServiceConnections(),
+			}
+			return json.NewEncoder(w).Encode(raw)
+		}))
 
 	serveMux.Handle("/.internal/", internalRouter)
 

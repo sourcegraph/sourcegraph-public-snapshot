@@ -49,7 +49,7 @@ func TestAddRepoToExclude(t *testing.T) {
 			kind:           extsvc.KindBitbucketCloud,
 			repo:           makeBitbucketCloudRepo(),
 			initialConfig:  `{"appPassword":"","url":"https://bitbucket.org","username":""}`,
-			expectedConfig: `{"appPassword":"","exclude":[{"name":"sg/sourcegraph"}],"url":"https://bitbucket.org","username":""}`,
+			expectedConfig: `{"exclude":[{"name":"sg/sourcegraph"}],"url":"https://bitbucket.org"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketServer schema",
@@ -230,7 +230,7 @@ func TestExternalServiceValidate(t *testing.T) {
 			return nil
 		},
 	}
-	err := externalServiceValidate(ctx, &types.ExternalService{}, src)
+	err := externalServiceValidate(ctx, src)
 	if err != nil {
 		t.Errorf("expected nil, got %v", err)
 	}

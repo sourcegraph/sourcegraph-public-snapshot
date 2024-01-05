@@ -45,7 +45,7 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 	}
 	total.GitDirBytes = uint64(gitDirSize)
 
-	repos, err := search.ListAllIndexed(ctx)
+	repos, err := search.ListAllIndexed(ctx, search.Indexed())
 	if err != nil {
 		return nil, err
 	}

@@ -3,13 +3,13 @@
 package cacert
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
+	"sync"
 )
 
 // System returns PEM encoded system certificates. Note: This function only
 // works on Linux. Other operating systems do not rely on PEM files at known
 // locations, instead they rely on system calls.
-var System = syncx.OnceValues(func() ([][]byte, error) {
+var System = sync.OnceValues(func() ([][]byte, error) {
 	c, err := loadSystemRoots()
 	if err != nil {
 		return nil, err

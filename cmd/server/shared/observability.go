@@ -12,7 +12,7 @@ const grafanaProcLine = `grafana: /usr/share/grafana/bin/grafana-server -config 
 
 func maybeObservability() []string {
 	if os.Getenv("DISABLE_OBSERVABILITY") != "" {
-		log.Scoped("server.observability", "").Info("WARNING: Running with observability disabled")
+		log.Scoped("server.observability").Info("WARNING: Running with observability disabled")
 		return []string{""}
 	}
 

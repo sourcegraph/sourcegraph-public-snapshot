@@ -68,6 +68,12 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
                 // highlight requests
                 merge: true,
             },
+            GitBlobLSIFData: {
+                merge: true,
+            },
+        },
+        possibleTypes: {
+            TreeEntry: ['GitTree', 'GitBlob'],
         },
     })
 
@@ -122,4 +128,5 @@ export async function mutation<T, V extends OperationVariables = OperationVariab
     })
 }
 
-export { gql, FetchPolicy }
+export type { FetchPolicy }
+export { gql }

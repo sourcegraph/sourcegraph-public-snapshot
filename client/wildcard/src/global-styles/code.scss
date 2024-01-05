@@ -34,18 +34,19 @@ code,
 }
 
 kbd {
-    font-family: var(--code-font-family);
+    font-family: var(--font-family-base);
     font-size: var(--code-font-size);
     display: inline-block;
     line-height: (16/12);
-    height: 1.125rem;
-    padding: 0 0.25rem;
+    height: 1.2rem;
+    width: 1.2rem;
+    text-align: center;
+    padding-top: 0.1rem;
     margin: 0 0.125rem;
     vertical-align: middle;
     border-radius: 3px;
     color: var(--body-color);
-    background-color: var(--color-bg-2);
-    box-shadow: inset 0 -2px 0 var(--color-bg-3);
+    background-color: var(--color-bg-3);
 }
 
 // Search examples that link to the results page should use this class.

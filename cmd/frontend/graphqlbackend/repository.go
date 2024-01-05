@@ -75,7 +75,7 @@ func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.
 			Name: name,
 			ID:   id,
 		},
-		logger: log.Scoped("repositoryResolver", "resolve a specific repository").
+		logger: log.Scoped("repositoryResolver").
 			With(log.Object("repo",
 				log.String("name", string(name)),
 				log.Int32("id", int32(id)))),
@@ -481,6 +481,15 @@ func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, erro
 		kvps = append(kvps, KeyValuePair{key: k, value: v})
 	}
 	return kvps, nil
+}
+
+func (r *RepositoryResolver) Topics(ctx context.Context) ([]string, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.Topics, nil
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {

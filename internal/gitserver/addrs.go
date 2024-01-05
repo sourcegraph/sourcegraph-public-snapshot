@@ -233,7 +233,9 @@ func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent stri
 	if err != nil {
 		return nil, err
 	}
-	return proto.NewGitserverServiceClient(conn), nil
+
+	client := &automaticRetryClient{base: proto.NewGitserverServiceClient(conn)}
+	return client, nil
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {
@@ -294,14 +296,14 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		a.conns.Store(&after)
 		return
 	}
-	log.Scoped("", "gitserver gRPC connections").Info(
+	log.Scoped("").Info(
 		"new gitserver addresses",
 		log.Strings("before", before.Addresses),
 		log.Strings("after", after.Addresses),
 	)
 
 	// Open connections for each address
-	clientLogger := log.Scoped("gitserver.client", "gitserver gRPC client")
+	clientLogger := log.Scoped("gitserver.client")
 
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {

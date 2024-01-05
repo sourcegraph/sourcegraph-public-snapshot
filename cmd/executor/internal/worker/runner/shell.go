@@ -33,7 +33,7 @@ func NewShellRunner(
 	return &shellRunner{
 		cmd:            cmd,
 		dir:            dir,
-		internalLogger: log.Scoped("shell-runner", ""),
+		internalLogger: log.Scoped("shell-runner"),
 		commandLogger:  logger,
 		options:        options,
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -44,7 +45,7 @@ type UserEmailsService interface {
 func NewUserEmailsService(db database.DB, logger log.Logger) UserEmailsService {
 	return &userEmails{
 		db:     db,
-		logger: logger.Scoped("UserEmails", "user emails handling service"),
+		logger: logger.Scoped("UserEmails"),
 	}
 }
 
@@ -56,7 +57,7 @@ type userEmails struct {
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (e *userEmails) Add(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("Add", "handles addition of user emails")
+	logger := e.logger.Scoped("Add")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
 		return err
@@ -92,6 +93,21 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 		return err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		arguments := struct {
+			UserID int32  `json:"UserID"`
+			Email  string `json:"email"`
+		}{
+			UserID: userID,
+			Email:  email,
+		}
+		// Log action of new email being added to user profile
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailAdded, "", uint32(userID), "", "BACKEND", arguments); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
+		}
+
+	}
+
 	if conf.EmailVerificationRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -119,7 +135,7 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 // Remove removes the e-mail from the specified user. Perforce external accounts
 // using the e-mail will also be removed.
 func (e *userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("Remove", "handles removal of user emails").
+	logger := e.logger.Scoped("Remove").
 		With(log.Int32("userID", userID))
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
@@ -132,7 +148,21 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 			return errors.Wrap(err, "removing user e-mail")
 		}
+		if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+			arguments := struct {
+				UserID int32  `json:"UserID"`
+				Email  string `json:"email"`
+			}{
+				UserID: userID,
+				Email:  email,
+			}
+			// Log action of email being removed from user profile
+			if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailRemoved, "", uint32(userID), "", "BACKEND", arguments); err != nil {
+				logger.Warn("Error logging security event", log.Error(err))
 
+			}
+
+		}
 		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
 		// tokens that may have been sent to that email.
 		if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
@@ -166,7 +196,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 // SetPrimaryEmail sets the supplied e-mail address as the primary address for
 // the given user.
 func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("SetPrimaryEmail", "handles setting primary e-mail for user").
+	logger := e.logger.Scoped("SetPrimaryEmail").
 		With(log.Int32("userID", userID))
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
@@ -192,7 +222,7 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 // If verified is false, Perforce external accounts using the e-mail will be
 // removed.
 func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	logger := e.logger.Scoped("SetVerified", "handles setting e-mail as verified")
+	logger := e.logger.Scoped("SetVerified")
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
 	// verification status. Users themselves must go through the normal email
@@ -227,6 +257,20 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
+	arguments := struct {
+		Email    string `json:"email"`
+		Verified bool   `json:"verified"`
+	}{
+		Email:    email,
+		Verified: verified,
+	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log action of email being verified/unverified
+		if err := e.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerifiedToggle, "", uint32(userID), "", "BACKEND", arguments); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
 	// transaction has committed so that it takes into account any changes triggered
 	// by changes in the verification status of the e-mail.
@@ -436,11 +480,9 @@ func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, us
 		return errors.Wrap(err, "deleting stale external account")
 	}
 
-	// Since we deleted an external account for the user we can no longer trust user
-	// based permissions, so we clear them out.
-	// This also removes the user's sub-repo permissions.
-	if err := db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{UserID: userID}); err != nil {
-		return errors.Wrapf(err, "revoking user permissions for user with ID %d", userID)
+	// Delete all sub-repo permissions for the user.
+	if err := db.SubRepoPerms().DeleteByUser(ctx, userID); err != nil {
+		return errors.Wrap(err, "deleting sub-repo permissions")
 	}
 
 	return nil

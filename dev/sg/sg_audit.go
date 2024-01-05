@@ -56,7 +56,7 @@ var auditCommand = &cli.Command{
 				&oauth2.Token{AccessToken: auditPRGitHubToken},
 			)))
 
-			logger := log.Scoped("auditPR", "sg audit pr")
+			logger := log.Scoped("auditPR")
 			logger.Debug("fetching issues")
 			issues, err := fetchIssues(ctx.Context, logger, ghc)
 			if err != nil {

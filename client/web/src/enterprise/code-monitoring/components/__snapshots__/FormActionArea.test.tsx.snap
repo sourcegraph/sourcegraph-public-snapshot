@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`FormActionArea Error is shown if code monitor has empty description 1`] = `
+exports[`FormActionArea > Error is shown if code monitor has empty description 1`] = `
 <DocumentFragment>
   <h3
     class="h3 mb-1"

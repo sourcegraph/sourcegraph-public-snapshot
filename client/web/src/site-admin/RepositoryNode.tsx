@@ -12,6 +12,7 @@ import {
     mdiSecurity,
     mdiVectorPolyline,
     mdiListStatus,
+    mdiSearchWeb,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -224,22 +225,20 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
-                                    onSelect={() => navigate(`/${node.name}/-/embeddings/configuration`)}
+                                    onSelect={() => navigate(`/${node.name}/-/settings/index`)}
                                     className="p-2"
                                 >
-                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
-                                    Embeddings policies
+                                    <Icon aria-hidden={true} svgPath={mdiSearchWeb} className="mr-1" />
+                                    Search indexing
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
-                                    onSelect={() =>
-                                        navigate(`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`)
-                                    }
+                                    onSelect={() => navigate(`/${node.name}/-/embeddings/configuration`)}
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
-                                    Embeddings jobs
+                                    Embeddings
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}

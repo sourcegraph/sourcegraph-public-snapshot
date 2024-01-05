@@ -15,12 +15,13 @@ export const enum EventName {
     CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED = 'web:codyChat:inferredRepoDisabled',
     CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED = 'web:codyChat:inferredFileEnabled',
     CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED = 'web:codyChat:inferredFileDisabled',
-    VIEW_GET_CODY = 'ViewGetCody',
+    VIEW_GET_CODY = 'GetCody',
 
     CODY_EDITOR_WIDGET_VIEWED = 'web:codyEditorWidget:viewed',
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
-    CODY_SIGNUP = 'CodySignup',
+    CODY_SIGNUP_CTA_CLICK = 'CodySignUpCTAClick',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
+    CODY_CHAT_GET_EDITOR_EXTENSION = 'web:codyChat:getEditorExtensionCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
     CODY_CTA = 'ClickedOnCodyCTA',
     VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',
@@ -30,11 +31,24 @@ export const enum EventName {
     TRY_CODY_WEB_ONBOARDING_DISPLAYED = 'TryCodyWebOnboardingDisplayed',
     TRY_CODY_SIGNUP_INITIATED = 'CodySignUpInitiated',
     SPEAK_TO_AN_ENGINEER_CTA = 'SpeakToACodyEngineerCTA',
-    SIGNUP_INITIATED = 'SignupInitiated',
+    AUTH_INITIATED = 'AuthInitiated',
+    SIGNUP_COMPLETED = 'web:auth:signUpCompleted',
+    SINGIN_COMPLETED = 'web:auth:signInCompleted',
 
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
+
+    CODY_MANAGEMENT_PAGE_VIEWED = 'CodyManageViewed',
+    CODY_SUBSCRIPTION_PAGE_VIEWED = 'CodyPlanSelectionViewed',
+    CODY_SUBSCRIPTION_PLAN_CLICKED = 'CodyPlanSelectionClicked',
+    CODY_SUBSCRIPTION_PLAN_CONFIRMED = 'CodyPlanSelectionConfirmed',
+    CODY_ONBOARDING_WELCOME_VIEWED = 'CodyWelcomeViewed',
+    CODY_ONBOARDING_PURPOSE_VIEWED = 'CodyUseCaseViewed',
+    CODY_ONBOARDING_PURPOSE_SELECTED = 'CodyUseCaseSelected',
+    CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED = 'CodyEditorViewed',
+    CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED = 'CodyEditorSkipped',
+    CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED = 'CodyEditorSelected',
 }
 
 export const enum EventLocation {

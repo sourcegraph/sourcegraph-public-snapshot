@@ -37,6 +37,7 @@ type SearchClient interface {
 		searchQuery string,
 		searchMode search.Mode,
 		protocol search.Protocol,
+		contextLines *int32,
 	) (*search.Inputs, error)
 
 	Execute(
@@ -49,7 +50,7 @@ type SearchClient interface {
 }
 
 // New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB) SearchClient {
+func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) SearchClient {
 	return &searchClient{
 		runtimeClients: job.RuntimeClients{
 			Logger:                      logger,
@@ -57,7 +58,7 @@ func New(logger log.Logger, db database.DB) SearchClient {
 			Zoekt:                       search.Indexed(),
 			SearcherURLs:                search.SearcherURLs(),
 			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-			Gitserver:                   gitserver.NewClient(),
+			Gitserver:                   gitserverClient,
 		},
 		settingsService:       settings.NewService(db),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -86,6 +87,7 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	searchMode search.Mode,
 	protocol search.Protocol,
+	contextLines *int32,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
@@ -126,6 +128,15 @@ func (s *searchClient) Plan(
 	}
 	tr.AddEvent("parsing done")
 
+	var finalContextLines int32
+	if contextLines != nil {
+		finalContextLines = *contextLines
+	} else if settings.SearchContextLines != nil {
+		finalContextLines = int32(*settings.SearchContextLines)
+	} else {
+		finalContextLines = 1 // default
+	}
+
 	inputs := &search.Inputs{
 		Plan:                   plan,
 		Query:                  plan.ToQ(),
@@ -136,6 +147,7 @@ func (s *searchClient) Plan(
 		Features:               ToFeatures(featureflag.FromContext(ctx), s.runtimeClients.Logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
+		ContextLines:           finalContextLines,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
@@ -231,6 +243,8 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeLucky, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
+	case "newStandardRC1":
+		return query.SearchTypeNewStandardRC1, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -252,8 +266,10 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeLiteral
 		case "V3":
 			searchType = query.SearchTypeStandard
+		case "V4-rc1":
+			searchType = query.SearchTypeNewStandardRC1
 		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got %q", version)
 		}
 	}
 	return searchType, nil
@@ -281,6 +297,8 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeLucky
 		case "keyword":
 			searchType = query.SearchTypeKeyword
+		case "newStandardRC1":
+			searchType = query.SearchTypeNewStandardRC1
 		}
 	})
 	return searchType
@@ -293,6 +311,8 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		logger.Warn("search feature flags are not available")
 	}
 
+	// When adding a new feature flag remember to add it to the list in
+	// client/web/src/featureFlags/featureFlags.ts to allow overriding.
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),

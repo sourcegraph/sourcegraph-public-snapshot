@@ -54,7 +54,7 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 
 func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbackend.AuthzResolver {
 	return &Resolver{
-		logger: observationCtx.Logger.Scoped("authz.Resolver", ""),
+		logger: observationCtx.Logger.Scoped("authz.Resolver"),
 		db:     db,
 	}
 }

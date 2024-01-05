@@ -59,9 +59,9 @@ type UserResourceHandler struct {
 
 func (h *UserResourceHandler) getLogger() log.Logger {
 	if h.observationCtx != nil && h.observationCtx.Logger != nil {
-		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
+		return h.observationCtx.Logger.Scoped("scim.user")
 	}
-	return log.Scoped("scim.user", "resource handler for scim user")
+	return log.Scoped("scim.user")
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
@@ -96,7 +96,7 @@ type UserSCIMService struct {
 }
 
 func (u *UserSCIMService) getLogger() log.Logger {
-	return log.Scoped("scim.user", "scim service for user")
+	return log.Scoped("scim.user")
 }
 
 func (u *UserSCIMService) Get(ctx context.Context, id string) (scim.Resource, error) {
@@ -491,7 +491,7 @@ Come experience the power of great code search.
 
 Learn more about Sourcegraph:
 
-https://about.sourcegraph.com
+https://sourcegraph.com
 `,
 	HTML: `
 <p>Sourcegraph enables you to quickly understand, fix, and automate changes to your code.</p>
@@ -508,6 +508,6 @@ https://about.sourcegraph.com
 
 <p><strong><a href="{{.URL}}">Come experience the power of great code search</a></strong></p>
 
-<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+<p><a href="https://sourcegraph.com">Learn more about Sourcegraph</a></p>
 `,
 })

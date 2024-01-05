@@ -5,6 +5,7 @@ go_library(
     name = "server",
     srcs = [
         "metrics.go",
+        "migrate_events.go",
         "publish_events.go",
         "server.go",
     ],
@@ -29,10 +30,14 @@ go_library(
 
 go_test(
     name = "server_test",
-    srcs = ["publish_events_test.go"],
+    srcs = [
+        "migrate_events_test.go",
+        "publish_events_test.go",
+    ],
     embed = [":server"],
     deps = [
         "//cmd/telemetry-gateway/internal/events",
+        "//internal/telemetrygateway/v1:telemetrygateway",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
     ],

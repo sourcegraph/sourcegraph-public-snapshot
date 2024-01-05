@@ -36,21 +36,22 @@ const (
 	jvmMajorVersion0 = 44
 )
 
-func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service, cacheDir string) VCSSyncer {
+func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service, cacheDir string, reposDir string) VCSSyncer {
 	placeholder, err := reposource.ParseMavenVersionedPackage("com.sourcegraph:sourcegraph:1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
 
-	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer", "")), cacheDir)
+	chandle := coursier.NewCoursierHandle(observation.NewContext(log.Scoped("gitserver.jvmsyncer")), cacheDir)
 
 	return &vcsPackagesSyncer{
-		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
+		logger:      log.Scoped("JVMPackagesSyncer"),
 		typ:         "jvm_packages",
 		scheme:      dependencies.JVMPackagesScheme,
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Maven.Dependencies,
+		reposDir:    reposDir,
 		source: &jvmPackagesSyncer{
 			coursier: chandle,
 			config:   connection,
@@ -124,7 +125,7 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 }
 
 func unzipJarFile(jarPath, destination string) (err error) {
-	logger := log.Scoped("unzipJarFile", "unzipJarFile unpacks the given jvm archive into workDir")
+	logger := log.Scoped("unzipJarFile")
 	workDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	zipFile, err := os.ReadFile(jarPath)

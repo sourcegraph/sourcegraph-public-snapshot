@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -122,11 +121,6 @@ func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalOrgsCount")(&err)
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
-}
-
-func getTotalReposCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos().Count(ctx, database.ReposListOptions{})
 }
 
 // hasRepo returns true when the instance has at least one repository that isn't
@@ -373,6 +367,17 @@ func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.Raw
 	return json.Marshal(codyUsage)
 }
 
+func getAndMarshalCodyProvidersJSON() (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyProvidersJSON")(&err)
+
+	codyProviders, err := usagestats.GetCodyProviders()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codyProviders)
+}
+
 func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepoMetadataUsageJSON")(&err)
 
@@ -385,7 +390,7 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 }
 
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
-	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
+	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions"))
 	var (
 		err error
 		dv  dependencyVersions
@@ -411,10 +416,7 @@ func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logge
 }
 
 func getRedisVersion(kv redispool.KeyValue) (string, error) {
-	pool, ok := kv.Pool()
-	if !ok {
-		return "disabled", nil
-	}
+	pool := kv.Pool()
 	dialFunc := pool.Dial
 
 	// TODO(keegancsmith) should be using pool.Get and closing conn?
@@ -453,52 +455,6 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-// Create a ping body with limited fields, used in Cody App.
-func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
-	logFunc := logger.Debug
-
-	r := &pingRequest{
-		ClientSiteID:        siteid.Get(db),
-		DeployType:          deploy.Type(),
-		ClientVersionString: version.Version(),
-	}
-
-	os := runtime.GOOS
-	if os == "darwin" {
-		os = "mac"
-	}
-	r.Os = os
-
-	totalRepos, err := getTotalReposCount(ctx, db)
-	if err != nil {
-		logFunc("getTotalReposCount failed", log.Error(err))
-	}
-	r.TotalRepos = int32(totalRepos)
-
-	usersActiveTodayCount, err := getUsersActiveTodayCount(ctx, db)
-	if err != nil {
-		logFunc("getUsersActiveTodayCount failed", log.Error(err))
-	}
-	r.ActiveToday = usersActiveTodayCount > 0
-
-	contents, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.EventLogs().Insert(ctx, &database.Event{
-		UserID:          0,
-		Name:            "ping",
-		URL:             "",
-		AnonymousUserID: "backend",
-		Source:          "BACKEND",
-		Argument:        contents,
-		Timestamp:       time.Now().UTC(),
-	})
-
-	return bytes.NewReader(contents), err
-}
-
 func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMessage, error) {
 	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
 	if err != nil {
@@ -508,7 +464,7 @@ func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMes
 }
 
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
-	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
+	scopedLog := logger.Scoped("telemetry")
 	logFunc := scopedLog.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
@@ -541,6 +497,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
 		CodyUsage:                     []byte("{}"),
+		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
 	}
 
@@ -601,11 +558,13 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
 	}
-	r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+		}
 	}
-
 	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
@@ -671,9 +630,12 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
 	}
 
-	r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+		}
 	}
 
 	r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
@@ -694,6 +656,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
 	if err != nil {
 		logFunc("codyUsage failed", log.Error(err))
+	}
+
+	r.CodyProviders, err = getAndMarshalCodyProvidersJSON()
+	if err != nil {
+		logFunc("codyProviders failed", log.Error(err))
 	}
 
 	r.RepoMetadataUsage, err = getAndMarshalRepoMetadataUsageJSON(ctx, db)
@@ -720,23 +687,26 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
-		}
-	}()
+	// We don't bother doing these on Sourcegraph.com as they are expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
+			if err != nil {
+				logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
+			}
+		}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
-		}
-	}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
+			if err != nil {
+				logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
+			}
+		}()
+	}
 
 	wg.Wait()
 
@@ -745,6 +715,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		return nil, err
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
@@ -808,15 +779,10 @@ func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	updateBodyFunc := updateBody
-	// In Cody App mode, use limited pings.
-	if deploy.IsApp() {
-		updateBodyFunc = limitedUpdateBody
-	}
 	endpoint := updateCheckURL(logger)
 
 	doCheck := func() (updateVersion string, err error) {
-		body, err := updateBodyFunc(ctx, logger, db)
+		body, err := updateBody(ctx, logger, db)
 
 		if err != nil {
 			return "", err
@@ -857,19 +823,6 @@ func check(logger log.Logger, db database.DB) {
 				description = strconv.Quote(string(bytes.TrimSpace(body)))
 			}
 			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
-		}
-
-		// Cody App: we always get ping responses back, as they may contain notification messages for us.
-		if deploy.IsApp() {
-			var response pingResponse
-			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-				return "", err
-			}
-			response.handleNotifications()
-			if response.UpdateAvailable {
-				return response.Version.String(), nil
-			}
-			return "", nil // no update available
 		}
 
 		if resp.StatusCode == http.StatusNoContent {
@@ -915,7 +868,7 @@ func Start(logger log.Logger, db database.DB) {
 	started = true
 
 	const delay = 30 * time.Minute
-	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
+	scopedLog := logger.Scoped("updatecheck")
 	for {
 		check(scopedLog, db)
 

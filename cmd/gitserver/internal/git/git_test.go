@@ -10,8 +10,24 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 )
+
+func TestMakeBareRepo(t *testing.T) {
+	dir := t.TempDir()
+	ctx := context.Background()
+
+	require.NoError(t, MakeBareRepo(ctx, dir))
+
+	// Now verify we created a valid repo.
+	c := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	c.Dir = dir
+	out, err := c.CombinedOutput()
+	require.NoError(t, err)
+	require.Equal(t, "HEAD\n", string(out))
+}
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	tmp := b.TempDir()

@@ -13,7 +13,7 @@ import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../../../search/useV2QueryInput'
 import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
 
@@ -36,7 +36,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
-    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [v2QueryInput] = useV2QueryInput()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -50,7 +50,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         // we need properly "translate" the queries when switching between the both versions
         if (selectedSearchContextSpec) {
             setQueryState(state => {
-                if (experimentalQueryInput) {
+                if (v2QueryInput) {
                     return { query: appendContextFilter(state.query, selectedSearchContextSpec) }
                 }
                 const contextFilter = getGlobalSearchContextFilter(state.query)?.filter
@@ -60,7 +60,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 return state
             })
         }
-    }, [experimentalQueryInput, selectedSearchContextSpec])
+    }, [v2QueryInput, selectedSearchContextSpec])
 
     const defaultSimpleSearchToggle = true
     const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)

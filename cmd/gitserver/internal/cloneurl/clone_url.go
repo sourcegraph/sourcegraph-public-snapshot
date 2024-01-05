@@ -90,8 +90,6 @@ func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind strin
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
-	case *schema.LocalGitExternalService:
-		return localCloneURL(repo), nil
 	case *schema.GoModulesConnection:
 		return string(repo.Name), nil
 	case *schema.PythonPackagesConnection:
@@ -129,7 +127,11 @@ func awsCodeCloneURL(logger log.Logger, repo *awscodecommit.Repository, cfg *sch
 }
 
 func azureDevOpsCloneURL(logger log.Logger, repo *azuredevops.Repository, cfg *schema.AzureDevOpsConnection) string {
-	u, err := url.Parse(repo.CloneURL)
+	if cfg.GitURLType == "ssh" {
+		return repo.SSHURL
+	}
+
+	u, err := url.Parse(repo.RemoteURL)
 	if err != nil {
 		logger.Warn("Error adding authentication to Azure DevOps repo remote URL.", log.String("url", cfg.Url), log.Error(err))
 		return cfg.Url
@@ -174,7 +176,7 @@ func bitbucketServerCloneURL(repo *bitbucketserver.Repo, cfg *schema.BitbucketSe
 }
 
 // bitbucketCloudCloneURL returns the repository's Git remote URL with the configured
-// Bitbucket Cloud app password inserted in the URL userinfo.
+// Bitbucket Cloud app password or workspace access token inserted in the URL userinfo.
 func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *schema.BitbucketCloudConnection) string {
 	if cfg.GitURLType == "ssh" {
 		return fmt.Sprintf("git@%s:%s.git", cfg.Url, repo.FullName)
@@ -197,7 +199,11 @@ func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *s
 		return fallbackURL
 	}
 
-	u.User = url.UserPassword(cfg.Username, cfg.AppPassword)
+	if cfg.AccessToken != "" {
+		u.User = url.UserPassword("x-token-auth", cfg.AccessToken)
+	} else {
+		u.User = url.UserPassword(cfg.Username, cfg.AppPassword)
+	}
 	return u.String()
 }
 
@@ -340,8 +346,4 @@ func phabricatorCloneURL(logger log.Logger, repo *phabricator.Repo, _ *schema.Ph
 
 func otherCloneURL(repo *types.Repo, m *extsvc.OtherRepoMetadata) string {
 	return repo.ExternalRepo.ServiceID + m.RelativePath
-}
-
-func localCloneURL(repo *types.Repo) string {
-	return repo.ExternalRepo.ServiceID
 }

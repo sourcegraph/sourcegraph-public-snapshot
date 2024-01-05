@@ -8,7 +8,7 @@ import (
 )
 
 func Init(w *webhooks.Router) {
-	logger := log.Scoped("webhookhandlers", "handling webhook events for authz events")
+	logger := log.Scoped("webhookhandlers")
 
 	// Refer to https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads
 	// for event types

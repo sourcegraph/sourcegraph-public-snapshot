@@ -125,7 +125,7 @@ func (s *Service) changelistMappingProducer(ctx context.Context, tasks chan<- *c
 
 // changelistMappingConsumer "consumes" jobs "produced" by the producer.
 func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *changelistMappingTask) {
-	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
+	logger := s.Logger.Scoped("changelistMappingConsumer")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
 	for task := range tasks {
@@ -154,7 +154,7 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *c
 
 // doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
 func (s *Service) doChangelistMapping(ctx context.Context, job *changelistMappingJob) error {
-	logger := s.Logger.Scoped("doChangelistMapping", "").With(
+	logger := s.Logger.Scoped("doChangelistMapping").With(
 		log.String("repo", string(job.RepoName)),
 	)
 

@@ -63,7 +63,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		srv := httptest.NewServer(handler)
 
 		u, _ := url.Parse(srv.URL)
-		conn, err := defaults.Dial(u.Host, logger.Scoped("gRPC client", ""))
+		conn, err := defaults.Dial(u.Host, logger.Scoped("gRPC client"))
 		if err != nil {
 			t.Fatalf("failed to dial: %v", err)
 		}

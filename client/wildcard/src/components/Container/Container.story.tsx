@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2, H3, Text, Input } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
@@ -7,7 +7,7 @@ import { Button } from '../Button'
 
 import { Container } from './Container'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <>
         <Alert variant="info">
             <Text>

@@ -169,7 +169,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) p4execHTTP(w http.ResponseWriter, r *http.Request, req *p4ExecRequest) {
-	logger := s.Logger.Scoped("p4exec", "")
+	logger := s.Logger.Scoped("p4exec")
 
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.

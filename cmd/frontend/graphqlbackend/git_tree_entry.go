@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/fs"
@@ -11,22 +12,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,9 +49,7 @@ type GitTreeEntryResolver struct {
 	contentErr       error
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
-	stat          fs.FileInfo
-	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
-	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
+	stat fs.FileInfo
 }
 
 type GitTreeEntryResolverOpts struct {
@@ -86,12 +89,13 @@ func (r *GitTreeEntryResolver) TotalLines(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	// We only care about the full content length here, so we just need content to be set.
-	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
+	// Call content so that r.fullContentBytes is populated.
+	_, err = r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(strings.Split(content, "\n"))), nil
+
+	return int32(lineCount(r.fullContentBytes)), nil
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
@@ -100,6 +104,7 @@ func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return int32(len(r.fullContentBytes)), nil
 }
 
@@ -113,40 +118,96 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContent
 		)
 	})
 
-	return pageContent(strings.Split(string(r.fullContentBytes), "\n"), args.StartLine, args.EndLine), r.contentErr
+	return string(pageContent(r.fullContentBytes, int32ToIntPtr(args.StartLine), int32ToIntPtr(args.EndLine))), r.contentErr
 }
 
-func pageContent(content []string, startLine, endLine *int32) string {
-	totalContentLength := len(content)
-	startCursor := 0
-	endCursor := totalContentLength
-
-	// Any nil or illegal value for startLine or endLine gets set to either the start or
-	// end of the file respectively.
-
-	// If startLine is set and is a legit value, set the cursor to point to it.
-	if startLine != nil && *startLine > 0 {
-		// The left index is inclusive, so we have to shift it back by 1
-		startCursor = int(*startLine) - 1
+func int32ToIntPtr(p *int32) *int {
+	if p == nil {
+		return nil
 	}
-	if startCursor >= totalContentLength {
-		startCursor = totalContentLength
-	}
+	val := int(*p)
+	return &val
+}
 
-	// If endLine is set and is a legit value, set the cursor to point to it.
-	if endLine != nil && *endLine >= 0 {
-		endCursor = int(*endLine)
-	}
-	if endCursor > totalContentLength {
-		endCursor = totalContentLength
+// pageContent returns a subslice of content for the range of startLine:endLine.
+// If startLine is unset, it is set to 1 (start of file).
+// If endLine is unset, it is set to the end of the file.
+// endLine must not be before startLine, otherwise the whole content is returned.
+// startLine and endLine are 1-indexed!
+func pageContent(content []byte, startLine, endLine *int) []byte {
+	// Trivial case: No pagination.
+	if startLine == nil && endLine == nil {
+		return content
 	}
 
-	// Final failsafe in case someone is really messing around with this API.
+	totalLineCount := lineCount(content)
+
+	var (
+		startCursor int
+		endCursor   int = totalLineCount
+	)
+
+	if startLine != nil {
+		if *startLine < 1 {
+			startCursor = 0
+		} else if *startLine > totalLineCount {
+			startCursor = totalLineCount
+		} else {
+			startCursor = *startLine - 1
+		}
+	}
+
+	if endLine != nil {
+		if *endLine > 0 {
+			endCursor = *endLine
+		}
+	}
+
 	if endCursor < startCursor {
-		return strings.Join(content[0:totalContentLength], "\n")
+		return content
 	}
 
-	return strings.Join(content[startCursor:endCursor], "\n")
+	start := nthIndex(content, '\n', startCursor)
+	if start == -1 {
+		start = 0
+	}
+	end := nthIndex(content, '\n', endCursor)
+	if end == -1 {
+		end = len(content)
+	}
+	if end < start {
+		return content
+	}
+
+	return content[start:end]
+}
+
+func lineCount(in []byte) int {
+	c := bytes.Count(in, []byte("\n"))
+	// Final newline doesn't mark a new line.
+	if len(in) > 0 && in[len(in)-1] != '\n' {
+		return c + 1
+	}
+	return c
+}
+
+func nthIndex(in []byte, sep byte, n int) (idx int) {
+	if n < 0 {
+		return -1
+	}
+	if len(in) < 1 {
+		return -1
+	}
+
+	start := 0
+	for i := 0; i < n; i++ {
+		idx := bytes.IndexByte(in[start:], sep)
+		if idx == -1 {
+			return idx
+		}
+		start = start + idx + 1
+	}
+	return start
 }
 
 func (r *GitTreeEntryResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
@@ -154,6 +215,7 @@ func (r *GitTreeEntryResolver) RichHTML(ctx context.Context, args *GitTreeConten
 	if err != nil {
 		return "", err
 	}
+
 	return richHTML(content, path.Ext(r.Path()))
 }
 
@@ -163,8 +225,17 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return binary.IsBinary(r.fullContentBytes), nil
 }
+
+var (
+	syntaxHighlightFileBlocklist = []string{
+		"yarn.lock",
+		"pnpm-lock.yaml",
+		"package-lock.json",
+	}
+)
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
@@ -178,9 +249,51 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 
+	// special handling in dotcom to prevent syntax highlighting large lock files
+	if envvar.SourcegraphDotComMode() {
+		for _, f := range syntaxHighlightFileBlocklist {
+			if strings.HasSuffix(r.Path(), f) {
+				// this will force the content to be returned as plaintext
+				// without hitting the syntax highlighter
+				args.Format = string(gosyntect.FormatHTMLPlaintext)
+			}
+		}
+	}
+
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
 		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
+	})
+}
+
+func (r *GitTreeEntryResolver) Languages(ctx context.Context) ([]string, error) {
+	// As of now, only GitBlob exposes a language field in the GraphQL
+	// API, but since GitTreeEntry and GitBlob are both implemented
+	// via the same GitTreeEntryResolver in the backend,
+	// add this check to be defensive instead of potentially
+	// returning an incorrect result.
+	if r.IsDirectory() {
+		return nil, nil
+	}
+	return languages.GetLanguages(r.Name(), func() ([]byte, error) {
+		useFileContents := true
+		exptFeatures := conf.SiteConfig().ExperimentalFeatures
+		if exptFeatures != nil && exptFeatures.LanguageDetection != nil {
+			switch exptFeatures.LanguageDetection.GraphQL {
+			case "useFileContents":
+				break
+			case "useFileNamesOnly":
+				useFileContents = false
+			}
+		}
+		if !useFileContents {
+			return nil, nil
+		}
+		_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return r.fullContentBytes, nil
 	})
 }
 
@@ -188,30 +301,28 @@ func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
 
 func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repoResolver }
 
-func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
-
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	return r.url(ctx).String(), nil
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.url")
-	defer tr.End()
-
-	if submodule := r.Submodule(); submodule != nil {
-		tr.SetAttributes(attribute.Bool("submodule", true))
-		submoduleURL := submodule.URL()
-		if strings.HasPrefix(submoduleURL, "../") {
-			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
-		}
-		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
-		if err != nil {
-			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return &url.URL{}
-		}
-		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
+	submodule := r.Submodule()
+	if submodule == nil {
+		return r.urlPath(r.commit.repoRevURL())
 	}
-	return r.urlPath(r.commit.repoRevURL())
+
+	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.url", attribute.Bool("submodule", true))
+	defer tr.End()
+	submoduleURL := submodule.URL()
+	if strings.HasPrefix(submoduleURL, "../") {
+		submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
+	}
+	repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
+	if err != nil {
+		log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
+		return &url.URL{}
+	}
+	return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() string {
@@ -309,17 +420,16 @@ func CreateFileInfo(path string, isDir bool) fs.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
 
-func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeEntryConnectionArgs) (bool, error) {
+func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context) (bool, error) {
 	if !r.IsDirectory() {
 		return false, nil
 	}
-	if r.isSingleChild != nil {
-		return *r.isSingleChild, nil
-	}
+
 	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
+
 	return len(entries) == 1, nil
 }
 
@@ -401,7 +511,6 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 }
 
 func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
-	// We only care about the full content length here, so we just need content to be set.
 	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return nil, err
@@ -428,20 +537,6 @@ func (r *GitTreeEntryResolver) OwnershipStats(ctx context.Context) (OwnershipSta
 		return nil, nil
 	}
 	return EnterpriseResolvers.ownResolver.GitTreeOwnershipStats(ctx, r)
-}
-
-func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {
-	if r.IsRoot() {
-		return nil, nil
-	}
-
-	parentPath := path.Dir(r.Path())
-	return r.commit.path(ctx, parentPath, func(stat fs.FileInfo) error {
-		if !stat.Mode().IsDir() {
-			return errors.Errorf("not a directory: %q", parentPath)
-		}
-		return nil
-	})
 }
 
 type symbolInfoArgs struct {

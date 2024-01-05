@@ -103,7 +103,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 
 		if l.RateLimitAlerter != nil {
 			// Call with usage 1 for 100% (rate limit exceeded)
-			go l.RateLimitAlerter(backgroundContextWithSpan(ctx), 1, retryAfter.Sub(l.NowFunc()))
+			go l.RateLimitAlerter(context.WithoutCancel(ctx), 1, retryAfter.Sub(l.NowFunc()))
 		}
 
 		return nil, RateLimitExceededError{
@@ -131,7 +131,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// same time block since the TTL would have been set.
 	return func(ctx context.Context, usage int) (err error) {
 		// NOTE: This is to make sure we still commit usage even if the context was canceled.
-		ctx = backgroundContextWithSpan(ctx)
+		ctx = context.WithoutCancel(ctx)
 
 		var incrementedTo, ttlSeconds int
 		// We need to start a new span because the previous one has ended
@@ -219,8 +219,4 @@ func (l StaticLimiter) Usage(ctx context.Context) (_ int, _ time.Time, err error
 	}
 
 	return currentUsage, time.Now().Add(time.Duration(ttl) * time.Second).Truncate(time.Second), nil
-}
-
-func backgroundContextWithSpan(ctx context.Context) context.Context {
-	return trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
 }

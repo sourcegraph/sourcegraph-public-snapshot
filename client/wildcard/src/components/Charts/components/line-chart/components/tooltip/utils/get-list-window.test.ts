@@ -1,4 +1,4 @@
-import expect from 'expect'
+import { describe, expect, it } from 'vitest'
 
 import { getListWindow } from './get-list-window'
 

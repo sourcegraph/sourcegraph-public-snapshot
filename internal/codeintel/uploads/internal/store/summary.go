@@ -20,34 +20,49 @@ func (s *store) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	var conds []*sqlf.Query
-	if opts.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	if opts.RepositoryID == 0 {
+		return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(getGlobalIndexersQuery)))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return nil, err
 	}
-	conds = append(conds, authzConds)
 
-	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(getIndexersQuery, sqlf.Join(conds, "AND"))))
+	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(getIndexersForRepositoryQuery, opts.RepositoryID, authzConds)))
 }
 
-const getIndexersQuery = `
+const getGlobalIndexersQuery = `
 WITH
 combined_indexers AS (
-	SELECT u.indexer, u.repository_id FROM lsif_uploads u
-	UNION
-	SELECT u.indexer, u.repository_id FROM lsif_indexes u
+	SELECT DISTINCT u.indexer FROM lsif_uploads u
+	UNION ALL
+	SELECT DISTINCT u.indexer FROM lsif_indexes u
 )
 SELECT DISTINCT u.indexer
 FROM combined_indexers u
-JOIN repo ON repo.id = u.repository_id
-WHERE
-	%s AND
-	repo.deleted_at IS NULL AND
-	repo.blocked IS NULL
+ORDER BY u.indexer
+`
+
+const getIndexersForRepositoryQuery = `
+WITH
+repo_candidate AS (
+	SELECT repo.id
+	FROM repo
+	WHERE
+		repo.id = %s AND
+		%s AND
+		repo.deleted_at IS NULL AND
+		repo.blocked IS NULL
+),
+combined_indexers AS (
+	SELECT DISTINCT u.indexer FROM lsif_uploads u JOIN repo_candidate r ON r.id = u.repository_id
+	UNION ALL
+	SELECT DISTINCT u.indexer FROM lsif_indexes u JOIN repo_candidate r ON r.id = u.repository_id
+)
+SELECT DISTINCT u.indexer
+FROM combined_indexers u
+ORDER BY u.indexer
 `
 
 // GetRecentUploadsSummary returns a set of "interesting" uploads for the repository with the given identifeir.

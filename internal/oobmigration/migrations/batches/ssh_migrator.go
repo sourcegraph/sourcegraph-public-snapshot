@@ -25,7 +25,7 @@ var _ oobmigration.Migrator = &SSHMigrator{}
 
 func NewSSHMigratorWithDB(store *basestore.Store, key encryption.Key, batchSize int) *SSHMigrator {
 	return &SSHMigrator{
-		logger:    log.Scoped("SSHMigrator", ""),
+		logger:    log.Scoped("SSHMigrator"),
 		store:     store,
 		key:       key,
 		batchSize: batchSize,

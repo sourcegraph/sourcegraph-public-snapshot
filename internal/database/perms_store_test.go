@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -1124,31 +1123,6 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		assertUnrestricted(t, 3, false)
 		assertUnrestricted(t, 4, false)
 		checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = 4"), []authz.Permission{{UserID: 2, RepoID: 4, Source: authz.SourceRepoSync}})
-	})
-
-	t.Run("Check parameter limit", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
-
-		// Also checking that more than 65535 IDs can be processed without an error
-		var ids [66000]int32
-		p := make([]authz.Permission, len(ids))
-		for i := range ids {
-			ids[i] = int32(i + 1)
-			p[i] = authz.Permission{RepoID: ids[i], Source: authz.SourceAPI}
-		}
-
-		chunks, err := collections.SplitIntoChunks(p, 15000)
-		require.NoError(t, err)
-
-		for _, chunk := range chunks {
-			setupPermsRelatedEntities(t, s, chunk)
-		}
-		if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], true); err != nil {
-			t.Fatal(err)
-		}
-		assertUnrestricted(t, 1, true)
-		assertUnrestricted(t, 500, true)
-		assertUnrestricted(t, 66000, true)
 	})
 }
 
@@ -3981,7 +3955,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					// private repo but unrestricted
@@ -3994,7 +3968,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "name"}}},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: []any{"public_repo_5"}, OrderBy: OrderBy{{Field: "name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
@@ -4003,7 +3977,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				},
 				{
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4030,14 +4004,14 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
-					// private repo but have access via user_permissions
+					// private repo but have access via user_permissions (still site admin)
 					RepoId: 2,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					// private repo but unrestricted
@@ -4108,6 +4082,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(999, 'user999', TRUE)`), // Site admin user with explicit access to all repos
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),
@@ -4126,10 +4101,12 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		}
 	}
 
-	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (666, 1), (NULL, 3), (666, 4)`)
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (666, 1, 'api'), (NULL, 3, 'api'), (666, 4, 'user_sync'), (999, 1, 'user_sync')`)
 	if err := s.execute(ctx, q); err != nil {
 		t.Fatal(err)
 	}
+
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 999})
 
 	tests := []listRepoPermissionsTest{
 		{
@@ -4138,6 +4115,11 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Args:   nil,
 			WantResults: []*listRepoPermissionsResult{
 				{
+					// have access and site-admin
+					UserID: 999,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
 					// do not have access but site-admin
 					UserID: 777,
 					Reason: UserRepoPermissionReasonSiteAdmin,
@@ -4145,7 +4127,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 				{
 					// have access
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 				{
 					// have access
@@ -4161,6 +4143,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			NoAuthzProviders: true,
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
 				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
@@ -4179,12 +4165,12 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: []any{555}, OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 			},
 		},
@@ -4197,7 +4183,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 			},
 		},
@@ -4208,16 +4194,20 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
 				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonPublic,
+				},
+				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4227,6 +4217,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Args:   nil,
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
 				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
@@ -4248,6 +4242,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
 				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
 				},
@@ -4266,18 +4264,24 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			RepoID:                    4,
 			Args:                      nil,
 			NoAuthzProviders:          true,
-			UsePermissionsUserMapping: true,
+			UsePermissionsUserMapping: false,
 			// restricted access
 			WantResults: []*listRepoPermissionsResult{
 				{
-					// do not have access but site-admin
-					UserID: 777,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					// have access
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},
@@ -4289,8 +4293,13 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					// have access
-					UserID: 666,
+					UserID: 999,
 					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+				{
+					// have access
+					UserID: 666,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 				{
 					// have access

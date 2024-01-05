@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -257,7 +256,7 @@ func PartitionRepos(
 	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.ReposMap)))
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc)
 
 	tr.SetAttributes(
 		attribute.Int("indexed.size", len(indexed.RepoRevs)),
@@ -596,7 +595,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 // contextWithoutDeadline returns a context which will cancel if the cOld is
 // canceled.
 func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
-	cNew := xcontext.Detach(cOld)
+	cNew := context.WithoutCancel(cOld)
 	cNew, cancel := context.WithCancel(cNew)
 
 	go func() {

@@ -135,11 +135,11 @@ func (d *db) Done(err error) error {
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
-	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
+	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore"))
 }
 
 func (d *db) AccessRequests() AccessRequestStore {
-	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore", ""))
+	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore"))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
@@ -304,7 +304,7 @@ func (d *db) TemporarySettings() TemporarySettingsStore {
 
 func (d *db) TelemetryEventsExportQueue() TelemetryEventsExportQueueStore {
 	return TelemetryEventsExportQueueWith(
-		d.logger.Scoped("telemetry_events", "telemetry events export queue store"),
+		d.logger.Scoped("telemetry_events"),
 		d.Store,
 	)
 }

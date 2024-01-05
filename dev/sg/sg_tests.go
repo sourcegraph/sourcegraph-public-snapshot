@@ -40,7 +40,7 @@ sg test -help
 sg test backend-integration -run TestSearch
 `,
 	Category: category.Dev,
-	BashComplete: completions.CompleteOptions(func() (options []string) {
+	BashComplete: completions.CompleteArgs(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return

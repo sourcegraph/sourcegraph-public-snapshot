@@ -295,6 +295,18 @@ $theme-colors: (
     --chroma-generic-subheading-fg: #aaaaaa;
     --chroma-generic-traceback-fg: #aa0000;
     --chroma-text-whitespace-fg: #bbbbbb;
+
+    // Blame colors
+    --blame-recency-0: var(--oc-violet-9);
+    --blame-recency-1: var(--oc-violet-8);
+    --blame-recency-2: var(--oc-violet-7);
+    --blame-recency-3: var(--oc-violet-6);
+    --blame-recency-4: var(--oc-violet-5);
+    --blame-recency-5: var(--oc-violet-4);
+    --blame-recency-6: var(--oc-violet-3);
+    --blame-recency-7: var(--oc-violet-2);
+    --blame-recency-8: var(--oc-violet-1);
+    --blame-recency-9: var(--oc-violet-0);
 }
 
 .theme-dark {
@@ -458,6 +470,18 @@ $theme-colors: (
     --chroma-generic-subheading-fg: #79c0ff;
     --chroma-generic-traceback-fg: #ff7b72;
     --chroma-text-whitespace-fg: #6e7681;
+
+    // Blame colors
+    --blame-recency-0: var(--oc-violet-0);
+    --blame-recency-1: var(--oc-violet-1);
+    --blame-recency-2: var(--oc-violet-2);
+    --blame-recency-3: var(--oc-violet-3);
+    --blame-recency-4: var(--oc-violet-4);
+    --blame-recency-5: var(--oc-violet-5);
+    --blame-recency-6: var(--oc-violet-6);
+    --blame-recency-7: var(--oc-violet-7);
+    --blame-recency-8: var(--oc-violet-8);
+    --blame-recency-9: var(--oc-violet-9);
 }
 
 // Additional colors global colors.

@@ -2,6 +2,7 @@ import { render, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+import { describe, expect, test } from 'vitest'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
@@ -29,7 +30,6 @@ const additionalProps = {
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
-    isCodyApp: false,
 }
 
 const generateMockFetchMonitors =

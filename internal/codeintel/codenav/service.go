@@ -46,7 +46,7 @@ func newService(
 		gitserver:  gitserver,
 		uploadSvc:  uploadSvc,
 		operations: newOperations(observationCtx),
-		logger:     log.Scoped("codenav", ""),
+		logger:     log.Scoped("codenav"),
 	}
 }
 

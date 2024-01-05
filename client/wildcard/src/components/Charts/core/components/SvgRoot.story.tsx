@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import type { AxisScale } from '@visx/axis/lib/types'
 import { ParentSize } from '@visx/responsive'
 import { scaleBand, scaleLinear, scaleTime } from '@visx/scale'
@@ -34,7 +34,7 @@ interface TemplateProps {
     color?: string
 }
 
-const SimpleChartTemplate: Story<TemplateProps> = args => (
+const SimpleChartTemplate: StoryFn<TemplateProps> = args => (
     <ParentSize style={{ width: 400, height: 400 }} debounceTime={0} className="flex-shrink-0">
         {parent => (
             <SvgRoot width={parent.width} height={parent.height} xScale={args.xScale} yScale={args.yScale}>
@@ -49,7 +49,7 @@ const SimpleChartTemplate: Story<TemplateProps> = args => (
     </ParentSize>
 )
 
-export const SmartAxisDemo: Story = args => (
+export const SmartAxisDemo: StoryFn = args => (
     <section style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
         <SimpleChartTemplate
             xScale={scaleTime<number>({

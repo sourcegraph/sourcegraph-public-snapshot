@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/hexops/gotextdiff"
@@ -31,6 +32,10 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 	}
 
 	user, err := UserByIDInt32(ctx, r.db, r.siteConfig.AuthorUserID)
+	if errcode.IsNotFound(err) {
+		// User no longer exists, which could be expected.
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -199,6 +199,13 @@ Sourcegraph aggregates usage and performance metrics for some product features i
     - Displaying ownership panel in file view.
 - Histogram of cloned repository sizes
 - Aggregate daily, weekly, monthly repository metadata usage statistics
+- Cody providers data
+  - Completions
+    - Provider name
+    - Chat, fast chat, and completion model names (only for "sourcegraph" provider)
+  - Embeddings
+    - Provider name
+    - Model name (only for "sourcegraph" provider)
 </details>
 
 ## Allowlist IPs / CIDR Ranges for Sourcegraph
@@ -213,7 +220,11 @@ Prior to 5.2.0, allowlist the full [Cloudflare IP ranges](https://www.cloudflare
 
 The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry requests.
 
+
+Be sure to update the enviornment variable like so : ```TELEMETRY_HTTP_PROXY:"http://proxy.example.com:8080"```
+
 ## Connections to Sourcegraph-managed services
+
 
 Sourcegraph only connects to Sourcegraph-managed services for three purposes:
 

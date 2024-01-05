@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -60,7 +61,15 @@ type DiffOptions struct {
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
-func (c *clientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
+func (c *clientImplementor) Diff(ctx context.Context, opts DiffOptions) (_ *DiffFileIterator, err error) {
+	ctx, _, endObservation := c.operations.diff.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			opts.Repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
@@ -167,7 +176,7 @@ func (o *ContributorOptions) Attrs() []attribute.KeyValue {
 }
 
 func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) (_ []*gitdomain.ContributorCount, err error) {
-	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{Attrs: opt.Attrs()})
+	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{Attrs: opt.Attrs(), MetricLabelValues: []string{c.scope}})
 	defer endObservation(1, observation.Args{})
 
 	if opt.Range == "" {
@@ -274,6 +283,14 @@ type CommitGraphOptions struct {
 // be rooted at the given commit. If a non-zero limit is supplied, at most that
 // many commits will be returned.
 func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+	ctx, _, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
 		args = append(args, "--all")
@@ -301,7 +318,16 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 // CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
 // is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
 // into component parts separately.
-func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
+func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) (_ []CommitLog, err error) {
+	ctx, _, endObservation := c.operations.commitLog.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.Stringer("after", after),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
 	if !after.IsZero() {
 		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
@@ -363,7 +389,15 @@ func parseTimestamp(timestamp string) (time.Time, error) {
 // the root commit.
 const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
+	ctx, _, endObservation := c.operations.diffPath.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
@@ -393,19 +427,42 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 }
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ []byte, err error) {
+	ctx, _, endObservation := c.operations.diffSymbols.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commitA", string(commitA)),
+			attribute.String("commitB", string(commitB)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	// Ensure commits exist to provide a better error message
+	_, err = c.ResolveRevisions(ctx, repo, []protocol.RevisionSpecifier{{RevSpec: string(commitA)}, {RevSpec: string(commitB)}})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to lookup revisions for git diff on %s between %s and %s", repo, commitA, commitB)
+	}
+
 	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	return command.Output(ctx)
+	out, err := command.Output(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to run git diff on %s between %s and %s", repo, commitA, commitB)
+	}
+	return out, nil
 }
 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		commit.Attr(),
-		attribute.String("path", path),
-		attribute.Bool("recurse", recurse),
-	}})
+	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			commit.Attr(),
+			attribute.String("path", path),
+			attribute.Bool("recurse", recurse),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
@@ -491,10 +548,13 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // symbolic link, the returned FileInfo describes the symbolic link. lStat makes
 // no attempt to follow the link.
 func (c *clientImplementor) lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		commit.Attr(),
-		attribute.String("path", path),
-	}})
+	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			commit.Attr(),
+			attribute.String("path", path),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
@@ -702,7 +762,16 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (err error) {
+	ctx, _, endObservation := c.operations.logReverseEach.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			api.RepoName(repo).Attr(),
+			attribute.String("commit", commit),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -722,10 +791,10 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 
 // BlameOptions configures a blame.
 type BlameOptions struct {
-	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
-
-	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
 func (o *BlameOptions) Attrs() []attribute.KeyValue {
@@ -733,6 +802,7 @@ func (o *BlameOptions) Attrs() []attribute.KeyValue {
 		attribute.String("newestCommit", string(o.NewestCommit)),
 		attribute.Int("startLine", o.StartLine),
 		attribute.Int("endLine", o.EndLine),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
 	}
 }
 
@@ -751,6 +821,7 @@ type Hunk struct {
 // StreamBlameFile returns Git blame information about a file.
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
 	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
 		Attrs: append([]attribute.KeyValue{
 			repo.Attr(),
 			attribute.String("path", path),
@@ -789,7 +860,10 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain", "--incremental"}
+	args := []string{"blame", "--porcelain", "--incremental"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
@@ -806,6 +880,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 // BlameFile returns Git blame information about a file.
 func (c *clientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
 	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
 		Attrs: append([]attribute.KeyValue{
 			repo.Attr(),
 			attribute.String("path", path),
@@ -828,7 +903,10 @@ func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, c
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain"}
+	args := []string{"blame", "--porcelain"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
@@ -981,11 +1059,14 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
-	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		attribute.String("spec", spec),
-		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
-	}})
+	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("spec", spec),
+			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(spec); err != nil {
@@ -1043,7 +1124,17 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 }
 
 // LsFiles returns the output of `git ls-files`.
-func (c *clientImplementor) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+func (c *clientImplementor) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) (_ []string, err error) {
+	ctx, _, endObservation := c.operations.lsFiles.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+			attribute.Bool("hasPathSpecs", len(pathspecs) > 0),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1094,7 +1185,17 @@ func (c *clientImplementor) ListDirectoryChildren(
 	repo api.RepoName,
 	commit api.CommitID,
 	dirnames []string,
-) (map[string][]string, error) {
+) (_ map[string][]string, err error) {
+	ctx, _, endObservation := c.operations.listDirectoryChildren.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+			attribute.Int("dirs", len(dirnames)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
 	cmd := c.gitCommand(repo, args...)
@@ -1175,10 +1276,13 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
-	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		attribute.StringSlice("commitObjs", commitObjs),
-	}})
+	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.StringSlice("commitObjs", commitObjs),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
@@ -1237,6 +1341,14 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+	ctx, _, endObservation := c.operations.getDefaultBranch.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
@@ -1267,10 +1379,13 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 // MergeBase returns the merge base commit for the specified commits.
 func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (_ api.CommitID, err error) {
-	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("a", string(a)),
-		attribute.String("b", string(b)),
-	}})
+	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("a", string(a)),
+			attribute.String("b", string(b)),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	cmd := c.gitCommand(repo, "merge-base", "--", string(a), string(b))
@@ -1283,10 +1398,13 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
 func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
-	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", repo),
-		attribute.String("commit", commit),
-	}})
+	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.String("repo", repo),
+			attribute.String("commit", commit),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
@@ -1307,11 +1425,14 @@ func RevListArgs(givenCommit string) []string {
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
 func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
-	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		attribute.String("left", left),
-		attribute.String("right", right),
-	}})
+	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("left", left),
+			attribute.String("right", right),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(left); err != nil {
@@ -1338,14 +1459,17 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
-// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
+// ReadFile returns the full contents of the named file at commit.
+// (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		commit.Attr(),
-		attribute.String("name", name),
-	}})
+	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			commit.Attr(),
+			attribute.String("name", name),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	br, err := c.NewFileReader(ctx, repo, commit, name)
@@ -1366,11 +1490,14 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
 	// TODO: this does not capture the lifetime of the request since we return a reader
-	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		commit.Attr(),
-		attribute.String("name", name),
-	}})
+	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			commit.Attr(),
+			attribute.String("name", name),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	a := actor.FromContext(ctx)
@@ -1504,10 +1631,13 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		commit.Attr(),
-		attribute.String("path", path),
-	}})
+	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			commit.Attr(),
+			attribute.String("path", path),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
@@ -1608,11 +1738,14 @@ func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
 func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		id.Attr(),
-		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
-	}})
+	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			id.Attr(),
+			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return c.getCommit(ctx, repo, id, opt)
@@ -1621,10 +1754,13 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 // Commits returns all commits matching the options.
 func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) (_ []*gitdomain.Commit, err error) {
 	opt = addNameOnly(opt, c.subRepoPermsChecker)
-	ctx, _, endObservation := c.operations.commits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		attribute.String("opts", fmt.Sprintf("%#v", opt)),
-	}})
+	ctx, _, endObservation := c.operations.commits.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("opts", fmt.Sprintf("%#v", opt)),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
@@ -1679,6 +1815,15 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
 func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	ctx, _, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("branch", branchName),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	args := []string{"log", "--pretty=format:%H:%cI"}
 	if maxAge != nil {
 		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
@@ -1705,7 +1850,12 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
+			// The commits are returned from git log, so we are sure they exist and
+			// don't need to ensure the revision.
+			NoEnsureRevision: true,
+		})
+		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
 	}
@@ -1739,11 +1889,14 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
 func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-		attribute.String("date", date),
-		attribute.String("revSpec", revspec),
-	}})
+	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("date", date),
+			attribute.String("revSpec", revspec),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
@@ -1903,27 +2056,55 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
 
-	return parseCommitLogOutput(data, opt.NameOnly)
+	return parseCommitLogOutput(bytes.NewReader(data))
 }
 
-func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
-	allParts := bytes.Split(data, []byte{'\x00'})
-	partsPerCommit := partsPerCommitBasic
-	if nameOnly {
-		partsPerCommit = partsPerCommitWithFileNames
-	}
-	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*wrappedCommit, 0, numCommits)
-	for len(data) > 0 {
-		var commit *wrappedCommit
-		var err error
-		commit, data, err = parseCommitFromLog(data, partsPerCommit)
+func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
+	commitScanner := bufio.NewScanner(r)
+	commitScanner.Split(commitSplitFunc)
+
+	var commits []*wrappedCommit
+	for commitScanner.Scan() {
+		rawCommit := commitScanner.Bytes()
+		parts := bytes.Split(rawCommit, []byte{'\x00'})
+		if len(parts) != partsPerCommit {
+			return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
+		}
+
+		commit, err := parseCommitFromLog(parts)
 		if err != nil {
 			return nil, err
 		}
 		commits = append(commits, commit)
 	}
 	return commits, nil
+}
+
+func commitSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if len(data) == 0 {
+		// Request more data
+		return 0, nil, nil
+	}
+
+	// Safety check: ensure we are always starting with a record separator
+	if data[0] != '\x1e' {
+		return 0, nil, errors.New("internal error: data should always start with an ASCII record separator")
+	}
+
+	loc := bytes.IndexByte(data[1:], '\x1e')
+	if loc < 0 {
+		// We can't find the start of the next record
+		if atEOF {
+			// If we're at the end of the stream, just return the rest as the last record
+			return len(data), data[1:], bufio.ErrFinalToken
+		} else {
+			// If we're not at the end of the stream, request more data
+			return 0, nil, nil
+		}
+	}
+	nextStart := loc + 1 // correct for searching at an offset
+
+	return nextStart, data[1:nextStart], nil
 }
 
 type wrappedCommit struct {
@@ -1982,9 +2163,12 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 // FirstEverCommit returns the first commit ever made to the repository.
 func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoName) (_ *gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-	}})
+	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
@@ -2004,7 +2188,16 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 }
 
 // CommitExists determines if the given commit exists in the given repository.
-func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
+func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (_ bool, err error) {
+	ctx, _, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(id)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	commit, err := c.getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
@@ -2039,10 +2232,13 @@ func (c *clientImplementor) CommitsExist(ctx context.Context, repoCommits []api.
 // If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 // resulting commit to be nil, but not fail the entire operation.
 func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) (_ []*gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.getCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numRepoCommits", len(repoCommits)),
-		attribute.Bool("ignoreErrors", ignoreErrors),
-	}})
+	ctx, _, endObservation := c.operations.getCommits.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.Int("numRepoCommits", len(repoCommits)),
+			attribute.Bool("ignoreErrors", ignoreErrors),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
@@ -2078,7 +2274,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 			return errors.Wrap(err, "failed to perform git log")
 		}
 
-		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), true)
+		wrappedCommits, err := parseCommitLogOutput(strings.NewReader(rawResult.Stdout))
 		if err != nil {
 			if ignoreErrors {
 				// Treat as not-found
@@ -2133,6 +2329,14 @@ func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.Re
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
 func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
+	ctx, _, endObservation := c.operations.head.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
 
 	out, err := cmd.Output(ctx)
@@ -2141,7 +2345,11 @@ func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ stri
 	}
 	commitID := string(out)
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
+			// We expect the HEAD reference to not be broken, let's not ensure the
+			// revision here.
+			NoEnsureRevision: true,
+		}); err != nil {
 			return checkError(err)
 		}
 	}
@@ -2157,22 +2365,31 @@ func checkError(err error) (string, bool, error) {
 }
 
 const (
-	partsPerCommitBasic         = 9  // number of \x00-separated fields per commit
-	partsPerCommitWithFileNames = 10 // number of \x00-separated fields per commit with names of modified files also returned
+	partsPerCommit = 10 // number of \x00-separated fields per commit
 
-	// don't include refs (faster, should be used if refs are not needed)
-	logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+	// This format string has 10 parts:
+	//  1) oid
+	//  2) author name
+	//  3) author email
+	//  4) author time
+	//  5) committer name
+	//  6) committer email
+	//  7) committer time
+	//  8) message body
+	//  9) parent hashes
+	// 10) modified files (optional)
+	//
+	// Each commit starts with an ASCII record separator byte (0x1E), and
+	// each field of the commit is separated by a null byte (0x00).
+	//
+	// Refs are slow, and are intentionally not included because they are usually not needed.
+	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, rest []byte, err error) {
-	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
-	if len(parts) < partsPerCommit {
-		return nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
-	}
-
+func parseCommitFromLog(parts [][]byte) (*wrappedCommit, error) {
 	// log outputs are newline separated, so all but the 1st commit ID part
 	// has an erroneous leading newline.
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
@@ -2180,11 +2397,11 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 
 	authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
 	if err != nil {
-		return nil, nil, errors.Errorf("parsing git commit author time: %s", err)
+		return nil, errors.Errorf("parsing git commit author time: %s", err)
 	}
 	committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
 	if err != nil {
-		return nil, nil, errors.Errorf("parsing git commit committer time: %s", err)
+		return nil, errors.Errorf("parsing git commit committer time: %s", err)
 	}
 
 	var parents []api.CommitID
@@ -2196,9 +2413,9 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 		}
 	}
 
-	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
+	fileNames := strings.Split(string(bytes.TrimSpace(parts[9])), "\n")
 
-	commit = &wrappedCommit{
+	return &wrappedCommit{
 		Commit: &gitdomain.Commit{
 			ID:        commitID,
 			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
@@ -2206,47 +2423,28 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 			Parents:   parents,
 		}, files: fileNames,
-	}
-
-	if len(parts) == partsPerCommit+1 {
-		rest = parts[partsPerCommit]
-		if string(nextCommit) != "" {
-			// Add the next commit ID with the rest to be processed
-			rest = append(append(nextCommit, '\x00'), rest...)
-		}
-	}
-
-	return commit, rest, nil
-}
-
-// If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this
-// portion of the byte array, so it must be returned as well to be added to the rest of the commits to be processed.
-func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte) {
-	var fileNames []string
-	var nextCommit []byte
-	if partsPerCommit == partsPerCommitWithFileNames {
-		parts[9] = bytes.TrimPrefix(parts[9], []byte{'\n'})
-		fileNamesRaw := parts[9]
-		fileNameParts := bytes.Split(fileNamesRaw, []byte{'\n'})
-		for i, name := range fileNameParts {
-			// The last item contains the files modified, some empty space, and the commit ID for the next commit. Drop
-			// the empty space and the next commit ID (which will be processed in the next iteration).
-			if string(name) == "" || i == len(fileNameParts)-1 {
-				continue
-			}
-			fileNames = append(fileNames, string(name))
-		}
-		nextCommit = fileNameParts[len(fileNameParts)-1]
-	}
-	return fileNames, nextCommit
+	}, nil
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
 // each branch containing the given commit.
-func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ []string, err error) {
+	ctx, _, endObservation := c.operations.branchesContaining.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
+			// Don't ensure the revision here, the branch command below will fail
+			// anyways.
+			NoEnsureRevision: true,
+		}); err != nil {
 			return nil, err
 		}
 	}
@@ -2279,7 +2477,16 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
+func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (_ map[string][]gitdomain.RefDescription, err error) {
+	ctx, _, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.Int("objects", len(gitObjs)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
 		format := strings.Join([]string{
 			derefField("objectname"),
@@ -2332,7 +2539,11 @@ func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
+			// The commits are returned from git already, so they must exist.
+			NoEnsureRevision: true,
+		})
+		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
@@ -2421,9 +2632,22 @@ lineLoop:
 // revision does not exist, a false-valued flag is returned along with a nil
 // error and zero-valued time.
 func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
+	ctx, _, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+			attribute.String("commit", string(commit)),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
+			// The show command below will fail anyways, so no need to ensure
+			// that the revision exists here.
+			NoEnsureRevision: true,
+		}); err != nil {
 			return "", time.Time{}, false, nil
 		}
 	}
@@ -2475,6 +2699,7 @@ func (c *clientImplementor) ArchiveReader(
 ) (_ io.ReadCloser, err error) {
 	// TODO: this does not capture the lifetime of the request because we return a reader
 	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
 		Attrs: append(
 			[]attribute.KeyValue{repo.Attr()},
 			options.Attrs()...,
@@ -2684,6 +2909,7 @@ func (f branchFilter) add(list []string) {
 // ListBranches returns a list of all branches in the repository.
 func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (_ []*gitdomain.Branch, err error) {
 	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
 		Attrs: append(
 			[]attribute.KeyValue{repo.Attr()},
 			opt.Attrs()...,
@@ -2721,7 +2947,11 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 
 		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{})
+			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{
+				// The commitID comes from git, so surely it knows about it and
+				// there's no need to ensure the revision exists.
+				NoEnsureRevision: true,
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -2762,9 +2992,12 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
 func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
-	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		repo.Attr(),
-	}})
+	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	return c.showRef(ctx, repo)

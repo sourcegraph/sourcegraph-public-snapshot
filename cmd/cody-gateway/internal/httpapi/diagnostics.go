@@ -27,7 +27,7 @@ import (
 // we do a simple auth on a static secret instead that is uniquely generated per
 // deployment.
 func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
-	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
+	baseLogger = baseLogger.Scoped("diagnostics")
 
 	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
 		token, err := authbearer.ExtractBearer(r.Header)
@@ -112,10 +112,7 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 
 func healthz(ctx context.Context) error {
 	// Check redis health
-	rpool, ok := redispool.Cache.Pool()
-	if !ok {
-		return errors.New("redis: not available")
-	}
+	rpool := redispool.Cache.Pool()
 	rconn, err := rpool.GetContext(ctx)
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to get conn")

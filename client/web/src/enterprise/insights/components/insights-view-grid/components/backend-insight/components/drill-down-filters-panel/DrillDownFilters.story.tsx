@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
@@ -14,7 +14,7 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-export const DrillDownPopover: Story = () => {
+export const DrillDownPopover: StoryFn = () => {
     const exampleReference = useRef(null)
     const initialFiltersValue: InsightFilters = {
         excludeRepoRegexp: 'EXCLUDE',

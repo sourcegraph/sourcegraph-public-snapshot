@@ -27,7 +27,7 @@ export const AccessTokenCreatedAlert: React.FunctionComponent<
             <Text>Copy the new access token now. You won't be able to see it again.</Text>
             <CopyableText className="test-access-token" text={tokenSecret} size={48} secret={true}>
                 {({ isRedacted }) => {
-                    const secretToDisplay = isRedacted ? tokenSecret.replace(/./g, '*') : tokenSecret
+                    const secretToDisplay = isRedacted ? tokenSecret.replaceAll(/./g, '*') : tokenSecret
                     return (
                         <>
                             <H5 className="mt-4 mb-2">

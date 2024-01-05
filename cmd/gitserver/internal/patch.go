@@ -56,7 +56,7 @@ func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *htt
 }
 
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	logger := s.Logger.Scoped("createCommitFromPatch", "").
+	logger := s.Logger.Scoped("createCommitFromPatch").
 		With(
 			log.String("repo", string(req.Repo)),
 			log.String("baseCommit", string(req.BaseCommit)),
@@ -155,7 +155,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		t := time.Now()
 
 		// runRemoteGitCommand since one of our commands could be git push
-		out, err := executil.RunRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		out, err := executil.RunRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true)
 		logger := logger.With(
 			log.String("prefix", prefix),
 			log.String("command", redactor.Redact(argsToString(cmd.Args))),
@@ -372,7 +372,7 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	r := urlredactor.New(remoteURL)
-	_, err := executil.RunCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
+	_, err := executil.RunCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {
@@ -426,7 +426,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		_, _, _, p4depot, _ = perforce.DecomposePerforceRemoteURL(remoteURL)
 	}
 
-	logger := s.Logger.Scoped("shelveChangelist", "").
+	logger := s.Logger.Scoped("shelveChangelist").
 		With(
 			log.String("repo", repo),
 			log.String("baseCommit", baseCommit),

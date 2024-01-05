@@ -31,7 +31,7 @@ const (
 
 func Init(logger log.Logger, db database.DB) {
 	const pkgName = "azureoauth"
-	logger = logger.Scoped(pkgName, "Azure DevOps OAuth config watch")
+	logger = logger.Scoped(pkgName)
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(logger, cfg, db)
 		return problems
@@ -185,7 +185,6 @@ func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProvi
 			}
 		},
 		SourceConfig: sourceCfg,
-		StateConfig:  oauth.GetStateConfig(stateCookie),
 		ServiceID:    azuredevops.AzureDevOpsAPIURL,
 		ServiceType:  extsvc.TypeAzureDevOps,
 		Login:        loginHandler,

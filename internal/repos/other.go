@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -26,11 +25,11 @@ type (
 	// A OtherSource yields repositories from a single Other connection configured
 	// in Sourcegraph via the external services configuration.
 	OtherSource struct {
-		svc     *types.ExternalService
-		conn    *schema.OtherExternalServiceConnection
-		exclude excludeFunc
-		client  httpcli.Doer
-		logger  log.Logger
+		svc      *types.ExternalService
+		conn     *schema.OtherExternalServiceConnection
+		excluder repoExcluder
+		client   httpcli.Doer
+		logger   log.Logger
 	}
 
 	// A srcExposeItem is the object model returned by src-cli when serving git repos
@@ -62,13 +61,13 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -77,11 +76,11 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 	}
 
 	return &OtherSource{
-		svc:     svc,
-		conn:    &c,
-		exclude: exclude,
-		client:  cli,
-		logger:  logger,
+		svc:      svc,
+		conn:     &c,
+		excluder: ex,
+		client:   cli,
+		logger:   logger,
 	}, nil
 }
 
@@ -137,7 +136,7 @@ func (s OtherSource) ExternalServices() types.ExternalServices {
 }
 
 func (s OtherSource) excludes(r *types.Repo) bool {
-	return s.exclude(string(r.Name))
+	return s.excluder.ShouldExclude(string(r.Name))
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {
@@ -209,18 +208,9 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 
 func (s OtherSource) srcExposeRequest() (req *http.Request, validSrcExpose bool, err error) {
 	srcServe := len(s.conn.Repos) == 1 && (s.conn.Repos[0] == "src-expose" || s.conn.Repos[0] == "src-serve")
-	srcServeLocal := len(s.conn.Repos) == 1 && s.conn.Repos[0] == "src-serve-local"
 
 	// Certain versions of src-serve accept the directory to discover git repositories within
-	if srcServeLocal {
-		reqBody, marshalErr := json.Marshal(map[string]any{"root": s.conn.Root})
-		if marshalErr != nil {
-			return nil, false, marshalErr
-		}
-
-		validSrcExpose = true
-		req, err = http.NewRequest("POST", s.conn.Url+"/v1/list-repos-for-path", bytes.NewReader(reqBody))
-	} else if srcServe {
+	if srcServe {
 		validSrcExpose = true
 		req, err = http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
 	}

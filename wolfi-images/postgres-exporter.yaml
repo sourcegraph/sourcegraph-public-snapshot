@@ -3,7 +3,7 @@ include: ./sourcegraph-base.yaml
 contents:
   packages:
     ## postgres-exporter packages
-    - 'prometheus-postgres-exporter=0.13.1-r0' # IMPORTANT: Pinned version for managed updates
+    - prometheus-postgres-exporter
 
 accounts:
   groups:

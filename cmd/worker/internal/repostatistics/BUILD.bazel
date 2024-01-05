@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "repostatistics",
-    srcs = ["compactor.go"],
+    srcs = [
+        "compactor.go",
+        "resetter.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics",
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
@@ -12,6 +15,8 @@ go_library(
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
+        "//lib/errors",
+        "@com_github_jackc_pgconn//:pgconn",
         "@com_github_sourcegraph_log//:log",
     ],
 )

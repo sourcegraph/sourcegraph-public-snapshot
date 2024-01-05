@@ -13,7 +13,6 @@ import styles from './SiteAdminSidebar.module.scss'
 
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
     codeInsightsEnabled: boolean
     endUserOnboardingEnabled: boolean
 }

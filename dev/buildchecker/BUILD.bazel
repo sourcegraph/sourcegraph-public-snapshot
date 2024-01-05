@@ -17,6 +17,7 @@ go_library(
     deps = [
         "//dev/team",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_google_go_github_v55//github",
         "@com_github_honeycombio_libhoney_go//:libhoney-go",

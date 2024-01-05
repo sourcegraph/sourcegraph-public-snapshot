@@ -99,13 +99,14 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs)
 
 		builder := &jobBuilder{
-			query:          b,
-			patternType:    inputs.PatternType,
-			resultTypes:    resultTypes,
-			repoOptions:    repoOptions,
-			features:       inputs.Features,
-			fileMatchLimit: fileMatchLimit,
-			selector:       selector,
+			query:           b,
+			patternType:     inputs.PatternType,
+			resultTypes:     resultTypes,
+			repoOptions:     repoOptions,
+			features:        inputs.Features,
+			fileMatchLimit:  fileMatchLimit,
+			selector:        selector,
+			numContextLines: int(inputs.ContextLines),
 		}
 
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
@@ -353,6 +354,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 					UseFullDeadline: useFullDeadline,
 					Features:        *searchInputs.Features,
 					PathRegexps:     getPathRegexpsFromTextPatternInfo(patternInfo),
+					NumContextLines: int(searchInputs.ContextLines),
 				}
 
 				addJob(&repoPagerJob{
@@ -622,21 +624,7 @@ func mapSlice(values []string, f func(string) string) []string {
 	return res
 }
 
-func count(b query.Basic, p search.Protocol) int {
-	if count := b.Count(); count != nil {
-		return *count
-	}
-
-	switch p {
-	case search.Batch:
-		return limits.DefaultMaxSearchResults
-	case search.Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
-}
-
-// toTextPatternInfo converts a an atomic query to internal values that drive
+// toTextPatternInfo converts an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
@@ -668,14 +656,14 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, defaultLimit int
 
 	return &search.TextPatternInfo{
 		// Values dependent on pattern atom.
-		IsRegExp:        isRegexp,
-		IsStructuralPat: b.IsStructural(),
-		IsCaseSensitive: b.IsCaseSensitive(),
-		FileMatchLimit:  int32(count),
-		Pattern:         b.PatternString(),
-		IsNegated:       negated,
+		Pattern:   b.PatternString(),
+		IsRegExp:  isRegexp,
+		IsNegated: negated,
 
 		// Values dependent on parameters.
+		IsStructuralPat:              b.IsStructural(),
+		IsCaseSensitive:              b.IsCaseSensitive(),
+		FileMatchLimit:               int32(count),
 		IncludePatterns:              filesInclude,
 		ExcludePattern:               query.UnionRegExps(filesExclude),
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
@@ -789,13 +777,14 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 // backends, then this builder type _may_ be the right place for it to live.
 // If in doubt, ask the search team.
 type jobBuilder struct {
-	query          query.Basic
-	patternType    query.SearchType
-	resultTypes    result.Types
-	repoOptions    search.RepoOptions
-	features       *search.Features
-	fileMatchLimit int32
-	selector       filter.SelectPath
+	query           query.Basic
+	patternType     query.SearchType
+	resultTypes     result.Types
+	repoOptions     search.RepoOptions
+	features        *search.Features
+	fileMatchLimit  int32
+	selector        filter.SelectPath
+	numContextLines int
 }
 
 func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
@@ -818,12 +807,13 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		// is therefore set to `nil` below.
 		// Ideally, The ZoektParameters type should not expose this field for Universe text
 		// searches at all, and will be removed once jobs are fully migrated.
-		Query:          nil,
-		Typ:            typ,
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		Query:           nil,
+		Typ:             typ,
+		FileMatchLimit:  b.fileMatchLimit,
+		Select:          b.selector,
+		Features:        *b.features,
+		PatternType:     b.patternType,
+		NumContextLines: b.numContextLines,
 	}
 
 	switch typ {
@@ -851,10 +841,11 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 	}
 
 	zoektParams := &search.ZoektParameters{
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		FileMatchLimit:  b.fileMatchLimit,
+		Select:          b.selector,
+		Features:        *b.features,
+		PatternType:     b.patternType,
+		NumContextLines: b.numContextLines,
 	}
 
 	switch typ {

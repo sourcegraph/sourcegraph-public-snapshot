@@ -209,9 +209,11 @@ const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({ namespaceID
 // scope added here and TS will be happy.
 function executorSecretScopeContext(scope: ExecutorSecretScope): { label: string; description: string } {
     switch (scope) {
-        case ExecutorSecretScope.BATCHES:
+        case ExecutorSecretScope.BATCHES: {
             return { label: 'Batch changes', description: 'Batch change execution secrets' }
-        case ExecutorSecretScope.CODEINTEL:
+        }
+        case ExecutorSecretScope.CODEINTEL: {
             return { label: 'Code graph', description: 'Code graph execution secrets' }
+        }
     }
 }

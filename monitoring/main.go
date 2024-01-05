@@ -26,7 +26,7 @@ func main() {
 
 	liblog := log.Init(log.Resource{Name: "monitoring-generator"})
 	defer liblog.Sync()
-	logger := log.Scoped("monitoring", "main Sourcegraph monitoring entrypoint")
+	logger := log.Scoped("monitoring")
 
 	// Create an app that only runs the generate command
 	app := &cli.App{

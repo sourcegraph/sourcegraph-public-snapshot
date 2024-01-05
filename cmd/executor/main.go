@@ -33,7 +33,7 @@ func main() {
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("executor", "the executor service polls the public Sourcegraph frontend API for work to perform")
+	logger := log.Scoped("executor")
 
 	runner := &util.RealCmdRunner{}
 

@@ -1,4 +1,3 @@
-/* eslint-disable jsdoc/check-indentation */
 import { onDestroy } from 'svelte'
 
 import { beforeNavigate } from '$app/navigation'

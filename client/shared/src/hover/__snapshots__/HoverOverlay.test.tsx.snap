@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`HoverOverlay actions and hover empty 1`] = `
+exports[`HoverOverlay > actions and hover empty 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -24,7 +24,7 @@ exports[`HoverOverlay actions and hover empty 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions and hover error 1`] = `
+exports[`HoverOverlay > actions and hover error 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -50,7 +50,7 @@ exports[`HoverOverlay actions and hover error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions and hover loading 1`] = `
+exports[`HoverOverlay > actions and hover loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -80,7 +80,7 @@ exports[`HoverOverlay actions and hover loading 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions and hover present 1`] = `
+exports[`HoverOverlay > actions and hover present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -122,9 +122,9 @@ exports[`HoverOverlay actions and hover present 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions and hover undefined 1`] = `<DocumentFragment />`;
+exports[`HoverOverlay > actions and hover undefined 1`] = `<DocumentFragment />`;
 
-exports[`HoverOverlay actions empty 1`] = `
+exports[`HoverOverlay > actions empty 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -142,9 +142,9 @@ exports[`HoverOverlay actions empty 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions error 1`] = `<DocumentFragment />`;
+exports[`HoverOverlay > actions error 1`] = `<DocumentFragment />`;
 
-exports[`HoverOverlay actions error, hover present 1`] = `
+exports[`HoverOverlay > actions error, hover present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -171,7 +171,7 @@ exports[`HoverOverlay actions error, hover present 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions loading 1`] = `
+exports[`HoverOverlay > actions loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -189,7 +189,7 @@ exports[`HoverOverlay actions loading 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions present 1`] = `
+exports[`HoverOverlay > actions present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -222,7 +222,7 @@ exports[`HoverOverlay actions present 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay actions present, hover loading 1`] = `
+exports[`HoverOverlay > actions present, hover loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -267,9 +267,9 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover empty 1`] = `<DocumentFragment />`;
+exports[`HoverOverlay > hover empty 1`] = `<DocumentFragment />`;
 
-exports[`HoverOverlay hover error 1`] = `
+exports[`HoverOverlay > hover error 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -295,7 +295,7 @@ exports[`HoverOverlay hover error 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover error, actions present 1`] = `
+exports[`HoverOverlay > hover error, actions present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -336,7 +336,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover loading 1`] = `
+exports[`HoverOverlay > hover loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -366,7 +366,7 @@ exports[`HoverOverlay hover loading 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover present 1`] = `
+exports[`HoverOverlay > hover present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -393,7 +393,7 @@ exports[`HoverOverlay hover present 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay hover present, actions loading 1`] = `
+exports[`HoverOverlay > hover present, actions loading 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"
@@ -420,7 +420,7 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
 </DocumentFragment>
 `;
 
-exports[`HoverOverlay multiple hovers present 1`] = `
+exports[`HoverOverlay > multiple hovers present 1`] = `
 <DocumentFragment>
   <div
     class="card hoverOverlay"

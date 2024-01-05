@@ -53,7 +53,7 @@ func SendTestWebhook(ctx context.Context, doer httpcli.Doer, description string,
 		MonitorDescription: description,
 		Query:              "test query",
 	}
-	return postWebhook(ctx, httpcli.ExternalDoer, u, generateWebhookPayload(args))
+	return postWebhook(ctx, doer, u, generateWebhookPayload(args))
 }
 
 type webhookPayload struct {

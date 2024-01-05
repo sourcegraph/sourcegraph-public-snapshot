@@ -1,6 +1,6 @@
 import { type FC, useState } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { H2 } from '@sourcegraph/wildcard'
@@ -97,4 +97,4 @@ const QueryInputStory: FC<{}> = () => {
     )
 }
 
-export const Default: Story = () => <BrandedStory>{QueryInputStory}</BrandedStory>
+export const Default: StoryFn = () => <BrandedStory>{QueryInputStory}</BrandedStory>

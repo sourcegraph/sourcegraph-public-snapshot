@@ -42,7 +42,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
     }, [])
 
     const handleSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>): void => {
+        async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
             if (loading) {
                 return
@@ -50,40 +50,40 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
 
             setLoading(true)
             eventLogger.log('InitiateSignIn')
-            fetch('/-/sign-in', {
-                credentials: 'same-origin',
-                method: 'POST',
-                headers: {
-                    ...context.xhrHeaders,
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: usernameOrEmail,
-                    password,
-                }),
-            })
-                .then(response => {
-                    if (response.status === 200) {
-                        if (new URLSearchParams(location.search).get('close') === 'true') {
-                            window.close()
-                        } else {
-                            const returnTo = getReturnTo(location)
-                            window.location.replace(returnTo)
-                        }
-                    } else if (response.status === 401) {
-                        throw new Error('User or password was incorrect')
-                    } else if (response.status === 422) {
-                        throw new Error('The account has been locked out')
+            try {
+                const response = await fetch('/-/sign-in', {
+                    credentials: 'same-origin',
+                    method: 'POST',
+                    headers: {
+                        ...context.xhrHeaders,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: usernameOrEmail,
+                        password,
+                    }),
+                })
+                if (response.status === 200) {
+                    if (new URLSearchParams(location.search).get('close') === 'true') {
+                        window.close()
                     } else {
-                        throw new Error('Unknown Error')
+                        const returnTo = getReturnTo(location)
+                        window.location.replace(returnTo)
                     }
-                })
-                .catch(error => {
-                    logger.error('Auth error:', error)
-                    setLoading(false)
-                    onAuthError(asError(error))
-                })
+                } else if (response.status === 401) {
+                    throw new Error('User or password was incorrect')
+                } else if (response.status === 422) {
+                    throw new Error('The account has been locked out')
+                } else {
+                    const text = await response.text()
+                    throw new Error(text === '' ? 'Unknown error' : text)
+                }
+            } catch (error) {
+                logger.error('Auth error:', error)
+                setLoading(false)
+                onAuthError(asError(error))
+            }
         },
         [usernameOrEmail, loading, location, password, onAuthError, context]
     )

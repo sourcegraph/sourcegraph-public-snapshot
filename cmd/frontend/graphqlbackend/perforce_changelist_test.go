@@ -77,7 +77,8 @@ foo bar`,
 	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotResolver, gotErr := toPerforceChangelistResolver(ctx, repoResolver, tc.inputCommit)
+			gcr := NewGitCommitResolver(db, nil, repoResolver, tc.inputCommit.ID, tc.inputCommit)
+			gotResolver, gotErr := toPerforceChangelistResolver(ctx, gcr)
 
 			if !errors.Is(gotErr, tc.expectedErr) {
 				t.Fatalf("mismatched errors, \nwant: %v\n got: %v", tc.expectedErr, gotErr)

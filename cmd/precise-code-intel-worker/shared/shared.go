@@ -105,7 +105,7 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
+		log.Scoped("init db").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
 	//
@@ -132,7 +132,7 @@ func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelsha
 	})
 	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		log.Scoped("init db", "Initialize codeintel database.").Fatal("Failed to connect to codeintel database", log.Error(err))
+		log.Scoped("init db").Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
 	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)

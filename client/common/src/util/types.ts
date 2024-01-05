@@ -1,11 +1,8 @@
 /**
  * Identity-function helper to ensure a value `T` is a subtype of `U`.
- *
  * @template U The type to check for (explicitly specify this)
  * @template T The actual type (inferred, don't specify this)
  */
-// needed for type parameter
-// eslint-disable-next-line unicorn/consistent-function-scoping
 export const subtypeOf =
     <U>() =>
     <T extends U>(value: T): T =>
@@ -14,7 +11,6 @@ export const subtypeOf =
 /**
  * Returns a type guard that checks whether the given value is strictly equal to a specific value.
  * This can for example be used with `isNot()` to exclude string literals like `"loading"`.
- *
  * @param constant The value to compare to. Pass this with `as const` to improve type inference.
  */
 export const isExactly =
@@ -26,7 +22,6 @@ export const isExactly =
  * Negates a type guard.
  * Returns a function that returns `true` when the input is **not** the type checked for by the given type guard.
  * It therefor excludes a type from a union type.
- *
  * @param isType The type guard that checks whether the given input value should be excluded.
  */
 export const isNot =
@@ -36,7 +31,6 @@ export const isNot =
 
 /**
  * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
- *
  * @param key The key of the property to check.
  */
 export const hasProperty =
@@ -46,14 +40,12 @@ export const hasProperty =
 
 /**
  * Returns a function that returns `true` if the given `key` exists in the given object, narrowing down the type of the _key_.
- *
  * @param key The key of the property to check.
  */
 export const keyExistsIn = <O extends object>(key: string | number | symbol, object: O): key is keyof O => key in object
 
 /**
  * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
- *
  * @param key The key of the property to check.
  * @param isType The type guard to evalute on the property value.
  */
@@ -72,7 +64,6 @@ export const isTaggedUnionMember =
 
 /**
  * Returns a function that returns `true` if the given value is an instance of the given class.
- *
  * @param constructor A reference to a class, e.g. `HTMLElement`
  */
 export const isInstanceOf =

@@ -13,7 +13,7 @@ type Plan string
 // HasFeature returns whether the plan has the given feature.
 // If the target is a pointer, the plan's feature configuration will be
 // set to the target.
-func (p Plan) HasFeature(target Feature, isExpired bool) bool {
+func (p Plan) HasFeature(target Feature) bool {
 	if target == nil {
 		panic("licensing: target cannot be nil")
 	}
@@ -23,23 +23,12 @@ func (p Plan) HasFeature(target Feature, isExpired bool) bool {
 		panic("licensing: target cannot be a nil pointer")
 	}
 
-	if isExpired {
-		for _, f := range planDetails[p].ExpiredFeatures {
-			if target.FeatureName() == f.FeatureName() {
-				if val.Kind() == reflect.Ptr {
-					val.Elem().Set(reflect.ValueOf(f).Elem())
-				}
-				return true
+	for _, f := range planDetails[p].Features {
+		if target.FeatureName() == f.FeatureName() {
+			if val.Kind() == reflect.Ptr {
+				val.Elem().Set(reflect.ValueOf(f).Elem())
 			}
-		}
-	} else {
-		for _, f := range planDetails[p].Features {
-			if target.FeatureName() == f.FeatureName() {
-				if val.Kind() == reflect.Ptr {
-					val.Elem().Set(reflect.ValueOf(f).Elem())
-				}
-				return true
-			}
+			return true
 		}
 	}
 	return false

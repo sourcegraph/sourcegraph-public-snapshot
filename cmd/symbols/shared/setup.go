@@ -123,11 +123,11 @@ func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repo
 }
 
 func setupRockskip(observationCtx *observation.Context, config rockskipConfig, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), string, error) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("rockskip", "rockskip-based symbols"), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("rockskip"), observationCtx)
 
 	codeintelDB := mustInitializeCodeIntelDB(observationCtx)
 	createParser := func() (ctags.Parser, error) {
-		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags, ctags_config.UniversalCtags)
+		return symbolsParser.SpawnCtags(log.Scoped("parser"), config.Ctags, ctags_config.UniversalCtags)
 	}
 	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
 	if err != nil {

@@ -1,11 +1,11 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/preview/BatchSpecInfoByline',
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {() => (
             <BatchSpecInfoByline

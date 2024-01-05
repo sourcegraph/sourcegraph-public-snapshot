@@ -266,6 +266,6 @@ FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
 	sid.upload_id = %s AND
-	sid.document_path = %s
+	sid.document_path LIKE %s
 LIMIT 1
 `

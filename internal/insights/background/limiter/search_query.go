@@ -18,7 +18,7 @@ var searchLimiter *ratelimit.InstrumentedLimiter
 func SearchQueryRate() *ratelimit.InstrumentedLimiter {
 
 	searchOnce.Do(func() {
-		searchLogger = log.Scoped("insights.search.ratelimiter", "")
+		searchLogger = log.Scoped("insights.search.ratelimiter")
 		defaultRateLimit := rate.Limit(20.0)
 		defaultBurst := 20
 		getRateLimit := getSearchQueryRateLimit(defaultRateLimit, defaultBurst)

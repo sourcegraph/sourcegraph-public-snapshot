@@ -7,7 +7,7 @@ import { asError, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '../Markdown'
 
 export const renderError = (error: unknown): string =>
-    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')), { breaks: true })
+    renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replaceAll('\t', '')), { breaks: true })
         .trim()
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')

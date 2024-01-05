@@ -20,7 +20,7 @@ type AlertsStatusReporter struct {
 
 func NewAlertsStatusReporter(logger log.Logger, alertmanager *amclient.Alertmanager) *AlertsStatusReporter {
 	return &AlertsStatusReporter{
-		log:          logger.Scoped("alerts-status", "alerts status reporter"),
+		log:          logger.Scoped("alerts-status"),
 		alertmanager: alertmanager,
 	}
 }

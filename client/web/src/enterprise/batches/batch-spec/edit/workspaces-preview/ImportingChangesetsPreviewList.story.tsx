@@ -1,12 +1,12 @@
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { mockImportingChangesets } from '../../batch-spec.mock'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/workspaces-preview/ImportingChangesetsPreviewList',
@@ -39,7 +39,7 @@ const config: Meta = {
 
 export default config
 
-export const ImportingChangesetsPreviewListStory: Story = args => {
+export const ImportingChangesetsPreviewListStory: StoryFn = args => {
     const count = args.count
     return (
         <WebStory>

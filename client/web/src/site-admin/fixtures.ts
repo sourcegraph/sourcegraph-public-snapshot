@@ -31,6 +31,7 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
         },
         webhookURL: null,
         hasConnectionCheck: true,
+        unrestricted: false,
         syncJobs: {
             totalCount: 1,
             pageInfo: { endCursor: null, hasNextPage: false },

@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import type { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'

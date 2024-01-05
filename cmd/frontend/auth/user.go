@@ -5,8 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
+
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -16,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,6 +35,53 @@ type GetAndSaveUserOp struct {
 	ExternalAccountData extsvc.AccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool
+}
+
+// Checks if the user's email defined in the GetAndSaveUserOp is banned.
+// This is done by first checking a list of banned email domains.
+// If the domain is not banned, we then check if the email is a Google account
+// that's hosted on a non-gmail.com domain. Then, if too many signups have
+// happend recently, we prevent the signup.
+func checkIfEmailDomainIsBanned(ctx context.Context, recorder *telemetry.BestEffortEventRecorder, op GetAndSaveUserOp, acct *extsvc.Account) (string, error) {
+	domain, _ := security.ParseEmailDomain(op.UserProps.Email)
+
+	banned, err := security.IsEmailBanned(op.UserProps.Email)
+	if err != nil {
+		return "could not determine if email domain is banned", err
+	}
+
+	if banned {
+		recorder.Record(ctx, telemetry.FeaturesSignUpBlockedBannedDomain, telemetry.ActionFailed, &telemetry.EventParameters{
+			PrivateMetadata: map[string]any{
+				"serviceType": acct.AccountSpec.ServiceType,
+				"serviceId":   acct.AccountSpec.ServiceID,
+				"emailDomain": domain,
+			},
+		})
+
+		return "this email address is not allowed to register", errors.New("email domain banned")
+	}
+
+	if acct.AccountSpec.ServiceID == "https://accounts.google.com" && domain != "gmail.com" {
+		banned, err := security.IsEmailBlockedDueToTooManySignups(op.UserProps.Email)
+		if err != nil {
+			return "could not determine if email domain is banned", err
+		}
+
+		if banned {
+			recorder.Record(ctx, telemetry.FeaturesSignUpBlockedTooManySignups, telemetry.ActionFailed, &telemetry.EventParameters{
+				PrivateMetadata: map[string]any{
+					"serviceType": acct.AccountSpec.ServiceType,
+					"serviceId":   acct.AccountSpec.ServiceID,
+					"emailDomain": domain,
+				},
+			})
+
+			return "There seem to be too many signups occurring today. Please try again at a later time.", errors.New("Email not allowed to register due to too many signups")
+		}
+	}
+
+	return "", nil
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -65,9 +119,11 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return MockGetAndSaveUser(ctx, op)
 	}
 
+	logger := sglog.Scoped("authGetAndSaveUser")
+	recorder := telemetryrecorder.NewBestEffort(logger, db)
+
 	externalAccountsStore := db.UserExternalAccounts()
 	users := db.Users()
-	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
 
 	acct := &extsvc.Account{
 		AccountSpec: op.ExternalAccount,
@@ -122,6 +178,13 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			SourcegraphOperator: acct.AccountSpec.ServiceType == auth.SourcegraphOperatorProviderType,
 		}
 
+		if envvar.SourcegraphDotComMode() {
+			reason, err := checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
+			if err != nil {
+				return 0, false, false, reason, err
+			}
+		}
+
 		// Fourth and finally, create a new user account and return it.
 		//
 		// If CreateIfNotExist is true, create the new user, regardless of whether the
@@ -163,7 +226,12 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
 		}
 
-		const eventName = "ExternalAuthSignupSucceeded"
+		// Legacy event - new event is recorded outside this closure to cover
+		// more scenarios. We retain the legacy event because it is still
+		// exported by the legacy Cloud exporter, remove in future release.
+		const legacyEventName = "ExternalAuthSignupSucceeded"
+		// SECURITY: This args map is treated as a public argument in the LogEvent call below, so it must not contain
+		// any sensitive data.
 		args, err := json.Marshal(map[string]any{
 			// NOTE: The conventional name should be "service_type", but keeping as-is for
 			// backwards capability.
@@ -172,7 +240,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		if err != nil {
 			logger.Error(
 				"failed to marshal JSON for event log argument",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 			// OK to continue, we still want the event log to be created
@@ -181,20 +249,24 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// NOTE: It is important to propagate the correct context that carries the
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
+		//
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		err = usagestats.LogEvent(
 			ctx,
 			db,
 			usagestats.Event{
-				EventName: eventName,
-				UserID:    act.UID,
-				Argument:  args,
-				Source:    "BACKEND",
+				EventName:      legacyEventName,
+				UserID:         act.UID,
+				Argument:       args,
+				PublicArgument: args,
+				Source:         "BACKEND",
 			},
 		)
 		if err != nil {
 			logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 		}
@@ -202,17 +274,49 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
-		const eventName = "ExternalAuthSignupFailed"
+		// Retain legacy event logging format since there are references to it
+		ctx = teestore.WithoutV1(ctx)
+
+		// New event - most external services have an exstvc.Variant, so add that as safe metadata
+		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+		recorder.Record(ctx, "externalAuthSignup", telemetry.ActionFailed, &telemetry.EventParameters{
+			Metadata:        telemetry.EventMetadata{"serviceVariant": telemetry.Number(serviceVariant)},
+			PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+		})
+
+		// Legacy event - retain because it is still exported by the legacy
+		// Cloud exporter, remove in future release.
+		const legacyEventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, acct.AccountSpec.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
+		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality.
+		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), legacyEventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
+				sglog.String("eventName", legacyEventName),
 				sglog.Error(err),
 			)
 		}
 		return newUserSaved, 0, safeErrMsg, err
 	}
+
+	// There is a legacy event instrumented earlier in this function that covers
+	// the new-user case only, that we are retaining because it might still be
+	// in use. Since this event is quite rare, we DON'T use teestore.WithoutV1
+	// here on the new event even though the legacy event still exists so that
+	// we can consistently capture all the cases.
+	serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+	recorder.Record(ctx, "externalAuthSignup", telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Metadata: telemetry.EventMetadata{
+			// Most auth providers services have an exstvc.Variant, so add that
+			// as safe metadata.
+			"serviceVariant": telemetry.Number(serviceVariant),
+			// Track the various outcomes of the massive signup closer above.
+			"newUserSaved": telemetry.Bool(newUserSaved),
+			"extAcctSaved": telemetry.Bool(extAcctSaved),
+		},
+		PrivateMetadata: map[string]any{"serviceType": acct.AccountSpec.ServiceType},
+	})
 
 	// Update user properties, if they've changed
 	if !newUserSaved {
@@ -265,5 +369,40 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 	}
 
+	addCodyProForTestUsers(ctx, db, userID, logger)
 	return newUserSaved, userID, "", nil
+}
+
+// addCodyProForTestUsers adds the cody-pro feature flag for users who are on the
+// "exempted from the minimum external account age" list
+// This is temporary for testing before 2023-12-14
+func addCodyProForTestUsers(ctx context.Context, db database.DB, userID int32, logger sglog.Logger) {
+	dc := conf.Get().Dotcom
+	if dc == nil {
+		return
+	}
+
+	verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userID, OnlyVerified: true})
+	if err != nil {
+		return
+	}
+
+	exempted := false
+	for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
+		for _, verifiedEmail := range verifiedEmails {
+			if verifiedEmail.Email == exemptedEmail {
+				exempted = true
+				break
+			}
+		}
+		if exempted {
+			break
+		}
+	}
+	if exempted {
+		_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &userID})
+		if err != nil {
+			logger.Error("failed to create feature flag override", sglog.Error(err))
+		}
+	}
 }

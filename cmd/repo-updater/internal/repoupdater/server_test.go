@@ -461,7 +461,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Name:         npmRepository.Name,
 				VCS:          protocol.VCSInfo{URL: string(npmRepository.Name)},
 			}},
-			assert: typestest.Assert.ReposEqual(npmRepository),
+			assert: typestest.AssertReposEqual(npmRepository),
 		},
 		{
 			name: "synced - github.com cloud default",
@@ -486,7 +486,7 @@ func TestServer_RepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: typestest.Assert.ReposEqual(githubRepository),
+			assert: typestest.AssertReposEqual(githubRepository),
 		},
 		{
 			name: "found - github.com already exists",
@@ -520,7 +520,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: typestest.Assert.ReposEqual(),
+			assert: typestest.AssertReposEqual(),
 		},
 		{
 			name: "unauthorized - github.com",
@@ -530,7 +530,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			src:    repos.NewFakeSource(&githubSource, &github.APIError{Code: http.StatusUnauthorized}),
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
 			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: typestest.Assert.ReposEqual(),
+			assert: typestest.AssertReposEqual(),
 		},
 		{
 			name: "temporarily unavailable - github.com",
@@ -544,7 +544,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				api.RepoName("github.com/foo/bar"),
 				true,
 			),
-			assert: typestest.Assert.ReposEqual(),
+			assert: typestest.AssertReposEqual(),
 		},
 		{
 			name:   "synced - gitlab.com",
@@ -567,7 +567,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: typestest.Assert.ReposEqual(gitlabRepository),
+			assert: typestest.AssertReposEqual(gitlabRepository),
 		},
 		{
 			name:   "found - gitlab.com",
@@ -628,7 +628,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 			}},
 			assertDelay: time.Second,
-			assert:      typestest.Assert.ReposEqual(),
+			assert:      typestest.AssertReposEqual(),
 		},
 	}
 

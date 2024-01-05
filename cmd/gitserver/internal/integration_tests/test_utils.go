@@ -46,7 +46,7 @@ func InitGitserver() {
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
-	logger := sglog.Scoped("gitserver_integration_tests", "")
+	logger := sglog.Scoped("gitserver_integration_tests")
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -74,14 +74,14 @@ func InitGitserver() {
 	db.ReposFunc.SetDefaultReturn(r)
 
 	s := server.Server{
-		Logger:         sglog.Scoped("server", "the gitserver service"),
+		Logger:         sglog.Scoped("server"),
 		ObservationCtx: &observation.TestContext,
 		ReposDir:       filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return filepath.Join(root, "remotes", string(name)), nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,

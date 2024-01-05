@@ -1,5 +1,5 @@
 import { mdiSourceRepository } from '@mdi/js'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -9,7 +9,7 @@ import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import type { AuthenticatedUser } from '../auth'
 
-import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import { CopyPermalinkAction } from './actions/CopyPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
 import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
@@ -24,7 +24,7 @@ const mockUser = {
     siteAdmin: true,
 } as AuthenticatedUser
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory initialEntries={['/github.com/sourcegraph/sourcegraph/-/tree/']} styles={webStyles}>
         {() => <div className="container mt-3">{story()}</div>}
     </BrandedStory>
@@ -38,7 +38,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <>
         <H1>Repo header</H1>
         <H2>Simple</H2>
@@ -76,12 +76,12 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
         id: 'go-to-permalink',
         position: 'right',
         children: () => (
-            <GoToPermalinkAction
-                telemetryService={NOOP_TELEMETRY_SERVICE}
+            <CopyPermalinkAction
                 revision="main"
                 commitID="123"
                 repoName="sourcegraph/sourcegraph"
                 actionType="nav"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         ),
     })
@@ -140,7 +140,6 @@ const createBreadcrumbs = (path: string) => [
 ]
 
 const createProps = (path: string, forceWrap: boolean = false): React.ComponentProps<typeof RepoHeader> => ({
-    actionButtons: [],
     breadcrumbs: createBreadcrumbs(path),
     repoName: 'sourcegraph/sourcegraph',
     revision: 'main',
@@ -148,7 +147,6 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     authenticatedUser: mockUser,
     platformContext: {} as any,
-    telemetryService: NOOP_TELEMETRY_SERVICE,
     forceWrap,
 })
 

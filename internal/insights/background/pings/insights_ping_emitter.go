@@ -20,7 +20,7 @@ import (
 func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 60
 	e := InsightsPingEmitter{
-		logger:     log.Scoped("InsightsPingEmitter", ""),
+		logger:     log.Scoped("InsightsPingEmitter"),
 		postgresDb: base,
 		insightsDb: insights,
 	}
@@ -232,6 +232,7 @@ func (e *InsightsPingEmitter) emitBackfillTime(ctx context.Context) error {
 func (e *InsightsPingEmitter) SaveEvent(ctx context.Context, name string, argument json.RawMessage) error {
 	store := e.postgresDb.EventLogs()
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err := store.Insert(ctx, &database.Event{
 		Name:            name,
 		UserID:          0,

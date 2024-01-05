@@ -1,11 +1,11 @@
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { ExecutorCompatibility } from '../../../graphql-operations'
 
 import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/executors/instances/ExecutorCompatibilityAlert',
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const UpToDate: Story = () => (
+export const UpToDate: StoryFn = () => (
     <WebStory>
         {props => (
             <ExecutorCompatibilityAlert
@@ -29,7 +29,7 @@ export const UpToDate: Story = () => (
 // This story is expected to be empty.
 UpToDate.storyName = 'Executor is up to date'
 
-export const Outdated: Story = () => (
+export const Outdated: StoryFn = () => (
     <WebStory>
         {props => (
             <ExecutorCompatibilityAlert
@@ -43,7 +43,7 @@ export const Outdated: Story = () => (
 
 Outdated.storyName = 'Executor is outdated'
 
-export const VersionAhead: Story = () => (
+export const VersionAhead: StoryFn = () => (
     <WebStory>
         {props => (
             <ExecutorCompatibilityAlert

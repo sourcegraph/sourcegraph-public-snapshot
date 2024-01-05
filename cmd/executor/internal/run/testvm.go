@@ -71,7 +71,7 @@ func createVM(ctx context.Context, cmdRunner util.CmdRunner, config *config.Conf
 
 	cmd := &command.RealCommand{
 		CmdRunner: cmdRunner,
-		Logger:    log.Scoped("executor-test-vm", ""),
+		Logger:    log.Scoped("executor-test-vm"),
 	}
 	firecrackerWorkspace, err := workspace.NewFirecrackerWorkspace(
 		ctx,

@@ -1,7 +1,6 @@
 import React from 'react'
 
-import type { Args } from '@storybook/addons'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn, Args } from '@storybook/react'
 
 import { PopoverTrigger, H1 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
@@ -68,7 +67,7 @@ const commonProps = (
     productResearchEnabled: props.productResearchEnabled,
 })
 
-export const FeedbackPromptWithSuccessResponse: Story = args => (
+export const FeedbackPromptWithSuccessResponse: StoryFn = args => (
     <>
         <H1>This is a feedbackPrompt with success response</H1>
         <FeedbackPrompt onSubmit={handleSuccessSubmit} {...commonProps(args)}>
@@ -86,7 +85,7 @@ export const FeedbackPromptWithSuccessResponse: Story = args => (
     </>
 )
 
-export const FeedbackPromptWithErrorResponse: Story = args => (
+export const FeedbackPromptWithErrorResponse: StoryFn = args => (
     <>
         <H1>This is a feedbackPrompt with error response</H1>
         <FeedbackPrompt onSubmit={handleErrorSubmit} {...commonProps(args)}>
@@ -104,7 +103,7 @@ export const FeedbackPromptWithErrorResponse: Story = args => (
     </>
 )
 
-export const FeedbackPromptWithInModal: Story = args => (
+export const FeedbackPromptWithInModal: StoryFn = args => (
     <>
         <H1>This is a feedbackPrompt in modal</H1>
         <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true} {...commonProps(args)}>

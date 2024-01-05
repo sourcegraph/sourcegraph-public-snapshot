@@ -12,10 +12,10 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
+import { hacksGobQueriesToRegex } from './searchSimple'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -93,14 +93,12 @@ export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
-    aggregableBadges?: AggregableBadge[]
 }
 
-interface ChunkMatch {
+export interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
-    aggregableBadges?: AggregableBadge[]
 }
 
 export interface SymbolMatch {
@@ -128,7 +126,6 @@ type MarkdownText = string
 /**
  * Our batch based client requests generic fields from GraphQL to represent repo and commit/diff matches.
  * We currently are only using it for commit. To simplify the PoC we are keeping this interface for commits.
- *
  * @see GQL.IGenericSearchResultInterface
  */
 export interface CommitMatch {
@@ -162,6 +159,7 @@ export interface RepositoryMatch {
     branches?: string[]
     descriptionMatches?: Range[]
     metadata?: Record<string, string | undefined>
+    topics?: string[]
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -272,7 +270,7 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility'
+    kind: 'file' | 'repo' | 'lang' | 'utility' | 'select' | 'after' | 'before' | 'author'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
@@ -339,35 +337,40 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
             switch (newEvent.kind) {
                 case 'N': {
                     switch (newEvent.value?.type) {
-                        case 'matches':
+                        case 'matches': {
                             return {
                                 ...results,
                                 // Matches are additive
                                 results: results.results.concat(newEvent.value.data),
                             }
+                        }
 
-                        case 'progress':
+                        case 'progress': {
                             return {
                                 ...results,
                                 // Progress updates replace
                                 progress: newEvent.value.data,
                             }
+                        }
 
-                        case 'filters':
+                        case 'filters': {
                             return {
                                 ...results,
                                 // New filter results replace all previous ones
                                 filters: newEvent.value.data,
                             }
+                        }
 
-                        case 'alert':
+                        case 'alert': {
                             return {
                                 ...results,
                                 alert: newEvent.value.data,
                             }
+                        }
 
-                        default:
+                        default: {
                             return results
+                        }
                     }
                 }
                 case 'E': {
@@ -389,13 +392,15 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
                         state: 'error',
                     }
                 }
-                case 'C':
+                case 'C': {
                     return {
                         ...results,
                         state: 'complete',
                     }
-                default:
+                }
+                default: {
                     return results
+                }
             }
         },
         emptyAggregateResults
@@ -483,6 +488,7 @@ export interface StreamSearchOptions {
     displayLimit?: number
     chunkMatches?: boolean
     enableRepositoryMetadata?: boolean
+    zoektSearchOptions?: string
 }
 
 function initiateSearchStream(
@@ -492,6 +498,7 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        zoektSearchOptions,
         featureOverrides,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
@@ -503,8 +510,25 @@ function initiateSearchStream(
     return new Observable<SearchEvent>(observer => {
         const subscriptions = new Subscription()
 
+        // HACK(keegan) forgive me for this hack, but this is for rapid
+        // prototyping of a new query language. We should fast follow on
+        // something more robust once we get some internal validation. This
+        // feature flag is purely so we can demonstrate it more easily.
+        //
+        // If you still see this code after February 2024 delete it (or me).
+        let queryParam = `${query} ${caseSensitive ? 'case:yes' : ''}`
+        if (featureOverrides?.includes('search-simple')) {
+            const queryRegex = hacksGobQueriesToRegex(queryParam)
+            // eslint-disable-next-line no-console
+            console.log('query rewritten due to search-simple feature flag being set', {
+                old: queryParam,
+                new: queryRegex,
+            })
+            queryParam = queryRegex
+        }
+
         const parameters = [
-            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
+            ['q', queryParam],
             ['v', version],
             ['t', patternType as string],
             ['sm', searchMode.toString()],
@@ -516,6 +540,10 @@ function initiateSearchStream(
         }
         for (const value of featureOverrides || []) {
             parameters.push(['feat', value])
+        }
+
+        if (zoektSearchOptions) {
+            parameters.push(['zoekt-search-opts', zoektSearchOptions])
         }
         const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
@@ -537,7 +565,6 @@ function initiateSearchStream(
 /**
  * Initiates a streaming search.
  * This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events). The observable will emit each event returned from the backend.
- *
  * @param queryObservable is an observables that resolves to a query string
  * @param options contains the search query and the necessary context to perform the search (version, patternType, caseSensitive, etc.)
  * @param messageHandlers provide handler functions for each possible `SearchEvent` type
@@ -566,21 +593,19 @@ export function getRepositoryUrl(repository: string, branches?: string[]): strin
 }
 
 export function getRevision(branches?: string[], version?: string): string {
-    let revision = ''
-    if (branches) {
-        const branch = branches[0]
-        if (branch !== '') {
-            revision = branch
-        }
-    } else if (version) {
-        revision = version
+    if (branches && branches.length > 0) {
+        return branches[0]
     }
-
-    return revision
+    if (version) {
+        return version
+    }
+    return ''
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.commit)
+    // We are not using getRevision here, because we want to flip the logic from
+    // "branches first" to "revsion first"
+    const revision = fileMatch.commit ?? fileMatch.branches?.[0]
     const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
@@ -627,15 +652,19 @@ export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
         case 'content':
-        case 'symbol':
+        case 'symbol': {
             return getFileMatchUrl(match)
-        case 'commit':
+        }
+        case 'commit': {
             return getCommitMatchUrl(match)
-        case 'repo':
+        }
+        case 'repo': {
             return getRepoMatchUrl(match)
+        }
         case 'person':
-        case 'team':
+        case 'team': {
             return getOwnerMatchUrl(match)
+        }
     }
 }
 

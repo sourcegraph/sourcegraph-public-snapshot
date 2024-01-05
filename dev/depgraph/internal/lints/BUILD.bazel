@@ -6,7 +6,6 @@ go_library(
         "lint.go",
         "no_binary_specific_shared_code.go",
         "no_dead_packages.go",
-        "no_enterprise_imports_from_oss.go",
         "no_loose_commands.go",
         "no_reaching_into_commands.go",
         "no_unused_shared_command_code.go",

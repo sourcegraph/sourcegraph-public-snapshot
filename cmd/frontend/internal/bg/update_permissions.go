@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,7 +20,7 @@ import (
 
 // UpdatePermissions is called as part of the background process by the `frontend` service.
 func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
-	scopedLog := logger.Scoped("permission_update", "Updates the permission in the database based on the rbac schema configuration.")
+	scopedLog := logger.Scoped("permission_update")
 	err := db.WithTransact(ctx, func(tx database.DB) error {
 		permissionStore := tx.Permissions()
 		rolePermissionStore := tx.RolePermissions()

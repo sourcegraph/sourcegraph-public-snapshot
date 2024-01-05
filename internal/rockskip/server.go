@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -60,7 +61,7 @@ func NewService(
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
-	logger := log.Scoped("service", "")
+	logger := log.Scoped("service")
 
 	service := &Service{
 		logger:                  logger,

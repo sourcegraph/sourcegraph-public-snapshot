@@ -2,43 +2,56 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n}\n\tquery
-      {\nrepo0: repository(owner: \"sourcegraph\", name: \"Sourcegraph\") { ... on
-      Repository { ...RepositoryFields } }\nrepo1: repository(owner: \"keegancsmith\",
-      name: \"sqlf\") { ... on Repository { ...RepositoryFields } }\nrepo2: repository(owner:
-      \"tsenart\", name: \"VEGETA\") { ... on Repository { ...RepositoryFields } }\nrepo3:
-      repository(owner: \"tsenart\", name: \"go-tsz\") { ... on Repository { ...RepositoryFields
-      } }\n}","variables":{}}'
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\tdiskUsage\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\tquery
+      {\nrepo0: repository(owner: \"sourcegraph\", name: \"sourcegraph\") { ... on
+      Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }\nrepo1:
+      repository(owner: \"keegancsmith\", name: \"sqlf\") { ... on Repository { ...RepositoryFields
+      parent { nameWithOwner, isFork } } }\nrepo2: repository(owner: \"tsenart\",
+      name: \"VEGETA\") { ... on Repository { ...RepositoryFields parent { nameWithOwner,
+      isFork } } }\nrepo3: repository(owner: \"tsenart\", name: \"go-tsz\") { ...
+      on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }\nrepo4:
+      repository(owner: \"sourcegraph\", name: \"about\") { ... on Repository { ...RepositoryFields
+      parent { nameWithOwner, isFork } } }\nrepo5: repository(owner: \"facebook\",
+      name: \"react\") { ... on Repository { ...RepositoryFields parent { nameWithOwner,
+      isFork } } }\nrepo6: repository(owner: \"torvalds\", name: \"linux\") { ...
+      on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }\nrepo7:
+      repository(owner: \"avelino\", name: \"awesome-go\") { ... on Repository { ...RepositoryFields
+      parent { nameWithOwner, isFork } } }\n}","variables":{}}'
     form: {}
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repo0":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Universal
-      code search (self-hosted)","url":"https://github.com/sourcegraph/sourcegraph","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":4888,"forkCount":579},"repo1":{"id":"MDEwOlJlcG9zaXRvcnk1ODk1ODk0Mg==","databaseId":58958942,"nameWithOwner":"keegancsmith/sqlf","description":"sqlf
-      generates parameterized SQL statements in Go, sprintf style","url":"https://github.com/keegancsmith/sqlf","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":54,"forkCount":3},"repo2":{"id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","databaseId":12080551,"nameWithOwner":"tsenart/vegeta","description":"HTTP
-      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":17729,"forkCount":1101},"repo3":{"id":"MDEwOlJlcG9zaXRvcnkxNDE3OTgwNzU=","databaseId":141798075,"nameWithOwner":"tsenart/go-tsz","description":"Time
-      series compression algorithm from Facebook''s Gorilla paper","url":"https://github.com/tsenart/go-tsz","isPrivate":false,"isFork":true,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":4,"forkCount":5}}}'
+    body: '{"data":{"repo0":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Code
+      AI platform with Code Search & Cody","url":"https://github.com/sourcegraph/sourcegraph","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":9145,"forkCount":1192,"diskUsage":1162487,"repositoryTopics":{"nodes":[{"topic":{"name":"sourcegraph"}},{"topic":{"name":"open-source"}},{"topic":{"name":"code-search"}},{"topic":{"name":"code-intelligence"}},{"topic":{"name":"repo-type-main"}},{"topic":{"name":"lsif-enabled"}}]},"parent":null},"repo1":{"id":"MDEwOlJlcG9zaXRvcnk1ODk1ODk0Mg==","databaseId":58958942,"nameWithOwner":"keegancsmith/sqlf","description":"sqlf
+      generates parameterized SQL statements in Go, sprintf style","url":"https://github.com/keegancsmith/sqlf","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":123,"forkCount":8,"diskUsage":17,"repositoryTopics":{"nodes":[{"topic":{"name":"golang"}},{"topic":{"name":"go"}},{"topic":{"name":"sql"}},{"topic":{"name":"sprintf-style"}}]},"parent":null},"repo2":{"id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","databaseId":12080551,"nameWithOwner":"tsenart/vegeta","description":"HTTP
+      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":22112,"forkCount":1364,"diskUsage":2553,"repositoryTopics":{"nodes":[{"topic":{"name":"load-testing"}},{"topic":{"name":"go"}},{"topic":{"name":"benchmarking"}},{"topic":{"name":"http"}}]},"parent":null},"repo3":{"id":"MDEwOlJlcG9zaXRvcnkxNDE3OTgwNzU=","databaseId":141798075,"nameWithOwner":"tsenart/go-tsz","description":"Time
+      series compression algorithm from Facebook''s Gorilla paper","url":"https://github.com/tsenart/go-tsz","isPrivate":false,"isFork":true,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":5,"forkCount":4,"diskUsage":326,"repositoryTopics":{"nodes":[]},"parent":{"nameWithOwner":"dgryski/go-tsz","isFork":false}},"repo4":{"id":"MDEwOlJlcG9zaXRvcnkxNDk1MTg3ODM=","databaseId":149518783,"nameWithOwner":"sourcegraph/about","description":"Sourcegraph
+      blog, feature announcements, and website (sourcegraph.com)","url":"https://github.com/sourcegraph/about","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":89,"forkCount":168,"diskUsage":524322,"repositoryTopics":{"nodes":[{"topic":{"name":"team"}}]},"parent":null},"repo5":{"id":"MDEwOlJlcG9zaXRvcnkxMDI3MDI1MA==","databaseId":10270250,"nameWithOwner":"facebook/react","description":"The
+      library for web and native user interfaces.","url":"https://github.com/facebook/react","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":215295,"forkCount":45372,"diskUsage":364386,"repositoryTopics":{"nodes":[{"topic":{"name":"javascript"}},{"topic":{"name":"react"}},{"topic":{"name":"frontend"}},{"topic":{"name":"declarative"}},{"topic":{"name":"ui"}},{"topic":{"name":"library"}}]},"parent":null},"repo6":{"id":"MDEwOlJlcG9zaXRvcnkyMzI1Mjk4","databaseId":2325298,"nameWithOwner":"torvalds/linux","description":"Linux
+      kernel source tree","url":"https://github.com/torvalds/linux","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":161083,"forkCount":51069,"diskUsage":4786194,"repositoryTopics":{"nodes":[]},"parent":null},"repo7":{"id":"MDEwOlJlcG9zaXRvcnkyMTU0MDc1OQ==","databaseId":21540759,"nameWithOwner":"avelino/awesome-go","description":"A
+      curated list of awesome Go frameworks, libraries and software","url":"https://github.com/avelino/awesome-go","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":111633,"forkCount":11434,"diskUsage":10576,"repositoryTopics":{"nodes":[{"topic":{"name":"golang"}},{"topic":{"name":"golang-library"}},{"topic":{"name":"go"}},{"topic":{"name":"awesome"}},{"topic":{"name":"awesome-list"}},{"topic":{"name":"hacktoberfest"}}]},"parent":null}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - no-cache
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 20 Jul 2021 18:51:56 GMT
+      - Thu, 16 Nov 2023 14:56:51 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -47,8 +60,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -56,28 +67,29 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B8E2:9885:4A73C8:4C0935:60F71B4C
-      X-Oauth-Scopes:
-      - ""
+      - F7AF:56FE:3B280F2C:3BD93ED2:65562DB3
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "1"
+      - "13"
       X-Xss-Protection:
       - "0"
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n}\n\t\nquery($query:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tviewerPermission\n\tstargazerCount\n\tforkCount\n\tdiskUsage\n\trepositoryTopics(first:100)
+      {\n\t\tnodes {\n\t\t\ttopic {\n\t\t\t\tname\n\t\t\t}\n\t\t}\n\t}\n}\n\t\nquery($query:
       String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
       $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
       { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
-      } }\n\t}\n}","variables":{"first":100,"query":"user:tsenart in:name patrol","type":"REPOSITORY"}}'
+      } }\n\t}\n}","variables":{"first":100,"query":"user:tsenart in:name patrol created:2007-06-01T00:00:00+00:00..2023-11-16T14:56:51+00:00","type":"REPOSITORY"}}'
     form: {}
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
@@ -85,23 +97,21 @@ interactions:
   response:
     body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU=","databaseId":153657245,"nameWithOwner":"tsenart/patrol","description":"Patrol
       is an operator friendly distributed rate limiting HTTP API with strong eventually
-      consistent CvRDT based replication.","url":"https://github.com/tsenart/patrol","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"ADMIN","stargazerCount":33,"forkCount":3}]}}}'
+      consistent CvRDT based replication.","url":"https://github.com/tsenart/patrol","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":35,"forkCount":3,"diskUsage":95,"repositoryTopics":{"nodes":[]}}]}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - no-cache
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 20 Jul 2021 18:51:56 GMT
+      - Thu, 16 Nov 2023 14:56:52 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -110,8 +120,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -119,13 +127,11 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - B8E2:9885:4A740B:4C0981:60F71B4C
-      X-Oauth-Scopes:
-      - ""
+      - F7AF:56FE:3B2812A4:3BD94230:65562DB3
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "2"
+      - "14"
       X-Xss-Protection:
       - "0"
     status: 200 OK

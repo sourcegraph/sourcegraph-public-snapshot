@@ -60,7 +60,7 @@ var app = &cli.App{
 					Name:        "private",
 					Description: "Set repo visibility to private",
 					Action: func(cmd *cli.Context) error {
-						logger := log.Scoped("runner", "")
+						logger := log.Scoped("runner")
 						ctx := context.Background()
 						tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 							&oauth2.Token{AccessToken: cmd.String("github.token")},
@@ -348,7 +348,7 @@ func main() {
 		Name: "codehostcopy",
 	})
 	defer cb.Sync()
-	logger := log.Scoped("main", "")
+	logger := log.Scoped("main")
 
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))

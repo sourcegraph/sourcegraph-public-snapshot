@@ -11,22 +11,20 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/gorilla/csrf"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/russellhaering/gosaml2/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const stateCookieName = "sg-oidc-state"
 
 // All OpenID Connect endpoints are under this path prefix.
 const authPrefix = auth.AuthURLPrefix + "/openidconnect"
@@ -106,7 +104,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
-		RedirectToAuthRequest(w, r, p, stateCookieName, auth.SafeRedirectURL(r.URL.String()))
+		RedirectToAuthRequest(w, r, p, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 
@@ -135,36 +133,29 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if redirect == "" {
 				redirect = r.URL.Query().Get("returnTo")
 			}
-			RedirectToAuthRequest(w, r, p, stateCookieName, redirect)
+			RedirectToAuthRequest(w, r, p, redirect)
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := AuthCallback(db, r, stateCookieName, "", GetProvider)
+			result, safeErrMsg, errStatus, err := AuthCallback(db, r, "", GetProvider)
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
-				arg, _ := json.Marshal(struct {
+				arg := struct {
 					SafeErrorMsg string `json:"safe_error_msg"`
 				}{
 					SafeErrorMsg: safeErrMsg,
-				})
-				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-					Name:            database.SecurityEventOIDCLoginFailed,
-					URL:             r.URL.Path,                                   // Don't log OIDC query params
-					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
-					Source:          "BACKEND",
-					Timestamp:       time.Now(),
-					Argument:        arg,
-				})
+				}
+
+				if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginFailed, r.URL.Path, uint32(0), fmt.Sprintf("unknown OIDC @ %s", time.Now()), "BACKEND", arg); err != nil {
+					log15.Warn("Error logging security event.", "error", err)
+				}
 				return
 			}
-			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-				Name:      database.SecurityEventOIDCLoginSucceeded,
-				URL:       r.URL.Path, // Don't log OIDC query params
-				UserID:    uint32(result.User.ID),
-				Source:    "BACKEND",
-				Timestamp: time.Now(),
-			})
+			if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil); err != nil {
+				log15.Warn("Error logging security event.", "error", err)
+
+			}
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
@@ -177,7 +168,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
-			if err = session.SetActor(w, r, sgactor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
+			if _, err = session.SetActorFromUser(r.Context(), w, r, result.User, exp); err != nil {
 				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
@@ -211,7 +202,7 @@ type AuthCallbackResult struct {
 // In case of an error, it returns the internal error, an error message that is
 // safe to be passed back to the user, and a proper HTTP status code
 // corresponding to the error.
-func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePrefix string, getProvider func(id string) *Provider) (result *AuthCallbackResult, safeErrMsg string, errStatus int, err error) {
+func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getProvider func(id string) *Provider) (result *AuthCallbackResult, safeErrMsg string, errStatus int, err error) {
 	if authError := r.URL.Query().Get("error"); authError != "" {
 		errorDesc := r.URL.Query().Get("error_description")
 		return nil,
@@ -226,27 +217,23 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 		desc := "Authentication failed. Try signing in again (and clearing cookies for the current site). No OpenID Connect state query parameter specified."
 		return nil,
 			desc,
-			http.StatusBadRequest,
+			http.StatusUnauthorized,
 			errors.New(desc)
 	}
 
-	stateCookie, err := r.Cookie(stateCookieName)
-	if err == http.ErrNoCookie {
+	var oidcState string
+	if err := session.GetData(r, "oidcState", &oidcState); err != nil {
 		return nil,
-			fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: no state cookie found (possible request forgery, or more than %s elapsed since you started the authentication process).", stateCookieTimeout),
-			http.StatusBadRequest,
-			errors.New("no state cookie found (possible request forgery).")
-	} else if err != nil {
-		return nil,
-			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: invalid state cookie.",
-			http.StatusInternalServerError,
-			errors.Wrap(err, "could not read state cookie (possible request forgery)")
+			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: no state cookie found.",
+			http.StatusUnauthorized,
+			errors.New("no state found (possible request forgery).")
 	}
-	if stateCookie.Value != stateParam {
+
+	if oidcState != stateParam {
 		return nil,
 			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: state parameter did not match the expected value (possible request forgery).",
-			http.StatusBadRequest,
-			errors.New("state cookie mismatch (possible request forgery)")
+			http.StatusUnauthorized,
+			errors.New("state mismatch (possible request forgery)")
 	}
 
 	// Decode state param value
@@ -267,7 +254,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalClient), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -308,7 +295,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 			errors.New("nonce is incorrect (possible replay attach)")
 	}
 
-	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), httpcli.ExternalClient), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), p.httpClient), oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		return nil,
 			"Failed to get userinfo: " + err.Error(),
@@ -336,7 +323,22 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 		return c.Value
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
-	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, &hubspot.ContactProperties{
+		AnonymousUserID:        anonymousId,
+		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
+		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
+		OriginalReferrer:       getCookie("originalReferrer"),
+		LastReferrer:           getCookie("sg_referrer"),
+		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+		SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+		SessionUTMSource:       getCookie("sg_utm_source"),
+		SessionUTMMedium:       getCookie("sg_utm_medium"),
+		SessionUTMContent:      getCookie("sg_utm_content"),
+		SessionUTMTerm:         getCookie("sg_utm_term"),
+		GoogleClickID:          getCookie("gclid"),
+		MicrosoftClickID:       getCookie("msclkid"),
+	})
 	if err != nil {
 		return nil,
 			safeErrMsg,
@@ -345,7 +347,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Add a ?signup= or ?signin= parameter to the redirect URL.
-	redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated)
+	redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OpenIDConnect")
 
 	user, err := db.Users().GetByID(r.Context(), actor.UID)
 	if err != nil {
@@ -391,34 +393,33 @@ func (s *AuthnState) Decode(encoded string) error {
 	return json.Unmarshal(b, s)
 }
 
-// stateCookieTimeout defines how long the state cookie should be valid for a
-// single authentication flow.
-const stateCookieTimeout = time.Minute * 15
-
 // RedirectToAuthRequest redirects the user to the authentication endpoint on the
 // external authentication provider.
-func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, cookieName, returnToURL string) {
+func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, returnToURL string) {
+	// NOTE: We do not have a valid screen at the root path (always gets redirected
+	// to "/search"), and it is a marketing page on Sourcegraph.com, so redirecting to
+	// "/search" is a safe default.
+	if returnToURL == "" || returnToURL == "/" {
+		returnToURL = "/search"
+	}
+
 	// The state parameter is an opaque value used to maintain state between the
-	// original Authentication Request and the callback. We do not record any state
-	// beyond a CSRF token used to defend against CSRF attacks against the callback.
-	// We use the CSRF token created by gorilla/csrf that is used for other app
-	// endpoints as the OIDC state parameter.
+	// original Authentication Request and the callback. We generate a random unique
+	// value as the OIDC state parameter.
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	state := (&AuthnState{
-		CSRFToken:  csrf.Token(r),
+	oidcState := (&AuthnState{
+		CSRFToken:  uuid.NewV4().String(), // NOTE: "CSRF" is misleading here as all we want is a unique random value in the state cookie
 		Redirect:   returnToURL,
 		ProviderID: p.ConfigID().ID,
 	}).Encode()
-	http.SetCookie(w,
-		&http.Cookie{
-			Name:    cookieName,
-			Value:   state,
-			Path:    auth.AuthURLPrefix + "/", // Include the OIDC redirect URI (/.auth/callback not /.auth/openidconnect/callback for backwards compatibility)
-			Expires: time.Now().Add(stateCookieTimeout),
-		},
-	)
+
+	if err := session.SetData(w, r, "oidcState", oidcState); err != nil {
+		log15.Error("Failed to saving state to session", "error", err)
+		http.Error(w, "Failed to saving state to session", http.StatusInternalServerError)
+		return
+	}
 
 	// Redirect to the OP's Authorization Endpoint for authentication. The nonce is
 	// an optional string value used to associate a Client session with an ID Token
@@ -429,5 +430,5 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
+	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)), http.StatusFound)
 }

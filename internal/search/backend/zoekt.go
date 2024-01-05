@@ -117,12 +117,14 @@ const maxRecvMsgSize = 128 * 1024 * 1024 // 128MiB
 func ZoektDialGRPC(endpoint string) zoekt.Streamer {
 	conn, err := defaults.Dial(
 		endpoint,
-		log.Scoped("zoekt", "Dial"),
+		log.Scoped("zoekt"),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxRecvMsgSize)),
 	)
+
+	client := &automaticRetryClient{base: proto.NewWebserverServiceClient(conn)}
 	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
-		client:   proto.NewWebserverServiceClient(conn),
+		client:   client,
 		dialErr:  err,
 	})
 }

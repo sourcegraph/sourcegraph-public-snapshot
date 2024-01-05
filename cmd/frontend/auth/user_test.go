@@ -480,6 +480,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
 		db.AuthzFunc.SetDefaultReturn(dbmocks.NewMockAuthzStore())
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
+		db.TelemetryEventsExportQueueFunc.SetDefaultReturn(dbmocks.NewMockTelemetryEventsExportQueueStore())
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
 		_, _, _, err := GetAndSaveUser(
@@ -571,6 +572,8 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
+	db.TelemetryEventsExportQueueFunc.SetDefaultReturn(dbmocks.NewMockTelemetryEventsExportQueueStore())
 
 	// Customers can always set their own display name and avatar URL values, but when
 	// we encounter them via e.g. code host logins, we don't want to override anything
@@ -682,6 +685,7 @@ func (m *mocks) DB() database.DB {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
 	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
+	db.TelemetryEventsExportQueueFunc.SetDefaultReturn(dbmocks.NewMockTelemetryEventsExportQueueStore())
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	return db
 }

@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
@@ -35,7 +35,7 @@ const action: ActionProps['action'] = {
 }
 window.context.emailEnabled = true
 
-export const EmailActionStory: Story = () => (
+export const EmailActionStory: StoryFn = () => (
     <WebStory>
         {() => (
             <>

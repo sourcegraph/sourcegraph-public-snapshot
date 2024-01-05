@@ -34,7 +34,7 @@ func NewHandler(
 	mf ModelFactory,
 	allowedModels []string,
 ) http.Handler {
-	baseLogger = baseLogger.Scoped("embeddingshandler", "The HTTP API handler for the embeddings endpoint.")
+	baseLogger = baseLogger.Scoped("embeddingshandler")
 
 	return featurelimiter.HandleFeature(
 		baseLogger,
@@ -105,6 +105,12 @@ func NewHandler(
 							"resolved_status_code":                           resolvedStatusCode,
 							codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
 							"batch_size": len(body.Input),
+							"input_character_count": func() (characters int) {
+								for _, input := range body.Input {
+									characters += len(input)
+								}
+								return characters
+							}(),
 						},
 					},
 				)
@@ -164,7 +170,18 @@ func NewHandler(
 				resolvedStatusCode = 200
 			}
 			_, _ = w.Write(data)
-		}))
+		}),
+		func(responseHeaders http.Header) (int, error) {
+			uh := responseHeaders.Get(usageHeaderName)
+			if uh == "" {
+				return 0, errors.New("no usage header set on response")
+			}
+			usage, err := strconv.Atoi(uh)
+			if err != nil {
+				return 0, errors.Wrap(err, "failed to parse usage header as number")
+			}
+			return usage, nil
+		})
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {

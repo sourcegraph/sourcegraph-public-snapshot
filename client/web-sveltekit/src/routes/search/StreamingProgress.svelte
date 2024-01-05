@@ -1,7 +1,7 @@
 <script lang="ts">
     import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 
-    import { limitHit, sortBySeverity } from '$lib/branded'
+    import { getProgressText, limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -25,7 +25,6 @@
         )
     }
 
-    $: matchCount = progress.matchCount + (progress.skipped.length > 0 ? '+' : '')
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
@@ -38,11 +37,13 @@
 
 <Popover let:registerTrigger let:toggle placement="bottom-start">
     <Button variant="secondary" size="sm" outline>
-        <button slot="custom" let:className use:registerTrigger class={className} on:click={() => toggle()}>
-            <Icon svgPath={icons[severity]} inline />
-            {matchCount} results in {(progress.durationMs / 1000).toFixed(2)}s
-            <Icon svgPath={mdiChevronDown} inline />
-        </button>
+        <svelte:fragment slot="custom" let:buttonClass>
+            <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
+                <Icon svgPath={icons[severity]} inline />
+                {getProgressText(progress).visibleText}
+                <Icon svgPath={mdiChevronDown} inline />
+            </button>
+        </svelte:fragment>
     </Button>
     <div slot="content" class="streaming-popover">
         <p>
@@ -58,24 +59,24 @@
             {#each sortedItems as item, index (item.reason)}
                 {@const open = openItems[index]}
                 <Button variant="primary" outline>
-                    <button
-                        slot="custom"
-                        type="button"
-                        let:className
-                        class="{className} p-2 w-100 bg-transparent border-0"
-                        aria-expanded={open}
-                        on:click={() => (openItems[index] = !open)}
-                    >
-                        <h4 class="d-flex align-items-center mb-0 w-100">
-                            <span class="mr-1 flex-shrink-0"><Icon svgPath={icons[item.severity]} inline /></span>
-                            <span class="flex-grow-1 text-left">{item.title}</span>
-                            {#if item.message}
-                                <span class="chevron flex-shrink-0"
-                                    ><Icon svgPath={open ? mdiChevronDown : mdiChevronLeft} inline /></span
-                                >
-                            {/if}
-                        </h4>
-                    </button>
+                    <svelte:fragment slot="custom" let:buttonClass>
+                        <button
+                            type="button"
+                            class="{buttonClass} p-2 w-100 bg-transparent border-0"
+                            aria-expanded={open}
+                            on:click={() => (openItems[index] = !open)}
+                        >
+                            <h4 class="d-flex align-items-center mb-0 w-100">
+                                <span class="mr-1 flex-shrink-0"><Icon svgPath={icons[item.severity]} inline /></span>
+                                <span class="flex-grow-1 text-left">{item.title}</span>
+                                {#if item.message}
+                                    <span class="chevron flex-shrink-0"
+                                        ><Icon svgPath={open ? mdiChevronDown : mdiChevronLeft} inline /></span
+                                    >
+                                {/if}
+                            </h4>
+                        </button>
+                    </svelte:fragment>
                 </Button>
                 {#if item.message && open}
                     <div class="message">
@@ -101,10 +102,12 @@
                     </label>
                 {/each}
                 <Button variant="primary">
-                    <button slot="custom" let:className class="{className} mt-3" disabled={searchAgainDisabled}>
-                        <Icon svgPath={mdiMagnify} />
-                        <span>Search again</span>
-                    </button>
+                    <svelte:fragment slot="custom" let:buttonClass>
+                        <button class="{buttonClass} mt-3" disabled={searchAgainDisabled}>
+                            <Icon svgPath={mdiMagnify} />
+                            <span>Search again</span>
+                        </button>
+                    </svelte:fragment>
                 </Button>
             </form>
         {/if}
@@ -134,5 +137,9 @@
 
     label {
         display: block;
+    }
+
+    .progress-button {
+        border: none;
     }
 </style>

@@ -42,7 +42,7 @@ interface State {
     /** The dynamically imported graphiql module, undefined while loading. */
     graphiqlOrError?: typeof _graphiqlModule | ErrorLike
 
-    /** The URL parameters decoded from the location hash. */
+    /** The current URL parameters. Only used to update the shareable URL link */
     parameters: Parameters
 }
 
@@ -73,6 +73,9 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
 
     private updates = new Subject<Parameters>()
     private subscriptions = new Subscription()
+    /** The initial URL parameters decoded from the location hash. */
+    /** This is used to programmatically set the initial editor state. */
+    private initialParameters: Parameters
 
     constructor(props: Props) {
         super(props)
@@ -93,6 +96,7 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
                 // invalid JSON errors in the GraphiQL editor.
             }
         }
+        this.initialParameters = parameters
         this.state = { parameters }
     }
 
@@ -161,9 +165,9 @@ class ApiConsoleInner extends React.PureComponent<Props, State> {
         return (
             <>
                 <GraphiQL
-                    query={this.state.parameters.query}
-                    variables={this.state.parameters.variables}
-                    operationName={this.state.parameters.operationName}
+                    query={this.initialParameters.query}
+                    variables={this.initialParameters.variables}
+                    operationName={this.initialParameters.operationName}
                     onEditQuery={this.onEditQuery}
                     onEditVariables={this.onEditVariables}
                     onEditOperationName={this.onEditOperationName}

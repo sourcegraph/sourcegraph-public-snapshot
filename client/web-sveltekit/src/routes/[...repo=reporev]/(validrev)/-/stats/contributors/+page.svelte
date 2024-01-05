@@ -43,6 +43,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Contributors - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     <div class="root">
         <form method="GET">
@@ -50,15 +54,15 @@
             <ButtonGroup>
                 {#each timePeriodButtons as [label, value]}
                     <Button variant="secondary">
-                        <button
-                            slot="custom"
-                            let:className
-                            class={className}
-                            class:active={timePeriod === value}
-                            type="button"
-                            data-value={value}
-                            on:click={setTimePeriod}>{label}</button
-                        >
+                        <svelte:fragment slot="custom" let:buttonClass>
+                            <button
+                                class={buttonClass}
+                                class:active={timePeriod === value}
+                                type="button"
+                                data-value={value}
+                                on:click={setTimePeriod}>{label}</button
+                            >
+                        </svelte:fragment>
                     </Button>
                 {/each}
             </ButtonGroup>

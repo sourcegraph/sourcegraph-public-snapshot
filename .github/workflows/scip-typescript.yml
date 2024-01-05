@@ -15,7 +15,7 @@ jobs:
       - uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
-          version: 8.3.0
+          version: 8.9.2
           run_install: false
       - name: Get pnpm store directory
         id: pnpm-cache
