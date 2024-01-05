@@ -4,7 +4,7 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
+    import Avatar from '$lib/Avatar.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Button, ButtonGroup } from '$lib/wildcard'
     import type { ContributorConnection } from './page.gql'
@@ -80,7 +80,7 @@
                         {@const commit = contributor.commits.nodes[0]}
                         <tr>
                             <td
-                                ><span><UserAvatar user={contributor.person} /></span>&nbsp;<span
+                                ><span><Avatar avatar={contributor.person} /></span>&nbsp;<span
                                     >{contributor.person.displayName}</span
                                 ></td
                             >

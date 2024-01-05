@@ -1,5 +1,3 @@
-#import "$lib/Commit.gql"
-
 fragment Commits on GitCommitConnection {
     nodes {
         ...Commit

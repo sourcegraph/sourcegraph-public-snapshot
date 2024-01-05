@@ -1,5 +1,3 @@
-#import "$lib/repo/GitReference.gql"
-
 query GitBranchesQuery($repo: ID!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
     node(id: $repo) {
         id

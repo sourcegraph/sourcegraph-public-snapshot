@@ -6,9 +6,8 @@ fragment HistoryPanel_HistoryConnection on GitCommitConnection {
         author {
             date
             person {
-                avatarURL
-                name
                 displayName
+                ...Avatar_Person
             }
         }
         canonicalURL

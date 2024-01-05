@@ -1,0 +1,9 @@
+query CurrentAuthState {
+    currentUser {
+        ...AuthenticatedUser
+    }
+}
+
+fragment AuthenticatedUser on User {
+    ...Header_User
+}

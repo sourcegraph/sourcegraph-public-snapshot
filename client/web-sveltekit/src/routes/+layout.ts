@@ -1,10 +1,12 @@
 import { browser } from '$app/environment'
 import { fetchEvaluatedFeatureFlags } from '$lib/featureflags'
-import { getGraphQLClient } from '$lib/graphql'
+import { getGraphQLClient, gql } from '$lib/graphql'
+import type { CurrentAuthStateResult } from '$lib/graphql/shared'
+import { currentAuthStateQuery } from '$lib/shared'
 import { fetchUserSettings } from '$lib/user/api/settings'
-import { fetchAuthenticatedUser } from '$lib/user/api/user'
 
 import type { LayoutLoad } from './$types'
+import { CurrentAuthState } from './layout.gql'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -21,10 +23,14 @@ if (browser) {
     }
 }
 
-export const load: LayoutLoad = () => ({
-    graphqlClient: getGraphQLClient(),
-    user: fetchAuthenticatedUser(),
-    // Initial user settings
-    settings: fetchUserSettings(),
-    featureFlags: fetchEvaluatedFeatureFlags(),
-})
+export const load: LayoutLoad = async () => {
+    const graphqlClient = await getGraphQLClient()
+
+    return {
+        graphqlClient,
+        user: (await graphqlClient.query({query: CurrentAuthState})).data.currentUser,
+        // Initial user settings
+        settings: fetchUserSettings(),
+        featureFlags: fetchEvaluatedFeatureFlags(),
+    }
+}

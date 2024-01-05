@@ -16,7 +16,7 @@
     import { createHistoryPanelStore } from '$lib/repo/stores'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
+    import Avatar from '$lib/Avatar.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
@@ -78,7 +78,7 @@
             {@const selected = commit.abbreviatedOID === selectedRev}
             <tr class:selected use:scrollIntoView={selected}>
                 <td>
-                    <UserAvatar user={commit.author.person} />&nbsp;
+                    <Avatar avatar={commit.author.person} />&nbsp;
                     {commit.author.person.displayName}
                 </td>
                 <td class="subject">

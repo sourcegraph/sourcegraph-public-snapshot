@@ -23,7 +23,6 @@ function generateGraphQLTypes(): Plugin {
                 config: {
                     onlyOperationTypes: true,
                     enumValues: '$lib/graphql-types',
-                    //interfaceNameForOperations: 'SvelteKitGraphQlOperations',
                 },
                 plugins: ['typescript', 'typescript-operations'],
             },
@@ -39,6 +38,7 @@ function generateGraphQLTypes(): Plugin {
                 },
                 config: {
                     useTypeImports: true,
+                    immutableTypes: true,
                 },
                 plugins: ['typescript-operations', `${__dirname}/dev/typed-document-node.cjs`],
             },

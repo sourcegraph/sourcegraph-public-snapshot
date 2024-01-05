@@ -1,5 +1,3 @@
-#import './FileDiffHunks.gql'
-
 fragment FileDiff_Diff on FileDiff {
     newPath
     oldPath

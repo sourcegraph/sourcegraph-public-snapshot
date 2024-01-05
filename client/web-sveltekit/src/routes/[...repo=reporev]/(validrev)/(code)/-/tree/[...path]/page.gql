@@ -1,5 +1,3 @@
-#import "$lib/repo/FileTable.gql"
-
 fragment TreeWithCommitInfo on GitTree {
     canonicalURL
     entries(first: $first) {

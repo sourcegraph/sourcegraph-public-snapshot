@@ -1,10 +1,11 @@
 import { getContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
-import type { SettingsCascade, AuthenticatedUser, TemporarySettingsStorage } from '$lib/shared'
+import type { SettingsCascade, TemporarySettingsStorage } from '$lib/shared'
 
 import type { FeatureFlag } from './featureflags'
 import type { GraphQLClient } from './graphql'
+import type { AuthenticatedUser } from '../routes/layout.gql'
 
 export { isLightTheme } from './theme'
 

@@ -2,9 +2,7 @@ fragment ContributorConnection on RepositoryContributorConnection {
     nodes {
         count
         person {
-            name
-            avatarURL
-            displayName
+            ...Avatar_Person
         }
         commits(first: 1) {
             # Fetch information about the last commit the user made

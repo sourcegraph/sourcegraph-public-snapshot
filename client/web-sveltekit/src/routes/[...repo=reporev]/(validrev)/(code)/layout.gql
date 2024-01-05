@@ -1,5 +1,3 @@
-#import "$lib/repo/BottomPanel.gql"
-
 query GitHistoryQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
     node(id: $repo) {
         id
