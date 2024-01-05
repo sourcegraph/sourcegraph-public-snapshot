@@ -121,7 +121,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		s.filters = make(filters)
 	}
 
-	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
+	addRepoFilter := func(repoName api.RepoName, rev string, lineMatchCount int32) {
 		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
 		if rev != "" {
 			// We don't need to quote rev. The only special characters we interpret
@@ -200,7 +200,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			}
 			lines := int32(v.ResultCount())
 
-			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
+			addRepoFilter(v.Repo.Name, rev, lines)
 			addLangFilter(v.Path, lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
@@ -208,11 +208,11 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(v.Name, v.ID, "", 1)
+			addRepoFilter(v.Name, "", 1)
 		case *result.CommitMatch:
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
 			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
-			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
+			addRepoFilter(v.Repo.Name, "", int32(v.ResultCount()))
 			addCommitAuthorFilter(v.Commit)
 			addCommitDateFilter(v.Commit)
 
