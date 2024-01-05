@@ -448,7 +448,7 @@ func TestRegexSearch(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				// Check this case specifically.
-				m:  nil,
+				m:  &allMatcher{},
 				pm: match,
 				zf: &zipFile{
 					Files: []srcFile{

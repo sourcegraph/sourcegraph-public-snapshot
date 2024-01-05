@@ -28,23 +28,6 @@ type matcher interface {
 	String() string
 }
 
-type regexMatcher struct {
-	// re is the regexp to match, or nil if empty ("match all files' content").
-	re *regexp.Regexp
-
-	// ignoreCase if true means we need to do case insensitive matching.
-	ignoreCase bool
-
-	// isNegated indicates whether matches on the pattern should be negated (representing a 'NOT' in the query)
-	isNegated bool
-
-	// literalSubstring is used to test if a file is worth considering for
-	// matches. literalSubstring is guaranteed to appear in any match found by
-	// re. It is the output of the longestLiteral function. It is only set if
-	// the regex has an empty LiteralPrefix.
-	literalSubstring []byte
-}
-
 // compilePattern returns a matcher for matching p. If the pattern
 // is empty, then it returns a nil matcher.
 func compilePattern(p *protocol.PatternInfo) (matcher, error) {
@@ -54,7 +37,7 @@ func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 	)
 
 	if p.Pattern == "" {
-		return nil, nil
+		return &allMatcher{}, nil
 	}
 
 	expr := p.Pattern
@@ -141,6 +124,41 @@ func longestLiteral(re *syntax.Regexp) string {
 		return longest
 	}
 	return ""
+}
+
+type allMatcher struct {}
+
+func (a allMatcher) MatchesString(_ string) bool {
+	return true
+}
+
+func (a allMatcher) MatchesFile(_ []byte, _ int) (match bool, matches [][]int) {
+	return true, nil
+}
+
+func (a allMatcher) ToZoektQuery(_ bool, _ bool) (zoektquery.Q, error) {
+	return &zoektquery.Const{Value: true}, nil
+}
+
+func (a allMatcher) String() string {
+	return "all"
+}
+
+type regexMatcher struct {
+	// re is the regexp to match, should never be nil
+	re *regexp.Regexp
+
+	// ignoreCase if true means we need to do case insensitive matching.
+	ignoreCase bool
+
+	// isNegated indicates whether matches on the pattern should be negated (representing a 'NOT' in the query)
+	isNegated bool
+
+	// literalSubstring is used to test if a file is worth considering for
+	// matches. literalSubstring is guaranteed to appear in any match found by
+	// re. It is the output of the longestLiteral function. It is only set if
+	// the regex has an empty LiteralPrefix.
+	literalSubstring []byte
 }
 
 func (rm *regexMatcher) String() string {

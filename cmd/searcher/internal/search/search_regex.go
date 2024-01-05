@@ -61,9 +61,7 @@ func regexSearch(
 	defer tr.EndWithErr(&err)
 
 	tr.SetAttributes(attribute.Stringer("path", pm))
-	if m != nil {
-		tr.SetAttributes(attribute.String("matcher", m.String()))
-	}
+	tr.SetAttributes(attribute.String("matcher", m.String()))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -85,11 +83,11 @@ func regexSearch(
 		files = zf.Files
 	)
 
-	if m == nil || (patternMatchesPaths && !patternMatchesContent) {
+	if _, ok := m.(allMatcher); ok || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
-			if pm.Matches(f.Name) && (m == nil || m.MatchesString(f.Name)) {
+			if pm.Matches(f.Name) && m.MatchesString(f.Name) {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
