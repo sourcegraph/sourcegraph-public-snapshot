@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { mdiBrain } from '@mdi/js'
+import classNames from 'classnames'
 
 import {
     Icon,
@@ -14,6 +15,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { useVisibleIndexes } from '../hooks/useVisibleIndexes'
+
+import styles from './BrainDot.module.scss'
 
 export interface BrainDotProps {
     repoName: string
@@ -52,40 +55,38 @@ const BrainDotContent: React.FunctionComponent<BrainDotProps> = ({ repoName, com
         <>
             {visibleIndexesLoading && <LoadingSpinner className="mx-2" />}
             {visibleIndexes && visibleIndexes.length > 0 && (
-                <MenuHeader>
-                    {[
+                <div className={styles.container}>
+                    <RadioButton
+                        id="none"
+                        key="none"
+                        name="none"
+                        label="None"
+                        wrapperClassName={classNames(styles.radioBtn, 'py-1')}
+                        checked={visibleIndexID === undefined}
+                        onChange={() => {
+                            delete indexIDsForSnapshotData[repoName]
+                            setIndexIDForSnapshotData(indexIDsForSnapshotData)
+                        }}
+                    />
+                    {visibleIndexes.map(index => (
                         <RadioButton
-                            id="none"
-                            key="none"
-                            name="none"
-                            label="None"
-                            wrapperClassName="py-1 px-2"
-                            checked={visibleIndexID === undefined}
+                            key={index.id}
+                            id={index.id}
+                            name={index.id}
+                            checked={visibleIndexID === index.id}
+                            wrapperClassName={classNames(styles.radioBtn, 'py-1')}
+                            label={
+                                <>
+                                    Index at <Code>{index.inputCommit.slice(0, 7)}</Code>
+                                </>
+                            }
                             onChange={() => {
-                                delete indexIDsForSnapshotData[repoName]
+                                indexIDsForSnapshotData[repoName] = index.id
                                 setIndexIDForSnapshotData(indexIDsForSnapshotData)
                             }}
-                        />,
-                        ...visibleIndexes.map(index => (
-                            <RadioButton
-                                key={index.id}
-                                id={index.id}
-                                name={index.id}
-                                checked={visibleIndexID === index.id}
-                                wrapperClassName="py-1 px-2"
-                                label={
-                                    <>
-                                        Index at <Code>{index.inputCommit.slice(0, 7)}</Code>
-                                    </>
-                                }
-                                onChange={() => {
-                                    indexIDsForSnapshotData[repoName] = index.id
-                                    setIndexIDForSnapshotData(indexIDsForSnapshotData)
-                                }}
-                            />
-                        )),
-                    ]}
-                </MenuHeader>
+                        />
+                    ))}
+                </div>
             )}
             {(visibleIndexes?.length ?? 0) === 0 && !visibleIndexesLoading && (
                 <small className="px-2">No precise indexes to display debug information for.</small>
