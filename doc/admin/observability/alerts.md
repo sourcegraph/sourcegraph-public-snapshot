@@ -231,18 +231,19 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 
 ## frontend: blob_load_latency
 
-<p class="subtitle">90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.</p>
+<p class="subtitle">90th percentile blob load latency over 10m</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
+- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m
 
 **Next steps**
 
-- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- When this alert fires, calls to the blob route are slow to return a response. The UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
+- Confirm that the Sourcegraph gitserver and frontend services have enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 - Check that gitserver containers have enough CPU/memory and are not getting throttled.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

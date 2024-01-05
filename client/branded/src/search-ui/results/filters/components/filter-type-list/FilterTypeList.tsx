@@ -1,13 +1,6 @@
 import { FC } from 'react'
 
-import {
-    mdiBook,
-    mdiCodeBrackets,
-    mdiFileOutline,
-    mdiPlusMinus,
-    mdiShapeSquareRoundedPlus,
-    mdiSourceCommit,
-} from '@mdi/js'
+import { mdiSourceFork, mdiCodeBraces, mdiFileOutline, mdiPlusMinus, mdiFunction, mdiSourceCommit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -78,10 +71,10 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
 }
 
 const FILTER_TYPE_ICONS = {
-    [SearchFilterType.Code]: mdiCodeBrackets,
-    [SearchFilterType.Repositories]: mdiBook,
+    [SearchFilterType.Code]: mdiCodeBraces,
+    [SearchFilterType.Repositories]: mdiSourceFork,
     [SearchFilterType.Paths]: mdiFileOutline,
-    [SearchFilterType.Symbols]: mdiShapeSquareRoundedPlus,
+    [SearchFilterType.Symbols]: mdiFunction,
     [SearchFilterType.Commits]: mdiSourceCommit,
     [SearchFilterType.Diffs]: mdiPlusMinus,
 }

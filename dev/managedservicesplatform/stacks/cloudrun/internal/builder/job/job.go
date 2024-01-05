@@ -151,10 +151,9 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 
 	if schedule := pointers.DerefZero(vars.Environment.EnvironmentJobSpec).Schedule; schedule != nil {
 		invoker := serviceaccount.New(stack, resourceid.New("job_invoker"), serviceaccount.Config{
-			ProjectID: vars.GCPProjectID,
-			AccountID: fmt.Sprintf("%s-job-sa", vars.Service.ID),
-			DisplayName: fmt.Sprintf("%s Job-Invoker Service Account",
-				pointers.Deref(vars.Service.Name, vars.Service.ID)),
+			ProjectID:   vars.GCPProjectID,
+			AccountID:   fmt.Sprintf("%s-job-sa", vars.Service.ID),
+			DisplayName: fmt.Sprintf("%s Job-Invoker Service Account", vars.Service.GetName()),
 		})
 
 		invokerMember := cloudrunv2jobiammember.NewCloudRunV2JobIamMember(stack, pointers.Ptr("cloudrun_scheduler_job_invoker"), &cloudrunv2jobiammember.CloudRunV2JobIamMemberConfig{

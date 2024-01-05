@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//dev/managedservicesplatform",
         "//dev/managedservicesplatform/googlesecretsmanager",
+        "//dev/managedservicesplatform/operationdocs",
         "//dev/managedservicesplatform/spec",
         "//dev/managedservicesplatform/stacks",
         "//dev/managedservicesplatform/stacks/cloudrun",
@@ -29,6 +30,5 @@ go_library(
         "//lib/output",
         "//lib/pointers",
         "@com_github_urfave_cli_v2//:cli",
-        "@com_github_vvakame_gcplogurl//:gcplogurl",
     ],
 )
