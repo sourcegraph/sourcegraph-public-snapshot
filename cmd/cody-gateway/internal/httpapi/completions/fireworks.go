@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 
@@ -211,9 +212,19 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 		if len(event.Choices) > 0 {
 			completionUsage.characters += len(event.Choices[0].Text)
 		}
+		// These are only included in the last message, so we're not worried about overwriting
+		if event.Usage.PromptTokens > 0 {
+			promptUsage.tokens = event.Usage.PromptTokens
+		}
+		if event.Usage.CompletionTokens > 0 {
+			completionUsage.tokens = event.Usage.CompletionTokens
+		}
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode Fireworks streaming response", log.Error(err))
+	}
+	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
+		logger.Warn("did not extract token counts from Fireworks streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
 
 	return promptUsage, completionUsage
