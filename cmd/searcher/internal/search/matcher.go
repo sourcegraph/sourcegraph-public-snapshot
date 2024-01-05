@@ -125,7 +125,7 @@ func longestLiteral(re *syntax.Regexp) string {
 	return ""
 }
 
-type allMatcher struct {}
+type allMatcher struct{}
 
 func (a allMatcher) MatchesString(_ string) bool {
 	return true
