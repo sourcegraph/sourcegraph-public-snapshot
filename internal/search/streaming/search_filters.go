@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -27,7 +26,7 @@ type SearchFilters struct {
 
 	// IsLimitHit is true if the results returned for a repository are
 	// incomplete.
-	isLimitHit bool
+	isComplete bool
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -124,10 +123,6 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = make(filters)
-	}
-
-	if event.Stats.IsLimitHit || event.Stats.Status.Any(search.RepoStatusLimitHit) {
-		s.isLimitHit = true
 	}
 
 	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
@@ -233,14 +228,14 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
-func (s *SearchFilters) Compute() []*Filter {
+func (s *SearchFilters) Compute(exhaustive bool) []*Filter {
 	filters := s.filters.Compute(computeOpts{
 		MaxRepos: 40,
 		MaxOther: 40,
 	})
 
 	for _, filter := range filters {
-		filter.IsLimitHit = s.isLimitHit
+		filter.IsExhaustive = exhaustive
 	}
 
 	return filters

@@ -115,6 +115,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     })
 
     useEffect(() => {
+        console.log({ results })
         if (results?.state === 'complete') {
             // Add the recent search in the next queue execution to avoid updating a React component while rendering another component.
             setTimeout(
