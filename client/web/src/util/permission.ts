@@ -1,5 +1,3 @@
-import { findIndex } from 'lodash'
-
 import type { AuthenticatedUser } from '../auth'
 import type { RbacPermission } from '../rbac/constants'
 
@@ -11,5 +9,5 @@ export const doesUserHavePermission = (
         return false
     }
 
-    return findIndex(user.permissions.nodes, permission => permission.displayName === permissionToCheckFor) !== -1
+    return user.permissions.nodes.some(permission => permission.displayName === permissionToCheckFor)
 }
