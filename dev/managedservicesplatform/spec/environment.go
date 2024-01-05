@@ -98,7 +98,7 @@ func (s EnvironmentSpec) Validate() []error {
 		errs = append(errs, errors.New("projectID is required"))
 	}
 	if len(s.ProjectID) > 30 {
-		errs = append(errs, errors.New("projectID must be less than 30 characters"))
+		errs = append(errs, errors.Newf("projectID %q must be less than 30 characters", s.ProjectID))
 	}
 	if !strings.Contains(s.ProjectID, fmt.Sprintf("-%s-", s.ID)) {
 		errs = append(errs, errors.Newf("projectID %q must contain environment ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",

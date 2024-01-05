@@ -14,7 +14,7 @@ build:
     dir: cmd/msp-example
 environments:
   - id: dev
-    projectID: msp-example-dev-TestNewService
+    projectID: msp-example-dev-xxxx
     # TODO: We initially provision in 'test' to make it easy to access the project
     # during setup. Once done, you should change this to 'external' or 'internal'.
     category: test
@@ -44,8 +44,8 @@ environments:
     startupProbe:
       # Only enable if your service implements MSP /-/healthz conventions.
       disabled: true
-  - id: prod
-    projectID: msp-example-prod-TestNewService
+  - id: second
+    projectID: msp-example-second-xxxx
     # TODO: We initially provision in 'test' to make it easy to access the project
     # during setup. Once done, you should change this to 'external' or 'internal'.
     category: test

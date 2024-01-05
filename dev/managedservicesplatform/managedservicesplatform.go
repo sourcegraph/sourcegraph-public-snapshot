@@ -8,26 +8,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/monitoring"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/project"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/tfcworkspaces"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/monitoring"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/tfcworkspaces"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
-
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-)
-
-const (
-	// TODO: re-export for use, maybe we should lift stack packages out of
-	// internal so that we can share consts, including output names.
-	StackNameProject  = project.StackName
-	StackNameIAM      = iam.StackName
-	StackNameCloudRun = cloudrun.StackName
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 )
 
 type TerraformCloudOptions struct {

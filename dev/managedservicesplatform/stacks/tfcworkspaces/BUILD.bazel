@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "tfcworkspaces",
     srcs = ["tfcworkspaces.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/tfcworkspaces",
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/tfcworkspaces",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/googlesecretsmanager",
