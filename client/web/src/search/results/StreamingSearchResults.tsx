@@ -34,15 +34,15 @@ import { useStreamingSearchPings } from './useStreamingSearchPings'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-    Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
-    SettingsCascadeProps,
-    PlatformContextProps,
-    TelemetryProps,
-    CodeInsightsProps,
-    SearchAggregationProps,
-    CodeMonitoringProps,
-    OwnConfigProps,
-    ExtensionsControllerProps {
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
+        SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        CodeInsightsProps,
+        SearchAggregationProps,
+        CodeMonitoringProps,
+        OwnConfigProps,
+        ExtensionsControllerProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
