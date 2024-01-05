@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"github.com/vvakame/gcplogurl"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
@@ -265,6 +265,39 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:   "operations",
+			Usage:  "Generate operational reference for a service",
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "pretty",
+					Usage: "Render syntax-highlighed Markdown",
+					Value: false,
+				},
+			},
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+					GenerateCommand: strings.Join(os.Args, " "),
+				})
+				if err != nil {
+					return errors.Wrap(err, "operationdocs.Render")
+				}
+				if c.Bool("pretty") {
+					return std.Out.WriteCode("markdown", doc)
+				}
+				std.Out.Write(doc)
+				return nil
+			},
+		},
+		{
 			Name:   "logs",
 			Usage:  "Quick links for logs of various MSP components",
 			Before: msprepo.UseManagedServicesRepo,
@@ -285,37 +318,7 @@ sg msp generate -all <service>
 				switch component := c.String("component"); component {
 				case "service":
 					std.Out.WriteNoticef("Opening link to service logs in browser...")
-					switch pointers.DerefZero(svc.Service.Kind) {
-					case spec.ServiceKindJob:
-						return open.URL((&gcplogurl.Explorer{
-							ProjectID: env.ProjectID,
-							Query:     gcplogurl.Query(`resource.type = "cloud_run_job"`),
-							SummaryFields: &gcplogurl.SummaryFields{
-								Fields: []string{
-									// execution identifier
-									`labels/"run.googleapis.com/execution_name"`,
-									// fields from structured logs by sourcegraph/log
-									"jsonPayload/InstrumentationScope",
-									"jsonPayload/Body",
-									"jsonPayload/Attributes/error",
-								},
-							},
-						}).String())
-
-					default:
-						return open.URL((&gcplogurl.Explorer{
-							ProjectID: env.ProjectID,
-							Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" -logName=~"logs/run.googleapis.com%2Frequests"`),
-							SummaryFields: &gcplogurl.SummaryFields{
-								Fields: []string{
-									// fields from structured logs by sourcegraph/log
-									"jsonPayload/InstrumentationScope",
-									"jsonPayload/Body",
-									"jsonPayload/Attributes/error",
-								},
-							},
-						}).String())
-					}
+					return open.URL(operationdocs.ServiceLogsURL(pointers.DerefZero(svc.Service.Kind), env.ProjectID))
 
 				default:
 					return errors.Newf("unsupported -component=%s", component)
