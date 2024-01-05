@@ -24,6 +24,7 @@ func main() {
 }
 
 var frozenMigrationsFlag = flag.Bool("write-frozen", true, "write frozen revision migration files")
+var outputPath = flag.String("output", "data/stitched-migration-graph.json", "where to put the stitched migration graph JSON")
 
 func mainErr() error {
 	flag.Parse()
@@ -46,7 +47,7 @@ func mainErr() error {
 		versionTags = append(versionTags, version.GitTag())
 	}
 	fmt.Printf("Generating stitched migration files for range [%s, %s]\n", MinVersion, MaxVersion)
-	if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "stitched-migration-graph.json"), versionTags); err != nil {
+	if err := stitchAndWrite(repoRoot, *outputPath, versionTags); err != nil {
 		return err
 	}
 

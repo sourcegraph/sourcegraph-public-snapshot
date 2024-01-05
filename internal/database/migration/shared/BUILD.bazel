@@ -17,3 +17,15 @@ go_library(
         "//lib/errors",
     ],
 )
+
+genrule(
+    name = "generate_stitched_migration_graph",
+    srcs = [],
+    outs = ["stitched-migration-graph.json"],
+    cmd = """\
+        $(location //internal/database/migration/shared/data/cmd/generator) \
+            -output = $@
+    """,
+    tools = ["//internal/database/migration/shared/data/cmd/generator"],
+    visibility = ["//visibility:public"],
+)

@@ -1,22 +1,24 @@
 package stitch
 
 import (
-	"archive/tar"
-	"bytes"
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var gitTreePattern = lazyregexp.New("^tree .+:.+\n")
+var migrationsArchive = &migrationArchives{currentVersion: "v5.3.0", m: map[string]migrationEntries{}}
+
+func init() {
+	err := migrationsArchive.load("foo")
+	if err != nil {
+		panic(err)
+	}
+}
 
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
 // at the given git revision.
@@ -26,39 +28,18 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 		return nil, err
 	}
 
-	// First we will try to look up using the version tag. This should succeed for
-	// historical releases that are already tagged. If we don't find the tag we will
-	// fallback below to a branch name matching the release branch.
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, pathForSchemaAtRev))
-	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
+	m, err := migrationsArchive.Get(rev)
 	if err != nil {
-		// Here we will try the release branch fallback. This should be encountered for future versions, in other words
-		// we are updating the max supported version to something that isn't yet tagged.
-		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: invalid object name") {
-			cmd := exec.Command("git", "show", fmt.Sprintf("origin/%s:%s", branch, pathForSchemaAtRev))
-			cmd.Dir = dir
-			out, err = cmd.CombinedOutput()
-		}
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to run git show: %s", out)
-		}
+		return nil, err
 	}
 
-	if ok := gitTreePattern.Match(out); !ok {
-		return nil, errors.New("not a directory")
-	}
-
-	var lines []string
-	for _, line := range bytes.Split(out, []byte("\n"))[1:] {
-		if len(line) == 0 {
-			continue
+	entries := []string{}
+	for path := range m {
+		if strings.HasPrefix(path, pathForSchemaAtRev) && path != pathForSchemaAtRev {
+			entries = append(entries, strings.Replace(path, pathForSchemaAtRev+"/", "", 1))
 		}
-
-		lines = append(lines, string(line))
 	}
-
-	return lines, nil
+	return entries, nil
 }
 
 // readMigrationFileContents reads the contents of the migration at given path at the given git revision.
@@ -106,42 +87,7 @@ func cachedArchiveContents(dir, rev string) (map[string]string, error) {
 // archiveContents calls git archive with the given git revision and returns a map from
 // file paths to file contents.
 func archiveContents(dir, rev string) (map[string]string, error) {
-	cmd := exec.Command("git", "archive", "--format=tar", rev, "migrations")
-	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: not a valid object name") {
-			cmd := exec.Command("git", "archive", "--format=tar", "origin/"+branch, "migrations")
-			cmd.Dir = dir
-			out, err = cmd.CombinedOutput()
-		}
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to run git archive: %s", out)
-		}
-	}
-
-	revContents := map[string]string{}
-
-	r := tar.NewReader(bytes.NewReader(out))
-	for {
-		header, err := r.Next()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-
-			return nil, err
-		}
-
-		fileContents, err := io.ReadAll(r)
-		if err != nil {
-			return nil, err
-		}
-
-		revContents[header.Name] = string(fileContents)
-	}
-
-	return revContents, nil
+	return migrationsArchive.Get(rev)
 }
 
 func migrationPath(schemaName, rev string) (string, error) {
