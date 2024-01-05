@@ -126,7 +126,7 @@ func loadSchema(filename string) (*schema, error) {
 
 func generateTSConstants(output io.Writer, permissions []permissionNamespace) {
 	fmt.Fprintln(output, TSGeneratedByTarget)
-	var permissionNames = make([]string, len(permissions))
+	permissionNames := make([]string, len(permissions))
 	for index, permission := range permissions {
 		fmt.Fprintln(output)
 		name := permission.zanziBarFormat()
@@ -152,8 +152,8 @@ func generateNamespaces(output io.Writer, namespaces []string) {
 	fmt.Fprintln(output, "package types")
 	fmt.Fprintln(output)
 
-	var namespacesConstants = make([]string, len(namespaces))
-	var namespaceVariableNames = make([]string, len(namespaces))
+	namespacesConstants := make([]string, len(namespaces))
+	namespaceVariableNames := make([]string, len(namespaces))
 	for index, namespace := range namespaces {
 		namespaceVarName := fmt.Sprintf("%sNamespace", sentencizeNamespace(namespace))
 		namespacesConstants[index] = fmt.Sprintf("const %s PermissionNamespace = \"%s\"", namespaceVarName, namespace)
@@ -168,7 +168,7 @@ func generateActions(output io.Writer, namespaceActions []namespaceAction) {
 	fmt.Fprintln(output, "package types")
 	fmt.Fprintln(output)
 
-	var namespaceActionConstants = make([]string, len(namespaceActions))
+	namespaceActionConstants := make([]string, len(namespaceActions))
 	for index, namespaceAction := range namespaceActions {
 		namespaceActionConstants[index] = fmt.Sprintf("const %s NamespaceAction = \"%s\"", namespaceAction.varName, namespaceAction.action)
 	}
