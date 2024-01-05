@@ -46,6 +46,11 @@ type Variables struct {
 
 const StackName = "iam"
 
+const (
+	OutputCloudRunServiceAccount = "cloud_run_service_account"
+	OutputOperatorServiceAccount = "operator_access_service_account"
+)
+
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, locals, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
@@ -205,9 +210,9 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Collect outputs
-	locals.Add("cloud_run_service_account", workloadServiceAccount.Email,
+	locals.Add(OutputCloudRunServiceAccount, workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
-	locals.Add("operator_access_service_account", operatorAccessServiceAccount.Email,
+	locals.Add(OutputOperatorServiceAccount, operatorAccessServiceAccount.Email,
 		"Service Account email used for operator access to other resources")
 	return &CrossStackOutput{
 		CloudRunWorkloadServiceAccount: workloadServiceAccount,
