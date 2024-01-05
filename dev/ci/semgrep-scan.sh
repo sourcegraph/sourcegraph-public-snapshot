@@ -11,6 +11,11 @@ echo -e "--- :lock: running Semgrep scan\n"
 
 set -x
 
+# verify security-semgrep-rules/semgrep-rules/ directory is present or print error
+if [ ! -d "security-semgrep-rules/semgrep-rules/" ]; then
+  echo ":red_circle: Semgrep rules directory not found. reachout security team for support :red_circle:"
+fi
+
 # run semgrep
 semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main
 
@@ -28,3 +33,5 @@ gh api \
   -f commit_sha="$BUILDKITE_COMMIT" \
   -f ref="refs/pull/$BUILDKITE_PULL_REQUEST/head" \
   -f sarif="$encoded_sarif"
+
+echo -e "--- :white_check_mark: Semgrep Scan job is completed\n"
