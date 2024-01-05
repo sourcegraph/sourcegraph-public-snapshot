@@ -28,8 +28,7 @@ type matcher interface {
 	String() string
 }
 
-// compilePattern returns a matcher for matching p. If the pattern
-// is empty, then it returns a nil matcher.
+// compilePattern returns a matcher for matching the pattern info
 func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 	var (
 		re               *regexp.Regexp
