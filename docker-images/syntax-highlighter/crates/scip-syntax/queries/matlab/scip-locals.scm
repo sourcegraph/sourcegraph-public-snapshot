@@ -6,15 +6,12 @@
 
 (assignment
  left: (identifier) @definition.var
- (#set! "reassignment_behavior" "oldest_is_definition")
  (#set! "def_ref"))
 (global_operator
  (identifier) @definition.var
- (#set! "reassignment_behavior" "oldest_is_definition")
  (#set! "def_ref"))
 (persistent_operator
  (identifier) @definition.var
- (#set! "reassignment_behavior" "oldest_is_definition")
  (#set! "def_ref"))
 
 (function_definition

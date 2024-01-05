@@ -113,10 +113,9 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			ProjectID: vars.ProjectID,
 			// These might be used to grant access across other projects so
 			// a human-usable ID and name are preferred over random values.
-			AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
-			DisplayName: fmt.Sprintf("%s Service Account",
-				pointers.Deref(vars.Service.Name, vars.Service.ID)),
-			Roles: serviceAccountRoles,
+			AccountID:   fmt.Sprintf("%s-sa", vars.Service.ID),
+			DisplayName: fmt.Sprintf("%s Service Account", vars.Service.GetName()),
+			Roles:       serviceAccountRoles,
 
 			// There may be external references to the service account to allow
 			// the workload access to external resources, so guard it from deletes.
@@ -134,10 +133,9 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	operatorAccessServiceAccount := serviceaccount.New(stack,
 		id.Group("operatoraccess"),
 		serviceaccount.Config{
-			ProjectID: vars.ProjectID,
-			AccountID: operatorAccessAccountID.HexValue,
-			DisplayName: fmt.Sprintf("%s Operator Access Service Account",
-				pointers.Deref(vars.Service.Name, vars.Service.ID)),
+			ProjectID:   vars.ProjectID,
+			AccountID:   operatorAccessAccountID.HexValue,
+			DisplayName: fmt.Sprintf("%s Operator Access Service Account", vars.Service.GetName()),
 			Roles: []serviceaccount.Role{
 				// Roles for connecting to Cloud SQL
 				{

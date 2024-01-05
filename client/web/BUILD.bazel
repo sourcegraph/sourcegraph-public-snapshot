@@ -1705,6 +1705,7 @@ ts_project(
         "src/util/dom.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
+        "src/util/permission.ts",
         "src/util/prettyBytesBigint.ts",
         "src/util/rbac.ts",
         "src/util/security.ts",

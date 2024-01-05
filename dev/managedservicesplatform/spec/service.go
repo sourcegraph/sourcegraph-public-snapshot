@@ -32,6 +32,11 @@ type ServiceSpec struct {
 	IAM *ServiceIAMSpec `yaml:"iam,omitempty"`
 }
 
+// GetName returns Name if configured, otherwise the ID.
+func (s ServiceSpec) GetName() string {
+	return pointers.Deref(s.Name, s.ID)
+}
+
 func (s ServiceSpec) Validate() []error {
 	var errs []error
 

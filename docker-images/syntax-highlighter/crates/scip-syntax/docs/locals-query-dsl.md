@@ -96,6 +96,30 @@ def f():
 a = 4 # reference 1
 ```
 
+### Skipping definitions
+
+Because we want to exclude non-local definitions when collecting locals, it's possible to mark a definition as `@definition.skip`.
+This will make it so the definition is not included in the output and all future matches of it will be skipped.
+It's important that you specify skip matches _before_ regular definition matches.
+
+```scm
+;; Skip top-level var_spec definitions
+(source_file (var_spec (identifier) @definition.skip))
+
+;; Captures all var_spec definitions as definitions
+(var_spec (identifier) @definition)
+```
+
+```go
+// Will be skipped
+var top_level = 10
+
+func main() {
+    // Will be recorded as a local
+    var local = 10
+}
+```
+
 ## References
 
 References are specified by labeling a capture as a `@reference`.
