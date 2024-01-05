@@ -10,6 +10,32 @@ expect.addSnapshotSerializer({
     test: () => true,
 })
 
+describe('newStandardRC1()', () => {
+    test('double quoted patterns are interpreted as literal', () => {
+        expect(scanSearchQuery('"foo and bar"', false, SearchPatternType.newStandardRC1)).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":13},"kind":1,"value":"foo and bar","delimited":true}]}'
+        )
+    })
+
+    test('single quoted patterns are interpreted as literal', () => {
+        expect(scanSearchQuery("'foo or bar'", false, SearchPatternType.newStandardRC1)).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":12},"kind":1,"value":"foo or bar","delimited":true}]}'
+        )
+    })
+
+    test('recognize keywords outside quoted patterns', () => {
+        expect(scanSearchQuery('"foo or bar" or bas', false, SearchPatternType.newStandardRC1)).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":12},"kind":1,"value":"foo or bar","delimited":true},{"type":"whitespace","range":{"start":12,"end":13}},{"type":"keyword","value":"or","range":{"start":13,"end":15},"kind":"or"},{"type":"whitespace","range":{"start":15,"end":16}},{"type":"pattern","range":{"start":16,"end":19},"kind":1,"value":"bas","delimited":false}]}'
+        )
+    })
+
+    test('scan literal and regexp patterns', () => {
+        expect(scanSearchQuery('pfalz /mosel/', false, SearchPatternType.newStandardRC1)).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":5},"kind":1,"value":"pfalz","delimited":false},{"type":"whitespace","range":{"start":5,"end":6}},{"type":"pattern","range":{"start":6,"end":13},"kind":2,"value":"mosel","delimited":true}]}'
+        )
+    })
+})
+
 describe('scanBalancedPattern()', () => {
     const scanBalancedPattern = toPatternResult(scanBalancedLiteral, PatternKind.Literal)
     test('balanced, scans up to whitespace', () => {

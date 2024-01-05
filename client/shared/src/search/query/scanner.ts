@@ -511,6 +511,38 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
+/**
+ * scanNewStandardRC1 is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
+ */
+const scanNewStandardRC1 = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
 export function detectPatternType(query: string): SearchPatternType | undefined {
     const result = scanStandard(query)
     const tokens =
@@ -538,9 +570,11 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.newStandardRC1:
         case SearchPatternType.keyword: {
             return scanStandard(query)
+        }
+        case SearchPatternType.newStandardRC1: {
+            return scanNewStandardRC1(query)
         }
         case SearchPatternType.literal: {
             patternKind = PatternKind.Literal
