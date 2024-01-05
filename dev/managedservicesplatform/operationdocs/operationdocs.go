@@ -91,6 +91,7 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 				resourceHeadings[k] = h
 				return l
 			}), ", ")},
+			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
 		}
 		if env.EnvironmentServiceSpec != nil {
 			if domain := env.Domain.GetDNSName(); domain != "" {

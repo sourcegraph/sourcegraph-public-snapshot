@@ -23,6 +23,7 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 | Project ID | [`msp-testbed-dev-xxxx`](https://console.cloud.google.com/run?project=msp-testbed-dev-xxxx)                                 |
 | Category   | **test**                                                                                                                    |
 | Resources  | [dev Redis](#dev-redis), [dev PostgreSQL instance](#dev-postgresql-instance), [dev BigQuery dataset](#dev-bigquery-dataset) |
+| Alerts     | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-dev-xxxx)                         |
 
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges.
 Test environments have less stringent requirements.
