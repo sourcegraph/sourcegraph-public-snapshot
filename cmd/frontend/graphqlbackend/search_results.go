@@ -201,8 +201,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	})
 
 	var resolvers []*searchFilterResolver
-	// TODO: use a real exhaustiveness here
-	for _, f := range filters.Compute(false) {
+	for _, f := range filters.Compute() {
 		resolvers = append(resolvers, &searchFilterResolver{filter: *f})
 	}
 	return resolvers
@@ -225,7 +224,8 @@ func (sf *searchFilterResolver) Count() int32 {
 }
 
 func (sf *searchFilterResolver) LimitHit() bool {
-	return sf.filter.IsExhaustive
+	// TODO(camdencheek): calculate exhaustiveness correctly
+	return true
 }
 
 func (sf *searchFilterResolver) Kind() string {

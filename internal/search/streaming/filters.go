@@ -16,14 +16,6 @@ type Filter struct {
 	// for `repo:` filters.
 	Count int
 
-	// IsLimitHit is true if the results returned for a repository are
-	// incomplete.
-
-	// This isn't set at the outset, and is set by SearchFilters.Compute().
-	// We do this because we want limitHit to apply to all filters, not just
-	// a single filter.
-	IsExhaustive bool
-
 	// Kind of filter. Should be "repo", "file", or "lang".
 	Kind string
 

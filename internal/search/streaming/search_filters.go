@@ -228,15 +228,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
-func (s *SearchFilters) Compute(exhaustive bool) []*Filter {
-	filters := s.filters.Compute(computeOpts{
+func (s *SearchFilters) Compute() []*Filter {
+	return s.filters.Compute(computeOpts{
 		MaxRepos: 40,
 		MaxOther: 40,
 	})
-
-	for _, filter := range filters {
-		filter.IsExhaustive = exhaustive
-	}
-
-	return filters
 }

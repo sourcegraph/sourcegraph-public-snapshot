@@ -121,14 +121,15 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         // presented in filters from search stream API. If the filter is in both
         // places (URL and steam API) merged them to avoid duplicates in the UI
         if (filterQueryFilters.length > 0 && !staticFilters) {
-            const mappedSelectedFilters = filterQueryFilters.map(selectedFilter => {
+            const mappedSelectedFilters = filterQueryFilters.map((selectedFilter): DynamicClientFilter => {
                 const mappedSelectedFilter = filters?.find(filter => isSameFilter(filter.value, selectedFilter))
 
                 return {
                     count: mappedSelectedFilter?.count ?? 0,
                     label: mappedSelectedFilter?.label ?? upperFirst(selectedFilter?.value?.value),
                     value: stringHuman([selectedFilter]),
-                } as DynamicClientFilter
+                    exhaustive: mappedSelectedFilter?.exhaustive ?? false,
+                }
             })
 
             const otherFilters = filterTypes.flatMap(
