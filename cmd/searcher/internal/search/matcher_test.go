@@ -227,3 +227,86 @@ func TestMatchesFile(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchesFileLimits(t *testing.T) {
+	file := []byte("the file that mentions file a lot ... the file file")
+
+	cases := []struct {
+		name        string
+		m           matcher
+		limit       int
+		wantMatches int
+	}{
+		{
+			name: "'or' matcher with limit",
+			m: &orMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("file"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("the"),
+					},
+				},
+			},
+			limit:       3,
+			wantMatches: 3,
+		},
+		{
+			name: "'or' matcher without limit",
+			m: &orMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("file"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("the"),
+					},
+				},
+			},
+			limit:       10,
+			wantMatches: 6,
+		},
+		{
+			name: "'and' matcher with limit",
+			m: &andMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("file"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("the"),
+					},
+				},
+			},
+			limit:       3,
+			wantMatches: 3,
+		},
+		{
+			name: "'and' matcher with negation",
+			m: &andMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("excluded"),
+						isNegated: true,
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("file"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("the"),
+					},
+				},
+			},
+			limit:       3,
+			wantMatches: 3,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, matches := c.m.MatchesFile(file, c.limit)
+			require.Equal(t, c.wantMatches, len(matches))
+		})
+	}
+}

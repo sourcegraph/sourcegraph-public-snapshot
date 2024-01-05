@@ -259,13 +259,10 @@ func (am *andMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 		if !childMatch {
 			return false, nil
 		}
-
 		matches = append(matches, childMatches...)
-		limit -= len(childMatches)
 	}
 
-	sort.Sort(matchSlice(matches))
-	return true, matches
+	return true, mergeMatches(matches, limit)
 }
 
 func (am *andMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
@@ -305,11 +302,9 @@ func (om *orMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
 		match = match || childMatch
 		matches = append(matches, childMatches...)
-		limit -= len(childMatches)
 	}
 
-	sort.Sort(matchSlice(matches))
-	return match, matches
+	return match, mergeMatches(matches, limit)
 }
 
 func (om *orMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
@@ -326,6 +321,14 @@ func (om *orMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery
 
 func (om *orMatcher) String() string {
 	return fmt.Sprintf("OR (%d children)", len(om.children))
+}
+
+func mergeMatches(matches [][]int, limit int) [][]int {
+	sort.Sort(matchSlice(matches))
+	if len(matches) > limit {
+		matches = matches[:limit]
+	}
+	return matches
 }
 
 type matchSlice [][]int
