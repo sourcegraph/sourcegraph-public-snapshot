@@ -20,7 +20,7 @@ func getChoice(in io.Reader, out *std.Output, choices map[int]string) (int, erro
 	// we need to sort the choices so that we can print them in the same order every time.
 	choiceIdx := make([]int, len(choices))
 	idx := 0
-	for num, _ := range choices {
+	for num := range choices {
 		choiceIdx[idx] = num
 		idx++
 	}

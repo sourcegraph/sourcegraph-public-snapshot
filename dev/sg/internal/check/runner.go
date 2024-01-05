@@ -169,8 +169,8 @@ func (r *Runner[Args]) Interactive(
 			choices[v] = fmt.Sprintf("Fix %q", category.Name)
 		}
 
-		choices[FixAll] = fmt.Sprintf("Fix everything")
-		choices[FixQuit] = fmt.Sprintf("Quit")
+		choices[FixAll] = "Fix everything"
+		choices[FixQuit] = "Quit"
 		return choices
 	}
 	for len(results.failed) != 0 {
@@ -191,7 +191,10 @@ func (r *Runner[Args]) Interactive(
 		switch choice {
 		case FixAll:
 			{
-				r.fixAllCategories(ctx, args, results)
+				if everythingFixed := r.fixAllCategories(ctx, args, results); everythingFixed {
+					// evertyhing got fixed \o/
+					return nil
+				}
 			}
 		case FixQuit:
 			{
