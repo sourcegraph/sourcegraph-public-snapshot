@@ -310,3 +310,91 @@ func TestMatchesFileLimits(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchesFileRanges(t *testing.T) {
+	file := []byte("philodendron and monsteras")
+
+	cases := []struct {
+		name        string
+		m           matcher
+		limit       int
+		wantMatches [][]int
+	}{
+		{
+			name: "'or' matcher with range overlap",
+			m: &orMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("steras"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("monster"),
+					},
+				},
+			},
+			limit:       100, // random high limit
+			wantMatches: [][]int{{17, 26}},
+		},
+		{
+			name: "'and' matcher with adjacent ranges",
+			m: &andMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("philo"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("dendron"),
+					},
+				},
+			},
+			limit:       100, // random high limit
+			wantMatches: [][]int{{0, 12}},
+		},
+		{
+			name: "'and' matcher with one range subsuming another",
+			m: &andMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("philodendron"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("lode"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("monster"),
+					},
+				},
+			},
+			limit:       100, // random high limit
+			wantMatches: [][]int{{0, 12}, {17, 24}},
+		},
+		{
+			name: "limit applied after merging",
+			m: &orMatcher{
+				children: []matcher{
+					&regexMatcher{
+						re: regexp.MustCompile("monster"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("tera"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("philo"),
+					},
+					&regexMatcher{
+						re: regexp.MustCompile("lode"),
+					},
+				},
+			},
+			limit:       2,
+			wantMatches: [][]int{{0, 7}, {17, 25}},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, matches := c.m.MatchesFile(file, c.limit)
+			require.Equal(t, c.wantMatches, matches)
+		})
+	}
+}

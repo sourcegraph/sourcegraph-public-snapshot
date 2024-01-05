@@ -466,7 +466,7 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 		{
-			name: "and matcher with matches",
+			name: "'and' matcher with matches",
 			args: args{
 				ctx: context.Background(),
 				m: &orMatcher{
@@ -491,16 +491,13 @@ func TestRegexSearch(t *testing.T) {
 					ContentStart: protocol.Location{0, 0, 0},
 					Ranges: []protocol.Range{{
 						Start: protocol.Location{0, 0, 0},
-						End: protocol.Location{5, 0, 5},
-					}, {
-						Start: protocol.Location{5, 0, 5},
 						End: protocol.Location{10, 0, 10},
 					}},
 				}},
 			}},
 		},
 		{
-			name: "and matcher with no match",
+			name: "'and' matcher with no match",
 			args: args{
 				ctx: context.Background(),
 				m: &andMatcher{
@@ -521,7 +518,7 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: nil,
 		},
 		{
-			name: "or matcher with matches",
+			name: "'or' matcher with matches",
 			args: args{
 				ctx: context.Background(),
 				m: &orMatcher{
@@ -552,7 +549,7 @@ func TestRegexSearch(t *testing.T) {
 			}},
 		},
 		{
-			name: "or matcher with no match",
+			name: "'or' matcher with no match",
 			args: args{
 				ctx: context.Background(),
 				m: &orMatcher{

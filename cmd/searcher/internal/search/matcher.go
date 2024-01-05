@@ -251,7 +251,6 @@ func (am *andMatcher) MatchesString(s string) bool {
 	return true
 }
 
-// TODO(jtibs): remove overlapping ranges
 func (am *andMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	var matches [][]int
 	for _, m := range am.children {
@@ -294,7 +293,6 @@ func (om *orMatcher) MatchesString(s string) bool {
 	return false
 }
 
-// TODO(jtibs): remove overlapping ranges
 func (om *orMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	match := false
 	var matches [][]int
@@ -323,12 +321,37 @@ func (om *orMatcher) String() string {
 	return fmt.Sprintf("OR (%d children)", len(om.children))
 }
 
+// mergeMatches sorts the matched ranges, merges overlapping ranges,
+// and finally truncates the list to obey 'limit'
 func mergeMatches(matches [][]int, limit int) [][]int {
-	sort.Sort(matchSlice(matches))
-	if len(matches) > limit {
-		matches = matches[:limit]
+	if len(matches) == 0 {
+		return matches
 	}
-	return matches
+
+	sort.Sort(matchSlice(matches))
+	newMatches := make([][]int, 0, len(matches))
+
+	first := matches[0]
+	start, end := first[0], first[1]
+
+	for i, m := range matches {
+		if i == 0 {
+			continue
+		}
+
+		if m[0] > end {
+			newMatches = append(newMatches, []int{start, end})
+			start, end = m[0], m[1]
+		} else if m[1] > end {
+			end = m[1]
+		}
+	}
+	newMatches = append(newMatches, []int{start, end})
+
+	if len(newMatches) > limit {
+		newMatches = newMatches[:limit]
+	}
+	return newMatches
 }
 
 type matchSlice [][]int
