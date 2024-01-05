@@ -44,7 +44,7 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 		[]string{"Property", "Details"},
 		[][]string{
 			{"Service ID", markdown.Code(s.Service.ID)},
-			{"Owners", markdown.Bold(strings.Join(s.Service.Owners, ", "))},
+			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
 			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
 			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
 				l, h := markdown.HeadingLinkf("%s environment", markdown.Code(e.ID))
@@ -83,10 +83,12 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 			{"Category", markdown.Bold(string(env.Category))},
 			{"Resources", strings.Join(env.Resources.List(), ", ")},
 		}
-		if domain := env.Domain.GetDNSName(); domain != "" {
-			overview = append(overview, []string{"Domain", markdown.Link(domain, domain)})
-			if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.Proxied {
-				overview = append(overview, []string{"Cloudflare WAF", markdown.Code("true")})
+		if env.EnvironmentServiceSpec != nil {
+			if domain := env.Domain.GetDNSName(); domain != "" {
+				overview = append(overview, []string{"Domain", markdown.Link(domain, domain)})
+				if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.Proxied {
+					overview = append(overview, []string{"Cloudflare WAF", markdown.Code("true")})
+				}
 			}
 		}
 		md.Table(
@@ -94,9 +96,9 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 			overview,
 		)
 
-		if env.Category != spec.EnvironmentCategoryTest {
-			md.Paragraphf("MSP infrastructure access needs to be requested using Entitle for time-bound privileges.")
-		}
+		md.Paragraphf(`MSP infrastructure access needs to be requested using Entitle for time-bound privileges.
+Test environments have less stringent requirements.`)
+
 		md.Table([]string{"Access", "Entitle request template"}, [][]string{
 			{"GCP project read access", entitleReaderLinksByCategory[env.Category]},
 			{"GCP project write access", entitleEditorLinksByCategory[env.Category]},
