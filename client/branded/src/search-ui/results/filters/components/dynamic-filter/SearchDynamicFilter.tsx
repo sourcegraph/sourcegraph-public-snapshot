@@ -13,8 +13,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
-
-import { DynamicClientFilter } from '../../types'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import styles from './SearchDynamicFilter.module.scss'
 
@@ -61,10 +60,10 @@ interface SearchDynamicFilterProps {
     /**
      * List of streamed filters from search stream API
      */
-    filters?: DynamicClientFilter[]
+    filters?: Filter[]
 
     /** Exposes render API to render some custom filter item in the list */
-    renderItem?: (filter: DynamicClientFilter) => ReactNode
+    renderItem?: (filter: Filter) => ReactNode
 
     /**
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
@@ -115,7 +114,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         [filterQueryFilters]
     )
 
-    const mappedFilters = useMemo<DynamicClientFilter[]>(() => {
+    const mappedFilters = useMemo<Filter[]>(() => {
         // If there are any selected filters in the filters query
         // include these filters in the filters array even if they are not
         // presented in filters from search stream API. If the filter is in both
@@ -128,7 +127,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                     count: mappedSelectedFilter?.count ?? 0,
                     label: mappedSelectedFilter?.label ?? upperFirst(selectedFilter?.value?.value),
                     value: stringHuman([selectedFilter]),
-                } as DynamicClientFilter
+                } as Filter
             })
 
             const otherFilters = filterTypes.flatMap(
@@ -194,9 +193,9 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
 }
 
 interface DynamicFilterItemProps {
-    filter: DynamicClientFilter
+    filter: Filter
     selected: boolean
-    renderItem?: (filter: DynamicClientFilter) => ReactNode
+    renderItem?: (filter: Filter) => ReactNode
     onClick: (filter: string, remove?: boolean) => void
 }
 
@@ -247,28 +246,28 @@ function toArray<T>(item: T | T[]): T[] {
     return [item]
 }
 
-export const languageFilter = (filter: DynamicClientFilter): ReactNode => (
+export const languageFilter = (filter: Filter): ReactNode => (
     <>
         <LanguageIcon language={filter.label} className={styles.icon} />
         {filter.label}
     </>
 )
 
-export const repoFilter = (filter: DynamicClientFilter): ReactNode => (
+export const repoFilter = (filter: Filter): ReactNode => (
     <>
         <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
         {filter.label}
     </>
 )
 
-export const commitDateFilter = (filter: DynamicClientFilter): ReactNode => (
+export const commitDateFilter = (filter: Filter): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
         <Code>{filter.value}</Code>
     </span>
 )
 
-export const symbolFilter = (filter: DynamicClientFilter): ReactNode => {
+export const symbolFilter = (filter: Filter): ReactNode => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
@@ -290,9 +289,9 @@ export const symbolFilter = (filter: DynamicClientFilter): ReactNode => {
     )
 }
 
-export const utilityFilter = (filter: DynamicClientFilter): string => (filter.count === 0 ? filter.value : filter.label)
+export const utilityFilter = (filter: Filter): string => (filter.count === 0 ? filter.value : filter.label)
 
-export const authorFilter = (filter: DynamicClientFilter): ReactNode => (
+export const authorFilter = (filter: Filter): ReactNode => (
     <>
         <UserAvatar size={14} user={{ avatarURL: null, displayName: filter.label }} className={styles.avatar} />
         {filter.label}

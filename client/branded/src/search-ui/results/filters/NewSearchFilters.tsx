@@ -23,15 +23,14 @@ import {
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { useFilterQuery } from './hooks'
-import { COMMIT_DATE_FILTERS, DynamicClientFilter, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
-import { generateAuthorFilters } from './utils'
+import { COMMIT_DATE_FILTERS, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
 interface NewSearchFiltersProps {
     query: string
     results: SearchMatch[] | undefined
-    filters?: DynamicClientFilter[]
+    filters?: Filter[]
     onQueryChange: (nextQuery: string) => void
 }
 
@@ -56,8 +55,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
 
         return SearchFilterType.Code
     }, [query])
-
-    const authorFilters = useMemo(() => generateAuthorFilters(results ?? []), [results])
 
     const handleFilterTypeChange = (filterType: SearchFilterType): void => {
         switch (filterType) {
@@ -99,7 +96,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                     <SearchDynamicFilter
                         title="By author"
                         filterType={FilterType.author}
-                        filters={authorFilters}
+                        filters={filters}
                         exclusive={true}
                         filterQuery={filterQuery}
                         renderItem={authorFilter}
