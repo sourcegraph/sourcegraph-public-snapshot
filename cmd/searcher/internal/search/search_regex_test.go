@@ -448,7 +448,6 @@ func TestRegexSearch(t *testing.T) {
 		name         string
 		args         args
 		wantFm       []protocol.FileMatch
-		wantLimitHit bool
 		wantErr      bool
 	}{
 		{
@@ -518,6 +517,19 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: nil,
 		},
 		{
+			name: "empty 'and' matcher",
+			args: args{
+				ctx: context.Background(),
+				m: &andMatcher{},
+				pm: match,
+				zf: file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+		},
+		{
 			name: "'or' matcher with matches",
 			args: args{
 				ctx: context.Background(),
@@ -569,19 +581,29 @@ func TestRegexSearch(t *testing.T) {
 			},
 			wantFm: nil,
 		},
+		{
+			name: "empty 'or' matcher",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatcher{},
+				pm: match,
+				zf: file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, 0)
+			gotFm, _, err := regexSearchBatch(tt.args.ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotFm, tt.wantFm) {
 				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
-			}
-			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
 		})
 	}
