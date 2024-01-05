@@ -162,7 +162,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
 	// if embeddings are disabled , return all repos in the notEmbedded slice
 	if !conf.EmbeddingsEnabled() {
-		return embedded, input, nil
+		return nil, input, nil
 	}
 	for _, repo := range input {
 		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
