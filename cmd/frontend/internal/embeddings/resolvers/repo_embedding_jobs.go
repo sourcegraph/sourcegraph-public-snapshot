@@ -262,3 +262,37 @@ func (r *repoEmbeddingJobStatsResolver) FilesSkipped() int32 {
 	}
 	return int32(skipped)
 }
+
+func NewEmptyRepoEmbeddingJobsResolver(
+	args graphqlbackend.ListRepoEmbeddingJobsArgs,
+) (*graphqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {
+	opts := &graphqlutil.ConnectionResolverOptions{}
+	return graphqlutil.NewConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver](&emptyEmbeddingJobStore{}, &args.ConnectionResolverArgs, opts)
+}
+
+type emptyEmbeddingJobStore struct{}
+
+func (s *emptyEmbeddingJobStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
+	return []graphqlbackend.RepoEmbeddingJobResolver{}, nil
+}
+func (s *emptyEmbeddingJobStore) ComputeTotal(ctx context.Context) (int32, error) {
+	return 0, nil
+}
+func (s *emptyEmbeddingJobStore) MarshalCursor(node graphqlbackend.RepoEmbeddingJobResolver, _ database.OrderBy) (*string, error) {
+	return nil, nil
+}
+
+func (s *emptyEmbeddingJobStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	return nil, nil
+}
+func (r *emptyEmbeddingJobStore) Nodes() []graphqlbackend.RepoEmbeddingJobResolver {
+	return []graphqlbackend.RepoEmbeddingJobResolver{}
+}
+
+func (r *emptyEmbeddingJobStore) TotalCount() int32 {
+	return 0
+}
+
+func (r *emptyEmbeddingJobStore) PageInfo() *graphqlutil.PageInfo {
+	return &graphqlutil.PageInfo{}
+}

@@ -121,24 +121,24 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 }
 
 func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {
-	if !conf.EmbeddingsEnabled() {
-		return nil, errors.New("embeddings are not configured or disabled")
-	}
 	// 🚨 SECURITY: Only site admins may list repo embedding jobs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
+	}
+	if !conf.EmbeddingsEnabled() {
+		return NewEmptyRepoEmbeddingJobsResolver(args)
 	}
 	return NewRepoEmbeddingJobsResolver(r.db, r.gitserverClient, r.repoEmbeddingJobsStore, args)
 }
 
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	if !conf.EmbeddingsEnabled() {
-		return nil, errors.New("embeddings are not configured or disabled")
-	}
-
 	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
 	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
+	}
+
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
 	var repoNames []api.RepoName
@@ -163,6 +163,11 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 }
 
 func (r *Resolver) MigrateToQdrant(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may MigrateToQdrant.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	if !conf.EmbeddingsEnabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
