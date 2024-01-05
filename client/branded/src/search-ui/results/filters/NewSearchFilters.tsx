@@ -3,9 +3,9 @@ import { FC, useMemo } from 'react'
 import { FilterType, NegatedFilters, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
-import type { Filter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import {
     authorFilter,
@@ -29,21 +29,18 @@ import styles from './NewSearchFilters.module.scss'
 
 interface NewSearchFiltersProps {
     query: string
-    results: SearchMatch[] | undefined
     filters?: Filter[]
     onQueryChange: (nextQuery: string) => void
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
-    const { query, results, filters, onQueryChange } = props
-
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters = [], onQueryChange }) => {
     const [filterQuery, setFilterQuery] = useFilterQuery()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)
 
         if (tokens.type === 'success') {
-            const filters = tokens.term.filter(token => token.type === 'filter') as Filter[]
+            const filters = tokens.term.filter(token => token.type === 'filter') as QueryFilter[]
             const typeFilters = filters.filter(filter => resolveFilter(filter.field.value)?.type === 'type')
 
             if (typeFilters.length === 0 || typeFilters.length > 1) {
