@@ -23,10 +23,6 @@ import (
 // (Filter).
 type SearchFilters struct {
 	filters filters
-
-	// IsLimitHit is true if the results returned for a repository are
-	// incomplete.
-	isComplete bool
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
