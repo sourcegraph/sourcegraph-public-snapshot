@@ -2,7 +2,10 @@ load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 
 filegroup(
     name = "scripts",
-    srcs = glob(["**/*.*"]),
+    srcs = glob(
+        ["**/*.*"],
+        ["BUILD.bazel"],
+    ),
     visibility = ["//visibility:public"],
 )
 
