@@ -1,8 +1,7 @@
 import { findIndex } from 'lodash'
 
-import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-
-import type { RbacPermission } from './constants'
+import type { AuthenticatedUser } from '../auth'
+import type { RbacPermission } from '../rbac/constants'
 
 export const doesUserHavePermission = (
     user: AuthenticatedUser | null,

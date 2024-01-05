@@ -16,7 +16,6 @@ ts_project(
     name = "constants",
     srcs = [
         "constants.ts",
-        "permission.ts",
     ],
     tsconfig = "//client/web:tsconfig",
 )

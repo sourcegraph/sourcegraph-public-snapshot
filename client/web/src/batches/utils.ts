@@ -1,6 +1,6 @@
 import type { AuthenticatedUser } from '../auth'
 import { BatchChangesWritePermission } from '../rbac/constants'
-import { doesUserHavePermission } from '../rbac/permission'
+import { doesUserHavePermission } from '../util/permission'
 
 export const canWriteBatchChanges = (user: AuthenticatedUser | null): boolean =>
     doesUserHavePermission(user, BatchChangesWritePermission)

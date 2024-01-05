@@ -10,9 +10,9 @@ import { AddOwnerModal } from '../../components/own/AddOwnerModal'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { OwnershipAssignPermission } from '../../rbac/constants'
-import { doesUserHavePermission } from '../../rbac/permission'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
+import { doesUserHavePermission } from '../../util/permission'
 
 import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
