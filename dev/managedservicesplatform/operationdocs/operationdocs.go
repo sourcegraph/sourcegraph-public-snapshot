@@ -98,8 +98,8 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 			md.Paragraphf("MSP infrastructure access needs to be requested using Entitle for time-bound privileges.")
 		}
 		md.Table([]string{"Access", "Entitle request template"}, [][]string{
-			{"Project", entitleReaderLinksByCategory[env.Category]},
-			{"Project write access", entitleEditorLinksByCategory[env.Category]},
+			{"GCP project read access", entitleReaderLinksByCategory[env.Category]},
+			{"GCP project write access", entitleEditorLinksByCategory[env.Category]},
 		})
 		// TODO: Add a comment about per-project access as well?
 
