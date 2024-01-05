@@ -214,13 +214,23 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 <span className={styles.itemText}>{renderItem ? renderItem(filter) : filter.label}</span>
                 {filter.count !== 0 && (
                     <Badge variant="secondary" className="ml-2">
-                        {filter.count}
+                        {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
                     </Badge>
                 )}
                 {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </li>
     )
+}
+
+function roundCount(count: number): number {
+    const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
+    for (const roundNumber of roundNumbers) {
+        if (count >= roundNumber) {
+            return roundNumber
+        }
+    }
+    return 0
 }
 
 const isSameFilter = (filterValue: string, filter: QueryFilter): boolean => {
