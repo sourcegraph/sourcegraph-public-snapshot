@@ -56,6 +56,10 @@ type Variables struct {
 
 const StackName = "cloudrun"
 
+const (
+	OutputCloudSQLConnectionName = "cloudsql_connection_name"
+)
+
 // Hardcoded variables.
 var (
 	// gcpRegion is currently hardcoded.

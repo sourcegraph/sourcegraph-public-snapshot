@@ -2,7 +2,6 @@ package stack
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 	"strconv"
 
@@ -11,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -113,9 +113,7 @@ func (l *StackLocals) Add(name string, value string, description string) {
 	// If MetadataKeyStackLocalsGSMProjectID is set, emit to GSM
 	if project, ok := l.s.Metadata[MetadataKeyStackLocalsGSMProjectID]; ok {
 		_ = gsmsecret.New(l.s.Stack, id.Group("gsm").Group(name), gsmsecret.Config{
-			// Scope the secret ID under stack name to avoid conflicts across
-			// stacks
-			ID:        fmt.Sprintf("%s_%s", l.s.Name, name),
+			ID:        stacks.OutputSecretID(l.s.Name, name),
 			ProjectID: project,
 			Value:     value,
 		})
