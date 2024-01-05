@@ -129,7 +129,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                     label: mappedSelectedFilter?.label ?? upperFirst(selectedFilter?.value?.value),
                     value: stringHuman([selectedFilter]),
                     exhaustive: mappedSelectedFilter?.exhaustive ?? false,
-                }
+                    kind: mappedSelectedFilter?.kind ?? selectedFilter.field.value,
+                } as DynamicClientFilter // TODO(camdencheek): fix the typing here so I can remove the cast
             })
 
             const otherFilters = filterTypes.flatMap(
