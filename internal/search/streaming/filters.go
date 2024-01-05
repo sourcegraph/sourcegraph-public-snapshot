@@ -18,6 +18,10 @@ type Filter struct {
 
 	// IsLimitHit is true if the results returned for a repository are
 	// incomplete.
+
+	// This isn't set at the outset, and is set by SearchFilters.Compute().
+	// We do this because we want limitHit to apply to all filters, not just
+	// a single filter.
 	IsLimitHit bool
 
 	// Kind of filter. Should be "repo", "file", or "lang".
@@ -46,22 +50,18 @@ func (f *Filter) Less(o *Filter) bool {
 type filters map[string]*Filter
 
 // Add the count to the filter with value.
-func (m filters) Add(value string, label string, count int32, limitHit bool, kind string) {
+func (m filters) Add(value string, label string, count int32, kind string) {
 	sf, ok := m[value]
 	if !ok {
 		sf = &Filter{
-			Value:      value,
-			Label:      label,
-			Count:      int(count),
-			IsLimitHit: limitHit,
-			Kind:       kind,
+			Value: value,
+			Label: label,
+			Count: int(count),
+			Kind:  kind,
 		}
 		m[value] = sf
 	} else {
 		sf.Count += int(count)
-		if limitHit {
-			sf.IsLimitHit = true
-		}
 	}
 }
 

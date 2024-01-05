@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
@@ -25,6 +24,10 @@ import (
 // (Filter).
 type SearchFilters struct {
 	filters filters
+
+	// IsLimitHit is true if the results returned for a repository are
+	// incomplete.
+	isLimitHit bool
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -123,6 +126,10 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		s.filters = make(filters)
 	}
 
+	if event.Stats.IsLimitHit || event.Stats.Status.Any(search.RepoStatusLimitHit) {
+		s.isLimitHit = true
+	}
+
 	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
 		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
 		if rev != "" {
@@ -130,21 +137,20 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		limitHit := event.Stats.Status.Get(repoID)&search.RepoStatusLimitHit != 0
-		s.filters.Add(filter, string(repoName), lineMatchCount, limitHit, "repo")
+		s.filters.Add(filter, string(repoName), lineMatchCount, "repo")
 	}
 
-	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
+	addFileFilter := func(fileMatchPath string, lineMatchCount int32) {
 		for _, ff := range commonFileFilters {
 			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
-				s.filters.Add(ff.regexFilter, ff.label, lineMatchCount, limitHit, "file")
+				s.filters.Add(ff.regexFilter, ff.label, lineMatchCount, "file")
 			}
 		}
 	}
 
-	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
+	addLangFilter := func(fileMatchPath string, lineMatchCount int32) {
 		if ext := path.Ext(fileMatchPath); ext != "" {
 			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
 			language := strings.ToLower(rawLanguage)
@@ -153,22 +159,22 @@ func (s *SearchFilters) Update(event SearchEvent) {
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				s.filters.Add(value, rawLanguage, lineMatchCount, limitHit, "lang")
+				s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
 			}
 		}
 	}
 
-	addSymbolFilter := func(symbols []*result.SymbolMatch, limitHit bool) {
+	addSymbolFilter := func(symbols []*result.SymbolMatch) {
 		for _, sym := range symbols {
 			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
 			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
-			s.filters.Add(filter, selectKind, 1, limitHit, "symbol type")
+			s.filters.Add(filter, selectKind, 1, "symbol type")
 		}
 	}
 
 	addCommitAuthorFilter := func(commit gitdomain.Commit) {
 		filter := fmt.Sprintf(`author:%s`, commit.Author.Email)
-		s.filters.Add(filter, commit.Author.Name, 1, false, "author")
+		s.filters.Add(filter, commit.Author.Name, 1, "author")
 	}
 
 	addCommitDateFilter := func(commit gitdomain.Commit) {
@@ -181,21 +187,22 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 		df := determineTimeframe(cd)
 		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
-		s.filters.Add(filter, df.Label, 1, false, "date")
+		s.filters.Add(filter, df.Label, 1, "date")
 	}
 
 	if event.Stats.ExcludedForks > 0 {
-		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "utility")
+		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), "utility")
 		s.filters.MarkImportant("fork:yes")
 	}
 	if event.Stats.ExcludedArchived > 0 {
-		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "utility")
+		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), "utility")
 		s.filters.MarkImportant("archived:yes")
 	}
 
 	for _, match := range event.Results {
 		switch v := match.(type) {
 		case *result.FileMatch:
+
 			rev := ""
 			if v.InputRev != nil {
 				rev = *v.InputRev
@@ -203,9 +210,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			lines := int32(v.ResultCount())
 
 			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
-			addLangFilter(v.Path, lines, v.LimitHit)
-			addFileFilter(v.Path, lines, v.LimitHit)
-			addSymbolFilter(v.Symbols, v.LimitHit)
+			addLangFilter(v.Path, lines)
+			addFileFilter(v.Path, lines)
+			addSymbolFilter(v.Symbols)
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
@@ -227,8 +234,14 @@ func (s *SearchFilters) Update(event SearchEvent) {
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
 func (s *SearchFilters) Compute() []*Filter {
-	return s.filters.Compute(computeOpts{
+	filters := s.filters.Compute(computeOpts{
 		MaxRepos: 40,
 		MaxOther: 40,
 	})
+
+	for _, filter := range filters {
+		filter.IsLimitHit = s.isLimitHit
+	}
+
+	return filters
 }
