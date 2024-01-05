@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Spec is a Managed Services Platform (MSP) service.
@@ -127,8 +126,7 @@ func (s Spec) Validate() []error {
 	}
 
 	for _, env := range s.Environments {
-		projectDisplayName := fmt.Sprintf("%s - %s",
-			pointers.Deref(s.Service.Name, s.Service.ID), env.ID)
+		projectDisplayName := fmt.Sprintf("%s - %s", s.Service.GetName(), env.ID)
 		if len(projectDisplayName) > 30 {
 			errs = append(errs, errors.Newf(
 				"full environment name %q exceeds 30 characters limit - try a shorter service name or environment ID",

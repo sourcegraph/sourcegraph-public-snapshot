@@ -400,6 +400,25 @@ type EnvironmentResourcesSpec struct {
 	BigQueryDataset *EnvironmentResourceBigQueryDatasetSpec `yaml:"bigQueryDataset,omitempty"`
 }
 
+// List collects a list of provisioned resources for human reference.
+func (s *EnvironmentResourcesSpec) List() []string {
+	if s == nil {
+		return nil
+	}
+
+	var resources []string
+	if s.Redis != nil {
+		resources = append(resources, "Redis")
+	}
+	if s.PostgreSQL != nil {
+		resources = append(resources, "PostgreSQL")
+	}
+	if s.BigQueryDataset != nil {
+		resources = append(resources, "BigQuery dataset")
+	}
+	return resources
+}
+
 func (s *EnvironmentResourcesSpec) Validate() []error {
 	if s == nil {
 		return nil

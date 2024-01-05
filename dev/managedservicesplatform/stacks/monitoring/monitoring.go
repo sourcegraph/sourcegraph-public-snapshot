@@ -210,8 +210,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		if channel.ProvisionChannel {
 			description := pointers.Stringf(
 				"Alerts from %s (%s) deployed on Managed Services Platform",
-				pointers.Deref(vars.Service.Name, vars.Service.ID),
-				vars.EnvironmentID)
+				vars.Service.GetName(), vars.EnvironmentID)
 			// https://registry.terraform.io/providers/pablovarela/slack/latest/docs/resources/conversation#argument-reference
 			slackChannel = slackconversation.NewConversation(stack, id.TerraformID("channel"), &slackconversation.ConversationConfig{
 				Name:      pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),

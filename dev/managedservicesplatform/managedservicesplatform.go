@@ -79,9 +79,8 @@ func (r *Renderer) RenderEnvironment(
 
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
-		ProjectID: env.ProjectID,
-		DisplayName: fmt.Sprintf("%s - %s",
-			pointers.Deref(svc.Name, svc.ID), env.ID),
+		ProjectID:   env.ProjectID,
+		DisplayName: fmt.Sprintf("%s - %s", svc.GetName(), env.ID),
 
 		Category: env.Category,
 		Labels: map[string]string{

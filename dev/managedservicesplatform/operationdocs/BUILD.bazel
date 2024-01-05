@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "operationdocs",
+    srcs = [
+        "links.go",
+        "operationdocs.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/managedservicesplatform/operationdocs/internal/markdown",
+        "//dev/managedservicesplatform/spec",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_vvakame_gcplogurl//:gcplogurl",
+    ],
+)
