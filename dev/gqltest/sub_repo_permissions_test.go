@@ -161,26 +161,6 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			zeroResult: true,
 		},
 		{
-			name:       "structural, indexed search of restricted content",
-			query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
-			zeroResult: true,
-		},
-		{
-			name:       "structural, unindexed search of restricted content",
-			query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
-			zeroResult: true,
-		},
-		{
-			name:          "structural, indexed search, nonzero result",
-			query:         `println(...) index:only patterntype:structural`,
-			minMatchCount: 1,
-		},
-		{
-			name:          "structural, unindexed search, nonzero result",
-			query:         `println(...) index:no patterntype:structural`,
-			minMatchCount: 1,
-		},
-		{
 			name:          "filename search, nonzero result",
 			query:         `repo:^perforce/test-perms$ type:path app`,
 			minMatchCount: 1,
@@ -243,6 +223,83 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("structural search", func(t *testing.T) {
+		// Enable structural search.
+		siteConfig, lastID, err := userClient.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		oldSiteConfig := new(schema.SiteConfiguration)
+		*oldSiteConfig = *siteConfig
+		defer func() {
+			_, lastID, err := userClient.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = userClient.UpdateSiteConfiguration(oldSiteConfig, lastID)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
+		err = userClient.UpdateSiteConfiguration(siteConfig, lastID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		tests := []struct {
+			name          string
+			query         string
+			zeroResult    bool
+			minMatchCount int64
+		}{
+			{
+				name:       "structural, indexed search of restricted content",
+				query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
+				zeroResult: true,
+			},
+			{
+				name:       "structural, unindexed search of restricted content",
+				query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
+				zeroResult: true,
+			},
+			{
+				name:          "structural, indexed search, nonzero result",
+				query:         `println(...) index:only patterntype:structural`,
+				minMatchCount: 1,
+			},
+			{
+				name:          "structural, unindexed search, nonzero result",
+				query:         `println(...) index:no patterntype:structural`,
+				minMatchCount: 1,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := userClient.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+
+				if results.MatchCount < test.minMatchCount {
+					t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
+				}
+			})
+		}
+	})
 
 	t.Run("commit search admin", func(t *testing.T) {
 		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
