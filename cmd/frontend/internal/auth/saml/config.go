@@ -6,13 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	stdlog "log"
+	stdlog "log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"

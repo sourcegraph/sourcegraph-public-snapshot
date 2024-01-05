@@ -624,7 +624,7 @@ func mapSlice(values []string, f func(string) string) []string {
 	return res
 }
 
-// toTextPatternInfo converts a an atomic query to internal values that drive
+// toTextPatternInfo converts an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
@@ -656,14 +656,14 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, defaultLimit int
 
 	return &search.TextPatternInfo{
 		// Values dependent on pattern atom.
-		IsRegExp:        isRegexp,
-		IsStructuralPat: b.IsStructural(),
-		IsCaseSensitive: b.IsCaseSensitive(),
-		FileMatchLimit:  int32(count),
-		Pattern:         b.PatternString(),
-		IsNegated:       negated,
+		Pattern:   b.PatternString(),
+		IsRegExp:  isRegexp,
+		IsNegated: negated,
 
 		// Values dependent on parameters.
+		IsStructuralPat:              b.IsStructural(),
+		IsCaseSensitive:              b.IsCaseSensitive(),
+		FileMatchLimit:               int32(count),
 		IncludePatterns:              filesInclude,
 		ExcludePattern:               query.UnionRegExps(filesExclude),
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),

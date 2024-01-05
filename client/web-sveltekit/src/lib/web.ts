@@ -29,6 +29,5 @@ export {
 export { isValidLineRange } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
 export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
 export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
-export { containsTest } from '@sourcegraph/web/src/repo/fileIcons'
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'

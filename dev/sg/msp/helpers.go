@@ -63,7 +63,7 @@ func getTFCRunsClient(c *cli.Context) (*terraformcloud.RunsClient, error) {
 	tfcMSPAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 		// We use a team token to get workspace runs
 		Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
-		Project: googlesecretsmanager.ProjectID,
+		Project: googlesecretsmanager.SharedSecretsProjectID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "get TFC OAuth client ID")

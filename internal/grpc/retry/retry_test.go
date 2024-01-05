@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/testing/testpb"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -150,12 +151,16 @@ func TestRetrySuite(t *testing.T) {
 	service := &failingService{
 		TestServiceServer: &testpb.TestPingService{},
 	}
+
+	logger := logtest.Scoped(t)
 	unaryInterceptor := UnaryClientInterceptor(
+		logger,
 		WithCodes(retriableErrors...),
 		WithMax(3),
 		WithBackoff(BackoffLinear(retryTimeout)),
 	)
 	streamInterceptor := StreamClientInterceptor(
+		logger,
 		WithCodes(retriableErrors...),
 		WithMax(3),
 		WithBackoff(BackoffLinear(retryTimeout)),
@@ -404,6 +409,8 @@ func (ti *trackedInterceptor) StreamClientInterceptor(ctx context.Context, desc 
 }
 
 func TestChainedRetrySuite(t *testing.T) {
+	logger := logtest.Scoped(t)
+
 	service := &failingService{
 		TestServiceServer: &testpb.TestPingService{},
 	}
@@ -418,12 +425,12 @@ func TestChainedRetrySuite(t *testing.T) {
 			ClientOpts: []grpc.DialOption{
 				grpc.WithChainUnaryInterceptor(
 					preRetryInterceptor.UnaryClientInterceptor,
-					UnaryClientInterceptor(),
+					UnaryClientInterceptor(logger),
 					postRetryInterceptor.UnaryClientInterceptor,
 				),
 				grpc.WithChainStreamInterceptor(
 					preRetryInterceptor.StreamClientInterceptor,
-					StreamClientInterceptor(),
+					StreamClientInterceptor(logger),
 					postRetryInterceptor.StreamClientInterceptor,
 				),
 			},

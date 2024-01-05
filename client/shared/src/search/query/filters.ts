@@ -70,7 +70,7 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-enum NegatedFilters {
+export enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',

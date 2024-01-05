@@ -29,23 +29,43 @@ export interface Meta {
     value?: string | null
 }
 
-export function getMetadata(result: RepositoryMatch): Meta[] {
-    const { metadata } = result
-    if (!metadata) {
-        return []
-    }
-    return sortBy(
-        Object.entries(metadata).map(([key, value]) => ({ key, value })),
-        ['key', 'value']
+export interface RepositoryBadge {
+    label: string
+    urlQuery: string
+}
+
+export function getRepositoryBadges(
+    queryState: QueryState,
+    repo: RepositoryMatch,
+    enableMetadata: boolean
+): RepositoryBadge[] {
+    const topicBadges = (repo.topics ?? []).map(topic => ({
+        label: topic,
+        urlQuery: buildSearchURLQueryForTopic(queryState, topic),
+    }))
+    const metaBadges = enableMetadata
+        ? Object.entries(repo.metadata ?? {}).map(([key, value]) => ({
+              label: `${key}:${value}`,
+              urlQuery: buildSearchURLQueryForMeta(queryState, key, value),
+          }))
+        : []
+    return sortBy([...topicBadges, ...metaBadges], ['label'])
+}
+
+function buildSearchURLQueryForTopic(queryState: QueryState, topic: string): string {
+    const query = appendFilter(queryState.query, 'repo', `has.topic(${topic})`)
+
+    return buildSearchURLQuery(
+        query,
+        queryState.patternType,
+        queryState.caseSensitive,
+        queryState.searchContext,
+        queryState.searchMode
     )
 }
 
-export function buildSearchURLQueryForMeta(queryState: QueryState, meta: Meta): string {
-    const query = appendFilter(
-        queryState.query,
-        'repo',
-        meta.value ? `has.meta(${meta.key}:${meta.value})` : `has.meta(${meta.key})`
-    )
+function buildSearchURLQueryForMeta(queryState: QueryState, key: string, value?: string): string {
+    const query = appendFilter(queryState.query, 'repo', value ? `has.meta(${key}:${value})` : `has.meta(${key})`)
 
     return buildSearchURLQuery(
         query,

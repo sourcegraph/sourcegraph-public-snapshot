@@ -7,6 +7,7 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -25,7 +26,7 @@ var (
 		codes:          DefaultRetriableCodes,
 		backoffFunc:    BackoffLinearWithJitter(50*time.Millisecond /*jitter*/, 0.10),
 		onRetryCallback: OnRetryCallback(func(ctx context.Context, attempt uint, err error) {
-			logTrace(ctx, "grpc_retry attempt: %d, backoff for %v", attempt, err)
+			logTrace(ctx, "grpc_retry attempting backing off due to error", attribute.Int("attempt", int(attempt)), attribute.String("error", err.Error()))
 		}),
 	}
 )

@@ -34,6 +34,10 @@ type Config struct {
 	WorkloadServiceAccount *serviceaccount.Output
 
 	Spec spec.EnvironmentResourceBigQueryDatasetSpec
+
+	// PreventDestroys indicates if destroys should be allowed on core components of
+	// this resource.
+	PreventDestroys bool
 }
 
 // New creates a BigQuery dataset and all configured tables.
@@ -56,6 +60,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 		DatasetId: &datasetID,
 		Labels:    &labels,
+
+		// By default, assume we don't want to delete service tables
+		Lifecycle: &cdktf.TerraformResourceLifecycle{
+			PreventDestroy: &config.PreventDestroys,
+		},
 	})
 
 	// Grant the workload SA editor access to the entire dataset.
@@ -79,6 +88,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 					TableId: &tableID,
 					Schema:  pointers.Ptr(string(config.Spec.GetSchema(tableID))),
 					Labels:  &labels,
+
+					// By default, assume we don't want to delete service tables
+					Lifecycle: &cdktf.TerraformResourceLifecycle{
+						PreventDestroy: &config.PreventDestroys,
+					},
 
 					// In order to write to the table, the workload SA must have editor
 					// access, so we make table depend on the role grant.

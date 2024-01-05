@@ -196,7 +196,8 @@ export const NotebookSymbolBlock: React.FunctionComponent<React.PropsWithChildre
                                 repoName={input.repositoryName}
                                 commitID={input.revision}
                                 filePath={input.filePath}
-                                plaintextLines={symbolOutput.highlightedLines}
+                                plaintextLines={[]}
+                                highlightedLines={symbolOutput.highlightedLines}
                                 highlightRanges={[symbolOutput.highlightSymbolRange]}
                                 {...symbolOutput.highlightLineRange}
                                 onCopy={logEventOnCopy}

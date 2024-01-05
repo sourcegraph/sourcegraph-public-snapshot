@@ -86,6 +86,7 @@ export async function fetchBlobPlaintext(options: FetchBlobOptions): Promise<Blo
                                     url
                                     serviceKind
                                 }
+                                languages
                             }
                         }
                     }
