@@ -226,7 +226,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 
 	t.Run("structural search", func(t *testing.T) {
 		// Enable structural search.
-		siteConfig, lastID, err := userClient.SiteConfiguration()
+		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -234,18 +234,18 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		oldSiteConfig := new(schema.SiteConfiguration)
 		*oldSiteConfig = *siteConfig
 		defer func() {
-			_, lastID, err := userClient.SiteConfiguration()
+			_, lastID, err := client.SiteConfiguration()
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = userClient.UpdateSiteConfiguration(oldSiteConfig, lastID)
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
 
 		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
-		err = userClient.UpdateSiteConfiguration(siteConfig, lastID)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}
