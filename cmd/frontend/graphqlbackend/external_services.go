@@ -195,17 +195,17 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 		arg := struct {
-			ID          graphql.ID
-			DisplayName *string
-			UpdaterID   *int32
-			PrevConfig  string
-			NewConfig   *string
+			ID           graphql.ID
+			DisplayName  *string
+			UpdaterID    *int32
+			PrevConfig   string
+			LatestConfig *string
 		}{
-			ID:          args.Input.ID,
-			DisplayName: args.Input.DisplayName,
-			UpdaterID:   &userID,
-			PrevConfig:  prevConfig,
-			NewConfig:   &latestConfig,
+			ID:           args.Input.ID,
+			DisplayName:  args.Input.DisplayName,
+			UpdaterID:    &userID,
+			PrevConfig:   prevConfig,
+			LatestConfig: &latestConfig,
 		}
 		// Log action of Code Host Connection being updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
