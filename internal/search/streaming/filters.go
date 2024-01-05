@@ -59,6 +59,9 @@ func (m filters) Add(value string, label string, count int32, limitHit bool, kin
 		m[value] = sf
 	} else {
 		sf.Count += int(count)
+		if limitHit {
+			sf.IsLimitHit = true
+		}
 	}
 }
 
