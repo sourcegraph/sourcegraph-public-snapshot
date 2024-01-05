@@ -420,7 +420,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := compilePathPatterns(&protocol.PatternInfo{
+	pm, err := compilePathPatterns(&protocol.PatternInfo{
 		IncludePatterns: []string{`a\.go`},
 		ExcludePattern:  `README\.md`,
 	})
@@ -429,35 +429,36 @@ func TestRegexSearch(t *testing.T) {
 	}
 
 	zipData, _ := createZip(map[string]string{
-		"a.go": "aaaaa11111",
-		"b.go": "bbbbb22222",
-		"c.go": "ccccc3333",
+		"a.go":      "aaaaa11111",
+		"b.go":      "bbbbb22222",
+		"c.go":      "ccccc3333",
+		"README.md": "important info on go",
 	})
 	file, _ := mockZipFile(zipData)
 
 	type args struct {
-		ctx context.Context
-		m   matchTree
-		pm  *pathMatcher
+		ctx                   context.Context
+		m                     matchTree
+		pm                    *pathMatcher
 		zf                    *zipFile
 		limit                 int
 		patternMatchesContent bool
 		patternMatchesPaths   bool
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantFm       []protocol.FileMatch
-		wantErr      bool
+		name    string
+		args    args
+		wantFm  []protocol.FileMatch
+		wantErr bool
 	}{
 		{
 			name: "nil matchTree returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
 				// Check this case specifically.
-				m:  &allMatchTree{},
-				pm: match,
-				zf: file,
+				m:                     &allMatchTree{},
+				pm:                    pm,
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
@@ -477,8 +478,8 @@ func TestRegexSearch(t *testing.T) {
 							re: regexp.MustCompile("11111"),
 						},
 					}},
-				pm: match,
-				zf: file,
+				pm:                    &pathMatcher{},
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
@@ -486,11 +487,11 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: []protocol.FileMatch{{
 				Path: "a.go",
 				ChunkMatches: []protocol.ChunkMatch{{
-					Content: "aaaaa11111",
+					Content:      "aaaaa11111",
 					ContentStart: protocol.Location{0, 0, 0},
 					Ranges: []protocol.Range{{
 						Start: protocol.Location{0, 0, 0},
-						End: protocol.Location{10, 0, 10},
+						End:   protocol.Location{10, 0, 10},
 					}},
 				}},
 			}},
@@ -508,8 +509,8 @@ func TestRegexSearch(t *testing.T) {
 							re: regexp.MustCompile("22222"),
 						},
 					}},
-				pm: match,
-				zf: file,
+				pm:                    &pathMatcher{},
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
@@ -519,10 +520,10 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "empty 'and' matchTree",
 			args: args{
-				ctx: context.Background(),
-				m: &andMatchTree{},
-				pm: match,
-				zf: file,
+				ctx:                   context.Background(),
+				m:                     &andMatchTree{},
+				pm:                    pm,
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
@@ -542,8 +543,8 @@ func TestRegexSearch(t *testing.T) {
 							re: regexp.MustCompile("99999"),
 						},
 					}},
-				pm: match,
-				zf: file,
+				pm:                    &pathMatcher{},
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
@@ -551,11 +552,11 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: []protocol.FileMatch{{
 				Path: "a.go",
 				ChunkMatches: []protocol.ChunkMatch{{
-					Content: "aaaaa11111",
+					Content:      "aaaaa11111",
 					ContentStart: protocol.Location{0, 0, 0},
 					Ranges: []protocol.Range{{
 						Start: protocol.Location{0, 0, 0},
-						End: protocol.Location{5, 0, 5},
+						End:   protocol.Location{5, 0, 5},
 					}},
 				}},
 			}},
@@ -573,8 +574,8 @@ func TestRegexSearch(t *testing.T) {
 							re: regexp.MustCompile("99999"),
 						},
 					}},
-				pm: match,
-				zf: file,
+				pm:                    &pathMatcher{},
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
@@ -584,15 +585,30 @@ func TestRegexSearch(t *testing.T) {
 		{
 			name: "empty 'or' matchTree",
 			args: args{
-				ctx: context.Background(),
-				m: &orMatchTree{},
-				pm: match,
-				zf: file,
+				ctx:                   context.Background(),
+				m:                     &orMatchTree{},
+				pm:                    &pathMatcher{},
+				zf:                    file,
 				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 				limit:                 5,
 			},
 			wantFm: nil,
+		},
+		{
+			name: "matchTree matches on content AND path",
+			args: args{
+				ctx: context.Background(),
+				m: &regexMatchTree{
+					re: regexp.MustCompile("go"),
+				},
+				pm:                    pm,
+				zf:                    file,
+				patternMatchesPaths:   true,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 	}
 	for _, tt := range tests {
