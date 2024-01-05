@@ -2,7 +2,7 @@ import type { AuthenticatedUser } from '../auth'
 import { BatchChangesWritePermission } from '../rbac/constants'
 import { doesUserHavePermission } from '../util/permission'
 
-export const canWriteBatchChanges = (user: AuthenticatedUser | null): boolean =>
+export const canWriteBatchChanges = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>
     doesUserHavePermission(user, BatchChangesWritePermission)
 
 export const NO_ACCESS_SOURCEGRAPH_COM = 'Batch changes are not available on Sourcegraph.com.'

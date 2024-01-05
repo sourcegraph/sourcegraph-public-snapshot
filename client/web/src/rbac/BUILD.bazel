@@ -14,8 +14,6 @@ write_generated_to_source_files(
 # appeared in the `srcs` target, ie. //client/web:build-enterprise
 ts_project(
     name = "constants",
-    srcs = [
-        "constants.ts",
-    ],
+    srcs = ["constants.ts"],
     tsconfig = "//client/web:tsconfig",
 )

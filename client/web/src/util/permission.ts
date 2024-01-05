@@ -4,7 +4,7 @@ import type { AuthenticatedUser } from '../auth'
 import type { RbacPermission } from '../rbac/constants'
 
 export const doesUserHavePermission = (
-    user: AuthenticatedUser | null,
+    user: Pick<AuthenticatedUser, 'permissions'> | null,
     permissionToCheckFor: RbacPermission
 ): boolean => {
     if (user === null) {
