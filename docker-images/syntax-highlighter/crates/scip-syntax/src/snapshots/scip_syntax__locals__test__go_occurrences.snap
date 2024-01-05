@@ -45,8 +45,8 @@ expression: dumped
 //                ^^^^^^^^^ reference local 2
   }
   
-  func Another(local int) int {
-//             ^^^^^ definition local 8
+  func ifFn(local int) int {
+//          ^^^^^ definition local 8
    if local := 9; local < 0 {
 //    ^^^^^ definition local 9
 //                ^^^^^ reference local 9
@@ -60,40 +60,63 @@ expression: dumped
     fmt.Println(local, "has multiple digits")
 //              ^^^^^ reference local 9
    }
-  
-   switch x := 0; x {
-//        ^ definition local 10
-//                ^ reference local 10
-   case 0:
-    x := "local x"
-//  ^ definition local 11
-    fmt.Println(x)
-//              ^ reference local 11
-   case 1:
-    fmt.Println(x)
-//              ^ reference local 10
-   case x:
-//      ^ reference local 10
-    fmt.Println("something")
-   }
-  
-   for i := 0; i < 3; i++ {
-//     ^ definition local 12
-//             ^ reference local 12
-//                    ^ reference local 12
-    fmt.Println(i)
-//              ^ reference local 12
-   }
-  
    return local
 //        ^^^^^ reference local 8
   }
   
+  func switchFn(local int) int {
+//              ^^^^^ definition local 10
+   switch x := 0; x {
+//        ^ definition local 11
+//                ^ reference local 11
+   case 0:
+    x := "local x"
+//  ^ definition local 12
+    fmt.Println(x)
+//              ^ reference local 12
+   case 1:
+    fmt.Println(x)
+//              ^ reference local 11
+   case x:
+//      ^ reference local 11
+    fmt.Println("something")
+   }
+   return local
+//        ^^^^^ reference local 10
+  }
+  
+  func forFn(local int) int {
+//           ^^^^^ definition local 13
+   for i := 0; i < 3; i++ {
+//     ^ definition local 14
+//             ^ reference local 14
+//                    ^ reference local 14
+    fmt.Println(i)
+//              ^ reference local 14
+   }
+   return local
+//        ^^^^^ reference local 13
+  
+  }
+  
   func constFunc() int {
    const LOCAL_CONST = 10
-//       ^^^^^^^^^^^ definition local 13
+//       ^^^^^^^^^^^ definition local 15
    return LOCAL_CONST
-//        ^^^^^^^^^^^ reference local 13
+//        ^^^^^^^^^^^ reference local 15
+  }
+  
+  func assignmentFn(arg int) int {
+//                  ^^^ definition local 16
+   local := 0
+// ^^^^^ definition local 17
+   local = 1
+// ^^^^^ reference local 17
+   local[arg] = 2
+// ^^^^^ reference local 17
+//       ^^^ reference local 16
+   *local = 3
+//  ^^^^^ reference local 17
   }
   
   type MyStruct struct {
@@ -103,16 +126,16 @@ expression: dumped
   
   type MyInterface interface {
    method(param int) int
-//        ^^^^^ definition local 14
+//        ^^^^^ definition local 18
   }
   
   func (m *MyStruct) method(local int) int {
-//      ^ definition local 15
-//                          ^^^^^ definition local 16
+//      ^ definition local 19
+//                          ^^^^^ definition local 20
    return m.field1 + local
-//        ^ reference local 15
-//                   ^^^^^ reference local 16
+//        ^ reference local 19
+//                   ^^^^^ reference local 20
   }
   
-  const MYCONST int = 10
+  const MY_CONST int = 10
 
