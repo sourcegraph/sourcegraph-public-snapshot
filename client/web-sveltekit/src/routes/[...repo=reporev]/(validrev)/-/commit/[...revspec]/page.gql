@@ -1,0 +1,42 @@
+#import '$lib/Commit.gql'
+#import './FileDiff.gql'
+
+query CommitQuery($repo: ID!, $revspec: String!) {
+    node(id: $repo) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                oid
+                parents {
+                    id
+                    oid
+                    abbreviatedOID
+                    canonicalURL
+                }
+
+                ...Commit
+            }
+        }
+    }
+}
+
+query DiffQuery($repo: ID!, $base: String, $head: String, $first: Int, $after: String, $paths: [String!]) {
+    node(id: $repo) {
+        ... on Repository {
+            id
+            comparison(base: $base, head: $head) {
+                fileDiffs(first: $first, after: $after, paths: $paths) {
+                    nodes {
+                        ...FileDiff_Diff
+                    }
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                }
+            }
+        }
+    }
+}

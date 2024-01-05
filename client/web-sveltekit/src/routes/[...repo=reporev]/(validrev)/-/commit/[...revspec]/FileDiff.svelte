@@ -4,13 +4,13 @@
     import { mdiChevronRight, mdiChevronDown } from '@mdi/js'
 
     import { numberWithCommas } from '$lib/common'
-    import type { FileDiffFields } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
 
     import DiffSquares from './DiffSquares.svelte'
     import FileDiffHunks from './FileDiffHunks.svelte'
+    import type { FileDiff_Diff } from './FileDiff.gql'
 
-    export let fileDiff: FileDiffFields
+    export let fileDiff: FileDiff_Diff
     export let expanded = !!fileDiff.newPath
 
     $: isBinary = fileDiff.newFile?.binary

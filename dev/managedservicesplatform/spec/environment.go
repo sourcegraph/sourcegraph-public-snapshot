@@ -28,8 +28,24 @@ type EnvironmentSpec struct {
 	// initialized!
 	ProjectID string `yaml:"projectID"`
 
-	// Category is either "test", "internal", or "external".
-	Category *EnvironmentCategory `yaml:"category,omitempty"`
+	// Category is either "test", "internal", or "external". It informs the
+	// which GCP project folder the environment lives in:
+	//
+	// - 'test': 'Engineering Projects' folder (liberal access)
+	// - 'internal': 'Internal Services' folder (restricted access)
+	// - 'external': 'Managed Services' folder (restricted access)
+	//
+	// It also informs what kind of notification channels are set up out-of-the-box:
+	//
+	// 1. 'test' services only generate Slack notifications.
+	// 2. 'internal' and 'external' services generate Slack and Opsgenie notifications.
+	//
+	// Slack channels are expected to be named '#alerts-<service>-<environmentName>'.
+	// Opsgenie teams are expected to correspond to service owners.
+	//
+	// Both Slack channels and Opsgenie teams are currently expected to be manually
+	// configured.
+	Category EnvironmentCategory `yaml:"category"`
 
 	// Deploy specifies how to deploy revisions.
 	Deploy EnvironmentDeploySpec `yaml:"deploy"`
@@ -75,15 +91,21 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 
+	if s.ID == "" {
+		errs = append(errs, errors.New("id is required"))
+	}
 	if s.ProjectID == "" {
 		errs = append(errs, errors.New("projectID is required"))
 	}
 	if len(s.ProjectID) > 30 {
-		errs = append(errs, errors.New("projectID must be less than 30 characters"))
+		errs = append(errs, errors.Newf("projectID %q must be less than 30 characters", s.ProjectID))
 	}
 	if !strings.Contains(s.ProjectID, fmt.Sprintf("-%s-", s.ID)) {
 		errs = append(errs, errors.Newf("projectID %q must contain environment ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 			s.ProjectID))
+	}
+	if err := s.Category.Validate(); err != nil {
+		return append(errs, errors.Wrap(err, "category"))
 	}
 
 	errs = append(errs, s.Deploy.Validate()...)
@@ -102,6 +124,19 @@ const (
 	// EnvironmentCategoryExternal is the default category if none is specified.
 	EnvironmentCategoryExternal EnvironmentCategory = "external"
 )
+
+func (c EnvironmentCategory) Validate() error {
+	switch c {
+	case EnvironmentCategoryTest,
+		EnvironmentCategoryInternal,
+		EnvironmentCategoryExternal:
+	case "":
+		return errors.New("no category provided")
+	default:
+		return errors.Newf("invalid category %q", c)
+	}
+	return nil
+}
 
 type EnvironmentDeploySpec struct {
 	Type         EnvironmentDeployType                  `yaml:"type"`
@@ -286,9 +321,14 @@ type EnvironmentServiceAuthenticationSpec struct {
 }
 
 type EnvironmentServiceStartupProbeSpec struct {
-	// Disabled configures whether the startup probe should be disabled.
+	// Disabled configures whether the MSP startup probe should be disabled.
 	// We recommend disabling it when creating a service, and re-enabling it
 	// once the service is healthy.
+	//
+	// - When disabled, the default probe is a very generous one that waits 240s
+	//   for your service to respond with anything at all on '/'
+	// - When enabled, the MSP-standard '/-/healthz' diagnostic check is used
+	//   with a generated diagnostics secret.
 	//
 	// This prevents the first Terraform apply from failing if your healthcheck
 	// is comprehensive.
@@ -299,11 +339,23 @@ type EnvironmentServiceStartupProbeSpec struct {
 	//
 	// Defaults to 1 second.
 	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
-	// probe the deployed service.
+	// Interval configures the frequency, in seconds, at which to
+	// probe the deployed service. Must be greater than or equal to timeout.
 	//
-	// Defaults to 1 second.
+	// Defaults to timeout.
 	Interval *int `yaml:"interval,omitempty"`
+}
+
+func (s *EnvironmentServiceStartupProbeSpec) MaximumLatencySeconds() int {
+	if s == nil {
+		s = &EnvironmentServiceStartupProbeSpec{}
+	}
+	if pointers.DerefZero(s.Disabled) {
+		return 240 // maximum Cloud Run timeout
+	}
+	// Maximum startup latency is retries x interval.
+	const maxRetries = 3
+	return maxRetries * pointers.Deref(s.Interval, 1)
 }
 
 type EnvironmentJobSpec struct {
@@ -348,6 +400,25 @@ type EnvironmentResourcesSpec struct {
 	BigQueryDataset *EnvironmentResourceBigQueryDatasetSpec `yaml:"bigQueryDataset,omitempty"`
 }
 
+// List collects a list of provisioned resources for human reference.
+func (s *EnvironmentResourcesSpec) List() []string {
+	if s == nil {
+		return nil
+	}
+
+	var resources []string
+	if s.Redis != nil {
+		resources = append(resources, s.Redis.ResourceKind())
+	}
+	if s.PostgreSQL != nil {
+		resources = append(resources, s.PostgreSQL.ResourceKind())
+	}
+	if s.BigQueryDataset != nil {
+		resources = append(resources, s.BigQueryDataset.ResourceKind())
+	}
+	return resources
+}
+
 func (s *EnvironmentResourcesSpec) Validate() []error {
 	if s == nil {
 		return nil
@@ -365,6 +436,8 @@ type EnvironmentResourceRedisSpec struct {
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
 }
 
+func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
+
 type EnvironmentResourcePostgreSQLSpec struct {
 	// Databases to provision - required.
 	Databases []string `yaml:"databases"`
@@ -374,6 +447,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
 }
+
+func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
 
 func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 	if s == nil {
@@ -421,7 +496,8 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	rawSchemaFiles map[string][]byte
 
 	// DatasetID, if provided, configures a custom dataset ID to place all tables
-	// into. By default, we use the service ID as the dataset ID.
+	// into. By default, we use the service ID as the dataset ID (with underscores
+	// replacing illegal characters).
 	//
 	// Dataset IDs must be alphanumeric (plus underscores).
 	DatasetID *string `yaml:"datasetID,omitempty"`
@@ -432,6 +508,14 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	// Location defaults to "US". Do not configure unless you know what you are
 	// doing, as BigQuery locations are not the same as standard GCP regions.
 	Location *string `yaml:"region,omitempty"`
+}
+
+func (EnvironmentResourceBigQueryDatasetSpec) ResourceKind() string { return "BigQuery dataset" }
+
+func (s *EnvironmentResourceBigQueryDatasetSpec) GetDatasetID(serviceID string) string {
+	return pointers.Deref(s.DatasetID,
+		// Dataset IDs must be alphanumeric (plus underscores)
+		strings.ReplaceAll(serviceID, "-", "_"))
 }
 
 func (s *EnvironmentResourceBigQueryDatasetSpec) Validate() []error {

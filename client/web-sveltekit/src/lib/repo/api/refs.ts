@@ -96,13 +96,16 @@ export async function queryGitReferences(args: {
     return data.node.gitRefs
 }
 
-interface Data {
+export interface GitBranchesOverview {
     defaultBranch: GitRefFields | null
     activeBranches: GitRefFields[]
     hasMoreActiveBranches: boolean
 }
 
-export async function queryGitBranchesOverview(args: { repo: Scalars['ID']['input']; first: number }): Promise<Data> {
+export async function queryGitBranchesOverview(args: {
+    repo: Scalars['ID']['input']
+    first: number
+}): Promise<GitBranchesOverview> {
     const data = await query<RepositoryGitBranchesOverviewResult, RepositoryGitBranchesOverviewVariables>(
         gql`
             query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {

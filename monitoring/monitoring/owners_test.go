@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"slices"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -16,9 +15,14 @@ import (
 	opsgenieteam "github.com/opsgenie/opsgenie-go-sdk-v2/team"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 )
 
+// onlineCheck flags whether or not checks against external ObservableOwner
+// resources like Opsgenie and handbook pages should run:
+//
+//	go test -run TestOwners github.com/sourcegraph/sourcegraph/monitoring/monitoring -update -online
+//
+// OPSGENIE_API_KEY is required to check Opsgenie resources.
 var onlineCheck = flag.Bool("online", false, "Run online checks")
 
 type opsgenieResponderConfig struct {
@@ -37,7 +41,8 @@ type notifierConfig struct {
 	Owners   []string               `json:"owners"` // owner.opsgenieTeam
 }
 
-// TestOwnersOpsgenieTeam checks Opsgenie team details of each owner.
+// TestOwnersOpsgenieTeam checks Opsgenie team details of each owner. It also
+// outputs usable site-config for 'observability.alerts' in Sourcegraph.com.
 func TestOwnersOpsgenieTeam(t *testing.T) {
 	if !*onlineCheck {
 		t.Skip("MONITORING_OWNERS_ONLINE_CHECK not set to true, skipping online checks")
@@ -67,11 +72,7 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
 	var failed int
 
 	// Range over stable sort of owners for test stability
-	owners := maps.Keys(allKnownOwners)
-	slices.Sort(owners)
-	for _, key := range owners {
-		owner := allKnownOwners[key]
-
+	for _, owner := range allKnownOwners {
 		if t.Run(owner.teamName, func(t *testing.T) {
 			team, err := client.Get(ctx, &opsgenieteam.GetTeamRequest{
 				IdentifierType:  opsgenieteam.Name,
@@ -104,7 +105,7 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
 	enc := json.NewEncoder(&data)
 	enc.SetIndent("    ", "  ")
 	assert.NoError(t, enc.Encode(observabilityAlertsConfig))
-	// The below can be copy-pasted into
+	// The below can be copy-pasted into site-config 'observability.alerts':
 	// https://sourcegraph.sourcegraph.com/search?q=context:global+repo:github.com/sourcegraph/deploy-sourcegraph-cloud+file:overlays/prod/frontend/files/site.json+%22observability.alerts%22:+%5B...%5D&patternType=structural&sm=1&groupBy=repo
 	autogold.Expect(`[
       {
@@ -114,12 +115,57 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
           "responders": [
             {
               "type": "team",
-              "name": "code-insights"
+              "name": "infra-support"
             }
           ]
         },
         "owners": [
-          "code-insights"
+          "infra-support"
+        ]
+      },
+      {
+        "level": "critical",
+        "notifier": {
+          "type": "opsgenie",
+          "responders": [
+            {
+              "type": "team",
+              "name": "code-search"
+            }
+          ]
+        },
+        "owners": [
+          "code-search"
+        ]
+      },
+      {
+        "level": "critical",
+        "notifier": {
+          "type": "opsgenie",
+          "responders": [
+            {
+              "type": "team",
+              "name": "search-platform"
+            }
+          ]
+        },
+        "owners": [
+          "search-platform"
+        ]
+      },
+      {
+        "level": "critical",
+        "notifier": {
+          "type": "opsgenie",
+          "responders": [
+            {
+              "type": "team",
+              "name": "code-search"
+            }
+          ]
+        },
+        "owners": [
+          "code-search"
         ]
       },
       {
@@ -144,12 +190,12 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
           "responders": [
             {
               "type": "team",
-              "name": "infra-support"
+              "name": "source"
             }
           ]
         },
         "owners": [
-          "infra-support"
+          "source"
         ]
       },
       {
@@ -159,12 +205,12 @@ func TestOwnersOpsgenieTeam(t *testing.T) {
           "responders": [
             {
               "type": "team",
-              "name": "source"
+              "name": "code-search"
             }
           ]
         },
         "owners": [
-          "source"
+          "code-search"
         ]
       }
     ]

@@ -596,6 +596,12 @@ func (o Observable) validate(variables []ContainerVariable) error {
 	if len(o.Description) == 0 {
 		return errors.New("Description must be set")
 	}
+	// Avoid paragraphs in the brief description
+	const maxDescriptionLength = 120
+	if len(o.Description) > maxDescriptionLength {
+		return errors.Newf("Description must be under %d characters (current length: %d) - to provide more context, use Interpretation and NextSteps fields instead",
+			maxDescriptionLength, len(o.Description))
+	}
 	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
 		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}

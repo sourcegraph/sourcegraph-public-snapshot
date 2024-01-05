@@ -5668,6 +5668,13 @@ def go_dependencies():
         version = "v0.0.0-20231222002716-51aa712b9bcc",
     )
     go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie",
+        sum = "h1:h0n42wBNI4h28Bb42A7TJbSLwmcpIvYI9NZrprPUt/A=",
+        version = "v0.0.0-20231230001101-a13188f9c749",
+    )
+    go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_postgresql",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql",
@@ -5680,6 +5687,13 @@ def go_dependencies():
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/random",
         sum = "h1:N0OxHqeujHxvVU666KQY9whauLyw4s3BJGBLxx6gKR0=",
         version = "v0.0.0-20230822024612-edb48c530722",
+    )
+    go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_slack",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack",
+        sum = "h1:Iip3TVeiTF8HyeRsK0MKMZ1vQ87fqFqwz0cVq1dib6E=",
+        version = "v0.0.0-20240103014439-025608ddf849",
     )
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_tfe",
@@ -6984,8 +6998,8 @@ def go_dependencies():
         name = "com_google_cloud_go_profiler",
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/profiler",
-        sum = "h1:b5got9Be9Ia0HVvyt7PavWxXEht15B9lWnigdvHtxOc=",
-        version = "v0.3.1",
+        sum = "h1:ZeRDZbsOBDyRG0OiK0Op1/XWZ3xeLwJc9zjkzczUxyY=",
+        version = "v0.4.0",
     )
     go_repository(
         name = "com_google_cloud_go_pubsub",

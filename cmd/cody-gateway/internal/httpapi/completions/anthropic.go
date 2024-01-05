@@ -7,18 +7,16 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-
 	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -122,7 +120,7 @@ func NewAnthropicHandler(
 	for _, pattern := range allowedPromptPatterns {
 		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
 	}
-	return makeUpstreamHandler(
+	return makeUpstreamHandler[anthropicRequest](
 		baseLogger,
 		eventLogger,
 		rs,
@@ -131,113 +129,7 @@ func NewAnthropicHandler(
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicAPIURL },
 		allowedModels,
-		upstreamHandlerMethods[anthropicRequest]{
-			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
-				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
-				}
-
-				if result, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
-					logger.Error("error checking anthropic request - treating as non-flagged",
-						log.Error(err))
-				} else if result.IsFlagged() {
-					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
-					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
-						logger.Warn("failed to record flagged prompt", log.Error(err))
-					}
-					if requestBlockingEnabled && result.shouldBlock {
-						return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
-					}
-					return 0, result, nil
-				}
-
-				return 0, nil, nil
-			},
-			transformBody: func(body *anthropicRequest, identifier string) {
-				// Overwrite the metadata field, we don't want to allow users to specify it:
-				body.Metadata = &anthropicRequestMetadata{
-					// We forward the actor ID to support tracking.
-					UserID: identifier,
-				}
-			},
-			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body anthropicRequest) (model string, additionalMetadata map[string]any) {
-				return body.Model, map[string]any{
-					"stream":               body.Stream,
-					"max_tokens_to_sample": body.MaxTokensToSample,
-				}
-			},
-			transformRequest: func(r *http.Request) {
-				// Mimic headers set by the official Anthropic client:
-				// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-				r.Header.Set("Cache-Control", "no-cache")
-				r.Header.Set("Accept", "application/json")
-				r.Header.Set("Content-Type", "application/json")
-				r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
-				r.Header.Set("X-API-Key", accessToken)
-				r.Header.Set("anthropic-version", "2023-01-01")
-			},
-			parseResponseAndUsage: func(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
-				// First, extract prompt usage details from the request.
-				promptUsage.characters = len(reqBody.Prompt)
-				promptUsage.tokens, err = reqBody.GetPromptTokenCount(anthropicTokenizer)
-				if err != nil {
-					logger.Error("failed to count tokens in Anthropic response", log.Error(err))
-				}
-
-				// Try to parse the request we saw, if it was non-streaming, we can simply parse
-				// it as JSON.
-				if !reqBody.Stream {
-					var res anthropicResponse
-					if err := json.NewDecoder(r).Decode(&res); err != nil {
-						logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
-						return promptUsage, completionUsage
-					}
-
-					// Extract usage data from response
-					completionUsage.characters = len(res.Completion)
-					if tokens, err := anthropicTokenizer.Tokenize(res.Completion); err != nil {
-						logger.Error("failed to count tokens in Anthropic response", log.Error(err))
-					} else {
-						completionUsage.tokens = len(tokens)
-					}
-					return promptUsage, completionUsage
-				}
-
-				// Otherwise, we have to parse the event stream from anthropic.
-				dec := anthropic.NewDecoder(r)
-				var lastCompletion string
-				// Consume all the messages, but we only care about the last completion data.
-				for dec.Scan() {
-					data := dec.Data()
-
-					// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
-					// non-documented data over the stream, like timestamps.
-					if !bytes.HasPrefix(data, []byte("{")) {
-						continue
-					}
-
-					var event anthropicResponse
-					if err := json.Unmarshal(data, &event); err != nil {
-						baseLogger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
-						continue
-					}
-					lastCompletion = event.Completion
-				}
-				if err := dec.Err(); err != nil {
-					logger.Error("failed to decode Anthropic streaming response", log.Error(err))
-				}
-
-				// Extract usage data from streamed response.
-				completionUsage.characters = len(lastCompletion)
-				if tokens, err := anthropicTokenizer.Tokenize(lastCompletion); err != nil {
-					logger.Warn("failed to count tokens in Anthropic response", log.Error(err))
-					completionUsage.tokens = -1
-				} else {
-					completionUsage.tokens = len(tokens)
-				}
-				return promptUsage, completionUsage
-			},
-		},
+		&AnthropicHandlerMethods{accessToken: accessToken, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, maxTokensToSample: maxTokensToSample, promptRecorder: promptRecorder, requestBlockingEnabled: requestBlockingEnabled},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -300,4 +192,120 @@ type anthropicRequestMetadata struct {
 type anthropicResponse struct {
 	Completion string `json:"completion,omitempty"`
 	StopReason string `json:"stop_reason,omitempty"`
+}
+
+type AnthropicHandlerMethods struct {
+	accessToken            string
+	anthropicTokenizer     *tokenizer.Tokenizer
+	promptRegexps          []*regexp.Regexp
+	maxTokensToSample      int
+	promptRecorder         PromptRecorder
+	requestBlockingEnabled bool
+}
+
+func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
+	if ar.MaxTokensToSample > int32(a.maxTokensToSample) {
+		return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", a.maxTokensToSample, ar.MaxTokensToSample)
+	}
+
+	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.promptRegexps); err != nil {
+		logger.Error("error checking anthropic request - treating as non-flagged",
+			log.Error(err))
+	} else if result.IsFlagged() {
+		// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
+		if err := a.promptRecorder.Record(ctx, ar.Prompt); err != nil {
+			logger.Warn("failed to record flagged prompt", log.Error(err))
+		}
+		if a.requestBlockingEnabled && result.shouldBlock {
+			return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
+		}
+		return 0, result, nil
+	}
+
+	return 0, nil, nil
+}
+func (a *AnthropicHandlerMethods) transformBody(body *anthropicRequest, identifier string) {
+	// Overwrite the metadata field, we don't want to allow users to specify it:
+	body.Metadata = &anthropicRequestMetadata{
+		// We forward the actor ID to support tracking.
+		UserID: identifier,
+	}
+}
+func (a *AnthropicHandlerMethods) getRequestMetadata(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body anthropicRequest) (model string, additionalMetadata map[string]any) {
+	return body.Model, map[string]any{
+		"stream":               body.Stream,
+		"max_tokens_to_sample": body.MaxTokensToSample,
+	}
+}
+func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
+	// Mimic headers set by the official Anthropic client:
+	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
+	r.Header.Set("Cache-Control", "no-cache")
+	r.Header.Set("Accept", "application/json")
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
+	r.Header.Set("X-API-Key", a.accessToken)
+	r.Header.Set("anthropic-version", "2023-01-01")
+}
+func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+	var err error
+	// First, extract prompt usage details from the request.
+	promptUsage.characters = len(reqBody.Prompt)
+	promptUsage.tokens, err = reqBody.GetPromptTokenCount(a.anthropicTokenizer)
+	if err != nil {
+		logger.Error("failed to count tokens in Anthropic response", log.Error(err))
+	}
+
+	// Try to parse the request we saw, if it was non-streaming, we can simply parse
+	// it as JSON.
+	if !reqBody.Stream {
+		var res anthropicResponse
+		if err := json.NewDecoder(r).Decode(&res); err != nil {
+			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
+			return promptUsage, completionUsage
+		}
+
+		// Extract usage data from response
+		completionUsage.characters = len(res.Completion)
+		if tokens, err := a.anthropicTokenizer.Tokenize(res.Completion); err != nil {
+			logger.Error("failed to count tokens in Anthropic response", log.Error(err))
+		} else {
+			completionUsage.tokens = len(tokens)
+		}
+		return promptUsage, completionUsage
+	}
+
+	// Otherwise, we have to parse the event stream from anthropic.
+	dec := anthropic.NewDecoder(r)
+	var lastCompletion string
+	// Consume all the messages, but we only care about the last completion data.
+	for dec.Scan() {
+		data := dec.Data()
+
+		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
+		// non-documented data over the stream, like timestamps.
+		if !bytes.HasPrefix(data, []byte("{")) {
+			continue
+		}
+
+		var event anthropicResponse
+		if err := json.Unmarshal(data, &event); err != nil {
+			logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
+			continue
+		}
+		lastCompletion = event.Completion
+	}
+	if err := dec.Err(); err != nil {
+		logger.Error("failed to decode Anthropic streaming response", log.Error(err))
+	}
+
+	// Extract usage data from streamed response.
+	completionUsage.characters = len(lastCompletion)
+	if tokens, err := a.anthropicTokenizer.Tokenize(lastCompletion); err != nil {
+		logger.Warn("failed to count tokens in Anthropic response", log.Error(err))
+		completionUsage.tokens = -1
+	} else {
+		completionUsage.tokens = len(tokens)
+	}
+	return promptUsage, completionUsage
 }

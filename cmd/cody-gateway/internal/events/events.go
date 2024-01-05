@@ -155,3 +155,15 @@ func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 	)
 	return nil
 }
+
+// MergeMaps returns a map that contains all the keys from the given maps.
+// If two or more maps contain the same key, the last value (in the order the maps are passed as parameters) is retained.
+// dst is modified in-place.
+func MergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
+	for _, src := range srcs {
+		for k, v := range src {
+			dst[k] = v
+		}
+	}
+	return dst
+}

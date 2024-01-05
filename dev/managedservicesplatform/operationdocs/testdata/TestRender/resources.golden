@@ -1,0 +1,72 @@
+# msp-testbed infrastructure operations
+
+This document describes operational guidance for msp-testbed infrastructure.
+This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).
+
+## Service overview
+
+|   PROPERTY   |                                                             DETAILS                                                              |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------|
+| Service ID   | [`msp-testbed`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml)                     |
+| Owners       |                                                                                                                                  |
+| Service kind | Cloud Run service                                                                                                                |
+| Environments | [dev environment](#dev-environment)                                                                                              |
+| Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
+| Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
+
+## Environments
+
+### dev environment
+
+|  PROPERTY  |                                                           DETAILS                                                           |
+|------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Project ID | [`msp-testbed-dev-xxxx`](https://console.cloud.google.com/run?project=msp-testbed-dev-xxxx)                                 |
+| Category   | **test**                                                                                                                    |
+| Resources  | [dev Redis](#dev-redis), [dev PostgreSQL instance](#dev-postgresql-instance), [dev BigQuery dataset](#dev-bigquery-dataset) |
+| Alerts     | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-dev-xxxx)                         |
+
+MSP infrastructure access needs to be requested using Entitle for time-bound privileges.
+Test environments have less stringent requirements.
+
+|          ACCESS          |                                              ENTITLE REQUEST TEMPLATE                                              |
+|--------------------------|--------------------------------------------------------------------------------------------------------------------|
+| GCP project read access  | no Entitle request needed; all engineers have access to this environment through the 'Engineering Projects' folder |
+| GCP project write access | no Entitle request needed; all engineers have access to this environment through the 'Engineering Projects' folder |
+
+#### dev Cloud Run
+
+| PROPERTY |                                                                                                                                                              DETAILS                                                                                                                                                              |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Console  | [Cloud Run service](https://console.cloud.google.com/run?project=msp-testbed-dev-xxxx)                                                                                                                                                                                                                                            |
+| Logs     | [GCP logging](https://console.cloud.google.com/logs/query;query=resource.type%20%3D%20%22cloud_run_revision%22%20-logName%3D~%22logs%2Frun.googleapis.com%252Frequests%22;summaryFields=jsonPayload%252FInstrumentationScope,jsonPayload%252FBody,jsonPayload%252FAttributes%252Ferror:false:32:end?project=msp-testbed-dev-xxxx) |
+
+#### dev Redis
+
+| PROPERTY |                                                         DETAILS                                                          |
+|----------|--------------------------------------------------------------------------------------------------------------------------|
+| Console  | [Memorystore Redis instances](https://console.cloud.google.com/memorystore/redis/instances?project=msp-testbed-dev-xxxx) |
+
+#### dev PostgreSQL instance
+
+| PROPERTY  |                                              DETAILS                                               |
+|-----------|----------------------------------------------------------------------------------------------------|
+| Console   | [Cloud SQL instances](https://console.cloud.google.com/sql/instances?project=msp-testbed-dev-xxxx) |
+| Databases | `foo`, `bar`                                                                                       |
+
+To connect to the PostgreSQL instance in this environment, use `sg msp` in the [`sourcegraph/managed-services`](https://github.com/sourcegraph/managed-services) repository:
+
+```bash
+# For read-only access
+sg msp pg connect msp-testbed dev
+
+# For write access - use with caution!
+sg msp pg connect -write-access msp-testbed dev
+```
+
+#### dev BigQuery dataset
+
+|    PROPERTY     |                                                                                                            DETAILS                                                                                                             |
+|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Dataset Project | `msp-testbed-dev-xxxx`                                                                                                                                                                                                         |
+| Dataset ID      | `msp_testbed`                                                                                                                                                                                                                  |
+| Tables          | [`bar`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/bar.bigquerytable.json), [`baz`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/baz.bigquerytable.json) |
