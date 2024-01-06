@@ -69,9 +69,9 @@ type SearchResultPreview = ContentMatch | PathMatch
 
 interface NewSearchContentProps
     extends TelemetryProps,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        ExtensionsControllerProps {
+    SettingsCascadeProps,
+    PlatformContextProps,
+    ExtensionsControllerProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -184,7 +184,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 >
                     <NewSearchFilters
                         query={submittedURLQuery}
-                        results={results?.results}
                         filters={results?.filters}
                         onQueryChange={handleFilterPanelQueryChange}
                     />
