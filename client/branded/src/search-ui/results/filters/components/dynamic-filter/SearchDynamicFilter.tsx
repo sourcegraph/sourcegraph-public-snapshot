@@ -61,7 +61,6 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
 
-    // TODO: consider moving this out of the component
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) || []
     const isSelected = (filter: Filter) => relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
