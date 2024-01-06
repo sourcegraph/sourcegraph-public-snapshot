@@ -15,9 +15,9 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 		return "timeout"
 	case err != nil:
 		return "error"
-	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
+	case stats.Status.All(search.RepoStatusTimedOut) && stats.Status.Len() == len(stats.Repos):
 		return "timeout"
-	case stats.Status.Any(search.RepoStatusTimedout):
+	case stats.Status.Any(search.RepoStatusTimedOut):
 		return "partial_timeout"
 	case alert != nil:
 		return "alert"
