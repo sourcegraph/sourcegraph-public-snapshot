@@ -34,7 +34,6 @@ interface NewSearchFiltersProps {
 }
 
 export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange }) => {
-    console.log({ query, filters })
     const [selectedFilters, setSelectedFilters] = useFilterQuery()
 
     const type = useMemo(() => {
