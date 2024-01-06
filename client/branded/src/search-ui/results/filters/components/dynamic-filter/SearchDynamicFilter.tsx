@@ -26,8 +26,8 @@ interface SearchDynamicFilterProps {
     filterKind: Filter['kind']
 
     /**
-     * Filter query that contains all filter-like query that were applied by users
-     * from filters panel UI.
+     * The set of filters that are selected. This is the state that is stored
+     * in the URL.
      */
     selectedFilters: URLQueryFilter[]
 
