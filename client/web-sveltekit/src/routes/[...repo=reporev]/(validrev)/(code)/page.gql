@@ -1,0 +1,3 @@
+fragment RepoPage_ResolvedRevision on Repository {
+    description
+}

@@ -7,9 +7,6 @@ export {
     parseQueryAndHash,
     buildSearchURLQuery,
     makeRepoURI,
-    type RevisionSpec,
-    type ResolvedRevisionSpec,
-    type RepoSpec,
 } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,

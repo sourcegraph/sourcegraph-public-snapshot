@@ -30,7 +30,7 @@
 <FileHeader>
     <Icon slot="icon" svgPath={mdiFolderOutline} />
     <svelte:fragment slot="actions">
-        <Permalink resolvedRevision={data.resolvedRevision} />
+        <Permalink commitID={data.resolvedRevision.commitID} />
     </svelte:fragment>
 </FileHeader>
 

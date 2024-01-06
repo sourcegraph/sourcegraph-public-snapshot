@@ -26,7 +26,8 @@
 
     const {
         revision,
-        resolvedRevision: { commitID, repo },
+        resolvedRevision: { commitID },
+        repoName,
         filePath,
         settings,
         graphqlClient,
@@ -67,7 +68,7 @@
             {#if formatted}
                 <FormatAction />
             {/if}
-            <Permalink resolvedRevision={data.resolvedRevision} />
+            <Permalink commitID={data.resolvedRevision.commitID} />
         {/if}
     </svelte:fragment>
 </FileHeader>
@@ -94,7 +95,7 @@
                     ...blobData,
                     revision: revision ?? '',
                     commitID,
-                    repoName: repo.name,
+                    repoName: repoName,
                     filePath,
                 }}
                 highlights={$combinedBlobData.highlights || ''}
