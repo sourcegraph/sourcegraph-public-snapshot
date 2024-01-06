@@ -62,7 +62,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const [searchTerm, setSearchTerm] = useState<string>('')
 
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
-    const relevantFilters = filters?.filter(f => f.kind === filterKind) || []
+    const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
     const isSelected = (filter: Filter) => relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
 
     const mergedFilters = [
