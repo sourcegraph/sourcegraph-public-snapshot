@@ -755,8 +755,9 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		// TODO(camdencheek): add a `dirty` to filters so we don't send them every tick
-		h.eventWriter.Filters(h.filters.Compute(), false)
+		if h.filters.Dirty {
+			h.eventWriter.Filters(h.filters.Compute(), false)
+		}
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())
