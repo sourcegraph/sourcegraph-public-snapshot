@@ -79,7 +79,12 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
 
             // If query and options have not changed, return cached value
             if (isCachedQuery && isCachedOptions && cachedResults.current?.cache[filterCacheKey]) {
-                return of(cachedResults.current?.cache[filterCacheKey])
+                const cacheHit = cachedResults.current?.cache[filterCacheKey]
+                return of(cacheHit)
+            }
+            const saveToCache = (results: AggregateStreamingSearchResults) => {
+                const previousCache = isCachedQuery && isCachedOptions ? cachedResults.current?.cache ?? {} : {}
+                cachedResults.current = { query, options, cache: { ...previousCache, [filterCacheKey]: results } }
             }
 
             const filterQuery = selectedFilters.map(f => f.value).join(' ')
@@ -92,12 +97,8 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
             // and is discussed extensively in github issues. Instead, we just manually
             // merge throttleTime with only leading values and the final value.
             // See: https://github.com/ReactiveX/rxjs/issues/5732
-            return merge(stream.pipe(throttleTime(500)), stream.pipe(last())).pipe(
-                tap(results => {
-                    const previousCache = cachedResults.current?.cache ?? {}
-                    cachedResults.current = { query, options, cache: { ...previousCache, [filterCacheKey]: results } }
-                })
-            )
+            return merge(stream.pipe(throttleTime(500)), stream.pipe(last(), tap(saveToCache)))
+
             // We also need to pass `queryTimestamp` to the dependency array, because
             // it's used in the `useEffect` below to reset the cache if a new search
             // is made with the same query. Otherwise, the new search will not be executed.
