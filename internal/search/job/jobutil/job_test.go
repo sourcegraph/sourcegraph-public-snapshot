@@ -1138,7 +1138,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		"foo/cloning":          search.RepoStatusCloning,
 		"foo/missing":          search.RepoStatusMissing,
 		"foo/missing-database": search.RepoStatusMissing,
-		"foo/timedout":         search.RepoStatusTimedout,
+		"foo/timedout":         search.RepoStatusTimedOut,
 	})
 
 	// If we specify a rev and it isn't found, we fail the whole search since

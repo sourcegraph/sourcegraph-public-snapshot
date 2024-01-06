@@ -16,10 +16,6 @@ type Filter struct {
 	// for `repo:` filters.
 	Count int
 
-	// IsLimitHit is true if the results returned for a repository are
-	// incomplete.
-	IsLimitHit bool
-
 	// Kind of filter. Should be "repo", "file", or "lang".
 	Kind string
 
@@ -46,15 +42,14 @@ func (f *Filter) Less(o *Filter) bool {
 type filters map[string]*Filter
 
 // Add the count to the filter with value.
-func (m filters) Add(value string, label string, count int32, limitHit bool, kind string) {
+func (m filters) Add(value string, label string, count int32, kind string) {
 	sf, ok := m[value]
 	if !ok {
 		sf = &Filter{
-			Value:      value,
-			Label:      label,
-			Count:      int(count),
-			IsLimitHit: limitHit,
-			Kind:       kind,
+			Value: value,
+			Label: label,
+			Count: int(count),
+			Kind:  kind,
 		}
 		m[value] = sf
 	} else {
