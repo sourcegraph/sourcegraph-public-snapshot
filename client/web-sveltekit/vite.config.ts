@@ -26,7 +26,7 @@ function generateGraphQLTypes(): Plugin {
                     return content.replace(/^import type \* as Types from .+$/m, '').trimStart()
                 }
                 return content
-            }
+            },
         },
         generates: {
             './src/lib/graphql-operations.ts': {
@@ -49,7 +49,6 @@ function generateGraphQLTypes(): Plugin {
                 },
                 config: {
                     useTypeImports: true,
-                    immutableTypes: true,
                     documentVariableSuffix: '', // The default is 'Document'
                 },
                 plugins: ['typescript-operations', 'typed-document-node'],

@@ -1,16 +1,15 @@
 import { getContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
-import type { SettingsCascade, TemporarySettingsStorage } from '$lib/shared'
+import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
-import type { FeatureFlag } from './featureflags'
 import type { GraphQLClient } from './graphql'
-import type { AuthenticatedUser } from '../routes/layout.gql'
+import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
 
 export { isLightTheme } from './theme'
 
 export interface SourcegraphContext {
-    settings: Readable<SettingsCascade['final'] | null>
+    settings: Readable<Settings | null>
     user: Readable<AuthenticatedUser | null>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
     featureFlags: Readable<FeatureFlag[]>
@@ -32,7 +31,7 @@ export const user = {
 }
 
 export const settings = {
-    subscribe(subscriber: (settings: SettingsCascade['final'] | null) => void) {
+    subscribe(subscriber: (settings: Settings | null) => void) {
         const { settings } = getStores()
         return settings.subscribe(subscriber)
     },
