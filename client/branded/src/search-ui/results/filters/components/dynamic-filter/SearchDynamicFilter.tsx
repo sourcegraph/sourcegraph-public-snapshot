@@ -63,7 +63,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
-    const isSelected = (filter: Filter) => relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
+    const isSelected = (filter: Filter): boolean =>
+        relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
 
     const mergedFilters = [
         // Selected filters come first, but we want to map them to the backend filters to get the relevant count and exhaustiveness
@@ -164,7 +165,7 @@ function roundCount(count: number): number {
 }
 
 function filtersEqual(a: URLQueryFilter, b: URLQueryFilter): boolean {
-    return a.kind == b.kind && a.label == b.label && a.value == b.value
+    return a.kind === b.kind && a.label === b.label && a.value === b.value
 }
 
 export const languageFilter = (filter: Filter): ReactNode => (

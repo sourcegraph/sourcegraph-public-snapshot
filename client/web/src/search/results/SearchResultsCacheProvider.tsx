@@ -82,7 +82,7 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
                 const cacheHit = cachedResults.current?.cache[filterCacheKey]
                 return of(cacheHit)
             }
-            const saveToCache = (results: AggregateStreamingSearchResults) => {
+            const saveToCache = (results: AggregateStreamingSearchResults): void => {
                 const previousCache = isCachedQuery && isCachedOptions ? cachedResults.current?.cache ?? {} : {}
                 cachedResults.current = { query, options, cache: { ...previousCache, [filterCacheKey]: results } }
             }
