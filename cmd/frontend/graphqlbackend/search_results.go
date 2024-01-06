@@ -112,7 +112,7 @@ func (c *SearchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResol
 }
 
 func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
-	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedout))
+	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedOut))
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
@@ -176,7 +176,7 @@ func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	count := sr.MatchCount()
-	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
+	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedOut) {
 		return fmt.Sprintf("%d+", count)
 	}
 	return strconv.Itoa(int(count))
@@ -224,7 +224,8 @@ func (sf *searchFilterResolver) Count() int32 {
 }
 
 func (sf *searchFilterResolver) LimitHit() bool {
-	return sf.filter.IsLimitHit
+	// TODO(camdencheek): calculate exhaustiveness correctly
+	return true
 }
 
 func (sf *searchFilterResolver) Kind() string {
@@ -475,7 +476,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		}
 
 		status := v.Stats.Status
-		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
+		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedOut) {
 			break // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
@@ -483,7 +484,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
 			cloning++
 		})
-		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+		status.Filter(search.RepoStatusTimedOut, func(api.RepoID) {
 			timedout++
 		})
 

@@ -35,7 +35,7 @@ exports[`FilterLink > should have correct links for dynamic filters 1`] = `
     <span
       class="pl-2 flex-shrink-0"
     >
-      500+
+      500
     </span>
   </button>
   <button
@@ -199,7 +199,7 @@ exports[`FilterLink > should have correct links for repos 1`] = `
     <span
       class="pl-2 flex-shrink-0"
     >
-      201+
+      201
     </span>
   </button>
 </DocumentFragment>
@@ -307,7 +307,7 @@ exports[`FilterLink > should have show icons for repos on cloud 1`] = `
     <span
       class="pl-2 flex-shrink-0"
     >
-      201+
+      201
     </span>
   </button>
 </DocumentFragment>
