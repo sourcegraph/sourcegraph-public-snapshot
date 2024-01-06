@@ -75,7 +75,7 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
         useMemo(() => {
             const isCachedQuery = query === cachedResults.current?.query
             const isCachedOptions = isEqual(options, cachedResults.current?.options)
-            const filterCacheKey = serializeURLQueryFilters(selectedFilters)
+            const filterCacheKey = serializeURLQueryFilters(selectedFilters) ?? ''
 
             // If query and options have not changed, return cached value
             if (isCachedQuery && isCachedOptions && cachedResults.current?.cache[filterCacheKey]) {
