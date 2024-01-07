@@ -21,7 +21,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
-        "//cmd/frontend/codyapp",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",

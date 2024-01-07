@@ -33,7 +33,6 @@ export const Overview: StoryFn = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isCodyApp={false}
             />
         )}
     </WebStory>
@@ -52,7 +51,6 @@ export const OverviewWithBusinessLicense: StoryFn = () => {
                     autoFocusForm={false}
                     externalServicesFromFile={false}
                     allowEditExternalServicesWithFile={false}
-                    isCodyApp={false}
                 />
             )}
         </WebStory>
@@ -70,7 +68,6 @@ export const AddConnectionBykind: StoryFn = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isCodyApp={false}
             />
         )}
     </WebStory>

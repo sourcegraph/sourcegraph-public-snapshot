@@ -22,7 +22,7 @@ function generateGraphQLTypes(): Plugin {
                 documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts'],
                 config: {
                     onlyOperationTypes: true,
-                    enumValues: '$lib/graphql-types.ts',
+                    enumValues: '$lib/graphql-types',
                     //interfaceNameForOperations: 'SvelteKitGraphQlOperations',
                 },
                 plugins: ['typescript', 'typescript-operations'],
@@ -34,7 +34,7 @@ function generateGraphQLTypes(): Plugin {
                 documents: ['src/**/*.gql', '!src/**/*.gql.d.ts'],
                 preset: 'near-operation-file',
                 presetConfig: {
-                    baseTypesPath: 'lib/graphql-types.ts',
+                    baseTypesPath: 'lib/graphql-types',
                     extension: '.gql.d.ts',
                 },
                 config: {
@@ -162,6 +162,21 @@ export default defineConfig(({ mode }) => {
                     secure: false,
                 },
             },
+        },
+
+        resolve: {
+            alias: [
+                // Unclear why Vite fails. It claims that index.esm.js doesn't have this export (it does).
+                // Rewriting this to index.js fixes the issue. Error:
+                // import { CiWarning, CiSettings, CiTextAlignLeft } from "react-icons/ci/index.esm.js";
+                //                     ^^^^^^^^^^
+                // SyntaxError: Named export 'CiSettings' not found. The requested module 'react-icons/ci/index.esm.js'
+                // is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^react-icons\/(.+)$/,
+                    replacement: 'react-icons/$1/index.js',
+                },
+            ],
         },
 
         optimizeDeps: {

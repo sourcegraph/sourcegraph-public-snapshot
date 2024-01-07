@@ -10,7 +10,6 @@ const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
-const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
@@ -28,15 +27,12 @@ const BROWSER_DOCUMENTS_GLOB = [
     '!**/*.d.ts',
 ]
 
-const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
-
 const JETBRAINS_DOCUMENTS_GLOB = [`${JETBRAINS_FOLDER}/webview/src/**/*.{ts,tsx}`]
 
 const GLOBS: Record<string, string[]> = {
     BrowserGraphQlOperations: BROWSER_DOCUMENTS_GLOB,
     JetBrainsGraphQlOperations: JETBRAINS_DOCUMENTS_GLOB,
     SharedGraphQlOperations: SHARED_DOCUMENTS_GLOB,
-    VSCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
     WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
 }
 
@@ -67,10 +63,6 @@ export const ALL_INPUTS: Input[] = [
     {
         interfaceNameForOperations: 'SharedGraphQlOperations',
         outputPath: path.join(SHARED_FOLDER, './src/graphql-operations.ts'),
-    },
-    {
-        interfaceNameForOperations: 'VSCodeGraphQlOperations',
-        outputPath: path.join(VSCODE_FOLDER, './src/graphql-operations.ts'),
     },
     {
         interfaceNameForOperations: 'JetBrainsGraphQlOperations',

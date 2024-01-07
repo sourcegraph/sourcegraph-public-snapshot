@@ -92,7 +92,6 @@ go_library(
         "settings.schema.json",
         "site.schema.json",
         "azuredevops.schema.json",
-        "localgit.schema.json",
         "opencodegraph.schema.json",
         "opencodegraph-protocol.schema.json",
     ],

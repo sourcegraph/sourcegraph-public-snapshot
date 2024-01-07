@@ -38,7 +38,7 @@ Sourcegraph is a Code AI platform that deeply understands your code, no matter h
 ## Quickstart
 
 <div class="cards">
-  <a class="card text-left" href="https://sourcegraph.com/cody"><b>Get Cody</b><p>Wite, fix, and maintain code with Sourcegraph’s AI coding assistant, Cody.
+  <a class="card text-left" href="https://sourcegraph.com/cody"><b>Get Cody</b><p>Write, fix, and maintain code with Sourcegraph’s AI coding assistant, Cody.
 </p></a>
   <a class="card text-left" href="https://sourcegraph.com/search"><b>Try Code Search</b><p>Search all of your repositories across all branches and all code hosts.</p></a>
 </div>

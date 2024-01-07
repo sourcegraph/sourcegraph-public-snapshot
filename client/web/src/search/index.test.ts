@@ -10,7 +10,13 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../graphql-operations'
 
-import { parseSearchURL, repoFilterForRepoRevision, getQueryStateFromLocation } from '.'
+import {
+    parseSearchURL,
+    filterValueForRepoRevision,
+    getQueryStateFromLocation,
+    repoFilterForRepoRevision,
+    fileFilterForFilePath,
+} from '.'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),
@@ -165,8 +171,39 @@ describe('search/index', () => {
 
 describe('repoFilterForRepoRevision escapes values with spaces', () => {
     test('escapes spaces in value', () => {
-        expect(repoFilterForRepoRevision('7 is my final answer')).toMatchInlineSnapshot(
+        expect(filterValueForRepoRevision('7 is my final answer')).toMatchInlineSnapshot(
             '"^7\\\\ is\\\\ my\\\\ final\\\\ answer$"'
+        )
+    })
+})
+
+describe('repoFilterForRepoRevision', () => {
+    test('respects pattern type', () => {
+        expect(repoFilterForRepoRevision('foo bar', undefined, SearchPatternType.standard)).toStrictEqual(
+            'repo:^foo\\ bar$ '
+        )
+        expect(repoFilterForRepoRevision('foo bar', undefined, SearchPatternType.newStandardRC1)).toStrictEqual(
+            'repo:"foo bar" '
+        )
+        expect(repoFilterForRepoRevision('foo bar', '1ef3b', SearchPatternType.newStandardRC1)).toStrictEqual(
+            'repo:"foo bar"@1ef3b '
+        )
+        expect(repoFilterForRepoRevision('foobar', '1ef3b', SearchPatternType.newStandardRC1)).toStrictEqual(
+            'repo:foobar@1ef3b '
+        )
+    })
+})
+
+describe('fileFilterForFilePath', () => {
+    test('respects pattern type', () => {
+        expect(fileFilterForFilePath('foo/bar/never panic', SearchPatternType.standard)).toStrictEqual(
+            'file:^foo/bar/never\\ panic'
+        )
+        expect(fileFilterForFilePath('foo/bar/never panic', SearchPatternType.newStandardRC1)).toStrictEqual(
+            'file:"foo/bar/never panic"'
+        )
+        expect(fileFilterForFilePath('foo/bar/never_panic', SearchPatternType.newStandardRC1)).toStrictEqual(
+            'file:foo/bar/never_panic'
         )
     })
 })

@@ -3,7 +3,7 @@ name = "syntect_server"
 version = "1.0.1"
 authors = [
     "TJ DeVries <devries.timothyj@gmail.com>",
-    "Stephen Gutekanst <stephen.gutekanst@gmail.com>"
+    "Stephen Gutekanst <stephen.gutekanst@gmail.com>",
 ]
 edition = "2021"
 license = "MIT"
@@ -51,11 +51,10 @@ members = [
 [workspace.dependencies]
 anyhow = "1"
 # "cargo" feature is enabled for using the `crate_version` macro
-clap = { version = "4.1.11", features = [ "derive", "cargo"] }
+clap = { version = "4.1.11", features = ["derive", "cargo"] }
 itertools = "0.10.5"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
-# See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1
-serde = { version = "=1.0.164", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 string-interner = "0.14.0"
 # Since there is no version tag, we pin the dependency to a specific revision
@@ -73,4 +72,4 @@ protobuf = "3"
 debug = true
 
 [dev-dependencies]
-criterion = { version = "0.4", features = [ "html_reports" ] }
+criterion = { version = "0.4", features = ["html_reports"] }

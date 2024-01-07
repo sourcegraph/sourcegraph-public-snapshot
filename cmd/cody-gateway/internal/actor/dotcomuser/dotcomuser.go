@@ -10,6 +10,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	graphqltypes "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/gregjones/httpcache"
@@ -33,6 +34,10 @@ const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 15 * time.Minute
+	// defaultRefreshInterval is used for updates, which is also called when a
+	// user's rate limit is hit, so we don't want to update every time. We use
+	// a shorter interval than the default in this case.
+	defaultRefreshInterval = 5 * time.Minute
 )
 
 type Source struct {
@@ -42,7 +47,7 @@ type Source struct {
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
-var _ actor.SourceSingleSyncer = &Source{}
+var _ actor.SourceUpdater = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
@@ -59,8 +64,14 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	return s.get(ctx, token, false)
 }
 
-func (s *Source) SyncOne(ctx context.Context, token string) error {
-	_, err := s.get(ctx, token, true)
+func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
+	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < defaultRefreshInterval {
+		return actor.ErrActorRecentlyUpdated{
+			RetryAt: act.LastUpdated.Add(defaultRefreshInterval),
+		}
+	}
+
+	_, err := s.get(ctx, act.Key, true)
 	return err
 }
 

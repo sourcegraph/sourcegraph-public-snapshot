@@ -968,47 +968,6 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
-  sourcegraph: &sourcegraph_command
-    description: Single-program distribution
-    cmd: |
-      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
-
-      # TODO: This should be fixed
-      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
-      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
-
-      .bin/sourcegraph
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
-    checkBinary: .bin/sourcegraph
-    env:
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
-      WEB_BUILDER_DEV_SERVER: 1
-    watch:
-      - cmd
-      - enterprise
-      - internal
-      - lib
-      - schema
-
-  cody-app:
-    <<: *sourcegraph_command
-    description: Cody App
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
-
-  tauri:
-    description: App shell (Tauri)
-    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
-
 bazelCommands:
   blobstore:
     target: //cmd/blobstore:blobstore
@@ -1542,23 +1501,6 @@ commandsets:
       PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
       EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
       USE_EMBEDDED_POSTGRESQL: false
-
-  app:
-    requiresDevPrivate: true
-    checks:
-      - git
-    commands:
-      - cody-app
-      - docsite
-      - web
-      - caddy
-      - tauri
-    env:
-      DISABLE_CODE_INSIGHTS: true
-      CODY_APP: 1
-      EXTSVC_CONFIG_ALLOW_EDITS: true
-      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
 
   cody-gateway:
     checks:

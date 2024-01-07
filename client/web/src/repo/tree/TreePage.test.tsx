@@ -34,6 +34,7 @@ describe('TreePage', () => {
             abbrevName: 'def-branch-abbr',
         },
         metadata: [],
+        topics: [],
     })
 
     const treePagePropsDefaults = (repositoryFields: RepositoryFields): Props => ({

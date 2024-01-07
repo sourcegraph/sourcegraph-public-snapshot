@@ -1834,16 +1834,15 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("no external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
 		if err := db.ExternalServices().Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		t.Run("config can't be empty", func(t *testing.T) {
@@ -1867,7 +1866,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("one external service", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svc := typestest.MakeGitLabExternalService()
@@ -1894,7 +1897,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -1966,7 +1973,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
 
 		svcs := typestest.MakeExternalServices()
@@ -2049,7 +2060,11 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("check code hosts created with many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(t))
+		t.Cleanup(func() {
+			_, err := db.ExecContext(ctx, "DELETE FROM external_services")
+			require.NoError(t, err)
+		})
+
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()

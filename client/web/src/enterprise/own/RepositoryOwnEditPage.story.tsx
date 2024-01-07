@@ -48,6 +48,7 @@ const repo: RepositoryFields = {
     },
     metadata: [],
     sourceType: RepositoryType.GIT_REPOSITORY,
+    topics: [],
 }
 
 const emptyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCodeownersVariables> = {

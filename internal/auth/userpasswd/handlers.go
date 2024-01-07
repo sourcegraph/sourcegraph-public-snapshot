@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
@@ -263,9 +262,6 @@ func unsafeSignUp(
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
 		}
-		if deploy.IsApp() && strings.Contains(err.Error(), "site_already_initialized") {
-			return nil, http.StatusOK, nil
-		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 		//lint:ignore SA1019 existing usage of deprecated functionality.
@@ -491,18 +487,11 @@ func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) h
 
 func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
-	event := &database.SecurityEvent{
-		Name:            *name,
-		URL:             r.URL.Path,
-		UserID:          uint32(user.ID),
-		AnonymousUserID: anonymousID,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
 	// Safe to ignore this error
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	db.SecurityEventLogs().LogEvent(r.Context(), event)
+	anonymousID, _ = cookie.AnonymousUID(r)
+	if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), *name, r.URL.Path, uint32(user.ID), anonymousID, "BACKEND", nil); err != nil {
+		log.Error(err)
+	}
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.

@@ -150,7 +150,8 @@ func TestRevisionValidation(t *testing.T) {
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
-			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
+			if !errors.Is(err, tt.wantErr) {
+				diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err))
 				t.Error(diff)
 			}
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -412,7 +413,8 @@ func TestResolverIterator(t *testing.T) {
 			}
 
 			err = it.Err()
-			if diff := cmp.Diff(errors.UnwrapAll(err), tc.err); diff != "" {
+			if !errors.Is(err, tc.err) {
+				diff := cmp.Diff(errors.UnwrapAll(err), tc.err)
 				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, diff)
 			}
 

@@ -83,9 +83,8 @@ pub fn index_language_with_config(
         let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
         if let Some(parser) = parser {
             // TODO: Could probably write this in a much better way.
-            let mut local_occs = scip_syntax::get_locals(parser, code.as_bytes())
-                .unwrap_or(Ok(vec![]))
-                .unwrap_or_default();
+            let mut local_occs =
+                scip_syntax::get_locals(parser, code.as_bytes()).unwrap_or_default();
 
             // Get ranges in reverse order, because we're going to pop off the back of the list.
             //  (that's why we're sorting the opposite way of the document occurrences above).

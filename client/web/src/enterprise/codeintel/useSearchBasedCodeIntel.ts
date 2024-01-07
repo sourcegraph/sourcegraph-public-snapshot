@@ -7,7 +7,6 @@ import LRU from 'lru-cache'
 import { createAggregateError, type ErrorLike } from '@sourcegraph/common'
 import type { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -51,7 +50,7 @@ interface UseSearchBasedCodeIntelOptions {
     searchToken: string
     fileContent: string
 
-    spec: LanguageSpec | undefined
+    languages: string[]
 
     isFork: boolean
     isArchived: boolean
@@ -226,12 +225,8 @@ async function searchBasedDefinitionsViaSquirrel(
 }
 
 async function searchBasedReferencesViaSearchQueries(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
-    const { searchToken, path, repo, isFork, isArchived, commit, spec, filter } = options
-    const queryTerms = referencesQuery({
-        searchToken,
-        path,
-        fileExts: getFileExtensionsForSearchBasedQuery(spec, path),
-    })
+    const { searchToken, path, languages, repo, isFork, isArchived, commit, filter } = options
+    const queryTerms = referencesQuery({ searchToken, path, languages })
     const filterReferences = (results: Location[]): Location[] =>
         filter ? results.filter(location => location.file.includes(filter)) : results
 
@@ -253,47 +248,16 @@ async function searchBasedReferencesViaSearchQueries(options: UseSearchBasedCode
     return flatten(await Promise.all([sameRepoReferences, remoteRepoReferences]))
 }
 
-function getFileExtension(filePath: string): string {
-    const lastDot = filePath.lastIndexOf('.')
-    if (lastDot === -1) {
-        const lastSlash = filePath.lastIndexOf('/')
-        if (lastSlash === -1) {
-            return filePath
-        }
-        return filePath.slice(lastSlash + 1)
-    }
-    return filePath.slice(lastDot + 1)
-}
-
-function getFileExtensionsForSearchBasedQuery(spec: LanguageSpec | undefined, path: string): string[] {
-    if (spec !== undefined) {
-        return spec.fileExts
-    }
-    return [getFileExtension(path)]
-}
-
 async function searchBasedDefinitionsViaSearchQueries(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
-    const { searchToken, path, repo, isFork, fileContent, isArchived, commit, spec, filter } = options
+    const { searchToken, path, repo, isFork, fileContent, isArchived, commit, languages, filter } = options
     // Construct base definition query without scoping terms
-    const queryTerms = definitionQuery({
-        searchToken,
-        path,
-        fileExts: getFileExtensionsForSearchBasedQuery(spec, path),
-    })
-    const filterDefinitions = (results: Location[]): Location[] => {
-        const filteredByName = filter ? results.filter(location => location.file.includes(filter)) : results
-        return spec?.filterDefinitions
-            ? spec.filterDefinitions<Location>(filteredByName, {
-                  repo,
-                  fileContent,
-                  filePath: path,
-              })
-            : filteredByName
-    }
+    const queryTerms = definitionQuery({ searchToken, path, languages })
+    const filterDefinitions = (results: Location[]): Location[] =>
+        filter ? results.filter(location => location.file.includes(filter)) : results
 
     const doSearch = (repoFilter: RepoFilter): Promise<Location[]> =>
         searchWithFallback(
-            args => searchAndFilterDefinitions({ spec, path, filterDefinitions, queryTerms: args.queryTerms }),
+            args => searchAndFilterDefinitions({ languages, path, filterDefinitions, queryTerms: args.queryTerms }),
             { repo, isFork, isArchived, commit, path, fileContent, filterDefinitions, queryTerms },
             repoFilter,
             options.getSetting
@@ -347,13 +311,12 @@ export async function searchBasedDefinitions(options: UseSearchBasedCodeIntelOpt
  * @param args Parameter bag.
  */
 async function searchAndFilterDefinitions({
-    spec,
+    languages,
     path,
     filterDefinitions,
     queryTerms,
 }: {
-    /** The LanguageSpec of the language in which we're searching */
-    spec: LanguageSpec | undefined
+    languages: string[]
     /** The file we're in */
     path: string
     /** The function used to filter definitions. */
@@ -366,7 +329,7 @@ async function searchAndFilterDefinitions({
     const result = await executeSearchQuery(queryTerms)
     const preFilteredResults = result
         .flatMap(searchResultToResults)
-        .filter(result => !isExternalPrivateSymbol(spec, path, result))
+        .filter(result => !isExternalPrivateSymbol(languages, path, result))
         .map(buildSearchBasedLocation)
 
     // Filter results based on language spec

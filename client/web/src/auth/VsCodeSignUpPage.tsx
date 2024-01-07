@@ -10,6 +10,7 @@ import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
+import { EventName } from '../util/constants'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { type SignUpArguments, SignUpForm } from './SignUpForm'
@@ -59,7 +60,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log(
-            'SignupInitiated',
+            EventName.AUTH_INITIATED,
             { type: eventType, source: 'vs-code' },
             { type: eventType, source: 'vs-code' }
         )

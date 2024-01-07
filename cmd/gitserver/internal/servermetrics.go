@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/mountinfo"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -28,9 +27,6 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 
 	// report the size of the repos dir
 	logger := s.Logger
-	if deploy.IsApp() {
-		logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
-	}
 	opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
 	m := mountinfo.NewCollector(logger, opts, map[string]string{"reposDir": s.ReposDir})
 	observationCtx.Registerer.MustRegister(m)

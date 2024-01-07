@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"net/url"
 	"strings"
@@ -158,7 +159,7 @@ func (c Contract) DiagnosticsAuthMiddleware(next http.Handler) http.Handler {
 			return false
 		}
 
-		if token != *c.internal.diagnosticsSecret {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(*c.internal.diagnosticsSecret)) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte("unauthorized"))
 			return false

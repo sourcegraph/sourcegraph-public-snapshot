@@ -186,17 +186,8 @@ fn index_content(
     }
 
     if options.analysis_mode.locals() {
-        let locals = get_locals(parser, &contents);
-
-        match locals {
-            Some(Ok(occurrences)) => {
-                for occ in occurrences {
-                    document.occurrences.push(occ);
-                }
-            }
-
-            Some(Err(e)) => return Err(e),
-            None => {}
+        if let Some(occurrences) = get_locals(parser, &contents) {
+            document.occurrences.extend(occurrences)
         }
     }
 

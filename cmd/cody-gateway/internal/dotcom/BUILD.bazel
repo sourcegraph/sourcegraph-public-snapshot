@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
@@ -37,4 +38,11 @@ write_generated_to_source_files(
     output_files = {"operations.go": "_operations.go"},
     tags = ["go_generate"],
     target = ":generate_genql_yaml",
+)
+
+go_test(
+    name = "dotcom_test",
+    srcs = ["dotcom_test.go"],
+    embed = [":dotcom"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

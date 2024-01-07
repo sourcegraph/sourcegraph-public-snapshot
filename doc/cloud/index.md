@@ -227,7 +227,6 @@ A few things you can ask Cody:
 > NOTE: We may be able to [support special requests](#accommodating-special-requirements), please reach out to your account team.
 
 - The Sourcegraph instance can only be accessible via a public IP. Running it in a private network and pairing it with your private network via site-to-site VPN or VPC Peering is not yet supported.
-- Code hosts or user authentication providers running in a private network are not yet supported. They have to be publically available or they must allow incoming traffic from Sourcegraph-owned static IP addresses. We do not have proper support for other connectivity methods, e.g. site-to-site VPN, VPC peering, tunneling.
 - Instances currently run only on Google Cloud Platform in the [chosen regions](#multiple-region-availability). Other regions and cloud providers (such as AWS or Azure) are not yet supported.
 - Some [configuration options](../admin/config/index.md) are managed by Sourcegrpah and cannot be override by customers, e.g. feature flags, experimental features.
 
@@ -235,7 +234,7 @@ A few things you can ask Cody:
 
 Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../admin/auth/index.md) of choice.
 
-For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic.
+For all managed instances, we will provide security capabilities from Cloudflare such as WAF and rate-limiting to protect your instance from malicious traffic. By default, we permit 1000 requests per minute based on IP address. If you need a higher quota, please reach out to your account manager.
 
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 

@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -272,7 +271,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	// And you may also see the type of error the browser would produce in this instance at e.g.
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
 	//
-	if policy == crossOriginPolicyNever && !deploy.IsApp() {
+	if policy == crossOriginPolicyNever {
 		return false
 	}
 
@@ -349,7 +348,6 @@ func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
 	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension
-	isAppRequest := deploy.IsApp() && strings.HasPrefix(requestOrigin, "tauri://")
 
 	var isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
@@ -360,5 +358,5 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = true
 	}
 
-	return isExtensionRequest || isAppRequest || isCORSAllowedRequest
+	return isExtensionRequest || isCORSAllowedRequest
 }

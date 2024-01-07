@@ -3,7 +3,7 @@ package executorqueue
 import (
 	"slices"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

@@ -14,19 +14,19 @@ func TestFilters(t *testing.T) {
 	m := make(filters)
 	for count := int32(1); count <= 1000; count++ {
 		repo := fmt.Sprintf("repo-%d", count)
-		m.Add(repo, repo, count, false, "repo")
+		m.Add(repo, repo, count, "repo")
 	}
 	for count := int32(1); count <= 100; count++ {
 		file := fmt.Sprintf("file-%d", count)
-		m.Add(file, file, count, false, "file")
+		m.Add(file, file, count, "file")
 	}
 	// Add one large file count to see if it is recommended near the top.
-	m.Add("file-big", "file-big", 10000, false, "file")
+	m.Add("file-big", "file-big", 10000, "file")
 
 	// Test important and updating
-	m.Add("fork", "fork", 3, false, "repo")
+	m.Add("fork", "fork", 3, "repo")
 	m.MarkImportant("fork")
-	m.Add("fork", "fork", 1, false, "repo")
+	m.Add("fork", "fork", 1, "repo")
 
 	want := []string{
 		"fork 4",

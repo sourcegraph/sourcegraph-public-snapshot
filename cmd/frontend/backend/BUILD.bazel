@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "backend",
     srcs = [
-        "app.go",
         "doc.go",
         "external_services.go",
         "go_importers.go",
@@ -49,7 +48,6 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
         "//internal/inventory",
-        "//internal/jsonc",
         "//internal/observation",
         "//internal/randstring",
         "//internal/rcache",

@@ -7,6 +7,7 @@ go_library(
         "build.go",
         "environment.go",
         "monitoring.go",
+        "projectid.go",
         "service.go",
         "spec.go",
     ],
@@ -17,7 +18,7 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_github_grafana_regexp//:regexp",
-        "@io_k8s_sigs_yaml//:yaml",
+        "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )
 
@@ -25,6 +26,7 @@ go_test(
     name = "spec_test",
     srcs = [
         "environment_test.go",
+        "projectid_test.go",
         "service_test.go",
     ],
     embed = [":spec"],
@@ -32,5 +34,6 @@ go_test(
         "//lib/pointers",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

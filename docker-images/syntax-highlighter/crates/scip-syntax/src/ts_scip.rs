@@ -54,7 +54,6 @@ pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
     })
 }
 
-
 // Converts a SCIP symbol kind to the ctags format.
 //
 // Universal-ctags uses inconsistent kind names for the same concept (for example typealias for

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -1053,6 +1054,16 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 
 func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (d *dummyFileResolver) Languages(ctx context.Context) ([]string, error) {
+	return languages.GetLanguages(d.Name(), func() ([]byte, error) {
+		content, err := d.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return []byte(content), nil
+	})
 }
 
 func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {

@@ -13,8 +13,6 @@ cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
 ui/assets/
-src-tauri/assets/
-src-tauri/target/
 vendor/
 .nyc_output/
 out/

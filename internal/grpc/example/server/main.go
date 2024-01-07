@@ -6,14 +6,16 @@ import (
 	"net"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc"
+
 	"github.com/sourcegraph/sourcegraph/internal/grpc/example/server/service"
 	pb "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type weatherGRPCServer struct {
@@ -194,7 +196,9 @@ func (w *weatherGRPCServer) UploadWeatherPhoto(stream pb.WeatherService_UploadWe
 		w.logger.Info("Received screenshot metadata",
 			log.String("sensorID", v.Metadata.GetSensorId()),
 			log.String("filename", v.Metadata.GetFileName()),
-			log.String("location", v.Metadata.GetLocation()))
+			log.String("location", v.Metadata.GetLocation()),
+			log.Time("timestamp", v.Metadata.GetTimestamp().AsTime()),
+		)
 	default:
 		return errors.Errorf("expected first message to be image metadata, instead got unexpected message type %T", v)
 	}
@@ -241,9 +245,13 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterWeatherServiceServer(s, &weatherGRPCServer{
-		logger: logger,
-	})
+	flaky := &flakyWeatherService{
+		base: &weatherGRPCServer{
+			logger: logger,
+		},
+	}
+	pb.RegisterWeatherServiceServer(s, flaky)
+
 	logger.Info("Server listening", log.String("address", lis.Addr().String()))
 
 	if err := s.Serve(lis); err != nil {
