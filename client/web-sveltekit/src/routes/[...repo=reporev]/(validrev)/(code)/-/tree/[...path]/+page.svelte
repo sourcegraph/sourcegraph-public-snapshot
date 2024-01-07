@@ -5,16 +5,17 @@
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createPromiseStore } from '$lib/utils'
-    import type { TreeWithCommitInfo } from './page.gql'
+    import type { TreePage_TreeWithCommitInfo, TreePage_Readme } from './page.gql'
 
     import type { PageData } from './$types'
     import FileTable from '$lib/repo/FileTable.svelte'
+    import Readme from '$lib/repo/Readme.svelte'
 
     export let data: PageData
 
     const { value: tree, set: setTree } = createPromiseStore<PageData['deferred']['treeEntries']>()
-    const { value: commitInfo, set: setCommitInfo } = createPromiseStore<Promise<TreeWithCommitInfo | null>>()
-    const { value: readme, set: setReadme } = createPromiseStore<PageData['deferred']['readme']>()
+    const { value: commitInfo, set: setCommitInfo } = createPromiseStore<Promise<TreePage_TreeWithCommitInfo | null>>()
+    const { value: readme, set: setReadme } = createPromiseStore<Promise<TreePage_Readme | null>>()
 
     $: setTree(data.deferred.treeEntries)
     $: setCommitInfo(data.deferred.commitInfo)
@@ -43,11 +44,7 @@
             {$readme.name}
         </h4>
         <div class="readme">
-            {#if $readme.richHTML}
-                {@html $readme.richHTML}
-            {:else if $readme.content}
-                <pre>{$readme.content}</pre>
-            {/if}
+            <Readme file={$readme} />
         </div>
     {/if}
 </div>
@@ -70,9 +67,5 @@
     .readme {
         padding: 1rem;
         flex: 1;
-
-        pre {
-            white-space: pre-wrap;
-        }
     }
 </style>

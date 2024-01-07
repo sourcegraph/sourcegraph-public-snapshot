@@ -1,7 +1,5 @@
-import { fetchHighlight, fetchBlobPlaintext } from '$lib/repo/api/blob'
-
 import type { PageLoad } from './$types'
-import { BlobDiffQuery } from './page.gql'
+import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
 
 export const load: PageLoad = async ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')
@@ -10,16 +8,37 @@ export const load: PageLoad = async ({ parent, params, url }) => {
     return {
         filePath: params.path,
         deferred: {
-            blob: fetchBlobPlaintext({
-                filePath: params.path,
-                repoID: resolvedRevision.repo.id,
-                commitID: resolvedRevision.commitID,
-            }),
-            highlights: fetchHighlight({
-                filePath: params.path,
-                repoID: resolvedRevision.repo.id,
-                commitID: resolvedRevision.commitID,
-            }).then(highlight => highlight?.lsif),
+            blob: graphqlClient
+                .query({
+                    query: BlobPageQuery,
+                    variables: {
+                        repoID: resolvedRevision.repo.id,
+                        revspec: resolvedRevision.commitID,
+                        path: params.path,
+                    },
+                })
+                .then(result => {
+                    if (result.data.node?.__typename !== 'Repository' || !result.data.node.commit?.blob) {
+                        throw new Error('Commit or file not found')
+                    }
+                    return result.data.node.commit.blob
+                }),
+            highlights: graphqlClient
+                .query({
+                    query: BlobSyntaxHighlightQuery,
+                    variables: {
+                        repoID: resolvedRevision.repo.id,
+                        revspec: resolvedRevision.commitID,
+                        path: params.path,
+                        disableTimeout: false,
+                    },
+                })
+                .then(result => {
+                    if (result.data.node?.__typename !== 'Repository') {
+                        throw new Error('Expected Repository')
+                    }
+                    return result.data.node.commit?.blob?.highlight.lsif
+                }),
             compare: revisionToCompare
                 ? {
                       revisionToCompare,

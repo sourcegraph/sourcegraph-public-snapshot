@@ -1,7 +1,16 @@
 import { redirect, error, type Redirect } from '@sveltejs/kit'
 
 import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
-import { CloneInProgressError, RepoNotFoundError, RepoSeeOtherError, RevisionNotFoundError, displayRepoName, isRepoSeeOtherErrorLike, isRevisionNotFoundErrorLike, parseRepoRevision } from '$lib/shared'
+import {
+    CloneInProgressError,
+    RepoNotFoundError,
+    RepoSeeOtherError,
+    RevisionNotFoundError,
+    displayRepoName,
+    isRepoSeeOtherErrorLike,
+    isRevisionNotFoundErrorLike,
+    parseRepoRevision,
+} from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 import type { GraphQLClient } from '$lib/graphql'
@@ -14,7 +23,7 @@ export interface ResolvedRevision {
 }
 
 export const load: LayoutLoad = async ({ parent, params, url, depends }) => {
-    const {graphqlClient: client} = await parent()
+    const { graphqlClient: client } = await parent()
 
     // This allows other places to reload all repo related data by calling
     // invalidate('repo:root')
@@ -29,7 +38,7 @@ export const load: LayoutLoad = async ({ parent, params, url, depends }) => {
     let resolvedRevisionOrError: ResolvedRevision | ErrorLike
 
     try {
-        resolvedRevisionOrError = await resolveRepoRevision({client, repoName, revision })
+        resolvedRevisionOrError = await resolveRepoRevision({ client, repoName, revision })
     } catch (repoError: unknown) {
         const redirect = isRepoSeeOtherErrorLike(repoError)
 
@@ -69,27 +78,33 @@ async function resolveRepoRevision({
     client,
     repoName,
     revision = '',
-}: {client: GraphQLClient, repoName: string, revision?: string}): Promise<ResolvedRevision> {
+}: {
+    client: GraphQLClient
+    repoName: string
+    revision?: string
+}): Promise<ResolvedRevision> {
     let data = client.readQuery({
         query: ResolveRepoRevison,
         variables: {
             repoName,
             revision,
-        }
+        },
     })
     if (
         !data ||
         (data.repositoryRedirect?.__typename === 'Repository' && data.repositoryRedirect.commit?.oid !== revision)
     ) {
         // We always refetch data when 'revision' is a "symbolic" revision (e.g. a tag or branch name)
-        data = await client.query({
-            query: ResolveRepoRevison,
-            variables: {
-                repoName,
-                revision,
-            },
-            fetchPolicy: 'network-only'
-        }).then(result => result.data)
+        data = await client
+            .query({
+                query: ResolveRepoRevison,
+                variables: {
+                    repoName,
+                    revision,
+                },
+                fetchPolicy: 'network-only',
+            })
+            .then(result => result.data)
     }
 
     if (!data?.repositoryRedirect) {
