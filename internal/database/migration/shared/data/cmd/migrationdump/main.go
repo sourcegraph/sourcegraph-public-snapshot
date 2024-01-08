@@ -50,7 +50,7 @@ func main() {
 	}
 
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
-		fmt.Printf("fatal: %v", err)
+		logger.Fatal("fatal error", log.Error(err))
 		os.Exit(1)
 	}
 
@@ -69,7 +69,7 @@ func Main(cctx *cli.Context, logger log.Logger) error {
 
 	versions, err := oobmigration.UpgradeRange(min, max)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	versionTags := make([]string, 0, len(versions))
 	for _, version := range versions {
