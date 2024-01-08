@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,11 +49,6 @@ func readMigrationFileContents(ma MigrationsReader, schemaName, rev, path string
 
 	return "", os.ErrNotExist
 }
-
-var (
-	revToPathTocontentsCacheMutex sync.RWMutex
-	revToPathTocontentsCache      = map[string]map[string]string{}
-)
 
 func migrationPath(schemaName, rev string) (string, error) {
 	revVersion, ok := oobmigration.NewVersionFromString(rev)
