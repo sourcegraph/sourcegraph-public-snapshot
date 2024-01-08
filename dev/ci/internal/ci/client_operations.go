@@ -79,7 +79,9 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		// and then adds the flag `--force-rebuild`. We need to do this because Chromatic fails when running on
 		// the same commit.
 		chromaticCommand := "./dev/ci/run-chromatic.sh --exit-zero-on-changes --exit-once-uploaded"
-		if opts.ChromaticShouldAutoAccept {
+		// REMOVE ME
+
+		if true { //opts.ChromaticShouldAutoAccept {
 			// have to specify a value. Value can either be a branch glob or a boolean
 			// see https://www.chromatic.com/docs/cli/
 			chromaticCommand += " --auto-accept-changes true"

@@ -23,7 +23,7 @@ pre {
 
 code,
 .text-code {
-    font-family: var(--code-font-family);
+    font-family: var(--font-family-base);
     font-size: var(--code-font-size);
     line-height: 1rem;
     white-space: pre;
@@ -44,8 +44,6 @@ kbd {
     vertical-align: middle;
     border-radius: 3px;
     color: var(--body-color);
-    background-color: var(--color-bg-2);
-    box-shadow: inset 0 -2px 0 var(--color-bg-3);
 }
 
 // Search examples that link to the results page should use this class.
