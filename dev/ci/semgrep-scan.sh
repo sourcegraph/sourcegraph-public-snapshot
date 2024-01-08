@@ -7,7 +7,7 @@ echo -e "--- :construction: cloning Semgrep rules\n"
 # clone the semgrep repo rules
 gh repo clone sourcegraph/security-semgrep-rules
 
-echo -e "--- :lock: running Semgrep scan\n"
+echo -e "--- :lock::semgrep: running Semgrep scan\n"
 
 set -x
 
@@ -19,7 +19,7 @@ fi
 # run semgrep
 semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main
 
-echo -e "--- :rocket: reporting Scan Results to GitHub\n"
+echo -e "--- :rocket: reporting scan results to GitHub\n"
 
 # upload SARIF results to code scanning API
 encoded_sarif=$(gzip -c results.sarif | base64 -w0)
@@ -47,4 +47,4 @@ else
     -f tool_name="ci semgrep"
 fi
 
-echo -e "--- :white_check_mark: Semgrep Scan job is complete\n"
+echo -e "--- :white_check_mark::semgrep: Semgrep scan job is complete\n"
