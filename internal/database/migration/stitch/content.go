@@ -13,7 +13,7 @@ import (
 
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
 // at the given git revision.
-func readMigrationDirectoryFilenames(ma *migrationArchives, schemaName, rev string) ([]string, error) {
+func readMigrationDirectoryFilenames(ma MigrationsReader, schemaName, rev string) ([]string, error) {
 	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func readMigrationDirectoryFilenames(ma *migrationArchives, schemaName, rev stri
 }
 
 // readMigrationFileContents reads the contents of the migration at given path at the given git revision.
-func readMigrationFileContents(ma *migrationArchives, schemaName, rev, path string) (string, error) {
+func readMigrationFileContents(ma MigrationsReader, schemaName, rev, path string) (string, error) {
 	m, err := ma.Get(rev)
 	if err != nil {
 		return "", err

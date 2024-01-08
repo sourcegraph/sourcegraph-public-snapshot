@@ -29,7 +29,7 @@ var ignoreMap = map[string]struct{}{
 // readRawMigrations reads migrations from a locally available git revision for the given schema.
 // This function understands the common ways we historically laid out our migration definitions
 // in-tree, and will return results going back to v3.29.0 (with empty metadata where missing).
-func readRawMigrations(ma *migrationArchives, schemaName, rev string) (migrations []rawMigration, _ error) {
+func readRawMigrations(ma MigrationsReader, schemaName, rev string) (migrations []rawMigration, _ error) {
 	entries, err := readMigrationDirectoryFilenames(ma, schemaName, rev)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func matchFlatPattern(s string) (id, suffix, direction string, ok bool) {
 }
 
 // readFlat creates a raw migration from a pair of up/down SQL files in-tree.
-func readFlat(ma *migrationArchives, schemaName, rev, id, suffix string) (rawMigration, error) {
+func readFlat(ma MigrationsReader, schemaName, rev, id, suffix string) (rawMigration, error) {
 	up, err := readMigrationFileContents(ma, schemaName, rev, fmt.Sprintf("%s_%s.up.sql", id, suffix))
 	if err != nil {
 		return rawMigration{}, err
@@ -116,7 +116,7 @@ func matchHierarchicalPattern(s string) (id, suffix string, ok bool) {
 
 // readHierarchical creates a raw migration from a pair of up/down SQL files and a metadata
 // file all located within a subdirectory in-tree.
-func readHierarchical(ma *migrationArchives, schemaName, rev, id, suffix string) (rawMigration, error) {
+func readHierarchical(ma MigrationsReader, schemaName, rev, id, suffix string) (rawMigration, error) {
 	up, err := readMigrationFileContents(ma, schemaName, rev, filepath.Join(id+suffix, "up.sql"))
 	if err != nil {
 		return rawMigration{}, err

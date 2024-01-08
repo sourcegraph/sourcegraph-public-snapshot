@@ -24,7 +24,7 @@ import (
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
 func StitchDefinitions(archivesPath string, schemaName string, revs []string) (shared.StitchedMigration, error) {
-	ma, err := NewMigrationArchives(archivesPath, "v5.3.0")
+	ma, err := NewLocalMigrationsReader(archivesPath, "5.2.0")
 	if err != nil {
 		return shared.StitchedMigration{}, err
 	}
@@ -65,7 +65,7 @@ var schemaBounds = map[string]oobmigration.Version{
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinitions(ma *migrationArchives, schemaName string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
+func overlayDefinitions(ma *LocalMigrationsReader, schemaName string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
 	definitionMap := map[int]definition.Definition{}
 	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
 	for _, rev := range revs {
@@ -94,7 +94,7 @@ const squashedMigrationPrefix = "squashed migrations"
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinition(ma *migrationArchives, schemaName, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
+func overlayDefinition(ma *LocalMigrationsReader, schemaName, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
 	revVersion, ok := oobmigration.NewVersionFromString(rev)
 	if !ok {
 		return shared.MigrationBounds{}, errors.Newf("illegal rev %q", rev)
