@@ -427,18 +427,18 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// Dereference to copy to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
 	} else {
 		rev = string(r.oid)
 	}
+	// Dereference to copy to avoid mutation
+	repoUrl := r.repoResolver.url()
 	if rev != "" {
 		repoUrl.Path += "@" + rev
 	}
-	return &repoUrl
+	return repoUrl
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
