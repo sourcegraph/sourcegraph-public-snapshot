@@ -52,6 +52,8 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
+// NewMinimalRepositoryResolver creates a new lazy resolver from the minimum necessary information: repo name and repo ID.
+// If you have a fully resolved *types.Repo, use NewRepositoryResolver instead.
 func NewMinimalRepositoryResolver(db database.DB, client gitserver.Client, id api.RepoID, name api.RepoName) *RepositoryResolver {
 	return &RepositoryResolver{
 		id:              id,
@@ -65,25 +67,20 @@ func NewMinimalRepositoryResolver(db database.DB, client gitserver.Client, id ap
 	}
 }
 
+// NewRepositoryResolver creates a repository resolver from a fully resolved *types.Repo. Do not use this
+// function with an incomplete *types.Repo. Instead, use NewMinimalRepositoryResolver, which will lazily
+// fetch the *types.Repo if needed.
 func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
-	// Protect against a nil repo
-	var id api.RepoID
-	var name api.RepoName
-	if repo != nil {
-		name = repo.Name
-		id = repo.ID
-	}
-
 	return &RepositoryResolver{
-		id:              id,
-		name:            name,
+		id:              repo.ID,
+		name:            repo.Name,
 		db:              db,
 		innerRepo:       repo,
 		gitserverClient: client,
 		logger: log.Scoped("repositoryResolver").
 			With(log.Object("repo",
-				log.String("name", string(name)),
-				log.Int32("id", int32(id)))),
+				log.String("name", string(repo.Name)),
+				log.Int32("id", int32(repo.ID)))),
 	}
 }
 
