@@ -60,6 +60,10 @@
     name: (identifier) @definition.term
 )
 
+(field_declaration
+ (variable_declarator
+  name: (identifier) @definition.skip))
+
 (variable_declarator
     name: (identifier) @definition.term
 )
