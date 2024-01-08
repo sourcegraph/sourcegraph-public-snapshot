@@ -35,10 +35,7 @@ export class SessionTracker {
             return ''
         }
         // This cookie is set in Google Tag manager.
-        this.originalReferrer =
-            this.originalReferrer ||
-            this.cookies.get(ORIGINAL_REFERRER_KEY) ||
-            document.referrer
+        this.originalReferrer = this.originalReferrer || this.cookies.get(ORIGINAL_REFERRER_KEY) || document.referrer
 
         return this.originalReferrer
     }
