@@ -71,22 +71,33 @@ base (which is required by this package).
 This project makes use of query composition, i.e. components define their own
 data dependencies via fragments, which get composed by their callers and are
 eventually being used in a query in a loader.
-This approach is not used everywhere (yet), but the goal is that any data
-loading happens inside or is enabled by a page/layout loader. This will make it
-very clear how the data flows.
 
-There are a couple of issues to consider with this approach and sometimes we'll have to make exceptions:
+This goal of this approach is to make data dependencies co-located and easier
+to change, as well to make the flow of data clearer. Data fetching should only
+happen in data loaders, not components.
+
+There are a couple of issues to consider with this approach and sometimes we'll
+have to make exceptions:
 
 - Caching: If every loader composes its own query it's possible that two
   queries fetch the same data, in which case we miss out on caching. If caching
   the data is more important than data co-location it might be preferable to
   define a reusable query function. Example: File list for currently opened
   folder (sidebar + folder page)
-- Shared data from layout loaders: While it's very convenient that pages have access to any data from the ancestor layout loaders, that doesn't work well with data dependency co-location. The layout loaders don't know which sub-layout or sub-page is loaded and what data it needs.
-  Possible solutions (to explore):
-  - Keep everything as is (query in higher up loader needs to (explicitly) include every field needed by a descendant layout/page.
-  - Have pages/layouts define dedicated fragments to be used for higher level loaders. High level loaders would then request the data for all sub-layouts/-pages, whether it's the current page or not (-> overfetching)
-  - Sub-layout/-pages don't rely on higher level loaders and instead fetch all their data on their own (-> duplicate data fetching)
+- Shared data from layout loaders: While it's very convenient that pages have
+  access to any data from the ancestor layout loaders, that doesn't work well
+  with data dependency co-location. The layout loaders don't know which
+  sub-layout or sub-page is loaded and what data it needs.
+  Fortunately we don't have a lot of data (yet) that is used this way. The
+  prime example for this right now is information about the authenticated user.
+  The current approach is to name data-dependencies on the current user as
+  `<ComponentName>_AuthenticatedUser` and use that fragment in the
+  `AuthenticatedUser` fragment in `src/routes/layout.gql`.
+  This approach might change as we uncover more use cases.
+- On demand data loading: Not all data is fetched/needed immediately for
+  rendering page. Data for e.g. typeaheads is fetched on demand. Ideally the
+  related queries are still composed by the data loader, which passes a
+  function for fetching the data to the page.
 
 ## Production build
 

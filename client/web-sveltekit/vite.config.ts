@@ -29,6 +29,7 @@ function generateGraphQLTypes(): Plugin {
             },
         },
         generates: {
+            // Legacy graphql-operations.ts file that is still used by some components.
             './src/lib/graphql-operations.ts': {
                 documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts', '!src/**/*.gql.ts'],
                 config: {
