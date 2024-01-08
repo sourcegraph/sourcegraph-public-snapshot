@@ -204,11 +204,11 @@ func (e *EventTeamMatch) eventMatch() {}
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
 type EventFilter struct {
-	Value    string `json:"value"`
-	Label    string `json:"label"`
-	Count    int    `json:"count"`
-	LimitHit bool   `json:"limitHit"`
-	Kind     string `json:"kind"`
+	Value      string `json:"value"`
+	Label      string `json:"label"`
+	Count      int    `json:"count"`
+	Exhaustive bool   `json:"exhaustive"`
+	Kind       string `json:"kind"`
 }
 
 // EventAlert is GQL.SearchAlert. It replaces when sent to match existing

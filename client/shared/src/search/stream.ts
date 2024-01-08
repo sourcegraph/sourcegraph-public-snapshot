@@ -269,7 +269,7 @@ export interface Filter {
     value: string
     label: string
     count: number
-    limitHit: boolean
+    exhaustive: boolean
     kind: 'file' | 'repo' | 'lang' | 'utility' | 'select' | 'after' | 'before' | 'author'
 }
 

@@ -24,11 +24,12 @@ func regexSearchBatch(
 	zf *zipFile,
 	limit int,
 	patternMatchesContent, patternMatchesPaths bool,
+	isCaseSensitive bool,
 	contextLines int32,
 ) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, sender, contextLines)
+	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isCaseSensitive, sender, contextLines)
 	return sender.collected, sender.LimitHit(), err
 }
 
@@ -52,14 +53,15 @@ func regexSearch(
 	pm *pathMatcher,
 	zf *zipFile,
 	patternMatchesContent, patternMatchesPaths bool,
+	isCaseSensitive bool,
 	sender matchSender,
 	contextLines int32,
 ) (err error) {
 	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.EndWithErr(&err)
 
-	m.AddAttributes(tr)
 	tr.SetAttributes(attribute.Stringer("path", pm))
+	tr.SetAttributes(attribute.String("matcher", m.String()))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -81,7 +83,7 @@ func regexSearch(
 		files = zf.Files
 	)
 
-	if m.MatchesAllContent() || (patternMatchesPaths && !patternMatchesContent) {
+	if _, ok := m.(allMatcher); ok || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
@@ -140,7 +142,7 @@ func regexSearch(
 				// data (for Preview).
 				fileBuf := zf.DataFor(f)
 				fileMatchBuf := fileBuf
-				if m.IgnoreCase() {
+				if !isCaseSensitive {
 					// If we are ignoring case, we transform the input instead of
 					// relying on the regular expression engine which can be
 					// slow. compilePattern has already lowercased the pattern. We also

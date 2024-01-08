@@ -34,7 +34,7 @@
 ; )
 
 ; (method_declaration
-;     name: (identifier) @definition.function (#set! "scope" "parent")
+;     name: (identifier) @definition.function
 ; )
 
 
