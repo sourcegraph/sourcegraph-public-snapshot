@@ -32,6 +32,7 @@ gh api \
   /repos/sourcegraph/sourcegraph/code-scanning/sarifs \
   -f commit_sha="$BUILDKITE_COMMIT" \
   -f ref="refs/pull/$BUILDKITE_PULL_REQUEST/head" \
-  -f sarif="$encoded_sarif"
+  -f sarif="$encoded_sarif" \
+  -f tool_name="ci semgrep"
 
 echo -e "--- :white_check_mark: Semgrep Scan job is complete\n"
