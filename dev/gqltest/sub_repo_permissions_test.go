@@ -484,7 +484,10 @@ func enableStructuralSearch(t *testing.T) {
 		}
 	})
 
-	siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
+	if siteConfig.ExperimentalFeatures == nil {
+		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+	}
+	siteConfig.ExperimentalFeatures.StructuralSearch = "enabled"
 	err = client.UpdateSiteConfiguration(siteConfig, lastID)
 	if err != nil {
 		t.Fatal(err)
