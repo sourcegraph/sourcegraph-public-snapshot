@@ -13,7 +13,7 @@ set -x
 
 # verify security-semgrep-rules/semgrep-rules/ directory is present or print error
 if [ ! -d "security-semgrep-rules/semgrep-rules/" ]; then
-  echo ":red_circle: Semgrep rules directory not found. reachout security team for support :red_circle:"
+  echo ":red_circle: Semgrep rules directory not found. Reachout to security team at #discuss-security for support :red_circle:"
 fi
 
 # run semgrep
