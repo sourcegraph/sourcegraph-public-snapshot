@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type FileChunkContext struct {
@@ -159,6 +160,10 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
 func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
+	// if embeddings are disabled , return all repos in the notEmbedded slice
+	if !conf.EmbeddingsEnabled() {
+		return nil, input, nil
+	}
 	for _, repo := range input {
 		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
 		if err != nil {
@@ -272,6 +277,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			query,
 			search.Precise,
 			search.Streaming,
+			pointers.Ptr(int32(0)),
 		)
 		if err != nil {
 			return nil, err

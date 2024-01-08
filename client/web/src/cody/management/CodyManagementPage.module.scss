@@ -12,6 +12,12 @@
     }
 }
 
+.container {
+    border-radius: 6px;
+    border: 1px solid (--border-color);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
 .plan-name {
     font-size: 1.5rem;
     font-weight: 600;
@@ -27,4 +33,32 @@
 
 .modal {
     width: 50rem;
+}
+
+.release-stage {
+    color: var(--gray-07);
+}
+
+.usage-banner {
+    border-radius: 0.375rem;
+    border: 1px solid var(--border-color);
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.9) 100%),
+        linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.03), 0 1px 1px 0 rgba(0, 0, 0, 0.05);
+
+    :global(.theme-dark) & {
+        background: linear-gradient(20deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.85) 100%),
+            linear-gradient(58deg, #7048e8 0%, #4ac1e8 33.21%, #4d0b79 75.39%, #ff5543 104.43%);
+    }
+}
+
+.ide-header {
+    padding: calc(var(--spacer) * 0.5);
+    margin: calc(var(--spacer) * -0.5);
+    border-radius: var(--border-radius);
+}
+
+.ide-header:hover {
+    cursor: pointer;
+    background: var(--subtle-bg);
 }

@@ -71,14 +71,6 @@ func (a *QueryArgs) AppendLimitToQuery(query *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf("%v %v", query, a.Limit)
 }
 
-func (a *QueryArgs) AppendAllToQuery(query *sqlf.Query) *sqlf.Query {
-	query = a.AppendWhereToQuery(query)
-	query = a.AppendOrderToQuery(query)
-	query = a.AppendLimitToQuery(query)
-
-	return query
-}
-
 type OrderBy []OrderByOption
 
 func (o OrderBy) Columns() []string {
@@ -101,6 +93,7 @@ func (o OrderBy) SQL(ascending bool) *sqlf.Query {
 	return sqlf.Join(columns, ", ")
 }
 
+// OrderByOption represents ordering in SQL by one column.
 type OrderByOption struct {
 	Field string
 	Nulls OrderByNulls
@@ -134,8 +127,8 @@ func (o OrderByOption) SQL(ascending bool) *sqlf.Query {
 type PaginationArgs struct {
 	First  *int
 	Last   *int
-	After  *string
-	Before *string
+	After  []any
+	Before []any
 
 	// TODO(naman): explain default
 	OrderBy   OrderBy
@@ -154,23 +147,36 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 
 	orderByColumns := orderBy.Columns()
 
-	if p.After != nil {
+	if len(p.After) > 0 {
+		// For order by stars, id this'll generate SQL of the following form:
+		// WHERE (stars, id) (<|>) (%s, %s)
+		// ORDER BY stars (ASC|DESC), id (ASC|DESC)
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) >", columnsStr)
 		if !p.Ascending {
 			condition = fmt.Sprintf("(%s) <", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.After)))
+		orderValues := make([]*sqlf.Query, len(p.After))
+		for i, a := range p.After {
+			orderValues[i] = sqlf.Sprintf("%s", a)
+		}
+
+		conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", sqlf.Join(orderValues, ",")))
 	}
-	if p.Before != nil {
+	if len(p.Before) > 0 {
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) <", columnsStr)
 		if !p.Ascending {
 			condition = fmt.Sprintf("(%s) >", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.Before)))
+		orderValues := make([]*sqlf.Query, len(p.Before))
+		for i, a := range p.Before {
+			orderValues[i] = sqlf.Sprintf("%s", a)
+		}
+
+		conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", sqlf.Join(orderValues, ",")))
 	}
 
 	if len(conditions) > 0 {
@@ -188,24 +194,4 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	}
 
 	return queryArgs
-}
-
-func copyPtr[T any](n *T) *T {
-	if n == nil {
-		return nil
-	}
-
-	c := *n
-	return &c
-}
-
-// Clone (aka deepcopy) returns a new PaginationArgs object with the same values
-// as "p".
-func (p *PaginationArgs) Clone() *PaginationArgs {
-	return &PaginationArgs{
-		First:  copyPtr(p.First),
-		Last:   copyPtr(p.Last),
-		After:  copyPtr(p.After),
-		Before: copyPtr(p.Before),
-	}
 }

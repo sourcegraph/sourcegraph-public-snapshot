@@ -1,9 +1,9 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
-import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useSyncedWithURLState, type SetStateResult } from '@sourcegraph/wildcard'
 
 import {
     type GetSearchAggregationResult,
@@ -16,53 +16,6 @@ import {
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { GroupResultsPing } from './pings'
 import { AggregationUIMode } from './types'
-
-interface URLStateOptions<State, SerializedState> {
-    urlKey: string
-    deserializer: (value: SerializedState | null) => State
-    serializer: (state: State) => string | null
-}
-
-type UpdatedSearchQuery = string
-type SetStateResult<State> = [state: State, dispatch: (state: State) => UpdatedSearchQuery]
-
-/**
- * React hook analog standard react useState hook but with synced value with URL
- * through URL query parameter.
- */
-function useSyncedWithURLState<State, SerializedState>(
-    options: URLStateOptions<State, SerializedState>
-): SetStateResult<State> {
-    const { urlKey, serializer, deserializer } = options
-    const navigate = useNavigate()
-    const { search } = useLocation()
-
-    const urlSearchParameters = useMemo(() => new URLSearchParams(search), [search])
-    const queryParameter = useMemo(
-        () => deserializer(urlSearchParameters.get(urlKey) as unknown as SerializedState | null),
-        [urlSearchParameters, urlKey, deserializer]
-    )
-
-    const setNextState = useCallback(
-        (nextState: State) => {
-            const serializedValue = serializer(nextState)
-
-            if (serializedValue === null) {
-                urlSearchParameters.delete(urlKey)
-            } else {
-                urlSearchParameters.set(urlKey, serializedValue)
-            }
-
-            const search = `?${urlSearchParameters.toString()}`
-            navigate({ search }, { replace: true })
-
-            return search
-        },
-        [navigate, serializer, urlKey, urlSearchParameters]
-    )
-
-    return [queryParameter, setNextState]
-}
 
 type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | 'repo-metadata' | ''
 

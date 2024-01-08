@@ -926,7 +926,7 @@ interactions:
       \t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd\"\n
       \tregistry \"github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api\"\n
       \n@@ -49,10 +48,6 @@ func NewHandler(db database.DB) http.Handler {\n \t\thttp.Redirect(w,
-      r, \"https://about.sourcegraph.com/go\", http.StatusFound)\n \t})))\n \n-\tif
+      r, \"https://sourcegraph.com/go\", http.StatusFound)\n \t})))\n \n-\tif
       envvar.SourcegraphDotComMode() {\n-\t\tr.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL(db))))\n-\t}\n-\n
       \tr.Get(router.UI).Handler(ui.Router())\n \n \tr.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))\n@@
       -73,7 +68,6 @@ func NewHandler(db database.DB) http.Handler {\n \t// Ping retrieval\n

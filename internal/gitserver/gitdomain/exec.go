@@ -36,7 +36,6 @@ var (
 		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p"},
 		"lfs":          {},
-		"apply":        {"--cached", "-p0"},
 
 		// Commands used by Batch Changes when publishing changesets.
 		"init":       {},
@@ -44,6 +43,7 @@ var (
 		"commit":     {"-m"},
 		"push":       {"--force"},
 		"update-ref": {},
+		"apply":      {"--cached", "-p0"},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},

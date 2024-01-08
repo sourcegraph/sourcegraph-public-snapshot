@@ -77,7 +77,7 @@ exports[`FeedbackPrompt > should render correctly 1`] = `
              
             <a
               class="anchorLink"
-              href="https://about.sourcegraph.com/terms/privacy"
+              href="https://sourcegraph.com/terms/privacy"
             >
               Sourcegraph Privacy Policy
             </a>
@@ -200,7 +200,7 @@ exports[`FeedbackPrompt > should render submit error correctly 1`] = `
              
             <a
               class="anchorLink"
-              href="https://about.sourcegraph.com/terms/privacy"
+              href="https://sourcegraph.com/terms/privacy"
             >
               Sourcegraph Privacy Policy
             </a>

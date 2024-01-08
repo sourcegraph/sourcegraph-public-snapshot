@@ -174,10 +174,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.NewJanitor(
 				ctx,
 				server.JanitorConfig{
-					ShardID:            gitserver.Hostname,
-					JanitorInterval:    config.JanitorInterval,
-					ReposDir:           config.ReposDir,
-					DesiredPercentFree: config.JanitorReposDesiredPercentFree,
+					ShardID:                        gitserver.Hostname,
+					JanitorInterval:                config.JanitorInterval,
+					ReposDir:                       config.ReposDir,
+					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
+					DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
 				},
 				db,
 				recordingCommandFactory,

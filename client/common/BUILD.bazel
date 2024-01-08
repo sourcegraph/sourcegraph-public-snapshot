@@ -26,6 +26,7 @@ ts_project(
         "src/errors/types.ts",
         "src/errors/utils.ts",
         "src/index.ts",
+        "src/languages.ts",
         "src/types/highlight.js/lib/core.d.ts",
         "src/types/highlightjs-graphql/index.d.ts",
         "src/types/index.ts",

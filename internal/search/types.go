@@ -37,6 +37,7 @@ type Inputs struct {
 	OnSourcegraphDotCom    bool
 	Features               *Features
 	Protocol               Protocol
+	ContextLines           int32
 	SanitizeSearchPatterns []*regexp.Regexp
 }
 
@@ -189,10 +190,11 @@ const (
 
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
-	Query          zoektquery.Q
-	Typ            IndexedRequestType
-	FileMatchLimit int32
-	Select         filter.SelectPath
+	Query           zoektquery.Q
+	Typ             IndexedRequestType
+	FileMatchLimit  int32
+	Select          filter.SelectPath
+	NumContextLines int
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
@@ -218,6 +220,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
 		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
+		NumContextLines:   o.NumContextLines,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
@@ -287,24 +290,26 @@ type SearcherParameters struct {
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
+
+	NumContextLines int
 }
 
-// TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
-// sync with pkg/searcher/protocol.PatternInfo.
+// TextPatternInfo defines the search request for unindexed and structural search
+// (the 'searcher' service). Keep it in sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
-	Pattern         string
-	IsNegated       bool
-	IsRegExp        bool
+	// Values dependent on pattern atom.
+	Pattern   string
+	IsNegated bool
+	IsRegExp  bool
+
+	// Values dependent on parameters.
 	IsStructuralPat bool
 	CombyRule       string
-	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 	Index           query.YesNoOnly
 	Select          filter.SelectPath
 
-	// We do not support IsMultiline
-	// IsMultiline     bool
 	IncludePatterns []string
 	ExcludePattern  string
 
@@ -335,9 +340,6 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 	}
 	if p.CombyRule != "" {
 		add(attribute.String("combyRule", p.CombyRule))
-	}
-	if p.IsWordMatch {
-		add(attribute.Bool("isWordMatch", p.IsWordMatch))
 	}
 	if p.IsCaseSensitive {
 		add(attribute.Bool("isCaseSensitive", p.IsCaseSensitive))
@@ -379,9 +381,6 @@ func (p *TextPatternInfo) String() string {
 		} else {
 			args = append(args, "comby")
 		}
-	}
-	if p.IsWordMatch {
-		args = append(args, "word")
 	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")

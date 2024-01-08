@@ -10,11 +10,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
@@ -68,7 +67,8 @@ type Event struct {
 
 // LogBackendEvent is a convenience function for logging backend events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
@@ -78,13 +78,11 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	if envvar.SourcegraphDotComMode() {
 		client = "DOTCOM_BACKEND"
 	}
-	if deploy.IsApp() {
-		client = "APP_BACKEND"
-	}
 
 	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
 	connectedSiteID := siteid.Get(db)
 
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvent(context.Background(), db, Event{
 		EventName:        eventName,
 		UserID:           userID,
@@ -107,14 +105,17 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 
 // LogEvent logs an event.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogEvent(ctx context.Context, db database.DB, args Event) error {
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvents(ctx, db, []Event{args})
 }
 
 // LogEvents logs a batch of events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
@@ -272,6 +273,9 @@ func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
 		return err
 	}
 
+	// Use EventRecorder from internal/telemetryrecorder instead - logLocalEvents
+	// should eventually be removed entirely.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return db.EventLogs().BulkInsert(ctx, databaseEvents)
 }
 

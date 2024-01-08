@@ -22,14 +22,6 @@
       "current": "5.2.0",
       "captainGitHubUsername": "unknwon",
       "captainSlackUsername": "joe"
-    },
-    "5.2.4": {
-      "codeFreezeDate": "2023-11-22T10:18:45.722-08:00",
-      "securityApprovalDate": "2023-11-22T10:18:45.722-08:00",
-      "releaseDate": "2023-11-29T10:18:45.722-08:00",
-      "current": "5.2.4",
-      "captainGitHubUsername": "BolajiOlajide",
-      "captainSlackUsername": "bolaji.olajide"
     }
   },
   "dryRun": {
@@ -38,15 +30,5 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
-  },
-  "in_progress": {
-    "captainGitHubUsername": "BolajiOlajide",
-    "captainSlackUsername": "bolaji.olajide",
-    "releases": [
-      {
-        "version": "5.2.4",
-        "previous": "5.2.3"
-      }
-    ]
   }
 }

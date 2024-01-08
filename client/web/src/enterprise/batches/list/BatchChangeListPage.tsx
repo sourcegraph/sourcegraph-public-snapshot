@@ -160,7 +160,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     isSourcegraphDotCom ? (
                         <Button
                             as={Link}
-                            to="https://about.sourcegraph.com"
+                            to="https://sourcegraph.com"
                             variant="primary"
                             onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
                         >

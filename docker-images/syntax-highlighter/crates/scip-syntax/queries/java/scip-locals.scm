@@ -4,6 +4,10 @@
 (record_declaration) @scope
 (method_declaration) @scope
 (constructor_declaration) @scope
+(lambda_expression) @scope
+(enhanced_for_statement) @scope
+(for_statement) @scope
+(block) @scope
 
 
 ; NOTE: The definitions below are commented out
@@ -30,21 +34,15 @@
 ; )
 
 ; (method_declaration
-;     name: (identifier) @definition.function (#set! "scope" "parent")
+;     name: (identifier) @definition.function
 ; )
 
-(block) @scope
-
-
-(for_statement) @scope
-
-(enum_constant
-  name: (identifier) @definition.term
-)
+; (enum_constant
+;   name: (identifier) @definition.term
+; )
 
 (enhanced_for_statement
-    name: (identifier) @definition.term
-) @scope
+    name: (identifier) @definition.term)
 
 (lambda_expression
 
@@ -55,11 +53,20 @@
         (identifier) @definition.term
     )
   ]
-) @scope
+)
+
+(record_declaration
+ (formal_parameters
+  (formal_parameter
+   name: (identifier) @occurrence.skip)))
 
 (formal_parameter
     name: (identifier) @definition.term
 )
+
+(field_declaration
+ (variable_declarator
+  name: (identifier) @occurrence.skip))
 
 (variable_declarator
     name: (identifier) @definition.term
@@ -75,5 +82,6 @@
     (type_identifier) @definition.type
 )
 
+(field_access field: (identifier) @occurrence.skip)
 (identifier) @reference
 (type_identifier) @reference

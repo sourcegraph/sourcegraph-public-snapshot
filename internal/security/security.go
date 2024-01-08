@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -50,32 +51,71 @@ func ensureBannedEmailDomainsLoaded() error {
 	return bannedEmailDomainsErr
 }
 
-func IsEmailBanned(email string) (bool, error) {
-	if err := ensureBannedEmailDomainsLoaded(); err != nil {
-		return false, err
-	}
-	if bannedEmailDomains.IsEmpty() {
-		return false, nil
-	}
-
+// Retrieves the domain name from an email address.
+// e.g. "user@example.com" -> "example.com"
+// The email address must be valid, or else an error is returned.
+func ParseEmailDomain(email string) (string, error) {
 	addr, err := mail.ParseAddress(email)
 	if err != nil {
-		return false, err
-	}
-
-	if len(addr.Address) == 0 {
-		return true, nil
+		return "", err
 	}
 
 	parts := strings.Split(addr.Address, "@")
 
-	if len(parts) < 2 {
+	return strings.ToLower(parts[len(parts)-1]), nil
+}
+
+func IsEmailBanned(email string) (bool, error) {
+	if err := ensureBannedEmailDomainsLoaded(); err != nil {
+		return false, err
+	}
+
+	if bannedEmailDomains.IsEmpty() {
+		return false, nil
+	}
+
+	domain, err := ParseEmailDomain(email)
+	if err != nil {
+		return false, err
+	}
+
+	_, banned := bannedEmailDomains[domain]
+
+	return banned, nil
+}
+
+var (
+	redisStore    = redispool.Store
+	redisScopeKey = "auth:emails:"
+)
+
+func IsEmailBlockedDueToTooManySignups(email string) (bool, error) {
+	limit := conf.Get().SiteConfig().AuthDailyEmailDomainSignupLimit
+
+	if limit == 0 {
+		return false, nil
+	}
+
+	domain, err := ParseEmailDomain(email)
+	if err != nil {
+		return false, err
+	}
+
+	key := redisScopeKey + domain
+	value := redisStore.Get(key)
+
+	if value.IsNil() {
+		err := redisStore.SetEx(key, 24*60*60, 1)
+		return false, err
+	}
+
+	if emailsRegisteredInLast24Hours, _ := value.Int(); emailsRegisteredInLast24Hours > limit {
 		return true, nil
 	}
 
-	_, banned := bannedEmailDomains[strings.ToLower(parts[len(parts)-1])]
+	_, err = redisStore.Incr(key)
 
-	return banned, nil
+	return false, err
 }
 
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
@@ -86,7 +126,6 @@ func ValidateRemoteAddr(raddr string) bool {
 	if err == nil {
 		raddr = host
 		_, err := strconv.Atoi(port)
-
 		// return false if port is not an int
 		if err != nil {
 			return false
@@ -130,7 +169,6 @@ const maxPasswordRunes = 256
 
 // ValidatePassword: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
-
 	if conf.PasswordPolicyEnabled() {
 		return validatePasswordUsingPolicy(passwd)
 	}
@@ -178,7 +216,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 		case unicode.IsLetter(c) || c == ' ':
 			chars++
 		default:
-			//ignore
+			// ignore
 		}
 	}
 	// Check for blank password

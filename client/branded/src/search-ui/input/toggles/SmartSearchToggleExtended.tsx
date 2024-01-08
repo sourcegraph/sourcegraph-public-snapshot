@@ -125,14 +125,14 @@ const SmartSearchToggleMenu: React.FunctionComponent<
             <RadioItem
                 value={SearchModes.PreciseNew}
                 header="Precise (NEW) 💖"
-                description="Spaces are interpreted as AND."
+                description='Spaces are interpreted as AND. "repo" and "file" filters expect glob syntax.'
                 isChecked={getMode === SearchModes.PreciseNew}
                 onSelect={onChange}
             />
             <RadioItem
                 value={SearchModes.Precise}
                 header="Precise (legacy)"
-                description="Spaces are interpreted literaly."
+                description='Spaces are interpreted literaly. "repo" and "file" filters expect regex syntax.'
                 isChecked={getMode === SearchModes.Precise}
                 onSelect={onChange}
             />

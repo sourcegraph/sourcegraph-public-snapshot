@@ -233,7 +233,9 @@ func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent stri
 	if err != nil {
 		return nil, err
 	}
-	return proto.NewGitserverServiceClient(conn), nil
+
+	client := &automaticRetryClient{base: proto.NewGitserverServiceClient(conn)}
+	return client, nil
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {

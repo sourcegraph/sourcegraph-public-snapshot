@@ -4,11 +4,18 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "ci",
     srcs = [
+        "bazel_helpers.go",
         "bazel_operations.go",
         "cache_helpers.go",
+        "client_operations.go",
         "config.go",
+        "executor_operations.go",
+        "images_operations.go",
+        "legacy_operations.go",
+        "misc_operations.go",
         "operations.go",
         "pipeline.go",
+        "security_operations.go",
         "web-integration-workloads.go",
         "wolfi_operations.go",
     ],

@@ -60,7 +60,7 @@ const SiteUpdateCheck: React.FC = () => {
                         Version {data.site.productVersion}{' '}
                         <small className="text-muted">
                             (
-                            <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
+                            <Link to="https://sourcegraph.com/changelog" target="_blank" rel="noopener">
                                 changelog
                             </Link>
                             )

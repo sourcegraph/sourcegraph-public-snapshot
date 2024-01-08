@@ -185,7 +185,7 @@ func handleAuthResponse() (*url.URL, chan string, chan error, error) {
 	startAuthHandlerServer(socket, AuthEndpoint, codeReceiver, errorReceiver)
 
 	redirectUrl := url.URL{
-		Host:   net.JoinHostPort("localhost", strconv.Itoa(socket.Addr().(*net.TCPAddr).Port)),
+		Host:   net.JoinHostPort("127.0.0.1", strconv.Itoa(socket.Addr().(*net.TCPAddr).Port)),
 		Path:   AuthEndpoint,
 		Scheme: "http",
 	}
@@ -339,8 +339,11 @@ func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager fun
 	}
 
 	if query == "" {
-		query = "name contains 'RFC'"
+		query = "name contains 'RFC' and trashed = false"
+	} else {
+		query += " and trashed = false"
 	}
+
 	q := driveSpec.Query(query)
 
 	list := srv.Files.List().

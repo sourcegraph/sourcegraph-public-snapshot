@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -71,7 +72,7 @@ func extractFeature(r *http.Request) (codygateway.Feature, error) {
 	return codygateway.Feature(feature), nil
 }
 
-// Handle uses a predefined feature to determine the appropriate per-feature
+// HandleFeature uses a predefined feature to determine the appropriate per-feature
 // rate limits applied for an actor.
 func HandleFeature(
 	baseLogger log.Logger,
@@ -98,17 +99,23 @@ func HandleFeature(
 		if err != nil {
 			limitedCause := "quota"
 			defer func() {
+				limitMap := map[string]any{}
+				var limitExceededError limiter.RateLimitExceededError
+				if errors.As(err, &limitExceededError) {
+					limitMap["limit"] = limitExceededError.Limit
+					limitMap["retry_after"] = limitExceededError.RetryAfter
+				}
 				if loggerErr := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameRateLimited,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: map[string]any{
+						Metadata: events.MergeMaps(limitMap, map[string]any{
 							"error": err.Error(),
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"cause": limitedCause,
-						},
+						}),
 					},
 				); loggerErr != nil {
 					logger.Error("failed to log event", log.Error(loggerErr))
@@ -137,7 +144,7 @@ func HandleFeature(
 			return
 		}
 
-		responseRecorder := response.NewStatusHeaderRecorder(w)
+		responseRecorder := response.NewStatusHeaderRecorder(w, logger)
 		next.ServeHTTP(responseRecorder, r)
 
 		// If response is healthy, consume the rate limit
@@ -154,7 +161,7 @@ func HandleFeature(
 }
 
 // ListLimitsHandler returns a map of all features and their current rate limit usages.
-func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisStore limiter.RedisStore) http.Handler {
+func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
@@ -164,7 +171,7 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 		// Iterate over all features.
 		for _, f := range codygateway.AllFeatures {
 			// Get the limiter, but don't log any rate limit events, the only limits enforced
-			// here are concurrency limits and we should not care about those.
+			// here are concurrency limits, and we should not care about those.
 			l, ok := act.Limiter(logger, redisStore, f, noopRateLimitNotifier)
 			if !ok {
 				response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", f))
@@ -209,6 +216,24 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 	})
 }
 
+func RefreshLimitsHandler(baseLogger log.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		act := actor.FromContext(r.Context())
+
+		if err := act.Update(r.Context()); err != nil {
+			logger := act.Logger(trace.Logger(r.Context(), baseLogger))
+			if actor.IsErrActorRecentlyUpdated(err) {
+				response.JSONError(logger, w, http.StatusTooManyRequests, err)
+			} else {
+				response.JSONError(logger, w, http.StatusInternalServerError, err)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	})
+}
+
 type listLimitElement struct {
 	Limit         int64      `json:"limit"`
 	Interval      string     `json:"interval"`
@@ -217,6 +242,6 @@ type listLimitElement struct {
 	AllowedModels []string   `json:"allowedModels"`
 }
 
-func noopRateLimitNotifier(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+func noopRateLimitNotifier(_ context.Context, _ codygateway.Actor, _ codygateway.Feature, _ float32, _ time.Duration) {
 	// nothing
 }

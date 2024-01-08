@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,7 +44,6 @@ func GetSearchJobsUsageStatistics(ctx context.Context, db database.DB) (*types.S
 
 	loader.withOperation("weeklyUsage", weeklySearchJobsUsage)
 	loader.withOperation("bannerViews", GetWeeklySearchFormViews)
-	loader.withOperation("validationErrors", GetWeeklySearchFormValidationErrors)
 
 	return loader.generate(ctx, db), nil
 }
@@ -107,36 +105,4 @@ func GetWeeklySearchFormViews(ctx context.Context, db database.DB, stats *types.
 	stats.WeeklySearchJobsSearchFormShown = weeklySearchJobsSearchFormShownByValidState
 
 	return nil
-}
-
-func GetWeeklySearchFormValidationErrors(ctx context.Context, db database.DB, stats *types.SearchJobsUsageStatistics, now time.Time) error {
-	const getSearchJobsAggregatedQuery = `
-		SELECT COUNT(*) as count, argument::json->>'errors' as errors FROM event_logs
-		WHERE name = 'SearchJobsValidationErrors' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
-		GROUP BY errors
-		ORDER BY count DESC, errors
-	`
-
-	rows, err := db.QueryContext(ctx, getSearchJobsAggregatedQuery, timeNow())
-	if err != nil {
-		return errors.Wrap(err, "GetWeeklySearchFormValidationErrors")
-	}
-	defer rows.Close()
-
-	errorsAggregate := []types.SearchJobsValidationErrorPing{}
-	for rows.Next() {
-		var v types.SearchJobsValidationErrorPing
-		if err := rows.Scan(
-			&v.TotalCount,
-			dbutil.JSONMessage(&v.Errors),
-		); err != nil {
-			return errors.Wrap(err, "GetWeeklySearchFormViews")
-		}
-
-		errorsAggregate = append(errorsAggregate, v)
-	}
-
-	stats.WeeklySearchJobsValidationErrors = errorsAggregate
-
-	return errors.Wrap(rows.Err(), "GetWeeklySearchFormViews")
 }

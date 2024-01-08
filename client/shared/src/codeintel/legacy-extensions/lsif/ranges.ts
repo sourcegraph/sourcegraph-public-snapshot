@@ -262,8 +262,11 @@ const rangesQuery = (hasImplementationsField: boolean): string => {
     return gql`
     query LegacyRanges($repository: String!, $commit: String!, $path: String!, $startLine: Int!, $endLine: Int!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     lsif {
                         ranges(startLine: $startLine, endLine: $endLine) {
                             nodes {

@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
+	"go.uber.org/zap" //nolint:logging // dependencies require direct usage of zap
 
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

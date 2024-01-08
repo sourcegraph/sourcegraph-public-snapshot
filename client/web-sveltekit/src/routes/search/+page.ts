@@ -45,6 +45,12 @@ export const load: PageLoad = ({ url, depends }) => {
             }
         }
 
+        const queryFilters = url.searchParams.get('filters') ?? ''
+        let filteredQuery = query
+        if (queryFilters) {
+            filteredQuery = query + ' ' + queryFilters
+        }
+
         const options: StreamSearchOptions = {
             version: LATEST_VERSION,
             patternType,
@@ -60,7 +66,7 @@ export const load: PageLoad = ({ url, depends }) => {
 
         // Browser back button should always use the cached version if available
         if (get(navigating)?.type !== 'popstate' || !searchStream) {
-            const querySource = new BehaviorSubject<string>(query)
+            const querySource = new BehaviorSubject<string>(filteredQuery)
             searchStream = cache[key] = merge(of(undefined), aggregateStreamingSearch(querySource, options)).pipe(
                 shareReplay(1)
             )
@@ -74,6 +80,7 @@ export const load: PageLoad = ({ url, depends }) => {
 
         return {
             stream: resultStream,
+            queryFilters,
             queryOptions: {
                 query,
                 caseSensitive,

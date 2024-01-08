@@ -18,6 +18,8 @@ type ConversationScope = 'general' | 'repo'
 
 const DEFAULT_VERTICAL_OFFSET = '1rem'
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const GettingStarted: React.FC<
     Pick<
         CodyChatStore,
@@ -27,9 +29,7 @@ export const GettingStarted: React.FC<
         | 'setScope'
         | 'toggleIncludeInferredRepository'
         | 'toggleIncludeInferredFile'
-        | 'fetchRepositoryNames'
     > & {
-        isCodyApp?: boolean
         isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
         authenticatedUser: AuthenticatedUser | null
@@ -260,7 +260,7 @@ export const GettingStarted: React.FC<
 
                 <Text alignment="center" size="small">
                     By using Cody, you agree to its{' '}
-                    <Link to="https://about.sourcegraph.com/terms/cody-notice">license and privacy statement</Link>.
+                    <Link to="https://sourcegraph.com/terms/cody-notice">license and privacy statement</Link>.
                 </Text>
             </div>
         </div>

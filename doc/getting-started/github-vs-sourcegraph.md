@@ -216,7 +216,7 @@ Symbol search makes it easier to find specific functions, variables, and more by
 
 Both GitHub code search and Sourcegraph support symbol searching. GitHub supports symbol search in 10 languages, including C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and Rust. 
 
-Sourcegraph’s [symbol search](https://docs.sourcegraph.com/code_navigation/explanations/features#symbol-search) is available for more than [75 languages](https://about.sourcegraph.com/blog/introducing-sourcegraph-server-2-6). 
+Sourcegraph’s [symbol search](https://docs.sourcegraph.com/code_navigation/explanations/features#symbol-search) is available for more than [75 languages](https://sourcegraph.com/blog/introducing-sourcegraph-server-2-6). 
 
 
 <table>
@@ -722,4 +722,4 @@ GitHub is closed source, while Sourcegraph’s code is publicly available.
 
 GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). The beta preview is not yet available for GitHub Enterprise. 
 
-Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://about.sourcegraph.com/get-started?t=enterprise/).
+Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://sourcegraph.com/get-started?t=enterprise/).

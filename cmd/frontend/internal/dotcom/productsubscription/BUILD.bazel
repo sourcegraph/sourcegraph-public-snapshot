@@ -26,6 +26,7 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/audit",
         "//internal/auth",
@@ -47,6 +48,7 @@ go_library(
         "//internal/productsubscription",
         "//internal/redispool",
         "//internal/slack",
+        "//internal/trace",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",

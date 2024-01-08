@@ -2,16 +2,23 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -274,4 +281,24 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 		})
 		assert.Len(t, accessRequestStore.UpdateFunc.History(), 0)
 	})
+}
+
+func TestAccessRequestConnectionStore(t *testing.T) {
+	ctx := context.Background()
+
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+	for i := 0; i < 10; i++ {
+		_, err := db.AccessRequests().Create(ctx, &types.AccessRequest{
+			Name:   "test" + strconv.Itoa(i),
+			Email:  fmt.Sprintf("test%d@sourcegraph.com", i),
+			Status: types.AccessRequestStatusPending,
+		})
+		require.NoError(t, err)
+	}
+
+	connectionStore := &accessRequestConnectionStore{
+		db: db,
+	}
+
+	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
 }

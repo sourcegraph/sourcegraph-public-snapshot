@@ -14,7 +14,12 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
-import { StreamingProgress, StreamingSearchResultsList, useSearchResultState } from '@sourcegraph/branded'
+import {
+    NewSearchFilters,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    useSearchResultState,
+} from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -30,7 +35,7 @@ import {
     PathMatch,
     StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
@@ -129,6 +134,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onLogSearchResultClick,
     } = props
 
+    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
     const submittedURLQueryRef = useRef(submittedURLQuery)
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
@@ -158,9 +164,34 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         []
     )
 
+    const handleFilterPanelQueryChange = useCallback(
+        (updatedQuery: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }])
+        },
+        [onSearchSubmit]
+    )
+
     return (
-        <div className={styles.root}>
-            {!sidebarCollapsed && (
+        <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
+            {newFiltersEnabled && (
+                <Panel
+                    defaultSize={250}
+                    minSize={200}
+                    position="left"
+                    storageKey="filter-sidebar"
+                    ariaLabel="Filters sidebar"
+                    className={styles.newFilters}
+                >
+                    <NewSearchFilters
+                        query={submittedURLQuery}
+                        results={results?.results}
+                        filters={results?.filters}
+                        onQueryChange={handleFilterPanelQueryChange}
+                    />
+                </Panel>
+            )}
+
+            {!newFiltersEnabled && !sidebarCollapsed && (
                 <SearchFiltersSidebar
                     as={NewSearchSidebarWrapper}
                     liveQuery={liveQuery}

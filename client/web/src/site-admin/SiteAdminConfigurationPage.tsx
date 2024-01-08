@@ -215,7 +215,6 @@ const quickConfigureActions: {
 interface Props extends TelemetryProps {
     isLightTheme: boolean
     client: ApolloClient<{}>
-    isCodyApp: boolean
 }
 
 interface State {
@@ -231,7 +230,7 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: FC<TelemetryProps & { isCodyApp: boolean }> = props => {
+export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => {
     const client = useApolloClient()
     return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
 }
@@ -395,7 +394,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                 <Alert key="cody-beta-notice" className={styles.alert} variant="info">
                     By turning on completions for "Cody beta," you have read the{' '}
                     <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
-                    <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
+                    <Link to="https://sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
                     particular, some code snippets will be sent to a third-party language model provider when you use
                     Cody questions.
                 </Alert>
@@ -435,7 +434,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                                 height={600}
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
-                                actions={this.props.isCodyApp ? [] : quickConfigureActions}
+                                actions={quickConfigureActions}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

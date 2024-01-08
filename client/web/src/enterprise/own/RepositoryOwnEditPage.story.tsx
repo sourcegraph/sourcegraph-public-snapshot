@@ -4,6 +4,7 @@ import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
+import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import {
     ExternalServiceKind,
@@ -12,6 +13,7 @@ import {
     type RepositoryFields,
     RepositoryType,
 } from '../../graphql-operations'
+import { OwnershipAssignPermission } from '../../rbac/constants'
 
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { RepositoryOwnEditPage } from './RepositoryOwnEditPage'
@@ -48,6 +50,14 @@ const repo: RepositoryFields = {
     },
     metadata: [],
     sourceType: RepositoryType.GIT_REPOSITORY,
+    topics: [],
+}
+
+const emptyPermissions: AuthenticatedUser['permissions'] = { nodes: [] }
+
+// If you wish to test assigning a new repo owner
+const ownershipAssignPermissions: AuthenticatedUser['permissions'] = {
+    nodes: [{ id: OwnershipAssignPermission, displayName: OwnershipAssignPermission }],
 }
 
 const emptyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCodeownersVariables> = {
@@ -65,7 +75,11 @@ const emptyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCode
 export const EmptyNonAdmin: StoryFn = () => (
     <WebStory mocks={[emptyResponse]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnEditPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: false, permissions: emptyPermissions }}
+                useBreadcrumb={useBreadcrumb}
+            />
         )}
     </WebStory>
 )
@@ -74,7 +88,11 @@ EmptyNonAdmin.storyName = 'Empty (non-admin)'
 export const EmptyAdmin: StoryFn = () => (
     <WebStory mocks={[emptyResponse]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnEditPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: true, permissions: emptyPermissions }}
+                useBreadcrumb={useBreadcrumb}
+            />
         )}
     </WebStory>
 )
@@ -105,7 +123,11 @@ const populatedResponse: MockedResponse<GetIngestedCodeownersResult, GetIngested
 export const PopulatedNonAdmin: StoryFn = () => (
     <WebStory mocks={[populatedResponse]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: false }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnEditPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: false, permissions: emptyPermissions }}
+                useBreadcrumb={useBreadcrumb}
+            />
         )}
     </WebStory>
 )
@@ -114,7 +136,11 @@ PopulatedNonAdmin.storyName = 'Populated (non-admin)'
 export const PopulatedAdmin: StoryFn = () => (
     <WebStory mocks={[populatedResponse]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnEditPage repo={repo} authenticatedUser={{ siteAdmin: true }} useBreadcrumb={useBreadcrumb} />
+            <RepositoryOwnEditPage
+                repo={repo}
+                authenticatedUser={{ siteAdmin: true, permissions: ownershipAssignPermissions }}
+                useBreadcrumb={useBreadcrumb}
+            />
         )}
     </WebStory>
 )

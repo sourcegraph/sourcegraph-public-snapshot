@@ -34,7 +34,10 @@ func (l *TestJobLine) LogURL() string {
 func newJob(t *testing.T, name string, exit int) *build.Job {
 	t.Helper()
 
-	state := build.JobFinishedState
+	state := build.JobFailedState
+	if exit == 0 {
+		state = build.JobPassedState
+	}
 	return &build.Job{
 		Job: buildkite.Job{
 			Name:       &name,
@@ -261,7 +264,7 @@ func TestSlackNotification(t *testing.T) {
 			":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
 		}
 
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -289,7 +292,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -300,7 +303,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 		// now update the notification with additional jobs that failed
 		b.AddJob(newJob(t, ":alarm_clock: delayed job", exit))
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		err = client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -324,7 +327,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -335,7 +338,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		b.AddJob(newJob(t, ":alarm: outlier", 1))
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		err = client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -345,7 +348,7 @@ func TestSlackNotification(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			b.AddJob(newJob(t, fmt.Sprintf(":alarm_clock: delayed job %d", i), exit))
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		err = client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -364,7 +367,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -378,7 +381,7 @@ func TestSlackNotification(t *testing.T) {
 		for _, s := range b.Steps {
 			b.AddJob(newJob(t, s.Name, 0))
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if info.BuildStatus != string(build.BuildFixed) {
 			t.Errorf("all jobs are fixed, build status should be fixed")
 		}
@@ -403,7 +406,7 @@ func TestSlackNotification(t *testing.T) {
 		}
 
 		// post a new notification
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStatusNotification(logtest.NoOp(t), b)
 		err := client.Send(info)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -421,7 +424,7 @@ func TestSlackNotification(t *testing.T) {
 			}
 			count++
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStatusNotification(logtest.NoOp(t), b)
 		if info.BuildStatus != string(build.BuildFailed) {
 			t.Errorf("some jobs are still failed so overall build status should be Failed")
 		}

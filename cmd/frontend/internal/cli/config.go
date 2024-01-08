@@ -364,8 +364,8 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			if err != nil {
 				return false, err
 			}
-
 			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
+
 			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return false, errors.Wrap(err, "ExternalServices.Update")
 			}

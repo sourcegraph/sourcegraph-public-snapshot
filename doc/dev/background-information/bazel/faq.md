@@ -125,6 +125,21 @@ Bazel uses `xcrun` to locate the SDK and toolchain for iOS/Mac compilation and x
 
 Nonetheless, there is a workaround! Pass the following CLI flag when you try to build a target `--macos_sdk_version=13.3`. With the flag bazel should be able to find the MacOS SDK and you should not get the error anymore. It's recommended to add `build --macos_sdk_version=13.3` to your `.bazelrc` file so that you don't have to add the CLI flag every time you invoke a build.
 
+### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI) 
+
+If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because 
+`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way. 
+
+While it says "error", it's to be noted that it doesn't prevent the Git command to continue.
+
+The fix is pretty simple, assuming that you do have a `git log` command in the script that `bazel run //something` calls. Adding the `--no-mailmap` flag will prevent the error to show up:
+
+```
+git log --no-mailmap (...)
+```
+
+Please keep in mind that it will prevent `git` to properly map the email addresses for a few individuals, though in most cases that shouldn't be a problem as that's not what we're looking for when using `git log` in scripts.
+
 ## Queries
 
 Bazel queries (`bazel query`, `bazel cquery` and `bazel aqueries`) are powerful tools that can assist you to visualize dependencies and understand how targets are being built or tested.

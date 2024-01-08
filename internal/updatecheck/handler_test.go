@@ -75,7 +75,6 @@ func TestCanUpdate(t *testing.T) {
 		now                 time.Time
 		clientVersionString string
 		latestReleaseBuild  pingResponse
-		deployType          string
 		hasUpdate           bool
 		err                 error
 	}{
@@ -131,10 +130,7 @@ func TestCanUpdate(t *testing.T) {
 				timeNow = time.Now
 			}()
 
-			if test.deployType == "" {
-				test.deployType = "kubernetes"
-			}
-			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild, test.deployType)
+			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild)
 			if err != test.err {
 				t.Fatalf("expected error %s; got %s", test.err, err)
 			}
@@ -182,6 +178,7 @@ func makeDefaultPingRequest(t *testing.T) *pingRequest {
 		RetentionStatistics:      nil,
 		HasCodyEnabled:           false,
 		CodyUsage:                nil,
+		CodyProviders:            nil,
 	}
 }
 
@@ -223,6 +220,7 @@ func TestSerializeBasic(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -300,6 +298,7 @@ func TestSerializeLimited(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -313,7 +312,7 @@ func TestSerializeLimited(t *testing.T) {
 		"search_onboarding": null,
 		"homepage_panels": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "",
 		"auth_providers": "",
@@ -379,6 +378,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -392,7 +392,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"search_jobs_usage": null,
 		"search_onboarding": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -441,6 +441,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -454,7 +455,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"search_jobs_usage": null,
 		"search_onboarding": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -503,6 +504,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -767,6 +769,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
 		"own_usage": null,
+		"cody_providers": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -779,7 +782,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"search_jobs_usage": null,
 		"search_onboarding": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -916,6 +919,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		},
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -933,7 +937,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"search_jobs_usage": null,
 		"search_onboarding": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -982,6 +986,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -995,7 +1000,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"search_jobs_usage": null,
 		"search_onboarding": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -1081,6 +1086,7 @@ func TestSerializeOwn(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -1192,6 +1198,7 @@ func TestSerializeRepoMetadataUsage(t *testing.T) {
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
 		"cody_usage": null,
+		"cody_providers": null,
 		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
@@ -1226,6 +1233,69 @@ func TestSerializeRepoMetadataUsage(t *testing.T) {
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeCodyProviders(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
+	pr.CodyProviders = json.RawMessage(`{"baz":"bonk"}`)
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
+		"remote_site_id": "0101-0101",
+		"license_key": "mylicense",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": {"foo":"bar"},
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"cody_usage": null,
+		"cody_providers": {"baz":"bonk"},
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"own_usage": null,
+		"search_usage": null,
+		"growth_statistics": null,
+		"has_cody_enabled": "false",
+		"saved_searches": null,
+		"search_jobs_usage": null,
+		"search_onboarding": null,
+		"homepage_panels": null,
+		"repositories": null,
+		"repository_size_histogram": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",

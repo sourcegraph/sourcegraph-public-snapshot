@@ -24,7 +24,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -461,7 +460,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 
 func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceType string) {
 	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
+	arg := struct {
 		Creator     int32  `json:"creator"`
 		SiteAdmin   bool   `json:"site_admin"`
 		ServiceType string `json:"service_type"`
@@ -469,19 +468,10 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Creator:     a.UID,
 		SiteAdmin:   u.SiteAdmin,
 		ServiceType: serviceType,
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccountCreated,
-		URL:             "",
-		UserID:          uint32(u.ID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
 	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountCreated, "", uint32(u.ID), "", "BACKEND", arg); err != nil {
+		log.Error(err)
+	}
 
 	eArg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
@@ -502,30 +492,8 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
-}
-
-func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
-	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
-		Modifier    int32  `json:"modifier"`
-		ServiceType string `json:"service_type"`
-	}{
-		Modifier:    a.UID,
-		ServiceType: serviceType,
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccountModified,
-		URL:             "",
-		UserID:          uint32(userID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -646,11 +614,8 @@ func (u *userStore) ChangeCodyPlan(ctx context.Context, id int32, pro bool) (err
 			return userNotFoundErr{args: []any{id}}
 		}
 
-		if pro {
-			return errors.New("user is already on Cody Pro plan")
-		}
-
-		return errors.New("user is already on Cody Community plan")
+		// Intentionally not returning an error if the user is already pro/commiunity. This makes the mutation idempotent.
+		return nil
 	}
 
 	return nil
@@ -842,6 +807,8 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Timestamp:       now,
 		}
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
@@ -963,6 +930,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
@@ -1646,11 +1614,11 @@ func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.
 
 func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name SecurityEventName, userID int32) {
 	a := actor.FromContext(ctx)
-	args, _ := json.Marshal(struct {
+	args := struct {
 		Requester int32 `json:"requester"`
 	}{
 		Requester: a.UID,
-	})
+	}
 
 	var path string
 	var host string
@@ -1658,17 +1626,9 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		path = r.URL.Path
 		host = r.URL.Host
 	}
-	event := &SecurityEvent{
-		Name:      name,
-		URL:       path,
-		UserID:    uint32(userID),
-		Argument:  args,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, name, path, uint32(userID), "", "BACKEND", args); err != nil {
+		log.Error(err)
 	}
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	eArgs, _ := json.Marshal(struct {
 		Requester int32 `json:"requester"`
@@ -1686,6 +1646,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp:       time.Now(),
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 

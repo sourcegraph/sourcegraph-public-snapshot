@@ -239,8 +239,13 @@ func categoryAdditionalSGConfiguration() category {
 					}
 					shell := usershell.ShellType(ctx)
 					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
-					if _, err := os.Stat(autocompletePath); err != nil {
+					completionScript, err := os.ReadFile(autocompletePath)
+					if err != nil {
 						return errors.Wrapf(err, "autocomplete script for shell %s not found", shell)
+					}
+
+					if string(completionScript) != usershell.AutocompleteScripts[shell] {
+						return errors.Wrapf(err, "autocomplete script for shell %s is not up to date", shell)
 					}
 
 					shellConfig := usershell.ShellConfigPath(ctx)

@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 
+	"cloud.google.com/go/profiler"
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
@@ -10,9 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
 )
 
-type Service[ConfigT any] interface {
+type ServiceMetadata interface {
 	Name() string
 	Version() string
+}
+
+type Service[ConfigT any] interface {
+	ServiceMetadata
 	// Initialize should use given configuration to build a combined background
 	// routine that implements starting and stopping the service.
 	Initialize(
@@ -34,7 +39,7 @@ func Start[
 	ConfigT any,
 	LoaderT ConfigLoader[ConfigT],
 ](service Service[ConfigT]) {
-	passSanityCheck()
+	passSanityCheck(service)
 
 	// Resource representing the service
 	res := log.Resource{
@@ -48,7 +53,9 @@ func Start[
 	defer liblog.Sync()
 
 	ctx := context.Background()
-	logger := log.Scoped("msp.run")
+
+	// logger should only be used within Start
+	logger := log.Scoped("msp.start")
 
 	env, err := newEnv()
 	if err != nil {
@@ -60,15 +67,17 @@ func Start[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	contract := newContract(env)
+	contract := newContract(log.Scoped("msp.contract"), env, service)
 
 	// Enable Sentry error log reporting
-	if contract.sentryDSN != nil {
+	var sentryEnabled bool
+	if contract.internal.sentryDSN != nil {
 		liblog.Update(func() log.SinksConfig {
+			sentryEnabled = true
 			return log.SinksConfig{
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
-						Dsn: *contract.sentryDSN,
+						Dsn: *contract.internal.sentryDSN,
 					},
 				},
 			}
@@ -81,11 +90,26 @@ func Start[
 	}
 
 	// Initialize things dependent on configuration being loaded
-	otelCleanup, err := opentelemetry.Init(ctx, logger, contract.opentelemetryContract, res)
+	otelCleanup, err := opentelemetry.Init(ctx, logger, contract.internal.opentelemetry, res)
 	if err != nil {
 		logger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
 	}
 	defer otelCleanup()
+
+	if contract.MSP {
+		if err := profiler.Start(profiler.Config{
+			Service:        service.Name(),
+			ServiceVersion: service.Version(),
+			// Options used in sourcegraph/sourcegraph
+			MutexProfiling: true,
+			AllocForceGC:   true,
+		}); err != nil {
+			// For now, keep this optional and don't prevent startup
+			logger.Error("failed to initialize profiler", log.Error(err))
+		} else {
+			logger.Debug("Cloud Profiler enabled")
+		}
+	}
 
 	// Initialize the service
 	routine, err := service.Initialize(
@@ -99,5 +123,10 @@ func Start[
 	}
 
 	// Start service routine, and block until it stops.
+	logger.Info("starting service",
+		log.Int("port", contract.Port),
+		log.Bool("msp", contract.MSP),
+		log.Bool("sentry", sentryEnabled))
 	background.Monitor(ctx, routine)
+	logger.Info("service stopped")
 }

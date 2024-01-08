@@ -11,7 +11,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/internal/app",
         "//cmd/frontend/internal/auth",
         "//cmd/frontend/internal/auth/githubappauth",
         "//cmd/frontend/internal/authz",

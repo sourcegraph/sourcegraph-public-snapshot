@@ -1,0 +1,67 @@
+.root {
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.heading {
+    margin: 0;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0.15rem;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    border: none;
+    width: 100%;
+    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+
+    &-selected {
+        .icon {
+            fill: var(--white) !important;
+        }
+    }
+
+    &:not(&-selected):hover {
+        background-color: var(--color-bg-2) !important;
+    }
+
+    &-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: normal;
+        white-space: pre;
+        word-wrap: break-word;
+        margin-right: auto;
+    }
+}
+
+.icon {
+    margin-right: 0.5rem;
+}
+
+.commit-date {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.avatar {
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+    background: var(--primary);
+
+    &::after {
+        display: none;
+    }
+}

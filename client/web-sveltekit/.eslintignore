@@ -9,10 +9,15 @@ node_modules
 vite.config.ts
 svelte.config.js
 playwright.config.ts
-src/lib/graphql-operations.ts
 /server.js
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
+
+# Generated files
+*.gql.d.ts
+src/lib/graphql-operations.ts
+src/lib/graphql-types.ts
+static/mockServiceWorker.js

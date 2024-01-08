@@ -56,15 +56,15 @@ func (a *Actor) GetName() string {
 }
 
 func (a *Actor) GetSource() codygateway.ActorSource {
-	if a.Source == nil {
+	if a == nil || a.Source == nil {
 		return "unknown"
 	}
 	return codygateway.ActorSource(a.Source.Name())
 }
 
 func (a *Actor) IsDotComActor() bool {
-	// Corresponds to sourcegraph.com subscription ID.
-	return a != nil && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819"
+	// Corresponds to sourcegraph.com subscription ID, or using a dotcom access token
+	return a != nil && (a.GetSource() == codygateway.ActorSourceProductSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygateway.ActorSourceDotcomUser
 }
 
 type contextKey int
@@ -113,10 +113,11 @@ func (a *Actor) Logger(logger log.Logger) log.Logger {
 // does not necessarily occur on every call.
 //
 // If the actor has no source, this is a no-op.
-func (a *Actor) Update(ctx context.Context) {
+func (a *Actor) Update(ctx context.Context) error {
 	if su, ok := a.Source.(SourceUpdater); ok && su != nil {
-		su.Update(ctx, a)
+		return su.Update(ctx, a)
 	}
+	return nil
 }
 
 func (a *Actor) TraceAttributes() []attribute.KeyValue {
@@ -197,7 +198,8 @@ func (a *Actor) Limiter(
 		concurrentInterval: limit.ConcurrentRequestsInterval,
 
 		nextLimiter: updateOnErrorLimiter{
-			actor: a,
+			logger: logger.Scoped("updateOnError"),
+			actor:  a,
 
 			nextLimiter: baseLimiter,
 		},

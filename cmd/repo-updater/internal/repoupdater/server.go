@@ -188,6 +188,9 @@ func (s *Server) repoLookup(ctx context.Context, repoName api.RepoName) (result 
 		if errcode.IsTemporary(err) {
 			return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
 		}
+		if errcode.IsRepoDenied(err) {
+			return &protocol.RepoLookupResult{ErrorRepoDenied: err.Error()}, nil
+		}
 		return nil, err
 	}
 

@@ -2,14 +2,16 @@
  * An implementation of the Blob view using CodeMirror
  */
 
-import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import { createClient, type Annotation } from '@opencodegraph/client'
+import { useOpenCodeGraphExtension } from '@opencodegraph/codemirror-extension'
 import { isEqual } from 'lodash'
 import { createRoot } from 'react-dom/client'
-import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
+import { createPath, useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import {
@@ -24,13 +26,15 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import type { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import {
-    type AbsoluteRepoFile,
-    type ModeSpec,
     parseQueryAndHash,
     toPrettyBlobURL,
+    type AbsoluteRepoFile,
     type BlobViewState,
+    type ModeSpec,
 } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -51,12 +55,12 @@ import { pinnedLocation } from './codemirror/codeintel/pin'
 import { syncSelection } from './codemirror/codeintel/token-selection'
 import { hideEmptyLastLine } from './codemirror/eof'
 import { syntaxHighlight } from './codemirror/highlight'
-import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { selectableLineNumbers, selectLines, type SelectedLineRange } from './codemirror/linenumbers'
 import { linkify } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { scipSnapshot } from './codemirror/scip-snapshot'
-import { search, SearchPanelConfig } from './codemirror/search'
+import { search, type SearchPanelConfig } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
@@ -111,6 +115,8 @@ export interface BlobProps
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
 
+    ocgVisibility?: TemporarySettingsSchema['openCodeGraph.annotations.visible']
+
     activeURL?: string
     searchPanelConfig?: SearchPanelConfig
 }
@@ -126,6 +132,9 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
+
+    /** Potential language(s) for content as determined by the backend. */
+    languages: string[]
 
     /** If present, the file is stored in Git LFS (large file storage). */
     lfs?: { byteSize: Scalars['BigInt'] } | null
@@ -203,6 +212,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         isBlameVisible,
         blameHunks,
+        ocgVisibility,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -318,13 +328,27 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
     const codeIntelExtension = useCodeIntelExtension(
         props.platformContext,
-        { repoName: blobInfo.repoName, filePath: blobInfo.filePath, commitID: blobInfo.commitID },
+        {
+            repoName: blobInfo.repoName,
+            filePath: blobInfo.filePath,
+            commitID: blobInfo.commitID,
+            languages: blobInfo.languages,
+        },
         blobInfo.mode
     )
     const pinnedTooltip = useCompartment(
         editorRef,
         useMemo(() => pinnedLocation.of(hasPin ? position : null), [hasPin, position])
     )
+
+    const openCodeGraphExtension = useOpenCodeGraphExtensionWithHardcodedConfig(
+        blobInfo.filePath,
+        blobInfo.content,
+        Boolean(ocgVisibility)
+    )
+
+    const { theme } = useTheme()
+
     const extensions = useMemo(
         () => [
             staticExtensions,
@@ -334,6 +358,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 onLineClick: navigateOnClick,
             }),
             scipSnapshot(blobInfo.content, blobInfo.snapshotData),
+            openCodeGraphExtension,
             codeFoldingExtension(),
             isCodyEnabled()
                 ? codyWidgetExtension(
@@ -370,6 +395,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialState: searchPanelConfig,
                 navigate,
             }),
+            EditorView.theme({}, { dark: theme === Theme.Dark }),
         ],
         // A couple of values are not dependencies (hasPin and position) because those are updated in effects
         // further below. However, they are still needed here because we need to
@@ -381,6 +407,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             blobInfo,
             extensionsController,
             isCodyEnabled,
+            openCodeGraphExtension,
             codeIntelExtension,
             editorRef.current,
             blameDecorations,
@@ -420,7 +447,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // when using macOS VoiceOver.
             editor.contentDOM.focus({ preventScroll: true })
         }
-    }, [blobInfo, extensions, navigateToLineOnAnyClick, positionRef])
+    }, [blobInfo.content, extensions, navigateToLineOnAnyClick, positionRef])
 
     // Update selected lines when URL changes
     useEffect(() => {
@@ -521,7 +548,8 @@ function useCodeIntelExtension(
         filePath,
         commitID,
         revision,
-    }: { repoName: string; filePath: string; commitID: string; revision?: string },
+        languages,
+    }: { repoName: string; filePath: string; commitID: string; revision?: string; languages: string[] },
     mode: string
 ): Extension {
     const navigate = useNavigate()
@@ -552,8 +580,7 @@ function useCodeIntelExtension(
                 ? createCodeIntelExtension({
                       api: {
                           api,
-                          documentInfo: { repoName, filePath, commitID, revision },
-                          mode,
+                          documentInfo: { repoName, filePath, commitID, revision, languages },
                           createTooltipView: ({ view, token, hovercardData }) =>
                               new HovercardView(view, token, hovercardData),
                           openImplementations(_view, documentInfo, occurrence) {
@@ -671,7 +698,7 @@ function useCodeIntelExtension(
                   })
                 : [],
         ],
-        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef]
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages]
     )
 }
 
@@ -723,6 +750,56 @@ function useBlameDecoration(
         useMemo(() => blameData(blameHunks), [blameHunks])
     )
     return useMemo(() => [enabled, data], [enabled, data])
+}
+
+function useOpenCodeGraphExtensionWithHardcodedConfig(
+    filePath: string,
+    content: string,
+    visibility: boolean
+): Extension {
+    const client = useMemo(
+        () =>
+            createClient({
+                configuration: () =>
+                    Promise.resolve({
+                        enable: true,
+                        providers: { [`${window.location.origin}/.api/opencodegraph`]: true },
+                    }),
+                authInfo: async () => Promise.resolve(null),
+                makeRange: r => r,
+            }),
+        []
+    )
+
+    const [annotations, setAnnotations] = useState<Annotation[]>()
+    useEffect(() => {
+        setAnnotations(undefined)
+        if (!content || !visibility) {
+            return
+        }
+        const subscription = client.annotations({ file: `sourcegraph:///${filePath}`, content }).subscribe({
+            next: setAnnotations,
+            error: (error: any) => {
+                // eslint-disable-next-line no-console
+                console.error('Error getting OpenCodeGraph annotations:', error)
+            },
+        })
+        return () => subscription.unsubscribe()
+    }, [content, visibility, filePath, client])
+
+    const openCodeGraphExtension = useOpenCodeGraphExtension({ visibility, annotations })
+
+    const theme = useMemo(
+        () =>
+            EditorView.baseTheme({
+                '.ocg-chip': {
+                    fontSize: '94% !important',
+                },
+            }),
+        []
+    )
+
+    return useMemo(() => [openCodeGraphExtension, theme], [openCodeGraphExtension, theme])
 }
 
 /**

@@ -67,7 +67,7 @@ describe('<NavMenu />', () => {
                     {
                         content: 'About Sourcegraph',
                         itemAs: AnchorLink,
-                        to: 'https://about.sourcegraph.com',
+                        to: 'https://sourcegraph.com',
                         key: 6,
                     },
                     {

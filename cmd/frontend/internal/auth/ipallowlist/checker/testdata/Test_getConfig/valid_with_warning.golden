@@ -1,0 +1,19 @@
+&checker.config{enabled: true, err: &errors.multiError{
+	errs: []error{&withstack.withStack{
+		cause: &errutil.withPrefix{
+			cause: &net.ParseError{
+				Type: "CIDR address",
+				Text: "invalid-ip",
+			},
+			prefix: markers.RedactableString(`invalid ip addr: ‹"invalid-ip"›`),
+		},
+		stack: &withstack.stack{
+			4303513060,
+			4303513664,
+			4303513368,
+			4303520312,
+			4296388680,
+			4295647796,
+		},
+	}},
+}}

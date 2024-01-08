@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -276,9 +275,9 @@ func TestAccessRequests_List(t *testing.T) {
 
 		assert.Equal(t, names, []string{"a3"})
 
-		after := strconv.Itoa(int(accessRequests[0].ID))
+		after := []any{accessRequests[0].ID}
 		two := int(2)
-		accessRequests, err = accessRequestStore.List(ctx, nil, &PaginationArgs{First: &two, After: &after, OrderBy: OrderBy{{Field: string(AccessRequestListID)}}})
+		accessRequests, err = accessRequestStore.List(ctx, nil, &PaginationArgs{First: &two, After: after, OrderBy: OrderBy{{Field: string(AccessRequestListID)}}})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(accessRequests))
 
