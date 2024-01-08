@@ -19,7 +19,7 @@ fi
 # run semgrep
 semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main
 
-echo -e "--- :rocket: uploading Semgrep scan results\n"
+echo -e "--- :rocket: reporting Scan Results to GitHub\n"
 
 # upload SARIF results to code scanning API
 encoded_sarif=$(gzip -c results.sarif | base64 -w0)
