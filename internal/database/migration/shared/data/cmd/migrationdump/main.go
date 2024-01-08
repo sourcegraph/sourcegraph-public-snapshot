@@ -18,11 +18,11 @@ import (
 
 func main() {
 	liblog := log.Init(log.Resource{
-		Name:    "devx-support",
+		Name:    "migrationdump",
 		Version: "0.0.1",
 	})
 	defer liblog.Sync()
-	logger := log.Scoped("migrationdump")
+	logger := log.Scoped("cli")
 
 	app := cli.App{
 		Name:  "migrationdump",

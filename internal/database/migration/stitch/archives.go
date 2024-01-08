@@ -81,7 +81,7 @@ func NewLocalMigrationsReader(path string, currentVersion string) (*LocalMigrati
 		currentVersion: currentVersion,
 	}
 	if err := a.load(path); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read local migrations")
 	}
 	return &a, nil
 }
@@ -90,7 +90,7 @@ func NewLocalMigrationsReader(path string, currentVersion string) (*LocalMigrati
 func readFromTarball(r io.Reader) (migrationFiles, error) {
 	gzipReader, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to read from tarball")
 	}
 	contents := map[string]string{}
 	tr := tar.NewReader(gzipReader)
@@ -100,12 +100,12 @@ func readFromTarball(r io.Reader) (migrationFiles, error) {
 			if errors.Is(err, io.EOF) {
 				break
 			}
-			return nil, err
+			return nil, errors.Wrap(err, "failed to read from tarball")
 		}
 
 		fileContents, err := io.ReadAll(tr)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to read from tarball")
 		}
 		// We don't want to deal with directories in the map.
 		if header.Typeflag == tar.TypeDir {
@@ -151,12 +151,12 @@ func (s *LocalMigrationsReader) load(path string) error {
 	contents := map[string]string{}
 	err = fs.WalkDir(migrations.QueryDefinitions, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to walk directory for current migrations (%q)", path)
 		}
 		if !d.IsDir() {
 			b, err := fs.ReadFile(migrations.QueryDefinitions, path)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to read file for current migrations (%q)", path)
 			}
 			// When we read them from the embedded FS, they don't have the "migrations" prefix that we
 			// have everywhere else.
@@ -165,7 +165,7 @@ func (s *LocalMigrationsReader) load(path string) error {
 		return nil
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to load current migrations from current migrations")
 	}
 	s.m[s.currentVersion] = contents
 	return nil
@@ -177,7 +177,7 @@ func (s *LocalMigrationsReader) Get(version string) (map[string]string, error) {
 	if !ok {
 		migrations, ok = s.m["v"+version]
 		if !ok {
-			return nil, errors.Newf("version %s not found", version)
+			return nil, errors.Newf("version key %s not found in migrations archive", version)
 		}
 	}
 	return migrations, nil
