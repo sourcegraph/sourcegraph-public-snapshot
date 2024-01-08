@@ -96,30 +96,6 @@ def f():
 a = 4 # reference 1
 ```
 
-### Skipping definitions
-
-Because we want to exclude non-local definitions when collecting locals, it's possible to mark a definition as `@definition.skip`.
-This will make it so the definition is not included in the output and all future matches of it will be skipped.
-It's important that you specify skip matches _before_ regular definition matches.
-
-```scm
-;; Skip top-level var_spec definitions
-(source_file (var_spec (identifier) @definition.skip))
-
-;; Captures all var_spec definitions as definitions
-(var_spec (identifier) @definition)
-```
-
-```go
-// Will be skipped
-var top_level = 10
-
-func main() {
-    // Will be recorded as a local
-    var local = 10
-}
-```
-
 ## References
 
 References are specified by labeling a capture as a `@reference`.
@@ -130,6 +106,39 @@ References are specified by labeling a capture as a `@reference`.
 
 They will be resolved against definitions in the current scope and parent scopes.
 Non-hoisted definitions are only resolved if they are defined _before_ the reference.
+
+## Skipping definitions & references
+
+Because we want to exclude non-local definitions and references when collecting locals, it's possible to mark an occurence as `@occurrence.skip`.
+This will make it so the occurrence is not included in the output and all future matches of it will be skipped.
+It's important that you specify skip matches _before_ regular definition and reference matches.
+
+```scm
+;; Skip top-level var_spec definitions
+(source_file (var_spec (identifier) @occurrence.skip))
+
+;; Captures all var_spec definitions as definitions
+(var_spec (identifier) @definition)
+
+;; Skip field_access as references
+(field_access field: (identifier) @occurrence.skip)
+
+(identifier) @reference
+```
+
+```go
+// Will be skipped
+var top_level = 10
+
+func main() {
+    // Will be recorded as a local
+    var local = 10
+
+    // local will be recorded, but field will be skipped
+    local.field
+}
+```
+
 
 [hoisting]: ./locals-scoping.md#hoisting
 [tree-sitter query]: https://tree-sitter.github.io/tree-sitter/using-parsers#pattern-matching-with-queries

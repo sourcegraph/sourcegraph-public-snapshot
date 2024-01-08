@@ -222,12 +222,11 @@ struct LocalResolver<'a> {
     source_bytes: &'a [u8],
     definition_id_supply: u32,
     // This is a hack to not record references that overlap with
-    // definitions. Ideally we'd fix our queries to prevent these
-    // overlaps.
+    // definitions.
     skip_references_at_offsets: HashSet<usize>,
-    // When marking captures as @definition.skip we record them here,
-    // to not record any subsequent matches. This is used to filter
-    // out non-local definitions
+    // When marking captures as @occurrence.skip we also
+    // record then here, to not record any subsequent matches. This is
+    // used to filter out non-local definitions and references.
     skip_definitions_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
@@ -528,14 +527,7 @@ impl<'a> LocalResolver<'a> {
                     if self.skip_definitions_at_offsets.contains(&offset) {
                         continue;
                     }
-                    let kind = capture_name
-                        .strip_prefix("definition.")
-                        .unwrap_or(capture_name);
-                    if kind == "skip" {
-                        self.skip_references_at_offsets.insert(offset);
-                        self.skip_definitions_at_offsets.insert(offset);
-                        continue;
-                    }
+
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
@@ -548,6 +540,10 @@ impl<'a> LocalResolver<'a> {
                     })
                 } else if capture_name.starts_with("reference") {
                     references.push(RefCapture { node: capture.node })
+                } else if capture_name == "occurrence.skip" {
+                    let offset = capture.node.start_byte();
+                    self.skip_references_at_offsets.insert(offset);
+                    self.skip_definitions_at_offsets.insert(offset);
                 } else {
                     debug_assert!(false, "Discarded capture: {capture_name}")
                 }
