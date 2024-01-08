@@ -66,8 +66,12 @@ func mainErr() error {
 
 func stitchAndWrite(archivesPath string, filepath string, versionTags []string) error {
 	stitchedMigrationBySchemaName := map[string]shared.StitchedMigration{}
+	ma, err := stitch.NewLocalMigrationsReader(archivesPath, maxVersionString)
+	if err != nil {
+		return err
+	}
 	for _, schemaName := range schemas.SchemaNames {
-		stitched, err := stitch.StitchDefinitions(archivesPath, schemaName, versionTags)
+		stitched, err := stitch.StitchDefinitions(ma, schemaName, versionTags)
 		if err != nil {
 			return err
 		}
