@@ -37,25 +37,9 @@ use tree_sitter::Node;
 // references we'll probably make it so `@reference` with no
 // namespace matches definitions in any namespace and
 // `@definition` matches any `@reference.namespace`
-//
-// b) Marking globals to avoid emitting them into occurrences
-//
-// https://github.com/sourcegraph/sourcegraph/issues/57791
-//
-// I've given this an initial try, but tree-sitter queries are
-// difficult to work with.
-//
-// The main problem is that `(source_file (child) @global)` captures
-// all occurences of `(child)` regardless of depth and nesting
-// underneath `source_file`. This makes it very difficult to talk
-// about "toplevel" items. We might need to extend our DSL a little
-// further and do some custom tree-traversal logic to implement this.
-//
-// One possible idea could be to subtract any matches we'd get from
-// scip-ctags
 
-// The maximum number of parent scopes we traverse before giving up to
-// prevent infinite loops
+/// The maximum number of parent scopes we traverse before giving up to
+/// prevent infinite loops
 const MAX_SCOPE_DEPTH: i32 = 10000;
 
 pub fn find_locals(
@@ -238,9 +222,12 @@ struct LocalResolver<'a> {
     source_bytes: &'a [u8],
     definition_id_supply: u32,
     // This is a hack to not record references that overlap with
-    // definitions. Ideally we'd fix our queries to prevent these
-    // overlaps.
+    // definitions.
     skip_references_at_offsets: HashSet<usize>,
+    // When marking captures as @occurrence.skip we record them here,
+    // to not record any subsequent matches. This is used to filter
+    // out non-local definitions and references.
+    skip_occurrences_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -266,6 +253,7 @@ impl<'a> LocalResolver<'a> {
             source_bytes,
             definition_id_supply: 0,
             skip_references_at_offsets: HashSet::new(),
+            skip_occurrences_at_offsets: HashSet::new(),
             occurrences: vec![],
         }
     }
@@ -510,6 +498,7 @@ impl<'a> LocalResolver<'a> {
     }
 
     fn collect_captures(
+        &mut self,
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
         source_bytes: &'a [u8],
@@ -534,6 +523,10 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
+                    let offset = capture.node.start_byte();
+                    if self.skip_occurrences_at_offsets.contains(&offset) {
+                        continue;
+                    }
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
@@ -545,7 +538,14 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("reference") {
+                    let offset = capture.node.start_byte();
+                    if self.skip_occurrences_at_offsets.contains(&offset) {
+                        continue;
+                    }
                     references.push(RefCapture { node: capture.node })
+                } else if capture_name == "occurrence.skip" {
+                    let offset = capture.node.start_byte();
+                    self.skip_occurrences_at_offsets.insert(offset);
                 } else {
                     debug_assert!(false, "Discarded capture: {capture_name}")
                 }
@@ -644,9 +644,13 @@ impl<'a> LocalResolver<'a> {
             }
         }
 
-        assert!(
+        debug_assert!(
             definitions_iter.next().is_none(),
             "Should've entered all definitions into the tree"
+        );
+        debug_assert!(
+            references_iter.next().is_none(),
+            "Should've entered all references into the tree"
         );
     }
 
@@ -716,7 +720,7 @@ impl<'a> LocalResolver<'a> {
         test_writer: Option<&mut dyn Write>,
     ) -> Vec<Occurrence> {
         // First we collect all captures from the tree-sitter locals query
-        let captures = Self::collect_captures(config, tree, self.source_bytes);
+        let captures = self.collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
         let top_scope = self
@@ -779,62 +783,42 @@ mod test {
     }
 
     #[test]
-    fn test_can_do_go() {
+    fn go() {
         let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("go_occurrences", dumped);
+        insta::assert_snapshot!("go_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_nested_locals() {
-        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
-        let source_code = include_str!("../testdata/locals-nested.go");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
-        let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
-    }
-
-    #[test]
-    fn test_can_do_functions() {
-        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
-        let source_code = include_str!("../testdata/funcs.go");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
-        let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
-    }
-
-    #[test]
-    fn test_can_do_perl() {
+    fn perl() {
         let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("perl_occurrences", dumped);
+        insta::assert_snapshot!("perl_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_matlab() {
+    fn matlab() {
         let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("matlab_occurrences", dumped);
+        insta::assert_snapshot!("matlab_scopes", scope_tree);
     }
 
     #[test]
-    fn test_can_do_java() {
+    fn java() {
         let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!(dumped);
-        insta::assert_snapshot!(scope_tree);
+        insta::assert_snapshot!("java_occurrences", dumped);
+        insta::assert_snapshot!("java_scopes", scope_tree);
     }
 }

@@ -8,22 +8,16 @@ expression: dumped
 //             ^^^^^^^ definition scip-ctags globals#
       private static int field1;
 //                       ^^^^^^ definition scip-ctags globals#field1.
-//                       ^^^^^^ definition local 1
       protected static int field2;
 //                         ^^^^^^ definition scip-ctags globals#field2.
-//                         ^^^^^^ definition local 2
       public static int field3;
 //                      ^^^^^^ definition scip-ctags globals#field3.
-//                      ^^^^^^ definition local 3
       private int field4;
 //                ^^^^^^ definition scip-ctags globals#field4.
-//                ^^^^^^ definition local 4
       protected int field5;
 //                  ^^^^^^ definition scip-ctags globals#field5.
-//                  ^^^^^^ definition local 5
       public int field6;
 //               ^^^^^^ definition scip-ctags globals#field6.
-//               ^^^^^^ definition local 6
   
       private static void method1() {}
 //                        ^^^^^^^ definition scip-ctags globals#method1().
@@ -40,34 +34,26 @@ expression: dumped
   
       public static final String COOLEST_STRING = "probably this one";
 //                               ^^^^^^^^^^^^^^ definition scip-ctags globals#COOLEST_STRING.
-//                               ^^^^^^^^^^^^^^ definition local 7
   
       public class ClassInAClass {
 //                 ^^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#
           boolean classy = true;
 //                ^^^^^^ definition scip-ctags globals#ClassInAClass#classy.
-//                ^^^^^^ definition local 8
   
           public static enum Enum {
 //                           ^^^^ definition scip-ctags globals#ClassInAClass#Enum#
               these,
 //            ^^^^^ definition scip-ctags globals#ClassInAClass#Enum#these.
-//            ^^^^^ definition local 9
               should,
 //            ^^^^^^ definition scip-ctags globals#ClassInAClass#Enum#should.
-//            ^^^^^^ definition local 10
               be,
 //            ^^ definition scip-ctags globals#ClassInAClass#Enum#be.
-//            ^^ definition local 11
               recognized,
 //            ^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#Enum#recognized.
-//            ^^^^^^^^^^ definition local 12
               as,
 //            ^^ definition scip-ctags globals#ClassInAClass#Enum#as.
-//            ^^ definition local 13
               terms
 //            ^^^^^ definition scip-ctags globals#ClassInAClass#Enum#terms.
-//            ^^^^^ definition local 14
           }
   
           public interface Goated {
@@ -81,7 +67,7 @@ expression: dumped
               class WhatIsGoingOn {}
 //                  ^^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#WhatIsGoingOn#
               boolean iThinkThisIsAllowedButWeDontReallyCare = true;
-//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local 15
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local 1
           }
       }
   }
