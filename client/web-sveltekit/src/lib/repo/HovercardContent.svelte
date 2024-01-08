@@ -79,7 +79,7 @@
         overflow-x: auto;
         word-wrap: normal;
 
-        > *:first-child {
+        > :global(*:first-child) {
             margin-top: var(--hover-overlay-content-margin-top);
             margin-bottom: 0.5rem;
         }
@@ -127,7 +127,7 @@
 
         // We use <hr>s as a divider between multiple contents.
         // This has the nice property of having floating buttons that text wraps around.
-        hr {
+        :global(hr) {
             // `<p>` and `<pre>` define their own margins, `<hr>` is only concerned with rendering the separator itself.
             margin-top: 0;
             margin-bottom: 0;

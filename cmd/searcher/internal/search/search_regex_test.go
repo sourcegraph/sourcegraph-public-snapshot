@@ -228,7 +228,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearchBatch(ctx, m, pm, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, 0)
+		_, _, err := regexSearchBatch(ctx, m, pm, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, 0)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -422,7 +422,6 @@ func TestRegexSearch(t *testing.T) {
 	match, err := compilePathPatterns(&protocol.PatternInfo{
 		IncludePatterns: []string{`a\.go`},
 		ExcludePattern:  `README\.md`,
-		IsCaseSensitive: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -445,13 +444,11 @@ func TestRegexSearch(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "nil re returns a FileMatch with no LineMatches",
+			name: "nil matcher returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
-				m: &regexMatcher{
-					// Check this case specifically.
-					re: nil,
-				},
+				// Check this case specifically.
+				m:  &allMatcher{},
 				pm: match,
 				zf: &zipFile{
 					Files: []srcFile{

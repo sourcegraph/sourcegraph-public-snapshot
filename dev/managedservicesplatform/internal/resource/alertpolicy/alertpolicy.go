@@ -193,7 +193,6 @@ If you have any questions, reach out to #discuss-core-services.`,
 			UserLabels: &map[string]*string{
 				"source":          pointers.Ptr("managed-services-platform"),
 				"msp_alert_id":    pointers.Ptr(config.ID),
-				"msp_service":     pointers.Ptr(config.ServiceName),
 				"msp_gcp_project": pointers.Ptr(config.ProjectID),
 			},
 			Combiner: pointers.Ptr("OR"),

@@ -17,7 +17,7 @@ export const generateAuthorFilters = (results: SearchMatch[]): DynamicClientFilt
                 label: authorName,
                 count: commitMatches.length,
                 value: `author:"${authorName}"`,
-                limitHit: false,
+                exhaustive: true,
             }
         })
         .sort((match1, match2) => match2.count - match1.count)

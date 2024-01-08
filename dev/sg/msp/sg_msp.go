@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"github.com/vvakame/gcplogurl"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -24,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Command is the 'sg msp' toolchain for the Managed Services Platform:
@@ -262,6 +265,39 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:   "operations",
+			Usage:  "Generate operational reference for a service",
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "pretty",
+					Usage: "Render syntax-highlighed Markdown",
+					Value: false,
+				},
+			},
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+					GenerateCommand: strings.Join(os.Args, " "),
+				})
+				if err != nil {
+					return errors.Wrap(err, "operationdocs.Render")
+				}
+				if c.Bool("pretty") {
+					return std.Out.WriteCode("markdown", doc)
+				}
+				std.Out.Write(doc)
+				return nil
+			},
+		},
+		{
 			Name:   "logs",
 			Usage:  "Quick links for logs of various MSP components",
 			Before: msprepo.UseManagedServicesRepo,
@@ -274,7 +310,7 @@ sg msp generate -all <service>
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
-				_, env, err := useServiceAndEnvironmentArguments(c)
+				svc, env, err := useServiceAndEnvironmentArguments(c)
 				if err != nil {
 					return err
 				}
@@ -282,18 +318,7 @@ sg msp generate -all <service>
 				switch component := c.String("component"); component {
 				case "service":
 					std.Out.WriteNoticef("Opening link to service logs in browser...")
-					return open.URL((&gcplogurl.Explorer{
-						ProjectID: env.ProjectID,
-						Query:     gcplogurl.Query(`resource.type = "cloud_run_revision" jsonPayload.InstrumentationScope != ""`),
-						SummaryFields: &gcplogurl.SummaryFields{
-							Fields: []string{
-								// fields from structured logs by sourcegraph/log
-								"jsonPayload/InstrumentationScope",
-								"jsonPayload/Body",
-								"jsonPayload/Attributes/error",
-							},
-						},
-					}).String())
+					return open.URL(operationdocs.ServiceLogsURL(pointers.DerefZero(svc.Service.Kind), env.ProjectID))
 
 				default:
 					return errors.Newf("unsupported -component=%s", component)
@@ -345,7 +370,7 @@ full access, use the '-write-access' flag.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, env, err := useServiceAndEnvironmentArguments(c)
+						_, env, err := useServiceAndEnvironmentArguments(c)
 						if err != nil {
 							return err
 						}
@@ -358,48 +383,46 @@ full access, use the '-write-access' flag.
 							return err
 						}
 
-						tfcClient, err := getTFCRunsClient(c)
+						secretStore, err := secrets.FromContext(c.Context)
 						if err != nil {
 							return err
 						}
-						iamOutputs, err := tfcClient.GetOutputs(c.Context,
-							terraformcloud.WorkspaceName(service.Service, *env,
-								managedservicesplatform.StackNameIAM))
-						if err != nil {
-							return errors.Wrap(err, "get IAM outputs")
-						}
+
 						var serviceAccountEmail string
 						if c.Bool("write-access") {
 							// Use the workload identity if all access is requested
-							workloadSA, err := iamOutputs.Find("cloud_run_service_account")
+							serviceAccountEmail, err = secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+								Name:    stacks.OutputSecretID(iam.StackName, iam.OutputCloudRunServiceAccount),
+								Project: env.ProjectID,
+							})
 							if err != nil {
 								return errors.Wrap(err, "find IAM output")
 							}
-							serviceAccountEmail = workloadSA.Value.(string)
+							std.Out.WriteAlertf("Preparing a connection with write access - proceed with caution!")
 						} else {
 							// Otherwise, use the operator access account which
 							// is a bit more limited.
-							operatorAccessSA, err := iamOutputs.Find("operator_access_service_account")
+							serviceAccountEmail, err = secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+								Name:    stacks.OutputSecretID(iam.StackName, iam.OutputOperatorServiceAccount),
+								Project: env.ProjectID,
+							})
 							if err != nil {
 								return errors.Wrap(err, "find IAM output")
 							}
-							serviceAccountEmail = operatorAccessSA.Value.(string)
+							std.Out.WriteSuggestionf("Preparing a connection with read-only access - for write access, use the '-write-access' flag.")
 						}
 
-						cloudRunOutputs, err := tfcClient.GetOutputs(c.Context,
-							terraformcloud.WorkspaceName(service.Service, *env,
-								managedservicesplatform.StackNameCloudRun))
-						if err != nil {
-							return errors.Wrap(err, "get Cloud Run outputs")
-						}
-						connectionName, err := cloudRunOutputs.Find("cloudsql_connection_name")
+						connectionName, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							Name:    stacks.OutputSecretID(cloudrun.StackName, cloudrun.OutputCloudSQLConnectionName),
+							Project: env.ProjectID,
+						})
 						if err != nil {
 							return errors.Wrap(err, "find Cloud Run output")
 						}
 
 						proxyPort := c.Int("port")
 						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
-							connectionName.Value.(string),
+							connectionName,
 							serviceAccountEmail,
 							proxyPort)
 						if err != nil {
@@ -511,14 +534,14 @@ Supports completions on services and environments.`,
 						}
 						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOrgToken,
-							Project: googlesecretsmanager.ProjectID,
+							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get AccessToken")
 						}
 						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
-							Project: googlesecretsmanager.ProjectID,
+							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get TFC OAuth client ID")

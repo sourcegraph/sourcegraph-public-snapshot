@@ -121,14 +121,16 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
         // presented in filters from search stream API. If the filter is in both
         // places (URL and steam API) merged them to avoid duplicates in the UI
         if (filterQueryFilters.length > 0 && !staticFilters) {
-            const mappedSelectedFilters = filterQueryFilters.map(selectedFilter => {
+            const mappedSelectedFilters = filterQueryFilters.map((selectedFilter): DynamicClientFilter => {
                 const mappedSelectedFilter = filters?.find(filter => isSameFilter(filter.value, selectedFilter))
 
                 return {
                     count: mappedSelectedFilter?.count ?? 0,
                     label: mappedSelectedFilter?.label ?? upperFirst(selectedFilter?.value?.value),
                     value: stringHuman([selectedFilter]),
-                } as DynamicClientFilter
+                    exhaustive: mappedSelectedFilter?.exhaustive ?? false,
+                    kind: mappedSelectedFilter?.kind ?? selectedFilter.field.value,
+                } as DynamicClientFilter // TODO(camdencheek): fix the typing here so I can remove the cast
             })
 
             const otherFilters = filterTypes.flatMap(
@@ -214,13 +216,23 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 <span className={styles.itemText}>{renderItem ? renderItem(filter) : filter.label}</span>
                 {filter.count !== 0 && (
                     <Badge variant="secondary" className="ml-2">
-                        {filter.count}
+                        {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
                     </Badge>
                 )}
                 {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </li>
     )
+}
+
+function roundCount(count: number): number {
+    const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
+    for (const roundNumber of roundNumbers) {
+        if (count >= roundNumber) {
+            return roundNumber
+        }
+    }
+    return 0
 }
 
 const isSameFilter = (filterValue: string, filter: QueryFilter): boolean => {

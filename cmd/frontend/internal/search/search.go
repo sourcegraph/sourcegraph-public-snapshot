@@ -709,7 +709,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	// Instantly send results if we have not sent any yet.
 	if h.first && len(event.Results) > 0 {
 		h.first = false
-		h.eventWriter.Filters(h.filters.Compute())
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		h.logLatency()
 	}
@@ -727,7 +727,11 @@ func (h *eventHandler) Done() {
 	h.progressTimer = nil
 
 	// Flush the final state
-	h.eventWriter.Filters(h.filters.Compute())
+	// TODO: make sure we actually respect timeouts
+	exhaustive := !h.progress.Stats.IsLimitHit &&
+		!h.progress.Stats.Status.Any(search.RepoStatusLimitHit) &&
+		!h.progress.Stats.Status.Any(search.RepoStatusTimedOut)
+	h.eventWriter.Filters(h.filters.Compute(), exhaustive)
 	h.matchesBuf.Flush()
 	h.eventWriter.Progress(h.progress.Final())
 }
@@ -751,7 +755,8 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		h.eventWriter.Filters(h.filters.Compute())
+		// TODO(camdencheek): add a `dirty` to filters so we don't send them every tick
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())
