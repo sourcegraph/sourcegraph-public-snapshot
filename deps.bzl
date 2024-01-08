@@ -5587,8 +5587,8 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/conc",
-        sum = "h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=",
-        version = "v0.3.0",
+        sum = "h1:0FsjN+u9fNXTS2C1JnJ6G/gkgcUg8dscyyfu3PwHWUQ=",
+        version = "v0.3.1-0.20240108182409-4afefce20f9b",
     )
     go_repository(
         name = "com_github_sourcegraph_go_ctags",
