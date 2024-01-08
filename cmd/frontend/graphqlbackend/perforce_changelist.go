@@ -94,17 +94,11 @@ func (r *PerforceChangelistResolver) cidURL() *url.URL {
 func (r *PerforceChangelistResolver) Commit(ctx context.Context) (_ *GitCommitResolver, err error) {
 	repoResolver := r.repositoryResolver
 	r.commitOnce.Do(func() {
-		repo, err := repoResolver.repo(ctx)
-		if err != nil {
-			r.commitErr = err
-			return
-		}
-
 		r.commitID, r.commitErr = backend.NewRepos(
 			r.logger,
 			repoResolver.db,
 			repoResolver.gitserverClient,
-		).ResolveRev(ctx, repo, r.commitSHA)
+		).ResolveRev(ctx, repoResolver.name, r.commitSHA)
 	})
 
 	if r.commitErr != nil {

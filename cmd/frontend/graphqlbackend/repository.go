@@ -52,6 +52,19 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
+func NewMinimalRepositoryResolver(db database.DB, client gitserver.Client, id api.RepoID, name api.RepoName) *RepositoryResolver {
+	return &RepositoryResolver{
+		id:              id,
+		name:            name,
+		db:              db,
+		gitserverClient: client,
+		logger: log.Scoped("repositoryResolver").
+			With(log.Object("repo",
+				log.String("name", string(name)),
+				log.Int32("id", int32(id)))),
+	}
+}
+
 func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var id api.RepoID
@@ -237,12 +250,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		attribute.String("commit", args.Rev))
 	defer tr.EndWithErr(&err)
 
-	repo, err := r.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, r.name, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -361,13 +369,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, r.name, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo.Name, commitID, false)
 	if err != nil {
 		return "", err
 	}
