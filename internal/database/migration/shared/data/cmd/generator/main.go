@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -26,10 +27,14 @@ func main() {
 var frozenMigrationsFlag = flag.Bool("write-frozen", true, "write frozen revision migration files")
 var outputPath = flag.String("output", "data/stitched-migration-graph.json", "where to put the stitched migration graph JSON")
 var frozenOutputPath = flag.String("frozen-output", "data/frozen", "where to put the stitched migration graph JSON")
-var archivePath = flag.String("archive", "foo", "where to find migration dump")
+var archivePath = flag.String("archive", "", "where to find migration dump")
 
 func mainErr() error {
 	flag.Parse()
+
+	if *archivePath == "" {
+		return errors.New("missing -archive flag")
+	}
 
 	// Write stitched migrations
 	versions, err := oobmigration.UpgradeRange(MinVersion, MaxVersion)
