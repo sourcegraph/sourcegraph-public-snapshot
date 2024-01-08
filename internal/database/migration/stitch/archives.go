@@ -78,7 +78,7 @@ type LocalMigrationsReader struct {
 func NewLocalMigrationsReader(path string, currentVersion string) (*LocalMigrationsReader, error) {
 	a := LocalMigrationsReader{
 		m:              make(map[string]migrationFiles),
-		currentVersion: currentVersion,
+		currentVersion: "v" + currentVersion,
 	}
 	if err := a.load(path); err != nil {
 		return nil, errors.Wrap(err, "failed to read local migrations")
@@ -147,27 +147,31 @@ func (s *LocalMigrationsReader) load(path string) error {
 		s.m[matches[1]] = contents
 	}
 
-	// Load the current version from the files on disk at that revision.
-	contents := map[string]string{}
-	err = fs.WalkDir(migrations.QueryDefinitions, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return errors.Wrapf(err, "failed to walk directory for current migrations (%q)", path)
-		}
-		if !d.IsDir() {
-			b, err := fs.ReadFile(migrations.QueryDefinitions, path)
+	// If we already have a tarball for the current version, it's most likely because someone didn't bump
+	// the constants yet, so let's use this one instead.
+	if _, ok := s.m[s.currentVersion]; !ok {
+		// Load the current version from the files on disk at that revision.
+		contents := map[string]string{}
+		err = fs.WalkDir(migrations.QueryDefinitions, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
-				return errors.Wrapf(err, "failed to read file for current migrations (%q)", path)
+				return errors.Wrapf(err, "failed to walk directory for current migrations (%q)", path)
 			}
-			// When we read them from the embedded FS, they don't have the "migrations" prefix that we
-			// have everywhere else.
-			contents[filepath.Join("migrations", path)] = string(b)
+			if !d.IsDir() {
+				b, err := fs.ReadFile(migrations.QueryDefinitions, path)
+				if err != nil {
+					return errors.Wrapf(err, "failed to read file for current migrations (%q)", path)
+				}
+				// When we read them from the embedded FS, they don't have the "migrations" prefix that we
+				// have everywhere else.
+				contents[filepath.Join("migrations", path)] = string(b)
+			}
+			return nil
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to load current migrations from current migrations")
 		}
-		return nil
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to load current migrations from current migrations")
+		s.m[s.currentVersion] = contents
 	}
-	s.m[s.currentVersion] = contents
 	return nil
 }
 
