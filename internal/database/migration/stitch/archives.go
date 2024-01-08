@@ -3,20 +3,20 @@ package stitch
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
-// migrationEntries are a map whose keys are filepaths and value are
+// migrationFiles are a map whose keys are filepaths and value are
 // the content of the file at that path.
-type migrationEntries map[string]string
+type migrationFiles map[string]string
 
 // migrationArchives holds all migrations for each major or minor releases made so far.
 // Content is populated through a folder containing tarballs for each release migrations and
@@ -25,11 +25,13 @@ type migrationArchives struct {
 	// currentVersion points at the version we should map to the migrations files at the root of the
 	// repo, for the current revision.
 	currentVersion string
-	m              map[string]migrationEntries
+	m              map[string]migrationFiles
 }
 
+// NewMigrationArchives initialize the archives with the migration and the current version.
 func NewMigrationArchives(path string, currentVersion string) (*migrationArchives, error) {
 	a := migrationArchives{
+		m:              make(map[string]migrationFiles),
 		currentVersion: currentVersion,
 	}
 	if err := a.load(path); err != nil {
@@ -84,7 +86,7 @@ func (s *migrationArchives) load(path string) error {
 
 		matches := filenameRegexp.FindStringSubmatch(e.Name())
 		if len(matches) < 2 {
-			return fmt.Errorf("invalid filename format: %s, can't extract version number", e.Name())
+			return errors.Newf("invalid filename format: %s, can't extract version number", e.Name())
 		}
 
 		s.m[matches[1]] = contents
@@ -120,7 +122,7 @@ func (s *migrationArchives) Get(version string) (map[string]string, error) {
 	if !ok {
 		migrations, ok = s.m["v"+version]
 		if !ok {
-			return nil, fmt.Errorf("version %s not found", version)
+			return nil, errors.Newf("version %s not found", version)
 		}
 	}
 	return migrations, nil

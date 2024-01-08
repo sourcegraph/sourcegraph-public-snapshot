@@ -11,24 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var migrationsArchive = &migrationArchives{currentVersion: "v5.3.0", m: map[string]migrationEntries{}}
-
-func init() {
-	err := migrationsArchive.load("foo")
-	if err != nil {
-		panic(err)
-	}
-}
-
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
 // at the given git revision.
-func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, error) {
+func readMigrationDirectoryFilenames(ma *migrationArchives, schemaName, rev string) ([]string, error) {
 	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := migrationsArchive.Get(rev)
+	m, err := ma.Get(rev)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +34,8 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 }
 
 // readMigrationFileContents reads the contents of the migration at given path at the given git revision.
-func readMigrationFileContents(schemaName, dir, rev, path string) (string, error) {
-	m, err := cachedArchiveContents(dir, rev)
+func readMigrationFileContents(ma *migrationArchives, schemaName, rev, path string) (string, error) {
+	m, err := ma.Get(rev)
 	if err != nil {
 		return "", err
 	}
@@ -64,31 +55,6 @@ var (
 	revToPathTocontentsCacheMutex sync.RWMutex
 	revToPathTocontentsCache      = map[string]map[string]string{}
 )
-
-// cachedArchiveContents memoizes archiveContents by git revision and schema name.
-func cachedArchiveContents(dir, rev string) (map[string]string, error) {
-	revToPathTocontentsCacheMutex.Lock()
-	defer revToPathTocontentsCacheMutex.Unlock()
-
-	m, ok := revToPathTocontentsCache[rev]
-	if ok {
-		return m, nil
-	}
-
-	m, err := archiveContents(dir, rev)
-	if err != nil {
-		return nil, err
-	}
-
-	revToPathTocontentsCache[rev] = m
-	return m, nil
-}
-
-// archiveContents calls git archive with the given git revision and returns a map from
-// file paths to file contents.
-func archiveContents(dir, rev string) (map[string]string, error) {
-	return migrationsArchive.Get(rev)
-}
 
 func migrationPath(schemaName, rev string) (string, error) {
 	revVersion, ok := oobmigration.NewVersionFromString(rev)

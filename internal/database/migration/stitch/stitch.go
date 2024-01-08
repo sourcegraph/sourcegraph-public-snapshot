@@ -23,8 +23,13 @@ import (
 //
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
-func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedMigration, error) {
-	definitionMap, boundsByRev, err := overlayDefinitions(schemaName, root, revs)
+func StitchDefinitions(archivesPath string, schemaName string, revs []string) (shared.StitchedMigration, error) {
+	ma, err := NewMigrationArchives(archivesPath, "v5.3.0")
+	if err != nil {
+		return shared.StitchedMigration{}, err
+	}
+
+	definitionMap, boundsByRev, err := overlayDefinitions(ma, schemaName, revs)
 	if err != nil {
 		return shared.StitchedMigration{}, err
 	}
@@ -60,11 +65,11 @@ var schemaBounds = map[string]oobmigration.Version{
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
+func overlayDefinitions(ma *migrationArchives, schemaName string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
 	definitionMap := map[int]definition.Definition{}
 	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
 	for _, rev := range revs {
-		bounds, err := overlayDefinition(schemaName, root, rev, definitionMap)
+		bounds, err := overlayDefinition(ma, schemaName, rev, definitionMap)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -89,7 +94,7 @@ const squashedMigrationPrefix = "squashed migrations"
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
+func overlayDefinition(ma *migrationArchives, schemaName, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
 	revVersion, ok := oobmigration.NewVersionFromString(rev)
 	if !ok {
 		return shared.MigrationBounds{}, errors.Newf("illegal rev %q", rev)
@@ -102,7 +107,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		return shared.MigrationBounds{PreCreation: true}, nil
 	}
 
-	fs, err := ReadMigrations(schemaName, root, rev)
+	fs, err := ReadMigrations(ma, schemaName, rev)
 	if err != nil {
 		return shared.MigrationBounds{}, err
 	}
