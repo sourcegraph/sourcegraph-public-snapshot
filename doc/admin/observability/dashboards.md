@@ -149,7 +149,7 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 #### frontend: blob_load_latency
 
-<p class="subtitle">90th percentile blob load latency over 10m for 10m0s</p>
+<p class="subtitle">90th percentile blob load latency over 10m</p>
 
 - The blob API route provides the files and code snippets that the UI displays.
 
