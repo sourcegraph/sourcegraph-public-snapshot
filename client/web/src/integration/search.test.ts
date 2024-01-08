@@ -138,7 +138,6 @@ describe('Search', () => {
         })
         testContext.overrideGraphQL(commonSearchGraphQLResultsWithUser)
         testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
-        testContext.overrideJsContext({ experimentalFeatures: { structuralSearch: 'enabled' } })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -353,13 +352,8 @@ describe('Search', () => {
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: applySettings() }),
                     })
+                    testContext.overrideJsContext({ experimentalFeatures: { structuralSearch: 'enabled' } })
                 })
-
-                // beforeEach(() => {
-                //     window.context = {
-                //         experimentalFeatures: { structuralSearch: 'enabled' },
-                //     } as any
-                // })
 
                 test('Clicking toggle turns on structural search', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
