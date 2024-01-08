@@ -37,10 +37,9 @@
 ;     name: (identifier) @definition.function
 ; )
 
-
-(enum_constant
-  name: (identifier) @definition.term
-)
+; (enum_constant
+;   name: (identifier) @definition.term
+; )
 
 (enhanced_for_statement
     name: (identifier) @definition.term)
