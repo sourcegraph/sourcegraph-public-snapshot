@@ -16,7 +16,7 @@
 
 (source_file
  (var_declaration
-  (var_spec name: (identifier) @definition.skip)))
+  (var_spec name: (identifier) @occurrence.skip)))
 
 (var_spec
  name: (identifier) @definition.var)
@@ -27,7 +27,7 @@
 (source_file
  (const_declaration
   (const_spec
-   name: (identifier) @definition.skip)))
+   name: (identifier) @occurrence.skip)))
 
 (const_declaration
  (const_spec
