@@ -55,6 +55,11 @@
   ]
 )
 
+(record_declaration
+ (formal_parameters
+  (formal_parameter
+   name: (identifier) @definition.skip)))
+
 (formal_parameter
     name: (identifier) @definition.term
 )
