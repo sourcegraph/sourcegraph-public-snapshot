@@ -2,6 +2,7 @@ import { memoize } from 'lodash'
 import { writable, type Readable, type Writable } from 'svelte/store'
 
 import { createEmptySingleSelectTreeState, type TreeState } from '$lib/TreeView'
+
 import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
 export const sidebarOpen = writable(true)

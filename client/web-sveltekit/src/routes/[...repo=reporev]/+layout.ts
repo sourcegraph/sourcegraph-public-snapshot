@@ -1,6 +1,7 @@
 import { redirect, error, type Redirect } from '@sveltejs/kit'
 
 import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
+import type { GraphQLClient } from '$lib/graphql'
 import {
     CloneInProgressError,
     RepoNotFoundError,
@@ -13,7 +14,6 @@ import {
 } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import type { GraphQLClient } from '$lib/graphql'
 import { ResolveRepoRevison, ResolvedRepository } from './layout.gql'
 
 export interface ResolvedRevision {

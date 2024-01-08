@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker'
 import { range } from 'lodash'
 
-import type { CommitMatch, ContentMatch, PersonMatch, TeamMatch, PathMatch, SymbolMatch } from '$lib/shared'
 import type { Commit } from '$lib/Commit.gql'
-import type { HistoryPanel_HistoryConnection } from '$lib/repo/HistoryPanel.gql'
 import { type HighlightedFileVariables, type HighlightedFileResult, SymbolKind } from '$lib/graphql-operations'
+import type { HistoryPanel_HistoryConnection } from '$lib/repo/HistoryPanel.gql'
+import type { CommitMatch, ContentMatch, PersonMatch, TeamMatch, PathMatch, SymbolMatch } from '$lib/shared'
 
 /**
  * Initializes faker's randomness generator with a fixed seed, for

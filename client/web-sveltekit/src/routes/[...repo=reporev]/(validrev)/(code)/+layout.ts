@@ -1,11 +1,11 @@
 import { dirname } from 'path'
 
 import { browser } from '$app/environment'
+import type { Scalars } from '$lib/graphql-types'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
 
 import type { LayoutLoad } from './$types'
 import { GitHistoryQuery, type GitHistory_HistoryConnection } from './layout.gql'
-import type { Scalars } from '$lib/graphql-types'
 
 const HISTORY_COMMITS_PER_PAGE = 20
 

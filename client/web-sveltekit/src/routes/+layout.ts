@@ -1,11 +1,12 @@
+import { error } from '@sveltejs/kit'
+
 import { browser } from '$app/environment'
 import { isErrorLike, parseJSONCOrError } from '$lib/common'
 import { getGraphQLClient } from '$lib/graphql'
-import { error } from '@sveltejs/kit'
+import type { Settings } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 import { Init, EvaluatedFeatureFlagsQuery } from './layout.gql'
-import type { Settings } from '$lib/shared'
 
 // Disable server side rendering for the whole app
 export const ssr = false

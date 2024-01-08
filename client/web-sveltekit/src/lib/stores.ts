@@ -3,8 +3,9 @@ import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
 import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
-import type { GraphQLClient } from './graphql'
 import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
+
+import type { GraphQLClient } from './graphql'
 
 export { isLightTheme } from './theme'
 
