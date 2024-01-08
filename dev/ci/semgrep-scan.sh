@@ -34,4 +34,4 @@ gh api \
   -f ref="refs/pull/$BUILDKITE_PULL_REQUEST/head" \
   -f sarif="$encoded_sarif"
 
-echo -e "--- :white_check_mark: Semgrep Scan job is completed\n"
+echo -e "--- :white_check_mark: Semgrep Scan job is complete\n"
