@@ -12,15 +12,15 @@ TODO @jhchabran.
 
 ## Why are we "stitching" migrations
 
-[Periodically we squash](https://github.com/sourcegraph/sourcegraph/pull/41819) all migrations from two versions behind the current version into a single migration using sg migration squash.This reduces the time required to initialize a new database. This means that the migrator image is built with a set of definitions embedded that doesn’t reflect the definition set in older versions. For multiversion upgrades this presents a problem. To get around this, on minor releases we generate a `stitched-migration-graph.json` file
+[Periodically we squash](https://github.com/sourcegraph/sourcegraph/pull/41819) all migrations from two versions behind the current version into a single migration using `sg migration squash`. This reduces the time required to initialize a new database. This means that the migrator image is built with a set of definitions embedded that doesn’t reflect the definition set in older versions. For multiversion upgrades this presents a problem. To get around this, on minor releases we generate a `stitched-migration-graph.json` file
 
-`stitched-migrations-graph.json` stitches (can think of this as unsquashing) historic migrations enabling the migrator to have a reference of older migrations. This serves a few purposes:
+`stitched-migration-graph.json` stitches (can think of this as unsquashing) historic migrations enabling the migrator to have a reference of older migrations. This serves a few purposes:
 
 1. When jumping across multiple versions we do not have access to a full record of migration definitions on migrator disk because some migrations will likely have been squashed. Therefore we need a way to ensure we don’t miss migrations on a squash boundary. Note we can’t just re-apply the root migration after a squash because some schema state that's already represented in the root migration. This means the squashed root migration isn’t always idempotent.
 
 2. During a multiversion upgrade migrator must schedule out of band migrations to be started at some version and completed before upgrading past some later version. Migrator needs access to the unsquashed migration definitions to know which migrations must have run at the time the oob migration is triggered.
 
-In standard/up upgrades `stitched-migrations.json` isn’t necessary. This is because up determines migrations to run by comparing migrations listed as already run in the relevant db’s migration_logs table directly to those migration definitions embedded in the migrator disk at build time for the current version, and running any which haven’t been run. We never squash away the previous minor version of Sourcegraph, in this way we can guarantee the migration_logs table migrations always has migrations in common with the migration definitions on disk.
+In standard/up upgrades `stitched-migration-graph.json` isn’t necessary. This is because up determines migrations to run by comparing migrations listed as already run in the relevant db’s migration_logs table directly to those migration definitions embedded in the migrator disk at build time for the current version, and running any which haven’t been run. We never squash away the previous minor version of Sourcegraph, in this way we can guarantee the `migration_logs` table migrations always has migrations in common with the migration definitions on disk.
 
 ## How it works
 
