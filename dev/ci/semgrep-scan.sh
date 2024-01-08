@@ -35,4 +35,4 @@ gh api \
   -f sarif="$encoded_sarif" \
   -f tool_name="ci semgrep"
 
-echo -e "--- :white_check_mark: Semgrep Scan job is complete\n"
+echo -e "--- :white_check_mark::semgrep: Semgrep scan job is complete\n"
