@@ -72,6 +72,9 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
                 merge: true,
             },
         },
+        possibleTypes: {
+            TreeEntry: ['GitTree', 'GitBlob'],
+        },
     })
 
     // TODO: Persist data locally after figuring out how to determine user authentication state

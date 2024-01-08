@@ -151,8 +151,6 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	CodyAppMode bool `json:"codyAppMode"`
-
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
 	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
@@ -220,8 +218,6 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
-
-	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -314,7 +310,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
-	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -346,7 +341,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		CodyAppMode:           deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -404,8 +398,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
-
-		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 

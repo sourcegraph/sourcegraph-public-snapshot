@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `has.topic` filter now supports filtering by Gitlab topics. [#57649](https://github.com/sourcegraph/sourcegraph/pull/57649)
 - Batch Changes now allows changesets to be exported in CSV and JSON format. [#56721](https://github.com/sourcegraph/sourcegraph/pull/56721)
 - Supports custom ChatCompletion models in Cody clients for dotcom users. [#58158](https://github.com/sourcegraph/sourcegraph/pull/58158)
+- Topics synced from GitHub and GitLab are now displayed for repository matches in the search results and on the repository tree page. [#58927](https://github.com/sourcegraph/sourcegraph/pull/58927)
 
 ### Changed
 
@@ -55,9 +56,22 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
-## Unreleased
+## Unreleased 5.2.6
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+## 5.2.5
+
+### Added
+
+- Added Cody providers data to pings. [#58848](https://github.com/sourcegraph/sourcegraph/pull/58848)
+- Added the ability to proxy authentication requests when using the Azure OpenAI Cody provider. [#58862](https://github.com/sourcegraph/sourcegraph/pull/58862)
 
 ### Fixed
 

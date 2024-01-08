@@ -44,6 +44,9 @@
         padding-top: 0;
         margin-bottom: 0.25rem;
         margin-top: 0.25rem;
+        :global(.theme-dark) & {
+            color: var(--body-color);
+        }
     }
 
     input:global(.hs-input):global(.error),
@@ -99,6 +102,15 @@
         &:focus {
             outline: none;
             border-color: #0b70db;
+        }
+
+        :global(.theme-dark) & {
+            color: var(--body-color);
+            border-color: var(--border-color);
+
+            &:not([type='file']) {
+                background-color: var(--bg-color);
+            }
         }
     }
 

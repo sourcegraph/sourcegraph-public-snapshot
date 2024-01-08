@@ -22,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -125,9 +124,6 @@ func (s *Store) Start() {
 		metrics.MustRegisterDiskMonitor(s.Path)
 
 		logger := s.Log
-		if deploy.IsApp() {
-			logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
-		}
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
 		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
 		s.ObservationCtx.Registerer.MustRegister(m)
@@ -139,12 +135,9 @@ func (s *Store) Start() {
 
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
-	return s.PrepareZipPaths(ctx, repo, commit, nil)
-}
-
-func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZipPaths")
+// If paths is non-empty, the archive will only contain files from paths.
+func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
+	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZip")
 	defer tr.EndWithErr(&err)
 
 	var cacheHit bool

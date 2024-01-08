@@ -310,7 +310,7 @@ func fuzzyRegexp(patterns []Pattern) []Node {
 
 // standard reduces a sequence of Patterns such that:
 //
-// - adjacent literal patterns are concattenated with space. I.e., contiguous
+// - adjacent literal patterns are concatenated with space. I.e., contiguous
 // literal patterns are joined on space to create one literal pattern.
 //
 // - any patterns adjacent to regular expression patterns are AND-ed.
@@ -525,8 +525,8 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 	return query
 }
 
-// concatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
-// Invariant: Guaranteed to succeed on a validat Basic query.
+// ConcatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
+// Invariant: Guaranteed to succeed on a validated Basic query.
 func ConcatRevFilters(b Basic) Basic {
 	var revision string
 	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
@@ -579,8 +579,8 @@ func OmitField(q Q, field string) string {
 	}))
 }
 
-// addRegexpField adds a new expr to the query with the given field and pattern
-// value. The nonnegated field is assumed to associate with a regexp value. The
+// AddRegexpField adds a new expr to the query with the given field and pattern
+// value. The non-negated field is assumed to correspond to a regexp value. The
 // pattern value is assumed to be unquoted.
 //
 // It tries to remove redundancy in the result. For example, given
@@ -609,7 +609,7 @@ func AddRegexpField(q Q, field, pattern string) string {
 	return StringHuman(q)
 }
 
-// Converts a parse tree to a basic query by attempting to obtain a valid partition.
+// ToBasicQuery converts a parse tree to a basic query by attempting to obtain a valid partition.
 func ToBasicQuery(nodes []Node) (Basic, error) {
 	parameters, pattern, err := PartitionSearchPattern(nodes)
 	if err != nil {

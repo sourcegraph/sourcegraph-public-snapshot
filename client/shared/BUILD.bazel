@@ -1,4 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
@@ -81,7 +81,7 @@ ts_project(
     ],
 )
 
-js_library(
+copy_to_bin(
     name = "graphql_operations_files",
     # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
     srcs = glob(
@@ -226,10 +226,7 @@ ts_project(
         "src/components/VirtualList.tsx",
         "src/components/icons.tsx",
         "src/components/languageIcons.tsx",
-        "src/components/ranking/LineRanking.ts",
         "src/components/ranking/PerFileResultRanking.ts",
-        "src/components/ranking/PerFileResultRankingTestHelpers.ts",
-        "src/components/ranking/ZoektRanking.ts",
         "src/components/utils/size.ts",
         "src/contributions/contributions.ts",
         "src/deprecated-theme-utils.ts",
@@ -435,8 +432,6 @@ ts_project(
         "src/components/Path.test.tsx",
         "src/components/RepoLink.test.tsx",
         "src/components/UserAvatar.test.tsx",
-        "src/components/ranking/LineRanking.test.tsx",
-        "src/components/ranking/ZoektRanking.test.tsx",
         "src/contributions/contributions.test.ts",
         "src/extensions/extension.test.ts",
         "src/hover/HoverOverlay.test.tsx",

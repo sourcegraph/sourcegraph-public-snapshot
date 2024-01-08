@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 
+	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -49,10 +51,13 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	}
 
 	// Initialize our gRPC server
-	// TODO(@bobheadxi): Maybe don't use defaults.NewServer, which is geared
-	// towards in-Sourcegraph services.
-	grpcServer := defaults.NewServer(logger)
-	telemetryGatewayServer, err := server.New(logger, eventsTopic)
+	grpcServer := defaults.NewPublicServer(logger)
+	telemetryGatewayServer, err := server.New(
+		logger,
+		eventsTopic,
+		events.PublishStreamOptions{
+			ConcurrencyLimit: config.Events.StreamPublishConcurrency,
+		})
 	if err != nil {
 		return nil, errors.Wrap(err, "init telemetry gateway server")
 	}
@@ -86,7 +91,10 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		),
 		background.CallbackRoutine{
 			// No Start - serving is handled by httpserver
-			StopFunc: func() { grpcServer.GracefulStop() },
+			StopFunc: func() {
+				grpcServer.GracefulStop()
+				eventsTopic.Stop()
+			},
 		},
 	}, nil
 }
@@ -97,7 +105,7 @@ type serviceStatus struct {
 
 var _ runtime.ServiceState = (*serviceStatus)(nil)
 
-func (s *serviceStatus) Healthy(ctx context.Context) error {
+func (s *serviceStatus) Healthy(ctx context.Context, _ url.Values) error {
 	if err := s.eventsTopic.Ping(ctx); err != nil {
 		return errors.Wrap(err, "eventsPubSubClient.Ping")
 	}

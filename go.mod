@@ -7,10 +7,6 @@ go 1.21
 // These entries indicate permanent replace directives due to significant changes from upstream
 // or intentional forks.
 replace (
-	// We maintain a potentially long-term fork of embedded-postgres for
-	// Cody App. We add features like unix sockets. If this replace
-	// directive still exists in 2024, lets consider hard forking.
-	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230624001757-345a8df15ded
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
@@ -63,7 +59,7 @@ require (
 	cloud.google.com/go/bigquery v1.57.1
 	cloud.google.com/go/kms v1.15.5
 	cloud.google.com/go/monitoring v1.16.3
-	cloud.google.com/go/profiler v0.3.1
+	cloud.google.com/go/profiler v0.4.0
 	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/secretmanager v1.11.4
 	cloud.google.com/go/storage v1.30.1
@@ -121,7 +117,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
@@ -261,28 +257,34 @@ require (
 	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/dghubble/gologin/v2 v2.4.0
 	github.com/edsrzf/mmap-go v1.1.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/google/go-containerregistry v0.16.1
 	github.com/google/go-github/v48 v48.2.0
 	github.com/google/go-github/v55 v55.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/hashicorp/cronexpr v1.1.1
 	github.com/hashicorp/go-tfe v1.32.1
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
-	github.com/invopop/jsonschema v0.7.0
+	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkoukk/tiktoken-go v0.1.5
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/qdrant/go-client v1.4.1
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231106184355-f739cf8e1d49
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20231222002716-51aa712b9bcc
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231222002716-51aa712b9bcc
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20231230001101-a13188f9c749
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
 	github.com/vektah/gqlparser/v2 v2.4.5
+	github.com/vvakame/gcplogurl v0.2.0
 	go.opentelemetry.io/collector/config/confighttp v0.81.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.81.0
 	go.opentelemetry.io/collector/config/configtls v0.81.0
@@ -316,6 +318,7 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/di-wu/parser v0.2.2 // indirect
 	github.com/docker/cli v24.0.0+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
@@ -331,7 +334,6 @@ require (
 	github.com/gosimple/slug v1.12.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-hclog v1.2.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -339,7 +341,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
-	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
 	github.com/jackc/pgx/v5 v5.5.0 // indirect
@@ -351,6 +352,7 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -361,12 +363,13 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
+	github.com/rickb777/date v1.14.3 // indirect
+	github.com/rickb777/plural v1.2.2 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.5 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.1.1 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
@@ -454,7 +457,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
 	github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 // indirect
-	github.com/fergusstrange/embedded-postgres v1.19.0
 	github.com/frankban/quicktest v1.14.3
 	github.com/fullstorydev/grpcui v1.3.1
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
@@ -478,7 +480,6 @@ require (
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/glog v1.1.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -545,8 +546,8 @@ require (
 	github.com/nightlyone/lockfile v1.0.0 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	github.com/olekukonko/tablewriter v0.0.5
+	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.22
 	github.com/pandatix/go-cvss v0.5.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -565,11 +566,10 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/scim2/filter-parser/v2 v2.2.0
-	github.com/sourcegraph/conc v0.2.0
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231121191755-214be625af21
+	github.com/sourcegraph/conc v0.3.0
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20231206165318-7b678e15c348
+	github.com/sourcegraph/zoekt v0.0.0-20231211160200-e92f6c764b56
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -578,7 +578,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/wk8/go-ordered-map/v2 v2.1.5
+	github.com/wk8/go-ordered-map/v2 v2.1.8
 	github.com/xanzy/go-gitlab v0.86.0
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -605,7 +605,6 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gorm.io/driver/postgres v1.5.4
-	gotest.tools v2.2.0+incompatible
 	k8s.io/klog/v2 v2.80.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	mvdan.cc/gofumpt v0.4.0 // indirect

@@ -21,37 +21,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
-var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
-
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.2.4")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.2.5")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.2.4")
+	latestReleaseKubernetesBuild = newPingResponse("5.2.5")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.4")
-
-	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
-	// App instances what the latest version is. The version here _must_ be available for download/released
-	// before being referenced here.
-	latestReleaseApp = newPingResponse("2023.03.23+205301.ca3646")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.5")
 )
 
 func getLatestRelease(deployType string) pingResponse {
@@ -60,8 +51,6 @@ func getLatestRelease(deployType string) pingResponse {
 		return latestReleaseKubernetesBuild
 	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
-		return latestReleaseApp
 	default:
 		return latestReleaseDockerServerImageBuild
 	}
@@ -94,7 +83,7 @@ type Meter struct {
 
 // Handle handles the ping requests and responds with information about software
 // updates for Sourcegraph.
-func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w http.ResponseWriter, r *http.Request) {
+func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, w http.ResponseWriter, r *http.Request) {
 	meter.RequestCounter.Add(r.Context(), 1)
 
 	pr, err := readPingRequest(r)
@@ -114,14 +103,14 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w 
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
-	if pr.ClientVersionString == "dev" && !deploy.IsDeployTypeApp(pr.DeployType) {
+	if pr.ClientVersionString == "dev" {
 		// No updates for dev servers.
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	pingResponse := getLatestRelease(pr.DeployType)
-	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
+	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse)
 
 	// Always log, even on malformed version strings
 	logPing(logger, pubsubClient, meter, r, pr, hasUpdate)
@@ -130,25 +119,10 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w 
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if deploy.IsDeployTypeApp(pr.DeployType) {
-		pingResponse.Notifications = getNotifications(pr.ClientVersionString)
-		pingResponse.UpdateAvailable = hasUpdate
-	}
 	body, err := json.Marshal(pingResponse)
 	if err != nil {
 		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	// Cody App: We always send back a ping response (rather than StatusNoContent) because
-	// the user's instance may have unseen notification messages.
-	if deploy.IsDeployTypeApp(pr.DeployType) {
-		if hasUpdate {
-			meter.RequestHasUpdateCounter.Add(r.Context(), 1)
-		}
-		w.Header().Set("content-type", "application/json; charset=utf-8")
-		_, _ = w.Write(body)
 		return
 	}
 
@@ -163,11 +137,11 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w 
 }
 
 // canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
-func canUpdate(clientVersionString string, latestReleaseBuild pingResponse, deployType string) (bool, error) {
+func canUpdate(clientVersionString string, latestReleaseBuild pingResponse) (bool, error) {
 	// Check for a date in the version string to handle developer builds that don't have a semver.
 	// If there is an error parsing a date out of the version string, then we ignore the error
 	// and parse it as a semver.
-	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil && !deploy.IsDeployTypeApp(deployType) {
+	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
 		return hasDateUpdate, nil
 	}
 
@@ -263,6 +237,7 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	CodyProviders                 json.RawMessage `json:"codyProviders,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
@@ -391,10 +366,11 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
 	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	CodyProviders                 json.RawMessage `json:"cody_providers"`
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
-func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing")
 	defer func() {
 		if err := recover(); err != nil {
@@ -496,6 +472,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
 		CodyUsage:                     codyUsage,
+		CodyProviders:                 pr.CodyProviders,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
 }

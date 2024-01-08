@@ -71,7 +71,7 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
     telemetryService,
 }) => {
     const onSignUpClick = (): void =>
-        telemetryService.log(EventName.CODY_SIGNUP, { type: 'ComHome' }, { type: 'ComHome' })
+        telemetryService.log(EventName.CODY_SIGNUP_CTA_CLICK, { type: 'ComHome' }, { type: 'ComHome' })
 
     return (
         <div className={classNames('d-flex', className, styles.container)}>

@@ -12,7 +12,6 @@ import {
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
-import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { type RouteObject, useLocation } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
@@ -33,7 +32,6 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import type { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
-import { UpdateGlobalNav } from '../cody/update/UpdateGlobalNav'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
@@ -69,7 +67,6 @@ export interface GlobalNavbarProps
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
     showSearchBox: boolean
     routes: RouteObject[]
 
@@ -129,7 +126,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     branding = window.context?.branding,
     isSourcegraphDotCom,
-    isCodyApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
@@ -148,10 +144,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isCodyApp && !isSourcegraphDotCom
-    const showSearchNotebook = notebooksEnabled && !isCodyApp && !isSourcegraphDotCom
-    const isLicensed = !!window.context?.licenseInfo || isCodyApp // Assume licensed when running as a native app
-    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isCodyApp && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom
+    const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom
+    const isLicensed = !!window.context?.licenseInfo
+    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
     const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
 
@@ -165,7 +161,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         }
     }, [showSearchBox, onNavbarQueryChange])
 
-    const codeInsights = (codeInsightsEnabled && !isCodyApp && !isSourcegraphDotCom) ?? false
+    const codeInsights = (codeInsightsEnabled && !isSourcegraphDotCom) ?? false
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -177,18 +173,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         <>
             <NavBar
                 logo={
-                    !isCodyApp && (
-                        <BrandLogo
-                            branding={branding}
-                            isLightTheme={isLightTheme}
-                            variant="symbol"
-                            className={styles.logo}
-                        />
-                    )
+                    <BrandLogo
+                        branding={branding}
+                        isLightTheme={isLightTheme}
+                        variant="symbol"
+                        className={styles.logo}
+                    />
                 }
             >
                 <InlineNavigationPanel
-                    isCodyApp={isCodyApp}
                     showSearchContext={showSearchContext}
                     showOwn={ownEnabled}
                     showCodySearch={codySearchEnabled}
@@ -209,12 +202,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     <SvelteKitNavItem />
-                    {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && (
                         <AccessRequestsGlobalNavItem className="d-flex align-items-center py-1" />
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser?.siteAdmin && !isCodyApp && (
+                    {props.authenticatedUser?.siteAdmin && (
                         <>
                             {isAdminOnboardingEnabled && (
                                 <NavAction>
@@ -222,7 +214,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
                             <NavAction>
-                                <StatusMessagesNavItem isCodyApp={isCodyApp} />
+                                <StatusMessagesNavItem />
                             </NavAction>
                         </>
                     )}
@@ -257,7 +249,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 {...props}
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                isCodyApp={isCodyApp}
                                 showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
@@ -279,7 +270,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 }
 
 export interface InlineNavigationPanelProps {
-    isCodyApp: boolean
     showSearchContext: boolean
     showOwn: boolean
     showCodySearch: boolean
@@ -298,7 +288,6 @@ export interface InlineNavigationPanelProps {
 
 export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const {
-        isCodyApp,
         showSearchContext,
         showOwn,
         showCodySearch,
@@ -342,28 +331,27 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     return (
         <NavGroup ref={navbarReference} className={classNames(className, styles.list)}>
-            {!isCodyApp &&
-                (searchNavBarItems.length > 0 ? (
-                    <NavDropdown
-                        toggleItem={{
-                            path: PageRoutes.Search,
-                            altPath: PageRoutes.RepoContainer,
-                            icon: MagnifyIcon,
-                            content: 'Code Search',
-                            variant: navLinkVariant,
-                        }}
-                        routeMatch={routeMatch}
-                        homeItem={{ content: 'Search home' }}
-                        items={searchNavBarItems}
-                        name="search"
-                    />
-                ) : (
-                    <NavItem icon={MagnifyIcon}>
-                        <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
-                            Code Search
-                        </NavLink>
-                    </NavItem>
-                ))}
+            {searchNavBarItems.length > 0 ? (
+                <NavDropdown
+                    toggleItem={{
+                        path: PageRoutes.Search,
+                        altPath: PageRoutes.RepoContainer,
+                        icon: MagnifyIcon,
+                        content: 'Code Search',
+                        variant: navLinkVariant,
+                    }}
+                    routeMatch={routeMatch}
+                    homeItem={{ content: 'Search home' }}
+                    items={searchNavBarItems}
+                    name="search"
+                />
+            ) : (
+                <NavItem icon={MagnifyIcon}>
+                    <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                        Code Search
+                    </NavLink>
+                </NavItem>
+            )}
             {showCodyDropdown ? (
                 <NavDropdown
                     toggleItem={{
@@ -416,30 +404,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                         Insights
                     </NavLink>
                 </NavItem>
-            )}
-            {isCodyApp && (
-                <NavDropdown
-                    routeMatch="something-that-never-matches"
-                    toggleItem={{
-                        path: '#',
-                        icon: CommentQuoteOutline,
-                        content: 'Feedback',
-                        variant: navLinkVariant,
-                    }}
-                    items={[
-                        {
-                            content: 'Join our Discord',
-                            path: 'https://discord.com/servers/sourcegraph-969688426372825169',
-                            target: '_blank',
-                        },
-                        {
-                            content: 'File an issue',
-                            path: 'https://github.com/sourcegraph/app',
-                            target: '_blank',
-                        },
-                    ]}
-                    name="feedback"
-                />
             )}
             {isSourcegraphDotCom && (
                 <NavItem>

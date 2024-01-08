@@ -4,25 +4,16 @@ pub mod snapshot;
 pub mod types;
 
 pub mod prelude {
-    pub use super::{ContainsNode, NodeToScipRange};
+    pub use super::NodeExt;
 }
 
-pub trait ContainsNode {
-    fn contains_node(&self, node: &Node) -> bool;
+/// Extension methods for Tree-sitter's `Node` type.
+pub trait NodeExt {
+    fn scip_range(&self) -> Vec<i32>;
 }
 
-impl<'a> ContainsNode for Node<'a> {
-    fn contains_node(&self, node: &Node) -> bool {
-        self.start_byte() <= node.start_byte() && self.end_byte() >= node.end_byte()
-    }
-}
-
-pub trait NodeToScipRange {
-    fn to_scip_range(&self) -> Vec<i32>;
-}
-
-impl<'a> NodeToScipRange for Node<'a> {
-    fn to_scip_range(&self) -> Vec<i32> {
+impl<'a> NodeExt for Node<'a> {
+    fn scip_range(&self) -> Vec<i32> {
         let start_position = self.start_position();
         let end_position = self.end_position();
 
@@ -42,20 +33,3 @@ impl<'a> NodeToScipRange for Node<'a> {
         }
     }
 }
-
-// #[allow(dead_code)]
-// pub fn walk_child(node: &Node, depth: usize) {
-//     let mut cursor = node.walk();
-//
-//     node.children(&mut cursor).for_each(|child| {
-//         println!(
-//             "{}{:?} {} {}",
-//             " ".repeat(depth),
-//             child,
-//             child.start_position().column,
-//             child.end_position().column
-//         );
-//
-//         walk_child(&child, depth + 1);
-//     });
-// }

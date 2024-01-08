@@ -22,7 +22,7 @@ go_test(
         ":events",
         "//internal/pubsub/pubsubtest",
         "//internal/telemetrygateway/v1:telemetrygateway",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@tools_gotest//assert",
     ],
 )

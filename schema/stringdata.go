@@ -75,11 +75,6 @@ var RubyPackagesSchemaJSON string
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string
 
-// LocalGitExternalServiceSchemaJSON is the content of the file "localgit.schema.json".
-//
-//go:embed localgit.schema.json
-var LocalGitExternalServiceSchemaJSON string
-
 // PerforceSchemaJSON is the content of the file "perforce.schema.json".
 //
 //go:embed perforce.schema.json

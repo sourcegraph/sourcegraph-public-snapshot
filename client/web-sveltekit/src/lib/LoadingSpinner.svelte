@@ -4,7 +4,7 @@
 </script>
 
 <div class:center>
-    <div class="loading-spinner" class:center class:icon-inline={inline} aria-label="loading" aria-live="polite" />
+    <div class="loading-spinner" class:icon-inline={inline} aria-label="loading" aria-live="polite" />
 </div>
 
 <style lang="scss">
@@ -12,6 +12,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        flex: 1;
+        justify-content: center;
     }
 
     .loading-spinner {

@@ -9,22 +9,39 @@
 
     display: grid;
     grid-template-rows: auto 1fr;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     grid-template-areas:
-        'infobar  preview sidebar-header '
-        'contents preview filters';
+        'new-filters infobar preview sidebar-header'
+        'new-filters contents preview filters';
 
-    @media (--md-breakpoint-down) {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto 1fr;
-        grid-template-areas:
-            'infobar'
-            'filters'
-            'contents';
-
-        overflow: auto;
-        height: min-content;
+    &--with-new-filters {
+        @media (--md-breakpoint-down) {
+            grid-template-rows: auto 1fr;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            grid-template-areas:
+                'new-filters infobar preview'
+                'new-filters contents preview';
+        }
     }
+
+    &:not(&--with-new-filters) {
+        @media (--md-breakpoint-down) {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto auto 1fr;
+            grid-template-areas:
+                'infobar'
+                'filters'
+                'contents';
+
+            overflow: auto;
+            height: min-content;
+        }
+    }
+}
+
+.new-filters {
+    grid-area: new-filters;
+    border-right: 1px solid var(--border-color);
 }
 
 .filters {

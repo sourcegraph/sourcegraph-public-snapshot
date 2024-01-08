@@ -106,6 +106,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
+		args.ContextLines,
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -224,6 +225,7 @@ type args struct {
 	Display                    int
 	EnableChunkMatches         bool
 	SearchMode                 int
+	ContextLines               *int32
 	ZoektSearchOptionsOverride string
 }
 
@@ -256,6 +258,14 @@ func parseURLQuery(q url.Values) (*args, error) {
 	chunkMatches := get("cm", "f")
 	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	}
+
+	if contextLines := q.Get("cl"); contextLines != "" {
+		parsedContextLines, err := strconv.ParseUint(contextLines, 10, 32)
+		if err != nil {
+			return nil, errors.Errorf("context lines must be parseable as a boolean, got %q: %w", contextLines, err)
+		}
+		a.ContextLines = pointers.Ptr(int32(parsedContextLines))
 	}
 
 	searchMode := get("sm", "0")
@@ -461,6 +471,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
 		repoEvent.Metadata = r.KeyValuePairs
+		repoEvent.Topics = r.Topics
 	}
 
 	return repoEvent
@@ -698,7 +709,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	// Instantly send results if we have not sent any yet.
 	if h.first && len(event.Results) > 0 {
 		h.first = false
-		h.eventWriter.Filters(h.filters.Compute())
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		h.logLatency()
 	}
@@ -716,7 +727,11 @@ func (h *eventHandler) Done() {
 	h.progressTimer = nil
 
 	// Flush the final state
-	h.eventWriter.Filters(h.filters.Compute())
+	// TODO: make sure we actually respect timeouts
+	exhaustive := !h.progress.Stats.IsLimitHit &&
+		!h.progress.Stats.Status.Any(search.RepoStatusLimitHit) &&
+		!h.progress.Stats.Status.Any(search.RepoStatusTimedOut)
+	h.eventWriter.Filters(h.filters.Compute(), exhaustive)
 	h.matchesBuf.Flush()
 	h.eventWriter.Progress(h.progress.Final())
 }
@@ -740,7 +755,8 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		h.eventWriter.Filters(h.filters.Compute())
+		// TODO(camdencheek): add a `dirty` to filters so we don't send them every tick
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())

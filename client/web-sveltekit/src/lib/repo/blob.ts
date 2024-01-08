@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view'
-import { from, Subscription } from 'rxjs'
+import { from, type Subscription } from 'rxjs'
 import { switchMap, map, startWith } from 'rxjs/operators'
 import { get, writable, type Readable, readonly } from 'svelte/store'
 

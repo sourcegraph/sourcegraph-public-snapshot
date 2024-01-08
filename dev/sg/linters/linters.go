@@ -37,13 +37,13 @@ var Targets = []Target{
 		Description: "Check go code for linting errors, forbidden imports, generated files, etc",
 		Checks: []*linter{
 			goGenerateLinter,
-			goDBConnImport,
-			noLocalHost,
+			onlyLocal(goDBConnImport),
+			onlyLocal(noLocalHost),
 			lintGoDirectives(),
 			lintLoggingLibraries(),
-			lintTracingLibraries(),
+			onlyLocal(lintTracingLibraries()),
 			goModGuards(),
-			lintSGExit(),
+			onlyLocal(lintSGExit()),
 		},
 	},
 	{
@@ -58,6 +58,7 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
+			docChangesLint(),
 		},
 	},
 	{
@@ -77,14 +78,6 @@ var Targets = []Target{
 			// we only run this linter locally, since on CI it has it's own job
 			onlyLocal(runScript("pnpm list:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
 			checkUnversionedDocsLinks(),
-		},
-	},
-	{
-		Name:        "svg",
-		Description: "Check svg assets",
-		Enabled:     disabled("reported as unreliable"),
-		Checks: []*linter{
-			checkSVGCompression(),
 		},
 	},
 	{

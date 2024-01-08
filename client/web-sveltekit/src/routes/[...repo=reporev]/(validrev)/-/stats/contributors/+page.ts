@@ -1,4 +1,4 @@
-import { getPaginationParams } from '$lib/Paginator.svelte'
+import { getPaginationParams } from '$lib/Paginator'
 import { fetchContributors } from '$lib/repo/api/contributors'
 
 import type { PageLoad } from './$types'

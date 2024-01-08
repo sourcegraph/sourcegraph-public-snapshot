@@ -14,17 +14,14 @@ Autocomplete supports any programming language because it uses LLMs trained on b
 
 To view how Cody provides code completions , you'll need to have the following:
 
-- An active Sourcegraph account (free or enterprise)
+- A Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 - A supported editor extension (VS Code, JetBrains, and Neovim) installed
 
 ## Working with code autocomplete
 
-The autocomplete feature is enabled by default on all IDE extensions, i.e., VS Code, JetBrains, and Neovim. Generally, there's a checkbox in the extension settings that confirms whether the autocomplete feature is enabled or not. In addition, some autocomplete settings are optionally and explicitly supported by some IDEs. For example, JetBrains IDEs have a custom setting that allows you to:
+The autocomplete feature is enabled by default on all IDE extensions, i.e., VS Code, JetBrains, and Neovim. Generally, there's a checkbox in the extension settings that confirms whether the autocomplete feature is enabled or not. In addition, some autocomplete settings are optionally and explicitly supported by some IDEs. For example, JetBrains IDEs have custom settings that allow you to customize colors and styles of the autocomplete suggestions.
 
-- Enable autocompletions for specific programming languages
-- Customize colors and styles of the autocomplete suggestions
-
-Once ready, you can start typing and Cody will automatically provide suggestions and context-aware completions based on your coding patterns and the code context. These autocomplete suggestions appears as grayed text. To accept the suggestion, press the `Enter` or `Tab` key.
+You can start typing and Cody will automatically provide suggestions and context-aware completions based on your coding patterns and the code context. These autocomplete suggestions appear as grayed text. To accept the suggestion, press the `Enter` or `Tab` key.
 
 ## Configure autocomplete on an Enterprise Sourcegraph instance
 

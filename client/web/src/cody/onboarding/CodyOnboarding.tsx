@@ -34,7 +34,7 @@ export const editorGroups: IEditor[][] = [
             name: 'VS Code',
             publisher: 'Microsoft',
             releaseStage: 'Stable',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-vscode',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-vscode',
             instructions: VSCodeInstructions,
         },
         {
@@ -42,7 +42,7 @@ export const editorGroups: IEditor[][] = [
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -50,15 +50,15 @@ export const editorGroups: IEditor[][] = [
             name: 'PhpStorm ',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
             icon: 'PyCharm',
             name: 'PyCharm',
-            publisher: 'Jetbrains',
+            publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -68,7 +68,7 @@ export const editorGroups: IEditor[][] = [
             name: 'WebStorm',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -76,7 +76,7 @@ export const editorGroups: IEditor[][] = [
             name: 'RubyMine',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -84,7 +84,7 @@ export const editorGroups: IEditor[][] = [
             name: 'GoLand',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
         {
@@ -92,7 +92,7 @@ export const editorGroups: IEditor[][] = [
             name: 'Android Studio',
             publisher: 'Google',
             releaseStage: 'Beta',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
             instructions: JetBrainsInstructions,
         },
     ],
@@ -102,13 +102,13 @@ export const editorGroups: IEditor[][] = [
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
-            docs: 'https://docs.sourcegraph.com/cody/overview/install-neovim',
+            docs: 'https://sourcegraph.com/docs/cody/clients/install-neovim',
             instructions: NeoVimInstructions,
         },
         {
             icon: 'Emacs',
             name: 'Emacs',
-            publisher: 'Free Software Foundation',
+            publisher: 'GNU',
             releaseStage: 'Coming Soon',
         },
     ],
@@ -151,7 +151,13 @@ export function CodyOnboarding({
     }
 
     return (
-        <Modal isOpen={true} aria-label="Cody Onboarding" className={styles.modal} position="center">
+        <Modal
+            isOpen={true}
+            position="center"
+            aria-label="Cody Onboarding"
+            className={styles.modal}
+            containerClassName={styles.root}
+        >
             {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
             {step === 1 && (
                 <PurposeStep
@@ -180,7 +186,11 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
     const [show, setShow] = useState(false)
     const isLightTheme = useIsLightTheme()
     useEffect(() => {
-        eventLogger.log(EventName.CODY_ONBOARDING_WELCOME_VIEWED, { tier: pro ? 'pro' : 'free' })
+        eventLogger.log(
+            EventName.CODY_ONBOARDING_WELCOME_VIEWED,
+            { tier: pro ? 'pro' : 'free' },
+            { tier: pro ? 'pro' : 'free' }
+        )
     }, [pro])
 
     useEffect(() => {
@@ -199,8 +209,8 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                         <source
                             src={
                                 isLightTheme
-                                    ? 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim.mp4'
-                                    : 'https://storage.googleapis.com/sourcegraph-assets/codyWelcomeAnim_dark.mp4'
+                                    ? 'https://storage.googleapis.com/sourcegraph-assets/hiCodyWhite.mp4'
+                                    : 'https://storage.googleapis.com/sourcegraph-assets/hiCodyDark.mp4'
                             }
                             type="video/mp4"
                         />
@@ -208,7 +218,7 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
                     </video>
                     <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
                         Ready to breeze through the basics and get comfortable with Cody
-                        {pro ? ' to Cody Pro Trial' : ''}?
+                        {pro ? ' Pro' : ''}?
                     </Text>
                     <Button
                         onClick={onNext}
@@ -238,7 +248,11 @@ function PurposeStep({
     const [useCase, setUseCase] = useState<'work' | 'personal' | null>(null)
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_VIEWED, { tier: pro ? 'pro' : 'free' })
+        eventLogger.log(
+            EventName.CODY_ONBOARDING_PURPOSE_VIEWED,
+            { tier: pro ? 'pro' : 'free' },
+            { tier: pro ? 'pro' : 'free' }
+        )
     }, [pro])
 
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
@@ -283,7 +297,7 @@ function PurposeStep({
                     formId="85548efc-a879-4553-9ef0-a8da8fdcf541"
                     onFormSubmitted={() => {
                         if (useCase) {
-                            eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase })
+                            eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase }, { useCase })
                         }
                         onNext()
                     }}
@@ -299,7 +313,11 @@ function PurposeStep({
 
 function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolean }): JSX.Element {
     useEffect(() => {
-        eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED, { tier: pro ? 'pro' : 'free' })
+        eventLogger.log(
+            EventName.CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED,
+            { tier: pro ? 'pro' : 'free' },
+            { tier: pro ? 'pro' : 'free' }
+        )
     }, [pro])
 
     const [editor, setEditor] = useState<null | IEditor>(null)
@@ -339,16 +357,30 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
                                 onKeyDown={() => {
                                     setEditor(editor)
 
-                                    eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED, {
-                                        tier: pro ? 'pro' : 'free',
-                                        editor,
-                                    })
+                                    eventLogger.log(
+                                        EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED,
+                                        {
+                                            tier: pro ? 'pro' : 'free',
+                                            editor,
+                                        },
+                                        {
+                                            tier: pro ? 'pro' : 'free',
+                                            editor,
+                                        }
+                                    )
                                 }}
                                 onClick={() => {
-                                    eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED, {
-                                        tier: pro ? 'pro' : 'free',
-                                        editor,
-                                    })
+                                    eventLogger.log(
+                                        EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED,
+                                        {
+                                            tier: pro ? 'pro' : 'free',
+                                            editor,
+                                        },
+                                        {
+                                            tier: pro ? 'pro' : 'free',
+                                            editor,
+                                        }
+                                    )
                                     setEditor(editor)
                                 }}
                             >
@@ -385,7 +417,11 @@ function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolea
                     size="small"
                     onClick={() => {
                         onCompleted()
-                        eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED, { tier: pro ? 'pro' : 'free' })
+                        eventLogger.log(
+                            EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED,
+                            { tier: pro ? 'pro' : 'free' },
+                            { tier: pro ? 'pro' : 'free' }
+                        )
                     }}
                 >
                     Skip for now

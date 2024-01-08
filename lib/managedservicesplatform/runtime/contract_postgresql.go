@@ -18,7 +18,7 @@ type postgreSQLContract struct {
 	customDSNTemplate *string
 
 	instanceConnectionName *string
-	user                   *string
+	instanceConnectionUser *string
 }
 
 func loadPostgreSQLContract(env *Env) postgreSQLContract {
@@ -27,8 +27,15 @@ func loadPostgreSQLContract(env *Env) postgreSQLContract {
 			"custom PostgreSQL DSN with templatized database, e.g. 'user=foo database={{ .Database }}'"),
 
 		instanceConnectionName: env.GetOptional("PGINSTANCE", "Cloud SQL instance connection name"),
-		user:                   env.GetOptional("PGUSER", "Cloud SQL user"),
+		instanceConnectionUser: env.GetOptional("PGUSER", "Cloud SQL user"),
 	}
+}
+
+// Configured indicates if a PostgreSQL instance is configured for use. It does
+// not guarantee the presence of any databases within the instance.
+func (c postgreSQLContract) Configured() bool {
+	return c.customDSNTemplate != nil ||
+		(c.instanceConnectionName != nil && c.instanceConnectionUser == nil)
 }
 
 // OpenDatabase returns a standard library DB pointing to the configured
@@ -59,12 +66,12 @@ func (c postgreSQLContract) OpenDatabase(ctx context.Context, database string) (
 // getCloudSQLConnConfig generates a pgx connection configuration for using
 // a Cloud SQL instance using IAM auth.
 func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database string) (*pgx.ConnConfig, error) {
-	if c.instanceConnectionName == nil || c.user == nil {
+	if c.instanceConnectionName == nil || c.instanceConnectionUser == nil {
 		return nil, errors.New("missing required PostgreSQL configuration")
 	}
 
 	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
-	dsn := fmt.Sprintf("user=%s dbname=%s", *c.user, database)
+	dsn := fmt.Sprintf("user=%s dbname=%s", *c.instanceConnectionUser, database)
 	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "pgx.ParseConfig")

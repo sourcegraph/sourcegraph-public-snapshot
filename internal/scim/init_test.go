@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"

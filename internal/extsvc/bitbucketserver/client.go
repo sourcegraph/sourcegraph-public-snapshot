@@ -17,7 +17,7 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/log"

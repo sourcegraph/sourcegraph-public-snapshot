@@ -713,6 +713,7 @@ type BatchWorkspaceFileResolver interface {
 	ChangelistURL(ctx context.Context) (*string, error)
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
 	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+	Languages() ([]string, error)
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)

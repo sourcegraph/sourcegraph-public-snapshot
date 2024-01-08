@@ -465,7 +465,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt-4",
-				ChatModelMaxTokens:       8000,
+				ChatModelMaxTokens:       7500,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   4000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
@@ -491,11 +491,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt4-deployment",
-				ChatModelMaxTokens:       8000,
+				ChatModelMaxTokens:       7500,
 				FastChatModel:            "gpt35-turbo-deployment",
-				FastChatModelMaxTokens:   8000,
+				FastChatModelMaxTokens:   7500,
 				CompletionModel:          "gpt35-turbo-deployment",
-				CompletionModelMaxTokens: 8000,
+				CompletionModelMaxTokens: 7500,
 				AccessToken:              "asdf",
 				Provider:                 "azure-openai",
 				Endpoint:                 "https://acmecorp.openai.azure.com",
@@ -603,66 +603,6 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			// Not supported, zero-config is new and should be using the new
 			// config.
-			wantDisabled: true,
-		},
-		{
-			name:       "app zero-config cody gateway completions with dotcom token",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
-					DotcomAuthToken: "sgp_abcdef0123abcdef0123abcdef0123abcdef0123",
-				},
-			},
-			wantConfig: &conftypes.CompletionsConfig{
-				AccessToken:              "sgd_d796dd3efc6c5257694b80cba0537131457b1742b42d081a27aeaef091107bc4",
-				ChatModel:                "anthropic/claude-2.0",
-				ChatModelMaxTokens:       12000,
-				FastChatModel:            "anthropic/claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic/claude-instant-1",
-				CompletionModelMaxTokens: 9000,
-				Endpoint:                 "https://cody-gateway.sourcegraph.com",
-				Provider:                 "sourcegraph",
-			},
-		},
-		{
-			name:       "app with custom configuration",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Completions: &schema.Completions{
-					AccessToken:     "CUSTOM_TOKEN",
-					Provider:        "anthropic",
-					ChatModel:       "claude-v1",
-					FastChatModel:   "claude-instant-1",
-					CompletionModel: "claude-instant-1",
-				},
-				App: &schema.App{
-					DotcomAuthToken: "TOKEN",
-				},
-			},
-			wantConfig: &conftypes.CompletionsConfig{
-				AccessToken:              "CUSTOM_TOKEN",
-				ChatModel:                "claude-v1",
-				ChatModelMaxTokens:       9000,
-				CompletionModel:          "claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				FastChatModel:            "claude-instant-1",
-				CompletionModelMaxTokens: 9000,
-				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
-			},
-		},
-		{
-			name:       "App but no dotcom username",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
-					DotcomAuthToken: "",
-				},
-			},
 			wantDisabled: true,
 		},
 	}
@@ -1009,112 +949,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				ExcludeChunkOnError: true,
 				Qdrant:              defaultQdrantConfig,
 			},
-		},
-		{
-			name:       "App default config",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
-					DotcomAuthToken: "sgp_0123456789012345678901234567890123456789",
-				},
-			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
-				AccessToken:                "sgd_a3eb0fee5d705bee20f7339924f442051520e2fcae446190128de1218d991660",
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
-				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
-				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
-				},
-				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
-			},
-		},
-		{
-			name: "App but no dotcom username",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
-					DotcomAuthToken: "",
-				},
-			},
-			wantDisabled: true,
-		},
-		{
-			name:       "App with dotcom token",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
-				},
-				App: &schema.App{
-					DotcomAuthToken: "sgp_0123456789012345678901234567890123456789",
-				},
-			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
-				AccessToken:                "sgd_a3eb0fee5d705bee20f7339924f442051520e2fcae446190128de1218d991660",
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
-				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
-				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
-				},
-				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
-			},
-		},
-		{
-			name:       "App with user token",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider:    "sourcegraph",
-					AccessToken: "TOKEN",
-				},
-			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
-				AccessToken:                "TOKEN",
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
-				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
-				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
-				},
-				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
-			},
-		},
-		{
-			name:       "App without dotcom or user token",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
-				},
-			},
-			wantDisabled: true,
 		},
 	}
 

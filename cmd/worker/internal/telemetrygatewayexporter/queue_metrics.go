@@ -15,7 +15,7 @@ import (
 )
 
 type queueMetricsJob struct {
-	store database.TelemetryEventsExportQueueStore
+	store database.TelemetryEventsExportQueueDiagnosticsStore
 
 	sizeGauge prometheus.Gauge
 }

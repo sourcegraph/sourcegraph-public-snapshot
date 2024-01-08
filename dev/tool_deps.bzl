@@ -5,6 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file"
 DOCSITE_VERSION = "1.9.4"
 SRC_CLI_VERSION = "5.2.1"
 CTAGS_VERSION = "6.0.0.2783f009"
+PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 
 SRC_CLI_BUILDFILE = """
@@ -15,7 +16,7 @@ filegroup(
 )
 """
 
-GCLOUD_VERSION = "415.0.0"
+GCLOUD_VERSION = "456.0.0"
 GCLOUD_BUILDFILE = """package(default_visibility = ["//visibility:public"])\nexports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])"""
 GCLOUD_PATCH_CMDS = [
     "ln -s google-cloud-sdk/bin/gcloud gcloud",
@@ -23,6 +24,14 @@ GCLOUD_PATCH_CMDS = [
     "ln -s google-cloud-sdk/bin/bq bq",
     "ln -s google-cloud-sdk/bin/git-credential-gcloud.sh git-credential-gcloud",
 ]
+
+PACKER_BUILDFILE = """
+filegroup(
+    name = "packer-{}",
+    srcs = ["packer"],
+    visibility = ["//visibility:public"],
+)
+"""
 
 def tool_deps():
     "Repository rules to fetch third party tooling used for dev purposes"
@@ -101,7 +110,7 @@ def tool_deps():
         name = "gcloud-darwin-arm64",
         build_file_content = GCLOUD_BUILDFILE,
         patch_cmds = GCLOUD_PATCH_CMDS,
-        sha256 = "974ed4f37f8bde2f7a9731eba90b033f7c97d24d835ecc62b58eee87c8f29776",
+        sha256 = "80c31937d3a3dce98d730844ff028715a46cd9fd5d5d44096b16e85fa54e6df1",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-arm.tar.gz".format(GCLOUD_VERSION),
     )
 
@@ -109,7 +118,7 @@ def tool_deps():
         name = "gcloud-darwin-amd64",
         build_file_content = GCLOUD_BUILDFILE,
         patch_cmds = GCLOUD_PATCH_CMDS,
-        sha256 = "f05cc45ffc6c1f3ff73854989f3ea3d6bee40287d23047917e4c845aeb027f98",
+        sha256 = "2961471b9d81092443456de15509f46fea685dfaf401f1b6c444eab63b45ccb7",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-x86_64.tar.gz".format(GCLOUD_VERSION),
     )
 
@@ -117,8 +126,29 @@ def tool_deps():
         name = "gcloud-linux-amd64",
         build_file_content = GCLOUD_BUILDFILE,
         patch_cmds = GCLOUD_PATCH_CMDS,
-        sha256 = "5f9ed1862a82f393be3b16634309e9e8edb6da13a8704952be9c4c59963f9cd4",
+        sha256 = "03d87f71e15f2143e5f2b64b3594464ac51e791658848fc33d748f545ef97889",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "packer-linux-amd64",
+        build_file_content = PACKER_BUILDFILE.format("linux-amd64"),
+        sha256 = "0587f7815ed79589cd9c2b754c82115731c8d0b8fd3b746fe40055d969facba5",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_linux_amd64.zip".format(PACKER_VERSION),
+    )
+
+    http_archive(
+        name = "packer-darwin-arm64",
+        build_file_content = PACKER_BUILDFILE.format("darwin-arm64"),
+        sha256 = "5cc53abbc345fc5f714c8ebe46fd79d5f503f29375981bee6c77f89e5ced92d3",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_arm64.zip".format(PACKER_VERSION),
+    )
+
+    http_archive(
+        name = "packer-darwin-amd64",
+        build_file_content = PACKER_BUILDFILE.format("darwin-amd64"),
+        sha256 = "ef1ceaaafcdada65bdbb45793ad6eedbc7c368d415864776b9d3fa26fb30b896",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_amd64.zip".format(PACKER_VERSION),
     )
 
     http_file(

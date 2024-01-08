@@ -27,7 +27,6 @@ thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
 }
 
-
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.

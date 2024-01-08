@@ -198,7 +198,6 @@ func TestNewCommon_repo_error(t *testing.T) {
 			config := &schema.OtherExternalServiceConnection{
 				Url:   "https://url.com",
 				Repos: []string{"serve-git-local"},
-				Root:  "path/to/repo",
 			}
 
 			bs, err := json.Marshal(config)

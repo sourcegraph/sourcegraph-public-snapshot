@@ -37,7 +37,9 @@ func ScheduleRepositories(
 
 		if !forceReschedule {
 			job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
-			if job != nil && isScheduledOrCompleted(job) {
+			// We skip creating a repo embedding job for a repo at revision if there already exists
+			// an identical job that has been completed, or is scheduled to run (processing or queued).
+			if job != nil && job.IsRepoEmbeddingJobScheduledOrCompleted() {
 				continue
 			}
 		}
@@ -76,8 +78,11 @@ func ScheduleRepositoriesForPolicy(
 			latestRevision = ""
 		}
 
+		// We skip creating a repo embedding job for a repo at revision if we already attempted a job at the same
+		// revision. In the case of failed jobs, this helps prevent us from constantly  retrying the job and
+		// failing again, which can be very expensive.
 		job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
-		if job != nil && isScheduledOrCompleted(job) {
+		if job != nil {
 			continue
 		}
 
@@ -87,11 +92,4 @@ func ScheduleRepositoriesForPolicy(
 		}
 	}
 	return nil
-}
-
-// We skip creating a repo embedding job for a repo at revision if there already exists
-// an identical job that has been completed, or is scheduled to run (processing or queued).
-// In the case that a repo is empty, a job is considered "completed" even if it failed.
-func isScheduledOrCompleted(job *repo.RepoEmbeddingJob) bool {
-	return job.IsRepoEmbeddingJobScheduledOrCompleted() || job.EmptyRepoEmbeddingJob()
 }

@@ -1337,6 +1337,9 @@ func TestRepos_List_topics(t *testing.T) {
 					ghr.RepositoryTopics.Nodes = append(ghr.RepositoryTopics.Nodes, github.RepositoryTopic{
 						Topic: github.Topic{Name: topic},
 					})
+					// In production, topics are only set on read. Here we add them manually to be
+					// able to compare them with the repos returned by the db.
+					r.Topics = append(r.Topics, topic)
 				}
 			}
 		}

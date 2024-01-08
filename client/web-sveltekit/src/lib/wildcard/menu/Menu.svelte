@@ -22,9 +22,11 @@
 
     interface $$Props extends HTMLButtonAttributes {
         open: Writable<boolean>
+        triggerButtonClass: string
     }
 
     export let open: Writable<boolean>
+    export let triggerButtonClass: string
 
     const {
         elements: { menu, item, trigger, separator },
@@ -35,7 +37,7 @@
     setContext({ item, trigger, separator, builders, open })
 </script>
 
-<button {...$trigger} use:trigger {...$$restProps}>
+<button {...$trigger} use:trigger class={triggerButtonClass} {...$$restProps}>
     <slot name="trigger" />
 </button>
 
@@ -44,18 +46,6 @@
 </div>
 
 <style lang="scss">
-    button {
-        color: var(--icon-color);
-        margin: 0;
-        padding: 0;
-        border: none;
-        background-color: transparent;
-
-        &:hover {
-            text-decoration: none;
-        }
-    }
-
     div,
     div :global([role='menu']) {
         isolation: isolate;

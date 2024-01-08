@@ -66,6 +66,7 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
 			Features:        s.args.Features,
+			NumContextLines: s.args.NumContextLines,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)

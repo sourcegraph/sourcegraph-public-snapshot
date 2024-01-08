@@ -69,6 +69,10 @@ type Config struct {
 	ActorConcurrencyLimit       codygateway.ActorConcurrencyLimitConfig
 	ActorRateLimitNotify        codygateway.ActorRateLimitNotifyConfig
 	AutoFlushStreamingResponses bool
+
+	Attribution struct {
+		Enabled bool
+	}
 }
 
 type OpenTelemetryConfig struct {
@@ -112,6 +116,7 @@ func (c *Config) Load() {
 			"claude-instant-v1.1",
 			"claude-instant-v1.1-100k",
 			"claude-instant-v1.2",
+			"claude-instant-1.2",
 			"claude-instant-1.2-cyan",
 		}, ","),
 		"Anthropic models that can be used."))
@@ -146,7 +151,7 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
-			"accounts/fireworks/models/wizardcoder-15b",
+			"accounts/fireworks/models/mixtral-8x7b-instruct",
 		}, ","),
 		"Fireworks models that can be used."))
 	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
@@ -186,6 +191,8 @@ func (c *Config) Load() {
 
 	c.ActorRateLimitNotify.SlackWebhookURL = c.GetOptional("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_SLACK_WEBHOOK_URL", "The Slack webhook URL to send notifications to.")
 	c.AutoFlushStreamingResponses = c.GetBool("CODY_GATEWAY_AUTO_FLUSH_STREAMING_RESPONSES", "false", "Whether we should flush streaming responses after every write.")
+
+	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 }
 
 // splitMaybe splits on commas, but only returns at least one element if the input

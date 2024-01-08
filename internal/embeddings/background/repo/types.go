@@ -41,11 +41,6 @@ func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
 	return j.State == "completed" || j.State == "processing" || j.State == "queued"
 }
 
-// EmptyRepoEmbeddingJob returns true if this job completed with an empty revision value and final state of failed
-func (j *RepoEmbeddingJob) EmptyRepoEmbeddingJob() bool {
-	return j.State == "failed" && j.Revision == ""
-}
-
 type EmbedRepoStats struct {
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats

@@ -55,6 +55,7 @@ func Test_zoektSearch(t *testing.T) {
 		client,
 		&search.TextPatternInfo{},
 		[]query.BranchRepos{{Branch: "test", Repos: roaring.BitmapOf(1, 2, 3)}},
+		0,
 		time.Since,
 		"",
 		matchSender(nil),
