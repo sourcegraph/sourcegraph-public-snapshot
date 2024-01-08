@@ -34,7 +34,6 @@ import styles from './ScopeSelector.module.scss'
 export interface IRepo {
     id: string
     name: string
-    embeddingExists: boolean
     externalRepository: {
         serviceType: string
     }
@@ -104,12 +103,12 @@ export const RepositoriesSelectorPopover: React.FC<{
         if (searchTextDebounced) {
             /* eslint-disable no-console */
             searchRepositories({
-                variables: { query: searchTextDebounced, includeJobs: !!authenticatedUser?.siteAdmin },
+                variables: { query: searchTextDebounced },
                 pollInterval: 5000,
             }).catch(console.error)
             /* eslint-enable no-console */
         }
-    }, [searchTextDebounced, searchRepositories, authenticatedUser?.siteAdmin])
+    }, [searchTextDebounced, searchRepositories])
 
     const [isCalloutDismissed = true, setIsCalloutDismissed] = useTemporarySetting(
         'cody.contextCallout.dismissed',
