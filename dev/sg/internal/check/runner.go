@@ -164,9 +164,10 @@ func (r *Runner[Args]) Interactive(
 
 	buildChoices := func(failed []int) map[int]string {
 		var choices = make(map[int]string)
-		for _, v := range failed {
-			category := r.categories[v]
-			choices[v] = fmt.Sprintf("Fix %q", category.Name)
+		for _, idx := range failed {
+			category := r.categories[idx]
+			// categories are zero based indexes internally, but are displayed with 1-based indexes
+			choices[idx+1] = fmt.Sprintf("Fix %q", category.Name)
 		}
 
 		choices[FixAll] = "Fix everything"
@@ -202,11 +203,13 @@ func (r *Runner[Args]) Interactive(
 			}
 		default:
 			{
-				selectedCategory := r.categories[choice]
+				// choice is 1 index based, so we subtract 1 to make it zero index based so that we can use it with r.categories
+				idx := choice - 1
+				selectedCategory := r.categories[idx]
 
 				r.Output.ClearScreen()
 
-				err = r.presentFailedCategoryWithOptions(ctx, int(choice), &selectedCategory, args, results)
+				err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
 				if err != nil {
 					if err == io.EOF {
 						return nil // we are done
