@@ -111,7 +111,6 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
 	logger := logtest.Scoped(t)
@@ -288,7 +287,6 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 		t.Skip()
 	}
 
-	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 	rcache.SetupForTest(t)
 
@@ -469,9 +467,10 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		require.NoError(t, err)
 
 		provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
-			BaseURL: uri,
-			DB:      testDB,
-			CLI:     doer,
+			BaseURL:                     uri,
+			DB:                          testDB,
+			CLI:                         doer,
+			SyncInternalRepoPermissions: true,
 		})
 
 		authz.SetProviders(false, []authz.Provider{provider})

@@ -1,6 +1,0 @@
-# This file is used in our production build to adjust CSS and JS output to support specified browsers. For additional information regarding the format and rule options, please see: https://github.com/browserslist/browserslist#queries
-
-# Run `pnpm --filter @sourcegraph/browser browserslist` to see which browsers are targeted by these queries
-
-last 3 Chrome versions
-last 3 Firefox versions

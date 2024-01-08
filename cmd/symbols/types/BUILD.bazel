@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/types",
     visibility = ["//visibility:public"],
     deps = [
-        "//internal/conf/deploy",
         "//internal/env",
         "//internal/search",
         "//internal/search/result",

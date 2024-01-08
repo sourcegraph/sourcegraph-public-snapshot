@@ -147,10 +147,3 @@ func IsValidTextFile(fileName string) bool {
 	basename := strings.ToLower(filepath.Base(fileName))
 	return strings.HasPrefix(basename, "license")
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

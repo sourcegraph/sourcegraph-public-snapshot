@@ -73,7 +73,7 @@ func foo(go string) {}
 
 				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
 				defer cancel()
-				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -127,7 +127,7 @@ func foo(go.txt) {}
 		extensionHint := filepath.Ext(filename)
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", 0, sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
@@ -214,7 +214,7 @@ func foo(real string) {}
 	}
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = filteredStructuralSearch(ctx, logtest.Scoped(t), zPath, zFile, p, "foo", sender)
+	err = filteredStructuralSearch(ctx, logtest.Scoped(t), zPath, zFile, p, "foo", sender, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +314,7 @@ func TestIncludePatterns(t *testing.T) {
 	}
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
+	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", 0, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,7 +351,7 @@ func TestRule(t *testing.T) {
 
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
+	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", 0, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +416,7 @@ func bar() {
 		return func(t *testing.T) {
 			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
 			defer cancel()
-			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
 			require.NoError(t, err)
 
 			require.Equal(t, wantCount, count(sender.collected))
@@ -457,7 +457,7 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -498,7 +498,7 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -539,7 +539,7 @@ func TestBuildQuery(t *testing.T) {
 func Test_chunkRanges(t *testing.T) {
 	cases := []struct {
 		ranges         []protocol.Range
-		mergeThreshold int
+		mergeThreshold int32
 		output         []rangeChunk
 	}{{
 		// Single range
@@ -698,7 +698,7 @@ func bar() {
 	t.Run("Structural search tar input to comby", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -735,5 +735,164 @@ func maybeSkipComby(t *testing.T) {
 	}
 	if _, err := exec.LookPath("comby"); err != nil {
 		t.Skipf("skipping comby test when not on CI: %v", err)
+	}
+}
+
+func Test_addContext(t *testing.T) {
+	l := func(offset, line, column int32) protocol.Location {
+		return protocol.Location{Offset: offset, Line: line, Column: column}
+	}
+
+	r := func(start, end protocol.Location) protocol.Range {
+		return protocol.Range{Start: start, End: end}
+	}
+
+	testCases := []struct {
+		file         string
+		contextLines int32
+		inputRange   protocol.Range
+		expected     string
+	}{
+		{
+			"",
+			0,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"",
+			1,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\n",
+			0,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\n",
+			1,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\n\n\n",
+			0,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"",
+		},
+		{
+			"\n\n\n\n",
+			1,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"\n\n",
+		},
+		{
+			"\n\n\n\n",
+			2,
+			r(l(1, 1, 0), l(1, 1, 0)),
+			"\n\n\n",
+		},
+		{
+			"abc\ndef\nghi\n",
+			0,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc",
+		},
+		{
+			"abc\ndef\nghi\n",
+			1,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef",
+		},
+		{
+			"abc\ndef\nghi\n",
+			2,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef\nghi",
+		},
+		{
+			"abc\ndef\nghi",
+			0,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc",
+		},
+		{
+			"abc\ndef\nghi",
+			1,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef",
+		},
+		{
+			"abc\ndef\nghi",
+			2,
+			r(l(1, 0, 1), l(1, 0, 1)),
+			"abc\ndef\nghi",
+		},
+		{
+			"abc\ndef\nghi",
+			2,
+			r(l(5, 1, 1), l(6, 1, 2)),
+			"abc\ndef\nghi",
+		},
+		{
+			"abc",
+			0,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc",
+		},
+		{
+			"abc",
+			1,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc",
+		},
+		{
+			"abc\r\ndef\r\nghi\r\n",
+			1,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc\r\ndef",
+		},
+		{
+			"abc\r\ndef\r\nghi",
+			3,
+			r(l(1, 0, 1), l(2, 0, 2)),
+			"abc\r\ndef\r\nghi",
+		},
+		{
+			"\r\n",
+			0,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"\r\n",
+			1,
+			r(l(0, 0, 0), l(0, 0, 0)),
+			"",
+		},
+		{
+			"abc\nd\xE2\x9D\x89f\nghi",
+			0,
+			r(l(4, 1, 0), l(5, 1, 1)),
+			"d\xE2\x9D\x89f",
+		},
+		{
+			"abc\nd\xE2\x9D\x89f\nghi",
+			1,
+			r(l(4, 1, 0), l(5, 1, 1)),
+			"abc\nd\xE2\x9D\x89f\nghi",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run("", func(t *testing.T) {
+			buf := []byte(testCase.file)
+			extendedRange := extendRangeToLines(testCase.inputRange, buf)
+			contextedRange := addContextLines(extendedRange, buf, testCase.contextLines)
+			require.Equal(t, testCase.expected, string(buf[contextedRange.Start.Offset:contextedRange.End.Offset]))
+		})
 	}
 }

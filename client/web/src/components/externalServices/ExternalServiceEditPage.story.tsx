@@ -46,6 +46,7 @@ const externalService = {
     lastSyncError: null,
     repoCount: 0,
     lastSyncAt: null,
+    unrestricted: false,
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',

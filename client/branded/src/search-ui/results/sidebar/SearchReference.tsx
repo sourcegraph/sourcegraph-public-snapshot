@@ -378,21 +378,24 @@ const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<Se
             <Button className="p-0 flex-1" onClick={() => onClick?.(example)}>
                 {scanResult.term.map((term, index) => {
                     switch (term.type) {
-                        case 'filter':
+                        case 'filter': {
                             return (
                                 <React.Fragment key={index}>
                                     <span className="search-filter-keyword">{term.field.value}:</span>
                                     {term.value?.quoted ? `"${term.value.value}"` : term.value?.value}
                                 </React.Fragment>
                             )
-                        case 'keyword':
+                        }
+                        case 'keyword': {
                             return (
                                 <span key={index} className="search-filter-keyword">
                                     {term.value}
                                 </span>
                             )
-                        default:
+                        }
+                        default: {
                             return example.slice(term.range.start, term.range.end)
+                        }
                     }
                 })}
             </Button>

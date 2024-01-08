@@ -108,8 +108,8 @@ func TestHandleAuthResponse(t *testing.T) {
 
 	// Check redirect URL is properly formed
 	host, port, _ := net.SplitHostPort(redirectUrl.Host)
-	if redirectUrl.Scheme != "http" || host != "localhost" || port == "0" {
-		t.Errorf("Expected redirect URL to be http://localhost, got %s", redirectUrl.String())
+	if redirectUrl.Scheme != "http" || host != "127.0.0.1" || port == "0" {
+		t.Errorf("Expected redirect URL to be http://127.0.0.1, got %s", redirectUrl.String())
 	}
 
 	const fakeAuthCode = "XXXYYYZZZ"
@@ -148,7 +148,8 @@ func (th *mockConfig) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) s
 }
 
 func (th *mockConfig) Exchange(ctx context.Context, code string,
-	opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+	opts ...oauth2.AuthCodeOption,
+) (*oauth2.Token, error) {
 	if code != th.code {
 		return nil, fmt.Errorf("Code mismatch. Wanted '%s' but got '%s", th.code, code)
 	}

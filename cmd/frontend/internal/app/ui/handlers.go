@@ -27,9 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -230,6 +228,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
+			if errcode.IsRepoDenied(err) {
+				serveError(w, r, db, err, http.StatusNotFound)
+				return nil, nil
+			}
 			if gitdomain.IsRepoNotExist(err) {
 				if gitdomain.IsCloneInProgress(err) {
 					// Repo is cloning.
@@ -368,12 +370,6 @@ func serveSignIn(db database.DB) handlerFunc {
 		return renderTemplate(w, "app.html", common)
 	}
 
-	// For app we use an extra middleware to handle passwordless signin via a
-	// in-memory secret.
-	if deploy.IsApp() {
-		return userpasswd.AppSignInMiddleware(db, handler)
-	}
-
 	return handler
 }
 
@@ -467,7 +463,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient("http.servetree"))
 		if handled {
 			return nil
 		}
@@ -503,7 +499,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient("http.serverepoorblob"))
 		if handled {
 			return nil
 		}
@@ -570,26 +566,33 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	email := r.URL.Query().Get("email")
 	tosAccepted := r.URL.Query().Get("tos_accepted")
 
-	firstSourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
-	var firstSourceURL string
-	if err == nil && firstSourceURLCookie != nil {
-		firstSourceURL = firstSourceURLCookie.Value
-	}
-
-	lastSourceURLCookie, err := r.Cookie("sourcegraphRecentSourceUrl")
-	var lastSourceURL string
-	if err == nil && lastSourceURLCookie != nil {
-		lastSourceURL = lastSourceURLCookie.Value
+	getCookie := func(name string) string {
+		c, err := r.Cookie(name)
+		if err != nil || c == nil {
+			return ""
+		}
+		return c.Value
 	}
 
 	anonymousUserId, _ := cookie.AnonymousUID(r)
 
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		IsServerAdmin:   true,
-		AnonymousUserID: anonymousUserId,
-		FirstSourceURL:  firstSourceURL,
-		LastSourceURL:   lastSourceURL,
-		HasAgreedToToS:  tosAccepted == "true",
+		IsServerAdmin:          true,
+		AnonymousUserID:        anonymousUserId,
+		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
+		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
+		OriginalReferrer:       getCookie("originalReferrer"),
+		LastReferrer:           getCookie("sg_referrer"),
+		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+		SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+		SessionUTMSource:       getCookie("sg_utm_source"),
+		SessionUTMMedium:       getCookie("sg_utm_medium"),
+		SessionUTMContent:      getCookie("sg_utm_content"),
+		SessionUTMTerm:         getCookie("sg_utm_term"),
+		GoogleClickID:          getCookie("gclid"),
+		MicrosoftClickID:       getCookie("msclkid"),
+		HasAgreedToToS:         tosAccepted == "true",
 	})
 	return nil
 }

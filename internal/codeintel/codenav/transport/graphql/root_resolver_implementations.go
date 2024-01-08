@@ -2,8 +2,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -132,30 +130,4 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 	}
 
 	return newLocationConnectionResolver(prototypes, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
-}
-
-//
-//
-
-// decodeCursor is the inverse of encodeCursor. If the given encoded string is empty, then
-// a fresh cursor is returned.
-func decodeImplementationsCursor(rawEncoded string) (codenav.ImplementationsCursor, error) {
-	if rawEncoded == "" {
-		return codenav.ImplementationsCursor{Phase: "local"}, nil
-	}
-
-	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
-	if err != nil {
-		return codenav.ImplementationsCursor{}, err
-	}
-
-	var cursor codenav.ImplementationsCursor
-	err = json.Unmarshal(raw, &cursor)
-	return cursor, err
-}
-
-// encodeCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
-func encodeImplementationsCursor(cursor codenav.ImplementationsCursor) string {
-	rawEncoded, _ := json.Marshal(cursor)
-	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }

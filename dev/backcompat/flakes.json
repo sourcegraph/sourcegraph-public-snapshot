@@ -26,6 +26,31 @@
             "path": "internal/database",
             "prefix": "TestUserCredentials_CreateUpdate",
             "reason": "Update to crypto internals affects ability to compare authenticators"
+        },
+        {
+            "path": "internal/database",
+            "prefix": "TestRepoStatistics",
+            "reason": "Updates the gitserver_repos_statistics table to different format that doesn't work with old query anymore"
+        },
+        {
+            "path": "internal/database",
+            "prefix": "TestRepoStatistics_RecloneAndCorruption",
+            "reason": "Updates the gitserver_repos_statistics table to different format that doesn't work with old query anymore"
+        },
+        {
+            "path": "internal/database",
+            "prefix": "TestRepoStatistics_DeleteAndUndelete",
+            "reason": "Updates the gitserver_repos_statistics table to different format that doesn't work with old query anymore"
+        },
+        {
+            "path": "internal/database",
+            "prefix": "TestRepoStatistics_AvoidZeros",
+            "reason": "Updates the gitserver_repos_statistics table to different format that doesn't work with old query anymore"
+        },
+        {
+            "path": "internal/database",
+            "prefix": "TestRepoStatistics_Compaction",
+            "reason": "Updates the gitserver_repos_statistics table to different format that doesn't work with old query anymore"
         }
     ]
 }

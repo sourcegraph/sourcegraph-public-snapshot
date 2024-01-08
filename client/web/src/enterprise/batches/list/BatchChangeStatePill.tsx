@@ -73,25 +73,28 @@ const StatePill: React.FunctionComponent<React.PropsWithChildren<Pick<BatchChang
     state,
 }) => {
     switch (state) {
-        case BatchChangeState.OPEN:
+        case BatchChangeState.OPEN: {
             return (
                 <Badge variant="success" className={styles.statePill} aria-hidden={true}>
                     Open
                 </Badge>
             )
-        case BatchChangeState.CLOSED:
+        }
+        case BatchChangeState.CLOSED: {
             return (
                 <Badge variant="danger" className={styles.statePill} aria-hidden={true}>
                     Closed
                 </Badge>
             )
+        }
         case BatchChangeState.DRAFT:
-        default:
+        default: {
             return (
                 <Badge variant="secondary" className={styles.statePill} aria-hidden={true}>
                     Draft
                 </Badge>
             )
+        }
     }
 }
 
@@ -100,7 +103,7 @@ const ExecutionStatePill: React.FunctionComponent<
 > = ({ latestExecutionState }) => {
     switch (latestExecutionState) {
         case BatchSpecState.PROCESSING:
-        case BatchSpecState.QUEUED:
+        case BatchSpecState.QUEUED: {
             return (
                 <Badge
                     variant="warning"
@@ -119,8 +122,9 @@ const ExecutionStatePill: React.FunctionComponent<
                     <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
+        }
 
-        case BatchSpecState.COMPLETED:
+        case BatchSpecState.COMPLETED: {
             return (
                 <Badge
                     variant="primary"
@@ -131,8 +135,9 @@ const ExecutionStatePill: React.FunctionComponent<
                     <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
+        }
         case BatchSpecState.FAILED:
-        default:
+        default: {
             return (
                 <Badge
                     variant="danger"
@@ -143,5 +148,6 @@ const ExecutionStatePill: React.FunctionComponent<
                     <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
+        }
     }
 }

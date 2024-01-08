@@ -103,6 +103,7 @@ func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 		Body           string                 `json:"body,omitempty"`
 		Commits        []GitCommitDescription `json:"commits,omitempty"`
 		Published      *PublishedValue        `json:"published,omitempty"`
+		Fork           *bool                  `json:"fork,omitempty"`
 	}{
 		BaseRepository: c.BaseRepository,
 		ExternalID:     c.ExternalID,
@@ -113,6 +114,7 @@ func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 		Title:          c.Title,
 		Body:           c.Body,
 		Commits:        c.Commits,
+		Fork:           c.Fork,
 	}
 	if !c.Published.Nil() {
 		v.Published = &c.Published

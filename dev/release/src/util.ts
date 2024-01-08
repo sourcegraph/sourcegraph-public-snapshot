@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync, createReadStream } from 'fs'
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
@@ -91,7 +91,7 @@ export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
 }
 
 export function changelogURL(version: string): string {
-    const versionAnchor = version.replace(/\./g, '-')
+    const versionAnchor = version.replaceAll('.', '-')
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
@@ -207,13 +207,13 @@ export async function getContainerRegistryCredential(registryHostname: string): 
         `Enter your container registry (${registryHostname} ) username: `,
         `${cacheFolder}/cr_${registryHostname.replace('.', '_')}_username.txt`
     )
-    const registryPassowrd = await readLine(
+    const registryPassword = await readLine(
         `Enter your container registry (${registryHostname} ) access token: `,
         `${cacheFolder}/cr_${registryHostname.replace('.', '_')}_password.txt`
     )
     const credential: ContainerRegistryCredential = {
         username: registryUsername,
-        password: registryPassowrd,
+        password: registryPassword,
         hostname: registryHostname,
     }
     return credential
@@ -289,48 +289,6 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
         }
     }
 }
-
-export const updateMigratorBazelOuts =
-    (version: string): EditFunc =>
-    (directory: string): void => {
-        const newEntries = `        "schema-descriptions/v${version}-internal_database_schema.codeinsights.json",
-        "schema-descriptions/v${version}-internal_database_schema.codeintel.json",
-        "schema-descriptions/v${version}-internal_database_schema.json",`
-        const filePath = `${directory}/cmd/migrator/BUILD.bazel`
-
-        let inGenrule = false
-        let inOuts = false
-        const result: string[] = []
-
-        const rls = readline.createInterface({
-            input: createReadStream(filePath),
-            output: process.stdout,
-            terminal: false,
-        })
-
-        rls.on('line', line => {
-            if (line.includes('genrule(')) {
-                inGenrule = true
-            }
-
-            if (inGenrule && line.includes('outs = [')) {
-                inOuts = true
-            }
-
-            if (inGenrule && inOuts && line.includes('],')) {
-                inOuts = false
-                inGenrule = false
-                line = `${newEntries}\n${line}`
-            }
-
-            result.push(line)
-        })
-
-        rls.on('close', () => {
-            writeFileSync(filePath, result.join('\n'))
-            console.log(`${filePath} updated successfully.`)
-        })
-    }
 
 export async function retryInput(
     prompt: string,

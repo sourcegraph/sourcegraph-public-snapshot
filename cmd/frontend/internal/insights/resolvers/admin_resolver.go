@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -436,7 +437,7 @@ type adminBackfillQueueConnectionStore struct {
 }
 
 // ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
-func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	filterArgs := scheduler.BackfillQueueArgs{}
 	if a.args != nil {
 		filterArgs.States = a.args.States
@@ -445,9 +446,9 @@ func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*
 
 	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx, filterArgs)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return i32Ptr(&count), nil
+	return int32(count), nil
 }
 
 func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
@@ -506,16 +507,15 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
 			Column: string(dbToOrderBy(scheduler.BackfillQueueColumn(column))),
-			Value:  fmt.Sprintf("%d", node.IDInt32()),
+			Value:  strconv.Itoa(int(node.IDInt32())),
 		},
 	)
 
 	return &cursor, nil
-
 }
 
 // UnmarshalCursor returns node id from after/before cursor string.
-func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) ([]any, error) {
 	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
 	if err != nil {
 		return nil, err
@@ -527,7 +527,12 @@ func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, order
 		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
 	}
 
-	return &backfillCursor.Value, err
+	c, err := strconv.Atoi(backfillCursor.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return []any{int32(c)}, err
 }
 
 const backfillCursorKind = "InsightsAdminBackfillItem"

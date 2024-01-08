@@ -1,7 +1,7 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 import { UnlockAccountPage } from './UnlockAccount'
 

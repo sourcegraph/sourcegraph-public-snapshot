@@ -13,7 +13,6 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	inventory "github.com/sourcegraph/sourcegraph/internal/inventory"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -596,9 +595,6 @@ type MockReposService struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.
 	GetByNameFunc *ReposServiceGetByNameFunc
-	// GetCommitFunc is an instance of a mock function object controlling
-	// the behavior of the method GetCommit.
-	GetCommitFunc *ReposServiceGetCommitFunc
 	// GetInventoryFunc is an instance of a mock function object controlling
 	// the behavior of the method GetInventory.
 	GetInventoryFunc *ReposServiceGetInventoryFunc
@@ -632,11 +628,6 @@ func NewMockReposService() *MockReposService {
 		},
 		GetByNameFunc: &ReposServiceGetByNameFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 *types.Repo, r1 error) {
-				return
-			},
-		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID) (r0 *gitdomain.Commit, r1 error) {
 				return
 			},
 		},
@@ -687,11 +678,6 @@ func NewStrictMockReposService() *MockReposService {
 				panic("unexpected invocation of MockReposService.GetByName")
 			},
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-				panic("unexpected invocation of MockReposService.GetCommit")
-			},
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
 				panic("unexpected invocation of MockReposService.GetInventory")
@@ -733,9 +719,6 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		},
 		GetByNameFunc: &ReposServiceGetByNameFunc{
 			defaultHook: i.GetByName,
-		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: i.GetCommit,
 		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: i.GetInventory,
@@ -1076,117 +1059,6 @@ func (c ReposServiceGetByNameFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ReposServiceGetByNameFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ReposServiceGetCommitFunc describes the behavior when the GetCommit
-// method of the parent MockReposService instance is invoked.
-type ReposServiceGetCommitFunc struct {
-	defaultHook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)
-	hooks       []func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)
-	history     []ReposServiceGetCommitFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCommit delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockReposService) GetCommit(v0 context.Context, v1 *types.Repo, v2 api.CommitID) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
-	m.GetCommitFunc.appendCall(ReposServiceGetCommitFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetCommit method of
-// the parent MockReposService instance is invoked and the hook queue is
-// empty.
-func (f *ReposServiceGetCommitFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCommit method of the parent MockReposService instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ReposServiceGetCommitFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ReposServiceGetCommitFunc) SetDefaultReturn(r0 *gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposServiceGetCommitFunc) PushReturn(r0 *gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-func (f *ReposServiceGetCommitFunc) nextHook() func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ReposServiceGetCommitFunc) appendCall(r0 ReposServiceGetCommitFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ReposServiceGetCommitFuncCall objects
-// describing the invocations of this function.
-func (f *ReposServiceGetCommitFunc) History() []ReposServiceGetCommitFuncCall {
-	f.mutex.Lock()
-	history := make([]ReposServiceGetCommitFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ReposServiceGetCommitFuncCall is an object that describes an invocation
-// of method GetCommit on an instance of MockReposService.
-type ReposServiceGetCommitFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.Repo
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *gitdomain.Commit
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ReposServiceGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ReposServiceGetCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

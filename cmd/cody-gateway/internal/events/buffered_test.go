@@ -33,7 +33,7 @@ func TestBufferedLogger(t *testing.T) {
 		handler := &mockLogger{}
 
 		// Test with a buffer size of 0, which should immediately submit events
-		b := events.NewBufferedLogger(logtest.Scoped(t), handler, 0, 3)
+		b, _ := events.NewBufferedLogger(logtest.Scoped(t), handler, 0, 3)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 
@@ -79,7 +79,7 @@ func TestBufferedLogger(t *testing.T) {
 		// Set up a buffered logger we can fill up
 		bufferSize := 3
 		workerCount := 3
-		b := events.NewBufferedLogger(l, handler, bufferSize, workerCount)
+		b, _ := events.NewBufferedLogger(l, handler, bufferSize, workerCount)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 
@@ -126,7 +126,7 @@ func TestBufferedLogger(t *testing.T) {
 
 		handler := &mockLogger{}
 		l, exportLogs := logtest.Captured(t)
-		b := events.NewBufferedLogger(l, handler, 10, 3)
+		b, _ := events.NewBufferedLogger(l, handler, 10, 3)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 

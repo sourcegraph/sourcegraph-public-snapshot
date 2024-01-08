@@ -4,6 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -14,7 +15,6 @@ import {
     Input,
     Link,
     Badge,
-    type BadgeProps,
     Icon,
     Text,
 } from '@sourcegraph/wildcard'
@@ -34,12 +34,13 @@ import { ExternalRepositoryIcon } from '../../../../site-admin/components/Extern
 import { PermissionsSyncJobsTable } from '../../../../site-admin/permissions-center/PermissionsSyncJobsTable'
 import { Table, type IColumn } from '../../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../../tracking/eventLogger'
+import { PermissionReasonBadgeProps } from '../../../settings/permissons'
 
 import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend'
 
 import styles from './UserSettingsPermissionsPage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     user: { id: string; username: string }
 }
 
@@ -49,6 +50,7 @@ interface Props extends TelemetryProps {
 export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'), [])
 
@@ -142,7 +144,12 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
-                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} userID={user.id} />
+                <PermissionsSyncJobsTable
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                    minimal={true}
+                    userID={user.id}
+                />
             </Container>
             <PageHeader
                 headingElement="h2"
@@ -212,20 +219,12 @@ const TableColumns: IColumn<INode>[] = [
             <div className={styles.updatedAtCell}>{updatedAt ? <Timestamp date={updatedAt} /> : '-'}</div>
         ),
     },
+    {
+        key: 'connections',
+        header: 'Code host connections',
+        render: ({ id }: INode) => <Link to={`/site-admin/external-services?repoID=${id}`}>View</Link>,
+    },
 ]
-
-const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
-    'Permissions Sync': {
-        variant: 'success',
-        tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
-    },
-    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
-    'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
-    'Explicit API': {
-        variant: 'success',
-        tooltip: 'The permission was granted through explicit permissions API.',
-    },
-}
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
     user: { id: string; username: string }

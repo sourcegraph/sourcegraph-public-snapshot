@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -87,7 +88,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 
 	var janitor goroutine.BackgroundRoutine
 	if opts.CleanupOldJobs {
-		janitor = newJobCleanerRoutine(ctx, dbHandle, opts.CleanupOldJobsInterval)
+		janitor = newJobCleanerRoutine(ctx, database.NewDBWith(observationCtx.Logger, basestore.NewWithHandle(dbHandle)), opts.CleanupOldJobsInterval)
 	} else {
 		janitor = goroutine.NoopRoutine()
 	}
@@ -118,19 +119,14 @@ func newResetterMetrics(observationCtx *observation.Context) dbworker.ResetterMe
 	}
 }
 
-const cleanSyncJobsQueryFmtstr = `
-DELETE FROM external_service_sync_jobs
-WHERE
-	finished_at < NOW() - INTERVAL '1 day'
-  	AND
-  	state IN ('completed', 'failed', 'canceled')
-`
-
-func newJobCleanerRoutine(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) goroutine.BackgroundRoutine {
+func newJobCleanerRoutine(ctx context.Context, db database.DB, interval time.Duration) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			_, err := handle.ExecContext(ctx, cleanSyncJobsQueryFmtstr)
+			err := db.ExternalServices().CleanupSyncJobs(ctx, database.ExternalServicesCleanupSyncJobsOptions{
+				OlderThan:             30 * 24 * time.Hour, // 30 days
+				MaxPerExternalService: 100,
+			})
 			return errors.Wrap(err, "error while running job cleaner")
 		}),
 		goroutine.WithName("repo-updater.sync-job-cleaner"),

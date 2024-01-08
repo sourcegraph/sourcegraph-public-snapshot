@@ -1,8 +1,17 @@
 import type { Line, SelectionRange, Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 import type { Position } from '@sourcegraph/extension-api-types'
-import type { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import { Range } from '@sourcegraph/shared/src/codeintel/scip'
+import {
+    type BlobViewState,
+    type UIPositionSpec,
+    type UIRangeSpec,
+    toPrettyBlobURL,
+} from '@sourcegraph/shared/src/util/url'
+
+import type { Location } from './codeintel/api'
 
 /**
  * The MouseEvent uses numbers to indicate which button was pressed.
@@ -66,6 +75,37 @@ export function uiPositionToOffset(
     return offset <= line.to ? offset : null
 }
 
+/*
+ * Converts 1-based line/character positions to document ranges.
+ * Returns null if the position cannot be mapped to a valid offset within the
+ * document.
+ */
+export function lprToRange(textDocument: Text, position: LineOrPositionOrRange): { from: number; to: number } | null {
+    const { line, character, endLine, endCharacter } = position
+    if (!line || line > textDocument.lines) {
+        return null
+    }
+
+    const fromLine = textDocument.line(line)
+    let from = fromLine.from
+
+    if (character) {
+        from += character - 1
+    }
+
+    let to = from
+
+    if (endLine && endLine < textDocument.lines) {
+        to = textDocument.line(endLine).from
+    }
+
+    if (endCharacter) {
+        to += endCharacter - 1
+    }
+
+    return { from, to }
+}
+
 /**
  * Converts document offsets to 1-based line/character positions.
  */
@@ -98,13 +138,6 @@ export function offsetToUIPosition(
     }
 
     return startPosition
-}
-
-export function viewPortChanged(
-    previous: { from: number; to: number } | null,
-    next: { from: number; to: number }
-): boolean {
-    return previous?.from !== next.from || previous.to !== next.to
 }
 
 export function sortRangeValuesByStart<T extends { range: { start: Position } }>(values: T[]): T[] {
@@ -193,4 +226,40 @@ export function isValidLineRange(
     }
 
     return true
+}
+
+export function locationToURL(
+    documentInfo: { repoName: string; filePath: string; commitID: string; revision?: string },
+    location: Location,
+    viewState?: BlobViewState
+): string {
+    const { range, filePath, repoName, revision: locationRevision } = location
+
+    // Try to preserve the non-canonical revision (branch name or empty revision)
+    // when possible.
+    const preserveNonCanonicalRevision =
+        documentInfo.repoName === repoName && // Destination location is within the same repo.
+        documentInfo.revision !== documentInfo.commitID && // Current URL is non-canonical/non-commit revision.
+        documentInfo.commitID === locationRevision // Destination revision is the as as current revision.
+    const revision = preserveNonCanonicalRevision ? documentInfo.revision : locationRevision
+
+    return toPrettyBlobURL({
+        repoName,
+        revision,
+        filePath,
+        position: { line: range.start.line + 1, character: range.start.character + 1 },
+        range: location.range ? Range.fromExtensions(location.range).withIncrementedValues() : undefined,
+        viewState,
+    })
+}
+
+// Returns true if this event is "regular", meaning the user is not holding down
+// modifier keys or clicking with a non-main button.
+export function isRegularEvent(event: MouseEvent | KeyboardEvent): boolean {
+    return (
+        ('button' in event ? event.button === MOUSE_MAIN_BUTTON : true) &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        !event.ctrlKey
+    )
 }

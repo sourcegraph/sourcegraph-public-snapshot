@@ -123,7 +123,7 @@ func gatewayDoer(upstream httpcli.Doer, feature types.CompletionsFeature, gatewa
 		// but it doesn't seem to work.
 		resp, err := (&actor.HTTPTransport{
 			RoundTripper: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-				return upstream.Do(req)
+				return upstream.Do(r)
 			}),
 		}).RoundTrip(req)
 

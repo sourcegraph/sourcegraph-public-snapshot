@@ -41,13 +41,17 @@ export const GlobalAlert: React.FunctionComponent<
 
 function alertVariantForType(type: AlertType): DismissibleAlertProps['variant'] {
     switch (type) {
-        case AlertType.INFO:
+        case AlertType.INFO: {
             return 'info'
-        case AlertType.WARNING:
+        }
+        case AlertType.WARNING: {
             return 'warning'
-        case AlertType.ERROR:
+        }
+        case AlertType.ERROR: {
             return 'danger'
-        default:
+        }
+        default: {
             return 'warning'
+        }
     }
 }

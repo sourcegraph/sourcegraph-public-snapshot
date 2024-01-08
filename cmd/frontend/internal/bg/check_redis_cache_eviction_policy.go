@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,38 +14,32 @@ import (
 const recommendedPolicy = "allkeys-lru"
 
 func CheckRedisCacheEvictionPolicy() {
-	cachePool, ok := redispool.Cache.Pool()
-	if !ok {
-		// Redis is disabled so can skip check
-		return
-	}
-
+	cachePool := redispool.Cache.Pool()
 	cacheConn := cachePool.Get()
 	defer cacheConn.Close()
 
-	if storePool, ok := redispool.Store.Pool(); ok {
-		storeConn := storePool.Get()
-		defer storeConn.Close()
+	storePool := redispool.Store.Pool()
+	storeConn := storePool.Get()
+	defer storeConn.Close()
 
-		storeRunID, err := getRunID(storeConn)
-		if err != nil {
-			log15.Error("Reading run_id from redis-store failed", "error", err)
-			return
-		}
+	storeRunID, err := getRunID(storeConn)
+	if err != nil {
+		log15.Error("Reading run_id from redis-store failed", "error", err)
+		return
+	}
 
-		cacheRunID, err := getRunID(cacheConn)
-		if err != nil {
-			log15.Error("Reading run_id from redis-cache failed", "error", err)
-			return
-		}
+	cacheRunID, err := getRunID(cacheConn)
+	if err != nil {
+		log15.Error("Reading run_id from redis-cache failed", "error", err)
+		return
+	}
 
-		if cacheRunID == storeRunID {
-			// If users use the same instance for redis-store and redis-cache we
-			// don't want to recommend an LRU policy, because that could interfere
-			// with the functionality of redis-store, which expects to store items
-			// for longer term usage
-			return
-		}
+	if cacheRunID == storeRunID {
+		// If users use the same instance for redis-store and redis-cache we
+		// don't want to recommend an LRU policy, because that could interfere
+		// with the functionality of redis-store, which expects to store items
+		// for longer term usage
+		return
 	}
 
 	vals, err := redis.Strings(cacheConn.Do("CONFIG", "GET", "maxmemory-policy"))

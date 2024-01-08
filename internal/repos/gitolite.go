@@ -18,9 +18,9 @@ import (
 // A GitoliteSource yields repositories from a single Gitolite connection configured
 // in Sourcegraph via the external services configuration.
 type GitoliteSource struct {
-	svc     *types.ExternalService
-	conn    *schema.GitoliteConnection
-	exclude excludeFunc
+	svc      *types.ExternalService
+	conn     *schema.GitoliteConnection
+	excluder repoExcluder
 
 	// gitoliteLister allows us to list Gitlolite repos. In practice, we ask
 	// gitserver to talk to gitolite because it holds the ssh keys required for
@@ -50,23 +50,23 @@ func NewGitoliteSource(ctx context.Context, svc *types.ExternalService, cf *http
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
 	lister := gitserver.NewGitoliteLister(gitoliteDoer)
 
 	return &GitoliteSource{
-		svc:     svc,
-		conn:    &c,
-		lister:  lister,
-		exclude: exclude,
+		svc:      svc,
+		conn:     &c,
+		lister:   lister,
+		excluder: ex,
 	}, nil
 }
 
@@ -105,7 +105,7 @@ func (s GitoliteSource) ExternalServices() types.ExternalServices {
 }
 
 func (s GitoliteSource) excludes(gr *gitolite.Repo, r *types.Repo) bool {
-	return s.exclude(gr.Name) ||
+	return s.excluder.ShouldExclude(gr.Name) ||
 		strings.ContainsAny(string(r.Name), "\\^$|()[]*?{},")
 }
 

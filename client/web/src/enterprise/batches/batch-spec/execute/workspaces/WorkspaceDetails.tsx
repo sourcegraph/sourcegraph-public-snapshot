@@ -465,12 +465,15 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
 
 function publishBadgeLabel(state: Scalars['PublishedValue']): string {
     switch (state) {
-        case 'draft':
+        case 'draft': {
             return 'will publish as draft'
-        case false:
+        }
+        case false: {
             return 'will not publish'
-        case true:
+        }
+        case true: {
             return 'will publish'
+        }
     }
 }
 

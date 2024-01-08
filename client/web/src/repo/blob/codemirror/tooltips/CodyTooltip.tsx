@@ -1,68 +1,66 @@
-import { type EditorState, type Extension, StateEffect, StateField } from '@codemirror/state'
-import { type EditorView, type PluginValue, type Tooltip, ViewPlugin, showTooltip } from '@codemirror/view'
+import { type EditorState, type Extension, StateField, type Transaction } from '@codemirror/state'
+import { type Tooltip, showTooltip } from '@codemirror/view'
 import ReactDOM from 'react-dom/client'
 
 import type { CodeMirrorEditor } from '../../../../cody/components/CodeMirrorEditor'
 import { CodyRecipesWidget } from '../../../../cody/widgets/CodyRecipesWidget'
 
-export const codyTooltip = StateField.define<Tooltip | null>({
-    create() {
-        return null
-    },
-    update(value, transaction) {
-        if (transaction.newSelection.main.empty) {
-            return null
-        }
-
-        for (const effect of transaction.effects) {
-            if (effect.is(setCodyTooltip)) {
-                return effect.value
-            }
-        }
-        return value
-    },
-    provide(field) {
-        return showTooltip.compute([field], state => state.field(field))
-    },
-})
-
-const setCodyTooltip = StateEffect.define<Tooltip | null>()
+// Only show the cody widget if the transaction
+// - changes the selection
+// - the selection is not empty (i.e. multiple characters are selected)
+// - the selection was user initiated (user event 'select')
+// - the selection was not triggers via searches (user event 'select.search')
+//
+// Unfortunately checking for 'select.search' is necessary because
+// - we cannot check for text selection via the keyboard
+//   (user event 'select.keyboard' doesn't exist, 'select.pointer' does)
+// - isUserEvent('select') will be true for any user event that _starts with_ 'select',
+//   i.e. also 'select.search', which we want to ignore.
+//
+// This also means we need to explicitly add any other 'select.x' event that should
+// be ignored.
+function shouldShowCodyWidget(transaction: Transaction): boolean {
+    return (
+        !!transaction.selection &&
+        !transaction.selection.main.empty &&
+        transaction.isUserEvent('select') &&
+        !transaction.isUserEvent('select.search')
+    )
+}
 
 /**
  * Add a extension to CodeMirror extensions to display the Cody widget
  * when some code is selected in the editor.
  */
 export function codyWidgetExtension(editor?: CodeMirrorEditor): Extension {
-    return [codyTooltip, selectionChangedPlugin(editor)]
+    return StateField.define<Tooltip | null>({
+        create() {
+            return null
+        },
+
+        update(value, transaction) {
+            if (transaction.newSelection.main.empty) {
+                // Don't show
+                return null
+            }
+
+            if (transaction.selection) {
+                if (shouldShowCodyWidget(transaction)) {
+                    const tooltip = createCodyWidget(transaction.state, editor)
+                    // Only create a new tooltip if the position changes, to avoid flickering
+                    return tooltip?.pos !== value?.pos ? tooltip : value
+                }
+                return null
+            }
+
+            return value
+        },
+        provide: field => showTooltip.compute([field], state => state.field(field)),
+    })
 }
 
-// We use this custom plugin over EditorView.domEventHandlers() because mouse selections can start
-// inside CodeMirror but the mouseup event can handle _outside_ of the CodeMirror element. These
-// events still change the selection inside CodeMirror but won't be fired when using the built-in
-// dom handler.
-const selectionChangedPlugin = (editor?: CodeMirrorEditor): Extension =>
-    ViewPlugin.fromClass(
-        class implements PluginValue {
-            constructor(public view: EditorView) {
-                document.body.addEventListener('mouseup', this.onPotentialSelectionChanged)
-                document.body.addEventListener('keyup', this.onPotentialSelectionChanged)
-            }
-            public destroy(): void {
-                document.body.removeEventListener('mouseup', this.onPotentialSelectionChanged)
-                document.body.removeEventListener('keyup', this.onPotentialSelectionChanged)
-            }
-            public onPotentialSelectionChanged = (): void => {
-                this.view.dispatch({ effects: [setCodyTooltip.of(computeCodyWidget(this.view.state, editor))] })
-            }
-        }
-    )
-
-function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Tooltip | null {
+function createCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Tooltip {
     const { selection } = state
-
-    if (selection.main.empty) {
-        return null
-    }
 
     // Find a position that is always the left most position of the selection bounding box
     const lineFrom = state.doc.lineAt(selection.main.from)

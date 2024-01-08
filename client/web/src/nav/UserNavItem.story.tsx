@@ -41,6 +41,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     session: { canSignOut: true },
     settingsURL: '#',
     siteAdmin: true,
+    emails: [],
     organizations: {
         nodes: [
             {
@@ -66,7 +67,6 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
 const commonProps = (props: Args): UserNavItemProps => ({
     authenticatedUser,
     isSourcegraphDotCom: props.isSourcegraphDotCom,
-    isCodyApp: false,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,
     telemetryService: NOOP_TELEMETRY_SERVICE,

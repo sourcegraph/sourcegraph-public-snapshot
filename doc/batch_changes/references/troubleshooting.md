@@ -176,6 +176,20 @@ If not, please update to the latest version of [Docker Desktop](https://docs.doc
 
 If you're experiencing `src-cli` hanging at the "Determining Workspace Type" step of the Batch Change we have found that clearing the Docker build cache using `docker builder prune` and restarting the Docker Daemon has resolved the issue. Please contact support if this does not resolve your issue. 
 
+### Using Rancher Desktop or Colima?
+
+If you encounter the error `docker: Error response from daemon: invalid mount config for type 'bind': bind source path does not exist`, try configuring the env var SRC_BATCH_TMP_DIR to reference an accessible directory.
+
+For Colima:
+```
+export SRC_BATCH_TMP_DIR=/tmp/colima/batchchange
+```
+
+For Rancher Desktop:
+```
+export SRC_BATCH_TMP_DIR=/tmp/rancher-desktop/batchchange
+```
+
 ## Publishing changesets
 
 ### Do you have the right credentials?

@@ -21,12 +21,10 @@ if (browser) {
     }
 }
 
-export const load: LayoutLoad = () => {
-    return {
-        graphqlClient: getGraphQLClient(),
-        user: fetchAuthenticatedUser(),
-        // Initial user settings
-        settings: fetchUserSettings(),
-        featureFlags: fetchEvaluatedFeatureFlags(),
-    }
-}
+export const load: LayoutLoad = () => ({
+    graphqlClient: getGraphQLClient(),
+    user: fetchAuthenticatedUser(),
+    // Initial user settings
+    settings: fetchUserSettings(),
+    featureFlags: fetchEvaluatedFeatureFlags(),
+})

@@ -28,10 +28,10 @@ func newOtelTracerProvider(r log.Resource) *oteltracesdk.TracerProvider {
 				semconv.ServiceVersionKey.String(r.Version),
 			),
 		),
-		// We use an always-sampler to retain all spans, and depend on shouldTraceTracer
-		// to decide from context whether or not to start a span. This is required because
-		// we have opentracing bridging enabled.
-		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		// We do not have OpenTracing bridging enabled, so we can use a sampler
+		// that configures traces for export based on trace policy in context
+		// while leaving valid traces in context.
+		oteltracesdk.WithSampler(tracePolicySampler{}),
 	)
 }
 

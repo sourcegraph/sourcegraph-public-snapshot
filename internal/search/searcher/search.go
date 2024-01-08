@@ -41,6 +41,8 @@ type TextSearchJob struct {
 	// repos).
 	Indexed bool
 
+	NumContextLines int
+
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
 	// as fast as possible, even if a "slow" deadline is set.
@@ -110,7 +112,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repo, repo.Name, rev, s.Indexed, s.PatternInfo, s.NumContextLines, fetchTimeout, stream)
 					if err != nil {
 						tr.SetAttributes(
 							repo.Name.Attr(),
@@ -183,6 +185,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	rev string,
 	index bool,
 	info *search.TextPatternInfo,
+	contextLines int,
 	fetchTimeout time.Duration,
 	stream streaming.Sender,
 ) (bool, error) {
@@ -199,16 +202,6 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		onMatches := func(searcherMatch *proto.FileMatch) {
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
-			})
-		}
-
-		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
-	}
-
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
 			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
@@ -222,9 +215,9 @@ func (s *TextSearchJob) searchFilesInRepo(
 	}
 
 	if conf.IsGRPCEnabled(ctx) {
-		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
+		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, contextLines, onMatchGRPC)
 	} else {
-		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, contextLines, onMatches)
 	}
 }
 

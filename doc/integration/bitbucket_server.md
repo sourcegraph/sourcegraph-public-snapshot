@@ -18,9 +18,9 @@ Site admins can [add Bitbucket Server / Bitbucket Data Center repositories to So
 
 Site admins can [configure Sourcegraph to respect Bitbucket Server / Bitbucket Data Center's repository access permissions](../admin/external_service/bitbucket_server.md#repository-permissions).
 
-## Sourcegraph Bitbucket Server Plugin
+## Sourcegraph Bitbucket Plugin
 
-We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github.com/sourcegraph/bitbucket-server-plugin/tree/master) which adds the following features to your Bitbucket Server / Bitbucket Data Center instance:
+We recommend installing the Sourcegraph Bitbucket plugin which adds the following features to your Bitbucket Server / Bitbucket Data Center instance:
 
 - **Native code navigation**: users don't need to install the [Sourcegraph browser extension](#browser-extension) to get hover tooltips, go-to-definition, find-references, and code search while browsing files and viewing pull requests on Bitbucket Server / Bitbucket Data Center.
 - **Fast permission syncing** between Sourcegraph and Bitbucket Server / Bitbucket Data Center
@@ -30,7 +30,7 @@ We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github
 
 ### Installation and requirements
 
-See the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for instructions on how to install the plugin on your Bitbucket Server / Bitbucket Data Center instance.
+Install the Sourcegraph plugin for Bitbucket from the [Atlassian Marketplace](https://marketplace.atlassian.com/apps/1231975/sourcegraph-for-bitbucket?tab=overview&hosting=datacenter) or see the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for instructions on how to manually install the plugin on your Bitbucket Server / Bitbucket Data Center instance.
 
 For the Bitbucket Server plugin to then communicate with the Sourcegraph instance, the Sourcegraph site configuration must be updated to include the [`corsOrigin` property](../admin/config/site_config.md) with the Bitbucket Server / Bitbucket Data Center URL
 

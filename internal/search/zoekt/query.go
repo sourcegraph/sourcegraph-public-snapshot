@@ -18,28 +18,15 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	isCaseSensitive := b.IsCaseSensitive()
 
 	if b.Pattern != nil {
-		if feat.UseZoektParser {
-			q, err = toZoektPatternNew(
-				b.Pattern,
-				isCaseSensitive,
-				resultTypes.Has(result.TypeFile),
-				resultTypes.Has(result.TypePath),
-				typ,
-			)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			q, err = toZoektPattern(
-				b.Pattern,
-				isCaseSensitive,
-				resultTypes.Has(result.TypeFile),
-				resultTypes.Has(result.TypePath),
-				typ,
-			)
-			if err != nil {
-				return nil, err
-			}
+		q, err = toZoektPattern(
+			b.Pattern,
+			isCaseSensitive,
+			resultTypes.Has(result.TypeFile),
+			resultTypes.Has(result.TypePath),
+			typ,
+		)
+		if err != nil {
+			return nil, err
 		}
 	}
 

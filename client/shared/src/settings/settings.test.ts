@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { createAggregateError, isErrorLike } from '@sourcegraph/common'
 
 import {

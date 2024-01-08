@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -54,7 +54,7 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 
 	loopSearch := func(ctx context.Context, c genericClient, qc *QueryConfig) {
 		if qc.Interval == 0 {
-			qc.Interval = time.Minute
+			qc.Interval = 5 * time.Minute
 		}
 
 		log := log15.New("name", qc.Name, "query", qc.Query, "type", c.clientType())

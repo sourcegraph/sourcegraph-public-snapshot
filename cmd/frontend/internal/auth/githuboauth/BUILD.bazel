@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/envvar",
+        "//cmd/frontend/external/session",
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//cmd/frontend/internal/auth/oauth",
@@ -73,6 +74,7 @@ go_test(
         "@com_github_davecgh_go_spew//spew",
         "@com_github_dghubble_gologin_v2//github",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_google_go_github_v55//github",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_log//logtest",

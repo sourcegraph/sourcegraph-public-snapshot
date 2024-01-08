@@ -1,6 +1,7 @@
 package permissions
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"testing"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -183,7 +183,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 
 			err := perms.LoadUserPendingPermissions(ctx, userPerms)
 			require.NoError(t, err)
-			require.Equal(t, []int32{1, 2}, userPerms.IDs.Sorted(collections.NaturalCompare[int32]))
+			require.Equal(t, []int32{1, 2}, userPerms.IDs.Sorted(cmp.Less[int32]))
 		}
 	}
 

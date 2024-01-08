@@ -54,13 +54,6 @@ func (r *repositoryStatsResolver) Indexed(ctx context.Context) (int32, error) {
 	return min(indexedRepos, total), nil
 }
 
-func min(a, b int32) int32 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
 	_, indexedLinesCount, err := r.computeIndexedStats(ctx)
 	if err != nil {

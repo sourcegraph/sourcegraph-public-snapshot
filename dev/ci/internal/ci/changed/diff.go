@@ -13,6 +13,7 @@ const (
 	None Diff = 0
 
 	Go Diff = 1 << iota
+	ClientBrowserExtensions
 	Client
 	GraphQL
 	DatabaseSchema
@@ -90,9 +91,6 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
-			diff |= Client
-		}
-		if strings.HasSuffix(p, "dev/ci/pnpm-test.sh") {
 			diff |= Client
 		}
 		// dev/release contains a nodejs script that doesn't have tests but needs to be
@@ -210,6 +208,11 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 		if strings.HasSuffix(p, ".pb.go") {
 			diff |= Protobuf
 		}
+
+		// Affects browser extensions
+		if strings.HasPrefix(p, "client/browser/") {
+			diff |= ClientBrowserExtensions
+		}
 	}
 
 	return
@@ -224,6 +227,8 @@ func (d Diff) String() string {
 		return "Go"
 	case Client:
 		return "Client"
+	case ClientBrowserExtensions:
+		return "ClientBrowserExtensions"
 	case GraphQL:
 		return "GraphQL"
 	case DatabaseSchema:

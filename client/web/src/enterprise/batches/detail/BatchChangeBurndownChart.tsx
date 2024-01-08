@@ -90,7 +90,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<React.PropsWithCh
         const changesetCountsOverTime = data.node.changesetCountsOverTime
         if (changesetCountsOverTime.length > 1) {
             const start = parseISO(changesetCountsOverTime[0].date)
-            const end = parseISO(changesetCountsOverTime[changesetCountsOverTime.length - 1].date)
+            const end = parseISO(changesetCountsOverTime.at(-1)!.date)
             // If the range spans multiple years, we want to display the year as well.
             if (getYear(start) !== getYear(end)) {
                 dateTickFormat = new Intl.DateTimeFormat(undefined, {
@@ -142,10 +142,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<React.PropsWithCh
                     >
                         <XAxis
                             dataKey="date"
-                            domain={[
-                                changesetCountsOverTime[0].date,
-                                changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
-                            ]}
+                            domain={[changesetCountsOverTime[0].date, changesetCountsOverTime.at(-1)!.date]}
                             name="Time"
                             tickFormatter={dateTickFormatter}
                             type="number"

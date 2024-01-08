@@ -23,7 +23,7 @@ See the following guides to use an external or managed version of each service t
 - See [Using a managed object storage service (S3 or GCS)](./object_storage.md) to replace the bundled blobstore instance.
 - See [Using an external Jaeger instance](../observability/tracing.md#Use-an-external-Jaeger-instance) to replace the bundled Jaeger instance.
 
-> NOTE: Using Sourcegraph with an external service is a [paid feature](https://about.sourcegraph.com/pricing). [Contact us](https://about.sourcegraph.com/contact/sales) to get a trial license.
+> NOTE: Using Sourcegraph with an external service is a [paid feature](https://sourcegraph.com/pricing). [Contact us](https://sourcegraph.com/contact/sales) to get a trial license.
 
 ## Cloud alternatives
 

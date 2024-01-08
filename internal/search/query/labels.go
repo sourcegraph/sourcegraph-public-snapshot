@@ -19,6 +19,8 @@ const (
 	// than canonical form (r: instead of repo:)
 	IsAlias
 	Standard
+	QuotesAsLiterals
+	GlobFilters
 )
 
 var allLabels = map[labels]string{

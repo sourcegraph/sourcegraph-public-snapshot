@@ -1,11 +1,6 @@
-import type { ContentMatch, MatchItem } from '$lib/shared'
+import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch, Filter } from '$lib/shared'
 
-export interface SidebarFilter {
-    value: string
-    label: string
-    count?: number
-    limitHit?: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility'
+export interface SidebarFilter extends Filter {
     runImmediately?: boolean
 }
 
@@ -17,32 +12,72 @@ export interface SearchPageContext {
     setQuery(query: string | ((query: string) => string)): void
 }
 
-export function resultToMatchItems(result: ContentMatch): MatchItem[] {
-    return result.type === 'content'
-        ? result.chunkMatches?.map(match => ({
-              highlightRanges: match.ranges.map(range => ({
-                  startLine: range.start.line,
-                  startCharacter: range.start.column,
-                  endLine: range.end.line,
-                  endCharacter: range.end.column,
-              })),
-              content: match.content,
-              startLine: match.contentStart.line,
-              endLine: match.ranges[match.ranges.length - 1].end.line,
-              aggregableBadges: match.aggregableBadges,
-          })) ||
-              result.lineMatches?.map(match => ({
-                  highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
-                      startLine: match.lineNumber,
-                      startCharacter: offsetAndLength[0],
-                      endLine: match.lineNumber,
-                      endCharacter: offsetAndLength[0] + offsetAndLength[1],
-                  })),
-                  content: match.line,
-                  startLine: match.lineNumber,
-                  endLine: match.lineNumber,
-                  aggregableBadges: match.aggregableBadges,
-              })) ||
-              []
-        : []
+export function resultToMatchGroups(result: ContentMatch): MatchGroup[] {
+    return result.chunkMatches?.map(chunkToMatchGroup) || result.lineMatches?.map(lineToMatchGroup) || []
+}
+
+type FilterGroups = Record<Filter['kind'], Filter[]>
+
+export function groupFilters(filters: Filter[] | null | undefined): FilterGroups {
+    const groupedFilters: FilterGroups = {
+        file: [],
+        repo: [],
+        lang: [],
+        utility: [],
+        author: [],
+        select: [],
+        after: [],
+        before: [],
+    }
+    if (filters) {
+        for (const filter of filters) {
+            switch (filter.kind) {
+                case 'after':
+                case 'before':
+                case 'author':
+                case 'utility':
+                case 'select':
+                case 'repo':
+                case 'file':
+                case 'lang': {
+                    groupedFilters[filter.kind].push(filter)
+                    break
+                }
+            }
+        }
+    }
+    return groupedFilters
+}
+
+export function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
+    const matches = chunk.ranges.map(range => ({
+        startLine: range.start.line,
+        startCharacter: range.start.column,
+        endLine: range.end.line,
+        endCharacter: range.end.column,
+    }))
+    const plaintextLines = chunk.content.split(/\r?\n/)
+    return {
+        plaintextLines,
+        highlightedHTMLRows: undefined, // populated lazily
+        matches,
+        startLine: chunk.contentStart.line,
+        endLine: chunk.contentStart.line + plaintextLines.length,
+    }
+}
+
+export function lineToMatchGroup(match: LineMatch): MatchGroup {
+    const matches = match.offsetAndLengths.map(offsetAndLength => ({
+        startLine: match.lineNumber,
+        startCharacter: offsetAndLength[0],
+        endLine: match.lineNumber,
+        endCharacter: offsetAndLength[0] + offsetAndLength[1],
+    }))
+    return {
+        plaintextLines: [match.line],
+        highlightedHTMLRows: undefined, // populated lazily
+        matches,
+        startLine: match.lineNumber,
+        endLine: match.lineNumber,
+    }
 }

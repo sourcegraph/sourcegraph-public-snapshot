@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import type { EditorSettings } from './editor-settings'

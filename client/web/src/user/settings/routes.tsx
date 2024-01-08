@@ -10,10 +10,19 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { canWriteBatchChanges } from '../../batches/utils'
+import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
+import type { ExecutorsUserAreaProps } from '../../enterprise/executors/ExecutorsUserArea'
+import type { UserEventLogsPageProps } from '../../enterprise/user/settings/UserEventLogsPage'
 import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
 import type { UserSettingsAreaRoute } from './UserSettingsArea'
+
+const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
+    () => import('../../enterprise/executors/ExecutorsUserArea'),
+    'ExecutorsUserArea'
+)
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
@@ -62,6 +71,51 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: 'about-organizations',
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
+    },
+    {
+        path: 'permissions',
+        render: lazyComponent(
+            () => import('../../enterprise/user/settings/auth/UserSettingsPermissionsPage'),
+            'UserSettingsPermissionsPage'
+        ),
+    },
+    {
+        path: 'event-log',
+        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
+            () => import('../../enterprise/user/settings/UserEventLogsPage'),
+            'UserEventLogsPage'
+        ),
+    },
+    {
+        path: 'executors/*',
+        render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+    },
+    {
+        path: 'batch-changes',
+        render: lazyComponent(
+            () => import('../../enterprise/batches/settings/BatchChangesSettingsArea'),
+            'BatchChangesSettingsArea'
+        ),
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+    },
+    {
+        path: 'subscriptions/:subscriptionUUID',
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
+            'UserSubscriptionsProductSubscriptionPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
+    },
+    {
+        path: 'subscriptions',
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
+            'UserSubscriptionsProductSubscriptionsPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
     },
 ]
 

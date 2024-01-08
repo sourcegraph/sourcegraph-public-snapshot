@@ -178,16 +178,21 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
 const ProviderIcon: React.FunctionComponent<{ serviceType: AuthProvider['serviceType'] }> = ({ serviceType }) => {
     switch (serviceType) {
-        case 'github':
+        case 'github': {
             return <Icon aria-hidden={true} svgPath={mdiGithub} />
-        case 'gitlab':
+        }
+        case 'gitlab': {
             return <Icon aria-hidden={true} svgPath={mdiGitlab} />
-        case 'bitbucketCloud':
+        }
+        case 'bitbucketCloud': {
             return <Icon aria-hidden={true} svgPath={mdiBitbucket} />
-        case 'azuredevops':
+        }
+        case 'azuredevops': {
             return <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
-        default:
+        }
+        default: {
             return null
+        }
     }
 }
 

@@ -87,7 +87,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 		store: r.store,
 		spec:  r.changesetSpec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
-		repoResolver: graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(), r.repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient("graphql.batches.changesetspecrepo"), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
 	}
 
@@ -178,7 +178,7 @@ func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
 }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repoResolver, r.spec.BaseRev, r.spec.Diff)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient("graphql.batches.changesetdescriptiondiff"), r.repoResolver, r.spec.BaseRev, r.spec.Diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {

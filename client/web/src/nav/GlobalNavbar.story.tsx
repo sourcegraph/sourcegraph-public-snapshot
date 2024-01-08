@@ -15,7 +15,6 @@ import { GlobalNavbar, type GlobalNavbarProps } from './GlobalNavbar'
 
 const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
-    isCodyApp: false,
     settingsCascade: {
         final: null,
         subjects: null,
@@ -57,7 +56,7 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: Decorator = Story => {
+const decorator: Decorator<GlobalNavbarProps> = Story => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -71,7 +70,7 @@ const decorator: Decorator = Story => {
     )
 }
 
-const config: Meta = {
+const config: Meta<typeof GlobalNavbar> = {
     title: 'web/nav/GlobalNav',
     decorators: [decorator],
     parameters: {

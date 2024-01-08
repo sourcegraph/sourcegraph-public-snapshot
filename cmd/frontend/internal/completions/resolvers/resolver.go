@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -58,6 +59,8 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	defer done()
 
 	client, err := client.Get(
+		c.logger,
+		telemetryrecorder.New(c.db),
 		completionsConfig.Endpoint,
 		completionsConfig.Provider,
 		completionsConfig.AccessToken,

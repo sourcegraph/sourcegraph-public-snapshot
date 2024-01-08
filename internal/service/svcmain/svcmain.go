@@ -3,18 +3,12 @@ package svcmain
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/output"
-	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -22,87 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sgservice "github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
-
-type Config struct {
-	// SkipValidate, if true, will skip validation of service configuration.
-	SkipValidate bool
-	// AfterConfigure, if provided, is run after all services' Configure hooks are called
-	AfterConfigure func()
-}
-
-// Main is called from the `main` function of `cmd/sourcegraph`.
-//
-// args is the commandline arguments (usually os.Args).
-func Main(services []sgservice.Service, config Config, args []string) {
-	// Unlike other sourcegraph binaries we expect to be run
-	// by a user instead of deployed to a cloud. So adjust the default output
-	// format before initializing log.
-	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok && deploy.IsSingleBinary() {
-		os.Setenv(log.EnvLogFormat, string(output.FormatConsole))
-	}
-
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	},
-		// Experimental: DevX is observing how sampling affects the errors signal.
-		log.NewSentrySinkWith(
-			log.SentrySink{
-				ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-			},
-		),
-	)
-
-	app := cli.NewApp()
-	app.Name = filepath.Base(args[0])
-	app.Usage = "The Cody app"
-	app.Version = version.Version()
-	app.Flags = []cli.Flag{
-		&cli.PathFlag{
-			Name:        "cacheDir",
-			DefaultText: "OS default cache",
-			Usage:       "Which directory should be used to cache data",
-			EnvVars:     []string{"SRC_APP_CACHE"},
-			TakesFile:   false,
-			Action: func(ctx *cli.Context, p cli.Path) error {
-				return os.Setenv("SRC_APP_CACHE", p)
-			},
-		},
-		&cli.PathFlag{
-			Name:        "configDir",
-			DefaultText: "OS default config",
-			Usage:       "Directory where the configuration should be saved",
-			EnvVars:     []string{"SRC_APP_CONFIG"},
-			TakesFile:   false,
-			Action: func(ctx *cli.Context, p cli.Path) error {
-				return os.Setenv("SRC_APP_CONFIG", p)
-			},
-		},
-	}
-	app.Action = func(_ *cli.Context) error {
-		logger := log.Scoped("sourcegraph")
-		cleanup := singleprogram.Init(logger)
-		defer func() {
-			err := cleanup()
-			if err != nil {
-				logger.Error("cleaning up", log.Error(err))
-			}
-		}()
-		run(liblog, logger, services, config, nil)
-		return nil
-	}
-
-	if err := app.Run(args); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
-}
 
 // SingleServiceMain is called from the `main` function of a command to start a single
 // service (such as frontend or gitserver). It assumes the service can access site
@@ -111,7 +27,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 //
 // If your service cannot access site configuration, use SingleServiceMainWithoutConf
 // instead.
-func SingleServiceMain(svc sgservice.Service, config Config) {
+func SingleServiceMain(svc sgservice.Service) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -125,7 +41,7 @@ func SingleServiceMain(svc sgservice.Service, config Config) {
 		),
 	)
 	logger := log.Scoped("sourcegraph")
-	run(liblog, logger, []sgservice.Service{svc}, config, nil)
+	run(liblog, logger, []sgservice.Service{svc}, nil)
 }
 
 // OutOfBandConfiguration declares additional configuration that happens continuously,
@@ -143,7 +59,7 @@ type OutOfBandConfiguration struct {
 // service WITHOUT site configuration enabled by default. This is only useful for services
 // that are not part of the core Sourcegraph deployment, such as executors and managed
 // services. Use with care!
-func SingleServiceMainWithoutConf(svc sgservice.Service, config Config, oobConfig OutOfBandConfiguration) {
+func SingleServiceMainWithoutConf(svc sgservice.Service, oobConfig OutOfBandConfiguration) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -157,14 +73,13 @@ func SingleServiceMainWithoutConf(svc sgservice.Service, config Config, oobConfi
 		),
 	)
 	logger := log.Scoped("sourcegraph")
-	run(liblog, logger, []sgservice.Service{svc}, config, &oobConfig)
+	run(liblog, logger, []sgservice.Service{svc}, &oobConfig)
 }
 
 func run(
 	liblog *log.PostInitCallbacks,
 	logger log.Logger,
 	services []sgservice.Service,
-	config Config,
 	// If nil, will use site config
 	oobConfig *OutOfBandConfiguration,
 ) {
@@ -210,23 +125,17 @@ func run(
 	// Validate each service's configuration.
 	//
 	// This cannot be done for executor, see the executorcmd package for details.
-	if !config.SkipValidate {
-		for i, c := range serviceConfigs {
-			if c == nil {
-				continue
-			}
-			if err := c.Validate(); err != nil {
-				logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
-			}
+	for i, c := range serviceConfigs {
+		if c == nil {
+			continue
+		}
+		if err := c.Validate(); err != nil {
+			logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
 		}
 	}
 
 	env.Lock()
 	env.HandleHelpFlag()
-
-	if config.AfterConfigure != nil {
-		config.AfterConfigure()
-	}
 
 	// Start the debug server. The ready boolean state it publishes will become true when *all*
 	// services report ready.
@@ -247,26 +156,15 @@ func run(
 			obctx := observation.ContextWithLogger(log.Scoped(service.Name()), obctx)
 
 			// ensure ready is only called once and always call it.
-			ready := syncx.OnceFunc(allReadyWG.Done)
+			ready := sync.OnceFunc(allReadyWG.Done)
 			defer ready()
-
-			// Don't run executors for Cody App
-			if deploy.IsApp() && service.Name() == "executor" {
-				logger.Info("Skipping", log.String("service", service.Name()))
-				return
-			}
 
 			// TODO: It's not clear or enforced but all the service.Start calls block until the service is completed
 			// This should be made explicit or refactored to accept to done channel or function in addition to ready.
 			err := service.Start(ctx, obctx, ready, serviceConfig)
 			allDoneWG.Done()
 			if err != nil {
-				// Special case in App: continue without executor if it fails to start.
-				if deploy.IsApp() && service.Name() == "executor" {
-					logger.Warn("failed to start service (skipping)", log.String("service", service.Name()), log.Error(err))
-				} else {
-					logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
-				}
+				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
 			}
 		}()
 	}

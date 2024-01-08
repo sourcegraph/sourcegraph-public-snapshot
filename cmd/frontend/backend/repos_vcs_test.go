@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -172,44 +171,5 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
-	}
-}
-
-func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
-	ctx := testContext()
-	logger := logtest.Scoped(t)
-
-	const wantRepo = "a"
-	want := api.CommitID(strings.Repeat("a", 40))
-
-	calledRepoLookup := false
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
-		}
-		return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
-	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	var calledVCSRepoGetCommit bool
-
-	gsClient := gitserver.NewMockClient()
-	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
-		calledVCSRepoGetCommit = true
-		return &gitdomain.Commit{ID: want}, nil
-	})
-
-	commit, err := NewRepos(logger, dbmocks.NewMockDB(), gsClient).GetCommit(ctx, &types.Repo{Name: "a"}, want)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if calledRepoLookup {
-		t.Error("calledRepoLookup")
-	}
-	if !calledVCSRepoGetCommit {
-		t.Error("!calledVCSRepoGetCommit")
-	}
-	if commit.ID != want {
-		t.Errorf("got commit %q, want %q", commit.ID, want)
 	}
 }

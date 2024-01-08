@@ -268,9 +268,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
-	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client"), c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
-		return c.httpClient.Do(r)
-	})
+	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client"), c.httpClient, req, c.Auth)
 	if resp != nil {
 		c.externalRateLimiter.Update(resp.Header)
 	}

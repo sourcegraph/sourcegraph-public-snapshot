@@ -119,9 +119,10 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
     switch (serviceType) {
         case 'openidconnect':
         case 'saml':
-        case 'gerrit':
+        case 'gerrit': {
             return <span>{account.external?.displayName || 'Not connected'}</span>
-        case 'azuredevops':
+        }
+        case 'azuredevops': {
             return (
                 <>
                     {account.external?.displayName ? (
@@ -133,7 +134,8 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
                     )}
                 </>
             )
-        default:
+        }
+        default: {
             return (
                 <>
                     {account.external?.url ? (
@@ -149,5 +151,6 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
                     )}
                 </>
             )
+        }
     }
 }

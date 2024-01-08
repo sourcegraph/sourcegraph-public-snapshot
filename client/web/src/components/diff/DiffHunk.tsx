@@ -115,9 +115,15 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                 )}
                             </>
                         )}
-                        <td className={styles.content} data-diff-marker={diffHunkTypeIndicators[line.kind]}>
-                            <VisuallyHidden>{diffHunkTypeDescriptions[line.kind]}</VisuallyHidden>
-                            <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
+                        <td className={styles.content}>
+                            <VisuallyHidden className={styles.diffTypeDescription}>
+                                {diffHunkTypeDescriptions[line.kind]}
+                            </VisuallyHidden>
+                            <div
+                                className="d-inline-block"
+                                data-diff-marker={diffHunkTypeIndicators[line.kind]}
+                                dangerouslySetInnerHTML={{ __html: line.html }}
+                            />
                         </td>
                     </tr>
                 )

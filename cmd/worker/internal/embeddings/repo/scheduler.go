@@ -39,7 +39,7 @@ func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *o
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
-		newRepoEmbeddingScheduler(workCtx, gitserver.NewClient(), db, repo.NewRepoEmbeddingJobsStore(db)),
+		newRepoEmbeddingScheduler(workCtx, gitserver.NewClient("embeddings.reposcheduler"), db, repo.NewRepoEmbeddingJobsStore(db)),
 	}, nil
 }
 
@@ -57,23 +57,13 @@ func newRepoEmbeddingScheduler(
 				return err
 			}
 
-			// get repo names from embeddable repos
 			var repoIDs []api.RepoID
 			for _, embeddable := range embeddableRepos {
 				repoIDs = append(repoIDs, embeddable.ID)
 			}
-			repos, err := db.Repos().GetByIDs(ctx, repoIDs...)
-			if err != nil {
-				return err
-			}
-			var repoNames []api.RepoName
-			for _, r := range repos {
-				repoNames = append(repoNames, r.Name)
-			}
 
-			return embeddings.ScheduleRepositoriesForEmbedding(ctx,
-				repoNames,
-				false, // Automatically scheduled jobs never force a full reindex
+			return embeddings.ScheduleRepositoriesForPolicy(ctx,
+				repoIDs,
 				db,
 				repoEmbeddingJobsStore,
 				gitserverClient)
@@ -83,6 +73,6 @@ func newRepoEmbeddingScheduler(
 		enqueueActive,
 		goroutine.WithName("repoEmbeddingSchedulerJob"),
 		goroutine.WithDescription("resolves embedding policies and schedules jobs to embed repos"),
-		goroutine.WithInterval(1*time.Minute),
+		goroutine.WithInterval(15*time.Minute),
 	)
 }

@@ -3,6 +3,7 @@ import { type FC, useCallback, useState } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
+import { isBefore, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
@@ -102,7 +103,13 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                                 )}{' '}
                                 {node.nextSyncAt !== null && (
                                     <>
-                                        Next sync scheduled <Timestamp date={node.nextSyncAt} />.
+                                        Next sync scheduled{' '}
+                                        {isBefore(new Date(), parseISO(node.nextSyncAt)) ? (
+                                            <>now</>
+                                        ) : (
+                                            <Timestamp date={node.nextSyncAt} />
+                                        )}
+                                        .
                                     </>
                                 )}
                                 {node.nextSyncAt === null && <>No next sync scheduled.</>}

@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import { noop } from 'lodash'
+import { describe, expect, it } from 'vitest'
 
 import { HTTPStatusError } from '@sourcegraph/http-client'
 

@@ -2,7 +2,7 @@ package conf
 
 import (
 	"encoding/hex"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"strings"
 	"time"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -23,7 +22,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -38,19 +37,12 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
-		return confdefaults.App
-	case deploy.IsDeployTypeSingleProgram(deployType):
-		return confdefaults.SingleProgram
 	default:
 		panic("deploy type did not register default configuration: " + deployType)
 	}
 }
 
 func ExecutorsAccessToken() string {
-	if deploy.IsSingleBinary() {
-		return confdefaults.AppInMemoryExecutorPassword
-	}
 	return Get().ExecutorsAccessToken
 }
 
@@ -460,6 +452,31 @@ func PasswordPolicyEnabled() bool {
 	return pc.Enabled
 }
 
+func RateLimits() schema.RateLimits {
+	rl := schema.RateLimits{
+		GraphQLMaxAliases:             500,
+		GraphQLMaxFieldCount:          500_000,
+		GraphQLMaxDepth:               30,
+		GraphQLMaxDuplicateFieldCount: 500,
+		GraphQLMaxUniqueFieldCount:    500,
+	}
+
+	configured := Get().RateLimits
+
+	if configured != nil {
+		if configured.GraphQLMaxAliases <= 0 {
+			rl.GraphQLMaxAliases = configured.GraphQLMaxAliases
+		}
+		if configured.GraphQLMaxFieldCount <= 0 {
+			rl.GraphQLMaxFieldCount = configured.GraphQLMaxFieldCount
+		}
+		if configured.GraphQLMaxDepth <= 0 {
+			rl.GraphQLMaxDepth = configured.GraphQLMaxDepth
+		}
+	}
+	return rl
+}
+
 // By default, password reset links are valid for 4 hours.
 const defaultPasswordLinkExpiry = 14400
 
@@ -555,21 +572,13 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		return nil
 	}
 
-	// Additionally, completions in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
-	if deploy.IsApp() {
-		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Completions == nil || siteConfig.Completions.AccessToken == "") {
-			return nil
-		}
-	}
-
 	completionsConfig := siteConfig.Completions
 	// If no completions configuration is set at all, but cody is enabled, assume
 	// a default configuration.
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-2",
+			ChatModel:       "anthropic/claude-2.0",
 			FastChatModel:   "anthropic/claude-instant-1",
 			CompletionModel: "anthropic/claude-instant-1",
 		}
@@ -609,7 +618,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-2"
+			completionsConfig.ChatModel = "anthropic/claude-2.0"
 		}
 
 		// Set a default fast chat model.
@@ -624,7 +633,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.openai.com/v1/chat/completions"
+			completionsConfig.Endpoint = "https://api.openai.com"
 		}
 
 		// If not access token is set, we cannot talk to OpenAI. Bail.
@@ -644,7 +653,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "gpt-3.5-turbo"
+			completionsConfig.CompletionModel = "gpt-3.5-turbo-instruct"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
 		// If no endpoint is configured, use a default value.
@@ -659,7 +668,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-2"
+			completionsConfig.ChatModel = "claude-2.0"
 		}
 
 		// Set a default fast chat model.
@@ -674,11 +683,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
 		if completionsConfig.Endpoint == "" {
-			return nil
-		}
-
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
@@ -778,6 +782,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		Endpoint:                         completionsConfig.Endpoint,
 		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
 		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+		PerCommunityUserChatMonthlyLLMRequestLimit:             completionsConfig.PerCommunityUserChatMonthlyLLMRequestLimit,
+		PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit:  completionsConfig.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit,
+		PerProUserChatDailyLLMRequestLimit:                     completionsConfig.PerProUserChatDailyLLMRequestLimit,
+		PerProUserCodeCompletionsDailyLLMRequestLimit:          completionsConfig.PerProUserCodeCompletionsDailyLLMRequestLimit,
+		PerCommunityUserChatMonthlyInteractionLimit:            completionsConfig.PerCommunityUserChatMonthlyInteractionLimit,
+		PerCommunityUserCodeCompletionsMonthlyInteractionLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyInteractionLimit,
+		PerProUserChatDailyInteractionLimit:                    completionsConfig.PerProUserChatDailyInteractionLimit,
+		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
 	}
 
 	return computedConfig
@@ -791,14 +803,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// If cody is disabled, don't use embeddings.
 	if !codyEnabled(siteConfig) {
 		return nil
-	}
-
-	// Additionally Embeddings in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
-	if deploy.IsApp() {
-		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Embeddings == nil || siteConfig.Embeddings.AccessToken == "") {
-			return nil
-		}
 	}
 
 	// If embeddings are explicitly disabled (legacy flag, TODO: remove after 5.1),
@@ -911,11 +915,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to OpenAI. Bail.
-		if embeddingsConfig.AccessToken == "" {
-			return nil
-		}
-
 		// If no model is set, we cannot do anything here.
 		if embeddingsConfig.Model == "" {
 			return nil
@@ -935,7 +934,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	if embeddingsConfig.FileFilters != nil {
 		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
 		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
-		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes > 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
 			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
 		}
 	}
@@ -1005,13 +1004,15 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Endpoint:    embeddingsConfig.Endpoint,
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
-		Incremental:                *embeddingsConfig.Incremental,
-		FileFilters:                fileFilters,
-		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
-		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
-		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
-		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
-		Qdrant:                     computedQdrantConfig,
+		Incremental:                            *embeddingsConfig.Incremental,
+		FileFilters:                            fileFilters,
+		MaxCodeEmbeddingsPerRepo:               embeddingsConfig.MaxCodeEmbeddingsPerRepo,
+		MaxTextEmbeddingsPerRepo:               embeddingsConfig.MaxTextEmbeddingsPerRepo,
+		PolicyRepositoryMatchLimit:             embeddingsConfig.PolicyRepositoryMatchLimit,
+		ExcludeChunkOnError:                    pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
+		Qdrant:                                 computedQdrantConfig,
+		PerCommunityUserEmbeddingsMonthlyLimit: embeddingsConfig.PerCommunityUserEmbeddingsMonthlyLimit,
+		PerProUserEmbeddingsMonthlyLimit:       embeddingsConfig.PerProUserEmbeddingsMonthlyLimit,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
@@ -1036,17 +1037,12 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if accessToken != "" {
 		return accessToken
 	}
-	// App generates a token from the api token the user used to connect app to dotcom.
-	if deploy.IsApp() && config.App != nil {
-		if config.App.DotcomAuthToken == "" {
-			return ""
-		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
-	}
+
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {
 		return ""
 	}
+
 	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
@@ -1084,7 +1080,7 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
-		return 8_000
+		return 7_500
 	case conftypes.CompletionsProviderNameAWSBedrock:
 		if strings.HasPrefix(model, "anthropic.") {
 			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
@@ -1102,7 +1098,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-v2" {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate
 		// that returning 100k here is the right thing to do.
 		return 12_000
@@ -1114,10 +1110,10 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 func openaiDefaultMaxPromptTokens(model string) int {
 	switch model {
 	case "gpt-4":
-		return 8_000
+		return 7_500
 	case "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo":
+	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":
 		return 4_000
 	case "gpt-3.5-turbo-16k":
 		return 16_000

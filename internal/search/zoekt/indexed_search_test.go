@@ -94,8 +94,8 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusTimedout,
+					"foo/bar":    search.RepoStatusTimedOut,
+					"foo/foobar": search.RepoStatusTimedOut,
 				}),
 			},
 		},

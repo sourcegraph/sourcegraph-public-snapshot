@@ -3,14 +3,23 @@ import assert from 'assert'
 import { render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import * as sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { Link } from '../components/Link/Link'
 
 import { createLinkClickHandler } from './linkClickHandler'
 
+if (!global.SVGAElement) {
+    // jsdom does not define SVGAElement, which is currently used in createLinkClickHandler. See
+    // https://github.com/jsdom/jsdom/issues/2128.
+    ;(global as any).SVGAElement = HTMLAnchorElement
+}
+
 describe('createLinkClickHandler', () => {
     it('handles clicks on links that stay inside the app', () => {
-        jsdom.reconfigure({ url: 'https://sourcegraph.test/some/where' })
+        // Create a URL that refers to the same host as `window.location.href`.
+        const urlInsideApp = new URL('/else/where', window.location.href)
+        expect(urlInsideApp.toString()).toBe(window.location.href + 'else/where')
 
         const history = createMemoryHistory({ initialEntries: [] })
         expect(history).toHaveLength(0)
@@ -18,7 +27,7 @@ describe('createLinkClickHandler', () => {
         const { container } = render(
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
-                <Link to="https://sourcegraph.test/else/where">Test</Link>
+                <Link to={urlInsideApp.toString()}>Test</Link>
             </div>
         )
 
@@ -38,14 +47,17 @@ describe('createLinkClickHandler', () => {
     })
 
     it('ignores clicks on links that go outside the app', () => {
-        jsdom.reconfigure({ url: 'https://sourcegraph.test/some/where' })
+        // Create a URL that refers to a different host than `window.location.href`.
+        const urlOutsideApp = new URL('https://other.example.com/some/where')
+        expect(urlOutsideApp.origin).not.toBe(window.location.origin)
+
         const history = createMemoryHistory({ initialEntries: [] })
         expect(history).toHaveLength(0)
 
         const { container } = render(
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
-                <Link to="https://github.com/some/where">Test</Link>
+                <Link to={urlOutsideApp.toString()}>Test</Link>
             </div>
         )
 

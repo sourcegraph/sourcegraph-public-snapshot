@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func NewUploadProcessorWorker(
@@ -143,27 +144,19 @@ func (h *handler) PreDequeue(_ context.Context, _ log.Logger) (bool, any, error)
 }
 
 func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
+	uncompressedSize := pointers.DerefZero(upload.UncompressedSize)
 	h.uploadSizeGauge.Add(float64(uncompressedSize))
 
-	gzipSize := h.getUploadSize(upload.UploadSize)
+	gzipSize := pointers.DerefZero(upload.UploadSize)
 	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
 }
 
 func (h *handler) PostHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
+	uncompressedSize := pointers.DerefZero(upload.UncompressedSize)
 	h.uploadSizeGauge.Sub(float64(uncompressedSize))
 
-	gzipSize := h.getUploadSize(upload.UploadSize)
+	gzipSize := pointers.DerefZero(upload.UploadSize)
 	atomic.AddInt64(&h.budgetRemaining, +gzipSize)
-}
-
-func (h *handler) getUploadSize(field *int64) int64 {
-	if field != nil {
-		return *field
-	}
-
-	return 0
 }
 
 func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {

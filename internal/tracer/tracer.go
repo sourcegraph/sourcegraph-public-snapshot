@@ -5,10 +5,9 @@ import (
 	"sync/atomic"
 	"text/template"
 
+	"github.com/go-logr/logr"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -98,9 +97,20 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 	debugMode := &atomic.Bool{}
 	provider := newOtelTracerProvider(resource)
 
+	// Set up logging
+	otelLogger := logger.AddCallerSkip(2).Scoped("otel")
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		if debugMode.Load() {
+			otelLogger.Warn("error encountered", log.Error(err))
+		} else {
+			otelLogger.Debug("error encountered", log.Error(err))
+		}
+	}))
+	otel.SetLogger(logr.Discard()) // we only care about errors, handled above - discard everything else
+
 	// Create and set up global tracers from provider. We will be making updates to these
 	// tracers through the debugMode ref and underlying provider.
-	otelTracerProvider := newTracer(logger, provider, debugMode)
+	otelTracerProvider := newLoggedOtelTracerProvider(logger, provider, debugMode)
 	otel.SetTextMapPropagator(oteldefaults.Propagator())
 	otel.SetTracerProvider(otelTracerProvider)
 
@@ -119,18 +129,4 @@ func Init(logger log.Logger, c WatchableConfigurationSource) {
 		}
 		return nil
 	})
-}
-
-func newTracer(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) oteltrace.TracerProvider {
-	// Set up logging
-	otelLogger := logger.AddCallerSkip(2).Scoped("otel")
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		if debugMode.Load() {
-			otelLogger.Warn("error encountered", log.Error(err))
-		} else {
-			otelLogger.Debug("error encountered", log.Error(err))
-		}
-	}))
-	// Wrap each tracer in additional logging
-	return newLoggedOtelTracerProvider(logger, provider, debugMode)
 }

@@ -99,6 +99,7 @@ var DeploySourcegraphDockerImages = []string{
 	"precise-code-intel-worker",
 	"prometheus",
 	"prometheus-gcp",
+	"qdrant",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",

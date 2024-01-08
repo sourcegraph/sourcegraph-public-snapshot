@@ -3,47 +3,47 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   class MyClass {
-//      ^^^^^^^ definition scip-ctags MyClass#
+//      ^^^^^^^ definition(Class) scip-ctags MyClass#
       public_field: number
-//    ^^^^^^^^^^^^ definition scip-ctags MyClass#public_field.
+//    ^^^^^^^^^^^^ definition(Property) scip-ctags MyClass#public_field.
       #private_field: number
-//    ^^^^^^^^^^^^^^ definition scip-ctags MyClass#`#private_field`.
+//    ^^^^^^^^^^^^^^ definition(Property) scip-ctags MyClass#`#private_field`.
       private also_private_field: number
-//            ^^^^^^^^^^^^^^^^^^ definition scip-ctags MyClass#also_private_field.
+//            ^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags MyClass#also_private_field.
   
       public_method() {}
-//    ^^^^^^^^^^^^^ definition scip-ctags MyClass#public_method().
+//    ^^^^^^^^^^^^^ definition(Method) scip-ctags MyClass#public_method().
       #private_method() {}
-//    ^^^^^^^^^^^^^^^ definition scip-ctags MyClass#`#private_method`().
+//    ^^^^^^^^^^^^^^^ definition(Method) scip-ctags MyClass#`#private_method`().
       private also_private_method() {}
-//            ^^^^^^^^^^^^^^^^^^^ definition scip-ctags MyClass#also_private_method().
+//            ^^^^^^^^^^^^^^^^^^^ definition(Method) scip-ctags MyClass#also_private_method().
   }
   
   interface MyInterface {
-//          ^^^^^^^^^^^ definition scip-ctags MyInterface#
+//          ^^^^^^^^^^^ definition(Interface) scip-ctags MyInterface#
       bruh: number,
-//    ^^^^ definition scip-ctags MyInterface#bruh.
+//    ^^^^ definition(Property) scip-ctags MyInterface#bruh.
       sayBruh(): void,
-//    ^^^^^^^ definition scip-ctags MyInterface#sayBruh().
+//    ^^^^^^^ definition(Method) scip-ctags MyInterface#sayBruh().
   }
   
   enum MyEnum {
-//     ^^^^^^ definition scip-ctags MyEnum#
+//     ^^^^^^ definition(Enum) scip-ctags MyEnum#
       zig,
-//    ^^^ definition scip-ctags MyEnum#zig.
+//    ^^^ definition(Property) scip-ctags MyEnum#zig.
       rust,
-//    ^^^^ definition scip-ctags MyEnum#rust.
+//    ^^^^ definition(Property) scip-ctags MyEnum#rust.
       go,
-//    ^^ definition scip-ctags MyEnum#go.
+//    ^^ definition(Property) scip-ctags MyEnum#go.
   }
   
   var global1 = 0;
-//    ^^^^^^^ definition scip-ctags global1.
+//    ^^^^^^^ definition(Variable) scip-ctags global1.
   var global2;
-//    ^^^^^^^ definition scip-ctags global2.
+//    ^^^^^^^ definition(Variable) scip-ctags global2.
   
   function func() {
-//         ^^^^ definition scip-ctags func().
+//         ^^^^ definition(Function) scip-ctags func().
       var c;
       function inAnotherFunc() {
           var b;
@@ -54,14 +54,14 @@ expression: dumped
   }
   
   var myObject = {
-//    ^^^^^^^^ definition scip-ctags myObject.
+//    ^^^^^^^^ definition(Variable) scip-ctags myObject.
     myProperty: "value",
-//  ^^^^^^^^^^ definition scip-ctags myObject.myProperty.
+//  ^^^^^^^^^^ definition(Property) scip-ctags myObject.myProperty.
   
     myMethod: function() {},
-//  ^^^^^^^^ definition scip-ctags myObject.myMethod().
+//  ^^^^^^^^ definition(Function) scip-ctags myObject.myMethod().
     myArrow: () => {},
-//  ^^^^^^^ definition scip-ctags myObject.myArrow().
+//  ^^^^^^^ definition(Function) scip-ctags myObject.myArrow().
   };
   
 

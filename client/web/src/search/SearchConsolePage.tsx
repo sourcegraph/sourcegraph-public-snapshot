@@ -132,6 +132,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}
                                 searchQueryFromURL={submittedURLQuery}
+                                showQueryExamplesOnNoResultsPage={false}
                             />
                         ))}
                 </div>

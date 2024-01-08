@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import type { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { describe, expect, test } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'

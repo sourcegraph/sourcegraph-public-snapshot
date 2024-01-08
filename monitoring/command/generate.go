@@ -107,7 +107,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				Usage:   "If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.",
 			},
 		},
-		BashComplete: completions.CompleteOptions(func() (options []string) {
+		BashComplete: completions.CompleteArgs(func() (options []string) {
 			return definitions.Default().Names()
 		}),
 		Action: func(c *cli.Context) error {

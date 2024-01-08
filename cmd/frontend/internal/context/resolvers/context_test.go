@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -32,10 +33,20 @@ import (
 func TestContextResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
+	truePtr := true
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: &truePtr,
+			Embeddings: &schema.Embeddings{
+				Provider:    "sourcegraph",
+				Enabled:     &truePtr,
+				AccessToken: "123",
+			},
+		},
+	})
 	// Create populates the IDs in the passed in types.Repo
 	err := db.Repos().Create(ctx, &repo1, &repo2)
 	require.NoError(t, err)
@@ -90,7 +101,7 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockSearchClient := client.NewMockSearchClient()
-	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
+	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ *int32) (*search.Inputs, error) {
 		return &search.Inputs{OriginalQuery: query}, nil
 	})
 	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
@@ -138,13 +149,6 @@ func TestContextResolver(t *testing.T) {
 		contextClient,
 	)
 
-	truePtr := true
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			CodyEnabled: &truePtr,
-		},
-	})
-
 	ctx = actor.WithActor(ctx, actor.FromMockUser(1))
 	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
@@ -163,6 +167,8 @@ func TestContextResolver(t *testing.T) {
 	}
 	// One code result and text result from each repo
 	expected := []string{"testcode1.go", "testtext1.md", "testcode2.go", "testtext2.md"}
+	sort.Strings(expected)
+	sort.Strings(paths)
 	require.Equal(t, expected, paths)
 }
 

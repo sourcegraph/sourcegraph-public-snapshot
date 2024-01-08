@@ -56,7 +56,7 @@ const EXECUTING_TABS: TabsConfig[] = [
     { key: 'execution', isEnabled: true, handler: { type: 'link' } },
 ]
 
-export const ExecuteBatchSpec: Story = args => (
+export const ExecuteBatchSpec: StoryFn = args => (
     <WebStory>{props => <TabBar {...props} tabsConfig={EXECUTING_TABS} activeTabKey={args.activeTabKey} />}</WebStory>
 )
 ExecuteBatchSpec.argTypes = {
@@ -77,7 +77,7 @@ const PREVIEWING_TABS: TabsConfig[] = [
     { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
-export const PreviewExecutionResult: Story = args => (
+export const PreviewExecutionResult: StoryFn = args => (
     <WebStory>{props => <TabBar {...props} tabsConfig={PREVIEWING_TABS} activeTabKey={args.activeTabKey} />}</WebStory>
 )
 PreviewExecutionResult.argTypes = {
@@ -98,7 +98,7 @@ const LOCAL_TABS: TabsConfig[] = [
     { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
-export const LocallyExecutedSpec: Story = args => (
+export const LocallyExecutedSpec: StoryFn = args => (
     <WebStory>{props => <TabBar {...props} tabsConfig={LOCAL_TABS} activeTabKey={args.activeTabKey} />}</WebStory>
 )
 LocallyExecutedSpec.argTypes = {

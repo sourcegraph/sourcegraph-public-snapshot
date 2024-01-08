@@ -32,7 +32,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => (
+export const Simple: StoryFn = (args = {}) => (
     <>
         <H2>Headings</H2>
         <table className="table">

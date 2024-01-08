@@ -63,7 +63,7 @@ func TestGoModulesSyncer_unzip(t *testing.T) {
 	}
 
 	workDir := t.TempDir()
-	err = unzip(dep.Module, zipBuf.Bytes(), workDir)
+	err = unzip(dep.Module, bytes.NewReader(zipBuf.Bytes()), workDir, workDir)
 	if err != nil {
 		t.Fatal(err)
 	}

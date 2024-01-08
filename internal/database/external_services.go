@@ -100,6 +100,11 @@ type ExternalServiceStore interface {
 	// found or not in processing or queued state.
 	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
 
+	// CleanupSyncJobs removes sync jobs that have finished before the given threshold.
+	// Additionally, only up to LimitPerService records are kept, deleting records
+	// to only keep the newest N.
+	CleanupSyncJobs(ctx context.Context, opts ExternalServicesCleanupSyncJobsOptions) error
+
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
 
@@ -204,25 +209,24 @@ func (e *externalServiceStore) Done(err error) error {
 // ExternalServiceKinds contains a map of all supported kinds of
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
-	extsvc.KindAWSCodeCommit:        {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
-	extsvc.KindAzureDevOps:          {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
-	extsvc.KindBitbucketCloud:       {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
-	extsvc.KindBitbucketServer:      {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
-	extsvc.KindGerrit:               {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
-	extsvc.KindGitHub:               {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	extsvc.KindGitLab:               {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
-	extsvc.KindGitolite:             {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	extsvc.KindGoPackages:           {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
-	extsvc.KindJVMPackages:          {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
-	extsvc.KindNpmPackages:          {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
-	extsvc.KindOther:                {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
-	extsvc.VariantLocalGit.AsKind(): {CodeHost: true, JSONSchema: schema.LocalGitExternalServiceSchemaJSON},
-	extsvc.KindPagure:               {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindPerforce:             {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
-	extsvc.KindPhabricator:          {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
-	extsvc.KindPythonPackages:       {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
-	extsvc.KindRustPackages:         {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
-	extsvc.KindRubyPackages:         {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
+	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindAzureDevOps:     {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
+	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
+	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
+	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
+	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
+	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
+	extsvc.KindGoPackages:      {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
+	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
+	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
+	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
+	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
+	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -587,9 +591,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	// Ensure the calculated fields in the external service are up to date.
-	if err := e.recalculateFields(es, string(normalized)); err != nil {
-		return err
-	}
+	e.recalculateFields(es, string(normalized))
 
 	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
@@ -624,14 +626,16 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			es.CloudDefault,
 			es.HasWebhooks,
 			es.CodeHostID,
+			es.CreatorID,
+			es.LastUpdaterID,
 		),
 	).Scan(&es.ID)
 }
 
 const createExternalServiceQueryFmtstr = `
 INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id, creator_id, last_updater_id)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -684,9 +688,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, string(normalized)); err != nil {
-			return err
-		}
+		e.recalculateFields(s, string(normalized))
 
 		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normalized))
 		if err != nil {
@@ -753,6 +755,8 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 			&svcs[i].CodeHostID,
+			&svcs[i].CreatorID,
+			&svcs[i].LastUpdaterID,
 		)
 		if err != nil {
 			return err
@@ -788,6 +792,8 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.CloudDefault,
 			s.HasWebhooks,
 			s.CodeHostID,
+			s.CreatorID,
+			s.LastUpdaterID,
 		))
 	}
 
@@ -798,7 +804,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -816,7 +822,9 @@ INSERT INTO external_services (
   unrestricted,
   cloud_default,
   has_webhooks,
-  code_host_id
+  code_host_id,
+  creator_id,
+  last_updater_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -833,7 +841,8 @@ SET
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks,
-  code_host_id       = excluded.code_host_id
+  code_host_id       = excluded.code_host_id,
+  last_updater_id    = excluded.last_updater_id
 RETURNING
 	id,
 	kind,
@@ -848,7 +857,9 @@ RETURNING
 	cloud_default,
 	encryption_key_id,
 	has_webhooks,
-	code_host_id
+	code_host_id,
+	creator_id,
+	last_updater_id
 `
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -859,6 +870,7 @@ type ExternalServiceUpdate struct {
 	TokenExpiresAt *time.Time
 	LastSyncAt     *time.Time
 	NextSyncAt     *time.Time
+	LastUpdaterID  *int32
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
@@ -950,11 +962,12 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
+		unrestricted := calcUnrestricted(string(normalized))
+
 		updates = append(updates,
 			sqlf.Sprintf(
-				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s",
-				encryptedConfig, keyID, unrestricted, hasWebhooks,
+				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s, last_updater_id = %s",
+				encryptedConfig, keyID, unrestricted, hasWebhooks, update.LastUpdaterID,
 			))
 	}
 
@@ -1381,6 +1394,54 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	return nil
 }
 
+type ExternalServicesCleanupSyncJobsOptions struct {
+	// Remove jobs that are older than the given duration from NOW().
+	OlderThan time.Duration
+	// Removes the oldest jobs until only MaxPerExternalService jobs remain for
+	// each service.
+	MaxPerExternalService int
+}
+
+func (e *externalServiceStore) CleanupSyncJobs(ctx context.Context, opts ExternalServicesCleanupSyncJobsOptions) error {
+	if opts.MaxPerExternalService < 1 {
+		return errors.New("MaxPerExternalService must be greater than 0")
+	}
+
+	q := buildCleanupSyncJobsQuery(opts)
+	return e.Exec(ctx, q)
+}
+
+const cleanupSyncJobsQueryFmtstr = `
+WITH ranked_jobs AS (
+    SELECT
+        id,
+        external_service_id,
+        state,
+        finished_at,
+        ROW_NUMBER() OVER (PARTITION BY external_service_id ORDER BY finished_at DESC) as rn
+    FROM
+        external_service_sync_jobs
+    WHERE
+        state IN ('completed', 'failed', 'canceled')
+		AND
+		finished_at IS NOT NULL
+)
+DELETE FROM
+    external_service_sync_jobs
+WHERE
+    id IN (
+        SELECT id FROM ranked_jobs
+        WHERE
+			rn > %s
+			OR
+			finished_at < %s
+    )
+`
+
+func buildCleanupSyncJobsQuery(opts ExternalServicesCleanupSyncJobsOptions) *sqlf.Query {
+	return sqlf.Sprintf(cleanupSyncJobsQueryFmtstr, opts.MaxPerExternalService, time.Now().Add(-opts.OlderThan))
+}
+
 func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT 1
@@ -1553,9 +1614,7 @@ WHERE %s
 var scanExternalServiceRepos = basestore.NewSliceScanner(scanExternalServiceRepo)
 
 func scanExternalServiceRepo(s dbutil.Scanner) (*types.ExternalServiceRepo, error) {
-	var (
-		repo types.ExternalServiceRepo
-	)
+	var repo types.ExternalServiceRepo
 
 	if err := s.Scan(
 		&repo.ExternalServiceID,
@@ -1644,11 +1703,8 @@ WHERE EXISTS(
 	return v && exists, nil
 }
 
-// recalculateFields updates the value of the external service fields that are
-// calculated depending on the external service configuration, namely
-// `Unrestricted` and `HasWebhooks`.
-func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
-	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
+func calcUnrestricted(config string) bool {
+	unrestricted := !envvar.SourcegraphDotComMode() && !gjson.Get(config, "authorization").Exists()
 
 	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
 	//
@@ -1661,14 +1717,23 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	//
 	// For existing auth providers, this is forwards compatible. While at the same time if they also
 	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
-	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
+	enforcePermissions := gjson.Get(config, "enforcePermissions")
 	if !envvar.SourcegraphDotComMode() {
 		if globals.PermissionsUserMapping().Enabled {
-			es.Unrestricted = false
+			unrestricted = false
 		} else if enforcePermissions.Exists() {
-			es.Unrestricted = !enforcePermissions.Bool()
+			unrestricted = !enforcePermissions.Bool()
 		}
 	}
+
+	return unrestricted
+}
+
+// recalculateFields updates the value of the external service fields that are
+// calculated depending on the external service configuration, namely
+// `Unrestricted` and `HasWebhooks`.
+func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
+	es.Unrestricted = calcUnrestricted(rawConfig)
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)
@@ -1680,8 +1745,6 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 		e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", es.ID))
 	}
 	es.HasWebhooks = &hasWebhooks
-
-	return nil
 }
 
 func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, config string) (codeHostID int32, _ error) {

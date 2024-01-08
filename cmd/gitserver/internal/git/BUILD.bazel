@@ -20,7 +20,6 @@ go_library(
         "//internal/conf",
         "//internal/fileutil",
         "//internal/gitserver/gitdomain",
-        "//internal/syncx",
         "//internal/trace",
         "//internal/wrexec",
         "//lib/errors",
@@ -43,5 +42,6 @@ go_test(
         "//internal/wrexec",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
     ],
 )

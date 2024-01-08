@@ -2,6 +2,18 @@
 
 ## General
 
+### `bazel configure` prints out a warning about TSConfig 
+
+Everytime you run `bazel configure`, you'll see a warning: 
+
+```
+$ bazel configure
+Updating BUILD files for protobuf, go, javascript
+2023/11/16 12:32:52 Failed to load base tsconfig file @sourcegraph/tsconfig: open /Users/thorstenball/work/sourcegraph/@sourcegraph/tsconfig: no such file or directory
+```
+
+The warning can be ignored, and [is a known bug](https://github.com/aspect-build/aspect-cli/issues/524).
+
 ### The analysis cache is being busted because of `--action_env`
 
 Typically you'll see this (in CI or locally):
@@ -107,6 +119,27 @@ To fix this, you need to install Rosetta 2. There are various ways of doing that
 
 __Tested on Darwin 22.3.0 Darwin Kernel Version 22.3.0__
 
+### On MacOS, your build fails with `xcrun failed with code 1. This most likely indicates that SDK version [10.10] for platform [MacOSX] is unsupported for the target version of xcode.`
+
+Bazel uses `xcrun` to locate the SDK and toolchain for iOS/Mac compilation and xcrun is fails to produce a version or it cannot find the correct directory. This might happen even if `xcrun --show-sdk-path` shows a valid path and `xcrun --show-sdk-version` shows a valid version. At the time of this entry we haven't found the exact cause of this issue and various other bazel projects have encountered the same issue.
+
+Nonetheless, there is a workaround! Pass the following CLI flag when you try to build a target `--macos_sdk_version=13.3`. With the flag bazel should be able to find the MacOS SDK and you should not get the error anymore. It's recommended to add `build --macos_sdk_version=13.3` to your `.bazelrc` file so that you don't have to add the CLI flag every time you invoke a build.
+
+### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI) 
+
+If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because 
+`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way. 
+
+While it says "error", it's to be noted that it doesn't prevent the Git command to continue.
+
+The fix is pretty simple, assuming that you do have a `git log` command in the script that `bazel run //something` calls. Adding the `--no-mailmap` flag will prevent the error to show up:
+
+```
+git log --no-mailmap (...)
+```
+
+Please keep in mind that it will prevent `git` to properly map the email addresses for a few individuals, though in most cases that shouldn't be a problem as that's not what we're looking for when using `git log` in scripts.
+
 ## Queries
 
 Bazel queries (`bazel query`, `bazel cquery` and `bazel aqueries`) are powerful tools that can assist you to visualize dependencies and understand how targets are being built or tested.
@@ -192,18 +225,18 @@ In the case where your testdata lives in `../**`, Gazelle cannot see those on it
 
 ### My go tests are timing out in CI but there is no output telling me where exactly it failed
 
-By defaults, Go tests are run without the `-v` flag, which means that Go will only print a summary when the testing is complete or has failed. But in the case of Bazel timeouts, i.e. when the test target 
-has a time out on the Bazel side (`short` by default, so 60 seconds) Bazel will kill the Go test binary before it had the chance to flush out its outputs. As a result, you'll see empty logs, which is 
-very incovenient for debugging. 
+By defaults, Go tests are run without the `-v` flag, which means that Go will only print a summary when the testing is complete or has failed. But in the case of Bazel timeouts, i.e. when the test target
+has a time out on the Bazel side (`short` by default, so 60 seconds) Bazel will kill the Go test binary before it had the chance to flush out its outputs. As a result, you'll see empty logs, which is
+very incovenient for debugging.
 
-Solution: run `bazel test --config go-verbose-test` to force Bazel to run the tests with the verbose flag on for any `go_test` rule it encounters. If this only happens in CI, you can combine this solution with the _bazel-do_ feature of `sg` 
-which enables to fire a build running a single, specific test that you provide: 
+Solution: run `bazel test --config go-verbose-test` to force Bazel to run the tests with the verbose flag on for any `go_test` rule it encounters. If this only happens in CI, you can combine this solution with the _bazel-do_ feature of `sg`
+which enables to fire a build running a single, specific test that you provide:
 
 ```
-sg ci bazel test --config go-verbose-test //my/timing-out:target 
+sg ci bazel test --config go-verbose-test //my/timing-out:target
 ```
 
-This will print out the URL of the newly created build and the logs will show you exactly where the tests were when they timed out. 
+This will print out the URL of the newly created build and the logs will show you exactly where the tests were when they timed out.
 
 ### Manually adding a `go_repository`
 

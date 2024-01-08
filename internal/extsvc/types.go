@@ -209,9 +209,6 @@ const (
 
 	// VariantOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	VariantOther
-
-	// VariantLocalGit is the (api.ExternalRepoSpec).ServiceType for local git repositories
-	VariantLocalGit
 )
 
 type variantValues struct {
@@ -242,7 +239,6 @@ var variantValuesMap = map[Variant]variantValues{
 	VariantRubyPackages:    {AsKind: "RUBYPACKAGES", AsType: "rubyPackages", ConfigPrototype: func() any { return &schema.RubyPackagesConnection{} }},
 	VariantRustPackages:    {AsKind: "RUSTPACKAGES", AsType: "rustPackages", ConfigPrototype: func() any { return &schema.RustPackagesConnection{} }},
 	VariantSCIM:            {AsKind: "SCIM", AsType: "scim"},
-	VariantLocalGit:        {AsKind: "LOCALGIT", AsType: "localgit", ConfigPrototype: func() any { return &schema.LocalGitExternalService{} }},
 }
 
 func (v Variant) AsKind() string {
@@ -630,12 +626,6 @@ func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bo
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
-	case *schema.PerforceConnection:
-		limit = GetDefaultRateLimit(KindPerforce)
-		if c != nil && c.RateLimit != nil {
-			isDefault = false
-			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
-		}
 	case *schema.JVMPackagesConnection:
 		limit = GetDefaultRateLimit(KindJVMPackages)
 		if c != nil && c.Maven.RateLimit != nil {
@@ -779,13 +769,6 @@ type OtherRepoMetadata struct {
 	AbsFilePath string
 }
 
-type LocalGitMetadata struct {
-	// AbsFilePath is the absolute path to the local repository. The path can also
-	// be extracted from the repo's URN, but storing it separately makes it easier
-	// work with.
-	AbsRepoPath string
-}
-
 func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
 	cfg, err := ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {
@@ -858,8 +841,6 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return VariantRubyPackages.AsKind(), nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
-	case *schema.LocalGitExternalService:
-		return VariantLocalGit.AsKind(), nil
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}
@@ -897,3 +878,8 @@ func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
 func (c CodeHostBaseURL) String() string {
 	return c.baseURL
 }
+
+// ServeGitExtSVCID is the external service ID used by sourcegraph's local code
+// syncing. We use a hardcoded ID to simplify finding and mutating the
+// external service.
+const ServeGitExtSVCID = 0xC0DE

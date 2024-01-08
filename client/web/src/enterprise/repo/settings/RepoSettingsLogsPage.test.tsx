@@ -1,6 +1,7 @@
 import type { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
+import { describe, expect, test } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -161,7 +162,7 @@ describe('RepoSettingsLogsPage', () => {
         expect(cmp.asFragment()).toMatchSnapshot()
     })
 
-    test('should render a waring when recording is disabled', async () => {
+    test('should render a warning when recording is disabled', async () => {
         const mockRecordedCommandsQuery: MockedResponse<RepositoryRecordedCommandsResult> = {
             delay: 0,
             request: {

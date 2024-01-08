@@ -91,7 +91,7 @@ function getStackedData<Datum>(input: GetStackedDataInput<Datum>): StackedCatego
     return categories.map<StackedCategory<Datum>>(category => ({
         ...category,
         stackedData: category.data.reduce<StackedDatum<Datum>[]>((stack, item) => {
-            const previousStackedValue = stack.length !== 0 ? stack[stack.length - 1].stackedValue : 0
+            const previousStackedValue = stack.length !== 0 ? stack.at(-1)!.stackedValue : 0
 
             stack.push({ datum: item, stackedValue: previousStackedValue + getDatumValue(item) })
 

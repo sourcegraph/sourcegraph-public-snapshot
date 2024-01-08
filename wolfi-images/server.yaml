@@ -29,6 +29,7 @@ contents:
     - prometheus
     - prometheus-alertmanager
     - redis-6.2
+    - redis-cli-6.2
     - sqlite-libs
     - su-exec
 
@@ -36,7 +37,7 @@ contents:
     - ctags@sourcegraph
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion=1.12-r6@sourcegraph
+    - p4-fusion-sg@sourcegraph
     - s3proxy@sourcegraph
     - grafana@chainguard
 

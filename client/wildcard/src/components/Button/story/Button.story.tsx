@@ -37,7 +37,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => (
+export const Simple: StoryFn = (args = {}) => (
     <Button variant={args.variant} size={args.size} disabled={args.disabled} outline={args.outline}>
         Click me!
     </Button>

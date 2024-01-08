@@ -6,7 +6,7 @@ import { WebStory } from '../../../../../../../components/WebStory'
 
 import { CaptureGroupInsightCard, LangStatsInsightCard, SearchInsightCard } from './InsightCards'
 
-export default {
+const meta: Meta = {
     title: 'web/insights/InsightCards',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -15,7 +15,9 @@ export default {
             disableSnapshot: false,
         },
     },
-} as Meta
+}
+
+export default meta
 
 export const InsightCards: StoryFn = () => (
     <section className="row">

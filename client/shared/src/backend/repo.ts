@@ -74,8 +74,12 @@ export const fetchTreeEntries = memoizeObservable(
                 fragment TreeFields on GitTree {
                     isRoot
                     url
-                    entries(first: $first, recursiveSingleChild: true) {
+                    entries(first: $first) {
+                        __typename
                         ...TreeEntryFields
+                        ... on GitBlob {
+                            languages
+                        }
                     }
                 }
                 fragment TreeEntryFields on TreeEntry {
@@ -87,7 +91,6 @@ export const fetchTreeEntries = memoizeObservable(
                         url
                         commit
                     }
-                    isSingleChild
                 }
             `,
             variables: args,

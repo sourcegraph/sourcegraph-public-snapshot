@@ -283,7 +283,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
         .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
     const commonHostName = allHostNames.length === 1 ? allHostNames[0] : undefined
 
-    const routineTypeDisplayableName = routine.type.toLowerCase().replace(/_/g, ' ')
+    const routineTypeDisplayableName = routine.type.toLowerCase().replaceAll('_', ' ')
 
     const recentRunsTooltipContent = (
         <div>
@@ -495,11 +495,14 @@ function categorizeRunDuration(durationMs: number, routineIntervalMs: number | n
 function getRunDurationTextClass(durationMs: number, routineIntervalMs: number | null): string {
     const category = categorizeRunDuration(durationMs, routineIntervalMs)
     switch (category) {
-        case 'dangerous':
+        case 'dangerous': {
             return 'text-danger'
-        case 'long':
+        }
+        case 'long': {
             return 'text-warning'
-        default:
+        }
+        default: {
             return 'text-success'
+        }
     }
 }

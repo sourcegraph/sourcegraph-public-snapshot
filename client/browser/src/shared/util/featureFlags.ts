@@ -39,7 +39,7 @@ const createFeatureFlagStorage = ({ get, set }: FeatureFlagUtilities): FeatureFl
     async toggle<K extends keyof FeatureFlags>(key: K): Promise<boolean> {
         const value = await get(key)
         await set(key, !value)
-        /* eslint-disable @typescript-eslint/return-await  */
+
         return !value
     },
 })

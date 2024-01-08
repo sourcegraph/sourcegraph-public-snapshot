@@ -48,16 +48,19 @@ export class ShortcutManager {
         this.updateMatchingShortcuts(event)
 
         switch (this.shortcutsMatched.length) {
-            case 0:
+            case 0: {
                 this.resetKeys()
                 break
-            case 1:
+            }
+            case 1: {
                 this.callMatchedShortcut(event)
                 break
-            default:
+            }
+            default: {
                 this.timer = window.setTimeout(() => {
                     this.callMatchedShortcut(event)
                 }, ON_MATCH_DELAY)
+            }
         }
     }
 

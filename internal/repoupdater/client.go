@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -17,12 +18,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,10 +38,6 @@ var (
 func repoUpdaterURLDefault() string {
 	if u := os.Getenv("REPO_UPDATER_URL"); u != "" {
 		return u
-	}
-
-	if deploy.IsSingleBinary() {
-		return "http://127.0.0.1:3182"
 	}
 
 	return "http://repo-updater:3182"
@@ -66,7 +61,7 @@ func NewClient(serverURL string) *Client {
 	return &Client{
 		URL:        serverURL,
 		HTTPClient: defaultDoer,
-		grpcClient: syncx.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
+		grpcClient: sync.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
 			u, err := url.Parse(serverURL)
 			if err != nil {
 				return nil, err
@@ -78,7 +73,8 @@ func NewClient(serverURL string) *Client {
 				return nil, err
 			}
 
-			return proto.NewRepoUpdaterServiceClient(conn), nil
+			client := &automaticRetryClient{base: proto.NewRepoUpdaterServiceClient(conn)}
+			return client, nil
 		}),
 	}
 }
@@ -153,6 +149,11 @@ func (c *Client) RepoLookup(
 			return res, &ErrUnauthorized{Repo: args.Repo, NoAuthz: true}
 		case resp.GetErrorTemporarilyUnavailable():
 			return res, &ErrTemporary{Repo: args.Repo, IsTemporary: true}
+		case resp.GetErrorRepoDenied() != "":
+			return res, &ErrRepoDenied{
+				Repo:   args.Repo,
+				Reason: resp.GetErrorRepoDenied(),
+			}
 		}
 		return res, nil
 	}
@@ -191,6 +192,11 @@ func (c *Client) RepoLookup(
 			err = &ErrTemporary{
 				Repo:        args.Repo,
 				IsTemporary: true,
+			}
+		case result.ErrorRepoDenied != "":
+			err = &ErrRepoDenied{
+				Repo:   args.Repo,
+				Reason: result.ErrorRepoDenied,
 			}
 		}
 	}

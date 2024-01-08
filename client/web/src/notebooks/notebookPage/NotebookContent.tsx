@@ -54,22 +54,26 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
             () =>
                 blocks.map(block => {
                     switch (block.__typename) {
-                        case 'MarkdownBlock':
+                        case 'MarkdownBlock': {
                             return { id: block.id, type: 'md', input: { text: block.markdownInput } }
-                        case 'QueryBlock':
+                        }
+                        case 'QueryBlock': {
                             return { id: block.id, type: 'query', input: { query: block.queryInput } }
-                        case 'FileBlock':
+                        }
+                        case 'FileBlock': {
                             return {
                                 id: block.id,
                                 type: 'file',
                                 input: { ...block.fileInput, revision: block.fileInput.revision ?? '' },
                             }
-                        case 'SymbolBlock':
+                        }
+                        case 'SymbolBlock': {
                             return {
                                 id: block.id,
                                 type: 'symbol',
                                 input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
                             }
+                        }
                     }
                 }),
             [blocks]

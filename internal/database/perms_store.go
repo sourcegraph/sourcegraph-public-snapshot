@@ -1972,19 +1972,24 @@ var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(bases
 			return nil, err
 		}
 
-		if source != nil {
-			// if source is API, set reason to explicit perms
+		// Access reason priorities are as follows:
+		// 1. Public repo
+		// 2. Unrestricted code host connection
+		// 3. Site admin
+		// 4. Explicit permissions
+		// 5. Permissions sync
+		if !repo.Private {
+			reason = UserRepoPermissionReasonPublic
+		} else if unrestricted {
+			reason = UserRepoPermissionReasonUnrestricted
+		} else if authzParams.BypassAuthzReasons.SiteAdmin {
+			reason = UserRepoPermissionReasonSiteAdmin
+		} else if source != nil {
 			if *source == authz.SourceAPI {
 				reason = UserRepoPermissionReasonExplicitPerms
-			}
-			// if source is perms sync, set reason to perms syncing
-			if *source == authz.SourceRepoSync || *source == authz.SourceUserSync {
+			} else if *source == authz.SourceRepoSync || *source == authz.SourceUserSync {
 				reason = UserRepoPermissionReasonPermissionsSync
 			}
-		} else if !repo.Private || unrestricted {
-			reason = UserRepoPermissionReasonUnrestricted
-		} else if repo.Private && !unrestricted && authzParams.BypassAuthzReasons.SiteAdmin {
-			reason = UserRepoPermissionReasonSiteAdmin
 		}
 
 		return &UserPermission{Repo: &repo, Reason: reason, UpdatedAt: updatedAt}, nil
@@ -2013,6 +2018,11 @@ type RepoPermission struct {
 // and timestamp for each permission.
 func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID, args *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
 	authzParams, err := GetAuthzQueryParameters(context.Background(), s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := s.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -2080,15 +2090,23 @@ func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID,
 			return nil, err
 		}
 
-		reason := UserRepoPermissionReasonPermissionsSync
-		if unrestricted {
+		var reason UserRepoPermissionReason
+		// Access reason priorities are as follows:
+		// 1. Public repo
+		// 2. Unrestricted code host connection
+		// 3. Site admin
+		// 4. Explicit permissions
+		// 5. Permissions sync
+		if !repo.Private {
+			reason = UserRepoPermissionReasonPublic
+		} else if unrestricted {
 			reason = UserRepoPermissionReasonUnrestricted
-			updatedAt = time.Time{}
-		} else if user.SiteAdmin && !authzParams.AuthzEnforceForSiteAdmins {
+		} else if !authzParams.AuthzEnforceForSiteAdmins && user.SiteAdmin {
 			reason = UserRepoPermissionReasonSiteAdmin
-			updatedAt = time.Time{}
 		} else if source == authz.SourceAPI {
 			reason = UserRepoPermissionReasonExplicitPerms
+		} else if source == authz.SourceRepoSync || source == authz.SourceUserSync {
+			reason = UserRepoPermissionReasonPermissionsSync
 		}
 
 		perms = append(perms, &RepoPermission{User: user, Reason: reason, UpdatedAt: updatedAt})
@@ -2196,4 +2214,5 @@ const (
 	UserRepoPermissionReasonUnrestricted    UserRepoPermissionReason = "Unrestricted"
 	UserRepoPermissionReasonPermissionsSync UserRepoPermissionReason = "Permissions Sync"
 	UserRepoPermissionReasonExplicitPerms   UserRepoPermissionReason = "Explicit API"
+	UserRepoPermissionReasonPublic          UserRepoPermissionReason = "Public"
 )

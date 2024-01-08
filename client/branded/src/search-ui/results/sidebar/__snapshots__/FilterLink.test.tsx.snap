@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`FilterLink should have correct links for dynamic filters 1`] = `
+exports[`FilterLink > should have correct links for dynamic filters 1`] = `
 <DocumentFragment>
   <button
     aria-label="lang:go, At least 500 results match this filter."
@@ -35,7 +35,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     <span
       class="pl-2 flex-shrink-0"
     >
-      500+
+      500
     </span>
   </button>
   <button
@@ -128,7 +128,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
 </DocumentFragment>
 `;
 
-exports[`FilterLink should have correct links for repos 1`] = `
+exports[`FilterLink > should have correct links for repos 1`] = `
 <DocumentFragment>
   <button
     aria-label="Search in repository gitlab.com/sourcegraph/sourcegraph, At least 5 results match this filter."
@@ -199,13 +199,13 @@ exports[`FilterLink should have correct links for repos 1`] = `
     <span
       class="pl-2 flex-shrink-0"
     >
-      201+
+      201
     </span>
   </button>
 </DocumentFragment>
 `;
 
-exports[`FilterLink should have correct links for scopes 1`] = `
+exports[`FilterLink > should have correct links for scopes 1`] = `
 <DocumentFragment>
   <button
     aria-label="Use search snippet: This is a search scope with a very long name lorem ipsum dolor sit amet"
@@ -236,7 +236,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
 </DocumentFragment>
 `;
 
-exports[`FilterLink should have show icons for repos on cloud 1`] = `
+exports[`FilterLink > should have show icons for repos on cloud 1`] = `
 <DocumentFragment>
   <button
     aria-label="Search in repository gitlab.com/sourcegraph/sourcegraph, At least 5 results match this filter."
@@ -307,7 +307,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     <span
       class="pl-2 flex-shrink-0"
     >
-      201+
+      201
     </span>
   </button>
 </DocumentFragment>

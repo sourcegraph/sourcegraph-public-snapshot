@@ -8,9 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
-var config = svcmain.Config{}
-
 func main() {
 	sanitycheck.Pass()
-	svcmain.SingleServiceMain(shared.Service, config)
+	svcmain.SingleServiceMain(shared.Service)
 }

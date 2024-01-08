@@ -77,7 +77,11 @@ Do the [branch cut](https://handbook.sourcegraph.com/departments/engineering/dev
 
 Revert or disable features that may cause delays. As necessary, `git cherry-pick` bugfix (not feature!) commits from `main` into the release branch. Continue to create new release candidates as necessary, until no more `release-blocker` issues remain.
 
-**Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL):
+- [ ] Update the [target branch of the RC test instance](https://github.com/sourcegraph/cloud/blob/main/.github/workflows/mi_upgrade_rctest.yml#L51) to the new release branch `$MAJOR.$MINOR`.
+- [ ] Trigger a [manual run of the GitHub Action](https://github.com/sourcegraph/cloud/actions/workflows/mi_upgrade_rctest.yml) to upgrade the RC test instance. It should complete without an error, otherwise there might be a database migration problem that warrants a `release-blocker` issue.
+
+> [!important]
+> You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL):
 
 - Sourcegraph: `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
 

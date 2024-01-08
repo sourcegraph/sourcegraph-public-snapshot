@@ -11,7 +11,7 @@ export const Path: React.FunctionComponent<React.PropsWithChildren<{ path: strin
     return (
         <>
             {parts.length > 1 ? <span className="text-muted">{parts.slice(0, -1).join('/')}/</span> : ''}
-            <strong>{parts[parts.length - 1]}</strong>
+            <strong>{parts.at(-1)}</strong>
         </>
     )
 }

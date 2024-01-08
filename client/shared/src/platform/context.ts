@@ -10,6 +10,7 @@ import type { SettingsEdit } from '../api/client/services/settings'
 import type { ExecutableExtension } from '../api/extension/activation'
 import type { Scalars } from '../graphql-operations'
 import type { Settings, SettingsCascadeOrError } from '../settings/settings'
+import type { TelemetryRecorder } from '../telemetry'
 import type { TelemetryService } from '../telemetry/telemetryService'
 import type { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
@@ -180,8 +181,19 @@ export interface PlatformContext {
     /**
      * A telemetry service implementation to log events.
      * Optional because it's currently only used in the web app platform.
+     *
+     * @deprecated Use 'telemetryRecorder' instead.
      */
     telemetryService?: TelemetryService
+
+    /**
+     * Telemetry recorder for the new telemetry framework, superseding
+     * 'telemetryService' and 'logEvent' variants. Learn more here:
+     * https://docs.sourcegraph.com/dev/background-information/telemetry
+     *
+     * It is backed by a '@sourcegraph/telemetry' implementation.
+     */
+    telemetryRecorder: TelemetryRecorder
 
     /**
      * If this is a function that returns a Subscribable of executable extensions,

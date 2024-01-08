@@ -174,7 +174,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				return runner.Check(cmd.Context, repoState)
 			},
 			// Completions to chain multiple commands
-			BashComplete: completions.CompleteOptions(func() (options []string) {
+			BashComplete: completions.CompleteArgs(func() (options []string) {
 				for _, c := range lt {
 					options = append(options, c.Name)
 				}

@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "nolocalhost",
+    srcs = ["nolocalhost.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/nolocalhost",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "@com_github_gobwas_glob//:glob",
+        "@org_golang_x_tools//go/analysis",
+    ],
+)

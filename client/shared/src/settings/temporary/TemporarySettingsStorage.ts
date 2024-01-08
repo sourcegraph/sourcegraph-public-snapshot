@@ -29,7 +29,11 @@ export class TemporarySettingsStorage {
         this.saveSubscription?.unsubscribe()
     }
 
-    constructor(private apolloClient: ApolloClient<object> | null, isAuthenticatedUser: boolean) {
+    constructor(
+        private apolloClient: ApolloClient<object> | null,
+        isAuthenticatedUser: boolean,
+        enableLocalOverrides: boolean = false
+    ) {
         let backend: SettingsBackend
         if (isAuthenticatedUser) {
             if (!this.apolloClient) {
@@ -41,7 +45,7 @@ export class TemporarySettingsStorage {
             backend = new LocalStorageSettingsBackend()
         }
 
-        if (process.env.NODE_ENV === 'development') {
+        if (enableLocalOverrides) {
             backend = new LocalOverrideBackend(backend)
         }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -191,7 +192,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Url:    server.URL,
 					ApiURL: server.URL,
 				}
-				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -203,7 +204,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, nil)
 				if c.expErr && err == nil {
 					t.Errorf("expected err %v, but was nil", c.expErr)
 				} else if !c.expErr && err != nil {
@@ -272,7 +273,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		Url:    server.URL,
 		ApiURL: server.URL,
 	}
-	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +284,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		client:      bbClient,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, _, err = s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err = s.GetOrCreateUser(ctx, tok, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

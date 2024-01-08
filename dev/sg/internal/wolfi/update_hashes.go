@@ -8,15 +8,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var ImagePattern = regexp.MustCompile(`image\s=\s"(.*?)"`)
+var DigestPattern = regexp.MustCompile(`digest\s=\s"(.*?)"`)
+var NamePattern = regexp.MustCompile(`name\s=\s"(.*?)"`)
 
 type TokenResponse struct {
 	Token     string `json:"token"`
@@ -25,9 +29,10 @@ type TokenResponse struct {
 }
 
 type ImageInfo struct {
-	Name   string
-	Digest string
-	Image  string
+	Name     string
+	Digest   string
+	Image    string
+	IsLegacy bool
 }
 
 func getAnonDockerAuthToken(repo string) (string, error) {
@@ -97,7 +102,7 @@ func getImageManifest(image string, tag string) (string, error) {
 	return digest, nil
 }
 
-func UpdateHashes(ctx *cli.Context, updateImageName string) error {
+func UpdateHashes(_ *cli.Context, updateImageName string) error {
 	if updateImageName != "" {
 		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
 		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)
@@ -118,10 +123,6 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	}
 	defer file.Close()
 
-	imagePattern := regexp.MustCompile(`image\s=\s"(.*?)"`)
-	digestPattern := regexp.MustCompile(`digest\s=\s"(.*?)"`)
-	namePattern := regexp.MustCompile(`name\s=\s"(.*?)"`)
-
 	scanner := bufio.NewScanner(file)
 	lines := []string{}
 	for scanner.Scan() {
@@ -139,24 +140,31 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	var currentImage *ImageInfo
 	for i, line := range lines {
 		switch {
-		case namePattern.MatchString(line):
-			match := namePattern.FindStringSubmatch(line)
+		case NamePattern.MatchString(line):
+			match := NamePattern.FindStringSubmatch(line)
 			if len(match) > 1 {
 				imageName := strings.Trim(match[1], `"`)
 
 				// Only update an image if updateImageName matches the name, or if it's empty (in which case update all images)
 				if updateImageName == imageName || updateImageName == "" {
 					updateImageNameMatch = true
-					currentImage = &ImageInfo{Name: imageName}
+					currentImage = &ImageInfo{
+						Name:     imageName,
+						IsLegacy: strings.Contains(imageName, "legacy_"),
+					}
 				}
 			}
-		case digestPattern.MatchString(line):
-			match := digestPattern.FindStringSubmatch(line)
+		case DigestPattern.MatchString(line):
+			match := DigestPattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Digest = strings.Trim(match[1], `"`)
 			}
-		case imagePattern.MatchString(line):
-			match := imagePattern.FindStringSubmatch(line)
+		case ImagePattern.MatchString(line):
+			if currentImage.IsLegacy {
+				std.Out.WriteWarningf("Skipping legacy image %q", currentImage.Name)
+				continue
+			}
+			match := ImagePattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Image = strings.Trim(match[1], `"`)
 
@@ -166,12 +174,10 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 
 					if err != nil {
 						std.Out.WriteWarningf("%v", err)
-					}
-
-					if currentImage.Digest != newDigest {
+					} else if currentImage.Digest != newDigest {
 						updated = true
 						// replace old digest with new digest in the previous line
-						lines[i-1] = digestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
+						lines[i-1] = DigestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
 						std.Out.WriteSuccessf("Found new digest for %s", currentImage.Image)
 					}
 				}
@@ -192,7 +198,11 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 		for _, line := range lines {
 			fmt.Fprintln(writer, line)
 		}
-		writer.Flush()
+
+		err = writer.Flush()
+		if err != nil {
+			return err
+		}
 		std.Out.WriteSuccessf("Succesfully updated digests in %s", bzl_deps_file)
 
 	} else {

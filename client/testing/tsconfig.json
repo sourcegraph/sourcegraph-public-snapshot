@@ -7,7 +7,7 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
+    "declaration": true,
   },
-  "include": ["src", "*.js"],
+  "include": ["src"],
 }

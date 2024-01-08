@@ -1,7 +1,7 @@
 import { subDays } from 'date-fns'
 import expect from 'expect'
 import { range } from 'lodash'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 
 import type { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import {

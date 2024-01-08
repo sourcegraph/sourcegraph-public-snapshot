@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { ContributableMenu } from '@sourcegraph/client-api'
 
 import type { ActionItemAction } from '../actions/ActionItem'

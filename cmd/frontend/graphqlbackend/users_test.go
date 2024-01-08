@@ -377,6 +377,8 @@ func TestUsers_InactiveSince(t *testing.T) {
 			Name:      "testevent",
 			Source:    "test",
 		}
+
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
@@ -447,6 +449,60 @@ func TestUsers_InactiveSince(t *testing.T) {
 				{ "username": "user-4" }
 			], "totalCount": 4 }}
 			`,
+		},
+	})
+}
+
+func TestUsers_CreatePassword(t *testing.T) {
+	users := dbmocks.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	db := dbmocks.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	actorFromSession := actor.FromMockUser(1)
+	actorFromSession.FromSessionCookie = true
+	actorNotFromSession := actor.FromMockUser(2)
+	actorNotFromSession.FromSessionCookie = false
+
+	RunTests(t, []*Test{
+		{
+			Label:   "Actor from session",
+			Context: actor.WithActor(context.Background(), actorFromSession),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+				mutation {
+					createPassword(newPassword:"i am gr00t1234!!") {
+					  alwaysNil
+					}
+				  }
+			`,
+			ExpectedResult: `
+				{
+					"createPassword": {
+						"alwaysNil": null
+					}
+				}
+			`,
+		},
+		{
+			Label:   "Actor not from session (token)",
+			Context: actor.WithActor(context.Background(), actorNotFromSession),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+				mutation {
+					createPassword(newPassword:"i am gr00t1234!!") {
+					  alwaysNil
+					}
+				  }
+			`,
+			ExpectedResult: `{ "createPassword": null }`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "only allowed from user session",
+					Path:    []any{"createPassword"},
+				},
+			},
 		},
 	})
 }

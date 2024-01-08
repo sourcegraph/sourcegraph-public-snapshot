@@ -1,0 +1,16 @@
+fragment TreeEntryWithCommitInfo on TreeEntry {
+    canonicalURL
+    history(first: 1) {
+        nodes {
+            canonicalURL
+            commit {
+                id
+                canonicalURL
+                subject
+                author {
+                    date
+                }
+            }
+        }
+    }
+}

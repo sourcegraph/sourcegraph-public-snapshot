@@ -11,10 +11,11 @@ import (
 
 // With configures a stack to be able to use Cloudflare resources.
 func With(cloudflareToken gsmsecret.DataConfig) stack.NewStackOption {
-	return func(s stack.Stack) {
+	return func(s stack.Stack) error {
 		_ = cloudflare.NewCloudflareProvider(s.Stack, pointers.Ptr("cloudflare"),
 			&cloudflare.CloudflareProviderConfig{
 				ApiToken: &gsmsecret.Get(s.Stack, resourceid.New("cloudflare-provider-token"), cloudflareToken).Value,
 			})
+		return nil
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -185,7 +185,7 @@ func pathAndCommitFromResult(m result.Match) (string, string) {
 }
 
 func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db database.DB) ([]gql.ComputeResultResolver, error) {
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient("graphql.compute")
 
 	type repoKey struct {
 		Name types.MinimalRepo

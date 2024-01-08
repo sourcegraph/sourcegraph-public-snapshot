@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -30,10 +29,6 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func featureFlagName(jobType IndexJobType) string {
-	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
-}
 
 const (
 	tableName = "own_background_jobs"

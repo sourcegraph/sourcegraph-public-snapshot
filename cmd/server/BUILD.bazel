@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/server",
     visibility = ["//visibility:private"],
     deps = [
+        "//client/web/dist",
         "//cmd/server/shared",
         "//internal/sanitycheck",
-        "//ui/assets/enterprise",
     ],
 )
 

@@ -49,6 +49,7 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 	})
 	if !shouldDisableV1(ctx) {
 		wg.Go(func() error {
+			//lint:ignore SA1019 we translate the new format into the existing store for local reference.
 			err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events))
 			counterV1Events.
 				WithLabelValues(strconv.FormatBool(err != nil)).
@@ -103,9 +104,15 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 				for k, v := range md {
 					mdPayload[k] = v
 				}
+
 				// Attach a simple indicator to denote if this event will
-				// be exported.
+				// be exported, since it was recorded in the new telemetry sytem.
 				mdPayload["telemetry.event.exportable"] = true
+
+				// Attach interaction context, if there is any.
+				if interaction := e.GetInteraction(); interaction != nil {
+					mdPayload["interaction.traceID"] = interaction.GetTraceId()
+				}
 
 				data, err := json.Marshal(mdPayload)
 				if err != nil {

@@ -1,3 +1,5 @@
+SOME_CONSTANT = 2.718
+
 if true
   a = 1
 elsif false

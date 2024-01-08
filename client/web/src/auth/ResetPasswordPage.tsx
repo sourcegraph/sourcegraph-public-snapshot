@@ -8,7 +8,7 @@ import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form, Con
 import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { AuthPageWrapper } from './AuthPageWrapper'

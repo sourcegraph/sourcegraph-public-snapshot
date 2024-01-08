@@ -29,7 +29,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
     }, [])
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [updated, setIsUpdated] = useState<boolean>(false)
-    const [updateResetTimer, setUpdateResetTimer] = useState<NodeJS.Timer>()
+    const [updateResetTimer, setUpdateResetTimer] = useState<number>()
 
     useEffect(
         () => () => {
@@ -51,7 +51,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
                 setIsLoading(false)
                 setIsUpdated(true)
                 setUpdateResetTimer(
-                    setTimeout(() => {
+                    window.setTimeout(() => {
                         // Hide "updated" text again after 1s
                         setIsUpdated(false)
                     }, 1000)

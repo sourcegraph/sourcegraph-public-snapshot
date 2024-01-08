@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"net/http"
 	"time"
 
@@ -124,6 +125,10 @@ func NewHandler(
 		}
 		if err != nil {
 			logger.Error("error searching embedding index", log.Error(err))
+			if errors.Is(err, &client.RateLimitExceededError{}) {
+				http.Error(w, fmt.Sprintf("error searching embedding index: %s", err.Error()), http.StatusTooManyRequests)
+				return
+			}
 			http.Error(w, fmt.Sprintf("error searching embedding index: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}

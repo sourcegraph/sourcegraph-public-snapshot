@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 
 import { OFFSET_TO_POSITION_TESTS, POSITION_TO_OFFSET_TESTS } from '../../client/types/textDocument.test'
@@ -14,7 +16,9 @@ describe('ExtensionDocument', () => {
     describe('positionAt', () => {
         for (const [index, { text, ...testCase }] of OFFSET_TO_POSITION_TESTS.entries()) {
             test(index.toString(), () =>
-                expect(textDocument(text).positionAt(testCase.offset)).toMatchObject(testCase.pos)
+                expect(textDocument(text).positionAt(testCase.offset)).toMatchObject(
+                    testCase.pos as unknown as Record<string, unknown>
+                )
             )
         }
     })

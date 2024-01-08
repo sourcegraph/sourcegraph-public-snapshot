@@ -40,7 +40,7 @@ import type {
     RepositoryContributorsVariables,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
+import { quoteIfNeeded, repoFilterForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import type { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
@@ -68,7 +68,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     const commit = node.commits.nodes[0] as RepositoryContributorNodeFields['commits']['nodes'][number] | undefined
 
     const query: string = [
-        searchQueryForRepoRevision(repoName),
+        repoFilterForRepoRevision(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -271,15 +271,18 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         const { value } = event.target
         switch (event.currentTarget.id) {
-            case contributorsPageInputIds.REVISION_RANGE:
+            case contributorsPageInputIds.REVISION_RANGE: {
                 setRevisionRange(value)
                 break
-            case contributorsPageInputIds.AFTER:
+            }
+            case contributorsPageInputIds.AFTER: {
                 setAfter(value)
                 break
-            case contributorsPageInputIds.PATH:
+            }
+            case contributorsPageInputIds.PATH: {
                 setPath(value)
                 break
+            }
         }
     }
 

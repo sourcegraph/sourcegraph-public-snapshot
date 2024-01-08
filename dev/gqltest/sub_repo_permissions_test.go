@@ -16,26 +16,25 @@ import (
 const (
 	perforceRepoName = "perforce/test-perms"
 	testPermsDepot   = "test-perms"
-	aliceEmail       = "alice@perforce-tests.sgdev.org"
+	aliceEmail       = "alice@perforce.sgdev.org"
 	aliceUsername    = "alice"
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
 	// Test cases
 
 	// flaky test
 	t.Run("can read README.md", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-		blob, err := userClient.GitBlob(repoName, "master", "README.md")
+		blob, err := userClient.GitBlob(repoName, "main", "README.md")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -48,7 +47,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	t.Run("cannot read hack.sh", func(t *testing.T) {
 		// Should not be able to read hack.sh
-		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
+		blob, err := userClient.GitBlob(repoName, "main", "Security/hack.sh")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -64,8 +63,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	// flaky test
 	t.Run("file list excludes excluded files", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-		files, err := userClient.GitListFilenames(repoName, "master")
+		files, err := userClient.GitListFilenames(repoName, "main")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,14 +84,14 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 func TestSubRepoPermissionsSymbols(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, repoName, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WaitForRepoToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +102,7 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 		// is repeated 10 times and the test runs for ~50 seconds in total to increase
 		// the probability of symbols being indexed.
 		for i := 0; i < 10; i++ {
-			symbols, err := userClient.GitGetCommitSymbols(repoName, "master")
+			symbols, err := userClient.GitGetCommitSymbols(repoName, "main")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -123,14 +121,15 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
+	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, _, err := createTestUserAndWaitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Fatalf("Failed to create user and wait for repo: %v", err)
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	t.Log("Wait for repo to be indexed")
+	err = client.WaitForRepoToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,17 +277,18 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}{
 		{
 			name:     "direct access to inaccessible commit",
-			revision: "87440329a7bae580b90280aaaafdc14ee7c1f8ef",
+			revision: "ce09ed9ea31ffa71c8de2d6029b93d4bd9568af8",
 		},
 		{
 			name:      "direct access to accessible commit",
-			revision:  "36d7eda16b9a881ef153126a4036efc4f6afb0c1",
+			revision:  "de3fac9e20a01dbda7f354c82bd6ed77f16a778c",
 			hasAccess: true,
 		},
 	}
 
 	for _, test := range commitAccessTests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Skip("Skipping until we have stable commit hashes")
 			_, err := userClient.GitGetCommitMessage(perforceRepoName, test.revision)
 			if err != nil {
 				if test.hasAccess {
@@ -314,7 +314,8 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	})
 
 	t.Run("code intel search", func(t *testing.T) {
-		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@8574314b8de445ec652cab87cbaa1a8dbe6ba6c4")
+		t.Skip("Skipping until we have stable commit hashes")
+		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@2a30922ef9f214d44de60e719a64473e17321684")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -348,7 +349,8 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 		t.Fatal(err)
 	}
 
-	err = userClient.WaitForReposToBeClonedWithin(5*time.Second, perforceRepoName)
+	t.Log("Wait for repo to be cloned")
+	err = userClient.WaitForReposToBeClonedWithin(120*time.Second, perforceRepoName)
 	if err != nil {
 		return nil, "", err
 	}
@@ -359,28 +361,10 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 
 func syncUserPerms(t *testing.T, userID, userName string) {
 	t.Helper()
-	err := client.ScheduleUserPermissionsSync(userID)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	// Wait up to 30 seconds for the user to have permissions synced
-	// from the code host at least once.
-	err = gqltestutil.Retry(30*time.Second, func() error {
-		userPermsInfo, err := client.UserPermissionsInfo(userName)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if userPermsInfo != nil && !userPermsInfo.SyncedAt.IsZero() {
-			return nil
-		}
-		return gqltestutil.ErrContinueRetry
-	})
-	if err != nil {
-		t.Fatal("Waiting for user permissions to be synced:", err)
-	}
+	t.Log("Wait for Perforce to be added as an authz provider")
 	// Wait up to 30 seconds for Perforce to be added as an authz provider
-	err = gqltestutil.Retry(30*time.Second, func() error {
+	err := gqltestutil.Retry(30*time.Second, func() error {
 		authzProviders, err := client.AuthzProviderTypes()
 		if err != nil {
 			t.Fatal("failed to fetch list of authz providers", err)
@@ -397,10 +381,55 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	if err != nil {
 		t.Fatal("Waiting for authz providers to be added:", err)
 	}
+
+	t.Log("Schedule permissions sync")
+	err = client.ScheduleUserPermissionsSync(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("Wait for permissions to sync")
+	// Wait up to 30 seconds for the user to have permissions synced
+	// from the code host at least once.
+	err = gqltestutil.Retry(30*time.Second, func() error {
+		userPermsInfo, err := client.UserPermissionsInfo(userName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if userPermsInfo != nil && !userPermsInfo.UpdatedAt.IsZero() {
+			return nil
+		}
+		return gqltestutil.ErrContinueRetry
+	})
+	// Try a second time if the first attempt failed.
+	if err != nil {
+		t.Log("First permissions sync failed. Trying a second time")
+		err = client.ScheduleUserPermissionsSync(userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Wait up to 30 seconds for the user to have permissions synced
+		// from the code host at least once.
+		err = gqltestutil.Retry(30*time.Second, func() error {
+			userPermsInfo, err := client.UserPermissionsInfo(userName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if userPermsInfo != nil && !userPermsInfo.UpdatedAt.IsZero() {
+				return nil
+			}
+			return gqltestutil.ErrContinueRetry
+		})
+		if err != nil {
+			t.Fatal("Waiting for user permissions to be synced:", err)
+		}
+	}
 }
 
 func enableSubRepoPermissions(t *testing.T) {
 	t.Helper()
+	t.Log("Enabling sub-repo permissions")
 
 	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {

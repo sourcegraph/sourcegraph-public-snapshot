@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -34,6 +33,7 @@ go_library(
         "//internal/rcache",
         "//internal/redispool",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/service",
         "//internal/trace",
         "//internal/trace/policy",
@@ -46,6 +46,7 @@ go_library(
         "@com_github_gomodule_redigo//redis",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
+        "@com_github_khan_genqlient//graphql",
         "@com_github_slack_go_slack//:slack",
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",

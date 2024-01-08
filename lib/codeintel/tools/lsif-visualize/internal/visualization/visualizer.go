@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -39,7 +40,7 @@ func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int, e
 			return true
 		}
 
-		if contains(lineContext.Element.Label, exclude) {
+		if slices.Contains(exclude, lineContext.Element.Label) {
 			return true
 		}
 
@@ -67,14 +68,14 @@ func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int, e
 		}
 
 		vertex, _ := v.Context.Stasher.Vertex(edge.OutV)
-		if contains(vertex.Element.Label, exclude) {
+		if slices.Contains(exclude, vertex.Element.Label) {
 			return true
 		}
 
 		return forEachInV(edge, func(inV int) bool {
 			if _, ok := vertices[inV]; ok {
 				vertex, _ = v.Context.Stasher.Vertex(inV)
-				if contains(vertex.Element.Label, exclude) {
+				if slices.Contains(exclude, vertex.Element.Label) {
 					return true
 				}
 				fmt.Printf("\tv%d -> v%d [label=\"(%d) %s\"];\n", edge.OutV, inV, lineContext.Element.ID, lineContext.Element.Label)
@@ -101,13 +102,4 @@ func getReachableVerticesAtDepth(from int, forwardEdges, backwardEdges map[int][
 	for _, v := range backwardEdges[from] {
 		getReachableVerticesAtDepth(v, forwardEdges, backwardEdges, depth-1, vertices)
 	}
-}
-
-func contains(s string, ss []string) bool {
-	for _, str := range ss {
-		if str == s {
-			return true
-		}
-	}
-	return false
 }

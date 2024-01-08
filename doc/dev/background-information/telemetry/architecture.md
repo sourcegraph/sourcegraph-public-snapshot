@@ -10,6 +10,8 @@ In the [lifecycle of an event](./index.md#event-lifecycle), events are first [st
 
 See [testing events](./index.md#testing-events) for a summary of how to observe your events during development.
 
+> WARNING: This page primarily pertains to the new telemetry system introduced in Sourcegraph 5.2.1 - refer to [DEPRECATED: Telemetry](deprecated.md) for the legacy system which may still be in use if a callsite has not been migrated yet.
+
 ## Storing events
 
 Once [recorded](./index.md#recording-events), telemetry events are stored in two places:

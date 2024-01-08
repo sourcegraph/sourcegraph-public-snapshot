@@ -5,7 +5,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../components/WebStory'
 import type { SourcegraphContext } from '../jscontext'
 
-import { VsCodeSignUpPage, VsCodeSignUpPageProps } from './VsCodeSignUpPage'
+import { VsCodeSignUpPage, type VsCodeSignUpPageProps } from './VsCodeSignUpPage'
 
 const config: Meta = {
     title: 'web/auth/VsCodeSignUpPage',

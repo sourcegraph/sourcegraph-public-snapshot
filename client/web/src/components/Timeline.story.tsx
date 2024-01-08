@@ -101,7 +101,7 @@ export const Details: StoryFn = () => (
     </WebStory>
 )
 
-export const DetailsWithoutDurations: Story = () => (
+export const DetailsWithoutDurations: StoryFn = () => (
     <WebStory>
         {() => (
             <Timeline

@@ -50,5 +50,5 @@ export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.Re
 }
 
 function getSettingsValue(settings: SettingsCascadeOrError, key: string): boolean {
-    return !isErrorLike(settings.final) && settings.final !== null && settings.final[key]
+    return !isErrorLike(settings.final) && settings.final?.[key]
 }

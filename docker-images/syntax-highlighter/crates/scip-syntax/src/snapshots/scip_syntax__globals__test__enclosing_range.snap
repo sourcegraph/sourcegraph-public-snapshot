@@ -11,10 +11,10 @@ expression: dumped
   }
   
   type SomethingElse struct {
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^ 6:0..9:1 definition scip-ctags scopes_of_go/SomethingElse#
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^ 6:0..9:1 definition(Struct) scip-ctags scopes_of_go/SomethingElse#
    a int
-// ^^^^^ definition scip-ctags scopes_of_go/SomethingElse#a.
+// ^^^^^ definition(Field) scip-ctags scopes_of_go/SomethingElse#a.
    b string
-// ^^^^^^^^ definition scip-ctags scopes_of_go/SomethingElse#b.
+// ^^^^^^^^ definition(Field) scip-ctags scopes_of_go/SomethingElse#b.
   }
 

@@ -20,7 +20,6 @@ import (
 
 type IndexEnqueuer struct {
 	store           store.Store
-	repoUpdater     RepoUpdaterClient
 	repoStore       database.RepoStore
 	gitserverClient gitserver.Client
 	operations      *operations
@@ -30,14 +29,12 @@ type IndexEnqueuer struct {
 func NewIndexEnqueuer(
 	observationCtx *observation.Context,
 	store store.Store,
-	repoUpdater RepoUpdaterClient,
 	repoStore database.RepoStore,
 	gitserverClient gitserver.Client,
 	jobSelector *jobselector.JobSelector,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
-		repoUpdater:     repoUpdater,
 		repoStore:       repoStore,
 		gitserverClient: gitserverClient,
 		operations:      newOperations(observationCtx),
@@ -79,7 +76,7 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo) (err error) {
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("scheme", pkg.Scheme),
 		attribute.String("name", string(pkg.Name)),
@@ -95,24 +92,11 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		attribute.String("repoName", string(repoName)),
 		attribute.String("revision", revision))
 
-	var repoID int
-	if !assumeSynced {
-		resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				return nil
-			}
-
-			return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
-		}
-		repoID = int(resp.ID)
-	} else {
-		repo, err := s.repoStore.GetByName(ctx, repoName)
-		if err != nil {
-			return errors.Wrap(err, "store.Repos.GetByName")
-		}
-		repoID = int(repo.ID)
+	repo, err := s.repoStore.GetByName(ctx, repoName)
+	if err != nil {
+		return errors.Wrap(err, "store.Repos.GetByName")
 	}
+	repoID := int(repo.ID)
 
 	commit, err := s.gitserverClient.ResolveRevision(ctx, repoName, revision, gitserver.ResolveRevisionOptions{})
 	if err != nil {

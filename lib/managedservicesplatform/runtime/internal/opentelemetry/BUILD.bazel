@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "opentelemetry",
+    srcs = [
+        "logger.go",
+        "metrics.go",
+        "opentelemetry.go",
+        "tracing.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry",
+    visibility = ["//lib/managedservicesplatform/runtime:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
+        "@io_opentelemetry_go_contrib_propagators_jaeger//:jaeger",
+        "@io_opentelemetry_go_contrib_propagators_ot//:ot",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//propagation",
+        "@io_opentelemetry_go_otel//semconv/v1.21.0:v1_21_0",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace//:otlptrace",
+        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracegrpc//:otlptracegrpc",
+        "@io_opentelemetry_go_otel_exporters_prometheus//:prometheus",
+        "@io_opentelemetry_go_otel_sdk//resource",
+        "@io_opentelemetry_go_otel_sdk//trace",
+        "@io_opentelemetry_go_otel_sdk_metric//:metric",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

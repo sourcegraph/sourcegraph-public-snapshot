@@ -23,6 +23,7 @@ import {
     Grid,
     AnchorLink,
 } from '@sourcegraph/wildcard'
+// eslint-disable-next-line no-restricted-imports
 import type { BreadcrumbItem } from '@sourcegraph/wildcard/src/components/PageHeader'
 
 import { GitHubAppDomain, type GitHubAppByIDResult, type GitHubAppByIDVariables } from '../../graphql-operations'

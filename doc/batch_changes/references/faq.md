@@ -134,3 +134,15 @@ Sourcegraph search shows you results on any repositories that you have read acce
 ### Why is my batch change preview hanging?
 
 When working with `src`, there are occurences where applying your batch spec might get stuck on a particular step. More so in the `Determining workspace type` step. The `Determining workspace type` is a simple step that decides if bind or volume modes should be used based on the command line flags, and the OS and architecture. If volume mode is used (which is default on Mac OS), then `src` will attempt to pull the `sourcegraph/src-batch-change-volume-workspace` Docker image from docker hub since that's required for the batch spec to be executed. The "hanging" is typically is caused by the local machine's CLI state. Restarting your computer and applying the batch spec again should fix this. 
+
+### Can I create a batch change and use a team's namespace so that the team owns the batch change?
+
+Yes, you can create a batch change under a team's namespace so that the team owns and manages the batch change. Here are the steps to achieve this:
+
+1. Create an [organization](../../admin/organizations.md) on Sourcegraph for your team.
+1. Add all members of your team to the organization.
+1. When creating the batch change, select the organization's namespace instead of your personal namespace. This can be done via the UI or using the `-namespace` flag with `src batch preview/apply`.
+1. The batch change will now be created under the organization's namespace.
+1. All members of the organization (your team) will have admin permissions to manage the batch change.
+
+So by using an organization's namespace, you can create a batch change that is owned and editable by the entire team, not just yourself.

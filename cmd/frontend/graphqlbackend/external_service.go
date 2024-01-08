@@ -317,6 +317,10 @@ func (r *externalServiceResolver) SupportsRepoExclusion() bool {
 	return r.externalService.SupportsRepoExclusion()
 }
 
+func (r *externalServiceResolver) Unrestricted() bool {
+	return r.externalService.Unrestricted
+}
+
 type externalServiceSyncJobConnectionResolver struct {
 	args              *externalServiceSyncJobsArgs
 	externalServiceID int64

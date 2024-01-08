@@ -2,6 +2,7 @@ import { BehaviorSubject, of } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
 import type sourcegraph from 'sourcegraph'
+import { describe, it } from 'vitest'
 
 import type { Contributions } from '@sourcegraph/client-api'
 

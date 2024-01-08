@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 1`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 1`] = `
 <DocumentFragment>
   test@sourcegraph.com (
   <a
@@ -15,7 +15,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 2`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 2`] = `
 <DocumentFragment>
   test@sourcegraph.com (
   <a
@@ -30,7 +30,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 3`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 3`] = `
 <DocumentFragment>
   test@sourcegraph.com (
   <a
@@ -45,7 +45,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 4`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 4`] = `
 <DocumentFragment>
   test@sourcegraph.com (
   <a
@@ -60,7 +60,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 5`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 5`] = `
 <DocumentFragment>
   <span>
     test@sourcegraph.com
@@ -68,7 +68,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 6`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 6`] = `
 <DocumentFragment>
   test@sourcegraph.com (
   <a
@@ -83,7 +83,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 7`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 7`] = `
 <DocumentFragment>
   <span>
     test@sourcegraph.com
@@ -91,7 +91,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 8`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 8`] = `
 <DocumentFragment>
   test@sourcegraph.com (
   <a
@@ -106,7 +106,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 9`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 9`] = `
 <DocumentFragment>
   <span>
     test@sourcegraph.com
@@ -114,37 +114,37 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name is set 10`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name is set 10`] = `
 <DocumentFragment>
   test@sourcegraph.com (@test)
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 1`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 1`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 2`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 2`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 3`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 3`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 4`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 4`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 5`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 5`] = `
 <DocumentFragment>
   <span>
     Not connected
@@ -152,13 +152,13 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 6`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 6`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 7`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 7`] = `
 <DocumentFragment>
   <span>
     Not connected
@@ -166,13 +166,13 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 8`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 8`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 9`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 9`] = `
 <DocumentFragment>
   <span>
     Not connected
@@ -180,7 +180,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
 </DocumentFragment>
 `;
 
-exports[`ExternalAccountConnectionDetails renders correctly when display name isn't set 10`] = `
+exports[`ExternalAccountConnectionDetails > renders correctly when display name isn't set 10`] = `
 <DocumentFragment>
   Not connected
 </DocumentFragment>

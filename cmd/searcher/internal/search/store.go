@@ -22,14 +22,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -126,9 +124,6 @@ func (s *Store) Start() {
 		metrics.MustRegisterDiskMonitor(s.Path)
 
 		logger := s.Log
-		if deploy.IsApp() {
-			logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
-		}
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
 		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
 		s.ObservationCtx.Registerer.MustRegister(m)
@@ -140,12 +135,9 @@ func (s *Store) Start() {
 
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
-	return s.PrepareZipPaths(ctx, repo, commit, nil)
-}
-
-func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZipPaths")
+// If paths is non-empty, the archive will only contain files from paths.
+func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
+	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZip")
 	defer tr.EndWithErr(&err)
 
 	var cacheHit bool
@@ -195,7 +187,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		cacheHit := true
-		bgctx := xcontext.Detach(ctx)
+		bgctx := context.WithoutCancel(ctx)
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
 			return s.fetch(ctx, repo, commit, filter, paths)

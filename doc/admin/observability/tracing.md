@@ -33,7 +33,7 @@ We generally follow the following algorithm to root-cause issues with traces:
    1. items near the leaves that take up a significant portion of the overall request time.
    2. spans that have errors attached to them
    3. [log entries](./logs.md) that correspond to spans in the trace (using the `TraceId` and `SpanId` fields)
-3. Report this information to Sourcegraph (via [issue](https://github.com/sourcegraph/sourcegraph/issues/new) or [reaching out directly](https://about.sourcegraph.com/contact/request-info/)) by screenshotting the relevant trace or sharing the trace JSON.
+3. Report this information to Sourcegraph (via [issue](https://github.com/sourcegraph/sourcegraph/issues/new) or [reaching out directly](https://sourcegraph.com/contact/request-info/)) by screenshotting the relevant trace or sharing the trace JSON.
 
 ### Trace a search query
 

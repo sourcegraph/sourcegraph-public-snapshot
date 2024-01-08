@@ -108,7 +108,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
             : 'Test configuration'
 
     const isValidConfig =
-        hasTestedConfig && typeof triggerTestConfigErrors !== 'undefined' && triggerTestConfigErrors.length === 0
+        hasTestedConfig && triggerTestConfigErrors !== undefined && triggerTestConfigErrors.length === 0
 
     const [repositoriesConfig, setRepositoriesConfig] = useState('')
     useEffect(

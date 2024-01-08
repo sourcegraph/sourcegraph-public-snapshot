@@ -16,7 +16,6 @@ export interface FetchCacheRequest extends RequestInit {
     url: string
     /**
      * maximum allowed cached item age in milliseconds
-     *
      * @example "60000" will allow using cached item within last minute
      */
     cacheMaxAge: number
@@ -27,7 +26,6 @@ let isEnabled = true
 
 /**
  * fetch API with cache
- *
  * @description Caches same argument requests for 1 minute
  */
 export const fetchCache = async <T = any>({

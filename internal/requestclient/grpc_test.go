@@ -5,7 +5,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/peer"
 )
 
@@ -109,9 +110,14 @@ func TestPropagator(t *testing.T) {
 			md := propagator.FromContext(requestCtx)
 
 			resultCtx := propagator.InjectContext(requestCtx, md)
-			if diff := cmp.Diff(test.wantClient, FromContext(resultCtx)); diff != "" {
-				t.Errorf("Client mismatch (-want +got):\n%s", diff)
-			}
+
+			// Explicitly compare exported fields because cmp.Diff doesn't work
+			// when there are unexported fields
+			rc := FromContext(resultCtx)
+			require.NotNil(t, rc)
+			assert.Equal(t, test.wantClient.IP, rc.IP)
+			assert.Equal(t, test.wantClient.ForwardedFor, rc.ForwardedFor)
+			assert.Equal(t, test.wantClient.UserAgent, rc.UserAgent)
 		})
 	}
 }

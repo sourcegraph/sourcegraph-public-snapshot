@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ToggleRenderedFileMode } from './ToggleRenderedFileMode'

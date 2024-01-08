@@ -1,11 +1,11 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
     import { formatRepositoryStarCount } from '$lib/branded'
-    import { mdiStar } from '@mdi/js'
+    import { mdiStarOutline } from '@mdi/js'
 
     export let repoStars: number
 </script>
 
 <span>
-    <Icon inline svgPath={mdiStar} --color="var(--yellow)" />&nbsp;{formatRepositoryStarCount(repoStars)}
+    <Icon inline svgPath={mdiStarOutline} />&nbsp;{formatRepositoryStarCount(repoStars)}
 </span>

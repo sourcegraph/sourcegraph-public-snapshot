@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 // ShortGitCommandTimeout returns the timeout for git commands that should not
@@ -84,9 +87,7 @@ func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 		attribute.StringSlice("args", cmd.Unwrap().Args),
 		attribute.String("dir", cmd.Unwrap().Dir))
 	defer func() {
-		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		}
+		tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		tr.EndWithErr(&err)
 	}()
 
@@ -108,9 +109,8 @@ func RunCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 	return buf.Bytes(), err
 }
 
-// RunRemoteGitCommand runs the command after applying the remote options. If
-// progress is not nil, all output is written to it in a separate goroutine.
-func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+// RunRemoteGitCommand runs the command after applying the remote options.
+func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
@@ -120,93 +120,20 @@ func RunRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts
 		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
 	}
 
-	var b interface {
-		Bytes() []byte
-	}
-
-	if progress != nil {
-		var pw progressWriter
-		mr := io.MultiWriter(&pw, progress)
-		cmd.Unwrap().Stdout = mr
-		cmd.Unwrap().Stderr = mr
-		b = &pw
-	} else {
-		var buf bytes.Buffer
-		cmd.Unwrap().Stdout = &buf
-		cmd.Unwrap().Stderr = &buf
-		b = &buf
-	}
+	var buf bytes.Buffer
+	cmd.Unwrap().Stdout = &buf
+	cmd.Unwrap().Stderr = &buf
 
 	// We don't care about exitStatus, we just rely on error.
 	_, err := RunCommand(ctx, cmd)
 
-	return b.Bytes(), err
+	return buf.Bytes(), err
 }
 
 // tlsExternal will create a new cache for this gitserer process and store the certificates set in
 // the site config.
 // This creates a long lived
 var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
-
-// progressWriter is an io.Writer that writes to a buffer.
-// '\r' resets the write offset to the index after last '\n' in the buffer,
-// or the beginning of the buffer if a '\n' has not been written yet.
-//
-// This exists to remove intermediate progress reports from "git clone
-// --progress".
-type progressWriter struct {
-	// writeOffset is the offset in buf where the next write should begin.
-	writeOffset int
-
-	// afterLastNewline is the index after the last '\n' in buf
-	// or 0 if there is no '\n' in buf.
-	afterLastNewline int
-
-	buf []byte
-}
-
-func (w *progressWriter) Write(p []byte) (n int, err error) {
-	l := len(p)
-	for {
-		if len(p) == 0 {
-			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
-			break
-		}
-		idx := bytes.IndexAny(p, "\r\n")
-		if idx == -1 {
-			w.buf = append(w.buf[:w.writeOffset], p...)
-			w.writeOffset = len(w.buf)
-			break
-		}
-		switch p[idx] {
-		case '\n':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			w.writeOffset = len(w.buf)
-			w.afterLastNewline = len(w.buf)
-			p = p[idx+1:]
-		case '\r':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			// Record that our next write should overwrite the data after the most recent newline.
-			// Don't slice it off immediately here, because we want to be able to return that output
-			// until it is overwritten.
-			w.writeOffset = w.afterLastNewline
-			p = p[idx+1:]
-		default:
-			panic(fmt.Sprintf("unexpected char %q", p[idx]))
-		}
-	}
-	return l, nil
-}
-
-// String returns the contents of the buffer as a string.
-func (w *progressWriter) String() string {
-	return string(w.buf)
-}
-
-// Bytes returns the contents of the buffer.
-func (w *progressWriter) Bytes() []byte {
-	return w.buf
-}
 
 type tlsConfig struct {
 	// Whether to not verify the SSL certificate when fetching or pushing over
@@ -298,6 +225,10 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 	}
 }
 
+func ConfigureRemoteGitCommand(cmd *exec.Cmd) {
+	configureRemoteGitCommand(cmd, tlsExternal())
+}
+
 func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	// We split here in case the first command is an absolute path to the executable
 	// which allows us to safely match lower down
@@ -383,4 +314,120 @@ func WrapCmdError(cmd *exec.Cmd, err error) error {
 		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
 	}
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
+}
+
+type RedactorFunc func(string) string
+
+// The passed cmd should be bound to the passed context.
+func RunCommandWriteOutput(ctx context.Context, cmd wrexec.Cmder, writer io.Writer, redactor RedactorFunc) (int, error) {
+	exitStatus := UnsetExitStatus
+
+	// Create a cancel context so that on exit we always properly close the command
+	// pipes attached later by process.PipeOutputUnbuffered.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Make sure we only write to the writer from one goroutine at a time, either
+	// stdout or stderr.
+	syncWriter := newSynchronizedWriter(writer)
+
+	outputRedactor := func(w io.Writer, r io.Reader) error {
+		sc := process.NewOutputScannerWithSplit(r, scanLinesWithCRLF)
+		for sc.Scan() {
+			line := sc.Text()
+			if _, err := fmt.Fprint(w, redactor(line)); err != nil {
+				return err
+			}
+		}
+		// We can ignore ErrClosed because we get that if a process crashes, it will
+		// be handled by cmd.Wait.
+		if err := sc.Err(); err != nil && !errors.Is(err, fs.ErrClosed) {
+			return err
+		}
+		return nil
+	}
+
+	eg, err := process.PipeProcessOutput(
+		ctx,
+		cmd,
+		syncWriter,
+		syncWriter,
+		outputRedactor,
+	)
+	if err != nil {
+		return exitStatus, errors.Wrap(err, "failed to pipe output")
+	}
+
+	if err = cmd.Start(); err != nil {
+		return exitStatus, errors.Wrap(err, "failed to start command")
+	}
+
+	// Wait for either the command to finish (aka the pipewriters get closed), or
+	// for a context cancelation.
+	select {
+	case <-ctx.Done():
+	case err := <-watchErrGroup(eg):
+		if err != nil {
+			return exitStatus, errors.Wrap(err, "failed to read output")
+		}
+	}
+
+	err = cmd.Wait()
+
+	if ps := cmd.Unwrap().ProcessState; ps != nil && ps.Sys() != nil {
+		if ws, ok := ps.Sys().(syscall.WaitStatus); ok {
+			exitStatus = ws.ExitStatus()
+		}
+	}
+
+	return exitStatus, errors.Wrap(err, "command failed")
+}
+
+// watchErrGroup turns a pool.ErrorPool into a channel that will receive the error
+// returned from the pool once it returns.
+func watchErrGroup(g *pool.ErrorPool) <-chan error {
+	ch := make(chan error)
+	go func() {
+		ch <- g.Wait()
+		close(ch)
+	}()
+
+	return ch
+}
+
+// scanLinesWithCRLF is a modified version of bufio.ScanLines that retains
+// the trailing newline byte(s) in the returned token and splits on either CR
+// or LF.
+func scanLinesWithCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	if i := bytes.IndexAny(data, "\r\n"); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, data[0 : i+1], nil
+	}
+
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+
+	// Request more data.
+	return 0, nil, nil
+}
+
+func newSynchronizedWriter(w io.Writer) *synchronizedWriter {
+	return &synchronizedWriter{writer: w}
+}
+
+type synchronizedWriter struct {
+	mu     sync.Mutex
+	writer io.Writer
+}
+
+func (sw *synchronizedWriter) Write(p []byte) (n int, err error) {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	return sw.writer.Write(p)
 }

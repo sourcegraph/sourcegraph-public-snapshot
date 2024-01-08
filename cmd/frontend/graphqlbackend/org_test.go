@@ -3,21 +3,26 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/gofrs/uuid"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -555,4 +560,31 @@ func TestUnmarshalOrgID(t *testing.T) {
 		_, err := UnmarshalOrgID(namespaceOrgID)
 		assert.Error(t, err)
 	})
+}
+
+func TestMembersConnectionStore(t *testing.T) {
+	ctx := context.Background()
+
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+
+	org, err := db.Orgs().Create(ctx, "test-org", nil)
+	require.NoError(t, err)
+
+	for i := 0; i < 10; i++ {
+		user, err := db.Users().Create(ctx, database.NewUser{
+			Username:        "test" + strconv.Itoa(i),
+			Email:           fmt.Sprintf("test%d@sourcegraph.com", i),
+			EmailIsVerified: true,
+		})
+		require.NoError(t, err)
+		_, err = db.OrgMembers().Create(ctx, org.ID, user.ID)
+		require.NoError(t, err)
+	}
+
+	connectionStore := &membersConnectionStore{
+		db:    db,
+		orgID: org.ID,
+	}
+
+	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
 }

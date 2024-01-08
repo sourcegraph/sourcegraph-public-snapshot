@@ -20,15 +20,15 @@ console.log('report-bundle-diff env:', {
 })
 
 const ROOT_PATH = path.join(__dirname, '../../../')
-const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'ui/assets')
+const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'client/web/dist')
 const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/@statoscope/cli/bin/cli.js')
 
 const MERGE_BASE = execSync('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
 
 async function findFile(root: string, filename: string): Promise<string> {
-    // file can be in one of 3 base paths
-    const parts: string[] = ['oss', 'enterprise', '']
+    // file can be in one of 2 base paths
+    const parts: string[] = ['enterprise', '']
     const files = await Promise.all(
         parts.flatMap(async (dir: string) => {
             const filePath = path.join(root, dir, filename)
@@ -125,7 +125,8 @@ async function main(): Promise<void> {
         const stats = await prepareStats()
 
         if (!stats) {
-            return
+            console.log('Failed to find stats to compare the bundle size against.')
+            process.exit(0)
         }
 
         console.log('--- Report bundle diff')
@@ -261,7 +262,7 @@ async function createOrUpdateComment(body: string): Promise<void> {
         try {
             await octokit.rest.issues.updateComment({
                 ...repo,
-                // eslint-disable-next-line camelcase
+
                 comment_id: sizeLimitComment.id,
                 body,
             })

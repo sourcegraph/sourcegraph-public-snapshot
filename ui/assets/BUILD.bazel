@@ -1,6 +1,4 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
 go_library(
     name = "assets",
