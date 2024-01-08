@@ -342,6 +342,60 @@ describe('Search', () => {
         })
     })
 
+    describe('Structural search toggle', () => {
+        withSearchQueryInput(({ name, applySettings, waitForInput }) => {
+            const queryInputSelector = queryInputSelectors[name]
+
+            describe(name, () => {
+                beforeEach(() => {
+                    testContext.overrideGraphQL({
+                        ...commonSearchGraphQLResults,
+                        ...createViewerSettingsGraphQLOverride({ user: applySettings() }),
+                    })
+                })
+
+                test('Clicking toggle turns on structural search', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+                    const editor = await waitForInput(driver, queryInputSelector)
+                    await driver.page.waitForSelector('.test-structural-search-toggle')
+                    await editor.focus()
+                    await driver.page.keyboard.type('test')
+                    await driver.page.click('.test-structural-search-toggle')
+                    await editor.focus()
+                    await driver.page.keyboard.press(Key.Enter)
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=1')
+                })
+
+                test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+                    const editor = await waitForInput(driver, queryInputSelector)
+                    await editor.focus()
+                    await driver.page.waitForSelector('.test-structural-search-toggle')
+                    await driver.page.click('.test-structural-search-toggle')
+                    if (name === 'v2') {
+                        // The the toggle buttons do not submit automatically in the new search input
+                        await editor.focus()
+                        await driver.page.keyboard.press(Key.Enter)
+                    }
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=0')
+                })
+
+                test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
+                    const editor = await waitForInput(driver, queryInputSelector)
+                    await driver.page.waitForSelector('.test-structural-search-toggle')
+                    await driver.page.click('.test-structural-search-toggle')
+                    if (name === 'v2') {
+                        // The the toggle buttons do not submit automatically in the new search input
+                        await editor.focus()
+                        await driver.page.keyboard.press(Key.Enter)
+                    }
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=0')
+                })
+            })
+        })
+    })
+
     describe('Search button', () => {
         const { waitForInput, applySettings } = getSearchQueryInputConfig('codemirror6')
 
