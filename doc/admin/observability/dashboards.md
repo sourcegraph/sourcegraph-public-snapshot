@@ -4197,7 +4197,6 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102800` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7583,7 +7582,7 @@ Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="gitserv
 
 <p class="subtitle">95th percentile duration by route, when status code is 200</p>
 
-The 95th percentile duration by route when the status code is 200 
+The 95th percentile duration by route when the status code is 200
 
 This panel has no related alerts.
 
@@ -7604,7 +7603,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 <p class="subtitle">95th percentile duration by route, when status code is not 200</p>
 
-The 95th percentile duration by route when the status code is not 200 
+The 95th percentile duration by route when the status code is not 200
 
 This panel has no related alerts.
 
@@ -15771,7 +15770,7 @@ Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="repo-up
 
 <p class="subtitle">95th percentile duration by route, when status code is 200</p>
 
-The 95th percentile duration by route when the status code is 200 
+The 95th percentile duration by route when the status code is 200
 
 This panel has no related alerts.
 
@@ -15792,7 +15791,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 <p class="subtitle">95th percentile duration by route, when status code is not 200</p>
 
-The 95th percentile duration by route when the status code is not 200 
+The 95th percentile duration by route when the status code is not 200
 
 This panel has no related alerts.
 
@@ -24491,7 +24490,7 @@ To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeinte
 
 ### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Summary
 
-#### codeintel-autoindexing: 
+#### codeintel-autoindexing:
 
 <p class="subtitle">Auto-index jobs inserted over 5m</p>
 
@@ -32197,4 +32196,3 @@ Query: `rate(src_embeddings_cache_miss_bytes[10m])`
 </details>
 
 <br />
-
