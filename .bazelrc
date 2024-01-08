@@ -19,12 +19,6 @@ try-import %workspace%/.aspect/bazelrc/user.bazelrc
 # Enable bazel hack for autogold; apply to both build & test to avoid busting analysis cache
 build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 
-# Needed by https://github.com/uber/bazel-zig-cc which we use to cross-compile
-# CGo code for cmd/symbols to be used in containers.
-build:incompat-zig-linux-amd64 --incompatible_enable_cc_toolchain_resolution
-build:incompat-zig-linux-amd64 --platforms @zig_sdk//platform:linux_amd64
-build:incompat-zig-linux-amd64 --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
-
 # Except in CI run E2E tests in headless mode
 try-import %workspace%/user.bazelrc
 
@@ -32,9 +26,9 @@ try-import %workspace%/user.bazelrc
 try-import %workspace%/.bazelrc-nix
 
 # Used to locally cross compile, when targeting docker images
-build:darwin-docker --incompatible_enable_cc_toolchain_resolution
 build:darwin-docker --platforms @zig_sdk//platform:linux_amd64
-build:darwin-docker --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.31
+build:darwin-docker --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.34
+build:darwin-docker --sandbox_add_mount_pair=/tmp
  # build setting to tell some go test runner to force targeting to macos even if we're building containers with the linux/amd64 toolchain.
 build:darwin-docker --//:darwin_docker=True
 

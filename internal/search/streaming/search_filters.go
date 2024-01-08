@@ -23,6 +23,9 @@ import (
 // (Filter).
 type SearchFilters struct {
 	filters filters
+
+	// Dirty is true if SearchFilters has changed since the last call to Compute()
+	Dirty bool
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -184,16 +187,17 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	if event.Stats.ExcludedForks > 0 {
 		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), "utility")
 		s.filters.MarkImportant("fork:yes")
+		s.Dirty = true
 	}
 	if event.Stats.ExcludedArchived > 0 {
 		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), "utility")
 		s.filters.MarkImportant("archived:yes")
+		s.Dirty = true
 	}
 
 	for _, match := range event.Results {
 		switch v := match.(type) {
 		case *result.FileMatch:
-
 			rev := ""
 			if v.InputRev != nil {
 				rev = *v.InputRev
@@ -204,17 +208,20 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addLangFilter(v.Path, lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
+			s.Dirty = true
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(v.Name, "", 1)
+			s.Dirty = true
 		case *result.CommitMatch:
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
 			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
 			addRepoFilter(v.Repo.Name, "", int32(v.ResultCount()))
 			addCommitAuthorFilter(v.Commit)
 			addCommitDateFilter(v.Commit)
+			s.Dirty = true
 
 			// =========== TODO: Jason Repo Metadata filters ============
 			// file paths are in v.ModifiedFiles which is a []string
@@ -225,6 +232,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
 func (s *SearchFilters) Compute() []*Filter {
+	s.Dirty = false
 	return s.filters.Compute(computeOpts{
 		MaxRepos: 40,
 		MaxOther: 40,
