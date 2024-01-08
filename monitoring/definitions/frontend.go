@@ -162,7 +162,7 @@ func Frontend() *monitoring.Dashboard {
 						},
 						{
 							Name:        "blob_load_latency",
-							Description: "90th percentile blob load latency over 10m for 10m0s",
+							Description: "90th percentile blob load latency over 10m",
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(5).For(10 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),

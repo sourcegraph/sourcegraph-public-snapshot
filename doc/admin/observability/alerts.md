@@ -231,7 +231,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 
 ## frontend: blob_load_latency
 
-<p class="subtitle">90th percentile blob load latency over 10m for 10m0s</p>
+<p class="subtitle">90th percentile blob load latency over 10m</p>
 
 **Descriptions**
 
