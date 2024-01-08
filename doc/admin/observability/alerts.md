@@ -8350,3 +8350,4 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"})
 </details>
 
 <br />
+
