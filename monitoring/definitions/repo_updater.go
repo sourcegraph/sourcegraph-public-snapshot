@@ -599,7 +599,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "repo_updater",
 				InstanceFilterRegex: `${instance:regex}`,
-			}, monitoring.ObservableOwnerDevOps),
+			}, monitoring.ObservableOwnerInfraOrg),
 			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, containerMonitoringOptions),

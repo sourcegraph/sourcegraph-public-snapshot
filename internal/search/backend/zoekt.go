@@ -86,9 +86,11 @@ func ZoektDial(endpoint string) zoekt.Streamer {
 		log.Scoped("zoekt"),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxRecvMsgSize)),
 	)
+
+	client := &automaticRetryClient{base: proto.NewWebserverServiceClient(conn)}
 	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
-		client:   proto.NewWebserverServiceClient(conn),
+		client:   client,
 		dialErr:  err,
 	})
 }

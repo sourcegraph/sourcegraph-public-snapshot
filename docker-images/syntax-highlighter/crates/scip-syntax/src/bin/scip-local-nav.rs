@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use clap::Parser;
 use scip::{types::Document, write_message_to_file};
-use scip_syntax::{languages::LocalConfiguration, locals::parse_tree};
+use scip_syntax::{languages::LocalConfiguration, locals::find_locals};
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
@@ -41,7 +41,7 @@ fn parse_files(config: &LocalConfiguration, root: &Path, dir: &Path) -> Vec<Docu
             .parse(contents.as_bytes(), None)
             .expect("to parse the tree");
 
-        let occs = parse_tree(config, &tree, contents.as_bytes()).expect("to get occurrences");
+        let occs = find_locals(config, &tree, contents.as_bytes());
 
         let mut doc = Document::new();
         doc.language = "go".to_string();

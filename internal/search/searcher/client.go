@@ -60,7 +60,6 @@ func Search(
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,
 			IsStructuralPat:              p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
 			IsCaseSensitive:              p.IsCaseSensitive,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 			IsNegated:                    p.IsNegated,
@@ -98,7 +97,7 @@ func Search(
 			return false, err
 		}
 
-		client := proto.NewSearcherServiceClient(conn)
+		client := &automaticRetryClient{proto.NewSearcherServiceClient(conn)}
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err

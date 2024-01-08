@@ -82,8 +82,17 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		arg := struct {
+			Kind        string
+			DisplayName string
+			Namespace   *graphql.ID
+		}{
+			Kind:        args.Input.Kind,
+			DisplayName: args.Input.DisplayName,
+			Namespace:   args.Input.Namespace,
+		}
 		// Log action of Code Host Connection being added
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -165,10 +174,20 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		arg := struct {
+			ID          graphql.ID
+			DisplayName *string
+			UpdaterID   *int32
+		}{
+			ID:          args.Input.ID,
+			DisplayName: args.Input.DisplayName,
+			UpdaterID:   &userID,
+		}
 		// Log action of Code Host Connection being updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args.Input.DisplayName); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
+
 	}
 	// Fetch from database again to get all fields with updated values.
 	es, err = r.db.ExternalServices().GetByID(ctx, id)
@@ -286,11 +305,16 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
+		arguments := struct {
+			GraphQLID         graphql.ID `json:"GraphQL ID"`
+			ExternalServiceID int64      `json:"External Service ID"`
+		}{
+			GraphQLID:         args.ExternalService,
+			ExternalServiceID: id,
+		}
 		// Log action of Code Host Connection being deleted
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arguments); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
-
 		}
 	}
 	return &EmptyResponse{}, nil

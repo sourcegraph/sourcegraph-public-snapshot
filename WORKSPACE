@@ -55,10 +55,10 @@ http_archive(
     patches = [
         "//third_party/rules_go:package_main.patch",
     ],
-    sha256 = "d6ab6b57e48c09523e93050f13698f708428cfd5e619252e369d377af6597707",
+    sha256 = "c8035e8ae248b56040a65ad3f0b7434712e2037e5dfdcebfe97576e620422709",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.43.0/rules_go-v0.43.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.43.0/rules_go-v0.43.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.44.0/rules_go-v0.44.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.44.0/rules_go-v0.44.0.zip",
     ],
 )
 
@@ -98,8 +98,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "6357de5982dd32526e02278221bb8d6aa45717ba9bbacf43686b130aa2c72e1e",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.30.0/rules_rust-v0.30.0.tar.gz"],
+    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.34.1/rules_rust-v0.34.1.tar.gz"],
 )
 
 # Container rules
@@ -134,7 +134,7 @@ http_archive(
 )
 
 # hermetic_cc_toolchain setup ================================
-HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.3"  # Check if third_party/hermetic_cc/zig_0.12.0_pr140.patch can be deleted when updating.
 
 # Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
@@ -149,8 +149,9 @@ http_archive(
     patch_args = ["-p1"],
     patches = [
         "//third_party/hermetic_cc:disable_ubsan.patch",
+        "//third_party/hermetic_cc:zig_0.12.0_pr140.patch",
     ],
-    sha256 = "28fc71b9b3191c312ee83faa1dc65b38eb70c3a57740368f7e7c7a49bedf3106",
+    sha256 = "a5caccbf6d86d4f60afd45b541a05ca4cc3f5f523aec7d3f7711e584600fb075",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
         "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -345,7 +346,14 @@ crate_repositories()
 
 load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
-zig_toolchains()
+zig_toolchains(
+    host_platform_sha256 = {
+        "macos-aarch64": "ed946cd65d00b18342d9a9ee9666b0869025ac2cd544a0fec3c337b5b0ee53c3",
+    },
+    # Fixes flakiness with zig 0.11.0
+    # https://bazelbuild.slack.com/archives/C04N6NE1GRM/p1704306009190609?thread_ts=1704306009.190609&cid=C04N6NE1GRM
+    version = "0.12.0-dev.2030+2ac315c24",
+)
 
 # containers steup       ===============================
 load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")

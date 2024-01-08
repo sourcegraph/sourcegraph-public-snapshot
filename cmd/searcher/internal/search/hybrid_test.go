@@ -173,6 +173,23 @@ added.md:1:1:
 hello world I am added
 `,
 	}, {
+		Name:    "example",
+		Pattern: protocol.PatternInfo{Pattern: "example"},
+		Want: `
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}, {
+		Name: "negated-pattern-example",
+		Pattern: protocol.PatternInfo{
+			Pattern:   "example",
+			IsNegated: true,
+		},
+		Want: `
+added.md
+changed.go
+`,
+	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
 			IncludePatterns: []string{"^added"},
@@ -219,6 +236,17 @@ unchanged.md
 changed.go
 unchanged.md:3:3:
 Hello world example in go
+`,
+	}, {
+		Name: "negated-pattern-path",
+		Pattern: protocol.PatternInfo{
+			Pattern:            "go",
+			IsNegated:          true,
+			PatternMatchesPath: true,
+		},
+		Want: `
+added.md
+unchanged.md
 `,
 	}}
 

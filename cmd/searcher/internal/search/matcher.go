@@ -2,117 +2,96 @@ package search
 
 import (
 	"bytes"
+	"fmt"
 	"regexp/syntax"
 	"strings"
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt/query"
-	"go.opentelemetry.io/otel/attribute"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 type matcher interface {
-	// AddAttributes adds attributes to the trace
-	AddAttributes(tr trace.Trace)
-
-	// MatchesAllContent returns whether the pattern will match all content
-	MatchesAllContent() bool
-
-	// IgnoreCase returns whether matches will ignore case
-	IgnoreCase() bool
-
-	// MatchesString returns whether the pattern matches the given string
+	// MatchesString returns whether the string matches
 	MatchesString(s string) bool
 
-	// MatchesFile returns a LineMatch for each line that matches rm in reader.
-	// LimitHit is true if some matches may not have been included in the result.
-	MatchesFile(fileBuf []byte, limit int) [][]int
+	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches
+	MatchesFile(fileBuf []byte, limit int) (match bool, matches [][]int)
 
 	// ToZoektQuery returns a zoekt query representing the same rules as as this matcher
 	ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error)
+
+	// String returns a simple string representation of the matcher
+	String() string
 }
 
-type regexMatcher struct {
-	// re is the regexp to match, or nil if empty ("match all files' content").
-	re *regexp.Regexp
-
-	// ignoreCase if true means we need to do case insensitive matching.
-	ignoreCase bool
-
-	// literalSubstring is used to test if a file is worth considering for
-	// matches. literalSubstring is guaranteed to appear in any match found by
-	// re. It is the output of the longestLiteral function. It is only set if
-	// the regex has an empty LiteralPrefix.
-	literalSubstring []byte
-}
-
-// compilePattern returns a matcher for matching p.
+// compilePattern returns a matcher for matching the pattern info
 func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 	var (
 		re               *regexp.Regexp
 		literalSubstring []byte
 	)
-	if p.Pattern != "" {
-		expr := p.Pattern
-		if !p.IsRegExp {
-			expr = regexp.QuoteMeta(expr)
-		}
-		if p.IsWordMatch {
-			expr = `\b` + expr + `\b`
-		}
-		if p.IsRegExp {
-			// We don't do the search line by line, therefore we want the
-			// regex engine to consider newlines for anchors (^$).
-			expr = "(?m:" + expr + ")"
-		}
 
-		// Transforms on the parsed regex
-		{
-			re, err := syntax.Parse(expr, syntax.Perl)
-			if err != nil {
-				return nil, err
-			}
+	if p.Pattern == "" {
+		return &allMatcher{}, nil
+	}
 
-			if !p.IsCaseSensitive {
-				// We don't just use (?i) because regexp library doesn't seem
-				// to contain good optimizations for case insensitive
-				// search. Instead we lowercase the input and pattern.
-				casetransform.LowerRegexpASCII(re)
-			}
+	expr := p.Pattern
+	if !p.IsRegExp {
+		expr = regexp.QuoteMeta(expr)
+	}
 
-			// OptimizeRegexp currently only converts capture groups into
-			// non-capture groups (faster for stdlib regexp to execute).
-			re = query.OptimizeRegexp(re, syntax.Perl)
+	if p.IsRegExp {
+		// We don't do the search line by line, therefore we want the
+		// regex engine to consider newlines for anchors (^$).
+		expr = "(?m:" + expr + ")"
+	}
 
-			expr = re.String()
-		}
-
-		var err error
-		re, err = regexp.Compile(expr)
+	// Transforms on the parsed regex
+	{
+		re, err := syntax.Parse(expr, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
 
-		// Only use literalSubstring optimization if the regex engine doesn't
-		// have a prefix to use.
-		if pre, _ := re.LiteralPrefix(); pre == "" {
-			ast, err := syntax.Parse(expr, syntax.Perl)
-			if err != nil {
-				return nil, err
-			}
-			ast = ast.Simplify()
-			literalSubstring = []byte(longestLiteral(ast))
+		if !p.IsCaseSensitive {
+			// We don't just use (?i) because regexp library doesn't seem
+			// to contain good optimizations for case insensitive
+			// search. Instead we lowercase the input and pattern.
+			casetransform.LowerRegexpASCII(re)
 		}
+
+		// OptimizeRegexp currently only converts capture groups into
+		// non-capture groups (faster for stdlib regexp to execute).
+		re = query.OptimizeRegexp(re, syntax.Perl)
+
+		expr = re.String()
+	}
+
+	var err error
+	re, err = regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only use literalSubstring optimization if the regex engine doesn't
+	// have a prefix to use.
+	if pre, _ := re.LiteralPrefix(); pre == "" {
+		ast, err := syntax.Parse(expr, syntax.Perl)
+		if err != nil {
+			return nil, err
+		}
+		ast = ast.Simplify()
+		literalSubstring = []byte(longestLiteral(ast))
 	}
 
 	return &regexMatcher{
 		re:               re,
 		ignoreCase:       !p.IsCaseSensitive,
+		isNegated:        p.IsNegated,
 		literalSubstring: literalSubstring,
 	}, nil
 }
@@ -146,31 +125,64 @@ func longestLiteral(re *syntax.Regexp) string {
 	return ""
 }
 
-func (rm *regexMatcher) AddAttributes(tr trace.Trace) {
-	if rm.re != nil {
-		tr.SetAttributes(attribute.Stringer("re", rm.re))
-	}
+type allMatcher struct{}
+
+func (a allMatcher) MatchesString(_ string) bool {
+	return true
 }
 
-func (rm *regexMatcher) MatchesAllContent() bool {
-	return rm.re == nil
+func (a allMatcher) MatchesFile(_ []byte, _ int) (match bool, matches [][]int) {
+	return true, nil
 }
 
-func (rm *regexMatcher) IgnoreCase() bool {
-	return rm.ignoreCase
+func (a allMatcher) ToZoektQuery(_ bool, _ bool) (zoektquery.Q, error) {
+	return &zoektquery.Const{Value: true}, nil
+}
+
+func (a allMatcher) String() string {
+	return "all"
+}
+
+type regexMatcher struct {
+	// re is the regexp to match, should never be nil
+	re *regexp.Regexp
+
+	// ignoreCase if true means we need to do case insensitive matching.
+	ignoreCase bool
+
+	// isNegated indicates whether matches on the pattern should be negated (representing a 'NOT' in the query)
+	isNegated bool
+
+	// literalSubstring is used to test if a file is worth considering for
+	// matches. literalSubstring is guaranteed to appear in any match found by
+	// re. It is the output of the longestLiteral function. It is only set if
+	// the regex has an empty LiteralPrefix.
+	literalSubstring []byte
+}
+
+func (rm *regexMatcher) String() string {
+	return fmt.Sprintf("re: %q", rm.re)
 }
 
 func (rm *regexMatcher) MatchesString(s string) bool {
-	if rm.re == nil {
-		return true
-	}
+	matches := rm.matchesString(s)
+	return matches == !rm.isNegated
+}
+
+func (rm *regexMatcher) matchesString(s string) bool {
 	if rm.ignoreCase {
 		s = strings.ToLower(s)
 	}
 	return rm.re.MatchString(s)
 }
 
-func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) [][]int {
+func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+	matches := rm.matchesFile(fileBuf, limit)
+	match := len(matches) > 0
+	return match == !rm.isNegated, matches
+}
+
+func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
 	// Most files will not have a match and we bound the number of matched
 	// files we return. So we can avoid the overhead of parsing out new lines
 	// and repeatedly running the regex engine by running a single match over
@@ -192,24 +204,36 @@ func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektqu
 		return nil, err
 	}
 	re = zoektquery.OptimizeRegexp(re, syntax.Perl)
+
 	if matchContent && matchPath {
 		return zoektquery.NewOr(
-			&zoektquery.Regexp{
-				Regexp:        re,
-				Content:       true,
-				CaseSensitive: !rm.ignoreCase,
-			},
-			&zoektquery.Regexp{
-				Regexp:        re,
-				FileName:      true,
-				CaseSensitive: !rm.ignoreCase,
-			},
+			rm.negateIfNeeded(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					Content:       true,
+					CaseSensitive: !rm.ignoreCase,
+				}),
+			rm.negateIfNeeded(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					FileName:      true,
+					CaseSensitive: !rm.ignoreCase,
+				}),
 		), nil
 	}
-	return &zoektquery.Regexp{
-		Regexp:        re,
-		Content:       matchContent,
-		FileName:      matchPath,
-		CaseSensitive: !rm.ignoreCase,
-	}, nil
+
+	return rm.negateIfNeeded(
+		&zoektquery.Regexp{
+			Regexp:        re,
+			Content:       matchContent,
+			FileName:      matchPath,
+			CaseSensitive: !rm.ignoreCase,
+		}), nil
+}
+
+func (rm *regexMatcher) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
+	if rm.isNegated {
+		return &zoektquery.Not{Child: q}
+	}
+	return q
 }

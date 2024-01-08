@@ -9,8 +9,12 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -20,7 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Command is the 'sg msp' toolchain for the Managed Services Platform:
@@ -57,9 +63,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Value: "service",
 				},
 				&cli.StringFlag{
-					Name:     "owner",
-					Usage:    "Name of team owning this new service",
-					Required: true,
+					Name:  "owner",
+					Usage: "Name of team owning this new service",
 				},
 				&cli.StringFlag{
 					Name:  "name",
@@ -67,7 +72,12 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				},
 				&cli.BoolFlag{
 					Name:  "dev",
-					Usage: "Generate a dev environment as the initial environment",
+					Usage: "Generate a dev environment",
+				},
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
@@ -81,6 +91,8 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 					Name:  c.String("name"),
 					Owner: c.String("owner"),
 					Dev:   c.Bool("dev"),
+
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
 				}
 
 				var exampleSpec []byte
@@ -110,6 +122,64 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 
 				std.Out.WriteSuccessf("Rendered %s template spec in %s",
 					c.String("kind"), outputPath)
+				return nil
+			},
+		},
+		{
+			Name:      "init-env",
+			ArgsUsage: "<service ID> <env ID>",
+			Usage:     "Add an environment to an existing Managed Services Platform service",
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:  "project-id-suffix-length",
+					Usage: "Length of random suffix appended to generated project IDs",
+					Value: spec.DefaultSuffixLength,
+				},
+			},
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				envID := c.Args().Get(1)
+				if envID == "" {
+					return errors.New("second argument <environment ID> is required")
+				}
+				if existing := svc.GetEnvironment(envID); existing != nil {
+					return errors.Newf("environment %q already exists", envID)
+				}
+
+				envNode, err := example.NewEnvironment(example.EnvironmentTemplate{
+					ServiceID:             svc.Service.ID,
+					EnvironmentID:         envID,
+					ProjectIDSuffixLength: c.Int("project-id-suffix-length"),
+				})
+				if err != nil {
+					return errors.Wrap(err, "example.NewEnvironment")
+				}
+
+				specPath := msprepo.ServiceYAMLPath(svc.Service.ID)
+				specData, err := os.ReadFile(specPath)
+				if err != nil {
+					return errors.Wrap(err, "ReadFile")
+				}
+
+				specData, err = spec.AppendEnvironment(specData, envNode)
+				if err != nil {
+					return errors.Wrap(err, "spec.AppendEnvironment")
+				}
+
+				if err := os.WriteFile(specPath, specData, 0o644); err != nil {
+					return err
+				}
+
+				std.Out.WriteSuccessf("Initialized environment %q in %s",
+					envID, specPath)
 				return nil
 			},
 		},
@@ -195,6 +265,67 @@ sg msp generate -all <service>
 			},
 		},
 		{
+			Name:   "operations",
+			Usage:  "Generate operational reference for a service",
+			Before: msprepo.UseManagedServicesRepo,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				ss, _ := msprepo.ListServices()
+				return ss
+			}),
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "pretty",
+					Usage: "Render syntax-highlighed Markdown",
+					Value: false,
+				},
+			},
+			Action: func(c *cli.Context) error {
+				svc, err := useServiceArgument(c)
+				if err != nil {
+					return err
+				}
+				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+					GenerateCommand: strings.Join(os.Args, " "),
+				})
+				if err != nil {
+					return errors.Wrap(err, "operationdocs.Render")
+				}
+				if c.Bool("pretty") {
+					return std.Out.WriteCode("markdown", doc)
+				}
+				std.Out.Write(doc)
+				return nil
+			},
+		},
+		{
+			Name:   "logs",
+			Usage:  "Quick links for logs of various MSP components",
+			Before: msprepo.UseManagedServicesRepo,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "component",
+					Aliases: []string{"c"},
+					Value:   "service",
+				},
+			},
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
+			Action: func(c *cli.Context) error {
+				svc, env, err := useServiceAndEnvironmentArguments(c)
+				if err != nil {
+					return err
+				}
+
+				switch component := c.String("component"); component {
+				case "service":
+					std.Out.WriteNoticef("Opening link to service logs in browser...")
+					return open.URL(operationdocs.ServiceLogsURL(pointers.DerefZero(svc.Service.Kind), env.ProjectID))
+
+				default:
+					return errors.Newf("unsupported -component=%s", component)
+				}
+			},
+		},
+		{
 			Name:    "postgresql",
 			Aliases: []string{"pg"},
 			Usage:   "Interact with PostgreSQL instances provisioned by MSP",
@@ -239,13 +370,9 @@ full access, use the '-write-access' flag.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
-						service, err := useServiceArgument(c)
+						_, env, err := useServiceAndEnvironmentArguments(c)
 						if err != nil {
 							return err
-						}
-						env := service.GetEnvironment(c.Args().Get(1))
-						if env == nil {
-							return errors.Errorf("environment %q not found", c.Args().Get(1))
 						}
 						if env.Resources.PostgreSQL == nil {
 							return errors.New("no postgresql instance provisioned")
@@ -261,57 +388,41 @@ full access, use the '-write-access' flag.
 							return err
 						}
 
-						// We use a team token to get workspace details
-						tfcMSPAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCMSPTeamToken,
-							Project: googlesecretsmanager.ProjectID,
-						})
-						if err != nil {
-							return errors.Wrap(err, "get TFC OAuth client ID")
-						}
-						tfcClient, err := terraformcloud.NewRunsClient(tfcMSPAccessToken)
-						if err != nil {
-							return errors.Wrap(err, "init Terraform Cloud client")
-						}
-
-						iamOutputs, err := tfcClient.GetOutputs(c.Context,
-							terraformcloud.WorkspaceName(service.Service, *env,
-								managedservicesplatform.StackNameIAM))
-						if err != nil {
-							return errors.Wrap(err, "get IAM outputs")
-						}
 						var serviceAccountEmail string
 						if c.Bool("write-access") {
 							// Use the workload identity if all access is requested
-							workloadSA, err := iamOutputs.Find("cloud_run_service_account")
+							serviceAccountEmail, err = secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+								Name:    stacks.OutputSecretID(iam.StackName, iam.OutputCloudRunServiceAccount),
+								Project: env.ProjectID,
+							})
 							if err != nil {
 								return errors.Wrap(err, "find IAM output")
 							}
-							serviceAccountEmail = workloadSA.Value.(string)
+							std.Out.WriteAlertf("Preparing a connection with write access - proceed with caution!")
 						} else {
 							// Otherwise, use the operator access account which
 							// is a bit more limited.
-							operatorAccessSA, err := iamOutputs.Find("operator_access_service_account")
+							serviceAccountEmail, err = secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+								Name:    stacks.OutputSecretID(iam.StackName, iam.OutputOperatorServiceAccount),
+								Project: env.ProjectID,
+							})
 							if err != nil {
 								return errors.Wrap(err, "find IAM output")
 							}
-							serviceAccountEmail = operatorAccessSA.Value.(string)
+							std.Out.WriteSuggestionf("Preparing a connection with read-only access - for write access, use the '-write-access' flag.")
 						}
 
-						cloudRunOutputs, err := tfcClient.GetOutputs(c.Context,
-							terraformcloud.WorkspaceName(service.Service, *env,
-								managedservicesplatform.StackNameCloudRun))
-						if err != nil {
-							return errors.Wrap(err, "get Cloud Run outputs")
-						}
-						connectionName, err := cloudRunOutputs.Find("cloudsql_connection_name")
+						connectionName, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							Name:    stacks.OutputSecretID(cloudrun.StackName, cloudrun.OutputCloudSQLConnectionName),
+							Project: env.ProjectID,
+						})
 						if err != nil {
 							return errors.Wrap(err, "find Cloud Run output")
 						}
 
 						proxyPort := c.Int("port")
 						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
-							connectionName.Value.(string),
+							connectionName,
 							serviceAccountEmail,
 							proxyPort)
 						if err != nil {
@@ -423,14 +534,14 @@ Supports completions on services and environments.`,
 						}
 						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOrgToken,
-							Project: googlesecretsmanager.ProjectID,
+							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get AccessToken")
 						}
 						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
 							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
-							Project: googlesecretsmanager.ProjectID,
+							Project: googlesecretsmanager.SharedSecretsProjectID,
 						})
 						if err != nil {
 							return errors.Wrap(err, "get TFC OAuth client ID")

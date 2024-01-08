@@ -158,7 +158,7 @@ func lineSpecFromPosition(pos lsp.Position, forceIncludeCharacter bool) string {
 // toSelectKind maps an internal symbol kind (cf. ctagsKind) to a corresponding
 // symbol selector kind value in select.go. The single selector value `kind`
 // corresponds 1-to-1 with LSP symbol kinds.
-var toSelectKind = map[string]string{
+var ToSelectKind = map[string]string{
 	"file":            "file",
 	"module":          "module",
 	"namespace":       "namespace",
@@ -237,6 +237,6 @@ func pick(symbols []*SymbolMatch, satisfy func(*SymbolMatch) bool) []*SymbolMatc
 
 func SelectSymbolKind(symbols []*SymbolMatch, field string) []*SymbolMatch {
 	return pick(symbols, func(s *SymbolMatch) bool {
-		return field == toSelectKind[strings.ToLower(s.Symbol.Kind)]
+		return field == ToSelectKind[strings.ToLower(s.Symbol.Kind)]
 	})
 }

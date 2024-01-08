@@ -269,8 +269,8 @@ export interface Filter {
     value: string
     label: string
     count: number
-    limitHit: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility'
+    exhaustive: boolean
+    kind: 'file' | 'repo' | 'lang' | 'utility' | 'select' | 'after' | 'before' | 'author'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'

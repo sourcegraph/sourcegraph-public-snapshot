@@ -8,6 +8,7 @@ go_library(
         "example.go",
         "metrics.go",
         "postgresql.go",
+        "redis.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/example",
     visibility = [
@@ -18,6 +19,7 @@ go_library(
         "//lib/background",
         "//lib/errors",
         "//lib/managedservicesplatform/runtime",
+        "@com_github_go_redis_redis_v8//:redis",
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_bigquery//:bigquery",
         "@io_gorm_driver_postgres//:postgres",

@@ -313,7 +313,8 @@ export const TreePage: FC<Props> = ({
                             <span className={styles.text}>Compare</span>
                         </Button>
                     </Tooltip>
-                    {codeIntelligenceEnabled && (
+                    {/** the code graph dashboard is only accessible to site admins */}
+                    {codeIntelligenceEnabled && authenticatedUser?.siteAdmin && (
                         <Tooltip content="Code graph data">
                             <Button
                                 className="flex-shrink-0"
@@ -435,6 +436,7 @@ export const TreePage: FC<Props> = ({
                             commitID={commitID}
                             isPackage={isPackage}
                             authenticatedUser={authenticatedUser}
+                            showOwnership={showOwnership}
                             {...props}
                         />
                     )}

@@ -12,6 +12,9 @@
       ".*_test\\.go$": "ignore test code",
       "internal/batches/testing/.*": "ignore batches testing code",
       "internal/gitserver/mock\\.go$": "ignore deprecation warning of P4Exec",
+      "internal/gitserver/retry\\.go$": "ignore deprecation warning of P4Exec",
+      "internal/grpc/example/client/retry\\.go$": "ignore deprecation warning of GetCurrentWeatherOld",
+      "internal/grpc/example/server/faulty\\.go$": "ignore deprecation warning of GetCurrentWeatherOld",
       "internal/database/dbmocks": "ignore generated database mocks"
     }
   },

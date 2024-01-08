@@ -11,6 +11,8 @@ go_library(
         "mock.go",
         "mocks_temp.go",
         "observability.go",
+        "proxy.go",
+        "retry.go",
         "stream_client.go",
         "stream_hunks.go",
         "test_utils.go",

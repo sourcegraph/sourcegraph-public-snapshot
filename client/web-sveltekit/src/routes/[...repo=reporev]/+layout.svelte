@@ -49,10 +49,8 @@
         )
     }
 
-    function isActive(href: string): boolean {
-        return href === data.repoURL
-            ? isCodePage(data.repoURL, $page.url.pathname)
-            : $page.url.pathname.startsWith(href)
+    function isActive(href: string, url: URL): boolean {
+        return href === data.repoURL ? isCodePage(data.repoURL, $page.url.pathname) : url.pathname.startsWith(href)
     }
 
     $: ({ repoName, displayRepoName } = data)
@@ -74,7 +72,7 @@
         {#each navEntriesToShow as entry}
             {@const href = data.repoURL + entry.path}
             <li>
-                <a {href} class:active={isActive(href)} data-sveltekit-reload={entry.external}>
+                <a {href} class:active={isActive(href, $page.url)} data-sveltekit-reload={entry.external}>
                     {#if entry.icon}
                         <Icon svgPath={entry.icon} inline />
                     {/if}
@@ -92,7 +90,7 @@
         {#each allMenuEntries as entry}
             {@const href = data.repoURL + entry.path}
             <MenuLink {href} data-sveltekit-reload={entry.external}>
-                <span class="overflow-entry" class:active={isActive(href)}>
+                <span class="overflow-entry" class:active={isActive(href, $page.url)}>
                     {#if entry.icon}
                         <Icon svgPath={entry.icon} inline />
                     {/if}

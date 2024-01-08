@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"reflect"
 	"testing"
@@ -14,7 +14,7 @@ import (
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"

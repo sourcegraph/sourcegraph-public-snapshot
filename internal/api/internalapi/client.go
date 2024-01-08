@@ -40,7 +40,9 @@ var Client = &internalClient{
 		if err != nil {
 			return nil, err
 		}
-		return proto.NewConfigServiceClient(conn), nil
+
+		client := &automaticRetryClient{base: proto.NewConfigServiceClient(conn)}
+		return client, nil
 	}),
 }
 

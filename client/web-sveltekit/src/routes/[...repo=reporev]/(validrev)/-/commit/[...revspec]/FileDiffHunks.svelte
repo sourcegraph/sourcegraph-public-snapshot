@@ -1,9 +1,10 @@
 <script lang="ts">
+    import { DiffHunkLineType } from '$lib/graphql-types'
     import '$lib/highlight.scss'
 
-    import { DiffHunkLineType, type FileDiffFields } from '$lib/graphql-operations'
+    import type { FileDiffHunks_Hunk } from './FileDiffHunks.gql'
 
-    export let hunks: FileDiffFields['hunks']
+    export let hunks: FileDiffHunks_Hunk[]
 </script>
 
 {#if hunks.length === 0}

@@ -61,7 +61,9 @@
             <UserMenu {authenticatedUser} />
         {:else}
             <Button variant="secondary" outline>
-                <a slot="custom" let:className class={className} href="/sign-in" data-sveltekit-reload>Sign in</a>
+                <svelte:fragment slot="custom" let:buttonClass>
+                    <a class={buttonClass} href="/sign-in" data-sveltekit-reload>Sign in</a>
+                </svelte:fragment>
             </Button>
         {/if}
     </div>

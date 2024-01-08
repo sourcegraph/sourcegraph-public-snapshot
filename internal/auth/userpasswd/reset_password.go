@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -150,17 +149,12 @@ func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc
 			} else if !ok {
 				logger.Warn("got invalid email verification code")
 			} else {
-				// copy-pasta from logEmailVerified
-				event := &database.SecurityEvent{
-					Name:      database.SecurityEventNameEmailVerified,
-					URL:       r.URL.Path,
-					UserID:    uint32(params.UserID),
-					Argument:  nil,
-					Source:    "BACKEND",
-					Timestamp: time.Now(),
+
+				anonymousID, _ := cookie.AnonymousUID(r)
+				if errsec := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventNameEmailVerified, r.URL.Path, uint32(params.UserID), anonymousID, "BACKEND", nil); errsec != nil {
+					logger.Warn("Error logging security event", log.Error(errsec))
 				}
-				event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-				db.SecurityEventLogs().LogEvent(ctx, event)
+
 			}
 		}
 

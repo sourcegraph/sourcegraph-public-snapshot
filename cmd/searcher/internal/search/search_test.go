@@ -163,18 +163,6 @@ fmt.Println("Hello world")
 			want: autogold.Expect("main.go:5:5:\nfunc main() {\n"),
 		},
 		{
-			arg:  protocol.PatternInfo{Pattern: "mai", IsWordMatch: true},
-			want: autogold.Expect(""),
-		},
-		{
-			arg: protocol.PatternInfo{Pattern: "main", IsWordMatch: true},
-			want: autogold.Expect(`main.go:1:1:
-package main
-main.go:5:5:
-func main() {
-`),
-		},
-		{
 			// Ensure we handle CaseInsensitive regexp searches with
 			// special uppercase chars in pattern.
 			arg: protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true},
@@ -379,6 +367,14 @@ abc.txt
 file++.plus
 milton.png
 nonutf8.txt
+symlink
+`),
+		},
+		{
+			arg: protocol.PatternInfo{Pattern: "go", IsNegated: true, PatternMatchesPath: true, ExcludePattern: "\\.txt"},
+			want: autogold.Expect(`README.md
+file++.plus
+milton.png
 symlink
 `),
 		},

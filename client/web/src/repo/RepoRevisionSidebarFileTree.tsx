@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { useApolloClient, gql as apolloGql, ApolloError } from '@apollo/client'
-import {
-    mdiFileDocumentOutline,
-    mdiSourceRepository,
-    mdiFolderOutline,
-    mdiFolderOpenOutline,
-    mdiFolderArrowUp,
-} from '@mdi/js'
+import { useApolloClient, gql as apolloGql, type ApolloError } from '@apollo/client'
+import { mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline, mdiFolderArrowUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -23,11 +17,12 @@ import {
     LoadingSpinner,
     Tooltip,
     ErrorAlert,
+    LanguageIcon,
 } from '@sourcegraph/wildcard'
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
-import { FILE_ICONS, FileExtension, getFileInfo } from './fileIcons'
+import { isProbablyTestFile } from './icon-utils'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
@@ -57,6 +52,9 @@ const QUERY = gql`
                         submodule {
                             url
                             commit
+                        }
+                        ... on GitBlob {
+                            languages
                         }
                     }
                 }
@@ -396,8 +394,9 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fileInfo = getFileInfo(name, isBranch)
-    const fileIcon = FILE_ICONS.get(fileInfo.extension)
+    const isLikelyTest = entry?.isDirectory ? false : isProbablyTestFile(element.name)
+
+    // const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -413,11 +412,7 @@ function renderNode({
                     handleSelect(event)
                 }}
             >
-                <Icon
-                    svgPath={mdiFolderArrowUp}
-                    className={classNames('mr-1', styles.icon)}
-                    aria-label="Load parent directory"
-                />
+                <Icon svgPath={mdiFolderArrowUp} className="mr-1" aria-label="Load parent directory" />
                 {name}
             </Link>
         )
@@ -439,11 +434,7 @@ function renderNode({
                             handleSelect(event)
                         }}
                     >
-                        <Icon
-                            svgPath={mdiSourceRepository}
-                            className={classNames('mr-1', styles.icon)}
-                            aria-label={tooltip}
-                        />
+                        <Icon svgPath={mdiSourceRepository} className="mr-1" aria-label={tooltip} />
                         {title}
                     </Link>
                 </Tooltip>
@@ -452,11 +443,7 @@ function renderNode({
         return (
             <Tooltip content={tooltip}>
                 <span {...props}>
-                    <Icon
-                        svgPath={mdiSourceRepository}
-                        className={classNames('mr-1', styles.icon)}
-                        aria-label={tooltip}
-                    />
+                    <Icon svgPath={mdiSourceRepository} className="mr-1" aria-label={tooltip} />
                     {title}
                 </span>
             </Tooltip>
@@ -481,26 +468,20 @@ function renderNode({
         >
             <div className={styles.fileContainer}>
                 <div className={styles.iconContainer}>
-                    {fileInfo.extension !== FileExtension.DEFAULT ? (
-                        <Icon
-                            as={fileIcon?.icon}
-                            className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
-                            aria-hidden={true}
+                    {entry?.__typename === 'GitBlob' && !isBranch ? (
+                        <LanguageIcon
+                            language={entry.languages.at(0) ?? ''}
+                            fileNameOrExtensions={element.name}
+                            className="mr-1"
                         />
                     ) : (
                         <Icon
-                            svgPath={
-                                isBranch
-                                    ? isExpanded
-                                        ? mdiFolderOpenOutline
-                                        : mdiFolderOutline
-                                    : mdiFileDocumentOutline
-                            }
-                            className={classNames('mr-1', styles.icon)}
+                            svgPath={isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
+                            className="mr-1"
                             aria-hidden={true}
                         />
                     )}
-                    {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                    {isLikelyTest && <div className={classNames(styles.testIndicator)} />}
                 </div>
                 {name}
             </div>
