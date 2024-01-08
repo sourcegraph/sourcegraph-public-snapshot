@@ -224,10 +224,10 @@ struct LocalResolver<'a> {
     // This is a hack to not record references that overlap with
     // definitions.
     skip_references_at_offsets: HashSet<usize>,
-    // When marking captures as @occurrence.skip we also
-    // record then here, to not record any subsequent matches. This is
-    // used to filter out non-local definitions and references.
-    skip_definitions_at_offsets: HashSet<usize>,
+    // When marking captures as @occurrence.skip we record them here,
+    // to not record any subsequent matches. This is used to filter
+    // out non-local definitions and references.
+    skip_occurrences_at_offsets: HashSet<usize>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -253,7 +253,7 @@ impl<'a> LocalResolver<'a> {
             source_bytes,
             definition_id_supply: 0,
             skip_references_at_offsets: HashSet::new(),
-            skip_definitions_at_offsets: HashSet::new(),
+            skip_occurrences_at_offsets: HashSet::new(),
             occurrences: vec![],
         }
     }
@@ -524,10 +524,9 @@ impl<'a> LocalResolver<'a> {
                     })
                 } else if capture_name.starts_with("definition") {
                     let offset = capture.node.start_byte();
-                    if self.skip_definitions_at_offsets.contains(&offset) {
+                    if self.skip_occurrences_at_offsets.contains(&offset) {
                         continue;
                     }
-
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
@@ -539,11 +538,14 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("reference") {
+                    let offset = capture.node.start_byte();
+                    if self.skip_occurrences_at_offsets.contains(&offset) {
+                        continue;
+                    }
                     references.push(RefCapture { node: capture.node })
                 } else if capture_name == "occurrence.skip" {
                     let offset = capture.node.start_byte();
-                    self.skip_references_at_offsets.insert(offset);
-                    self.skip_definitions_at_offsets.insert(offset);
+                    self.skip_occurrences_at_offsets.insert(offset);
                 } else {
                     debug_assert!(false, "Discarded capture: {capture_name}")
                 }
