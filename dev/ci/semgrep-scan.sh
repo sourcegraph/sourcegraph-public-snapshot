@@ -7,7 +7,7 @@ echo -e "--- :construction: cloning Semgrep rules\n"
 # clone the semgrep repo rules
 gh repo clone sourcegraph/security-semgrep-rules
 
-echo -e "--- :lock: running Semgrep scan\n"
+echo -e "--- :lock::semgrep: running Semgrep scan\n"
 
 set -x
 
