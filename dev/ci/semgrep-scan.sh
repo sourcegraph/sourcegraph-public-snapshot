@@ -25,14 +25,26 @@ echo -e "--- :rocket: reporting Scan Results to GitHub\n"
 encoded_sarif=$(gzip -c results.sarif | base64 -w0)
 
 # upload SARIF results to code scanning API
-gh api \
-  --method POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  /repos/sourcegraph/sourcegraph/code-scanning/sarifs \
-  -f commit_sha="$BUILDKITE_COMMIT" \
-  -f ref="refs/pull/$BUILDKITE_PULL_REQUEST/head" \
-  -f sarif="$encoded_sarif" \
-  -f tool_name="ci semgrep"
+if [ "$BUILDKITE_PULL_REQUEST" = "false" ]; then
+  gh api \
+    --method POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    /repos/sourcegraph/sourcegraph/code-scanning/sarifs \
+    -f commit_sha="$BUILDKITE_COMMIT" \
+    -f ref="refs/heads/$BUILDKITE_BRANCH" \
+    -f sarif="$encoded_sarif" \
+    -f tool_name="ci semgrep"
+else
+  gh api \
+    --method POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    /repos/sourcegraph/sourcegraph/code-scanning/sarifs \
+    -f commit_sha="$BUILDKITE_COMMIT" \
+    -f ref="refs/pull/$BUILDKITE_PULL_REQUEST/head" \
+    -f sarif="$encoded_sarif" \
+    -f tool_name="ci semgrep"
+fi
 
 echo -e "--- :white_check_mark: Semgrep Scan job is complete\n"
