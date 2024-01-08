@@ -299,10 +299,10 @@ func TestRunnerInteractive(t *testing.T) {
 
 	t.Run("manual fix", func(t *testing.T) {
 		inputs := []string{
-			"3", // fixable
+			"4", // fixable
 			"2", // manual fix
 			"1", // fix the first
-			"3", // try again
+			"4", // try again
 			"99",
 		}
 		var output strings.Builder
