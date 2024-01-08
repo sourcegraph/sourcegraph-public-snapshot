@@ -26,7 +26,8 @@ var ignoreMap = map[string]struct{}{
 	"BUILD.bazel":        {},
 }
 
-// readRawMigrations reads migrations from a locally available git revision for the given schema.
+// readRawMigrations reads migrations from available archives of migrations at a given revision
+// for the given schema.
 // This function understands the common ways we historically laid out our migration definitions
 // in-tree, and will return results going back to v3.29.0 (with empty metadata where missing).
 func readRawMigrations(ma MigrationsReader, schemaName, rev string) (migrations []rawMigration, _ error) {
