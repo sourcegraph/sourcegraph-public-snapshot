@@ -883,16 +883,7 @@ func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
 
 	if label.IsSet(GlobFilters) && !parsedLabels.IsSet(IsPredicate) {
 		switch field {
-		case "r", "repo":
-			rev := ""
-			if i := strings.Index(value, "@"); i != -1 {
-				value, rev = value[:i], value[i+1:]
-			}
-			value = globToRegex(value)
-			if rev != "" {
-				value += "@" + rev
-			}
-		case "f", "file":
+		case "r", "repo", "f", "file":
 			value = globToRegex(value)
 		}
 	}
