@@ -413,7 +413,7 @@ func (r *RepositoryResolver) URL() string {
 }
 
 func (r *RepositoryResolver) url() *url.URL {
-	return r.RepoMatch.URL()
+	return &url.URL{Path: "/" + string(r.innerRepo.Name)}
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
