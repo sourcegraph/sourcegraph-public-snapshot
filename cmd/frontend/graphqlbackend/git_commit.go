@@ -433,7 +433,6 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 	} else {
 		rev = string(r.oid)
 	}
-	// Dereference to copy to avoid mutation
 	repoUrl := r.repoResolver.url()
 	if rev != "" {
 		repoUrl.Path += "@" + rev
@@ -442,10 +441,9 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	// Dereference to copy the URL to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
+	repoUrl := r.repoResolver.url()
 	repoUrl.Path += "@" + string(r.oid)
-	return &repoUrl
+	return repoUrl
 }
 
 func (r *GitCommitResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
