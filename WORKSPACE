@@ -134,7 +134,7 @@ http_archive(
 )
 
 # hermetic_cc_toolchain setup ================================
-HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.3"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.3"  # Check if third_party/hermetic_cc/zig_0.12.0_pr140.patch can be deleted when updating.
 
 # Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
