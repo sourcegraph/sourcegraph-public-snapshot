@@ -256,6 +256,8 @@ func (am *andMatchTree) MatchesString(s string) bool {
 func (am *andMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	var matches [][]int
 	for _, m := range am.children {
+		// Pass the full limit to the children instead of tracking how many matches we
+		// have left. This is slightly wasteful but keeps the logic simpler.
 		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
 		if !childMatch {
 			return false, nil
@@ -299,6 +301,8 @@ func (om *orMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	match := false
 	var matches [][]int
 	for _, m := range om.children {
+		// Pass the full limit to the children instead of tracking how many matches we
+		// have left. This is slightly wasteful but keeps the logic simpler.
 		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
 		match = match || childMatch
 		matches = append(matches, childMatches...)
