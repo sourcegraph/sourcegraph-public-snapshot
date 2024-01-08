@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.11.1
 	github.com/cockroachdb/redact v1.1.5
-	github.com/derision-test/go-mockgen v1.3.7
+	github.com/derision-test/go-mockgen v1.3.8-0.20240105000756-fb9effb23d90
 	github.com/fatih/color v1.15.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-enry/go-enry/v2 v2.8.4
