@@ -15,19 +15,12 @@ interface SearchQueryChecksProps {
         isValidPatternType: true | false | undefined
         isNotRepo: true | false | undefined
         isNotCommitOrDiff: true | false | undefined
-        isNoNewLines: true | false | undefined
         isNotRev: true | false | undefined
     }
 }
 
 export const SearchQueryChecks: FC<SearchQueryChecksProps> = ({ checks }) => (
     <ul aria-label="Search query validation checks list" className={classNames(styles.checks)}>
-        <CheckListItem
-            errorMessage="shouldn't contains a match over more than a single line"
-            valid={checks?.isNoNewLines}
-        >
-            Does not contain a match over more than a single line.
-        </CheckListItem>
         <CheckListItem
             errorMessage="shouldn't contain boolean operators, AND, OR, NOT (regular
                 expression boolean operators can still be used)"

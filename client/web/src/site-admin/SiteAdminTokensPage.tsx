@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Container, Icon, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -51,18 +51,15 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                                 className="ml-2"
                                 to={`${authenticatedUser.settingsURL!}/tokens/new`}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new token
                             </ButtonLink>
                         )}
                         {!accessTokensEnabled && (
-                            <Button
-                                variant="primary"
-                                title="Access token creation is disabled in site configuration"
-                                className="ml-2"
-                                disabled={true}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
-                            </Button>
+                            <Tooltip content="Access token creation is disabled in site configuration">
+                                <Button variant="primary" className="ml-2" disabled={true}>
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new token
+                                </Button>
+                            </Tooltip>
                         )}
                     </>
                 }
