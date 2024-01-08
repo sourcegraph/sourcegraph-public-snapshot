@@ -3,7 +3,6 @@ source: crates/scip-syntax/src/locals.rs
 expression: scope_tree
 ---
 scope global (0, 0)-(85, 0)
-  ref local (7, 4)-(7, 9)
   scope scope (9, 0)-(25, 1)
     ref main (9, 5)-(9, 9)
     scope scope (9, 12)-(25, 1)
@@ -157,6 +156,5 @@ scope global (0, 0)-(85, 0)
       ref m (81, 8)-(81, 9)
       ref field1 (81, 10)-(81, 16)
       ref local (81, 19)-(81, 24)
-  ref MY_CONST (84, 6)-(84, 14)
   ref int (84, 15)-(84, 18)
 
