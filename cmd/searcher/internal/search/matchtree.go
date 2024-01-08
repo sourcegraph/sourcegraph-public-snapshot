@@ -19,7 +19,9 @@ type matchTree interface {
 	// MatchesString returns whether the string matches
 	MatchesString(s string) bool
 
-	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches
+	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches.
+	// Note: even if the returned matches slice is empty, match can be true. This can happen if
+	// a query matches all content, or if the query is negated.
 	MatchesFile(fileBuf []byte, limit int) (match bool, matches [][]int)
 
 	// ToZoektQuery returns a zoekt query representing the same rules as as this matchTree
