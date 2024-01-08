@@ -10,7 +10,6 @@ const PASSING_VALIDATION = {
     isNotRepo: true,
     isNotContext: true,
     isNotCommitOrDiff: true,
-    isNoNewLines: true,
     isNotRev: true,
 }
 
@@ -40,17 +39,7 @@ describe('searchQueryValidator', () => {
         })
     })
 
-    it('validates no new lines', () => {
-        expect(searchQueryValidator(`${GOOD_QUERY} \\n`)).toEqual({
-            ...PASSING_VALIDATION,
-            isNoNewLines: false,
-        })
-    })
-
     it('validates not using `rev`', () => {
-        expect(searchQueryValidator(`${GOOD_QUERY} rev:any`)).toEqual({
-            ...PASSING_VALIDATION,
-            isNotRev: false,
-        })
+        expect(searchQueryValidator(`${GOOD_QUERY} rev:any`)).toEqual(PASSING_VALIDATION)
     })
 })
