@@ -642,9 +642,13 @@ impl<'a> LocalResolver<'a> {
             }
         }
 
-        assert!(
+        debug_assert!(
             definitions_iter.next().is_none(),
             "Should've entered all definitions into the tree"
+        );
+        debug_assert!(
+            references_iter.next().is_none(),
+            "Should've entered all references into the tree"
         );
     }
 
