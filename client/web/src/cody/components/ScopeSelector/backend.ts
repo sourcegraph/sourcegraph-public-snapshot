@@ -4,7 +4,6 @@ const REPO_FIELDS = gql`
     fragment ContextSelectorRepoFields on Repository {
         id
         name
-        embeddingExists
         externalRepository {
             id
             serviceType
@@ -12,42 +11,23 @@ const REPO_FIELDS = gql`
     }
 `
 
-const EMBEDDING_JOB_FIELDS = gql`
-    fragment ContextSelectorEmbeddingJobFields on RepoEmbeddingJob {
-        id
-        state
-        failureMessage
-    }
-`
-
 export const ReposSelectorSearchQuery = gql`
-    query ReposSelectorSearch($query: String!, $includeJobs: Boolean!) {
+    query ReposSelectorSearch($query: String!) {
         repositories(query: $query, first: 15) {
             nodes {
                 ...ContextSelectorRepoFields
-                embeddingJobs(first: 1) @include(if: $includeJobs) {
-                    nodes {
-                        ...ContextSelectorEmbeddingJobFields
-                    }
-                }
             }
         }
     }
 
     ${REPO_FIELDS}
-    ${EMBEDDING_JOB_FIELDS}
 `
 
 export const SuggestedReposQuery = gql`
-    query SuggestedRepos($names: [String!]!, $numResults: Int!, $includeJobs: Boolean!) {
+    query SuggestedRepos($names: [String!]!, $numResults: Int!) {
         byName: repositories(names: $names, first: $numResults) {
             nodes {
                 ...ContextSelectorRepoFields
-                embeddingJobs(first: 1) @include(if: $includeJobs) {
-                    nodes {
-                        ...ContextSelectorEmbeddingJobFields
-                    }
-                }
             }
         }
         # We also grab the first $numResults embedded repos available on the site
@@ -55,33 +35,21 @@ export const SuggestedReposQuery = gql`
         firstN: repositories(first: $numResults, embedded: true) {
             nodes {
                 ...ContextSelectorRepoFields
-                embeddingJobs(first: 1) @include(if: $includeJobs) {
-                    nodes {
-                        ...ContextSelectorEmbeddingJobFields
-                    }
-                }
             }
         }
     }
 
     ${REPO_FIELDS}
-    ${EMBEDDING_JOB_FIELDS}
 `
 
 export const ReposStatusQuery = gql`
-    query ReposStatus($repoNames: [String!]!, $first: Int!, $includeJobs: Boolean!) {
+    query ReposStatus($repoNames: [String!]!, $first: Int!) {
         repositories(names: $repoNames, first: $first) {
             nodes {
                 ...ContextSelectorRepoFields
-                embeddingJobs(first: 1) @include(if: $includeJobs) {
-                    nodes {
-                        ...ContextSelectorEmbeddingJobFields
-                    }
-                }
             }
         }
     }
 
     ${REPO_FIELDS}
-    ${EMBEDDING_JOB_FIELDS}
 `
