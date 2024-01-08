@@ -40,6 +40,9 @@ describe('searchQueryValidator', () => {
     })
 
     it('validates not using `rev`', () => {
-        expect(searchQueryValidator(`${GOOD_QUERY} rev:any`)).toEqual(PASSING_VALIDATION)
+        expect(searchQueryValidator(`${GOOD_QUERY} rev:any`)).toEqual({
+            ...PASSING_VALIDATION,
+            isNotRev: false,
+        })
     })
 })
