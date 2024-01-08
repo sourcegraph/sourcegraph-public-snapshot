@@ -78,5 +78,7 @@
     (type_identifier) @definition.type
 )
 
+;; TODO(Christoph): Do we need @reference.skip?
+(field_access field: (identifier) @definition.skip)
 (identifier) @reference
 (type_identifier) @reference

@@ -16,7 +16,6 @@ expression: dumped
    public Locals(String chars) {
 //                      ^^^^^ definition local 2
     this.chars = chars;
-//       ^^^^^ reference local 2
 //               ^^^^^ reference local 2
    }
   
@@ -25,7 +24,6 @@ expression: dumped
 //                                        ^^^ definition local 4
 //                                                    ^^^^ definition local 5
     return new Locals(this.chars + chars + text.getChars());
-//                         ^^^^^ reference local 3
 //                                 ^^^^^ reference local 3
 //                                         ^^^^ reference local 5
    }
@@ -89,7 +87,6 @@ expression: dumped
     Flags(int bits) {
 //            ^^^^ definition local 19
      this.bits = bits;
-//        ^^^^ reference local 19
 //               ^^^^ reference local 19
     }
   
@@ -97,9 +94,6 @@ expression: dumped
 //                                          ^^^^ definition local 20
      return (bits.bits & Flags.NODE_TEXT.bits) != 0;
 //           ^^^^ reference local 20
-//                ^^^^ reference local 20
-//                             ^^^^^^^^^ reference local 14
-//                                       ^^^^ reference local 20
     }
    }
   
