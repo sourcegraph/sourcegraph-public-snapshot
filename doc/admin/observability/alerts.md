@@ -231,11 +231,11 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 
 ## frontend: blob_load_latency
 
-<p class="subtitle">90th percentile blob load latency over 10m</p>
+<p class="subtitle">90th percentile blob load latency over 10m for 10m0s</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m
+- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m for 10m0s
 
 **Next steps**
 
@@ -8350,4 +8350,3 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"})
 </details>
 
 <br />
-

@@ -149,7 +149,7 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 #### frontend: blob_load_latency
 
-<p class="subtitle">90th percentile blob load latency over 10m</p>
+<p class="subtitle">90th percentile blob load latency over 10m for 10m0s</p>
 
 - The blob API route provides the files and code snippets that the UI displays.
 
@@ -7583,7 +7583,7 @@ Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="gitserv
 
 <p class="subtitle">95th percentile duration by route, when status code is 200</p>
 
-The 95th percentile duration by route when the status code is 200 
+The 95th percentile duration by route when the status code is 200
 
 This panel has no related alerts.
 
@@ -7604,7 +7604,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 <p class="subtitle">95th percentile duration by route, when status code is not 200</p>
 
-The 95th percentile duration by route when the status code is not 200 
+The 95th percentile duration by route when the status code is not 200
 
 This panel has no related alerts.
 
@@ -15771,7 +15771,7 @@ Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="repo-up
 
 <p class="subtitle">95th percentile duration by route, when status code is 200</p>
 
-The 95th percentile duration by route when the status code is 200 
+The 95th percentile duration by route when the status code is 200
 
 This panel has no related alerts.
 
@@ -15792,7 +15792,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 <p class="subtitle">95th percentile duration by route, when status code is not 200</p>
 
-The 95th percentile duration by route when the status code is not 200 
+The 95th percentile duration by route when the status code is not 200
 
 This panel has no related alerts.
 
@@ -24491,7 +24491,7 @@ To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeinte
 
 ### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Summary
 
-#### codeintel-autoindexing: 
+#### codeintel-autoindexing:
 
 <p class="subtitle">Auto-index jobs inserted over 5m</p>
 
@@ -32197,4 +32197,3 @@ Query: `rate(src_embeddings_cache_miss_bytes[10m])`
 </details>
 
 <br />
-
