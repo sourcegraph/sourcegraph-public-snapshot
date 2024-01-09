@@ -42,11 +42,11 @@ service GitserverService {
   }
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {
-      option idempotency_level = IDEMPOTENT;
+    option idempotency_level = IDEMPOTENT;
   }
   // TODO: Remove this endpoint after 5.2, it is deprecated.
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {
-      option idempotency_level = IDEMPOTENT;
+    option idempotency_level = IDEMPOTENT;
   }
 }
 
