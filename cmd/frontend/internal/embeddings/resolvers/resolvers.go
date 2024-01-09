@@ -148,7 +148,7 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 	}
 	forceReschedule := args.Force != nil && *args.Force
 
-	err = embeddings.ScheduleRepositoriesForEmbedding(
+	err = embeddings.ScheduleRepositories(
 		ctx,
 		repoNames,
 		forceReschedule,
