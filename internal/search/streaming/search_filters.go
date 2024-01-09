@@ -167,7 +167,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addCommitAuthorFilter := func(commit gitdomain.Commit) {
-		filter := fmt.Sprintf(`author:%s`, commit.Author.Email)
+		filter := fmt.Sprintf(`author:%s`, regexp.QuoteMeta(commit.Author.Email))
 		s.filters.Add(filter, commit.Author.Name, 1, "author")
 	}
 

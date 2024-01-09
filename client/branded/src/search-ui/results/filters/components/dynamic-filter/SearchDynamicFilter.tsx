@@ -1,20 +1,15 @@
-import { FC, ReactNode, useCallback, useMemo, useState } from 'react'
+import { FC, ReactNode, useMemo, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
-import { upperFirst } from 'lodash'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { findFilters } from '@sourcegraph/shared/src/search/query/query'
-import { succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
-import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
 
-import { DynamicClientFilter } from '../../types'
+import { URLQueryFilter } from '../../hooks'
 
 import styles from './SearchDynamicFilter.module.scss'
 
@@ -28,149 +23,83 @@ interface SearchDynamicFilterProps {
      * Specifies which type filter we want to render in this particular
      * filter section, it could be lang filter, repo filter, or file filters.
      */
-    filterType: string | string[]
+    filterKind: Filter['kind']
 
     /**
-     * Filter query that contains all filter-like query that were applied by users
-     * from filters panel UI.
+     * The set of filters that are selected. This is the state that is stored
+     * in the URL.
      */
-    filterQuery: string
-
-    /**
-     * Specifies alternative filter type for the filter, some filters like file
-     * have negate-like nature, for example when we want to exclude files, so
-     * in order to find these filters in the URL we have to specify -file as alias
-     * because in stream API these filters still have file kind.
-     */
-    filterAlias?: string | string[]
-
-    /**
-     * Be default, filters are not exclusive, this means that you can select more
-     * than one filter in the section, exclusive:true means that only one selected
-     * filter is possible .
-     */
-    exclusive?: boolean
-
-    /**
-     * When filter is selected, it's automatically rendered as a first element
-     * in the filters list, staticFilters: true means that we don't change order
-     * of the filters when some of them are selected.
-     */
-    staticFilters?: boolean
+    selectedFilters: URLQueryFilter[]
 
     /**
      * List of streamed filters from search stream API
      */
-    filters?: DynamicClientFilter[]
+    filters?: Filter[]
 
     /** Exposes render API to render some custom filter item in the list */
-    renderItem?: (filter: DynamicClientFilter) => ReactNode
+    renderItem?: (filter: Filter) => ReactNode
 
     /**
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
      * @param nextQuery
      */
-    onFilterQueryChange: (nextQuery: string) => void
+    onSelectedFilterChange: (filters: URLQueryFilter[]) => void
 }
 
 /**
  * Dynamic filter panel section. It renders dynamically generated filters which
  * come from the search stream API.
  */
-export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
-    const {
-        title,
-        filters,
-        filterType,
-        filterAlias,
-        filterQuery,
-        staticFilters = false,
-        exclusive = false,
-        renderItem,
-        onFilterQueryChange,
-    } = props
-
+export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
+    title,
+    filters,
+    filterKind,
+    selectedFilters,
+    renderItem,
+    onSelectedFilterChange,
+}) => {
     const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
 
-    const filterTypes = useMemo(() => toArray(filterType), [filterType])
-    const filterAliases = useMemo(() => toArray(filterAlias ?? ''), [filterAlias])
+    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
+    const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
+    const isSelected = (filter: Filter): boolean =>
+        relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
 
-    // Scan the filter query (which comes from URL param) and extract
-    // all appearances of a filter type that we're looking for in the
-    const filterQueryFilters = useMemo(() => {
-        const typedFilters = filterTypes.flatMap(filterType => findFilters(succeedScan(filterQuery), filterType))
-        const aliasedFilters = filterAliases.flatMap(filterAlias => findFilters(succeedScan(filterQuery), filterAlias))
+    const mergedFilters = [
+        // Selected filters come first, but we want to map them to the backend filters to get the relevant count and exhaustiveness
+        ...relevantSelectedFilters.map(
+            sf => filters?.find(f => filtersEqual(f, sf)) ?? { ...sf, count: 0, exhaustive: true }
+        ),
+        // Followed by filters from the backend, but excluding the ones we already listed
+        ...relevantFilters.filter(f => relevantSelectedFilters.find(sf => filtersEqual(f, sf)) === undefined),
+    ]
 
-        return [...typedFilters, ...aliasedFilters]
-    }, [filterQuery, filterAliases, filterTypes])
-
-    // Compares filters stringified value to match selected filters in URL
-    const isSelected = useCallback(
-        (filterValue: string): boolean => {
-            const filteredFilter = filterQueryFilters.find(selectedFilter => isSameFilter(filterValue, selectedFilter))
-
-            return filteredFilter !== undefined
-        },
-        [filterQueryFilters]
-    )
-
-    const mappedFilters = useMemo<DynamicClientFilter[]>(() => {
-        // If there are any selected filters in the filters query
-        // include these filters in the filters array even if they are not
-        // presented in filters from search stream API. If the filter is in both
-        // places (URL and steam API) merged them to avoid duplicates in the UI
-        if (filterQueryFilters.length > 0 && !staticFilters) {
-            const mappedSelectedFilters = filterQueryFilters.map((selectedFilter): DynamicClientFilter => {
-                const mappedSelectedFilter = filters?.find(filter => isSameFilter(filter.value, selectedFilter))
-
-                return {
-                    count: mappedSelectedFilter?.count ?? 0,
-                    label: mappedSelectedFilter?.label ?? upperFirst(selectedFilter?.value?.value),
-                    value: stringHuman([selectedFilter]),
-                    exhaustive: mappedSelectedFilter?.exhaustive ?? false,
-                    kind: mappedSelectedFilter?.kind ?? selectedFilter.field.value,
-                } as DynamicClientFilter // TODO(camdencheek): fix the typing here so I can remove the cast
-            })
-
-            const otherFilters = filterTypes.flatMap(
-                filterType => filters?.filter(filter => filter.kind === filterType && !isSelected(filter.value)) ?? []
-            )
-
-            return [...mappedSelectedFilters, ...otherFilters]
+    const handleFilterClick = (filter: URLQueryFilter, remove?: boolean): void => {
+        if (remove) {
+            onSelectedFilterChange(selectedFilters.filter(f => !filtersEqual(f, filter)))
+        } else {
+            onSelectedFilterChange([...selectedFilters, filter])
         }
-
-        return filterTypes.flatMap(filterType => filters?.filter(filter => filter.kind === filterType) ?? [])
-    }, [staticFilters, filterTypes, filters, filterQueryFilters, isSelected])
-
-    const handleFilterClick = (filter: string, remove?: boolean): void => {
-        const preparedFilterQuery = exclusive
-            ? filterQueryFilters.reduce((storeQuery, filter) => omitFilter(storeQuery, filter), filterQuery)
-            : filterQuery
-
-        const updatedQuery = remove
-            ? preparedFilterQuery.replace(filter, '').trim()
-            : `${preparedFilterQuery} ${filter}`
-
-        onFilterQueryChange(updatedQuery)
     }
 
-    if (mappedFilters.length === 0) {
+    if (mergedFilters.length === 0) {
         return null
     }
 
-    const filteredFilters = mappedFilters.filter(filter => filter.label.includes(searchTerm))
+    // TODO: should this be case-insensitive search?
+    const filteredFilters = mergedFilters.filter(filter => filter.label.includes(searchTerm))
     const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUMBER)
 
     return (
         <div className={styles.root}>
             <H4 className={styles.heading}>{title}</H4>
 
-            {mappedFilters.length > MAX_FILTERS_NUMBER && (
+            {mergedFilters.length > MAX_FILTERS_NUMBER && (
                 <Input
                     variant="small"
                     value={searchTerm}
-                    placeholder={`Filter ${filterTypes.join(',')}`}
+                    placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}
                 />
             )}
@@ -180,7 +109,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
                     <DynamicFilterItem
                         key={filter.value}
                         filter={filter}
-                        selected={isSelected(filter.value)}
+                        selected={isSelected(filter)}
                         renderItem={renderItem}
                         onClick={handleFilterClick}
                     />
@@ -188,7 +117,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
             </ul>
             {filteredFilters.length > MAX_FILTERS_NUMBER && (
                 <Button variant="link" size="sm" onClick={() => setShowAllFilters(!showAllFilters)}>
-                    {showAllFilters ? `Show less ${filterType} filters` : `Show all ${filterType} filters`}
+                    {showAllFilters ? `Show less ${filterKind} filters` : `Show all ${filterKind} filters`}
                 </Button>
             )}
         </div>
@@ -196,10 +125,10 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = props => {
 }
 
 interface DynamicFilterItemProps {
-    filter: DynamicClientFilter
+    filter: Filter
     selected: boolean
-    renderItem?: (filter: DynamicClientFilter) => ReactNode
-    onClick: (filter: string, remove?: boolean) => void
+    renderItem?: (filter: Filter) => ReactNode
+    onClick: (filter: URLQueryFilter, remove?: boolean) => void
 }
 
 const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
@@ -211,7 +140,7 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 variant={selected ? 'primary' : 'secondary'}
                 outline={!selected}
                 className={classNames(styles.item, { [styles.itemSelected]: selected })}
-                onClick={() => onClick(filter.value, selected)}
+                onClick={() => onClick(filter, selected)}
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter) : filter.label}</span>
                 {filter.count !== 0 && (
@@ -235,42 +164,32 @@ function roundCount(count: number): number {
     return 0
 }
 
-const isSameFilter = (filterValue: string, filter: QueryFilter): boolean => {
-    const constructedFilterValue = stringHuman([filter])
-
-    return filterValue === constructedFilterValue
+function filtersEqual(a: URLQueryFilter, b: URLQueryFilter): boolean {
+    return a.kind === b.kind && a.label === b.label && a.value === b.value
 }
 
-function toArray<T>(item: T | T[]): T[] {
-    if (Array.isArray(item)) {
-        return item
-    }
-
-    return [item]
-}
-
-export const languageFilter = (filter: DynamicClientFilter): ReactNode => (
+export const languageFilter = (filter: Filter): ReactNode => (
     <>
         <LanguageIcon language={filter.label} className={styles.icon} />
         {filter.label}
     </>
 )
 
-export const repoFilter = (filter: DynamicClientFilter): ReactNode => (
+export const repoFilter = (filter: Filter): ReactNode => (
     <>
         <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
         {filter.label}
     </>
 )
 
-export const commitDateFilter = (filter: DynamicClientFilter): ReactNode => (
+export const commitDateFilter = (filter: Filter): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
         <Code>{filter.value}</Code>
     </span>
 )
 
-export const symbolFilter = (filter: DynamicClientFilter): ReactNode => {
+export const symbolFilter = (filter: Filter): ReactNode => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
 
@@ -292,9 +211,9 @@ export const symbolFilter = (filter: DynamicClientFilter): ReactNode => {
     )
 }
 
-export const utilityFilter = (filter: DynamicClientFilter): string => (filter.count === 0 ? filter.value : filter.label)
+export const utilityFilter = (filter: Filter): string => (filter.count === 0 ? filter.value : filter.label)
 
-export const authorFilter = (filter: DynamicClientFilter): ReactNode => (
+export const authorFilter = (filter: Filter): ReactNode => (
     <>
         <UserAvatar size={14} user={{ avatarURL: null, displayName: filter.label }} className={styles.avatar} />
         {filter.label}
