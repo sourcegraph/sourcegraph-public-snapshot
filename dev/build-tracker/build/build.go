@@ -53,8 +53,8 @@ func (s *Step) LogURL() string {
 type BuildStatus string
 
 const (
+	// The following are statuses we consider the build to be in
 	BuildStatusUnknown BuildStatus = ""
-	BuildInProgress    BuildStatus = "InProgress"
 	BuildPassed        BuildStatus = "Passed"
 	BuildFailed        BuildStatus = "Failed"
 	BuildFixed         BuildStatus = "Fixed"
@@ -62,7 +62,12 @@ const (
 	EventJobFinished   = "job.finished"
 	EventBuildFinished = "build.finished"
 
+	// The following are states the job received from buildkite can be in. These are terminal states
 	JobFinishedState = "finished"
+	JobPassedState   = "passed"
+	JobFailedState   = "failed"
+	JobTimedOutState = "timed_out"
+	JobUnknnownState = "unknown"
 )
 
 func (b *Build) AddJob(j *Job) error {
@@ -254,6 +259,9 @@ func (s *Store) Add(event *Event) {
 	// will be more up to date, and tack on some finalized data
 	if event.IsBuildFinished() {
 		build.updateFromEvent(event)
+		s.logger.Debug("build finished", log.Int("buildNumber", event.GetBuildNumber()),
+			log.Int("totalSteps", len(build.Steps)),
+			log.String("status", build.GetState()))
 
 		// Track consecutive failures by pipeline + branch
 		// We update the global count of consecutiveFailures then we set the count on the individual build
@@ -275,14 +283,22 @@ func (s *Store) Add(event *Event) {
 		s.logger.Warn("job not added",
 			log.Error(err),
 			log.Int("buildNumber", event.GetBuildNumber()),
-			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
+			log.Object("job",
+				log.String("name", newJob.GetName()),
+				log.String("id", newJob.GetID()),
+				log.String("status", string(newJob.status())),
+				log.Int("exit", newJob.exitStatus())),
 			log.Int("totalSteps", len(build.Steps)),
 		)
 	} else {
 		s.logger.Debug("job added to step",
 			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("step", log.String("name", newJob.GetName()),
-				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.GetID())),
+				log.Object("job",
+					log.String("name", newJob.GetName()),
+					log.String("id", newJob.GetID()),
+					log.String("status", string(newJob.status())),
+					log.Int("exit", newJob.exitStatus())),
 			),
 			log.Int("totalSteps", len(build.Steps)),
 		)

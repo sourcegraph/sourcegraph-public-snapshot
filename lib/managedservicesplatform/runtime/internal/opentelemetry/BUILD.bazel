@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "opentelemetry",
     srcs = [
+        "logger.go",
         "metrics.go",
         "opentelemetry.go",
         "tracing.go",
@@ -28,5 +29,6 @@ go_library(
         "@io_opentelemetry_go_otel_sdk//resource",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk_metric//:metric",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

@@ -37,11 +37,11 @@ func newTelemetryGatewayEvent(
 	}
 	event.Parameters = &telemetrygatewayv1.EventParameters{
 		Version: int32(parameters.Version),
-		Metadata: func() map[string]int64 {
+		Metadata: func() map[string]float64 {
 			if len(parameters.Metadata) == 0 {
 				return nil
 			}
-			m := make(map[string]int64, len(parameters.Metadata))
+			m := make(map[string]float64, len(parameters.Metadata))
 			for k, v := range parameters.Metadata {
 				m[string(k)] = v
 			}

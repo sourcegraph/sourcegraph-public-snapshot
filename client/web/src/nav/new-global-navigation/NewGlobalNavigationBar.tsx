@@ -101,10 +101,10 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                     />
                 ) : (
                     <InlineNavigationPanel
-                        isCodyApp={false}
                         showSearchContext={showSearchContext}
                         showOwn={showOwn}
                         showCodySearch={showCodySearch}
+                        showCodyDropdown={false}
                         showSearchJobs={showSearchJobs}
                         showSearchNotebook={showSearchNotebook}
                         showCodeMonitoring={showCodeMonitoring}
@@ -117,7 +117,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
                 {authenticatedUser ? (
                     <UserNavItem
-                        isCodyApp={false}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
                         showFeedbackModal={() => {}}
@@ -183,6 +182,12 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
+    // If the feature-flag "search-new-keyword" is set, we allow the user to
+    // choose between precise (legacy), precise (new), and smart search.  This
+    // is only temporary for internal testing.  The goal is to make the new
+    // precise search the default.
+    const [showExtendedPicker] = useFeatureFlag('search-new-keyword')
+
     const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
         useNavbarQueryState(selectQueryState, shallow)
@@ -209,7 +214,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     }, [])
 
     // TODO: Move this check outside of navigation component and share it via context
-    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
+    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
 
     return (
         <>
@@ -239,6 +244,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                     setCaseSensitivity={setSearchCaseSensitivity}
                     setSearchMode={setSearchMode}
                     submitSearch={submitSearchOnChange}
+                    showExtendedPicker={showExtendedPicker}
                 />
             </LazyV2SearchInput>
 
@@ -383,11 +389,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                     )}
 
                     {isSourcegraphDotCom && (
-                        <NavItemLink
-                            url="https://about.sourcegraph.com"
-                            external={true}
-                            onClick={handleNavigationClick}
-                        >
+                        <NavItemLink url="https://sourcegraph.com" external={true} onClick={handleNavigationClick}>
                             About Sourcegraph
                         </NavItemLink>
                     )}

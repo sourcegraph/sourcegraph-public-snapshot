@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync, createReadStream } from 'fs'
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
@@ -289,48 +289,6 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
         }
     }
 }
-
-export const updateMigratorBazelOuts =
-    (version: string): EditFunc =>
-    (directory: string): void => {
-        const newEntries = `        "schema-descriptions/v${version}-internal_database_schema.codeinsights.json",
-        "schema-descriptions/v${version}-internal_database_schema.codeintel.json",
-        "schema-descriptions/v${version}-internal_database_schema.json",`
-        const filePath = `${directory}/cmd/migrator/BUILD.bazel`
-
-        let inGenrule = false
-        let inOuts = false
-        const result: string[] = []
-
-        const rls = readline.createInterface({
-            input: createReadStream(filePath),
-            output: process.stdout,
-            terminal: false,
-        })
-
-        rls.on('line', line => {
-            if (line.includes('genrule(')) {
-                inGenrule = true
-            }
-
-            if (inGenrule && line.includes('outs = [')) {
-                inOuts = true
-            }
-
-            if (inGenrule && inOuts && line.includes('],')) {
-                inOuts = false
-                inGenrule = false
-                line = `${newEntries}\n${line}`
-            }
-
-            result.push(line)
-        })
-
-        rls.on('close', () => {
-            writeFileSync(filePath, result.join('\n'))
-            console.log(`${filePath} updated successfully.`)
-        })
-    }
 
 export async function retryInput(
     prompt: string,

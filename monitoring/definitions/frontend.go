@@ -162,13 +162,17 @@ func Frontend() *monitoring.Dashboard {
 						},
 						{
 							Name:        "blob_load_latency",
-							Description: "90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.",
+							Description: "90th percentile blob load latency over 10m",
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
-							Critical:    monitoring.Alert().GreaterOrEqual(5),
+							Critical:    monitoring.Alert().GreaterOrEqual(5).For(10 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSource,
+							Interpretation: `
+								- The blob API route provides the files and code snippets that the UI displays.
+							`,
 							NextSteps: `
-								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+								- When this alert fires, calls to the blob route are slow to return a response. The UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
+								- Confirm that the Sourcegraph gitserver and frontend services have enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 								- Check that gitserver containers have enough CPU/memory and are not getting throttled.
 							`,
@@ -336,7 +340,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "frontend",
 				InstanceFilterRegex: `${internalInstance:regex}`,
-			}, monitoring.ObservableOwnerDevOps),
+			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
@@ -507,7 +511,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `max by(owner) (observability_test_metric_warning)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 						{
@@ -516,7 +520,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `max by(owner) (observability_test_metric_critical)`,
 							Critical:    monitoring.Alert().GreaterOrEqual(1),
 							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
+							Owner:       monitoring.ObservableOwnerInfraOrg,
 							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 					},
@@ -694,11 +698,11 @@ func Frontend() *monitoring.Dashboard {
 			},
 
 			// Resource monitoring
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerDevOps),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerInfraOrg),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg, nil),
 			{
 				Title:  "Search: Ranking",
 				Hidden: true,
@@ -753,7 +757,8 @@ func Frontend() *monitoring.Dashboard {
 											RefID:        "2",
 											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
 											LegendFormat: "filePathMatch",
-										}}
+										},
+									}
 									p.GraphPanel.Tooltip.Shared = true
 								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,
@@ -789,7 +794,7 @@ func Frontend() *monitoring.Dashboard {
 						Warning:  monitoring.Alert().Greater(0),
 						Critical: monitoring.Alert().GreaterOrEqual(10),
 
-						Owner: monitoring.ObservableOwnerDevOps,
+						Owner: monitoring.ObservableOwnerInfraOrg,
 						NextSteps: `
 							- Check your SMTP configuration in site configuration.
 							- Check 'sourcegraph-frontend' logs for more detailed error messages.
@@ -805,7 +810,7 @@ func Frontend() *monitoring.Dashboard {
 						Panel:       monitoring.Panel().LegendFormat("emails"),
 						NoAlert:     true, // this is a purely informational panel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
+						Owner:          monitoring.ObservableOwnerInfraOrg,
 						Interpretation: "Total emails successfully delivered.",
 
 						// use to observe behaviour of email usage across instances
@@ -819,7 +824,7 @@ func Frontend() *monitoring.Dashboard {
 							With(monitoring.PanelOptions.LegendOnRight()),
 						NoAlert: true, // this is a purely informational panel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
+						Owner:          monitoring.ObservableOwnerInfraOrg,
 						Interpretation: "Emails successfully delivered by source, i.e. product feature.",
 
 						// use to observe behaviour of email usage across instances.

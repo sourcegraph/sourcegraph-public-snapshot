@@ -226,7 +226,7 @@ type PullRequestStatusState string
 type Repository struct {
 	ID         string  `json:"id"`
 	Name       string  `json:"name"`
-	CloneURL   string  `json:"remoteURL"`
+	RemoteURL  string  `json:"remoteURL"`
 	APIURL     string  `json:"url"`
 	SSHURL     string  `json:"sshUrl"`
 	WebURL     string  `json:"webUrl"`

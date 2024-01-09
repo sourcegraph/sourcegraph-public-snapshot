@@ -26,7 +26,6 @@ const GitHubAppsPage = lazyComponent(() => import('../components/gitHubApps/GitH
 
 interface Props extends TelemetryProps, PlatformContextProps {
     authenticatedUser: AuthenticatedUser
-    isCodyApp: boolean
     batchChangesEnabled: boolean
 }
 

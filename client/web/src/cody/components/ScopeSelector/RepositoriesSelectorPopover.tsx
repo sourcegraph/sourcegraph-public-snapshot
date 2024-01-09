@@ -68,7 +68,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     inferredRepository: IRepo | null
     inferredFilePath: string | null
     additionalRepositories: IRepo[]
-    resetScope: (() => Promise<void>) | null
+    resetScope: () => void | null
     addRepository: (repoName: string) => void
     removeRepository: (repoName: string) => void
     toggleIncludeInferredRepository: () => void

@@ -5,9 +5,9 @@
     import { mdiAccount } from '@mdi/js'
 
     import SearchResult from './SearchResult.svelte'
-    import { getSearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './searchResultsContext'
     import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
-    import UserAvatar from '$lib/UserAvatar.svelte'
+    import Avatar from '$lib/Avatar.svelte'
     import type { PersonMatch } from '$lib/shared'
 
     export let result: PersonMatch
@@ -20,7 +20,10 @@
 </script>
 
 <SearchResult>
-    <UserAvatar slot="icon" user={{ ...result.user, displayName }} />
+    <Avatar
+        slot="icon"
+        avatar={{ displayName, username: result.user?.username ?? '', avatarURL: result.user?.avatarURL ?? null }}
+    />
     <div slot="title">
         &nbsp;
         {#if ownerURL}

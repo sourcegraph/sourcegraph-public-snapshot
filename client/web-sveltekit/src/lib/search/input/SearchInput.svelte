@@ -121,12 +121,14 @@
     let suggestionsPaddingTop = 0
     let suggestionsUI: Extension = []
 
-    $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
-    $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
+    $: patternType = $queryState.patternType
+    $: regularExpressionEnabled = patternType === SearchPatternType.regexp
+    $: structuralEnabled = patternType === SearchPatternType.structural
     $: extension = [
         suggestions({
             id: popoverID,
             source: createSuggestionsSource({
+                valueType: patternType === SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
                 graphqlQuery,
                 authenticatedUser: $user,
                 isSourcegraphDotCom: false,
@@ -167,7 +169,7 @@
 >
     <input class="hidden" value={$queryState.query} name="q" />
     <div class="focus-container">
-        <div class="mode-switcher"></div>
+        <div class="mode-switcher" />
         <BaseCodeMirrorQueryInput
             bind:this={input}
             bind:view={editor}
@@ -223,9 +225,13 @@
 
 <style lang="scss">
     @use '$lib/breakpoints';
+
     form {
         width: 100%;
         position: relative;
+        // Necessary to ensure that the search input (especially the suggestions) are rendered above sticky headers
+        // in the search results page ("position: sticky" creates a new stacking context).
+        z-index: 1;
         padding: 0.75rem;
 
         &:focus-within {
@@ -317,19 +323,5 @@
         border: 0;
         background-color: transparent;
         cursor: pointer;
-    }
-
-    .popover-content {
-        input {
-            margin-left: 0;
-        }
-
-        label {
-            max-width: 17rem;
-            display: flex;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-top: 1px solid var(--border-color);
-        }
     }
 </style>

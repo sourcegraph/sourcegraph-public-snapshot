@@ -56,7 +56,7 @@ export class UserTracker {
             cohortID = getPreviousMonday(new Date())
         }
 
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
         cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID, userCookieSettings)
         localStorage.removeItem(ANONYMOUS_USER_ID_KEY)

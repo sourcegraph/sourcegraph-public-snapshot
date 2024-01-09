@@ -174,7 +174,7 @@ index.scip
 /dev/backcompat/back_compat_migrations.patch
 
 # Generated on CI only
-.aspect/bazelrc/ci.sourcegraph.bazelrc
+.aspect/bazelrc/ci.generated.bazelrc
 
 # nix
 result

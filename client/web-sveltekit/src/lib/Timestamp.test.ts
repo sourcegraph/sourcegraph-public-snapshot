@@ -11,7 +11,7 @@ import { useFakeTimers, useRealTimers } from '$mocks'
 import Timestamp from './Timestamp.svelte'
 
 describe('Timestamp.svelte', () => {
-    function renderTimestamp(options?: Partial<ComponentProps<Timestamp>>) {
+    function renderTimestamp(options?: Partial<ComponentProps<Timestamp>>): void {
         const date = faker.date.recent()
         render(Timestamp, { date, ...options })
     }
@@ -31,16 +31,16 @@ describe('Timestamp.svelte', () => {
         const element = screen.getByTestId('timestamp')
         expect(element.textContent).toMatchInlineSnapshot('"less than a minute ago"')
 
-        // Advance timer by 42 minutes
-        await vi.advanceTimersByTimeAsync(42 * 60 * 1000)
-        expect(element.textContent).toMatchInlineSnapshot('"42 minutes ago"')
+        // Advance timer by 9 minutes
+        await vi.advanceTimersByTimeAsync(9 * 60 * 1000)
+        expect(element.textContent).toMatchInlineSnapshot('"9 minutes ago"')
 
         useRealTimers()
     })
 
-    test.each([{}, { addSuffix: false }, { strict: true }, { addSuffix: false, strict: true }, { showAbsolute: true }])(
+    test.each([{}, { hideSuffix: true }, { strict: true }, { hideSuffix: true, strict: true }, { showAbsolute: true }])(
         'props: %o',
-        (_, options) => {
+        options => {
             useFakeTimers()
 
             renderTimestamp(options)

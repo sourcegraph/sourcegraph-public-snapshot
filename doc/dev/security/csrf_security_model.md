@@ -2,7 +2,7 @@
 
 This section describes Sourcegraph's security threat model against CSRF (Cross Site Request Forgery) requests, in depth for developers working at Sourcegraph.
 
-If you are looking for general information or wish to disclose a vulnerability, please see our [security policy](https://about.sourcegraph.com/security/) or [how to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
+If you are looking for general information or wish to disclose a vulnerability, please see our [security policy](https://sourcegraph.com/security/) or [how to disclose vulnerabilities](https://sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
 
 - [Sourcegraph CSRF security model](#sourcegraph-csrf-security-model)
 - [Living document](#living-document)
@@ -226,7 +226,7 @@ CSRF protection in our API endpoints is too aggressive, leading us and customers
 
 Because of point #1 above (we allow session based authentication iff the request passed CORS policy checks), it is not possible for anyone currently to use the Sourcegraph API endpoints from other, non-explicitly-allowed domains. For example:
 
-* We cannot use the Sourcegraph search API from about.sourcegraph.com
+* We cannot use the Sourcegraph search API from sourcegraph.com
 * People cannot use the Sourcegraph.com GraphQL API from their own websites, even in authenticated form (i.e. public resolvers only)
 * Customers cannot use the Sourcegraph API from their private instance on their own internal tool websites—even by having users provide an access token. The request would be forbidden as it would not pass the CORS preflight request.
 

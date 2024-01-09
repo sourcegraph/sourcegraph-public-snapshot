@@ -321,7 +321,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return
 		}
-		_, _ = w.Write([]byte(fmt.Sprintf("manual purge started with limit of %d and rate of %f", limit, perSecond)))
+		fmt.Fprintf(w, "manual purge started with limit of %d and rate of %f", limit, perSecond)
 	}
 }
 

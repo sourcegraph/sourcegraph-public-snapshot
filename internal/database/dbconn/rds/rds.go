@@ -5,13 +5,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds/rdsutils"
 	"github.com/jackc/pgx/v4"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -40,7 +40,7 @@ func (u *Updater) Update(cfg *pgx.ConnConfig) (*pgx.ConnConfig, error) {
 	logger := log.Scoped("rds")
 	if cfg.Password != "" {
 		// only output the warning once, or it will emit a new entry on every connection
-		syncx.OnceFunc(func() {
+		sync.OnceFunc(func() {
 			logger.Warn("'PG_CONNECTION_UPDATER' is 'EC2_ROLE_CREDENTIALS', but 'PGPASSWORD' is also set. Ignoring 'PGPASSWORD'.")
 		})
 	}

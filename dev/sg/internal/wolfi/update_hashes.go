@@ -29,9 +29,10 @@ type TokenResponse struct {
 }
 
 type ImageInfo struct {
-	Name   string
-	Digest string
-	Image  string
+	Name     string
+	Digest   string
+	Image    string
+	IsLegacy bool
 }
 
 func getAnonDockerAuthToken(repo string) (string, error) {
@@ -101,7 +102,7 @@ func getImageManifest(image string, tag string) (string, error) {
 	return digest, nil
 }
 
-func UpdateHashes(ctx *cli.Context, updateImageName string) error {
+func UpdateHashes(_ *cli.Context, updateImageName string) error {
 	if updateImageName != "" {
 		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
 		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)
@@ -147,7 +148,10 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 				// Only update an image if updateImageName matches the name, or if it's empty (in which case update all images)
 				if updateImageName == imageName || updateImageName == "" {
 					updateImageNameMatch = true
-					currentImage = &ImageInfo{Name: imageName}
+					currentImage = &ImageInfo{
+						Name:     imageName,
+						IsLegacy: strings.Contains(imageName, "legacy_"),
+					}
 				}
 			}
 		case DigestPattern.MatchString(line):
@@ -156,6 +160,10 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 				currentImage.Digest = strings.Trim(match[1], `"`)
 			}
 		case ImagePattern.MatchString(line):
+			if currentImage.IsLegacy {
+				std.Out.WriteWarningf("Skipping legacy image %q", currentImage.Name)
+				continue
+			}
 			match := ImagePattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Image = strings.Trim(match[1], `"`)
@@ -166,9 +174,7 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 
 					if err != nil {
 						std.Out.WriteWarningf("%v", err)
-					}
-
-					if currentImage.Digest != newDigest {
+					} else if currentImage.Digest != newDigest {
 						updated = true
 						// replace old digest with new digest in the previous line
 						lines[i-1] = DigestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
@@ -192,7 +198,11 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 		for _, line := range lines {
 			fmt.Fprintln(writer, line)
 		}
-		writer.Flush()
+
+		err = writer.Flush()
+		if err != nil {
+			return err
+		}
 		std.Out.WriteSuccessf("Succesfully updated digests in %s", bzl_deps_file)
 
 	} else {

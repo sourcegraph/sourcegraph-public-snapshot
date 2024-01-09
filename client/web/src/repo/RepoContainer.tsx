@@ -12,7 +12,6 @@ import React, {
 } from 'react'
 
 import classNames from 'classnames'
-import { escapeRegExp } from 'lodash'
 import { createPortal } from 'react-dom'
 import { type Location, useLocation, Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
@@ -32,7 +31,6 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, type SearchContextProps } from '@sourcegraph/shared/src/search'
-import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -52,7 +50,7 @@ import type { ExternalLinkFields, RepositoryFields } from '../graphql-operations
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
-import { searchQueryForRepoRevision, type SearchStreamingProps } from '../search'
+import { repoFilterForRepoRevision, fileFilterForFilePath, type SearchStreamingProps } from '../search'
 import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
@@ -240,7 +238,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     settingsCascade={props.settingsCascade}
                     authenticatedUser={authenticatedUser}
                     platformContext={props.platformContext}
-                    telemetryService={props.telemetryService}
                 />
 
                 <Suspense fallback={<LoadingSpinner />}>
@@ -407,16 +404,17 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
         [enableV2QueryInput, selectedSearchContextSpec]
     )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const patternType = useNavbarQueryState.getState().searchPatternType
     useEffect(() => {
-        let query = queryPrefix + searchQueryForRepoRevision(repoName, revision)
+        let query = queryPrefix + repoFilterForRepoRevision(repoName, revision, patternType)
         if (filePath) {
-            query = `${query.trimEnd()} file:${escapeSpaces('^' + escapeRegExp(filePath))}`
+            query = `${query.trimEnd()} ${fileFilterForFilePath(filePath, patternType)}`
         }
         onNavbarQueryChange({
             query,
             hint: EditorHint.Blur,
         })
-    }, [revision, filePath, repoName, onNavbarQueryChange, queryPrefix])
+    }, [revision, filePath, repoName, onNavbarQueryChange, queryPrefix, patternType])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)
 
@@ -484,27 +482,27 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 />
             ))}
 
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={1}
-                id="cody"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {() =>
-                    !isCodySidebarOpen ? (
+            {!isCodySidebarOpen && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={1}
+                    id="cody"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {() => (
                         <AskCodyButton
                             onClick={() => {
                                 logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
                                 setIsCodySidebarOpen(true)
                             }}
                         />
-                    ) : null
-                }
-            </RepoHeaderContributionPortal>
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={2}
+                priority={3}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -531,8 +529,9 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
             {isBrainDotVisible && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={110}
+                    priority={7}
                     id="code-intelligence-status"
+                    renderInContextMenu={true}
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>

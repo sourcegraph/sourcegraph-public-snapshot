@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "shared",
@@ -16,4 +17,36 @@ go_library(
         "//internal/database/migration/definition",
         "//lib/errors",
     ],
+)
+
+genrule(
+    name = "generate_stitched_migration_graph",
+    srcs = [],
+    outs = ["stitched-migration-graph.json"],
+    cmd = """\
+        mkdir -p _migration_archives
+        # "-m" flag enables concurrent mode, it's significantly faster even if files are small.
+        CLOUDSDK_CORE_PROJECT="sourcegraph-ci"
+        $(location //dev/tools:gsutil) -m cp "gs://schemas-migrations/migrations/*" _migration_archives/
+        $(location //internal/database/migration/shared/data/cmd/generator) \
+            -output=$@ \
+            -frozen-output=. \
+            -archive=_migration_archives
+    """,
+    tags = [
+        "no-sandbox",  # gsutil doesn't work sandboxed.
+        "requires-network",  # we're fetching files from a GCP bucket.
+    ],
+    tools = [
+        "//dev/tools:gsutil",
+        "//internal/database/migration/shared/data/cmd/generator",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_stitched_migration_graph",
+    output_files = {"data/stitched-migration-graph.json": "stitched-migration-graph.json"},
+    tags = ["go_generate"],
+    target = ":generate_stitched_migration_graph",
 )

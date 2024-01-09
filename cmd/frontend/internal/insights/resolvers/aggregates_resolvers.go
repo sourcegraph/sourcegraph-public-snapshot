@@ -194,12 +194,6 @@ func getProactiveResultLimit() int {
 
 }
 
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
 func getExtendedTimeout(ctx context.Context, db database.DB) int {
 	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
 

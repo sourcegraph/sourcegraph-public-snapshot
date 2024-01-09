@@ -56,6 +56,7 @@ export interface HubSpotFormProps {
     inlineMessage?: string
     overrideFormShorten?: boolean
     userId?: string
+    userEmail?: string
 }
 
 /**
@@ -172,7 +173,7 @@ function createHubSpotForm({ formId, onFormReady, onFormSubmitted, inlineMessage
 }
 
 // This gets called when the HubSpot form is ready
-const onHubsportFormReady = (form: HTMLFormElement, userId?: string): void => {
+const onHubsportFormReady = (form: HTMLFormElement, userId?: string, userEmail?: string): void => {
     /**
      * This allows you to populate hidden form fields with values
      *
@@ -204,6 +205,9 @@ const onHubsportFormReady = (form: HTMLFormElement, userId?: string): void => {
         } else {
             populateHiddenFormField('anonymous_user_id', sourcegraphAnonymousUid)
         }
+        if (userEmail) {
+            populateHiddenFormField('email', userEmail)
+        }
         populateHiddenFormField('first_source_url', firstSourceURL)
         populateHiddenFormField('form_submission_source', window.location.href)
     }
@@ -217,6 +221,7 @@ const onHubsportFormReady = (form: HTMLFormElement, userId?: string): void => {
  * @param options.onFormSubmitted - a callback that runs after a form submission
  * @param options.inlineMessage - a message to display after a form submission
  * @param options.userId - authenticated user's id
+ * @param options.userEmail - authenticated user's email
  * @returns - a div element with an id where the HubSpot form renders
  */
 export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
@@ -225,6 +230,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     onFormSubmitted,
     onFormReady,
     inlineMessage = 'Thank you for your feedback!',
+    userEmail,
     userId,
 }) => {
     const [formCreated, setFormCreated] = useState<boolean>(false)
@@ -245,7 +251,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
                 formId: formId || masterFormId,
                 onFormReady: form => {
                     onFormReady?.(form)
-                    onHubsportFormReady(form, userId)
+                    onHubsportFormReady(form, userId, userEmail)
                 },
                 onFormSubmitted,
                 inlineMessage,
@@ -253,7 +259,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
 
             setFormCreated(true)
         }
-    }, [formId, onFormSubmitted, inlineMessage, formCreated, masterFormName, onFormReady, userId])
+    }, [formId, onFormSubmitted, inlineMessage, formCreated, masterFormName, onFormReady, userId, userEmail])
 
     return <div id="form-target" data-testid="hubspot-form-container" className={classNames(styles.container)} />
 }

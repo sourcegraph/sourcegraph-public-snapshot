@@ -309,9 +309,7 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
-	// BlameFile returns Git blame information about a file.
-	BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
-
+	// StreamBlameFile returns Git blame information about a file in a streaming fashion.
 	StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error)
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
@@ -416,8 +414,8 @@ type Client interface {
 	// longer required.
 	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
 
-	// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
-	// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
+	// ReadFile returns the full contents of the named file at commit.
+	// (If you just need to check a file's existence, use Stat, not ReadFile.)
 	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
 
 	// BranchesContaining returns a map from branch names to branch tip hashes for

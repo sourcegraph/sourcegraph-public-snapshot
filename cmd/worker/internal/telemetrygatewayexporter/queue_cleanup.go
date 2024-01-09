@@ -24,7 +24,8 @@ type queueCleanupJob struct {
 
 func newQueueCleanupJob(obctx *observation.Context, store database.TelemetryEventsExportQueueStore, cfg config) goroutine.BackgroundRoutine {
 	job := &queueCleanupJob{
-		store: store,
+		store:           store,
+		retentionWindow: cfg.ExportedEventsRetentionWindow,
 		prunedCounter: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: "src",
 			Subsystem: "telemetrygatewayexporter",

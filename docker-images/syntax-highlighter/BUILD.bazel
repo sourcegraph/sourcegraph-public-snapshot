@@ -83,18 +83,22 @@ oci_image(
     name = "image",
     base = "@wolfi_syntax_highlighter_base",
     entrypoint = [
-        "/usr/local/bin/http-server-stabilizer",
-        "-listen=:9238",
-        "-prometheus-app-name=syntax_highlighter",
-        # The more workers, the more resilient syntect_server is to getting stuck on
-        # bad grammar/file combinations. If it happens with four workers, only 1/4th of
-        # requests will be affected for a short period of time. Each worker can require
-        # at peak around 1.1 GiB of memory.
-        "-workers=4",
-        "--",
-        "env",
-        "ROCKET_PORT={{.Port}}",  # {{.Port}} is a templated variable used by http-server-stabilizer
-        "/syntect_server",
+        "/bin/sh",
+        "-c",
+        " ".join([
+            "/usr/local/bin/http-server-stabilizer",
+            "-listen=:9238",
+            "-prometheus-app-name=syntax_highlighter",
+            # The more workers, the more resilient syntect_server is to getting stuck on
+            # bad grammar/file combinations. If it happens with four workers, only 1/4th of
+            # requests will be affected for a short period of time. Each worker can require
+            # at peak around 1.1 GiB of memory.
+            "-workers=$WORKERS",
+            "--",
+            "env",
+            "ROCKET_PORT={{.Port}}",  # {{.Port}} is a templated variable used by http-server-stabilizer
+            "/syntect_server",
+        ]),
     ],
     env = {
         "ROCKET_ENV": "production",

@@ -90,8 +90,6 @@ func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind strin
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
-	case *schema.LocalGitExternalService:
-		return localCloneURL(repo), nil
 	case *schema.GoModulesConnection:
 		return string(repo.Name), nil
 	case *schema.PythonPackagesConnection:
@@ -129,7 +127,11 @@ func awsCodeCloneURL(logger log.Logger, repo *awscodecommit.Repository, cfg *sch
 }
 
 func azureDevOpsCloneURL(logger log.Logger, repo *azuredevops.Repository, cfg *schema.AzureDevOpsConnection) string {
-	u, err := url.Parse(repo.CloneURL)
+	if cfg.GitURLType == "ssh" {
+		return repo.SSHURL
+	}
+
+	u, err := url.Parse(repo.RemoteURL)
 	if err != nil {
 		logger.Warn("Error adding authentication to Azure DevOps repo remote URL.", log.String("url", cfg.Url), log.Error(err))
 		return cfg.Url
@@ -344,8 +346,4 @@ func phabricatorCloneURL(logger log.Logger, repo *phabricator.Repo, _ *schema.Ph
 
 func otherCloneURL(repo *types.Repo, m *extsvc.OtherRepoMetadata) string {
 	return repo.ExternalRepo.ServiceID + m.RelativePath
-}
-
-func localCloneURL(repo *types.Repo) string {
-	return repo.ExternalRepo.ServiceID
 }

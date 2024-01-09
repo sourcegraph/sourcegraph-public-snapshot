@@ -5,8 +5,5 @@ go_library(
     srcs = ["confdefaults.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf/confdefaults",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//internal/conf/conftypes",
-        "@com_github_russellhaering_gosaml2//uuid",
-    ],
+    deps = ["//internal/conf/conftypes"],
 )

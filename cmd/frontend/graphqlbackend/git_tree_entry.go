@@ -12,22 +12,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -225,6 +229,14 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	return binary.IsBinary(r.fullContentBytes), nil
 }
 
+var (
+	syntaxHighlightFileBlocklist = []string{
+		"yarn.lock",
+		"pnpm-lock.yaml",
+		"package-lock.json",
+	}
+)
+
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
 	if (args.StartLine != nil || args.EndLine != nil) && args.Format != "HTML_PLAINTEXT" {
@@ -237,9 +249,51 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 
+	// special handling in dotcom to prevent syntax highlighting large lock files
+	if envvar.SourcegraphDotComMode() {
+		for _, f := range syntaxHighlightFileBlocklist {
+			if strings.HasSuffix(r.Path(), f) {
+				// this will force the content to be returned as plaintext
+				// without hitting the syntax highlighter
+				args.Format = string(gosyntect.FormatHTMLPlaintext)
+			}
+		}
+	}
+
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
 		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
+	})
+}
+
+func (r *GitTreeEntryResolver) Languages(ctx context.Context) ([]string, error) {
+	// As of now, only GitBlob exposes a language field in the GraphQL
+	// API, but since GitTreeEntry and GitBlob are both implemented
+	// via the same GitTreeEntryResolver in the backend,
+	// add this check to be defensive instead of potentially
+	// returning an incorrect result.
+	if r.IsDirectory() {
+		return nil, nil
+	}
+	return languages.GetLanguages(r.Name(), func() ([]byte, error) {
+		useFileContents := true
+		exptFeatures := conf.SiteConfig().ExperimentalFeatures
+		if exptFeatures != nil && exptFeatures.LanguageDetection != nil {
+			switch exptFeatures.LanguageDetection.GraphQL {
+			case "useFileContents":
+				break
+			case "useFileNamesOnly":
+				useFileContents = false
+			}
+		}
+		if !useFileContents {
+			return nil, nil
+		}
+		_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		return r.fullContentBytes, nil
 	})
 }
 

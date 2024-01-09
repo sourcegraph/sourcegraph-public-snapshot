@@ -1,9 +1,11 @@
 # buildchecker [![buildchecker](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml)
 
 `buildchecker` is designed to respond to periods of consecutive build failures on a Buildkite pipeline.
-Owned by the [DevX team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience).
+Owned by the [DevInfra team](https://handbook.sourcegraph.com/departments/engineering/teams/devinfra/).
 
 More documentation for Sourcegraph teammates is available in the[CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios).
+
+Buildchecker is deployed as a [GitHub Action](../../.github/workflows/buildchecker.yml).
 
 ## Usage
 

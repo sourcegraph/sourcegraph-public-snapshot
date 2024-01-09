@@ -5,12 +5,14 @@ package inventory
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
-	"log"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -158,5 +160,6 @@ func preferLanguage(lang, ext string) {
 			return
 		}
 	}
-	log.Fatalf("%q not in %q: %q", lang, ext, langs)
+
+	log.Scoped("inventory").Fatal(fmt.Sprintf("%q not in %q: %q", lang, ext, langs))
 }

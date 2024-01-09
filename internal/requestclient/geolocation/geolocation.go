@@ -7,10 +7,10 @@ package geolocation
 import (
 	_ "embed"
 	"net"
+	"sync"
 
 	"github.com/oschwald/maxminddb-golang"
 
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,7 +20,7 @@ var mmdbData []byte
 // getLocationsDB holds the MMDB-format database embedded at mmdbData.
 // It is only evaluated once - subsequent calls will return the first initialized
 // *maxminddb.Reader instance.
-var getLocationsDB = syncx.OnceValue(func() *maxminddb.Reader {
+var getLocationsDB = sync.OnceValue(func() *maxminddb.Reader {
 	db, err := maxminddb.FromBytes(mmdbData)
 	if err != nil {
 		panic(errors.Wrap(err, "initialize IP database"))

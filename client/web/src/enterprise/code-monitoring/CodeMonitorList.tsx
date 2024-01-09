@@ -80,7 +80,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                             <CallToActionBanner variant="outlined" small={true}>
                                 To monitor changes across your private repositories,{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com"
+                                    to="https://sourcegraph.com"
                                     onClick={() =>
                                         eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Monitoring' })
                                     }

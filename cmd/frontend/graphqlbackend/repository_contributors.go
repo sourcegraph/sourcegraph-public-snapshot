@@ -52,14 +52,17 @@ func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryCon
 	return &position, nil
 }
 
-func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	return &cursor, nil
+func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	c, err := strconv.Atoi(cursor)
+	if err != nil {
+		return nil, err
+	}
+	return []any{c}, nil
 }
 
-func (s *repositoryContributorConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *repositoryContributorConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	results, err := s.compute(ctx)
-	num := int32(len(results))
-	return &num, err
+	return int32(len(results)), err
 }
 
 func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*repositoryContributorResolver, error) {
@@ -69,7 +72,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 	}
 
 	var start int
-	results, start, err = OffsetBasedCursorSlice(results, args)
+	results, start, err = offsetBasedCursorSlice(results, args)
 	if err != nil {
 		return nil, err
 	}
@@ -108,27 +111,19 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 	return s.results, s.err
 }
 
-func OffsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
+func offsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
 	start := 0
 	end := 0
 	totalFloat := float64(len(nodes))
 	if args.First != nil {
-		if args.After != nil {
-			after, err := strconv.Atoi(*args.After)
-			if err != nil {
-				return nil, 0, err
-			}
-			start = int(math.Min(float64(after)+1, totalFloat))
+		if len(args.After) > 0 {
+			start = int(math.Min(float64(args.After[0].(int))+1, totalFloat))
 		}
 		end = int(math.Min(float64(start+*args.First), totalFloat))
 	} else if args.Last != nil {
 		end = int(totalFloat)
-		if args.Before != nil {
-			before, err := strconv.Atoi(*args.Before)
-			if err != nil {
-				return nil, 0, err
-			}
-			end = int(math.Max(float64(before), 0))
+		if len(args.Before) > 0 {
+			end = int(math.Max(float64(args.Before[0].(int)), 0))
 		}
 		start = int(math.Max(float64(end-*args.Last), 0))
 	} else {

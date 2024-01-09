@@ -54,6 +54,8 @@ type BuildNotification struct {
 	BuildStatus        string
 	Fixed              []JobLine
 	Failed             []JobLine
+	Passed             []JobLine
+	TotalSteps         int
 }
 
 type JobLine interface {

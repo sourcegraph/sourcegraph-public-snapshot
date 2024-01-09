@@ -282,7 +282,20 @@ Batch Changes uses the tokens from GitHub Apps in the following ways:
 
 Installation access tokens are short-lived, non-refreshable tokens that give Sourcegraph access to the repositories the GitHub App has been given access to. Sourcegraph uses these tokens to read and write commits to repository branches. These tokens expire after 1 hour.
 
-### Custom Certificates
+### Rejecting Unverified Commits
+
+<span class="badge badge-note">Sourcegraph 5.2.4+</span>
+
+Admins can configure Batch Changes to error when it creates commits that are not signed. This can be done by enabling the `batchChanges.rejectUnverifiedCommits` setting in the site configuration:
+
+```json
+{
+  ...,
+  "batchChanges.rejectUnverifiedCommits": true
+}
+```
+
+## Custom Certificates
 
 <span class="badge badge-note">Sourcegraph 5.1.5+</span>
 
@@ -301,7 +314,7 @@ in the **Site configuration** with your certificate(s).
 }
 ```
 
-### Ownership
+## Ownership
 
 When a user is deleted, their Batch Changes become inaccessible in the UI but the data is not permanently deleted.
 This allows recovering the Batch Changes if the user is restored.

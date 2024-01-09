@@ -16,7 +16,6 @@ type operations struct {
 	archiveReader            *observation.Operation
 	batchLog                 *observation.Operation
 	batchLogSingle           *observation.Operation
-	blameFile                *observation.Operation
 	commits                  *observation.Operation
 	contributorCount         *observation.Operation
 	do                       *observation.Operation
@@ -123,7 +122,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		archiveReader:            op("ArchiveReader"),
 		batchLog:                 op("BatchLog"),
 		batchLogSingle:           subOp("batchLogSingle"),
-		blameFile:                op("BlameFile"),
 		commits:                  op("Commits"),
 		contributorCount:         op("ContributorCount"),
 		do:                       subOp("do"),

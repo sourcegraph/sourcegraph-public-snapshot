@@ -53,3 +53,13 @@ func Float64[T numberType](v T) *float64 {
 func Stringf(format string, a ...any) *string {
 	return Ptr(fmt.Sprintf(format, a...))
 }
+
+// Slice takes a slice of values and turns it into a slice of pointers.
+func Slice[S []V, V any](s S) []*V {
+	slice := make([]*V, len(s))
+	for i, v := range s {
+		v := v // copy
+		slice[i] = &v
+	}
+	return slice
+}

@@ -186,7 +186,7 @@ func TestDisplayLimit(t *testing.T) {
 
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol, _ *int32) (*search.Inputs, error) {
 				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
 				return &search.Inputs{

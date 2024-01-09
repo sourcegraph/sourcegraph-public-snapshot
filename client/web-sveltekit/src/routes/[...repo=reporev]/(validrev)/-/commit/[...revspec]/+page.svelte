@@ -4,7 +4,7 @@
     import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
-    import FileDiff from './FileDiff.svelte'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
 
     type Deferred = PageData['deferred']
 
@@ -17,6 +17,10 @@
     $: pending = $diffPending || $commitPending
 </script>
 
+<svelte:head>
+    <title>Commit: {$commit?.subject ?? ''} - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <section>
     {#if $commit}
         <div class="header">
@@ -26,7 +30,7 @@
                 <span class="parents">
                     {$commit.parents.length} parents:
                     {#each $commit.parents as parent}
-                        <a href={parent.url}>{parent.abbreviatedOID}</a>{' '}
+                        <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>{' '}
                     {/each}
                 </span>
             </div>

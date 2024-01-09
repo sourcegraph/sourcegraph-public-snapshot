@@ -15,10 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -280,7 +282,8 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "foreground.SyncRepo (shared=%v)", shared)
+		logger.Warn("foreground sync failed", log.Error(err), log.Bool("shared", shared))
+		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
 }
@@ -356,6 +359,10 @@ func (s *Syncer) syncRepo(
 	repo, err = rg.GetRepo(ctx, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get repo with path: %q", path)
+	}
+
+	if err := repoCanBeAddedOnDemandDotcom(repo); err != nil {
+		return nil, err
 	}
 
 	if repo.Private {
@@ -935,4 +942,32 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
+}
+
+const (
+	maxSize  = 1 * bytesize.GB
+	minStars = 100
+)
+
+type ErrRepoDeniedTooBig struct{}
+
+func (e ErrRepoDeniedTooBig) Error() string {
+	// NOTE: This message is visible to users!
+	return "repository is larger than 1GB and has less than 100 stars"
+}
+
+func (e ErrRepoDeniedTooBig) IsRepoDenied() bool { return true }
+
+// repoCanBeAddedOnDemandDotcom returns nil if the repository can be added on
+// dotcom and an error if it doesn't meet requirements. For example: if the
+// repo is too big for the number of stars it has, an error is returned with an
+// error message that explains this.
+func repoCanBeAddedOnDemandDotcom(repo *types.Repo) error {
+	if r, ok := repo.Metadata.(*github.Repository); ok {
+		if r.SizeBytes() >= maxSize && r.StargazerCount < minStars {
+			return ErrRepoDeniedTooBig{}
+		}
+	}
+
+	return nil
 }

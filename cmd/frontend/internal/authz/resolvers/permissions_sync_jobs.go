@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -37,13 +36,13 @@ type permissionsSyncJobConnectionStore struct {
 	args graphqlbackend.ListPermissionsSyncJobsArgs
 }
 
-func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.PermissionSyncJobs().Count(ctx, s.getListArgs(nil))
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	total := int32(count)
-	return &total, nil
+
+	return int32(count), nil
 }
 
 func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsSyncJobResolver, error) {
@@ -95,16 +94,17 @@ func (s *permissionsSyncJobConnectionStore) resolveSubject(ctx context.Context, 
 }
 
 func (s *permissionsSyncJobConnectionStore) MarshalCursor(node graphqlbackend.PermissionsSyncJobResolver, _ database.OrderBy) (*string, error) {
-	id, err := unmarshalPermissionsSyncJobID(node.ID())
+	cur := string(node.ID())
+	return &cur, nil
+}
+
+func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	id, err := unmarshalPermissionsSyncJobID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
-	cursor := strconv.Itoa(id)
-	return &cursor, nil
-}
 
-func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	return &cursor, nil
+	return []any{id}, nil
 }
 
 func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.PaginationArgs) database.ListPermissionSyncJobOpts {

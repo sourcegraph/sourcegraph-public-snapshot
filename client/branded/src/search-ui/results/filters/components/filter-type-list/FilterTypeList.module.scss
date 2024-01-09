@@ -1,0 +1,23 @@
+.type-list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+
+    &-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: normal;
+
+        &:not(&-selected):hover {
+            background-color: var(--color-bg-2) !important;
+        }
+    }
+}

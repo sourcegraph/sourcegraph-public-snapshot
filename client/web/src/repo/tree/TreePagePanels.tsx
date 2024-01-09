@@ -13,6 +13,7 @@ import {
     CardHeader,
     H2,
     Icon,
+    LanguageIcon,
     Link,
     LinkOrSpan,
     LoadingSpinner,
@@ -147,7 +148,7 @@ export interface DiffStat {
 }
 
 export interface FilePanelProps {
-    entries: Pick<TreeFields['entries'][number], 'name' | 'url' | 'isDirectory' | 'path'>[]
+    entries: TreeFields['entries']
     historyEntries?: TreeHistoryFields[]
     className?: string
 }
@@ -189,11 +190,19 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                 title={entry.path}
                                 data-testid="tree-entry"
                             >
-                                <Icon
-                                    className="mr-1"
-                                    svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
-                                    aria-hidden={true}
-                                />
+                                {entry.__typename === 'GitBlob' ? (
+                                    <LanguageIcon
+                                        language={entry.languages.at(0) ?? ''}
+                                        fileNameOrExtensions={entry.name}
+                                        className="mr-1"
+                                    />
+                                ) : (
+                                    <Icon
+                                        svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                                        className="mr-1"
+                                        aria-hidden={true}
+                                    />
+                                )}
                                 {entry.name}
                                 {entry.isDirectory && '/'}
                             </LinkOrSpan>
@@ -214,11 +223,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     </span>
                                 </td>
                                 <td className={classNames(styles.commitDate, 'text-muted')}>
-                                    <Timestamp
-                                        noAbout={true}
-                                        noAgo={true}
-                                        date={getCommitDate(fileHistoryByPath[entry.path])}
-                                    />
+                                    <Timestamp noAbout={true} date={getCommitDate(fileHistoryByPath[entry.path])} />
                                 </td>
                             </>
                         )}

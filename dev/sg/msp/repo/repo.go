@@ -15,7 +15,7 @@ import (
 // UseManagedServicesRepo is a cli.BeforeFunc that enforces that we are in the
 // sourcegraph/managed-services repository by setting the current working
 // directory.
-func UseManagedServicesRepo(c *cli.Context) error {
+func UseManagedServicesRepo(*cli.Context) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func ListServices() ([]string, error) {
 
 // ServicesAndEnvironmentsCompletion provides completions capabilities for
 // commands that accept '<service ID> <environment ID>' positional arguments.
-func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
+func ServicesAndEnvironmentsCompletion(additionalArgs ...func(args cli.Args) (options []string)) cli.BashCompleteFunc {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil
@@ -73,8 +73,8 @@ func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
 	if err != nil {
 		return nil
 	}
-	return completions.CompletePositionalArgs(
-		func(args cli.Args) (options []string) {
+	args := []func(cli.Args) []string{
+		func(cli.Args) (options []string) {
 			services, _ := listServicesFromRoot(repoRoot)
 			return services
 		},
@@ -87,9 +87,14 @@ func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
 			}
 			return svc.ListEnvironmentIDs()
 		},
-	)
+	}
+	return completions.CompletePositionalArgs(append(args, additionalArgs...)...)
 }
 
 func ServiceYAMLPath(serviceID string) string {
 	return filepath.Join("services", serviceID, "service.yaml")
+}
+
+func ServiceStackPath(serviceID, envID, stackID string) string {
+	return filepath.Join("services", serviceID, "terraform", envID, "stacks", stackID)
 }

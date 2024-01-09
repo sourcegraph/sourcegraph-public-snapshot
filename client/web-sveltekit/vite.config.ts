@@ -1,83 +1,138 @@
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
+import { generate, type CodegenConfig } from '@graphql-codegen/cli'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-async function generateGraphQLOperations(): Promise<Plugin> {
-    const outputPath = './src/lib/graphql-operations.ts'
-    const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
-
-    // We have to dynamically import this module to not make it a dependency when using
-    // Bazel
-    const codegen = (await import('vite-plugin-graphql-codegen')).default
-
-    return codegen({
-        // Keep in sync with client/shared/dev/generateGraphQlOperations.ts
-        config: {
-            generates: {
-                [outputPath]: {
-                    documents: 'src/lib/**/*.{ts,graphql}',
-                    config: {
-                        onlyOperationTypes: true,
-                        noExport: false,
-                        enumValues: '@sourcegraph/shared/src/graphql-operations',
-                        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
-                    },
-                    plugins: [
-                        '../shared/dev/extractGraphQlOperationCodegenPlugin.js',
-                        'typescript',
-                        'typescript-operations',
-                    ],
-                },
+// Generates typescript types for gql-tags and .graphql files
+// We don't use vite-plugin-graphql-codegen because it doesn't support watch mode
+// when documents are defined separately for every generated file.
+// Defining a single set of documents at the top level doesn't work either because
+// it would generated unnecessary files (e.g. .qql.d.ts files for .ts file) and also
+// caused duplicate code generation issues.
+function generateGraphQLTypes(): Plugin {
+    const codgegenConfig: CodegenConfig = {
+        hooks: {
+            // This hook removes the 'import type * as Types from ...' import from generated files if it's not used.
+            // The near-operation-file preset generates this import for every file, even if it's not used. This
+            // generally is not a problem, but the issue is reported by `pnpm check`.
+            // See https://github.com/dotansimha/graphql-code-generator/issues/4900
+            beforeOneFileWrite(_path, content) {
+                if (/^import type \* as Types from/m.test(content) && !/Types(\[|\.)/.test(content)) {
+                    return content.replace(/^import type \* as Types from .+$/m, '').trimStart()
+                }
+                return content
             },
-            schema: '../../cmd/frontend/graphqlbackend/*.graphql',
-            errorsOnly: true,
-            silent: true,
-            config: {
-                // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
-                arrayInputCoercion: false,
-                preResolveTypes: true,
-                operationResultSuffix: 'Result',
-                omitOperationSuffix: true,
-                namingConvention: {
-                    typeNames: 'keep',
-                    enumValues: 'keep',
-                    transformUnderscore: true,
-                },
-                declarationKind: 'interface',
-                avoidOptionals: {
-                    field: true,
-                    inputValue: false,
-                    object: true,
-                },
-                scalars: {
-                    DateTime: 'string',
-                    JSON: 'object',
-                    JSONValue: 'unknown',
-                    GitObjectID: 'string',
-                    JSONCString: 'string',
-                    PublishedValue: "boolean | 'draft'",
-                    BigInt: 'string',
-                },
-            },
-            // Top-level documents needs to be expliclity configured, otherwise vite-plugin-graphql-codgen
-            // won't regenerate on change.
-            documents,
         },
-    })
+        generates: {
+            // Legacy graphql-operations.ts file that is still used by some components.
+            './src/lib/graphql-operations.ts': {
+                documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts', '!src/**/*.gql.ts'],
+                config: {
+                    onlyOperationTypes: true,
+                    enumValues: '$lib/graphql-types',
+                },
+                plugins: ['typescript', 'typescript-operations'],
+            },
+            'src/lib/graphql-types.ts': {
+                plugins: ['typescript'],
+            },
+            'src/': {
+                documents: ['src/**/*.gql', '!src/**/*.gql.ts'],
+                preset: 'near-operation-file',
+                presetConfig: {
+                    baseTypesPath: 'lib/graphql-types',
+                    extension: '.gql.ts',
+                },
+                config: {
+                    useTypeImports: true,
+                    documentVariableSuffix: '', // The default is 'Document'
+                },
+                plugins: ['typescript-operations', 'typed-document-node'],
+            },
+        },
+        schema: '../../cmd/frontend/graphqlbackend/*.graphql',
+        errorsOnly: true,
+        config: {
+            // https://the-guild.dev/graphql/codegen/plugins/typescript/typescript-operations#config-api-reference
+            arrayInputCoercion: false,
+            preResolveTypes: true,
+            operationResultSuffix: 'Result',
+            omitOperationSuffix: true,
+            namingConvention: {
+                typeNames: 'keep',
+                enumValues: 'keep',
+                transformUnderscore: true,
+            },
+            declarationKind: 'interface',
+            avoidOptionals: {
+                field: true,
+                inputValue: false,
+                object: true,
+            },
+            scalars: {
+                DateTime: 'string',
+                JSON: 'object',
+                JSONValue: 'unknown',
+                GitObjectID: 'string',
+                JSONCString: 'string',
+                PublishedValue: "boolean | 'draft'",
+                BigInt: 'string',
+            },
+        },
+    }
+
+    // Cheap custom function to check whether we should run codegen for the provided path
+    function shouldRunCodegen(path: string): boolean {
+        // Do not run codegen for generated files
+        if (/(graphql-(operations|types)|\.gql)\.ts$/.test(path)) {
+            return false
+        }
+        if (/\.(ts|gql)$/.test(path)) {
+            return true
+        }
+        return false
+    }
+
+    async function codegen(): Promise<void> {
+        try {
+            await generate(codgegenConfig, true)
+        } catch {
+            // generate already logs errors to the console
+            // but we still need to catch it otherwise vite will terminate
+        }
+    }
+
+    return {
+        name: 'graphql-codegen',
+        buildStart() {
+            return codegen()
+        },
+        configureServer(server) {
+            server.watcher.on('add', path => {
+                if (shouldRunCodegen(path)) {
+                    codegen()
+                }
+            })
+            server.watcher.on('change', path => {
+                if (shouldRunCodegen(path)) {
+                    codegen()
+                }
+            })
+        },
+    }
 }
 
 export default defineConfig(({ mode }) => {
     let config: UserConfig = {
         plugins: [
             sveltekit(),
-            // When using bazel the graphql operations fiel is generated
-            // by bazel targets
-            process.env.BAZEL ? null : generateGraphQLOperations(),
+            // Generates typescript types for gql-tags and .gql files
+            generateGraphQLTypes(),
             inspect(),
         ],
         define:
@@ -117,6 +172,27 @@ export default defineConfig(({ mode }) => {
                     secure: false,
                 },
             },
+        },
+
+        resolve: {
+            alias: [
+                // Unclear why Vite fails. It claims that index.esm.js doesn't have this export (it does).
+                // Rewriting this to index.js fixes the issue. Error:
+                // import { CiWarning, CiSettings, CiTextAlignLeft } from "react-icons/ci/index.esm.js";
+                //                     ^^^^^^^^^^
+                // SyntaxError: Named export 'CiSettings' not found. The requested module 'react-icons/ci/index.esm.js'
+                // is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^react-icons\/(.+)$/,
+                    replacement: 'react-icons/$1/index.js',
+                },
+                // We generate corresponding .gql.ts files for .gql files.
+                // This alias allows us to import .gql files and have them resolved to the generated .gql.ts files.
+                {
+                    find: /^(.*)\.gql$/,
+                    replacement: '$1.gql.ts',
+                },
+            ],
         },
 
         optimizeDeps: {

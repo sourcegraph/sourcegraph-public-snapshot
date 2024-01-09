@@ -70,13 +70,14 @@ func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRep
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
+func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, contextLines int32, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
 	if len(branchRepos) == 0 {
 		return nil
 	}
 
 	searchOpts := (&search.ZoektParameters{
-		FileMatchLimit: args.FileMatchLimit,
+		FileMatchLimit:  args.FileMatchLimit,
+		NumContextLines: int(contextLines),
 	}).ToSearchOptions(ctx)
 	searchOpts.Whole = true
 
@@ -106,7 +107,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 		// Cancel the context on completion so that the writer doesn't
 		// block indefinitely if this stops reading.
 		defer cancel()
-		return structuralSearch(ctx, logger, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
+		return structuralSearch(ctx, logger, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, int32(searchOpts.NumContextLines), sender)
 	})
 
 	pool.Go(func() error {

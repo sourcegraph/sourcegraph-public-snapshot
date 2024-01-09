@@ -81,7 +81,7 @@ To use embeddings with OpenAI:
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Azure OpenAI support is in the experimental stage.
 <br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+For any feedback, you can <a href="https://sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
 </p>
 </aside>
 
@@ -101,12 +101,18 @@ To use embeddings with Azure OpenAI:
     "provider": "azure-openai",
     "model": "<deployment name of the model>",
     "endpoint": "<endpoint>",
-    "accessToken": "<key>",
+    "accessToken": "<See below>",
     "dimensions": 1536,
     "excludedFilePathPatterns": []
   }
 }
 ```
+
+For the access token, you can either:
+
+- As of 5.2.4 the access token can be left empty and it will rely on Environmental, Workload Identity or Managed Identity credentials configured for the `frontend` service
+- Set it to `<API_KEY>` if directly configuring the credentials using the API key specified in the Azure portal
+- If Azure Authentication requests require a proxy the environment variable `CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY` can be specified to a proxy URL
 
 <br>
 

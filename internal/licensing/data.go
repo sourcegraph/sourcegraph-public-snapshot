@@ -59,31 +59,6 @@ const (
 	// setting repository permissions.
 	FeatureExplicitPermissionsAPI BasicFeature = "explicit-permissions-api"
 
-	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
-	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
-	// extensions published to Sourcegraph.com.
-	FeatureExtensionRegistry BasicFeature = "private-extension-registry"
-
-	// FeatureRemoteExtensionsAllowDisallow is whether explicitly specify a list of allowed remote
-	// extensions and prevent any other remote extensions from being used has been purchased. It
-	// does not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow BasicFeature = "remote-extensions-allow-disallow"
-
-	// FeatureBranding is whether custom branding of this Sourcegraph instance has been purchased.
-	FeatureBranding BasicFeature = "branding"
-
-	// FeatureCampaigns is whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased.
-	//
-	// DEPRECATED: See FeatureBatchChanges.
-	FeatureCampaigns BasicFeature = "campaigns"
-
-	// FeatureMonitoring is whether monitoring on this Sourcegraph instance has been purchased.
-	FeatureMonitoring BasicFeature = "monitoring"
-
-	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
-	// has been purchased.
-	FeatureBackupAndRestore BasicFeature = "backup-and-restore"
-
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
 	FeatureCodeInsights BasicFeature = "code-insights"
 
@@ -95,22 +70,28 @@ const (
 
 	// FeatureAllowAirGapped is whether or not air gapped mode is allowed on this instance.
 	FeatureAllowAirGapped BasicFeature = "allow-air-gapped"
+
+	// FeatureCodeMonitors is whether code monitors is allowed on this Sourcegraph instance.
+	FeatureCodeMonitors BasicFeature = "code-monitors"
+
+	// FeatureNotebooks is whether the notebooks feature is allowed on this Sourcegraph instance.
+	FeatureNotebooks BasicFeature = "notebooks"
+
+	// FeatureCodeSearch is whether the code search feature suite is allowed on this Sourcegraph instance.
+	FeatureCodeSearch BasicFeature = "code-search"
 )
 
 var AllFeatures = []Feature{
 	FeatureSSO,
 	FeatureACLs,
 	FeatureExplicitPermissionsAPI,
-	FeatureExtensionRegistry,
-	FeatureRemoteExtensionsAllowDisallow,
-	FeatureBranding,
-	FeatureCampaigns,
-	FeatureMonitoring,
-	FeatureBackupAndRestore,
 	FeatureCodeInsights,
 	&FeatureBatchChanges{},
 	FeatureSCIM,
 	FeatureAllowAirGapped,
+	FeatureCodeMonitors,
+	FeatureNotebooks,
+	FeatureCodeSearch,
 }
 
 type PlanDetails struct {
@@ -123,6 +104,9 @@ var planDetails = map[Plan]PlanDetails{
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanOldEnterprise: {
@@ -130,17 +114,14 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureACLs,
 			FeatureExplicitPermissionsAPI,
-			FeatureExtensionRegistry,
-			FeatureRemoteExtensionsAllowDisallow,
-			FeatureBranding,
-			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureMonitoring,
-			FeatureBackupAndRestore,
 			FeatureCodeInsights,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanTeam0: {
@@ -150,6 +131,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterprise0: {
@@ -161,25 +145,29 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 
 	PlanBusiness0: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeInsights,
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterprise1: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
@@ -187,12 +175,14 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterpriseExtension: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
@@ -200,27 +190,33 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanFree0: {
 		Features: []Feature{
 			FeatureSSO,
-			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanFree1: {
 		Features: []Feature{
-			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanAirGappedEnterprise: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
 			&FeaturePrivateRepositories{Unrestricted: true},
@@ -229,6 +225,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSCIM,
 			FeatureCody,
 			FeatureAllowAirGapped,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 }

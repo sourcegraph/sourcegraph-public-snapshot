@@ -2,8 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -64,7 +62,7 @@ var permissionsInfoRepositoryConnectionMaxPageSize = 100
 var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
 	OrderBy:     database.OrderBy{{Field: "repo.id"}},
 	Ascending:   true,
-	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
+	MaxPageSize: permissionsInfoRepositoryConnectionMaxPageSize,
 }
 
 func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
@@ -98,25 +96,22 @@ func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.Per
 	return &cursor, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	cursorSQL := strconv.Itoa(int(repoID))
-
-	return &cursorSQL, nil
+	return []any{int32(repoID)}, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (int32, error) {
 	count, err := s.db.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	return int32(count), nil
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
@@ -165,7 +160,7 @@ var permissionsInfoUserConnectionMaxPageSize = 100
 var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOptions{
 	OrderBy:     database.OrderBy{{Field: "users.username"}},
 	Ascending:   true,
-	MaxPageSize: &permissionsInfoUserConnectionMaxPageSize,
+	MaxPageSize: permissionsInfoUserConnectionMaxPageSize,
 }
 
 func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
@@ -201,15 +196,13 @@ func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.Permission
 	return &cursor, nil
 }
 
-func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	cursorSQL := fmt.Sprintf("'%s'", cursor)
-
-	return &cursorSQL, nil
+func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	return []any{cursor}, nil
 }
 
 // TODO(naman): implement total count
-func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	return nil, nil
+func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
 func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {

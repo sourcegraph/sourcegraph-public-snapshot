@@ -65,7 +65,7 @@ go_test(
         "@com_github_crewjam_saml_samlidp//:samlidp",
         "@com_github_russellhaering_gosaml2//:gosaml2",
         "@com_github_russellhaering_goxmldsig//:goxmldsig",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@tools_gotest//assert",
     ],
 )

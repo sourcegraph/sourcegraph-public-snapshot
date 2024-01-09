@@ -44,7 +44,7 @@
         )
     let treeProvider: FileTreeProvider | null = null
 
-    async function updateFileTreeProvider(repoID: Scalars['ID'], commitID: string, parentPath: string) {
+    async function updateFileTreeProvider(repoID: Scalars['ID']['input'], commitID: string, parentPath: string) {
         const result = await data.deferred.fileTree
         if (!result) {
             treeProvider = null
@@ -66,6 +66,15 @@
             repoID,
             commitID,
             loader: fileTreeLoader,
+        })
+    }
+
+    function fetchCommitHistory(afterCursor: string | null) {
+        return data.fetchCommitHistory({
+            repo: data.resolvedRevision.repo.id,
+            revspec: data.resolvedRevision.commitID,
+            filePath: $page.params.path ?? '',
+            afterCursor,
         })
     }
 
@@ -107,7 +116,7 @@
     {/if}
     <div class="main">
         <slot />
-        <BottomPanel bind:this={bottomPanel} history={data.deferred.codeCommits} />
+        <BottomPanel bind:this={bottomPanel} history={data.deferred.commitHistory} {fetchCommitHistory} />
     </div>
 </section>
 

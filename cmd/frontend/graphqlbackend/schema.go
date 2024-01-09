@@ -90,11 +90,6 @@ var rbacSchema string
 //go:embed own.graphql
 var ownSchema string
 
-// appSchema is the Cody App local raw graqhql schema.
-//
-//go:embed app.graphql
-var appSchema string
-
 // completionSchema is the Sourcegraph Completions raw graqhql schema.
 //
 //go:embed completions.graphql

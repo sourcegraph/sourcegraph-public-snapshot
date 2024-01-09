@@ -1,0 +1,21 @@
+.footer {
+    padding: 1rem 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.link {
+    display: flex;
+    gap: 0.25rem;
+    color: var(--text-muted);
+
+    &-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex-grow: 1;
+    }
+
+    &-icon {
+        margin-top: 0.1rem;
+    }
+}

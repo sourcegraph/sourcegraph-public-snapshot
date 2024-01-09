@@ -58,7 +58,7 @@ However, if the user deletion is permanent, deleting both account and data, then
 
 ## Known issues
 
-- Batch Changes currently support **GitHub**, **GitLab** and **Bitbucket Server and Bitbucket Data Center** repositories. If you're interested in using Batch Changes on other code hosts, [let us know](https://about.sourcegraph.com/contact).
+- Batch Changes currently support **GitHub**, **GitLab** and **Bitbucket Server and Bitbucket Data Center** repositories. If you're interested in using Batch Changes on other code hosts, [let us know](https://sourcegraph.com/contact).
 - {#server-execution} Batch change steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)) or [server-side](https://docs.sourcegraph.com/batch_changes/explanations/server_side) `Beta`. For this reason, the APIs for creating and updating a batch change require you to upload all of the changeset specs (which are produced by executing the batch spec locally). Also see [how scalable is Batch Changes](../references/faq.md#how-scalable-is-batch-changes-how-many-changesets-can-i-create).
 - It is not yet possible for multiple users to edit the same batch change that was created under an organization.
 - It is not yet possible to reuse a branch in a repository across multiple batch changes.

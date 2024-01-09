@@ -249,8 +249,8 @@ Please, visit this link in your browser to unlock the account and try to sign in
 
 This link will expire in {{.ExpiryTime}}.
 
-To see our Terms of Service, please visit this link: https://about.sourcegraph.com/terms
-To see our Privacy Policy, please visit this link: https://about.sourcegraph.com/privacy
+To see our Terms of Service, please visit this link: https://sourcegraph.com/terms
+To see our Privacy Policy, please visit this link: https://sourcegraph.com/privacy
 
 Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
 `,
@@ -287,8 +287,8 @@ Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
     This link will expire in {{.ExpiryTime}}.
   </p>
   <p class="mtl">
-    <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
-    <a href="https://about.sourcegraph.com/privacy">Privacy</a>
+    <a href="https://sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
+    <a href="https://sourcegraph.com/privacy">Privacy</a>
   </p>
   <p>Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA</p>
   </small>

@@ -204,6 +204,7 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 			&patternInfo,
 			time.Hour,
 			search.Features{},
+			0, // we don't care about the actual content, so don't fetch extra lines
 			onMatch,
 		)
 		if err != nil {

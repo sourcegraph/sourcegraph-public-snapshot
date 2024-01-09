@@ -61,10 +61,10 @@
 </script>
 
 <!-- TODO: implement keyboard handlers. See https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/ -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
     bind:this={divider}
     role="separator"
-    tabindex="0"
     aria-valuemin={0}
     aria-valuemax={100}
     aria-valuenow={$currentPosition}

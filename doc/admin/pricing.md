@@ -1,6 +1,6 @@
 # Pricing
 
-Visit the [pricing page](https://about.sourcegraph.com/pricing) for up-to-date pricing. 
+Visit the [pricing page](https://sourcegraph.com/pricing) for up-to-date pricing. 
 
 ## How are active users calculated?
 

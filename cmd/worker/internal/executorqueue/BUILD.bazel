@@ -1,9 +1,6 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
-# gazelle:resolve go google.golang.org/genproto/googleapis/api/metric @go_googleapis//google/api:metric_go_proto
-# gazelle:resolve go google.golang.org/genproto/googleapis/api/monitoredres @go_googleapis//google/api:monitoredres_go_proto
-
 go_library(
     name = "executorqueue",
     srcs = [
@@ -38,9 +35,9 @@ go_library(
         "@com_github_inconshreveable_log15//:log15",
         "@com_google_cloud_go_monitoring//apiv3/v2:apiv3",
         "@com_google_cloud_go_monitoring//apiv3/v2/monitoringpb",
-        "@go_googleapis//google/api:metric_go_proto",
-        "@go_googleapis//google/api:monitoredres_go_proto",
         "@org_golang_google_api//option",
+        "@org_golang_google_genproto_googleapis_api//metric",
+        "@org_golang_google_genproto_googleapis_api//monitoredres",
         "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )

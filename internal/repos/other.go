@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -209,18 +208,9 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 
 func (s OtherSource) srcExposeRequest() (req *http.Request, validSrcExpose bool, err error) {
 	srcServe := len(s.conn.Repos) == 1 && (s.conn.Repos[0] == "src-expose" || s.conn.Repos[0] == "src-serve")
-	srcServeLocal := len(s.conn.Repos) == 1 && s.conn.Repos[0] == "src-serve-local"
 
 	// Certain versions of src-serve accept the directory to discover git repositories within
-	if srcServeLocal {
-		reqBody, marshalErr := json.Marshal(map[string]any{"root": s.conn.Root})
-		if marshalErr != nil {
-			return nil, false, marshalErr
-		}
-
-		validSrcExpose = true
-		req, err = http.NewRequest("POST", s.conn.Url+"/v1/list-repos-for-path", bytes.NewReader(reqBody))
-	} else if srcServe {
+	if srcServe {
 		validSrcExpose = true
 		req, err = http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
 	}

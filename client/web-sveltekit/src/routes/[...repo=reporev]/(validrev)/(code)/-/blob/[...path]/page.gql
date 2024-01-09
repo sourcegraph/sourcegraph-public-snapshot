@@ -1,0 +1,57 @@
+query BlobDiffQuery($repoID: ID!, $revspec: String!, $paths: [String!]) {
+    node(id: $repoID) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                diff {
+                    fileDiffs(paths: $paths) {
+                        nodes {
+                            ...FileDiff_Diff
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+query BlobPageQuery($repoID: ID!, $revspec: String!, $path: String!) {
+    node(id: $repoID) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                oid
+                blob(path: $path) {
+                    ...BlobPage_Blob
+                }
+            }
+        }
+    }
+}
+
+fragment BlobPage_Blob on GitBlob {
+    canonicalURL
+    content
+    richHTML
+    languages
+}
+
+query BlobSyntaxHighlightQuery($repoID: ID!, $revspec: String!, $path: String!, $disableTimeout: Boolean!) {
+    node(id: $repoID) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                blob(path: $path) {
+                    canonicalURL
+                    highlight(disableTimeout: $disableTimeout) {
+                        aborted
+                        lsif
+                    }
+                }
+            }
+        }
+    }
+}

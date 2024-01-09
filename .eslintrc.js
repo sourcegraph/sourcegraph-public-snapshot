@@ -43,8 +43,8 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    EXPERIMENTAL_projectService: true,
-    project: __dirname + '/tsconfig.all.json',
+    EXPERIMENTAL_useProjectService: true,
+    project: true,
   },
   settings: {
     react: {

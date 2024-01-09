@@ -42,17 +42,11 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 
 interface IChatUIProps {
     codyChatStore: CodyChatStore
-    isCodyApp?: boolean
     isCodyChatPage?: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({
-    codyChatStore,
-    isCodyApp,
-    isCodyChatPage,
-    authenticatedUser,
-}): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, authenticatedUser }): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -67,7 +61,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
-        fetchRepositoryNames,
         storageQuotaExceeded,
         clearHistory,
     } = codyChatStore
@@ -95,8 +88,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             setScope,
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
-            fetchRepositoryNames,
-            isCodyApp,
             logTranscriptEvent,
             transcriptHistory,
             className: 'mt-2',
@@ -107,8 +98,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             setScope,
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
-            fetchRepositoryNames,
-            isCodyApp,
             logTranscriptEvent,
             transcriptHistory,
             authenticatedUser,
@@ -155,7 +144,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
                 setInputHistory={setInputHistory}
                 onSubmit={onSubmit}
                 submitButtonComponent={SubmitButton}
-                fileLinkComponent={isCodyApp ? AppFileLink : FileLink}
+                fileLinkComponent={FileLink}
                 className={styles.container}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}
@@ -310,15 +299,6 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = React.memo(funct
     )
 })
 
-/**
- * Since App doesn't support search UI we don't user link to the blob UI as we do
- * in the standard FileLink component, instead at the moment we render just a plain text
- * see https://github.com/sourcegraph/sourcegraph/issues/53776 for more details.
- */
-export const AppFileLink: React.FunctionComponent<FileLinkProps> = React.memo(function AppFileLink({ path }) {
-    return <>{path}</>
-})
-
 interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
 export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React.memo(
@@ -426,12 +406,12 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
                         <>
                             <Link to={`/sign-in?returnTo=${location.pathname}`}>Sign in</Link> to get access to Cody.
                             You can learn more about Cody{' '}
-                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                            <Link to="https://sourcegraph.com/cody?utm_source=server">here</Link>.
                         </>
                     ) : (
                         <>
                             Cody isn't available on this instance, but you can learn more about Cody{' '}
-                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                            <Link to="https://sourcegraph.com/cody?utm_source=server">here</Link>.
                         </>
                     )}
                 </Text>

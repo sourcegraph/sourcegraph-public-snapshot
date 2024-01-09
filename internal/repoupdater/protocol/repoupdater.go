@@ -109,9 +109,10 @@ type RepoLookupResult struct {
 	// Repo contains information about the repository, if it is found. If an error occurred, it is nil.
 	Repo *RepoInfo
 
-	ErrorNotFound               bool // the repository host reported that the repository was not found
-	ErrorUnauthorized           bool // the repository host rejected the client's authorization
-	ErrorTemporarilyUnavailable bool // the repository host was temporarily unavailable (e.g., rate limit exceeded)
+	ErrorNotFound               bool   // the repository host reported that the repository was not found
+	ErrorUnauthorized           bool   // the repository host rejected the client's authorization
+	ErrorTemporarilyUnavailable bool   // the repository host was temporarily unavailable (e.g., rate limit exceeded)
+	ErrorRepoDenied             string // the repository cannot be added on-demand on dotcom (e.g. because its too big)
 }
 
 func (r *RepoLookupResult) ToProto() *proto.RepoLookupResponse {
@@ -120,6 +121,7 @@ func (r *RepoLookupResult) ToProto() *proto.RepoLookupResponse {
 		ErrorNotFound:               r.ErrorNotFound,
 		ErrorUnauthorized:           r.ErrorUnauthorized,
 		ErrorTemporarilyUnavailable: r.ErrorTemporarilyUnavailable,
+		ErrorRepoDenied:             r.ErrorRepoDenied,
 	}
 }
 
@@ -129,6 +131,7 @@ func RepoLookupResultFromProto(p *proto.RepoLookupResponse) *RepoLookupResult {
 		ErrorNotFound:               p.GetErrorNotFound(),
 		ErrorUnauthorized:           p.GetErrorUnauthorized(),
 		ErrorTemporarilyUnavailable: p.GetErrorTemporarilyUnavailable(),
+		ErrorRepoDenied:             p.GetErrorRepoDenied(),
 	}
 }
 
@@ -145,6 +148,9 @@ func (r *RepoLookupResult) String() string {
 	}
 	if r.ErrorTemporarilyUnavailable {
 		parts = append(parts, "tempunavailable")
+	}
+	if r.ErrorRepoDenied != "" {
+		parts = append(parts, "repodenied")
 	}
 	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(parts, " "))
 }

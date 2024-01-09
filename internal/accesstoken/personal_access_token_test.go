@@ -1,5 +1,7 @@
 package accesstoken
 
+// pre-commit:ignore_sourcegraph_token
+
 import (
 	"testing"
 )
@@ -93,9 +95,8 @@ func TestParsePersonalAccessToken(t *testing.T) {
 
 func TestGeneratePersonalAccessToken(t *testing.T) {
 	type args struct {
-		licenseKey                string
-		isDevInstance             bool
-		includeInstanceIdentifier bool
+		licenseKey    string
+		isDevInstance bool
 	}
 	tests := []struct {
 		name            string
@@ -108,9 +109,8 @@ func TestGeneratePersonalAccessToken(t *testing.T) {
 		{
 			name: "valid token generation 1",
 			args: args{
-				licenseKey:                "abcdef1234abcdef1234abcdef1234abcdef1234",
-				isDevInstance:             false,
-				includeInstanceIdentifier: true,
+				licenseKey:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+				isDevInstance: false,
 			},
 			wantTokenPrefix: "sgp_5e37db464e9301ea_",
 			wantTokenLength: 61,
@@ -119,9 +119,8 @@ func TestGeneratePersonalAccessToken(t *testing.T) {
 		{
 			name: "valid token generation 2",
 			args: args{
-				licenseKey:                "foobar",
-				isDevInstance:             false,
-				includeInstanceIdentifier: true,
+				licenseKey:    "foobar",
+				isDevInstance: false,
 			},
 			wantTokenPrefix: "sgp_8844b0e0e754ec66_",
 			wantTokenLength: 61,
@@ -130,51 +129,17 @@ func TestGeneratePersonalAccessToken(t *testing.T) {
 		{
 			name: "valid token generation, dev instance",
 			args: args{
-				licenseKey:                "abcdef1234abcdef1234abcdef1234abcdef1234",
-				isDevInstance:             true,
-				includeInstanceIdentifier: true,
+				licenseKey:    "abcdef1234abcdef1234abcdef1234abcdef1234",
+				isDevInstance: true,
 			},
 			wantTokenPrefix: "sgp_local_",
 			wantTokenLength: 50,
 			wantErr:         false,
 		},
-		{
-			name: "valid token generation, no identifier",
-			args: args{
-				licenseKey:                "abcdef1234abcdef1234abcdef1234abcdef1234",
-				isDevInstance:             false,
-				includeInstanceIdentifier: false,
-			},
-			wantTokenPrefix: "sgp_",
-			wantTokenLength: 44,
-			wantErr:         false,
-		},
-		{
-			name: "valid token generation, no identifier",
-			args: args{
-				licenseKey:                "",
-				isDevInstance:             false,
-				includeInstanceIdentifier: false,
-			},
-			wantTokenPrefix: "sgp_",
-			wantTokenLength: 44,
-			wantErr:         false,
-		},
-		{
-			name: "valid token generation, no identifier",
-			args: args{
-				licenseKey:                "",
-				isDevInstance:             true,
-				includeInstanceIdentifier: false,
-			},
-			wantTokenPrefix: "sgp_",
-			wantTokenLength: 44,
-			wantErr:         false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			token, _, err := GeneratePersonalAccessToken(tt.args.includeInstanceIdentifier, tt.args.licenseKey, tt.args.isDevInstance)
+			token, _, err := GeneratePersonalAccessToken(tt.args.licenseKey, tt.args.isDevInstance)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GeneratePersonalAccessToken() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -17,6 +17,7 @@ import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } 
 import { LoaderButton } from '../components/LoaderButton'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
+import { EventName } from '../util/constants'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
@@ -125,7 +126,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
         (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log('SignupInitiated', { type }, { type })
+            eventLogger.log(EventName.AUTH_INITIATED, { type }, { type })
         },
         []
     )
@@ -233,11 +234,11 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     <Text className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our{' '}
-                            <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                            <Link to="https://sourcegraph.com/terms" target="_blank" rel="noopener">
                                 Terms of Service
                             </Link>{' '}
                             and{' '}
-                            <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                            <Link to="https://sourcegraph.com/privacy" target="_blank" rel="noopener">
                                 Privacy Policy
                             </Link>
                             .

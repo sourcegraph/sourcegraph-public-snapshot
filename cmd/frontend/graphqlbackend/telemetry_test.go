@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -17,6 +18,10 @@ import (
 
 type mockTelemetryResolver struct {
 	events []TelemetryEventInput
+
+	// Embed interface directly in mock so that it satisfies TelemetryResolver.
+	// Unexpected usage of interface methods that aren't mocked will panic.
+	TelemetryResolver
 }
 
 func (m *mockTelemetryResolver) RecordEvents(_ context.Context, args *RecordEventsArgs) (*EmptyResponse, error) {
@@ -25,6 +30,10 @@ func (m *mockTelemetryResolver) RecordEvents(_ context.Context, args *RecordEven
 }
 
 func TestTelemetryRecordEvents(t *testing.T) {
+	staticTimeString := "2023-02-24T14:48:30Z"
+	staticTime, err := time.Parse(time.RFC3339, staticTimeString)
+	require.NoError(t, err)
+
 	for _, tc := range []struct {
 		name string
 		// Write a raw GraphQL event because we want to test providing the raw input
@@ -59,7 +68,7 @@ func TestTelemetryRecordEvents(t *testing.T) {
 			},
 		},
 		{
-			name: "object privateMetadata",
+			name: "metadata with standard object privateMetadata",
 			gqlEventsInput: `
 				{
 					feature: "cody.fixup"
@@ -96,6 +105,11 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				// Sanity check strucpb marshalling used in cmd/frontend/internal/telemetry/resolvers
 				_, err := structpb.NewStruct(v)
 				require.NoError(t, err)
+
+				md := *gotEvents[0].Parameters.Metadata
+				require.Len(t, md, 2)
+				assert.Equal(t, int32(1), md[0].Value.Value)
+				assert.Equal(t, int32(0), md[1].Value.Value)
 			},
 		},
 		{
@@ -110,16 +124,6 @@ func TestTelemetryRecordEvents(t *testing.T) {
 					}
 					parameters: {
 						version: 0
-						metadata: [
-							{
-								key: "contextSelection",
-								value: 1
-							},
-							{
-								key: "chatPredictions",
-								value: 0
-							},
-						]
 						privateMetadata: "some value"
 					}
 				}
@@ -150,16 +154,6 @@ func TestTelemetryRecordEvents(t *testing.T) {
 					}
 					parameters: {
 						version: 0
-						metadata: [
-							{
-								key: "contextSelection",
-								value: 1
-							},
-							{
-								key: "chatPredictions",
-								value: 0
-							},
-						]
 						privateMetadata: 12
 					}
 				}
@@ -176,6 +170,64 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				// Sanity check strucpb marshalling used in cmd/frontend/internal/telemetry/resolvers
 				_, err := structpb.NewValue(value)
 				require.NoError(t, err)
+			},
+		},
+		{
+			name: "different numeric values in metadata",
+			gqlEventsInput: `
+				{
+					feature: "cody.fixup"
+					action: "applied"
+					source: {
+						client: "VSCode.Cody",
+						clientVersion: "0.14.1"
+					}
+					parameters: {
+						version: 0
+						metadata: [
+							{
+								key: "contextSelection",
+								value: 1
+							},
+							{
+								key: "chatPredictions",
+								value: 0
+							},
+							{
+								key: "fooBar",
+								value: 3.14
+							},
+						]
+					}
+				}
+			`,
+			assert: func(t *testing.T, gotEvents []TelemetryEventInput) {
+				// Check PrivateMetadata
+				require.Len(t, gotEvents, 1)
+				md := *gotEvents[0].Parameters.Metadata
+				require.Len(t, md, 3)
+				assert.Equal(t, int32(1), md[0].Value.Value)
+				assert.Equal(t, int32(0), md[1].Value.Value)
+				assert.Equal(t, 3.14, md[2].Value.Value)
+			},
+		},
+		{
+			name: "custom timestamp",
+			gqlEventsInput: fmt.Sprintf(`
+				{
+					timestamp: "%s"
+					feature: "cody.fixup"
+					action: "applied"
+					source: {
+						client: "VSCode.Cody",
+						clientVersion: "0.14.1"
+					}
+					parameters: { version: 0 }
+				}
+			`, staticTimeString),
+			assert: func(t *testing.T, gotEvents []TelemetryEventInput) {
+				require.Len(t, gotEvents, 1)
+				assert.Equal(t, staticTime.String(), gotEvents[0].Timestamp.String())
 			},
 		},
 	} {
