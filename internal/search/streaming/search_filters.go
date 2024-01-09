@@ -181,7 +181,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 		df := determineTimeframe(cd)
 		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
-		s.filters.Add(filter, df.Label, 1, "date")
+		s.filters.Add(filter, df.Label, 1, "commit date")
 	}
 
 	if event.Stats.ExcludedForks > 0 {
