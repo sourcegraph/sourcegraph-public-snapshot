@@ -585,7 +585,7 @@ Supports completions on services and environments.`,
 				},
 				{
 					Name:      "graph",
-					Usage:     "EXPERIMENTAL: Graph the core resources within a Terraform workspace.",
+					Usage:     "EXPERIMENTAL: Graph the core resources within a Terraform workspace",
 					ArgsUsage: "<service ID> <environment ID> <stack ID>",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{
