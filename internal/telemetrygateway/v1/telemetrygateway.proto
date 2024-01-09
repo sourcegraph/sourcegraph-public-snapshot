@@ -228,3 +228,17 @@ message EventInteraction {
   // originating client's IP address (which we do not collect).
   optional Geolocation geolocation = 3;
 }
+
+// https://github.com/GoogleCloudPlatform/protoc-gen-bq-schema
+import "bq_table.proto";
+import "bq_field.proto";
+
+// InternalEventRecord is the shape of the internally published event.
+message InternalEventRecord {
+  option (gen_bq_schema.bigquery_opts).table_name = "telemetry_events";
+
+  // Metadata associated with the request to publish this event.
+  RecordEventsRequestMetadata metadata = 1;
+  // Event data.
+  Event event = 2;
+}
