@@ -17,7 +17,7 @@ if [ ! -d "security-semgrep-rules/semgrep-rules/" ]; then
 fi
 
 # run semgrep
-semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main --no-error
+semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main || true
 
 echo -e "--- :rocket: reporting scan results to GitHub\n"
 
