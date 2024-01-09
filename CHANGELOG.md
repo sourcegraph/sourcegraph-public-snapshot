@@ -58,6 +58,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 - The experimental `indexRepositoryName` option for the rust packages code host connection has been removed. [#59176](https://github.com/sourcegraph/sourcegraph/pull/59176)
+- The column "Repository metadata" in the CSV export of repository search results is now deprecated and will be removed in a future release. Use "Repository metadata JSON" instead [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
 
 ## Unreleased 5.2.6
 
