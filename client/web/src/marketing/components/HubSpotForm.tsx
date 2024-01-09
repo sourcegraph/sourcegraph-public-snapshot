@@ -78,6 +78,22 @@ const clearbitScript =
 
 // Gets a script element by its id
 const getScriptElement = (id: string): HTMLScriptElement | Element | null => document.querySelector(`#${id}`)
+const MAX_RETRIES = 3
+
+const loadHubSpotScript = async (): Promise<void> => {
+    let retries = 0
+    while (retries < MAX_RETRIES) {
+        try {
+            await loadScriptElement('hubspot', hubSpotScript)
+            break // If successful, break the loop
+        } catch (error) {
+            retries++
+            if (retries >= MAX_RETRIES) {
+                console.error('Error loading HubSpot script:', error)
+            }
+        }
+    }
+}
 
 /**
  * This loads a script element and appends it to the document head
@@ -117,9 +133,6 @@ const loadScriptElement = (
 const loadAllScripts = async (): Promise<void> => {
     const loadingScripts: Promise<HTMLScriptElement | Element | null>[] = []
 
-    if (!window.hbspt) {
-        loadingScripts.push(loadScriptElement('hubspot', hubSpotScript))
-    }
     if (!window.jQuery) {
         loadingScripts.push(loadScriptElement('jquery', jQueryScript))
     }
@@ -130,8 +143,11 @@ const loadAllScripts = async (): Promise<void> => {
     try {
         await Promise.all(loadingScripts)
     } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Error loading scripts:', error)
+        console.error('Error loading other scripts:', error)
+    }
+
+    if (!window.hbspt) {
+        await loadHubSpotScript()
     }
 }
 
