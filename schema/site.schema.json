@@ -233,7 +233,7 @@
           "description": "Enables structural search.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
