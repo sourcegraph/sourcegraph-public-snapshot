@@ -3,12 +3,14 @@ import { FC, ReactNode, useMemo, useState } from 'react'
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
+import { CodeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
 
 import styles from './SearchDynamicFilter.module.scss'
@@ -175,12 +177,19 @@ export const languageFilter = (filter: Filter): ReactNode => (
     </>
 )
 
-export const repoFilter = (filter: Filter): ReactNode => (
-    <>
+export const repoFilter = (filter: Filter): ReactNode => {
+    const hostName = filter.label.split('/')[0]
+    const codeHostIcon = <CodeHostIcon repoName={hostName} /> || (
         <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
-        {filter.label}
-    </>
-)
+    )
+    return (
+        <Tooltip content={filter.label}>
+            <span ref={null}>
+                {codeHostIcon} {displayRepoName(filter.label)}
+            </span>
+        </Tooltip>
+    )
+}
 
 export const commitDateFilter = (filter: Filter): ReactNode => (
     <span className={styles.commitDate}>
