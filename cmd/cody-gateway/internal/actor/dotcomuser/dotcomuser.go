@@ -40,7 +40,7 @@ var (
 	// defaultRefreshInterval is used for updates, which is also called when a
 	// user's rate limit is hit, so we don't want to update every time. We use
 	// a shorter interval than the default in this case.
-	defaultRefreshInterval = 0 * time.Minute
+	defaultRefreshInterval = 5 * time.Minute
 )
 
 type Source struct {
@@ -48,7 +48,7 @@ type Source struct {
 	cache             httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom            graphql.Client
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
-	rs                limiter.RedisStore
+	redisStore        limiter.RedisStore
 	rateLimitNotifier notify.RateLimitNotifier
 }
 
@@ -60,7 +60,7 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 		cache:             cache,
 		dotcom:            dotComClient,
 		concurrencyConfig: concurrencyConfig,
-		rs:                rs,
+		redisStore:        rs,
 		rateLimitNotifier: rateLimitNotifier,
 	}
 }
@@ -87,11 +87,6 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 	var act *actor.Actor
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
-		// if oldAct is present in the cache, even though it is stale,
-		// return it as a fallback if we fail to hit the dotcom API.
-		if oldAct != nil && oldAct.ID != "" {
-			return oldAct, nil
-		}
 		// Generate a stateless actor and save in the cache so that we aren't constantly hitting the dotcom API
 		act = newActor(s, token, dotcom.DotcomUserState{}, s.concurrencyConfig)
 	} else {
@@ -112,9 +107,9 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 			// reset the usage cache if:
 			// 1. old actor is not present in the cache
 			// 2. new rl interval is different from old rl interval
-			if oldAct == nil || oldAct.ID == "" || rl.Interval != oldAct.RateLimits[feature].Interval {
+			if oldAct.IsEmpty() || rl.Interval != oldAct.RateLimits[feature].Interval {
 				// get the base limiter for the feature which implements the core rate limiting based on the config
-				l, ok := act.BaseLimiter(s.rs, feature, s.rateLimitNotifier)
+				l, ok := act.BaseLimiter(s.redisStore, feature, s.rateLimitNotifier)
 				if !ok {
 					return nil, errors.Wrap(err, fmt.Sprintf("failed to create base limiter for feature: %s and actor id: %s", feature, l.Identifier))
 				}

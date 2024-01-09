@@ -62,6 +62,14 @@ func (a *Actor) GetSource() codygateway.ActorSource {
 	return codygateway.ActorSource(a.Source.Name())
 }
 
+// IsEmpty returns true if the actor is empty, i.e. has no ID.
+// An empty actor is saved in the cache on fetch req failure,
+// so that we aren't constantly hitting the dotcom API. Check
+// the implementation of `Source.fetchAndCache`.
+func (a *Actor) IsEmpty() bool {
+	return a == nil || a.ID == ""
+}
+
 func (a *Actor) IsDotComActor() bool {
 	// Corresponds to sourcegraph.com subscription ID, or using a dotcom access token
 	return a != nil && (a.GetSource() == codygateway.ActorSourceProductSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygateway.ActorSourceDotcomUser

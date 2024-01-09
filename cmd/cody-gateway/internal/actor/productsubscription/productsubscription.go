@@ -69,10 +69,6 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Cl
 func (s *Source) Name() string { return string(codygateway.ActorSourceProductSubscription) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
-	return s.get(ctx, token, false)
-}
-
-func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*actor.Actor, error) {
 	if token == "" {
 		return nil, actor.ErrNotFromSource{}
 	}
@@ -94,7 +90,7 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 	data, hit := s.cache.Get(token)
 	if !hit {
 		span.SetAttributes(attribute.Bool("actor-cache-miss", true))
-		return s.fetchAndCache(ctx, token, nil)
+		return s.fetchAndCache(ctx, token)
 	}
 
 	var act *actor.Actor
@@ -105,16 +101,12 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 		// Delete the corrupted record.
 		s.cache.Delete(token)
 
-		return s.fetchAndCache(ctx, token, nil)
-	}
-
-	if bypassCache {
-		return s.fetchAndCache(ctx, token, act)
+		return s.fetchAndCache(ctx, token)
 	}
 
 	if act.LastUpdated != nil && time.Since(*act.LastUpdated) > defaultUpdateInterval {
 		span.SetAttributes(attribute.Bool("actor-expired", true))
-		return s.fetchAndCache(ctx, token, act)
+		return s.fetchAndCache(ctx, token)
 	}
 
 	act.Source = s
@@ -129,7 +121,7 @@ func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 		}
 	}
 
-	_, err := s.get(ctx, act.Key, true)
+	_, err := s.fetchAndCache(ctx, act.Key)
 	return err
 }
 
@@ -196,16 +188,10 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 	return nil, err
 }
 
-func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.Actor) (*actor.Actor, error) {
+func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
 	var act *actor.Actor
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
-		// if oldAct is present in the cache, even though it is stale,
-		// return it as a fallback if we fail to hit the dotcom API.
-		if oldAct != nil && oldAct.ID != "" {
-			return oldAct, nil
-		}
-
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
 		act = newActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode, s.concurrencyConfig)
 	} else {

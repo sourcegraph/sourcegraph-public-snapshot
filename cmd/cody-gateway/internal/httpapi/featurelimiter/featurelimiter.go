@@ -223,9 +223,7 @@ func RefreshLimitsHandler(baseLogger log.Logger) http.Handler {
 		if err := act.Update(r.Context()); err != nil {
 			logger := act.Logger(trace.Logger(r.Context(), baseLogger))
 			if actor.IsErrActorRecentlyUpdated(err) {
-				// If the actor was recently updated, we can just return a 200.
-				// Client will keep on retrying otherwise.
-				w.WriteHeader(http.StatusOK)
+				response.JSONError(logger, w, http.StatusTooManyRequests, err)
 			} else {
 				response.JSONError(logger, w, http.StatusInternalServerError, err)
 			}

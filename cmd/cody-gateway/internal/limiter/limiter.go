@@ -89,7 +89,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// If the expiry on the key is greater than the intervalSeconds, update the TTL.
 	// This is here as a safeguard for the case where the TTL is wrongly set or the
 	// usage cache is not reset when the intervalSeconds config change. This only covers
-	// the case where the new intervalSeconds in shorter than the present TTL, i.e Free -> Pro.
+	// the case where the new intervalSeconds in shorter than the present TTL.
 	if ttl, err := l.Redis.TTL(l.Identifier); err == nil {
 		if l.UpdateRateLimitTTL && ttl > int(intervalSeconds) {
 			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
