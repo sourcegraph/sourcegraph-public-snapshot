@@ -41,9 +41,10 @@ func NewRepositoryLinker(
 	repoInfo := protocol.NewRepoInfo(repo)
 
 	return RepositoryLinker{
-		phabRepo:    phabRepo,
-		links:       repoInfo.Links,
-		serviceType: repoInfo.ExternalRepo.ServiceType,
+		phabRepo:      phabRepo,
+		links:         repoInfo.Links,
+		serviceType:   repoInfo.ExternalRepo.ServiceType,
+		defaultBranch: defaultBranch,
 	}
 }
 
