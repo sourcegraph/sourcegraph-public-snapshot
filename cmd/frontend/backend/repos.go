@@ -33,7 +33,7 @@ type ReposService interface {
 	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
 	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
-	GetInventory(ctx context.Context, repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
+	GetInventory(ctx context.Context, repoName api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
 	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
 	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
 	ResolveRev(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error)
