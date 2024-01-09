@@ -37,6 +37,7 @@ var (
 		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p"},
 		"lfs":          {},
+		"config":       {"test"},
 
 		// Commands used by Batch Changes when publishing changesets.
 		"init":       {},
