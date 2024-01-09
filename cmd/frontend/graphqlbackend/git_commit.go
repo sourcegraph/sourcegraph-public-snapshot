@@ -215,7 +215,7 @@ func (r *GitCommitResolver) CanonicalURL() string {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.repoResolver.repo(ctx)
+	repo, err := r.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
