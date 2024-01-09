@@ -139,7 +139,7 @@ func versionFromTag(runType runtype.RunType, tag string, commit string, buildNum
 	if runType.Is(runtype.RFC795InternalRelease) {
 		// TODO(RFC795)
 		// Hardcoded for now
-		return "5.2.666"
+		return "5.3.666"
 	}
 
 	// "main" branch is used for continuous deployment and has a special-case format
