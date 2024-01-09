@@ -82,41 +82,28 @@ func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 	return err
 }
 
-// fetchAndCache fetches the dotcom user data for the given user token and caches it
+// fetchAndCache fetches the dotcom user data for the given user token and caches it.
+// We compare against the previous state of the actor (if available) to trigger logic based
+// on any updates.
 func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.Actor) (*actor.Actor, error) {
 	var act *actor.Actor
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
-		// Generate a stateless actor and save in the cache so that we aren't constantly hitting the dotcom API
+		// Generate a stateless actor and save in the cache so that we aren't constantly hitting the dotcom API.
 		act = newActor(s, token, dotcom.DotcomUserState{}, s.concurrencyConfig)
 	} else {
 		act = newActor(s, token,
 			resp.Dotcom.CodyGatewayDotcomUserByToken.DotcomUserState, s.concurrencyConfig)
 	}
 
+	// Marshall the actor into JSON so we can persist it.
 	if data, err := json.Marshal(act); err != nil {
-		s.log.Error("failed to marshal actor",
-			log.Error(err))
+		s.log.Error("failed to marshal actor", log.Error(err))
 	} else {
-		for _, feature := range codygateway.AllFeatures {
-			rl, ok := act.RateLimits[feature]
-			if !ok {
-				continue
-			}
-
-			// reset the usage cache if:
-			// 1. old actor is not present in the cache
-			// 2. new rl interval is different from old rl interval
-			if oldAct.IsEmpty() || rl.Interval != oldAct.RateLimits[feature].Interval {
-				// get the base limiter for the feature which implements the core rate limiting based on the config
-				l, ok := act.BaseLimiter(s.redisStore, feature, s.rateLimitNotifier)
-				if !ok {
-					return nil, errors.Wrap(err, fmt.Sprintf("failed to create base limiter for feature: %s and actor id: %s", feature, l.Identifier))
-				}
-				if err := l.ResetUsage(); err != nil {
-					return nil, errors.Wrap(err, fmt.Sprintf("failed to reset usage cache for feature: %s and actor id: %s", feature, l.Identifier))
-				}
-			}
+		// As part of fetching the actor data, we may also want to reset their usage data.
+		// (e.g. if they recent upgraded/downgraded from Cody Pro.)
+		if err = s.maybeResetUsageData(*act, oldAct); err != nil {
+			return nil, errors.Wrap(err, "resetting usage data")
 		}
 
 		s.cache.Set(token, data)
@@ -128,6 +115,43 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 		return nil, errors.Wrap(checkErr, "failed to validate access token")
 	}
 	return act, nil
+}
+
+// maybeResetUsageData will reset the actor's usage data for all Cody features if the previous
+// actor state is unknown (e.g. wasn't present in our cache) or if the rate limit interval has
+// changed (e.g. changed their Cody Pro subscription plan).
+func (s *Source) maybeResetUsageData(current actor.Actor, oldAct *actor.Actor) error {
+	for _, feature := range codygateway.AllFeatures {
+		rl, ok := current.RateLimits[feature]
+		if !ok {
+			continue
+		}
+
+		// The actual RateLimit will be a zero value in the event of an error reading the
+		// Actor from dotcom. In these cases, rl.IsValid() is false and so we just ignore
+		// resetting the usage data to avoid cascading failure.
+		if !rl.IsValid() {
+			continue
+		}
+
+		// If oldActor is nil/empty, then we reset because we don't have any usage data available.
+		// If the rate limit interval has changed, reset their previous usage as a side-effect.
+		// (e.g. zero out previous usage as part of upgrading the plan. This has the potential for
+		// abuse, which we prevent by limiting how frequently a user can change their subscription plan.)
+		if oldAct.IsEmpty() || rl.Interval != oldAct.RateLimits[feature].Interval {
+			// Get the base limiter for the feature which implements the core rate limiting based on the config.
+			l, ok := current.BaseLimiter(s.redisStore, feature, s.rateLimitNotifier)
+			if !ok {
+				return errors.Errorf("failed to create base limiter for feature: %s and actor id: %s", feature, current.ID)
+			}
+			if err := l.ResetUsage(); err != nil {
+				message := fmt.Sprintf("failed to reset usage cache for feature: %s and actor id: %s", feature, current.ID)
+				return errors.Wrap(err, message)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckDotcomUserAccessTokenResponse, error) {
@@ -172,20 +196,21 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 	if err := json.Unmarshal(data, &act); err != nil || act == nil {
 		trace.Logger(ctx, s.log).Error("failed to unmarshal actor", log.Error(err))
 
-		// Delete the corrupted record.
+		// Delete the corrupted record in our cache, and try a fresh fetch.
 		s.cache.Delete(token)
 
 		return s.fetchAndCache(ctx, token, nil)
 	}
 
-	// if force fetch of rate-limit data from upstream or act cache older than defaultUpdateInterval (15 minutes)
+	// If our cached data is sufficiently old, refresh it proactively.
 	if bypassCache || act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
 		return s.fetchAndCache(ctx, token, act)
 	}
 
 	act.Source = s
 
-	// Try to get data again from the actorID-based key
+	// Try to get data again from the actorID-based key. This is because rate limit data is written to
+	// the cache by the actor ID, instead of the access-token based lookup key we used earlier.
 	dataWithLatestConfig, hit := s.cache.Get(act.ID)
 	if hit {
 		var actWithLatestConfig *actor.Actor

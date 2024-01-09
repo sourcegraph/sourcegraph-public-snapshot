@@ -62,7 +62,7 @@ func (a *Actor) GetSource() codygateway.ActorSource {
 	return codygateway.ActorSource(a.Source.Name())
 }
 
-// IsEmpty returns true if the actor is empty, i.e. has no ID.
+// IsEmpty returns true if the actor is empty, e.g. has no ID.
 // An empty actor is saved in the cache on fetch req failure,
 // so that we aren't constantly hitting the dotcom API. Check
 // the implementation of `Source.fetchAndCache`.
@@ -222,24 +222,35 @@ func (a *Actor) Limiter(
 	feature codygateway.Feature,
 	rateLimitNotifier notify.RateLimitNotifier,
 ) (limiter.Limiter, bool) {
+	// Start with the base limiter. For most users, this is governed by the app's configuration.
+	// But for users on the Cody Pro plan, their limits may be different.
 	baseLimiter, limit, ok := a.baseLimiterAndLimit(redis, feature, rateLimitNotifier)
 	if !ok {
 		return nil, false
 	}
 
+	// Wrap the base limiter with updateOnErrorLimiter, to call Actor.Update to
+	// refresh the actor cache on any errors.
+	updateOnErrLimiter := updateOnErrorLimiter{
+		logger:      logger.Scoped("updateOnError"),
+		actor:       a,
+		nextLimiter: baseLimiter,
+	}
+
+	// Finally return a concurrency limiter, to ensure that a user cannot have too many
+	// requests in-flight at a time. Note that we are setting the user's limits based on
+	// what we got from baseLimiterAndLimit, as to honor a Cody Pro subscription as
+	// applicable.
+	concurrentStorePrefix := fmt.Sprintf("concurrent:%s", featurePrefix(feature))
 	return &concurrencyLimiter{
 		logger:             logger.Scoped("concurrency"),
 		actor:              a,
 		feature:            feature,
-		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix(feature)), redis),
+		redis:              limiter.NewPrefixRedisStore(concurrentStorePrefix, redis),
 		concurrentRequests: limit.ConcurrentRequests,
 		concurrentInterval: limit.ConcurrentRequestsInterval,
-		nextLimiter: updateOnErrorLimiter{
-			logger:      logger.Scoped("updateOnError"),
-			actor:       a,
-			nextLimiter: baseLimiter,
-		},
-		nowFunc: time.Now,
+		nextLimiter:        updateOnErrLimiter,
+		nowFunc:            time.Now,
 	}, true
 }
 
