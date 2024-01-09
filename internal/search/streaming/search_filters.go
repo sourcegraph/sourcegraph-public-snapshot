@@ -160,7 +160,12 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 	addSymbolFilter := func(symbols []*result.SymbolMatch) {
 		for _, sym := range symbols {
-			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			selectKind, ok := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			if !ok {
+				// Skip any symbols we don't know how to select
+				// TODO(@camdencheek): figure out which symbols are missing from result.ToSelectKind
+				continue
+			}
 			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
 			s.filters.Add(filter, selectKind, 1, "symbol type")
 		}
