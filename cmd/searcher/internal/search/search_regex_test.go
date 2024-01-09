@@ -673,7 +673,47 @@ func Test_locsToRanges(t *testing.T) {
 			Start: protocol.Location{0, 0, 0},
 			End:   protocol.Location{25, 2, 3},
 		}},
-	}}
+	}, {
+		// multiple matches on different lines
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{0, 2}, {2, 3}, {10, 14}, {23, 28}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{2, 0, 2},
+		}, {
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{3, 0, 3},
+		}, {
+			Start: protocol.Location{10, 0, 7},
+			End:   protocol.Location{14, 1, 2},
+		}, {
+			Start: protocol.Location{23, 2, 1},
+			End:   protocol.Location{28, 2, 6},
+		}},
+	}, {
+		// multiple matches with overlap
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{1, 8}, {2, 3}, {8, 11}, {8, 9}, {13, 16}, {14, 17}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{1, 0, 1},
+			End:   protocol.Location{8, 0, 5},
+		}, {
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{3, 0, 3},
+		}, {
+			Start: protocol.Location{8, 0, 5},
+			End:   protocol.Location{11, 0, 8},
+		},  {
+			Start: protocol.Location{8, 0, 5},
+			End:   protocol.Location{9, 0, 6},
+		}, {
+			Start: protocol.Location{13, 1, 1},
+			End:   protocol.Location{16, 1, 4},
+		}, {
+			Start: protocol.Location{14, 1, 2},
+			End:   protocol.Location{17, 1, 5},
+		}}},
+	}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {

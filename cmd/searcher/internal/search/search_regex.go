@@ -239,13 +239,13 @@ func locsToFileMatch(fileBuf []byte, name string, locs [][]int, contextLines int
 func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 	ranges := make([]protocol.Range, 0, len(locs))
 
-	prevEnd := 0
-	prevEndLine := 0
+	prevStart := 0
+	prevStartLine := 0
 
 	for _, loc := range locs {
 		start, end := loc[0], loc[1]
 
-		startLine := prevEndLine + bytes.Count(buf[prevEnd:start], []byte{'\n'})
+		startLine := prevStartLine + bytes.Count(buf[prevStart:start], []byte{'\n'})
 		endLine := startLine + bytes.Count(buf[start:end], []byte{'\n'})
 
 		firstLineStart := 0
@@ -271,8 +271,8 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 			},
 		})
 
-		prevEnd = end
-		prevEndLine = endLine
+		prevStart = start
+		prevStartLine = startLine
 	}
 
 	return ranges

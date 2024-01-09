@@ -333,40 +333,22 @@ func TestMatchesFileRanges(t *testing.T) {
 				},
 			},
 			limit:       100, // random high limit
-			wantMatches: [][]int{{17, 26}},
+			wantMatches: [][]int{{17, 24}, {20, 26}},
 		},
 		{
 			name: "'and' matchTree with adjacent ranges",
 			m: &andMatchTree{
 				children: []matchTree{
 					&regexMatchTree{
-						re: regexp.MustCompile("philo"),
-					},
-					&regexMatchTree{
 						re: regexp.MustCompile("dendron"),
 					},
-				},
-			},
-			limit:       100, // random high limit
-			wantMatches: [][]int{{0, 12}},
-		},
-		{
-			name: "'and' matchTree with one range subsuming another",
-			m: &andMatchTree{
-				children: []matchTree{
 					&regexMatchTree{
-						re: regexp.MustCompile("philodendron"),
-					},
-					&regexMatchTree{
-						re: regexp.MustCompile("lode"),
-					},
-					&regexMatchTree{
-						re: regexp.MustCompile("monster"),
+						re: regexp.MustCompile("philo"),
 					},
 				},
 			},
 			limit:       100, // random high limit
-			wantMatches: [][]int{{0, 12}, {17, 24}},
+			wantMatches: [][]int{{0, 5}, {5, 12}},
 		},
 		{
 			name: "limit applied after merging",
@@ -387,7 +369,7 @@ func TestMatchesFileRanges(t *testing.T) {
 				},
 			},
 			limit:       2,
-			wantMatches: [][]int{{0, 7}, {17, 25}},
+			wantMatches: [][]int{{0, 5}, {3, 7}},
 		},
 	}
 
