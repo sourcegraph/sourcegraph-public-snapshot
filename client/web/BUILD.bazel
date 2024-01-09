@@ -10,8 +10,6 @@ load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//dev:esbuild.bzl", "esbuild_web_app")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# gazelle:js_custom_files stories **/*.story.{ts,tsx}
-
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 

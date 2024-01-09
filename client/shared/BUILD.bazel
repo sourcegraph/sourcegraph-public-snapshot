@@ -7,8 +7,6 @@ load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# gazelle:js_custom_files stories **/*.story.{ts,tsx}
-
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_resolve ../graphql-operations //client/shared:graphql_operations
 # gazelle:js_ignore_imports **/*.worker.ts
