@@ -706,7 +706,7 @@ func Test_locsToRanges(t *testing.T) {
 		}, {
 			Start: protocol.Location{8, 0, 5},
 			End:   protocol.Location{11, 0, 8},
-		},  {
+		}, {
 			Start: protocol.Location{8, 0, 5},
 			End:   protocol.Location{9, 0, 6},
 		}, {
