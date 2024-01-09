@@ -491,6 +491,9 @@ func TestRegexSearch(t *testing.T) {
 					ContentStart: protocol.Location{0, 0, 0},
 					Ranges: []protocol.Range{{
 						Start: protocol.Location{0, 0, 0},
+						End:   protocol.Location{5, 0, 5},
+					}, {
+						Start: protocol.Location{5, 0, 5},
 						End:   protocol.Location{10, 0, 10},
 					}},
 				}},

@@ -311,7 +311,7 @@ func TestMatchesFileLimits(t *testing.T) {
 	}
 }
 
-func TestMatchesFileRanges(t *testing.T) {
+func TestMergeMatches(t *testing.T) {
 	file := []byte("philodendron and monsteras")
 
 	cases := []struct {
