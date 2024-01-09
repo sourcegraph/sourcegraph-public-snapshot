@@ -29,8 +29,12 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/featureflag",
         "//internal/licensing",
+        "//internal/rbac/types",
+        "//internal/types",
         "//schema",
     ],
 )
