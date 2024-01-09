@@ -887,7 +887,7 @@ func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 // lock file may prevent the check from succeeding. We only want bare
 // repositories and want to avoid transient false positives.
 func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) bool {
-	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
+	cmd := exec.Command("sh", "git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	b, _ := wrappedCmd.Output()
