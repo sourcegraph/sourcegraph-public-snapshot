@@ -134,7 +134,7 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 func isAllowedDiffPathArg(arg string, repoDir string) bool {
 	// allows diff command path that requires (dot) as path
 	// example: diff --find-renames ... --no-prefix commit -- .
-	if arg == "." {
+	if arg == ".." {
 		return true
 	}
 
