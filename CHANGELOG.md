@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch Changes now allows changesets to be exported in CSV and JSON format. [#56721](https://github.com/sourcegraph/sourcegraph/pull/56721)
 - Supports custom ChatCompletion models in Cody clients for dotcom users. [#58158](https://github.com/sourcegraph/sourcegraph/pull/58158)
 - Topics synced from GitHub and GitLab are now displayed for repository matches in the search results and on the repository tree page. [#58927](https://github.com/sourcegraph/sourcegraph/pull/58927)
+- Added a new column "Repository metadata JSON" to the CSV export of repository search results, which includes the JSON encoded object of metadata key-value pairs. [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
 
 ### Changed
 
@@ -57,6 +58,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 - The experimental `indexRepositoryName` option for the rust packages code host connection has been removed. [#59176](https://github.com/sourcegraph/sourcegraph/pull/59176)
+- The column "Repository metadata" in the CSV export of repository search results is now deprecated and will be removed in a future release. Use "Repository metadata JSON" instead [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
 
 ## Unreleased 5.2.6
 
