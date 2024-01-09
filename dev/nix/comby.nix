@@ -17,6 +17,10 @@ let
       # `static = true` from mkStatic is currently broken on macos, noah to fix upstream
       libev = (mkStatic pkgsStatic.libev).override { static = false; };
       gmp = mkStatic pkgsStatic.gmp;
+    }).overrideAttrs (oldAttrs: {
+      postInstall = (oldAttrs.postInstall or "") + ''
+        ln -s $out/bin/comby $out/bin/comby-${oldAttrs.version}
+      '';
     });
 in
 if hostPlatform.isMacOS then

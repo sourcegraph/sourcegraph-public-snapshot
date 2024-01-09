@@ -1,0 +1,126 @@
+name: comby
+
+on:
+  push:
+    paths:
+      - 'dev/nix/comby.nix'
+    branches:
+        - 'main'
+  pull_request:
+    paths:
+      - 'dev/nix/comby.nix'
+  workflow_dispatch:
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  x86_64-darwin:
+    name: Build comby x86_64-darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - name: Run `nix build`
+        run: |
+          nix build .#comby
+      - name: Sign the binary
+        # signing in ./result/bin will cause a cache miss on next invocation
+        run: |
+          mkdir -p dist
+          cp -L ./result/bin/comby* ./dist/
+          sudo codesign --force -s - ./dist/comby*
+      - name: Rename an prepare for upload
+        run: |
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - name: Show hash of comby
+        run: |
+          shasum -a 256 ./dist/comby-*
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          path: './dist/'
+          destination: 'comby/x86_64-darwin/'
+          glob: 'comby-*'
+  aarch64-darwin:
+    name: Build comby aarch64-darwin
+    runs-on: macos-latest-xlarge
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - name: Run `nix build`
+        run: |
+          nix build .#comby
+      - name: Sign the binary
+        # signing in ./result/bin will cause a cache miss on next invocation
+        run: |
+          mkdir -p dist
+          cp -L ./result/bin/comby* ./dist/
+          sudo codesign --force -s - ./dist/comby*
+      - name: Rename an prepare for upload
+        run: |
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - name: Show hash of comby
+        run: |
+          shasum -a 256 ./dist/comby-*
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          path: './dist/'
+          destination: 'comby/aarch64-darwin/'
+          glob: 'comby-*'
+  x86_64-linux:
+    name: Build comby x86_64-linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - name: Run `nix build`
+        run: |
+          nix build .#comby
+      - id: 'rename-and-upload'
+        name: Rename an prepare for upload
+        run: |
+          mkdir -p dist
+          cp -R -L ./result/bin/comby-* dist/
+          cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
+      - id: 'show-hash'
+        name: Show hash of comby
+        run: |
+          shasum -a 256 ./dist/comby-*
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        # github.head_ref is only available for pull requests
+        # if the event type is not pull_requet we have to use github.ref_name
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          path: './dist/'
+          destination: 'comby/x86_64-linux'
+          glob: 'comby-*'
+
+  report_failure:
+    needs: [aarch64-darwin, x86_64-darwin, x86_64-linux]
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit
