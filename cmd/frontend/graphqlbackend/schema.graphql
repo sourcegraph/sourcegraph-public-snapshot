@@ -7391,6 +7391,11 @@ type Site implements SettingsSubject {
     """
     codyLLMConfiguration: CodyLLMConfiguration
 
+    """
+    Decides which features to enable for the users of this SG instance
+
+    Site-admin only.
+    """
     codyConfigFeatures: CodyConfigFeatures
 
     """
@@ -7437,6 +7442,10 @@ type CodyLLMConfiguration {
     provider: String!
 }
 
+"""
+Cody Config features contains information about which LLM features are enabled
+for this SG instance
+"""
 type CodyConfigFeatures {
     """
     Enable Cody chat feature.
