@@ -1704,7 +1704,15 @@ WHERE EXISTS(
 }
 
 func calcUnrestricted(config string) bool {
-	unrestricted := !envvar.SourcegraphDotComMode() && !gjson.Get(config, "authorization").Exists()
+	if envvar.SourcegraphDotComMode() {
+		return false
+	}
+
+	// If PermissionsUserMapping is enabled, we return false since permissions
+	// will be managed by the explicit permissions API.
+	if globals.PermissionsUserMapping().Enabled {
+		return false
+	}
 
 	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
 	//
@@ -1718,15 +1726,11 @@ func calcUnrestricted(config string) bool {
 	// For existing auth providers, this is forwards compatible. While at the same time if they also
 	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
 	enforcePermissions := gjson.Get(config, "enforcePermissions")
-	if !envvar.SourcegraphDotComMode() {
-		if globals.PermissionsUserMapping().Enabled {
-			unrestricted = false
-		} else if enforcePermissions.Exists() {
-			unrestricted = !enforcePermissions.Bool()
-		}
+	if enforcePermissions.Exists() {
+		return !enforcePermissions.Bool()
 	}
 
-	return unrestricted
+	return !gjson.Get(config, "authorization").Exists()
 }
 
 // recalculateFields updates the value of the external service fields that are
