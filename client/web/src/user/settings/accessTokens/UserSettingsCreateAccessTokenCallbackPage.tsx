@@ -197,7 +197,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                     switchMap(() =>
                         (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
                             tap(result => {
-                                // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
+                                // SECURITY: If the request was from a valid requester and from a non-mobile device,
+                                // redirect to the allowlisted redirect URL.
                                 // SECURITY: Local context ONLY
                                 if (requester && !isMobile()) {
                                     onDidCreateAccessToken(result)
