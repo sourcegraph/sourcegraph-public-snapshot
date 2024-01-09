@@ -10,7 +10,7 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Badge, Button, Icon, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
-import { CodeHostIcon, codeHostIcon } from '../../../../components'
+import { codeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
 
 import styles from './SearchDynamicFilter.module.scss'
