@@ -1392,7 +1392,7 @@ func TestUsers_CreateCancelAccessRequest(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = usersStore.Create(ctx, NewUser{Username: "u1ted", Email: "a123@email.com", EmailIsVerified: true, EmailVerificationCode: "e"})
+	_, err = usersStore.Create(ctx, NewUser{Username: "u1ted", Email: "a123@email.com", EmailVerificationCode: "e"})
 	require.NoError(t, err)
 
 	updated, _ := accessRequestsStore.GetByEmail(ctx, "a123@email.com")
