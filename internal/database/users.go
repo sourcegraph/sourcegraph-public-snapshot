@@ -7,12 +7,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"hash/fnv"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
@@ -400,17 +401,16 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 			}
 			return nil, err
 		}
-	}
 
-	if info.Email != "" {
+		// Cancel possible pending access request for this email
 		accessRequestsStore := AccessRequestsWith(u, u.logger)
 		ar, err := accessRequestsStore.GetByEmail(ctx, info.Email)
 
-		if errors.Is(err, &ErrAccessRequestNotFound{Email: info.Email}) {
-			// No access request found for this new user's email
-		} else if err != nil {
+		if err != nil && !errors.Is(err, &ErrAccessRequestNotFound{Email: info.Email}) {
 			return nil, err
-		} else {
+		}
+
+		if err == nil {
 			ar.Status = types.AccessRequestStatusCanceled
 			ar.UpdatedAt = time.Now()
 			ar.DecisionByUserID = pointers.Ptr(id)
