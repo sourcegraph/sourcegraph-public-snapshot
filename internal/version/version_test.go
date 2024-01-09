@@ -98,6 +98,7 @@ func Test_monthsFromDays(t *testing.T) {
 		})
 	}
 }
+
 func TestHowLongOutOfDate(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -130,7 +131,7 @@ func TestHowLongOutOfDate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			MockTimestamp(tt.buildTimestamp)
+			mockTimestamp(tt.buildTimestamp)
 			got, err := HowLongOutOfDate(tt.now)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HowLongOutOfDate() error = %v, wantErr %v", err, tt.wantErr)
