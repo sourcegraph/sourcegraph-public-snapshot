@@ -962,7 +962,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := calcUnrestricted(string(normalized))
+		unrestricted := calcUnrestricted(string(normalized), envvar.SourcegraphDotComMode(), globals.PermissionsUserMapping().Enabled)
 
 		updates = append(updates,
 			sqlf.Sprintf(
@@ -1703,14 +1703,20 @@ WHERE EXISTS(
 	return v && exists, nil
 }
 
-func calcUnrestricted(config string) bool {
-	if envvar.SourcegraphDotComMode() {
+// calcUnrestricted determines whether or not permissions should be enforced
+// on an external service.
+//
+// isDotComMode and permissionsUserMappingEnabled can be passed via
+// envvar.SourcegraphDotComMode() and globals.PermissionsUserMapping().Enabled
+// respectively.
+func calcUnrestricted(config string, isDotComMode bool, permissionsUserMappingEnabled bool) bool {
+	if isDotComMode {
 		return false
 	}
 
 	// If PermissionsUserMapping is enabled, we return false since permissions
 	// will be managed by the explicit permissions API.
-	if globals.PermissionsUserMapping().Enabled {
+	if permissionsUserMappingEnabled {
 		return false
 	}
 
@@ -1737,7 +1743,7 @@ func calcUnrestricted(config string) bool {
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
-	es.Unrestricted = calcUnrestricted(rawConfig)
+	es.Unrestricted = calcUnrestricted(rawConfig, envvar.SourcegraphDotComMode(), globals.PermissionsUserMapping().Enabled)
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

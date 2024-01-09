@@ -2793,13 +2793,9 @@ func TestExternalServices_CleanupSyncJobs(t *testing.T) {
 func TestCalcUnrestricted(t *testing.T) {
 	// Separate test for dotcom mode to test a mix of cases
 	t.Run("dotcom mode always returns false", func(t *testing.T) {
-		dotComMode := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(dotComMode)
-
-		require.False(t, calcUnrestricted(""))
-		require.False(t, calcUnrestricted(`{"authorization": {}}`))
-		require.False(t, calcUnrestricted(`{"authorization": {}, "enforcePermissions": false}`))
+		require.False(t, calcUnrestricted("", true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}}`, true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}, "enforcePermissions": false}`, true, false))
 	})
 
 	otherTests := map[string]struct {
@@ -2816,10 +2812,6 @@ func TestCalcUnrestricted(t *testing.T) {
 
 	for testName, test := range otherTests {
 		t.Run(testName, func(t *testing.T) {
-			dotComMode := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(dotComMode)
-
 			var vals []string
 			if test.authorization {
 				vals = append(vals, `"authorization": {}`)
@@ -2827,10 +2819,9 @@ func TestCalcUnrestricted(t *testing.T) {
 			if test.enforcePermissions {
 				vals = append(vals, `"enforcePermissions": true`)
 			}
-			globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: test.permissionsUserMapping})
 
 			conf := fmt.Sprintf("{%s}", strings.Join(vals, ","))
-			require.Equal(t, test.want, calcUnrestricted(conf))
+			require.Equal(t, test.want, calcUnrestricted(conf, false, test.permissionsUserMapping))
 		})
 	}
 }
