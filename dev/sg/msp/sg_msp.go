@@ -9,12 +9,17 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/monitoring"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/project"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/tfcworkspaces"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -575,6 +580,66 @@ Supports completions on services and environments.`,
 							}
 						}
 
+						return nil
+					},
+				},
+				{
+					Name:      "graph",
+					Usage:     "EXPERIMENTAL: Graph the core resources within a Terraform workspace",
+					ArgsUsage: "<service ID> <environment ID> <stack ID>",
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "dot",
+							Usage: "Dump dot graph configuration instead of rendering the image with 'dot'",
+						},
+					},
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(
+						func(cli.Args) (options []string) {
+							// Common stack names
+							return []string{
+								project.StackName,
+								iam.StackName,
+								cloudrun.StackName,
+								monitoring.StackName,
+								tfcworkspaces.StackName,
+							}
+						},
+					),
+					Action: func(c *cli.Context) error {
+						service, env, err := useServiceAndEnvironmentArguments(c)
+						if err != nil {
+							return err
+						}
+
+						stack := c.Args().Get(2)
+						if stack == "" {
+							return errors.New("third argument <stack ID> is required")
+						}
+
+						dotgraph, err := msprepo.TerraformGraph(c.Context, service.Service.ID, env.ID, stack)
+						if err != nil {
+							return err
+						}
+
+						if c.Bool("dot") {
+							std.Out.Write(dotgraph)
+							return nil
+						}
+
+						output := fmt.Sprintf("./%s-%s.%s.png", service.Service.ID, env.ID, stack)
+						f, err := os.OpenFile(output, os.O_RDWR|os.O_CREATE, 0o644)
+						if err != nil {
+							return errors.Wrapf(err, "open %q", output)
+						}
+						defer f.Close()
+						if err := run.Cmd(c.Context, "dot -Tpng").
+							Input(strings.NewReader(dotgraph + "\n")).
+							Environ(os.Environ()).
+							Run().
+							Stream(f); err != nil {
+							return err
+						}
+						std.Out.WriteSuccessf("Graph rendered in %q", output)
 						return nil
 					},
 				},

@@ -795,6 +795,30 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
+func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.ConfigFeatures) {
+	// If cody is disabled, don't use any of the other features.
+	if !codyEnabled(siteConfig) {
+		return nil
+	}
+	configFeatures := siteConfig.ConfigFeatures
+	// If no features configuration is set at all, but cody is enabled, assume a default configuration
+	// where all the features are enabled this is to handle edge cases where no config is set etc
+	if configFeatures == nil {
+		return &conftypes.ConfigFeatures{
+			Chat:         true,
+			AutoComplete: true,
+			Commands:     true,
+		}
+	}
+
+	computedConfig := &conftypes.ConfigFeatures{
+		Chat:         configFeatures.Chat,
+		AutoComplete: configFeatures.AutoComplete,
+		Commands:     configFeatures.Commands,
+	}
+	return computedConfig
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
