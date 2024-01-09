@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func TestNewTelemetryGatewayEvents(t *testing.T) {
@@ -201,6 +202,28 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
     }
   },
   "timestamp": "2023-02-24T14:48:30Z"
+}`),
+		},
+		{
+			name: "with custom timestamp",
+			ctx:  context.Background(),
+			event: graphqlbackend.TelemetryEventInput{
+				Timestamp: &gqlutil.DateTime{Time: staticTime.Add(48 * time.Hour)},
+				Feature:   "Feature",
+				Action:    "Example",
+			},
+			expect: autogold.Expect(`{
+  "action": "Example",
+  "feature": "Feature",
+  "id": "with custom timestamp",
+  "parameters": {},
+  "source": {
+    "client": {},
+    "server": {
+      "version": "0.0.0+dev"
+    }
+  },
+  "timestamp": "2023-02-26T14:48:30Z"
 }`),
 		},
 	} {

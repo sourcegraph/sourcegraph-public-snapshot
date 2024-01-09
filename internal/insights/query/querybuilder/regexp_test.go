@@ -212,25 +212,25 @@ func TestReplace_Valid(t *testing.T) {
 		{
 			query:       `\/insi(g)ht[s]\/`,
 			replacement: "ggg",
-			want:        autogold.Expect(BasicQuery(`/\/insi(?:ggg)ht[s]\//`)),
+			want:        autogold.Expect(BasicQuery("/\\\\\\/insi(?:ggg)ht[s]\\\\\\//")),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `<title>(.*)</title>`,
 			replacement: "findme",
-			want:        autogold.Expect(BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			want:        autogold.Expect(BasicQuery("/<title>(?:findme)<\\/title>/")),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `(/\w+/)`,
 			replacement: `/sourcegraph/`,
-			want:        autogold.Expect(BasicQuery(`/(?:\/sourcegraph\/)/`)),
+			want:        autogold.Expect(BasicQuery("/(?:\\/sourcegraph\\/)/")),
 			searchType:  query.SearchTypeRegex,
 		},
 		{
 			query:       `/<title>(.*)<\/title>/`,
 			replacement: "findme",
-			want:        autogold.Expect(BasicQuery(`/<title>(?:findme)<\/title>/`)),
+			want:        autogold.Expect(BasicQuery("/<title>(?:findme)<\\/title>/")),
 			searchType:  query.SearchTypeStandard,
 		},
 	}

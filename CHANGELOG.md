@@ -42,11 +42,15 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added Cody providers data to pings. [#58848](https://github.com/sourcegraph/sourcegraph/pull/58848)
+
 ### Fixed
 
 - Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
 
 ### Changed
+
+- All of Sourcegraph's gRPC clients will now automatically retry most requests that fail due to transient connection errors. [#59095](https://github.com/sourcegraph/sourcegraph/pull/59095) (and other [associated PRs in the stack](https://github.com/sourcegraph/sourcegraph/pull/59095#issuecomment-1861921670))
 
 ### Removed
 
@@ -76,6 +80,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
+- Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
 
 ### Removed
 

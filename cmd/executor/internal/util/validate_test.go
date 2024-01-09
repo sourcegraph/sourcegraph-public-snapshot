@@ -146,7 +146,7 @@ func TestValidateSrcCLIVersion(t *testing.T) {
 			runner.On("CombinedOutput", mock.Anything, "src", []string{"version", "-client-only"}).
 				Return(0, fmt.Sprintf("Current version: %s", test.currentVersion))
 
-			err = util.ValidateSrcCLIVersion(context.Background(), runner, client, apiclient.EndpointOptions{URL: server.URL})
+			err = util.ValidateSrcCLIVersion(context.Background(), runner, client)
 			if test.expectedErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, errors.Is(err, util.ErrSrcPatchBehind), test.isSrcPatchErr)
