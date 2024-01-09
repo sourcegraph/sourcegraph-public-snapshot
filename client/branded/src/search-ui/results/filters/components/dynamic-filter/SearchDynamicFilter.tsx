@@ -87,8 +87,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
         return null
     }
 
-    // TODO: should this be case-insensitive search?
-    const filteredFilters = mergedFilters.filter(filter => filter.label.includes(searchTerm))
+    const lowerSearchTerm = searchTerm.toLowerCase()
+    const filteredFilters = mergedFilters.filter(filter => filter.label.toLowerCase().includes(lowerSearchTerm))
     const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUMBER)
 
     return (
