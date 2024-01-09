@@ -10,7 +10,9 @@
       "docker-images/*": "ignore all code under docker-images",
       "main.go": "ignore main",
       ".*_test\\.go$": "ignore test code",
-      "internal/batches/testing/*": "ignore batches testing code"
+      "internal/batches/testing/*": "ignore batches testing code",
+      "internal/gitserver/retry.go": "ignore deprecation warning of P4Exec",
+      "internal/gitserver/client.go": "ignore deprecation warning of P4Exec"
     }
   },
   "bodyclose": {

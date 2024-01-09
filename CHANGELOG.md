@@ -50,6 +50,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- All of Sourcegraph's gRPC clients will now automatically retry most requests that fail due to transient connection errors. [#59095](https://github.com/sourcegraph/sourcegraph/pull/59095) (and other [associated PRs in the stack](https://github.com/sourcegraph/sourcegraph/pull/59095#issuecomment-1861921670))
+
 ### Removed
 
 ## 5.2.3
