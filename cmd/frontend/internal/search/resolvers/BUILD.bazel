@@ -14,6 +14,7 @@ go_library(
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/conf",
         "//internal/database",
+        "//internal/errcode",
         "//internal/gqlutil",
         "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
