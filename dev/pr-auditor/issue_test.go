@@ -35,7 +35,7 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		name:    "not reviewed, not planned",
 		payload: payload,
 		result: checkResult{
-			Reviewed: false,
+			ReviewSatisfied: false,
 		},
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
@@ -45,8 +45,19 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		name:    "not reviewed, planned",
 		payload: payload,
 		result: checkResult{
-			Reviewed: false,
-			TestPlan: "A plan!",
+			ReviewSatisfied: false,
+			TestPlan:        "A plan!",
+		},
+		wantAssignees:    []string{"robert"},
+		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
+		wantBodyContains: []string{"some pull request", "has a test plan", "was not reviewed"},
+		wantBodyExcludes: []string{"protected"},
+	}, {
+		name:    "not reviewed, not planned, but plan skipping is disabled",
+		payload: payload,
+		result: checkResult{
+			ReviewSatisfied: false,
+			CanSkipTestPlan: true,
 		},
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
@@ -56,7 +67,7 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		name:    "not planned, reviewed",
 		payload: payload,
 		result: checkResult{
-			Reviewed: true,
+			ReviewSatisfied: true,
 		},
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/test-plan", "bobheadxi/robert"},
