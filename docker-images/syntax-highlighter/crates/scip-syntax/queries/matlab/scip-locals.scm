@@ -11,13 +11,12 @@
  (identifier) @definition.var
  (#set! "def_ref"))
 
-;; Matlab exports the _first_ function from a module as a non-local,
+;; MATLAB exports the _first_ function from a module as a non-local,
 ;; which this query matches using tree-sitter's anchor syntax (the
 ;; dot).
 (source_file . (function_definition
  name: (identifier) @occurrence.skip))
 
-;; Properties and methods on classes are non-local occurrences
 (properties
  (property name: [(identifier) (property_name (identifier))] @occurrence.skip))
 (methods
@@ -41,7 +40,6 @@
 
 (lambda (arguments (identifier) @definition.term))
 
-;; Neither class names nor field accesses are local references
 (class_definition name: (identifier) @occurrence.skip)
 (field_expression
  field: [(identifier)
