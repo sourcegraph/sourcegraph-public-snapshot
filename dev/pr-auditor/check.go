@@ -10,9 +10,11 @@ import (
 )
 
 type checkResult struct {
-	// Reviewed indicates that *any* review has been made on the PR. It is also set to
+	// ReviewSatisfied indicates that *any* review has been made on the PR. It is also set to
 	// true if the test plan indicates that this PR does not need to be review.
-	Reviewed bool
+	ReviewSatisfied bool
+	// TestPlanSatisfied indicates that either a test plan was provided or flags indicate no test plan is needed.
+	TestPlanSatisfied bool
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
 	// ProtectedBranch indicates that the base branch for this PR is protected and merges
@@ -22,8 +24,8 @@ type checkResult struct {
 	Error error
 }
 
-func (r checkResult) HasTestPlan() bool {
-	return r.TestPlan != ""
+func (r checkResult) IsSatisfied() bool {
+	return r.TestPlanSatisfied && r.ReviewSatisfied && !r.ProtectedBranch
 }
 
 var (
@@ -36,8 +38,9 @@ var (
 )
 
 type checkOpts struct {
-	ValidateReviews bool
-	ProtectedBranch string
+	ValidateReviews  bool
+	ValidateTestPlan bool
+	ProtectedBranch  string
 }
 
 func isProtectedBranch(payload *EventPayload, protectedBranch string) bool {
@@ -63,8 +66,9 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	sections := testPlanDividerRegexp.Split(pr.Body, 2)
 	if len(sections) < 2 {
 		return checkResult{
-			Reviewed: reviewed,
-			Error:    err,
+			ReviewSatisfied:   reviewed,
+			TestPlanSatisfied: !opts.ValidateTestPlan,
+			Error:             err,
 		}
 	}
 
@@ -90,10 +94,11 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	mergeAgainstProtected := isProtectedBranch(payload, opts.ProtectedBranch)
 
 	return checkResult{
-		Reviewed:        reviewed,
-		TestPlan:        testPlan,
-		ProtectedBranch: mergeAgainstProtected,
-		Error:           err,
+		ReviewSatisfied:   reviewed,
+		TestPlanSatisfied: testPlan != "" || !opts.ValidateTestPlan,
+		TestPlan:          testPlan,
+		ProtectedBranch:   mergeAgainstProtected,
+		Error:             err,
 	}
 }
 
