@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, isMobile } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
@@ -199,7 +199,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             tap(result => {
                                 // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
                                 // SECURITY: Local context ONLY
-                                if (requester) {
+                                if (requester && !isMobile()) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
