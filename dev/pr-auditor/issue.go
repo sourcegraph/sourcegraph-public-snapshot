@@ -28,7 +28,7 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult, addition
 		exceptionLabels = append(exceptionLabels, "exception/review")
 	}
 
-	if !result.TestPlanSatisfied {
+	if !result.IsTestPlanSatisfied() {
 		exceptionLabels = append(exceptionLabels, "exception/test-plan")
 	}
 	if result.ProtectedBranch {
@@ -36,16 +36,16 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult, addition
 	}
 
 	if !result.ReviewSatisfied {
-		if result.TestPlanSatisfied {
+		if result.IsTestPlanSatisfied() {
 			issueBody = fmt.Sprintf("%s %q **has a test plan (or does not require one)** but **was not reviewed**.", payload.PullRequest.URL, prTitle)
 		} else {
 			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, prTitle)
 		}
-	} else if !result.TestPlanSatisfied {
+	} else if !result.IsTestPlanSatisfied() {
 		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, prTitle)
 	}
 
-	if !result.TestPlanSatisfied {
+	if !result.IsTestPlanSatisfied() {
 		issueBody += fmt.Sprintf("\n\nLearn more about test plans in our [testing guidelines](%s).", testPlanDocs)
 	}
 

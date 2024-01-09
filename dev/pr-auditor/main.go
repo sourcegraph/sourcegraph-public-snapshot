@@ -120,8 +120,8 @@ const (
 
 func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: !flags.SkipCheckReview,
-		ValidateTestPlan: flags.SkipCheckTestPlan,
+		SkipReviews:     flags.SkipCheckReview,
+		SkipTestPlan:    flags.SkipCheckTestPlan,
 		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
@@ -181,8 +181,8 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: false, // only validate reviews on post-merge
-		ValidateTestPlan: flags.SkipCheckTestPlan,
+		SkipReviews:     true, // only validate reviews on post-merge
+		SkipTestPlan:    flags.SkipCheckTestPlan,
 		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
@@ -193,7 +193,7 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	case result.Error != nil:
 		prState = "error"
 		stateDescription = fmt.Sprintf("checkPR: %s", result.Error.Error())
-	case !result.TestPlanSatisfied:
+	case !result.IsTestPlanSatisfied():
 		prState = "failure"
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"

@@ -13,8 +13,8 @@ type checkResult struct {
 	// ReviewSatisfied indicates that *any* review has been made on the PR. It is also set to
 	// true if the test plan indicates that this PR does not need to be review.
 	ReviewSatisfied bool
-	// TestPlanSatisfied indicates that either a test plan was provided or flags indicate no test plan is needed.
-	TestPlanSatisfied bool
+	// CanSkipTestPlan indicates that the test plan is not required for audit.
+	CanSkipTestPlan bool
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
 	// ProtectedBranch indicates that the base branch for this PR is protected and merges
@@ -25,7 +25,11 @@ type checkResult struct {
 }
 
 func (r checkResult) IsSatisfied() bool {
-	return r.TestPlanSatisfied && r.ReviewSatisfied && !r.ProtectedBranch
+	return r.IsTestPlanSatisfied() && r.ReviewSatisfied && !r.ProtectedBranch
+}
+
+func (r checkResult) IsTestPlanSatisfied() bool {
+	return r.CanSkipTestPlan || r.TestPlan != ""
 }
 
 var (
@@ -38,9 +42,9 @@ var (
 )
 
 type checkOpts struct {
-	ValidateReviews  bool
-	ValidateTestPlan bool
-	ProtectedBranch  string
+	SkipReviews     bool
+	SkipTestPlan    bool
+	ProtectedBranch string
 }
 
 func isProtectedBranch(payload *EventPayload, protectedBranch string) bool {
@@ -54,7 +58,7 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	// might not have any comments so we need to double-check through the GitHub API
 	var err error
 	reviewed := pr.ReviewComments > 0
-	if !reviewed && opts.ValidateReviews {
+	if !reviewed && !opts.SkipReviews {
 		owner, repo := payload.Repository.GetOwnerAndName()
 		var reviews []*github.PullRequestReview
 		// Continue, but return err later
@@ -66,9 +70,9 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	sections := testPlanDividerRegexp.Split(pr.Body, 2)
 	if len(sections) < 2 {
 		return checkResult{
-			ReviewSatisfied:   reviewed,
-			TestPlanSatisfied: !opts.ValidateTestPlan,
-			Error:             err,
+			ReviewSatisfied: reviewed,
+			CanSkipTestPlan: opts.SkipTestPlan,
+			Error:           err,
 		}
 	}
 
@@ -94,11 +98,11 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	mergeAgainstProtected := isProtectedBranch(payload, opts.ProtectedBranch)
 
 	return checkResult{
-		ReviewSatisfied:   reviewed,
-		TestPlanSatisfied: testPlan != "" || !opts.ValidateTestPlan,
-		TestPlan:          testPlan,
-		ProtectedBranch:   mergeAgainstProtected,
-		Error:             err,
+		ReviewSatisfied: reviewed,
+		CanSkipTestPlan: opts.SkipTestPlan,
+		TestPlan:        testPlan,
+		ProtectedBranch: mergeAgainstProtected,
+		Error:           err,
 	}
 }
 

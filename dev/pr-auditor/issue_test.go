@@ -45,9 +45,19 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		name:    "not reviewed, planned",
 		payload: payload,
 		result: checkResult{
-			ReviewSatisfied:   false,
-			TestPlan:          "A plan!",
-			TestPlanSatisfied: true,
+			ReviewSatisfied: false,
+			TestPlan:        "A plan!",
+		},
+		wantAssignees:    []string{"robert"},
+		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
+		wantBodyContains: []string{"some pull request", "has a test plan", "was not reviewed"},
+		wantBodyExcludes: []string{"protected"},
+	}, {
+		name:    "not reviewed, not planned, but plan skipping is disabled",
+		payload: payload,
+		result: checkResult{
+			ReviewSatisfied: false,
+			CanSkipTestPlan: true,
 		},
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
