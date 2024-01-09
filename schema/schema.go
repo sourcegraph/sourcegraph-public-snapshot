@@ -642,6 +642,16 @@ type Completions struct {
 	Provider string `json:"provider,omitempty"`
 }
 
+// ConfigFeatures description: Configuration for the completions service.
+type ConfigFeatures struct {
+	// AutoComplete description: Enable/Disable AutoComplete for the clients
+	AutoComplete bool `json:"autoComplete,omitempty"`
+	// Chat description: Enable/Disable Chat for the clients
+	Chat bool `json:"chat,omitempty"`
+	// Commands description: Enable/Disable special commands for the clients
+	Commands bool `json:"commands,omitempty"`
+}
+
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -2155,10 +2165,6 @@ type RubyRateLimit struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
-	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Only set if you intend to sync every crate from the index. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
-	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
-	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
-	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
 	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
 }
@@ -2707,6 +2713,8 @@ type SiteConfiguration struct {
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
+	// ConfigFeatures description: Configuration for the completions service.
+	ConfigFeatures *ConfigFeatures `json:"configFeatures,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -2965,6 +2973,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "cody.enabled")
 	delete(m, "cody.restrictUsersFeatureFlag")
 	delete(m, "completions")
+	delete(m, "configFeatures")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")
 	delete(m, "defaultRateLimit")

@@ -1,12 +1,12 @@
 - steps:
     - root: ""
-      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      image: sourcegraph/scip-typescript@sha256:3df8b36a2ad4e073415bfbeaedf38b3cfff3e697614c8f578299f470d140c2c8
       commands:
         - yarn --ignore-scripts
   local_steps:
     - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
   root: ""
-  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer: sourcegraph/scip-typescript@sha256:3df8b36a2ad4e073415bfbeaedf38b3cfff3e697614c8f578299f470d140c2c8
   indexer_args:
     - scip-typescript
     - index

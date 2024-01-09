@@ -37,7 +37,7 @@ import type {
     TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, repoFilterForRepoRevision } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
@@ -154,10 +154,11 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     revision: string
     isPackage: boolean
     authenticatedUser: AuthenticatedUser | null
+    showOwnership: boolean
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
-    const { filePath, tree, treeWithHistory, repo, revision, isPackage } = props
+    const { filePath, tree, treeWithHistory, repo, revision, isPackage, showOwnership } = props
 
     const isRoot = filePath === ''
 
@@ -200,13 +201,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        {enableOwnershipPanels && (
+                        {enableOwnershipPanels && showOwnership && (
                             <Card>
                                 <CardHeader className={panelStyles.cardColHeaderWrapper}>Own</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
-                        <Card className={enableOwnershipPanels ? 'mt-3' : undefined}>
+                        <Card className={enableOwnershipPanels && showOwnership ? 'mt-3' : undefined}>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>
@@ -524,7 +525,7 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     sourceType,
 }) => {
     const query: string = [
-        repoFilterForRepoRevision(repoName),
+        searchQueryForRepoRevision(repoName),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',

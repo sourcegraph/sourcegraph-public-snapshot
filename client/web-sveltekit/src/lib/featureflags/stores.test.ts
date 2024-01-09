@@ -10,22 +10,22 @@ describe('featureflags', () => {
             useFakeTimers()
 
             const store = createFeatureFlagStore(
-                [{ name: 'sentinel', value: true }],
+                [{ name: 'search-debug', value: true }],
                 vi
                     .fn()
-                    .mockResolvedValueOnce([{ name: 'sentinel', value: false }])
-                    .mockResolvedValueOnce([{ name: 'sentinel', value: true }])
+                    .mockResolvedValueOnce([{ name: 'search-debug', value: false }])
+                    .mockResolvedValueOnce([{ name: 'search-debug', value: true }])
             )
 
             const sub = vi.fn()
             store.subscribe(sub)
-            expect(sub).toHaveBeenLastCalledWith([{ name: 'sentinel', value: true }])
+            expect(sub).toHaveBeenLastCalledWith([{ name: 'search-debug', value: true }])
 
             await vi.advanceTimersToNextTimerAsync()
-            expect(sub).toHaveBeenLastCalledWith([{ name: 'sentinel', value: false }])
+            expect(sub).toHaveBeenLastCalledWith([{ name: 'search-debug', value: false }])
 
             await vi.advanceTimersToNextTimerAsync()
-            expect(sub).toHaveBeenLastCalledWith([{ name: 'sentinel', value: true }])
+            expect(sub).toHaveBeenLastCalledWith([{ name: 'search-debug', value: true }])
 
             useRealTimers()
         })
@@ -33,15 +33,15 @@ describe('featureflags', () => {
 
     describe('featureFlag()', () => {
         test('returns the current feature flag value', () => {
-            mockFeatureFlags({ sentinel: false })
+            mockFeatureFlags({ 'search-debug': false })
 
-            const store = featureFlag('sentinel')
+            const store = featureFlag('search-debug')
 
             const sub = vi.fn()
             store.subscribe(sub)
             expect(sub).toHaveBeenLastCalledWith(false)
 
-            mockFeatureFlags({ sentinel: true })
+            mockFeatureFlags({ 'search-debug': true })
             expect(sub).toHaveBeenLastCalledWith(true)
 
             unmockFeatureFlags()

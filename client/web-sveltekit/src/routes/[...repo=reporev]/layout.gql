@@ -1,0 +1,33 @@
+query ResolveRepoRevison($repoName: String!, $revision: String!) {
+    repositoryRedirect(name: $repoName) {
+        __typename
+        ... on Repository {
+            ...ResolvedRepository
+        }
+        ... on Redirect {
+            url
+        }
+    }
+}
+
+fragment ResolvedRepository on Repository {
+    id
+    commit(rev: $revision) {
+        oid
+    }
+    changelist(cid: $revision) {
+        commit {
+            oid
+        }
+    }
+    mirrorInfo {
+        cloneProgress
+        cloneInProgress
+        cloned
+    }
+    defaultBranch {
+        abbrevName
+    }
+
+    ...RepoPage_ResolvedRevision
+}

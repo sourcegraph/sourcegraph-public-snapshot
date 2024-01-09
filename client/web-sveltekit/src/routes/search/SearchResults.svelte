@@ -23,7 +23,7 @@
     import { resultTypeFilter } from '$lib/search/sidebar'
     import { submitSearch, type QueryStateStore, getQueryURL } from '$lib/search/state'
     import { groupFilters } from '$lib/search/utils'
-    import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch } from '$lib/shared'
+    import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch, type Progress } from '$lib/shared'
 
     import Section from './SidebarSection.svelte'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -40,7 +40,6 @@
     export let queryState: QueryStateStore
 
     let resultContainer: HTMLElement | null = null
-    let searchInput: SearchInput
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
 
@@ -48,7 +47,7 @@
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
     // $stream.state is always "loading". Need to look into this.
-    $: loading = !progress?.done
+    $: loading = !(progress as Progress & { done?: boolean })?.done
     $: results = $stream?.results
     $: filters = groupFilters($stream?.filters)
     $: hasFilters = filters.lang.length > 0 || filters.repo.length > 0 || filters.file.length > 0
@@ -110,7 +109,7 @@
 </svelte:head>
 
 <div class="search">
-    <SearchInput bind:this={searchInput} {queryState} showSmartSearchButton />
+    <SearchInput {queryState} showSmartSearchButton />
 </div>
 
 <div class="search-results">

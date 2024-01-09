@@ -1824,4 +1824,32 @@ describe('scanSearchQuery() and decorate()', () => {
             ]
         `)
     })
+
+    test('Do not highlight keywords inside quotes for newStandardRC1', () => {
+        expect(getTokens(toSuccess(scanSearchQuery('"foo and bar" and bas', false, SearchPatternType.newStandardRC1))))
+            .toMatchInlineSnapshot(`
+              [
+                {
+                  "startIndex": 0,
+                  "scopes": "identifier"
+                },
+                {
+                  "startIndex": 13,
+                  "scopes": "whitespace"
+                },
+                {
+                  "startIndex": 14,
+                  "scopes": "keyword"
+                },
+                {
+                  "startIndex": 17,
+                  "scopes": "whitespace"
+                },
+                {
+                  "startIndex": 18,
+                  "scopes": "identifier"
+                }
+              ]
+            `)
+    })
 })

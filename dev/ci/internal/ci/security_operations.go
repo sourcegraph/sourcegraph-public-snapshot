@@ -19,6 +19,16 @@ func sonarcloudScan() operations.Operation {
 
 }
 
+func semgrepScan() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(
+			"Semgrep SAST Scan",
+			bk.Cmd("dev/ci/semgrep-scan.sh"),
+		)
+	}
+
+}
+
 // Ask trivy, a security scanning tool, to scan the candidate image
 // specified by "app" and "tag".
 func trivyScanCandidateImage(app, tag string) operations.Operation {

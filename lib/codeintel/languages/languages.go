@@ -51,12 +51,18 @@ func GetMostLikelyLanguage(path, contents string) (lang string, found bool) {
 // the content.
 //
 // Only returns an error if getContent returns an error.
+//
+// getContent is not called if the file is likely to be a binary file,
+// as enry only covers programming languages.
 func GetLanguages(path string, getContent func() ([]byte, error)) ([]string, error) {
 	langs := enry.GetLanguagesByFilename(path, nil, nil)
 	if len(langs) == 1 {
 		return langs, nil
 	}
-	newLangs := enry.GetLanguagesByExtension(path, nil, langs)
+	newLangs, isLikelyBinaryFile := getLanguagesByExtension(path)
+	if isLikelyBinaryFile {
+		return nil, nil
+	}
 	switch len(newLangs) {
 	case 0:
 		break

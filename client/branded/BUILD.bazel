@@ -149,7 +149,6 @@ ts_project(
         "src/search-ui/results/filters/components/filters-doc-footer/FiltersDocFooter.tsx",
         "src/search-ui/results/filters/hooks.ts",
         "src/search-ui/results/filters/types.ts",
-        "src/search-ui/results/filters/utils.ts",
         "src/search-ui/results/progress/StreamingProgress.tsx",
         "src/search-ui/results/progress/StreamingProgressCount.tsx",
         "src/search-ui/results/progress/StreamingProgressSkippedButton.tsx",

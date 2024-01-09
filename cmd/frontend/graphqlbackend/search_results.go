@@ -112,7 +112,7 @@ func (c *SearchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResol
 }
 
 func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
-	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedout))
+	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedOut))
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
@@ -176,7 +176,7 @@ func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	count := sr.MatchCount()
-	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
+	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedOut) {
 		return fmt.Sprintf("%d+", count)
 	}
 	return strconv.Itoa(int(count))
@@ -224,7 +224,8 @@ func (sf *searchFilterResolver) Count() int32 {
 }
 
 func (sf *searchFilterResolver) LimitHit() bool {
-	return sf.filter.IsLimitHit
+	// TODO(camdencheek): calculate exhaustiveness correctly
+	return true
 }
 
 func (sf *searchFilterResolver) Kind() string {
@@ -242,8 +243,9 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		// No line match
 		return time.Time{}, nil
 	}
+
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient("graphql.search.results.blame").BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hr, err := gitserver.NewClient("graphql.search.results.blame").StreamBlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,
@@ -251,8 +253,16 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 	if err != nil {
 		return time.Time{}, err
 	}
+	defer hr.Close()
 
-	return hunks[0].Author.Date, nil
+	// We are only interested in the first hunk, so we consume one and then return
+	// which calls hr.Close above.
+	hunk, err := hr.Read()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return hunk.Author.Date, nil
 }
 
 func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
@@ -475,7 +485,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		}
 
 		status := v.Stats.Status
-		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
+		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedOut) {
 			break // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
@@ -483,7 +493,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
 			cloning++
 		})
-		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+		status.Filter(search.RepoStatusTimedOut, func(api.RepoID) {
 			timedout++
 		})
 
