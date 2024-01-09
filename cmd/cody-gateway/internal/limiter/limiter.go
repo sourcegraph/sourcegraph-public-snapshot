@@ -86,6 +86,18 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		return nil, NoAccessError{}
 	}
 
+	// If the expiry on the key is greater than the intervalSeconds, update the TTL.
+	// This is here as a safeguard for the case where the TTL is wrongly set or the
+	// usage cache is not reset when the intervalSeconds config change. This only covers
+	// the case where the new intervalSeconds in shorter than the present TTL, i.e Free -> Pro.
+	if ttl, err := l.Redis.TTL(l.Identifier); err == nil {
+		if l.UpdateRateLimitTTL && ttl > int(intervalSeconds) {
+			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
+				return nil, errors.Wrap(err, "failed to set expiry for rate limit counter")
+			}
+		}
+	}
+
 	// Check the current usage. If no record exists, redis will return 0.
 	currentUsage, err = l.Redis.GetInt(l.Identifier)
 	if err != nil {
@@ -155,7 +167,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		}
 
 		// Set expiry on the key. If the key didn't exist prior to the previous INCR,
-		// it will set the expiry of the key to one day.
+		// it will set the expiry of the key to interval seconds.
 		// If it did exist before, it should have an expiry set already, so the TTL >= 0
 		// makes sure that we don't overwrite it and restart the 1h bucket.
 		ttl, err := l.Redis.TTL(l.Identifier)
@@ -163,7 +175,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
 		var alertTTL time.Duration
-		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > int(intervalSeconds)) {
+		if ttl < 0 {
 			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
 				return errors.Wrap(err, "failed to set expiry for rate limit counter")
 			}
@@ -180,6 +192,10 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 
 		return nil
 	}, nil
+}
+
+func (l StaticLimiter) ResetUsage() error {
+	return l.Redis.Del(l.Identifier)
 }
 
 func (l StaticLimiter) Usage(ctx context.Context) (_ int, _ time.Time, err error) {

@@ -3,6 +3,7 @@ package dotcomuser
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +20,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,7 +40,7 @@ var (
 	// defaultRefreshInterval is used for updates, which is also called when a
 	// user's rate limit is hit, so we don't want to update every time. We use
 	// a shorter interval than the default in this case.
-	defaultRefreshInterval = 5 * time.Minute
+	defaultRefreshInterval = 0 * time.Minute
 )
 
 type Source struct {
@@ -45,16 +48,20 @@ type Source struct {
 	cache             httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom            graphql.Client
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
+	rs                limiter.RedisStore
+	rateLimitNotifier notify.RateLimitNotifier
 }
 
 var _ actor.SourceUpdater = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier) *Source {
 	return &Source{
 		log:               logger.Scoped("dotcomuser"),
 		cache:             cache,
 		dotcom:            dotComClient,
 		concurrencyConfig: concurrencyConfig,
+		rs:                rs,
+		rateLimitNotifier: rateLimitNotifier,
 	}
 }
 
@@ -76,11 +83,16 @@ func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 }
 
 // fetchAndCache fetches the dotcom user data for the given user token and caches it
-func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
+func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.Actor) (*actor.Actor, error) {
 	var act *actor.Actor
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
-		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
+		// if oldAct is present in the cache, even though it is stale,
+		// return it as a fallback if we fail to hit the dotcom API.
+		if oldAct != nil && oldAct.ID != "" {
+			return oldAct, nil
+		}
+		// Generate a stateless actor and save in the cache so that we aren't constantly hitting the dotcom API
 		act = newActor(s, token, dotcom.DotcomUserState{}, s.concurrencyConfig)
 	} else {
 		act = newActor(s, token,
@@ -91,6 +103,27 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 		s.log.Error("failed to marshal actor",
 			log.Error(err))
 	} else {
+		for _, feature := range codygateway.AllFeatures {
+			rl, ok := act.RateLimits[feature]
+			if !ok {
+				continue
+			}
+
+			// reset the usage cache if:
+			// 1. old actor is not present in the cache
+			// 2. new rl interval is different from old rl interval
+			if oldAct == nil || oldAct.ID == "" || rl.Interval != oldAct.RateLimits[feature].Interval {
+				// get the base limiter for the feature which implements the core rate limiting based on the config
+				l, ok := act.BaseLimiter(s.rs, feature, s.rateLimitNotifier)
+				if !ok {
+					return nil, errors.Wrap(err, fmt.Sprintf("failed to create base limiter for feature: %s and actor id: %s", feature, l.Identifier))
+				}
+				if err := l.ResetUsage(); err != nil {
+					return nil, errors.Wrap(err, fmt.Sprintf("failed to reset usage cache for feature: %s and actor id: %s", feature, l.Identifier))
+				}
+			}
+		}
+
 		s.cache.Set(token, data)
 		// Also save to the key based on the actor ID.
 		s.cache.Set(act.ID, data)
@@ -133,13 +166,11 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 	if len(token) != tokenLength {
 		return nil, errors.New("invalid token format")
 	}
-	// force fetch of rate-limit data from upstream
-	if bypassCache {
-		return s.fetchAndCache(ctx, token)
-	}
+	// NOTE(naman): figure out a way to cache the actor in the limiter
+	// based on actor id and not the token to avoid storing the config for each token.
 	data, hit := s.cache.Get(token)
 	if !hit {
-		return s.fetchAndCache(ctx, token)
+		return s.fetchAndCache(ctx, token, nil)
 	}
 
 	var act *actor.Actor
@@ -149,11 +180,12 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 		// Delete the corrupted record.
 		s.cache.Delete(token)
 
-		return s.fetchAndCache(ctx, token)
+		return s.fetchAndCache(ctx, token, nil)
 	}
 
-	if act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
-		return s.fetchAndCache(ctx, token)
+	// if force fetch of rate-limit data from upstream or act cache older than defaultUpdateInterval (15 minutes)
+	if bypassCache || act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
+		return s.fetchAndCache(ctx, token, act)
 	}
 
 	act.Source = s

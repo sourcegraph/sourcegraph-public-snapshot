@@ -14,6 +14,8 @@ type RedisStore interface {
 	TTL(key string) (int, error)
 	// Expire configures an existing key's TTL
 	Expire(key string, ttlSeconds int) error
+	// Delete removes a key
+	Del(key string) error
 }
 
 type MockRedisEntry struct {
@@ -58,5 +60,11 @@ func (m MockRedisStore) Expire(key string, ttlSeconds int) error {
 	}
 	entry.TTL = ttlSeconds
 	m[key] = entry
+	return nil
+}
+
+func (m MockRedisStore) Del(key string) error {
+	delete(m, key)
+
 	return nil
 }
