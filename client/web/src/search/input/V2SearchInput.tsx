@@ -19,6 +19,7 @@ import {
     type CodeMirrorQueryInputWrapperProps,
 } from '@sourcegraph/branded/src/search-ui/input/experimental/CodeMirrorQueryInputWrapper'
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
@@ -140,13 +141,14 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
     const suggestionSource = useMemo(
         () =>
             createSuggestionsSource({
+                valueType: inputProps.patternType === SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
                 graphqlQuery<T, V extends Record<string, any>>(query: string, variables: V): Promise<T> {
                     return client.query<T, V>({ query: getDocumentNode(query), variables }).then(result => result.data)
                 },
                 authenticatedUser,
                 isSourcegraphDotCom,
             }),
-        [client, authenticatedUser, isSourcegraphDotCom]
+        [client, authenticatedUser, isSourcegraphDotCom, inputProps.patternType]
     )
 
     const extensions = useMemo(

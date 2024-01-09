@@ -101,7 +101,7 @@ problems.
 ### Merged PRs
 
 - Total [99 PRs](https://github.com/sourcegraph/sourcegraph/milestone/232?closed=1) merged since the last release
-- JetBrains: Cody: Bump Jetbrains platform compat to `221.5080.210`,
+- JetBrains: Cody: Bump JetBrains platform compat to `221.5080.210`,
   by [@Gedochao](https://github.com/Gedochao) ([#56625](https://github.com/sourcegraph/sourcegraph/pull/56625))
 - JetBrains: fix capitalization,
   by [@vdavid](https://github.com/vdavid) ([#56576](https://github.com/sourcegraph/sourcegraph/pull/56576))
@@ -203,7 +203,7 @@ problems.
   by [@vdavid](https://github.com/vdavid) ([#56196](https://github.com/sourcegraph/sourcegraph/pull/56196))
 - JetBrains: manually construct server url to fix any issues with it,
   by [@szymonprz](https://github.com/szymonprz) ([#56419](https://github.com/sourcegraph/sourcegraph/pull/56419))
-- gh: give a proper name to Jetbrains test job,
+- gh: give a proper name to JetBrains test job,
   by [@jhchabran](https://github.com/jhchabran) ([#56622](https://github.com/sourcegraph/sourcegraph/pull/56622))
 - JetBrains: require restart after installation,
   by [@olafurpg](https://github.com/olafurpg) ([#56174](https://github.com/sourcegraph/sourcegraph/pull/56174))

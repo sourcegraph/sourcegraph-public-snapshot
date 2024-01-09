@@ -19,12 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -48,6 +48,8 @@ func newExternalHTTPHandler(
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) (http.Handler, error) {
 	logger := log.Scoped("external")
+
+	ipAllowlistMiddleware := ipallowlist.New(logger)
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
@@ -122,6 +124,8 @@ func newExternalHTTPHandler(
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("external", h)
+	// 🚨 SECURITY: ip allowlist must be the first middleware to run to avoid doing unnecessary things
+	h = ipAllowlistMiddleware.Handle(h)
 
 	return h, nil
 }
@@ -267,7 +271,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	// And you may also see the type of error the browser would produce in this instance at e.g.
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
 	//
-	if policy == crossOriginPolicyNever && !deploy.IsApp() {
+	if policy == crossOriginPolicyNever {
 		return false
 	}
 
@@ -344,7 +348,6 @@ func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
 	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension
-	isAppRequest := deploy.IsApp() && strings.HasPrefix(requestOrigin, "tauri://")
 
 	var isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
@@ -355,5 +358,5 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = true
 	}
 
-	return isExtensionRequest || isAppRequest || isCORSAllowedRequest
+	return isExtensionRequest || isCORSAllowedRequest
 }

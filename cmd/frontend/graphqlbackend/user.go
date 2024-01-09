@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 
 	"github.com/keegancsmith/sqlf"
@@ -241,7 +242,40 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
+	query := sqlf.Sprintf(`
+		WHERE
+			user_id = %s
+			AND timestamp >= %s
+			AND timestamp <= NOW()
+			AND name NOT LIKE '%%clicked%%'
+			AND name NOT LIKE '%%resetChat%%'
+			AND name NOT LIKE '%%menu:opened%%'
+			AND name NOT LIKE 'cody.%%'
+			AND (
+					(
+						SOURCE = 'IDEEXTENSION'
+						AND (
+							name LIKE '%%recipe%%'
+							OR name LIKE '%%command%%'
+							OR name LIKE '%%chat:executed%%'
+							OR name LIKE '%%chat-question:executed%%'
+							OR name LIKE '%%inline-chat%%'
+							OR name LIKE '%%inline-assist%%'
+							OR name LIKE '%%chat:submitted%%'
+						)
+					)
+
+					OR
+
+					(
+						SOURCE = 'WEB'
+						AND (
+							name = 'web:codyChat:submit'
+							OR name LIKE 'web:codyChat:recipe:%%'
+						)
+					)
+			)
+	`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
@@ -258,7 +292,14 @@ func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
+	query := sqlf.Sprintf(`
+		WHERE
+			user_id = %s
+			AND timestamp >= %s
+			AND timestamp <= NOW()
+			AND source = 'IDEEXTENSION'
+			AND name LIKE '%%completion:suggested%%'
+	`, r.user.ID, currentPeriodStartDate.Time)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
@@ -474,6 +515,13 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	}
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
+	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when a user account is modified/updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
 	}
 	return UserByIDInt32(ctx, r.db, userID)
 }
@@ -906,7 +954,13 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		// Log an event when a user's Completions quota is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
 
@@ -944,6 +998,12 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
+		// Log an event when user's code completions quota is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameUserCodeCompletionQuotaUpdated, "", uint32(id), "", "BACKEND", args); err != nil {
+			r.logger.Error("Error logging security event", log.Error(err))
+		}
+	}
 	return UserByIDInt32(ctx, r.db, user.ID)
 }

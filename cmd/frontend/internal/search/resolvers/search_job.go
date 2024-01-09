@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
@@ -53,6 +54,10 @@ func (r *searchJobResolver) State(ctx context.Context) string {
 func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := r.db.Users().GetByID(ctx, r.Job.InitiatorID)
 	if err != nil {
+		// We return nil for deleted users and expect the client to handle this case.
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return graphqlbackend.NewUserResolver(ctx, r.db, user), nil

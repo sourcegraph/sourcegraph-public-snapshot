@@ -6,18 +6,20 @@
 
 set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
-if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" ]]; then
+if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" && "$BUILDKITE_PIPELINE_SLUG" != "aspect-experimental" ]]; then
   exit 0
 fi
 
 # The bazel queue is running stateful agents, so we need to ensure we're cleaning after us.
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" || "$BUILDKITE_AGENT_META_DATA_QUEUE" == "aspect-default" ]]; then
   # Ensure all test databases are wiped, in case a test process was interrupted.
+  # This might not be availbe on the Aspect agents so we export it for good measure
+  export PGUSER=postgres
   for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
 
   # Remove any hanging containers and/or volumes to ensure the next tests are able to run.
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
-    echo "Removing docker containers..."
+    echo "~~~ :docker::broom: Removing docker containers..."
     mapfile -t containers < <(docker ps -aq)
     for c in "${containers[@]}"; do docker rm -f "$c"; done
   fi
@@ -34,7 +36,7 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
 
   # Compare disk usage with the threshold
   if ((usage > threshold)); then
-    echo "Disk space on $volume is more than $threshold% full. Cleaning up docker cache."
+    echo "~~~ Disk space on $volume is more than $threshold% full. Cleaning up docker cache."
     docker system prune -f
   fi
 fi
@@ -55,12 +57,6 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
       exit 0
     fi
   done
-
-  # Please see: https://github.com/sourcegraph/sourcegraph/issues/43934
-  echo "--- ⚠️A TEMPORARILY DISABLED: Logs will not be uploaded to Grafana. Please reach out to #discuss-dev-infra"
-  # Non-zero exit code and not a soft fail: upload the logs.
-  # echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
-  # ./dev/ci/scripts/upload-build-logs.sh
 fi
 
 # upload raw annotations as artifacts if they are available for easier access

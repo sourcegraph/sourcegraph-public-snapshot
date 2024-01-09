@@ -52,11 +52,11 @@ export function createGitCommit(initial?: Partial<GitCommitFields>): GitCommitFi
                     oid,
                     abbreviatedOID: oid.slice(0, 7),
                     url: faker.internet.url(),
+                    canonicalURL: faker.internet.url(),
                 }
             },
             { count: { min: 1, max: 2 } }
         ),
-        url: faker.internet.url(),
         canonicalURL: faker.internet.url(),
         externalURLs: [],
         ...initial,

@@ -16,7 +16,7 @@ cd "${BUILD_WORKSPACE_DIRECTORY}"
 bazel configure
 
 if [ "${CI:-}" ]; then
-  git ls-files --exclude-standard --others | grep -v .aspect/bazelrc/ci.generated.bazelrc | xargs git add --intent-to-add || true
+  git ls-files --exclude-standard --others | xargs git add --intent-to-add || true
 
   diff_file=$(mktemp)
   trap 'rm -f "${diff_file}"' EXIT

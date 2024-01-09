@@ -11,6 +11,8 @@ type Config struct {
 			ProjectID *string
 			TopicID   *string
 		}
+
+		StreamPublishConcurrency int
 	}
 }
 
@@ -21,4 +23,6 @@ func (c *Config) Load(env *runtime.Env) {
 		"The project ID for the Pub/Sub.")
 	c.Events.PubSub.TopicID = env.GetOptional("TELEMETRY_GATEWAY_EVENTS_PUBSUB_TOPIC_ID",
 		"The topic ID for the Pub/Sub.")
+	c.Events.StreamPublishConcurrency = env.GetInt("TELEMETRY_GATEWAY_EVENTS_STREAM_PUBLISH_CONCURRENCY", "250",
+		"Per-stream concurrent publishing limit.")
 }

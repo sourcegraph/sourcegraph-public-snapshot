@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"net/url"
 	"strings"
@@ -83,12 +84,20 @@ type HandlerRegisterer interface {
 
 type ServiceState interface {
 	// Healthy should return nil if the service is healthy, or an error with
-	// detailed diagnostics if the service is not healthy. The query parameter
-	// provides the URL query parameters the healtcheck was called with, to
-	// implement different "degrees" of healtchecks.
+	// detailed diagnostics if the service is not healthy. In general:
 	//
-	// The default MSP healthchecks are called without any query parameters, and
-	// should be implemented such that they can evaluate quickly.
+	// - A healthy state indicates that the service is ready to serve traffic
+	//   and do work.
+	// - An unhealthy state indicates that the previous revision should continue
+	//   to serve traffic.
+	//
+	// Healthy should be implemented with the above considerations in mind.
+	//
+	// The query parameter provides the URL query parameters the healtcheck was
+	// called with, to implement different "degrees" of healtchecks that can be
+	// used by a human operator. The default MSP healthchecks are called without
+	// any query parameters, and should be implemented such that they can
+	// evaluate quickly.
 	//
 	// Healthy is only called if the correct service secret is provided.
 	Healthy(ctx context.Context, query url.Values) error
@@ -150,7 +159,7 @@ func (c Contract) DiagnosticsAuthMiddleware(next http.Handler) http.Handler {
 			return false
 		}
 
-		if token != *c.internal.diagnosticsSecret {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(*c.internal.diagnosticsSecret)) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte("unauthorized"))
 			return false

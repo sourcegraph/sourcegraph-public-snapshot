@@ -1,9 +1,75 @@
+extend type Query {
+    """
+    Telemetry queries for "Event Logging Everywhere", aka a version 2 of
+    existing event-logging/event-recording APIs.
+    """
+    telemetry: TelemetryQuery!
+}
+
+"""
+Queries for exported telemetry events.
+"""
+type TelemetryQuery {
+    """
+    List events that were recently exported, up to the retention period configured
+    on the instance.
+    """
+    exportedEvents(
+        """
+        Returns the first n recently exported events.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExportedEventsConnection!
+}
+
+"""
+ExportedEvent does not implement Node for lookup because they are ephemereal.
+"""
+type ExportedEvent {
+    """
+    The unique id of the event queued for export.
+    """
+    id: ID!
+    """
+    The time this event was exported at.
+    """
+    exportedAt: DateTime!
+    """
+    The raw event payload that was exported, rendered as JSON.
+    """
+    payload: JSONValue!
+}
+
+"""
+A list of recently exported telemetry event payloads.
+"""
+type ExportedEventsConnection {
+    """
+    A list of exported events, with the most recent events first.
+    """
+    nodes: [ExportedEvent!]!
+
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 extend type Mutation {
     """
     Telemetry mutations for "Event Logging Everywhere", aka a version 2 of
     existing event-logging/event-recording APIs.
     """
-    telemetry: TelemetryMutation
+    telemetry: TelemetryMutation!
 }
 
 """

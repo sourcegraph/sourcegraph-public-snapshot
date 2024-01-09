@@ -125,7 +125,8 @@ async function main(): Promise<void> {
         const stats = await prepareStats()
 
         if (!stats) {
-            return
+            console.log('Failed to find stats to compare the bundle size against.')
+            process.exit(0)
         }
 
         console.log('--- Report bundle diff')

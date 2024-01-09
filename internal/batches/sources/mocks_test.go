@@ -10868,9 +10868,6 @@ type MockGitserverClient struct {
 	// BatchLogFunc is an instance of a mock function object controlling the
 	// behavior of the method BatchLog.
 	BatchLogFunc *GitserverClientBatchLogFunc
-	// BlameFileFunc is an instance of a mock function object controlling
-	// the behavior of the method BlameFile.
-	BlameFileFunc *GitserverClientBlameFileFunc
 	// BranchesContainingFunc is an instance of a mock function object
 	// controlling the behavior of the method BranchesContaining.
 	BranchesContainingFunc *GitserverClientBranchesContainingFunc
@@ -11056,11 +11053,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		BatchLogFunc: &GitserverClientBatchLogFunc{
 			defaultHook: func(context.Context, gitserver.BatchLogOptions, gitserver.BatchLogCallback) (r0 error) {
-				return
-			},
-		},
-		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) (r0 []*gitserver.Hunk, r1 error) {
 				return
 			},
 		},
@@ -11361,11 +11353,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.BatchLog")
 			},
 		},
-		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-				panic("unexpected invocation of MockGitserverClient.BlameFile")
-			},
-		},
 		BranchesContainingFunc: &GitserverClientBranchesContainingFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID) ([]string, error) {
 				panic("unexpected invocation of MockGitserverClient.BranchesContaining")
@@ -11655,9 +11642,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		BatchLogFunc: &GitserverClientBatchLogFunc{
 			defaultHook: i.BatchLog,
-		},
-		BlameFileFunc: &GitserverClientBlameFileFunc{
-			defaultHook: i.BlameFile,
 		},
 		BranchesContainingFunc: &GitserverClientBranchesContainingFunc{
 			defaultHook: i.BranchesContaining,
@@ -12246,120 +12230,6 @@ func (c GitserverClientBatchLogFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientBatchLogFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// GitserverClientBlameFileFunc describes the behavior when the BlameFile
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientBlameFileFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
-	hooks       []func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)
-	history     []GitserverClientBlameFileFuncCall
-	mutex       sync.Mutex
-}
-
-// BlameFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) BlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3)
-	m.BlameFileFunc.appendCall(GitserverClientBlameFileFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the BlameFile method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BlameFile method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientBlameFileFunc) SetDefaultReturn(r0 []*gitserver.Hunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientBlameFileFunc) PushReturn(r0 []*gitserver.Hunk, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *gitserver.BlameOptions) ([]*gitserver.Hunk, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientBlameFileFunc) appendCall(r0 GitserverClientBlameFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientBlameFileFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientBlameFileFunc) History() []GitserverClientBlameFileFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientBlameFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientBlameFileFuncCall is an object that describes an
-// invocation of method BlameFile on an instance of MockGitserverClient.
-type GitserverClientBlameFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 *gitserver.BlameOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitserver.Hunk
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientBlameFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientBlameFileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientBranchesContainingFunc describes the behavior when the

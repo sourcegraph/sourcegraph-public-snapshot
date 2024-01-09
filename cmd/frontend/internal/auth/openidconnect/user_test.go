@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -76,10 +77,11 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
-				"anonymous-user-id-123",
-				"https://example.com/",
-				"https://example.com/",
-			)
+				&hubspot.ContactProperties{
+					AnonymousUserID: "anonymous-user-id-123",
+					FirstSourceURL:  "https://example.com/",
+					LastSourceURL:   "https://example.com/",
+				})
 			require.NoError(t, err)
 		})
 	}

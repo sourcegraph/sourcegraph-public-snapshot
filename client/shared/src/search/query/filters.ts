@@ -70,7 +70,7 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-enum NegatedFilters {
+export enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',
@@ -511,6 +511,16 @@ export const escapeSpaces = (value: string): string => {
         }
     }
     return escaped.join('')
+}
+
+/**
+ * Helper function to quote a string if it contains whitespace characters.
+ */
+export function quoteIfWhitespace(value: string): string {
+    if (/\s/.test(value)) {
+        return `"${value}"`
+    }
+    return value
 }
 
 /**

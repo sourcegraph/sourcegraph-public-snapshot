@@ -19,6 +19,7 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func FromSearchClient(client client.SearchClient) NewSearcher {
@@ -44,6 +45,7 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 			q,
 			search.Precise,
 			search.Exhaustive,
+			pointers.Ptr(int32(0)),
 		)
 		if err != nil {
 			return nil, err

@@ -30,8 +30,10 @@ export interface RepositoryFileTreePageProps extends RepoRevisionContainerContex
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
-/** A page that shows a file or a directory (tree view) in a repository at the
- * current revision. */
+/**
+ * A page that shows a file or a directory (tree view) in a repository at the
+ * current revision.
+ */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
     const { repo, resolvedRevision, repoName, objectType: maybeObjectType, globalContext, ...context } = props
 

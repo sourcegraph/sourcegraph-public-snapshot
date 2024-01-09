@@ -39,7 +39,7 @@ const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_
 const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
 
 const onClickCTAButton = (type: string): void =>
-    eventLogger.log(EventName.SIGNUP_INITIATED, { type, source: 'get-started' })
+    eventLogger.log(EventName.AUTH_INITIATED, { type, source: 'get-started' })
 
 const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })

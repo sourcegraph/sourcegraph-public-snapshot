@@ -60,7 +60,7 @@ Sourcegraph Enterprise is Sourcegraph’s primary offering and includes all code
 Sourcegraph extensions are also OSS licensed (Apache 2), such as:
 
 - [Sourcegraph browser extension](https://github.com/sourcegraph/sourcegraph/tree/master/client/browser)
-- [Sourcegraph Jetbrains extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
+- [Sourcegraph JetBrains extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
 
 ## How is Sourcegraph different than GitHub code search?
 
@@ -122,7 +122,7 @@ Read the [Notebooks documentation](../notebooks/index.md) to learn more, and che
 
 ## Batch Changes
 
-_Note: Enterprise Feature_
+_Note: Enterprise feature_
 
 Automate changes to your codebase. Reduce effort, reduce errors and enable developers to focus on high value work.
 
@@ -130,7 +130,7 @@ Read the [batch changes documentation](../batch_changes/index.md) to learn more,
 
 ## Code Insights
 
-_Note: Enterprise Feature_
+_Note: Enterprise feature_
 
 Sourcegraph lets you understand and analyze code trends by visualizing how the codebase is changing over time. Measure and act on engineering goals such as migration and component deprecation.
 

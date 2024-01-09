@@ -56,7 +56,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     siteID,
     siteGQLID,
     sourcegraphDotComMode: false,
-    codyAppMode: false,
     userAgentIsBot: false,
     version: '0.0.0',
     xhrHeaders: {},
@@ -64,6 +63,5 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     authMinPasswordLength: 12,
     embeddingsEnabled: false,
     runningOnMacOS: true,
-    srcServeGitUrl: 'http://127.0.0.1:3434',
     primaryLoginProvidersCount: 5,
 })

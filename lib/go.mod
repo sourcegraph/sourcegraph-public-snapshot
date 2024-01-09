@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.11.1
 	github.com/cockroachdb/redact v1.1.5
-	github.com/derision-test/go-mockgen v1.3.7
+	github.com/derision-test/go-mockgen v1.3.8-0.20240105000756-fb9effb23d90
 	github.com/fatih/color v1.15.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-enry/go-enry/v2 v2.8.4
@@ -23,7 +23,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/muesli/termenv v0.12.0
-	github.com/sourcegraph/conc v0.2.0
+	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
@@ -31,7 +31,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.23.7
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/sys v0.14.0
 	golang.org/x/term v0.14.0
 	google.golang.org/protobuf v1.31.0

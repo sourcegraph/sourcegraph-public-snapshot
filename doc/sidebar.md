@@ -32,8 +32,8 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Cody for JetBrains](cody/overview/install-jetbrains.md)
   - [Cody for Neovim](cody/overview/install-neovim.md)
   - [Cody for Web](cody/overview/cody-with-sourcegraph.md)
-  - [Cody Desktop App](cody/overview/app/index.md)
   - [Cody Enterprise](cody/overview/enable-cody-enterprise.md)
+  - [Feature Parity Reference](cody/feature-reference.md)
 - [Quickstart](cody/quickstart.md)
 - [Capabilities](cody/capabilities/index.md)
   - [Chat](cody/capabilities/chat.md)
@@ -43,7 +43,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Core Concepts](cody/core-concepts/index.md)
 - [Cody Use Cases](cody/use-cases/generate-unit-tests.md)
   - [Generate Unit Tests](cody/use-cases/generate-unit-tests.md)
-- [Feature Parity Reference](cody/feature-reference.md)
+- [Usage and Pricing](cody/usage-and-pricing.md)
 - [Troubleshooting](cody/troubleshooting.md)
 - [FAQ](cody/faq.md)
 

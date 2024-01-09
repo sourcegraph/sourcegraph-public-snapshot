@@ -113,7 +113,6 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
 		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
-		"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
 		"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 

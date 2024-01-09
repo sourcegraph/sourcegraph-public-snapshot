@@ -25,7 +25,6 @@ import { ExternalServiceNode } from './ExternalServiceNode'
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isCodyApp: boolean
 }
 
 /**
@@ -35,7 +34,6 @@ export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    isCodyApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
@@ -64,11 +62,6 @@ export const ExternalServicesPage: FC<Props> = ({
                 headingElement="h2"
                 actions={
                     <>
-                        {isCodyApp && (
-                            <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
-                            </ButtonLink>
-                        )}
                         <ButtonLink
                             className="test-goto-add-external-service-page"
                             to="/site-admin/external-services/new"

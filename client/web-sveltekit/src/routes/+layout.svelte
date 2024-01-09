@@ -6,7 +6,8 @@
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
-    import { createTemporarySettingsStorage } from '$lib/temporarySettings'
+    import { createTemporarySettingsStorage, temporarySetting } from '$lib/temporarySettings'
+    import { setThemeFromString } from '$lib/theme'
 
     import Header from './Header.svelte'
 
@@ -39,6 +40,14 @@
     // Update stores when data changes
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
+
+    // Set initial, user configured theme
+    // TODO: This should be send be server in the HTML so that we don't flash the wrong theme
+    // on initial page load.
+    $: userTheme = temporarySetting('user.themePreference', 'System')
+    $: if (!$userTheme.loading && $userTheme.data) {
+        setThemeFromString($userTheme.data)
+    }
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)

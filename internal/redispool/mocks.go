@@ -154,7 +154,7 @@ func NewMockKeyValue() *MockKeyValue {
 			},
 		},
 		PoolFunc: &KeyValuePoolFunc{
-			defaultHook: func() (r0 *redis.Pool, r1 bool) {
+			defaultHook: func() (r0 *redis.Pool) {
 				return
 			},
 		},
@@ -261,7 +261,7 @@ func NewStrictMockKeyValue() *MockKeyValue {
 			},
 		},
 		PoolFunc: &KeyValuePoolFunc{
-			defaultHook: func() (*redis.Pool, bool) {
+			defaultHook: func() *redis.Pool {
 				panic("unexpected invocation of MockKeyValue.Pool")
 			},
 		},
@@ -1822,23 +1822,23 @@ func (c KeyValueLTrimFuncCall) Results() []interface{} {
 // KeyValuePoolFunc describes the behavior when the Pool method of the
 // parent MockKeyValue instance is invoked.
 type KeyValuePoolFunc struct {
-	defaultHook func() (*redis.Pool, bool)
-	hooks       []func() (*redis.Pool, bool)
+	defaultHook func() *redis.Pool
+	hooks       []func() *redis.Pool
 	history     []KeyValuePoolFuncCall
 	mutex       sync.Mutex
 }
 
 // Pool delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockKeyValue) Pool() (*redis.Pool, bool) {
-	r0, r1 := m.PoolFunc.nextHook()()
-	m.PoolFunc.appendCall(KeyValuePoolFuncCall{r0, r1})
-	return r0, r1
+func (m *MockKeyValue) Pool() *redis.Pool {
+	r0 := m.PoolFunc.nextHook()()
+	m.PoolFunc.appendCall(KeyValuePoolFuncCall{r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the Pool method of the
 // parent MockKeyValue instance is invoked and the hook queue is empty.
-func (f *KeyValuePoolFunc) SetDefaultHook(hook func() (*redis.Pool, bool)) {
+func (f *KeyValuePoolFunc) SetDefaultHook(hook func() *redis.Pool) {
 	f.defaultHook = hook
 }
 
@@ -1846,7 +1846,7 @@ func (f *KeyValuePoolFunc) SetDefaultHook(hook func() (*redis.Pool, bool)) {
 // Pool method of the parent MockKeyValue instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *KeyValuePoolFunc) PushHook(hook func() (*redis.Pool, bool)) {
+func (f *KeyValuePoolFunc) PushHook(hook func() *redis.Pool) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1854,20 +1854,20 @@ func (f *KeyValuePoolFunc) PushHook(hook func() (*redis.Pool, bool)) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *KeyValuePoolFunc) SetDefaultReturn(r0 *redis.Pool, r1 bool) {
-	f.SetDefaultHook(func() (*redis.Pool, bool) {
-		return r0, r1
+func (f *KeyValuePoolFunc) SetDefaultReturn(r0 *redis.Pool) {
+	f.SetDefaultHook(func() *redis.Pool {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *KeyValuePoolFunc) PushReturn(r0 *redis.Pool, r1 bool) {
-	f.PushHook(func() (*redis.Pool, bool) {
-		return r0, r1
+func (f *KeyValuePoolFunc) PushReturn(r0 *redis.Pool) {
+	f.PushHook(func() *redis.Pool {
+		return r0
 	})
 }
 
-func (f *KeyValuePoolFunc) nextHook() func() (*redis.Pool, bool) {
+func (f *KeyValuePoolFunc) nextHook() func() *redis.Pool {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1903,9 +1903,6 @@ type KeyValuePoolFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *redis.Pool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1917,7 +1914,7 @@ func (c KeyValuePoolFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c KeyValuePoolFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // KeyValueSetFunc describes the behavior when the Set method of the parent

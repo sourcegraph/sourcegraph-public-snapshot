@@ -8,16 +8,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/monitoring"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/project"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/tfcworkspaces"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
-
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 )
 
 type TerraformCloudOptions struct {
@@ -53,6 +55,7 @@ func (r *Renderer) RenderEnvironment(
 	svc spec.ServiceSpec,
 	build spec.BuildSpec,
 	env spec.EnvironmentSpec,
+	monitoringSpec spec.MonitoringSpec,
 ) (*CDKTF, error) {
 	terraformVersion := terraform.Version
 	stackSetOptions := []stack.NewStackOption{
@@ -68,19 +71,16 @@ func (r *Renderer) RenderEnvironment(
 				},
 			}))
 	}
+	stacks := stack.NewSet(r.OutputDir, stackSetOptions...)
 
-	var (
-		projectIDPrefix = fmt.Sprintf("%s-%s", svc.ID, env.ID)
-		stacks          = stack.NewSet(r.OutputDir, stackSetOptions...)
-	)
+	// If destroys are not allowed, configure relevant resources to prevent
+	// destroys.
+	preventDestroys := !pointers.DerefZero(env.AllowDestroys)
 
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
-		ProjectIDPrefix:       projectIDPrefix,
-		ProjectIDSuffixLength: svc.ProjectIDSuffixLength,
-
-		DisplayName: fmt.Sprintf("%s - %s",
-			pointers.Deref(svc.Name, svc.ID), env.ID),
+		ProjectID:   env.ProjectID,
+		DisplayName: fmt.Sprintf("%s - %s", svc.GetName(), env.ID),
 
 		Category: env.Category,
 		Labels: map[string]string{
@@ -94,30 +94,67 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
 	iamOutput, err := iam.NewStack(stacks, iam.Variables{
-		ProjectID: *projectOutput.Project.ProjectId(),
-		Image:     build.Image,
-		Service:   svc,
-		SecretEnv: env.SecretEnv,
+		ProjectID:       *projectOutput.Project.ProjectId(),
+		Image:           build.Image,
+		Service:         svc,
+		SecretEnv:       env.SecretEnv,
+		PreventDestroys: preventDestroys,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")
 	}
-	if _, err := cloudrun.NewStack(stacks, cloudrun.Variables{
-		ProjectID:                      *projectOutput.Project.ProjectId(),
-		CloudRunWorkloadServiceAccount: iamOutput.CloudRunWorkloadServiceAccount,
+	cloudrunOutput, err := cloudrun.NewStack(stacks, cloudrun.Variables{
+		ProjectID: *projectOutput.Project.ProjectId(),
+		IAM:       *iamOutput,
 
 		Service:     svc,
 		Image:       build.Image,
 		Environment: env,
 
 		StableGenerate: r.StableGenerate,
-	}); err != nil {
+
+		PreventDestroys: preventDestroys,
+	})
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
+	}
+	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
+		ProjectID:  *projectOutput.Project.ProjectId(),
+		Service:    svc,
+		Monitoring: monitoringSpec,
+		MaxInstanceCount: func() *int {
+			if env.Instances.Scaling != nil {
+				return env.Instances.Scaling.MaxCount
+			}
+			return nil
+		}(),
+		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
+		ServiceStartupProbe: pointers.DerefZero(env.EnvironmentServiceSpec).StatupProbe,
+
+		// Notification configuration
+		EnvironmentCategory: env.Category,
+		EnvironmentID:       env.ID,
+		Owners:              svc.Owners,
+	}); err != nil {
+		return nil, errors.Wrap(err, "failed to create monitoring stack")
+	}
+
+	// If TFC is enabled, render the TFC workspace runs stack to manage initial
+	// applies/teardowns and other configuration.
+	if r.TFC.Enabled {
+		if _, err := tfcworkspaces.NewStack(stacks, tfcworkspaces.Variables{
+			PreviousStacks: stack.ExtractStacks(stacks),
+			// TODO: Maybe include spec option to disable notifications
+			EnableNotifications: true,
+		}); err != nil {
+			return nil, errors.Wrap(err, "failed to create TFC workspace runs stack")
+		}
 	}
 
 	// Return CDKTF representation for caller to synthesize

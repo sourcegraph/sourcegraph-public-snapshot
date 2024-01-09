@@ -1,12 +1,13 @@
 import { cleanup, getByText, render } from '@testing-library/react'
-import { of } from 'rxjs'
-import { map } from 'rxjs/operators'
 import { afterAll, describe, expect, it } from 'vitest'
 
 import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
+    FILE_LINES,
+    FILE_LINES_SIMPLE,
+    FILE_LINES_LONG,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
@@ -19,6 +20,7 @@ describe('CodeExcerpt', () => {
     const startLine = 0
     const endLine = 3
     const defaultProps = {
+        blobLines: FILE_LINES_SIMPLE,
         repoName: 'github.com/golang/oauth2',
         commitID: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
         filePath: '.travis.yml',
@@ -31,8 +33,7 @@ describe('CodeExcerpt', () => {
         endLine,
         isLightTheme: false,
         className: 'file-match__item-code-excerpt',
-        fetchHighlightedFileRangeLines: () =>
-            of(HIGHLIGHTED_FILE_LINES_SIMPLE).pipe(map(ranges => ranges[0].slice(startLine, endLine))),
+        plaintextLines: FILE_LINES_SIMPLE.slice(startLine, endLine),
     }
 
     it('renders correct number of rows', () => {
@@ -40,11 +41,22 @@ describe('CodeExcerpt', () => {
         expect(container.querySelectorAll('[data-testid="code-excerpt"] tr').length).toBe(3)
     })
 
-    it('renders the line number container on each row', () => {
+    it('renders the line number container on each row for plaintext', () => {
         // We can't evaluate the content of these containers since the numbers are drawn
         // by CSS. This is a proxy to make sure the <td> tags with data-line attributes
         // at least exist.
         const { container } = render(<CodeExcerpt {...defaultProps} />)
+        const dataLines = container.querySelectorAll('[data-line]')
+        expect(dataLines).toHaveLength(3)
+    })
+
+    it('renders the line number container on each row for highlighted code', () => {
+        // We can't evaluate the content of these containers since the numbers are drawn
+        // by CSS. This is a proxy to make sure the <td> tags with data-line attributes
+        // at least exist.
+        const { container } = render(
+            <CodeExcerpt {...defaultProps} highlightedLines={HIGHLIGHTED_FILE_LINES_SIMPLE.slice(startLine, endLine)} />
+        )
         const dataLines = container.querySelectorAll('[data-line]')
         expect(dataLines).toHaveLength(3)
     })
@@ -75,9 +87,8 @@ describe('CodeExcerpt', () => {
                 startLine={startLine}
                 endLine={endLine}
                 highlightRanges={highlightRanges}
-                fetchHighlightedFileRangeLines={() =>
-                    of(HIGHLIGHTED_FILE_LINES).pipe(map(ranges => ranges[0].slice(startLine, endLine)))
-                }
+                plaintextLines={FILE_LINES.slice(startLine, endLine)}
+                highlightedLines={HIGHLIGHTED_FILE_LINES.slice(startLine, endLine)}
             />
         )
         const highlightedSpans = container.querySelectorAll('.match-highlight')
@@ -108,9 +119,8 @@ describe('CodeExcerpt', () => {
                 startLine={startLine}
                 endLine={endLine}
                 highlightRanges={highlightRanges}
-                fetchHighlightedFileRangeLines={() =>
-                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(ranges => ranges[0].slice(startLine, endLine)))
-                }
+                plaintextLines={FILE_LINES_LONG.slice(startLine, endLine)}
+                highlightedLines={HIGHLIGHTED_FILE_LINES_LONG.slice(startLine, endLine)}
             />
         )
         const rows = container.querySelectorAll('tr')
@@ -139,9 +149,8 @@ describe('CodeExcerpt', () => {
                 startLine={startLine}
                 endLine={endLine}
                 highlightRanges={highlightRanges}
-                fetchHighlightedFileRangeLines={() =>
-                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(ranges => ranges[0].slice(startLine, endLine)))
-                }
+                plaintextLines={FILE_LINES_LONG.slice(startLine, endLine)}
+                highlightedLines={HIGHLIGHTED_FILE_LINES_LONG.slice(startLine, endLine)}
             />
         )
         const rows = container.querySelectorAll('tr')

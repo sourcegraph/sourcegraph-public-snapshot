@@ -209,25 +209,24 @@ func (e *externalServiceStore) Done(err error) error {
 // ExternalServiceKinds contains a map of all supported kinds of
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
-	extsvc.KindAWSCodeCommit:        {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
-	extsvc.KindAzureDevOps:          {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
-	extsvc.KindBitbucketCloud:       {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
-	extsvc.KindBitbucketServer:      {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
-	extsvc.KindGerrit:               {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
-	extsvc.KindGitHub:               {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	extsvc.KindGitLab:               {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
-	extsvc.KindGitolite:             {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	extsvc.KindGoPackages:           {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
-	extsvc.KindJVMPackages:          {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
-	extsvc.KindNpmPackages:          {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
-	extsvc.KindOther:                {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
-	extsvc.VariantLocalGit.AsKind(): {CodeHost: true, JSONSchema: schema.LocalGitExternalServiceSchemaJSON},
-	extsvc.KindPagure:               {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindPerforce:             {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
-	extsvc.KindPhabricator:          {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
-	extsvc.KindPythonPackages:       {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
-	extsvc.KindRustPackages:         {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
-	extsvc.KindRubyPackages:         {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
+	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindAzureDevOps:     {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
+	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
+	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
+	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
+	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
+	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
+	extsvc.KindGoPackages:      {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
+	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
+	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
+	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
+	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
+	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -592,9 +591,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	// Ensure the calculated fields in the external service are up to date.
-	if err := e.recalculateFields(es, string(normalized)); err != nil {
-		return err
-	}
+	e.recalculateFields(es, string(normalized))
 
 	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
@@ -691,9 +688,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, string(normalized)); err != nil {
-			return err
-		}
+		e.recalculateFields(s, string(normalized))
 
 		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normalized))
 		if err != nil {
@@ -1737,7 +1732,7 @@ func calcUnrestricted(config string) bool {
 // recalculateFields updates the value of the external service fields that are
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
-func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
+func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
 	es.Unrestricted = calcUnrestricted(rawConfig)
 
 	hasWebhooks := false
@@ -1750,8 +1745,6 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 		e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", es.ID))
 	}
 	es.HasWebhooks = &hasWebhooks
-
-	return nil
 }
 
 func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, config string) (codeHostID int32, _ error) {

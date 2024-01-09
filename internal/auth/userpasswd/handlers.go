@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
@@ -131,7 +130,31 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
+		getCookie := func(name string) string {
+			c, err := r.Cookie(name)
+			if err != nil || c == nil {
+				return ""
+			}
+			return c.Value
+		}
+
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+			DatabaseID:             usr.ID,
+			AnonymousUserID:        creds.AnonymousUserID,
+			FirstSourceURL:         creds.FirstSourceURL,
+			LastSourceURL:          creds.LastSourceURL,
+			OriginalReferrer:       getCookie("originalReferrer"),
+			LastReferrer:           getCookie("sg_referrer"),
+			SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+			SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+			SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+			SessionUTMSource:       getCookie("sg_utm_source"),
+			SessionUTMMedium:       getCookie("sg_utm_medium"),
+			SessionUTMContent:      getCookie("sg_utm_content"),
+			SessionUTMTerm:         getCookie("sg_utm_term"),
+			GoogleClickID:          getCookie("gclid"),
+			MicrosoftClickID:       getCookie("msclkid"),
+		})
 	}
 
 	// New event - we record legacy event manually for now, hence teestore.WithoutV1
@@ -139,7 +162,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
 	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
 		Metadata: telemetry.EventMetadata{
-			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
+			"failIfNewUserIsNotInitialSiteAdmin": telemetry.Bool(failIfNewUserIsNotInitialSiteAdmin),
 		},
 	})
 	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
@@ -238,9 +261,6 @@ func unsafeSignUp(
 			// information.
 			message = defaultErrorMessage
 			statusCode = http.StatusInternalServerError
-		}
-		if deploy.IsApp() && strings.Contains(err.Error(), "site_already_initialized") {
-			return nil, http.StatusOK, nil
 		}
 		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
 		// TODO: Use EventRecorder from internal/telemetryrecorder instead.
@@ -467,18 +487,11 @@ func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) h
 
 func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
-	event := &database.SecurityEvent{
-		Name:            *name,
-		URL:             r.URL.Path,
-		UserID:          uint32(user.ID),
-		AnonymousUserID: anonymousID,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
 	// Safe to ignore this error
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	db.SecurityEventLogs().LogEvent(r.Context(), event)
+	anonymousID, _ = cookie.AnonymousUID(r)
+	if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), *name, r.URL.Path, uint32(user.ID), anonymousID, "BACKEND", nil); err != nil {
+		log.Error(err)
+	}
 
 	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
 	// context.

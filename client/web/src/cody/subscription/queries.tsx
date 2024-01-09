@@ -18,6 +18,8 @@ export const USER_CODY_USAGE = gql`
             codyCurrentPeriodCodeUsage
             codyCurrentPeriodChatLimit
             codyCurrentPeriodCodeLimit
+            codyCurrentPeriodStartDate
+            codyCurrentPeriodEndDate
         }
     }
 `

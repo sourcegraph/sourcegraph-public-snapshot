@@ -1,26 +1,71 @@
-import type { SidebarFilter } from './utils'
+import {
+    mdiCodeTags,
+    mdiFileCodeOutline,
+    mdiPlusMinus,
+    mdiShapeOutline,
+    mdiSourceCommit,
+    mdiSourceRepository,
+} from '@mdi/js'
 
-export const searchTypes: SidebarFilter[] = [
+import { FilterKind, FilterType, appendFilter, findFilter, updateFilter } from '$lib/shared'
+
+function addOrUpdateTypeFilter(value: string): (query: string) => string {
+    return query => {
+        try {
+            return updateFilter(query, FilterType.type, value)
+        } catch {
+            // Ignore error
+        }
+        return appendFilter(query, FilterType.type, value)
+    }
+}
+
+function isSelectedTypeFilter(value: string): (query: string) => boolean {
+    return query => findFilter(query, FilterType.type, FilterKind.Global)?.value?.value === value
+}
+
+interface ResultTypeFilter {
+    label: string
+    icon: string
+    getQuery: (query: string) => string
+    isSelected: (query: string) => boolean
+}
+
+export const resultTypeFilter: ResultTypeFilter[] = [
     {
-        label: 'Search repos by org or name',
-        value: 'repo:',
-        kind: 'utility',
+        label: 'Code',
+        icon: mdiCodeTags,
+        getQuery: addOrUpdateTypeFilter('file'),
+        isSelected: isSelectedTypeFilter('file'),
     },
     {
-        label: 'Find a symbol',
-        value: 'type:symbol',
-        kind: 'utility',
-        runImmediately: true,
+        label: 'Repositories',
+        icon: mdiSourceRepository,
+        getQuery: addOrUpdateTypeFilter('repo'),
+        isSelected: isSelectedTypeFilter('repo'),
     },
     {
-        label: 'Search diffs',
-        value: 'type:diff',
-        kind: 'utility',
-        runImmediately: true,
+        label: 'Paths',
+        icon: mdiFileCodeOutline,
+        getQuery: addOrUpdateTypeFilter('path'),
+        isSelected: isSelectedTypeFilter('path'),
     },
     {
-        label: 'Search commit message',
-        value: 'type:commit',
-        kind: 'utility',
+        label: 'Symbols',
+        icon: mdiShapeOutline,
+        getQuery: addOrUpdateTypeFilter('symbol'),
+        isSelected: isSelectedTypeFilter('symbol'),
+    },
+    {
+        label: 'Commits',
+        icon: mdiSourceCommit,
+        getQuery: addOrUpdateTypeFilter('commit'),
+        isSelected: isSelectedTypeFilter('commit'),
+    },
+    {
+        label: 'Diffs',
+        icon: mdiPlusMinus,
+        getQuery: addOrUpdateTypeFilter('diff'),
+        isSelected: isSelectedTypeFilter('diff'),
     },
 ]

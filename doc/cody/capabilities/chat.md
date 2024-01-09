@@ -2,9 +2,9 @@
 
 <p class="subtitle">Use Cody's chat to get contextually-aware answers to your questions.</p>
 
-Cody **chat** allows you to ask coding-related questions about your entire codebase or a specific code snippet. You can do it from the **Chat** panel of the supported editor extensions (VS Code, JetBrains, and Neovim) or via the **Ask Cody** button in the web app.
+Cody **chat** allows you to ask coding-related questions about your entire codebase or a specific code snippet. You can do it from the **Chat** panel of the supported editor extensions (VS Code, JetBrains, and Neovim) or in the web app.
 
-The feature allows you to have an engaging conversation experience with Cody across VS Code, JetBrains, and Neovim. Key functionalities in the VS Code extension include support for multiple simultaneous chats, enhanced chat context configurability through `@` commands, detailed visibility into the code that Cody read before providing a response, and more.
+Key functionalities in the VS Code extension include support for multiple simultaneous chats, enhanced chat context configurability through `@` commands, detailed visibility into the code that Cody read before providing a response, and more.
 
 You can learn more about the IDE support for these functionalities in the [feature parity reference](./../feature-reference.md#chat).
 
@@ -12,14 +12,14 @@ You can learn more about the IDE support for these functionalities in the [featu
 
 To use Cody's chat, you'll need to have the following:
 
-- An active Sourcegraph account (free or enterprise)
+- A Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
 - A supported editor extension (VS Code, JetBrains, and Neovim) installed
 
 ## How does chat work?
 
 Cody can use several methods (including keyword search and optional embeddings context) to ask relevant questions. For VS Code extension users, Cody also uses context from the files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
-Cody can assist you with various use cases by answering questions such as:
+Cody can assist you with various use cases such as:
 
 - Generating an API call: Cody can analyze your API schema to provide context for the code it generates
 - Locating a specific component in your codebase: Cody can identify and describe the files where a particular component is defined
@@ -50,8 +50,6 @@ You are provided with code suggestions in the chat window along with the followi
 - The **Copy Code** icon to your clipboard and paste the code suggestion into your code editor
 - Insert the code suggestion at the current cursor location by the **Insert Code at Cursor** icon
 - The **Save Code to New File** icon to save the code suggestion to a new file in your project
-
->NOTE: These options are only available for VS Code extension users.
 
 During the chat, if Cody needs additional context, it can ask you to provide more information with a follow-up question. If your question is beyond the scope of the context, Cody will ask you to provide an alternate question aligned with the context of your codebase.
 

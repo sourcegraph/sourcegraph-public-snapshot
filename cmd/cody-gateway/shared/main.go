@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
@@ -95,11 +96,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Supported actor/auth sources
 	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
+	var dotcomClient graphql.Client
 	if config.Dotcom.AccessToken != "" {
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
 		obctx.Logger.Info("dotcom-based actor sources are enabled")
-		dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+		dotcomClient = dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
@@ -171,7 +173,9 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			FireworksDisableSingleTenant:                config.Fireworks.DisableSingleTenant,
 			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses:                 config.AutoFlushStreamingResponses,
-		}, sources)
+			EnableAttributionSearch:                     config.Attribution.Enabled,
+		},
+		dotcomClient)
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
@@ -193,10 +197,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	})
 
 	// Set up redis-based distributed mutex for the source syncer worker
-	p, ok := redispool.Store.Pool()
-	if !ok {
-		return errors.New("real redis is required")
-	}
+	p := redispool.Store.Pool()
 	sourceWorkerMutex := redsync.New(redigo.NewPool(p)).NewMutex("source-syncer-worker",
 		// Do not retry endlessly becuase it's very likely that someone else has
 		// a long-standing hold on the mutex. We will try again on the next periodic

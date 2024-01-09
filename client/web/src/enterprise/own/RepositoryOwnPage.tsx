@@ -9,8 +9,10 @@ import { Button, H1, Icon, Link, PageHeader, ProductStatusBadge, ButtonLink } fr
 import { AddOwnerModal } from '../../components/own/AddOwnerModal'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { OwnershipAssignPermission } from '../../rbac/constants'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
+import { doesUserHavePermission } from '../../util/permission'
 
 import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
@@ -20,6 +22,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useBreadcrumb,
     repo,
     telemetryService,
+    authenticatedUser,
 }) => {
     const [searchParams] = useSearchParams()
     const filePath = searchParams.get('path') ?? ''
@@ -60,6 +63,9 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     useEffect(() => {
         telemetryService.log('repoPage:ownershipPage:viewed')
     }, [telemetryService])
+
+    const showAddOwnerBtn = doesUserHavePermission(authenticatedUser, OwnershipAssignPermission)
+
     return (
         <>
             <Page>
@@ -73,9 +79,11 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     >
                         <Icon aria-hidden={true} svgPath={mdiPencil} /> Upload CODEOWNERS
                     </ButtonLink>
-                    <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
-                    </Button>
+                    {showAddOwnerBtn && (
+                        <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
+                        </Button>
+                    )}
                 </div>
 
                 <PageHeader

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "release",
+    srcs = ["cve.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/release",
+    visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/bk",
+        "//dev/sg/internal/std",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "release_test",
+    srcs = ["cve_test.go"],
+    embed = [":release"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+)

@@ -13,6 +13,7 @@ proto_library(
     name = "grpc_example_weather_v1_proto",
     srcs = ["weather.proto"],
     visibility = ["//:__subpackages__"],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
 go_proto_library(

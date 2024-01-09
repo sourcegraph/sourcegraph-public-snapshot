@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/russellhaering/gosaml2/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -140,28 +141,21 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
-				arg, _ := json.Marshal(struct {
+				arg := struct {
 					SafeErrorMsg string `json:"safe_error_msg"`
 				}{
 					SafeErrorMsg: safeErrMsg,
-				})
-				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-					Name:            database.SecurityEventOIDCLoginFailed,
-					URL:             r.URL.Path,                                   // Don't log OIDC query params
-					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
-					Source:          "BACKEND",
-					Timestamp:       time.Now(),
-					Argument:        arg,
-				})
+				}
+
+				if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginFailed, r.URL.Path, uint32(0), fmt.Sprintf("unknown OIDC @ %s", time.Now()), "BACKEND", arg); err != nil {
+					log15.Warn("Error logging security event.", "error", err)
+				}
 				return
 			}
-			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-				Name:      database.SecurityEventOIDCLoginSucceeded,
-				URL:       r.URL.Path, // Don't log OIDC query params
-				UserID:    uint32(result.User.ID),
-				Source:    "BACKEND",
-				Timestamp: time.Now(),
-			})
+			if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil); err != nil {
+				log15.Warn("Error logging security event.", "error", err)
+
+			}
 
 			var exp time.Duration
 			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
@@ -329,7 +323,22 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 		return c.Value
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
-	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, &hubspot.ContactProperties{
+		AnonymousUserID:        anonymousId,
+		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
+		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
+		OriginalReferrer:       getCookie("originalReferrer"),
+		LastReferrer:           getCookie("sg_referrer"),
+		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
+		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
+		SessionUTMCampaign:     getCookie("sg_utm_campaign"),
+		SessionUTMSource:       getCookie("sg_utm_source"),
+		SessionUTMMedium:       getCookie("sg_utm_medium"),
+		SessionUTMContent:      getCookie("sg_utm_content"),
+		SessionUTMTerm:         getCookie("sg_utm_term"),
+		GoogleClickID:          getCookie("gclid"),
+		MicrosoftClickID:       getCookie("msclkid"),
+	})
 	if err != nil {
 		return nil,
 			safeErrMsg,

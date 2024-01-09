@@ -13,7 +13,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Profile',
         to: '/profile',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Subscriptions',
@@ -36,7 +35,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Emails',
         to: '/emails',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Access tokens',
@@ -47,7 +45,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Account security',
         to: '/security',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         label: 'Quotas',
@@ -64,7 +61,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Permissions',
         to: '/permissions',
         exact: true,
-        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         to: '/event-log',

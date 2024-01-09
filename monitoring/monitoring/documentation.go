@@ -168,7 +168,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 	fmt.Fprintf(&d.alertDocs, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
-	if o.Owner.identifier != "" {
+	if o.Owner.opsgenieTeam != "" {
 		// add owner
 		fprintOwnedBy(&d.alertDocs, o.Owner)
 	}
@@ -211,7 +211,7 @@ func (d *documentation) renderDashboardPanelEntry(c *Dashboard, o Observable, pa
 	fmt.Fprintf(&d.dashboards, "To see this panel, visit `/-/debug/grafana/d/%[1]s/%[1]s?viewPanel=%[2]d` on your Sourcegraph instance.\n\n",
 		c.Name, panelID)
 
-	if o.Owner.identifier != "" {
+	if o.Owner.opsgenieTeam != "" {
 		// add owner
 		fprintOwnedBy(&d.dashboards, o.Owner)
 	}

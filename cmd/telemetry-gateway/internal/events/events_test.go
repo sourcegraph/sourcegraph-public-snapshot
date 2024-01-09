@@ -29,10 +29,13 @@ func TestPublish(t *testing.T) {
 		}
 	}
 
-	publisher, err := events.NewPublisherForStream(memTopic, &telemetrygatewayv1.RecordEventsRequestMetadata{})
+	const concurrency = 50
+	publisher, err := events.NewPublisherForStream(memTopic, &telemetrygatewayv1.RecordEventsRequestMetadata{}, events.PublishStreamOptions{
+		ConcurrencyLimit: concurrency,
+	})
 	require.NoError(t, err)
 
-	events := make([]*telemetrygatewayv1.Event, 100)
+	events := make([]*telemetrygatewayv1.Event, concurrency)
 	for i := range events {
 		events[i] = &telemetrygatewayv1.Event{
 			Id:      strconv.Itoa(i),

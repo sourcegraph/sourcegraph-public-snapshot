@@ -16,8 +16,20 @@ import (
 
 // TopicClient is a Pub/Sub client that bound to a topic.
 type TopicClient interface {
+	// TopicPublisher is the interface most callsites will use, which only
+	// includes publishing entrypoints. When propagating TopicClient as a
+	// dependency, prefer to use the smaller TopicPublisher interface.
+	TopicPublisher
+
 	// Ping checks if the connection to the topic is valid.
 	Ping(ctx context.Context) error
+	// Stop stops the topic publishing channel. The client should not be used after
+	// calling Stop.
+	Stop()
+}
+
+// TopicPublisher is a Pub/Sub publisher bound to a topic.
+type TopicPublisher interface {
 	// Publish publishes messages and waits for all the results synchronously.
 	// It returns the first error encountered or nil if all succeeded. To collect
 	// individual errors, call Publish with only 1 message, or use PublishMessage.
@@ -25,9 +37,6 @@ type TopicClient interface {
 	// PublishMessage publishes a single message with attributes and waits for
 	// the result synchronously.
 	PublishMessage(ctx context.Context, message []byte, attributes map[string]string) error
-	// Stop stops the topic publishing channel. The client should not be used after
-	// calling Stop.
-	Stop()
 }
 
 var (

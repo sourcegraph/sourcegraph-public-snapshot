@@ -42,6 +42,7 @@ go_library(
         "//cmd/telemetrygateway/shared:__pkg__",
         "//internal/api:__pkg__",
         "//internal/database:__pkg__",
+        "//internal/database/dbmocks:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
         "//internal/telemetry:__pkg__",
         "//internal/telemetry/sensitivemetadataallowlist:__pkg__",

@@ -336,6 +336,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		query,
 		search.Precise,
 		search.Batch,
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -576,6 +577,7 @@ func TestEvaluateAnd(t *testing.T) {
 				tt.query,
 				search.Precise,
 				search.Batch,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -692,6 +694,7 @@ func TestSubRepoFiltering(t *testing.T) {
 				tt.searchQuery,
 				search.Precise,
 				search.Batch,
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)

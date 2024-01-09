@@ -42,35 +42,35 @@ type usageStats struct {
 // in the order they are defined here.
 //
 // Methods do not need to be concurrency-safe, as they are only called sequentially.
-type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
+type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
 	// Returning a non-nil error will stop further processing and return the given error
 	// code, or a 400.
 	// Second return value is a boolean indicating whether the request was flagged during validation.
 	//
 	// The provided logger already contains actor context.
-	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
+	validateRequest(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
 	//
 	// If the upstream supports it, the given identifier string should be
 	// provided to assist in abuse detection.
-	transformBody func(_ *ReqT, identifier string)
+	transformBody(_ *ReqT, identifier string)
 	// transformRequest can be used to modify the HTTP request before it is sent
 	// upstream. To manipulate the body, use transformBody.
-	transformRequest func(*http.Request)
+	transformRequest(*http.Request)
 	// getRequestMetadata should extract details about the request we are sending
 	// upstream for validation and tracking purposes. Usage data does not need
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata(context.Context, log.Logger, *actor.Actor, codygateway.Feature, ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
 	// If data is unavailable, implementations should set relevant usage fields
 	// to -1 as a sentinel value.
-	parseResponseAndUsage func(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
+	parseResponseAndUsage(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
 }
 
 type UpstreamRequest interface {
@@ -89,7 +89,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
 
-	upstreamAPIURL string,
+	upstreamAPIURL func(feature codygateway.Feature) string,
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
@@ -101,7 +101,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName).
-		With(log.String("upstream.url", upstreamAPIURL))
+		// This URL is used only for logging reason so we default to the chat endpoint
+		With(log.String("upstream.url", upstreamAPIURL(codygateway.FeatureChatCompletions)))
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
@@ -179,7 +180,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							Name:       codygateway.EventNameRequestBlocked,
 							Source:     act.Source.Name(),
 							Identifier: act.ID,
-							Metadata: mergeMaps(requestMetadata, map[string]any{
+							Metadata: events.MergeMaps(requestMetadata, map[string]any{
 								codygateway.CompletionsEventFeatureMetadataField: feature,
 								"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
 								"provider": upstreamName,
@@ -221,7 +222,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			// Create a new request to send upstream, making sure we retain the same context.
-			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL(feature), bytes.NewReader(upstreamPayload))
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
 				return
@@ -231,7 +232,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, body)
+			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, feature, body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -263,7 +264,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
 				if flaggingResult.IsFlagged() {
-					requestMetadata = mergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
+					requestMetadata = events.MergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 				}
 				usageData := map[string]any{
 					"prompt_character_count":     promptUsage.characters,
@@ -285,7 +286,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						Name:       codygateway.EventNameCompletionsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
+						Metadata: events.MergeMaps(requestMetadata, usageData, map[string]any{
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"model":    gatewayModel,
 							"provider": upstreamName,
@@ -427,15 +428,6 @@ func intersection(a, b []string) (c []string) {
 		}
 	}
 	return c
-}
-
-func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
-	for _, src := range srcs {
-		for k, v := range src {
-			dst[k] = v
-		}
-	}
-	return dst
 }
 
 type flaggingResult struct {
