@@ -73,15 +73,29 @@ func NewMinimalRepositoryResolver(db database.DB, client gitserver.Client, id ap
 // function with an incomplete *types.Repo. Instead, use NewMinimalRepositoryResolver, which will lazily
 // fetch the *types.Repo if needed.
 func NewRepositoryResolver(db database.DB, gs gitserver.Client, repo *types.Repo) *RepositoryResolver {
+	// Protect against a nil repo
+	//
+	// TODO(@camdencheek): this shouldn't be necessary because it doesn't
+	// make sense to construct a repository resolver from a nil repo,
+	// but this was historically allowed, so tests fail without this.
+	// We should do an audit of callsites to fix places where this could
+	// be called with a nil repo.
+	var id api.RepoID
+	var name api.RepoName
+	if repo != nil {
+		name = repo.Name
+		id = repo.ID
+	}
+
 	return &RepositoryResolver{
-		id:              repo.ID,
-		name:            repo.Name,
+		id:              id,
+		name:            name,
 		db:              db,
 		gitserverClient: gs,
 		logger: log.Scoped("repositoryResolver").
 			With(log.Object("repo",
-				log.String("name", string(repo.Name)),
-				log.Int32("id", int32(repo.ID)))),
+				log.String("name", string(name)),
+				log.Int32("id", int32(id)))),
 		repo: repo,
 	}
 }
