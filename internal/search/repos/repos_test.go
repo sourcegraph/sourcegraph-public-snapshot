@@ -276,12 +276,12 @@ func TestResolverIterator(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	for i := 1; i <= 5; i++ {
-		r := types.MinimalRepo{
+		r := &types.Repo{
 			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 
-		if err := db.Repos().Create(ctx, r.ToRepo()); err != nil {
+		if err := db.Repos().Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -435,18 +435,20 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 
 	var all []RepoRevSpecs
 	for i := 1; i <= 5; i++ {
-		r := types.MinimalRepo{
+		r := &types.Repo{
 			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 
-		repo := r.ToRepo()
-		if err := db.Repos().Create(ctx, repo); err != nil {
+		if err := db.Repos().Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
-		r.ID = repo.ID
 
-		all = append(all, RepoRevSpecs{Repo: r})
+		all = append(all, RepoRevSpecs{Repo: types.MinimalRepo{
+			ID:    r.ID,
+			Name:  r.Name,
+			Stars: r.Stars,
+		}})
 	}
 
 	withRevSpecs := func(rrs []RepoRevSpecs, revs ...query.RevisionSpecifier) []RepoRevSpecs {
