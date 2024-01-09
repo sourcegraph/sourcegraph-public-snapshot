@@ -192,7 +192,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoName]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, gitserverClient, repoName.ToRepo())
+		resolver := gql.NewMinimalRepositoryResolver(db, gitserverClient, repoName.ID, repoName.Name)
 		repoResolvers[repoName] = resolver
 		return resolver
 	}

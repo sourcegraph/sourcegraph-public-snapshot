@@ -38,22 +38,48 @@ type RepositoryResolver struct {
 	id   api.RepoID
 	name api.RepoName
 
-	logger log.Logger
-
-	hydration sync.Once
-	innerRepo *types.Repo
-	err       error
-
 	db              database.DB
 	gitserverClient gitserver.Client
+	logger          log.Logger
+
+	// Fields below this line should not be used directly.
+	// Use the get* methods instead.
+
+	repoOnce sync.Once
+	repo     *types.Repo
+	repoErr  error
 
 	defaultBranchOnce sync.Once
 	defaultBranch     *GitRefResolver
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
+// NewMinimalRepositoryResolver creates a new lazy resolver from the minimum necessary information: repo name and repo ID.
+// If you have a fully resolved *types.Repo, use NewRepositoryResolver instead.
+func NewMinimalRepositoryResolver(db database.DB, client gitserver.Client, id api.RepoID, name api.RepoName) *RepositoryResolver {
+	return &RepositoryResolver{
+		id:              id,
+		name:            name,
+		db:              db,
+		gitserverClient: client,
+		logger: log.Scoped("repositoryResolver").
+			With(log.Object("repo",
+				log.String("name", string(name)),
+				log.Int32("id", int32(id)))),
+	}
+}
+
+// NewRepositoryResolver creates a repository resolver from a fully resolved *types.Repo. Do not use this
+// function with an incomplete *types.Repo. Instead, use NewMinimalRepositoryResolver, which will lazily
+// fetch the *types.Repo if needed.
+func NewRepositoryResolver(db database.DB, gs gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
+	//
+	// TODO(@camdencheek): this shouldn't be necessary because it doesn't
+	// make sense to construct a repository resolver from a nil repo,
+	// but this was historically allowed, so tests fail without this.
+	// We should do an audit of callsites to fix places where this could
+	// be called with a nil repo.
 	var id api.RepoID
 	var name api.RepoName
 	if repo != nil {
@@ -65,12 +91,12 @@ func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.
 		id:              id,
 		name:            name,
 		db:              db,
-		innerRepo:       repo,
-		gitserverClient: client,
+		gitserverClient: gs,
 		logger: log.Scoped("repositoryResolver").
 			With(log.Object("repo",
 				log.String("name", string(name)),
 				log.Int32("id", int32(id)))),
+		repo: repo,
 	}
 }
 
@@ -126,9 +152,21 @@ func UnmarshalRepositoryIDs(ids []graphql.ID) ([]api.RepoID, error) {
 }
 
 // repo makes sure the repo is hydrated before returning it.
-func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
-	err := r.hydrate(ctx)
-	return r.innerRepo, err
+func (r *RepositoryResolver) getRepo(ctx context.Context) (*types.Repo, error) {
+	r.repoOnce.Do(func() {
+		// Repositories with an empty creation date were created using RepoName.ToRepo(),
+		// they only contain ID and name information.
+		//
+		// TODO(@camdencheek): We _shouldn't_ need to inspect the CreatedAt date,
+		// but the API NewRepositoryResolver previously allowed passing in a *types.Repo
+		// with only the Name and ID fields populated.
+		if r.repo != nil && !r.repo.CreatedAt.IsZero() {
+			return
+		}
+		r.logger.Debug("RepositoryResolver.hydrate", log.String("repo.ID", string(r.IDInt32())))
+		r.repo, r.repoErr = r.db.Repos().Get(ctx, r.id)
+	})
+	return r.repo, r.repoErr
 }
 
 func (r *RepositoryResolver) RepoName() api.RepoName {
@@ -140,32 +178,47 @@ func (r *RepositoryResolver) Name() string {
 }
 
 func (r *RepositoryResolver) ExternalRepo(ctx context.Context) (*api.ExternalRepoSpec, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &repo.ExternalRepo, err
 }
 
 func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return false, err
+	}
 	return repo.Fork, err
 }
 
 func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return false, err
+	}
 	return repo.Archived, err
 }
 
 func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return false, err
+	}
 	return repo.Private, err
 }
 
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return "", err
+	}
 	return repo.URI, err
 }
 
 func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve innerRepo")
 	}
@@ -178,7 +231,10 @@ func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error
 }
 
 func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
+	if err != nil {
+		return "", err
+	}
 	return repo.Description, err
 }
 
@@ -237,12 +293,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		attribute.String("commit", args.Rev))
 	defer tr.EndWithErr(&err)
 
-	repo, err := r.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, r.name, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -284,7 +335,7 @@ func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryCha
 		return nil, nil
 	}
 
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +359,7 @@ func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitR
 	tr, ctx := trace.New(ctx, "RepositoryResolver.FirstEverCommit")
 	defer tr.EndWithErr(&err)
 
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -356,18 +407,18 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 	// Note: the repository database field is no longer updated as of
 	// https://github.com/sourcegraph/sourcegraph/issues/2586, so we do not use it anymore and
 	// instead compute the language on the fly.
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, r.name, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo.Name, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -389,11 +440,13 @@ func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
 }
 
 func (r *RepositoryResolver) RawCreatedAt() string {
-	if r.innerRepo == nil {
+	// TODO(@camdencheek): this represents a race condition between
+	// the sync.Once that populates r.repo and any callers of this method.
+	// The risk is small, so I'm not worrying about it right now.
+	if r.repo == nil {
 		return ""
 	}
-
-	return r.innerRepo.CreatedAt.Format(time.RFC3339)
+	return r.repo.CreatedAt.Format(time.RFC3339)
 }
 
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
@@ -409,7 +462,7 @@ func (r *RepositoryResolver) url() *url.URL {
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -435,12 +488,8 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
-	return r.repo(ctx)
-}
-
 func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -453,7 +502,7 @@ func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair,
 }
 
 func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -466,32 +515,12 @@ func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, erro
 }
 
 func (r *RepositoryResolver) Topics(ctx context.Context) ([]string, error) {
-	repo, err := r.repo(ctx)
+	repo, err := r.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return repo.Topics, nil
-}
-
-func (r *RepositoryResolver) hydrate(ctx context.Context) error {
-	r.hydration.Do(func() {
-		// Repositories with an empty creation date were created using RepoName.ToRepo(),
-		// they only contain ID and name information.
-		if r.innerRepo != nil && !r.innerRepo.CreatedAt.IsZero() {
-			return
-		}
-
-		r.logger.Debug("RepositoryResolver.hydrate", log.String("repo.ID", string(r.IDInt32())))
-
-		var repo *types.Repo
-		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
-		if r.err == nil {
-			r.innerRepo = repo
-		}
-	})
-
-	return r.err
 }
 
 func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {
