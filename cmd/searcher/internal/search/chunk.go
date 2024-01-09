@@ -157,3 +157,39 @@ func lineEnd(buf []byte, offset int32) int32 {
 	}
 	return end
 }
+
+// columnHelper is a helper struct which caches the number of runes last
+// counted. If we naively use utf8.RuneCount for each match on a line, this
+// leads to an O(nm) algorithm where m is the number of matches and n is the
+// length of the line. Since the matches are sorted by increasing offset, we
+// can avoid searching through the part of the line already processed, which
+// makes this operation O(n) instead.
+type columnHelper struct {
+	data []byte
+
+	// 0 values for all these are valid values
+	lastLineOffset int
+	lastOffset     int
+	lastRuneCount  int
+}
+
+// get returns the column for the match. 'lineOffset' is the byte offset for the
+// start of the line in the data buffer, and 'offset' is the byte offset of the
+// rune in data.
+func (c *columnHelper) get(lineOffset int, offset int) int {
+	var runeCount int
+
+	if lineOffset == c.lastLineOffset && offset >= c.lastOffset {
+		// Can count from last calculation
+		runeCount = c.lastRuneCount + utf8.RuneCount(c.data[c.lastOffset:offset])
+	} else {
+		// Need to count from the beginning of line
+		runeCount = utf8.RuneCount(c.data[lineOffset:offset])
+	}
+
+	c.lastLineOffset = lineOffset
+	c.lastOffset = offset
+	c.lastRuneCount = runeCount
+
+	return runeCount
+}

@@ -1,7 +1,10 @@
 package search
 
 import (
+	"bytes"
 	"testing"
+	"testing/quick"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/require"
 
@@ -294,5 +297,83 @@ func Test_addContext(t *testing.T) {
 			contextedRange := addContextLines(extendedRange, buf, testCase.contextLines)
 			require.Equal(t, testCase.expected, string(buf[contextedRange.Start.Offset:contextedRange.End.Offset]))
 		})
+	}
+}
+
+func TestColumnHelper(t *testing.T) {
+	f := func(line0, line1 string) bool {
+		data := []byte(line0 + line1)
+		lineOffset := len(line0)
+
+		columnHelper := columnHelper{data: data}
+
+		// We check every second rune returns the correct answer
+		offset := lineOffset
+		column := 0
+		for offset < len(data) {
+			if column%2 == 0 {
+				got := columnHelper.get(lineOffset, offset)
+				if got != column {
+					return false
+				}
+			}
+			_, size := utf8.DecodeRune(data[offset:])
+			offset += size
+			column++
+		}
+
+		return true
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	// Corner cases
+
+	// empty data, shouldn't happen but just in case it slips through
+	ch := columnHelper{data: nil}
+	if got := ch.get(0, 0); got != 0 {
+		t.Fatal("empty data didn't return 1", got)
+	}
+
+	// Repeating a call to get should return the same value
+	// empty data, shouldn't happen but just in case it slips through
+	ch = columnHelper{data: []byte("hello\nworld")}
+	if got := ch.get(6, 8); got != 2 {
+		t.Fatal("unexpected value for third column on second line", got)
+	}
+	if got := ch.get(6, 8); got != 2 {
+		t.Fatal("unexpected value for repeated call for third column on second line", got)
+	}
+
+	// Now make sure if we go backwards we do not incorrectly use the cache
+	if got := ch.get(6, 6); got != 0 {
+		t.Fatal("unexpected value for backwards call for first column on second line", got)
+	}
+}
+
+func BenchmarkColumnHelper(b *testing.B) {
+	// We simulate looking up columns of evenly spaced matches
+	const matches = 10_000
+	const match = "match"
+	const space = "         "
+	const dist = len(match) + len(space)
+	data := bytes.Repeat([]byte(match+space), matches)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		columnHelper := columnHelper{data: data}
+
+		lineOffset := 0
+		offset := 0
+		for offset < len(data) {
+			col := columnHelper.get(lineOffset, offset)
+			if col != offset+1 {
+				b.Fatal("column is not offset even though data is ASCII")
+			}
+			offset += dist
+		}
 	}
 }
