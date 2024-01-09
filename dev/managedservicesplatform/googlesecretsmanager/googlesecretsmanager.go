@@ -34,6 +34,9 @@ const (
 	//
 	// The current bot user is https://api.slack.com/apps/A06C4TF6YF7/oauth
 	SecretSlackOperatorOAuthToken = "SLACK_OPERATOR_BOT_OAUTH_TOKEN"
+	// SecretSentryAuthToken is a Sentry internal integration auth token with
+	// Project permissions
+	SecretSentryAuthToken = "TFC_MSP_SENTRY_INTEGRATION"
 
 	// SecretSourcegraphWildcardKey and SecretSourcegraphWildcardCert are used
 	// for configuring Cloudflare TLS.

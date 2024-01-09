@@ -50,6 +50,7 @@ type internalContract struct {
 	diagnosticsSecret *string
 	opentelemetry     opentelemetry.Config
 	sentryDSN         *string
+	environmentID     *string
 }
 
 func newContract(logger log.Logger, env *Env, service ServiceMetadata) Contract {
@@ -73,7 +74,8 @@ func newContract(logger log.Logger, env *Env, service ServiceMetadata) Contract 
 					env.GetOptional("OTEL_GCP_PROJECT_ID", "GCP project ID for OpenTelemetry export"),
 					defaultGCPProjectID),
 			},
-			sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+			sentryDSN:     env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
+			environmentID: env.GetOptional("ENVIRONMENT_ID", "MSP Service Environment ID"),
 		},
 	}
 }

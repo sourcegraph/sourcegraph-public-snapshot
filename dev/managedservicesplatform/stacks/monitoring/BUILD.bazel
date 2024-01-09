@@ -17,6 +17,7 @@ go_library(
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/options/googleprovider",
         "//dev/managedservicesplatform/internal/stack/options/opsgenieprovider",
+        "//dev/managedservicesplatform/internal/stack/options/sentryprovider",
         "//dev/managedservicesplatform/internal/stack/options/slackprovider",
         "//dev/managedservicesplatform/spec",
         "//lib/errors",
@@ -26,6 +27,9 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringuptimecheckconfig",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//apiintegration",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//dataopsgenieteam",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//datasentryorganizationintegration:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//notificationaction:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//project:go_default_library",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_slack//conversation",
     ],
 )
