@@ -50,7 +50,7 @@ func TestExportedEvents(t *testing.T) {
 	}
 
 	// Use a real DB for TelemetryEventsExportQueue for simplicity and E2E testing
-	exportQueueStore := database.TelemetryEventsExportQueueWith(logtest.Scoped(t), database.NewDB(logtest.Scoped(t), dbtest.NewDB(t)))
+	exportQueueStore := database.TelemetryEventsExportQueueWith(logtest.Scoped(t), database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t)))
 	require.NoError(t, exportQueueStore.QueueForExport(context.Background(), exportedEvents))
 	require.NoError(t, exportQueueStore.MarkAsExported(context.Background(), exportedEventIDs))
 
