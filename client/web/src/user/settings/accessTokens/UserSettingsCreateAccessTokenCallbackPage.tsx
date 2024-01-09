@@ -185,6 +185,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         setNote(REQUESTERS[requestFrom].name)
     }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester, port, destination])
 
+    const isRequestFromMobileDevice = isMobile()
+
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -200,7 +202,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 // SECURITY: If the request was from a valid requester and from a non-mobile device,
                                 // redirect to the allowlisted redirect URL.
                                 // SECURITY: Local context ONLY
-                                if (requester && !isMobile()) {
+                                if (requester && !isRequestFromMobileDevice) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
@@ -226,7 +228,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port]
+            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isRequestFromMobileDevice]
         )
     )
 
@@ -258,6 +260,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             variant="primary"
                             label="Authorize"
                             loading={creationOrError === 'loading'}
+                            // we disable this if the request is made from a mobile device so the access token doesn't
+                            // get created at all. This prevents redirecting to an external site from a mobile app.
+                            disabled={isRequestFromMobileDevice}
                             onClick={onAuthorize}
                         />
                         <Button
