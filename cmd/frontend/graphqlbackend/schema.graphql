@@ -10130,6 +10130,10 @@ enum AccessRequestStatus {
     Access request was rejected
     """
     REJECTED
+    """
+    Access request was canceled
+    """
+    CANCELED
 }
 
 """
