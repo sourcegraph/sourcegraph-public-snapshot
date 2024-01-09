@@ -201,13 +201,8 @@ interface CodeSymbol {
 /**
  * Converts a Repo value to a suggestion.
  */
-function toRepoSuggestion(
-    result: FzfResultItem<Repo>,
-    config: SuggestionsSourceConfig,
-    from: number,
-    to?: number
-): Option {
-    const option = toRepoCompletion(result, config, from, to, 'repo:')
+function toRepoSuggestion(result: FzfResultItem<Repo>, from: number, to?: number): Option {
+    const option = toRepoCompletion(result, from, to, 'repo:')
     option.render = RenderAs.FILTER
     return option
 }
@@ -217,7 +212,6 @@ function toRepoSuggestion(
  */
 function toRepoCompletion(
     { item, positions }: FzfResultItem<Repo>,
-    config: SuggestionsSourceConfig,
     from: number,
     to?: number,
     valuePrefix = ''
@@ -232,7 +226,7 @@ function toRepoCompletion(
         kind: 'repo',
         action: {
             type: 'completion',
-            insertValue: valuePrefix + (config.valueType === 'regex' ? regexInsertText(item.name) : item.name) + ' ',
+            insertValue: valuePrefix + regexInsertText(item.name) + ' ',
             from,
             to,
         },
@@ -295,7 +289,6 @@ function toFilterCompletion(label: string, description: string | undefined, from
  */
 function toFileCompletion(
     { item, positions }: FzfResultItem<File>,
-    config: SuggestionsSourceConfig,
     from: number,
     to?: number,
     valuePrefix = ''
@@ -310,8 +303,7 @@ function toFileCompletion(
         kind: 'file',
         action: {
             type: 'completion',
-            insertValue:
-                valuePrefix + (config.valueType === 'regex' ? regexInsertText(item.path) + ' ' : item.path) + ' ',
+            insertValue: valuePrefix + regexInsertText(item.path) + ' ',
             from,
             to,
         },
@@ -321,13 +313,8 @@ function toFileCompletion(
 /**
  * Converts a File value to a (jump) target suggestion.
  */
-function toFileSuggestion(
-    result: FzfResultItem<File>,
-    config: SuggestionsSourceConfig,
-    from: number,
-    to?: number
-): Option {
-    const option = toFileCompletion(result, config, from, to, 'file:')
+function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number): Option {
+    const option = toFileCompletion(result, from, to, 'file:')
     option.render = RenderAs.FILTER
     return option
 }
@@ -512,7 +499,7 @@ const contextActions: Group = {
  * Returns static and dynamic completion suggestions for filters when completing
  * a filter value.
  */
-function filterValueSuggestions(caches: Caches, config: SuggestionsSourceConfig): InternalSource {
+function filterValueSuggestions(caches: Caches): InternalSource {
     return ({ token, parsedQuery, position }) => {
         if (token?.type !== 'filter') {
             return null
@@ -544,7 +531,7 @@ function filterValueSuggestions(caches: Caches, config: SuggestionsSourceConfig)
                                             ? ALL_FILTER_VALUE_LIST_SIZE
                                             : MULTIPLE_FILTER_VALUE_LIST_SIZE
                                     )
-                                    .map(item => toRepoCompletion(item, config, from, to)),
+                                    .map(item => toRepoCompletion(item, from, to)),
                             },
                         ]
 
@@ -575,7 +562,7 @@ function filterValueSuggestions(caches: Caches, config: SuggestionsSourceConfig)
                                     predicates.length === 0
                                         ? ALL_FILTER_VALUE_LIST_SIZE
                                         : MULTIPLE_FILTER_VALUE_LIST_SIZE,
-                                    item => toFileCompletion(item, config, from, to)
+                                    item => toFileCompletion(item, from, to)
                                 ),
                             },
                         ]
@@ -746,7 +733,7 @@ function staticFilterPredicateOptions(type: 'repo' | 'file', filter: Filter, fro
  * Returns repository (jump) target suggestions matching the term at the cursor,
  * but only if the query doesn't already contain a 'repo:' filter.
  */
-function repoSuggestions(cache: Caches['repo'], config: SuggestionsSourceConfig): InternalSource {
+function repoSuggestions(cache: Caches['repo']): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
         const showRepoSuggestions =
             token?.type === 'pattern' &&
@@ -762,7 +749,7 @@ function repoSuggestions(cache: Caches['repo'], config: SuggestionsSourceConfig)
                     title: 'Repositories',
                     options: results
                         .slice(0, DEFAULT_SUGGESTIONS_LIST_SIZE)
-                        .map(result => toRepoSuggestion(result, config, token.range.start)),
+                        .map(result => toRepoSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -776,13 +763,13 @@ function repoSuggestions(cache: Caches['repo'], config: SuggestionsSourceConfig)
  * but only if the query contains suitable filters. On dotcom we only show file
  * suggestions if the query contains at least one context: or repo: filter.
  */
-function fileSuggestions(cache: Caches['file'], config: SuggestionsSourceConfig): InternalSource {
+function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
         // Only show file suggestions on dotcom if the query contains at least
         // one context: filter that is not 'global', or a repo: filter.
         const showFileSuggestions =
             token?.type === 'pattern' &&
-            (!config.isSourcegraphDotCom ||
+            (!isSourcegraphDotCom ||
                 tokens.some(token => {
                     if (token.type !== 'filter') {
                         return false
@@ -803,7 +790,7 @@ function fileSuggestions(cache: Caches['file'], config: SuggestionsSourceConfig)
                 {
                     title: 'Files',
                     options: limitUniqueOptions(results, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE, result =>
-                        toFileSuggestion(result, config, token.range.start)
+                        toFileSuggestion(result, token.range.start)
                     ),
                 },
             ],
@@ -881,9 +868,8 @@ interface Caches {
 
 export interface SuggestionsSourceConfig {
     graphqlQuery: <T, V extends Record<string, any>>(query: string, variables: V) => Promise<T>
-    authenticatedUser?: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
     isSourcegraphDotCom?: boolean
-    valueType: 'regex' | 'glob'
 }
 
 let sharedCaches: Caches | null = null
@@ -1076,10 +1062,10 @@ export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source
 
     const sources: InternalSource[] = [
         defaultSuggestions,
-        filterValueSuggestions(caches, config),
+        filterValueSuggestions(caches),
         filterSuggestions,
-        repoSuggestions(caches.repo, config),
-        fileSuggestions(caches.file, config),
+        repoSuggestions(caches.repo),
+        fileSuggestions(caches.file, config.isSourcegraphDotCom),
         symbolSuggestions(caches.symbol),
     ]
 

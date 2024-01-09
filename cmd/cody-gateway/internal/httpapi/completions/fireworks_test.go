@@ -13,7 +13,7 @@ func TestFireworksRequestGetTokenCount(t *testing.T) {
 
 	t.Run("streaming", func(t *testing.T) {
 		req := fireworksRequest{Stream: true}
-		r := strings.NewReader(streamingResponse)
+		r := strings.NewReader(fireworksStreamingResponse)
 		handler := &FireworksHandlerMethods{}
 		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
 
@@ -23,7 +23,7 @@ func TestFireworksRequestGetTokenCount(t *testing.T) {
 
 	t.Run("non-streaming", func(t *testing.T) {
 		req := fireworksRequest{Stream: false}
-		r := strings.NewReader(nonStreamingResponse)
+		r := strings.NewReader(fireworksNonStreamingResponse)
 		handler := &FireworksHandlerMethods{}
 		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
 
@@ -32,7 +32,7 @@ func TestFireworksRequestGetTokenCount(t *testing.T) {
 	})
 }
 
-var streamingResponse = `
+var fireworksStreamingResponse = `
 data: {"id":"cmpl-448a6127ca074189b4e011ec","object":"chat.completion.chunk","created":1704368645,"model":"accounts/fireworks/models/mixtral-8x7b-instruct","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}],"usage":null}
 
 data: {"id":"cmpl-448a6127ca074189b4e011ec","object":"chat.completion.chunk","created":1704368645,"model":"accounts/fireworks/models/mixtral-8x7b-instruct","choices":[{"index":0,"delta":{"content":"I am a helpful AI assistant"},"finish_reason":null}],"usage":null}
@@ -50,4 +50,4 @@ data: {"id":"cmpl-448a6127ca074189b4e011ec","object":"chat.completion.chunk","cr
 data: [DONE]
 `
 
-var nonStreamingResponse = `{"id":"cmpl-a890423291fa6d7de7b8d8af","object":"chat.completion","created":1704368780,"model":"accounts/fireworks/models/mixtral-8x7b-instruct","choices":[{"index":0,"message":{"role":"assistant","content":"I don't have a \"real\" name, as I am an artificial intelligence and don't have a physical body or personal identity. I"},"finish_reason":"length"}],"usage":{"prompt_tokens":79,"total_tokens":109,"completion_tokens":30}}`
+var fireworksNonStreamingResponse = `{"id":"cmpl-a890423291fa6d7de7b8d8af","object":"chat.completion","created":1704368780,"model":"accounts/fireworks/models/mixtral-8x7b-instruct","choices":[{"index":0,"message":{"role":"assistant","content":"I don't have a \"real\" name, as I am an artificial intelligence and don't have a physical body or personal identity. I"},"finish_reason":"length"}],"usage":{"prompt_tokens":79,"total_tokens":109,"completion_tokens":30}}`

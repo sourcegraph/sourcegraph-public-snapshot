@@ -586,8 +586,26 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 	return &codyLLMConfigurationResolver{config: c}
 }
 
+func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
+	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
+	if c == nil {
+		return nil
+	}
+	return &codyConfigFeaturesResolver{config: c}
+}
+
+func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
+
+func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
+
+func (c *codyConfigFeaturesResolver) Commands() bool { return c.config.Commands }
+
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig
+}
+
+type codyConfigFeaturesResolver struct {
+	config *conftypes.ConfigFeatures
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }

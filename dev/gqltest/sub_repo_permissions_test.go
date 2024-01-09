@@ -121,6 +121,7 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
+	enableStructuralSearch(t)
 	cleanup := createPerforceExternalService(t, testPermsDepot, true)
 	t.Cleanup(cleanup)
 	userClient, _, err := createTestUserAndWaitForRepo(t)
@@ -454,6 +455,39 @@ func enableSubRepoPermissions(t *testing.T) {
 			Enabled: true,
 		},
 	}
+	err = client.UpdateSiteConfiguration(siteConfig, lastID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func enableStructuralSearch(t *testing.T) {
+	t.Helper()
+	t.Log("Enabling structural search")
+
+	// Enable structural search.
+	siteConfig, lastID, err := client.SiteConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oldSiteConfig := new(schema.SiteConfiguration)
+	*oldSiteConfig = *siteConfig
+	t.Cleanup(func() {
+		_, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	if siteConfig.ExperimentalFeatures == nil {
+		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+	}
+	siteConfig.ExperimentalFeatures.StructuralSearch = "enabled"
 	err = client.UpdateSiteConfiguration(siteConfig, lastID)
 	if err != nil {
 		t.Fatal(err)

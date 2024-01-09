@@ -184,7 +184,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 >
                     <NewSearchFilters
                         query={submittedURLQuery}
-                        results={results?.results}
                         filters={results?.filters}
                         onQueryChange={handleFilterPanelQueryChange}
                     />

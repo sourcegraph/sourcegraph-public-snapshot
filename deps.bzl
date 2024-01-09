@@ -1460,8 +1460,8 @@ def go_dependencies():
         name = "com_github_derision_test_go_mockgen",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/derision-test/go-mockgen",
-        sum = "h1:b/DXAXL2FkaRPpnbYK3ODdZzklmJAwox0tkc6yyXx74=",
-        version = "v1.3.7",
+        sum = "h1:Wo7vx8f7QdBT4jxfgTvs2t9VpyFlvvqzjXoE3m7MQBU=",
+        version = "v1.3.8-0.20240105000756-fb9effb23d90",
     )
     go_repository(
         name = "com_github_dghubble_go_twitter",
@@ -4238,13 +4238,6 @@ def go_dependencies():
         importpath = "github.com/matttproud/golang_protobuf_extensions",
         sum = "h1:mmDVorXM7PCGKw94cs5zkfA9PSy5pEvNWRP0ET0TIVo=",
         version = "v1.0.4",
-    )
-    go_repository(
-        name = "com_github_mcuadros_go_version",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/mcuadros/go-version",
-        sum = "h1:YocNLcTBdEdvY3iDK6jfWXvEaM5OCKkjxPKoJRdB3Gg=",
-        version = "v0.0.0-20190830083331-035f6764e8d2",
     )
     go_repository(
         name = "com_github_mholt_acmez",

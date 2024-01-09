@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -160,14 +163,19 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 	addSymbolFilter := func(symbols []*result.SymbolMatch) {
 		for _, sym := range symbols {
-			selectKind := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			selectKind, ok := result.ToSelectKind[strings.ToLower(sym.Symbol.Kind)]
+			if !ok {
+				// Skip any symbols we don't know how to select
+				// TODO(@camdencheek): figure out which symbols are missing from result.ToSelectKind
+				continue
+			}
 			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
-			s.filters.Add(filter, selectKind, 1, "symbol type")
+			s.filters.Add(filter, cases.Title(language.English, cases.Compact).String(selectKind), 1, "symbol type")
 		}
 	}
 
 	addCommitAuthorFilter := func(commit gitdomain.Commit) {
-		filter := fmt.Sprintf(`author:%s`, commit.Author.Email)
+		filter := fmt.Sprintf(`author:%s`, regexp.QuoteMeta(commit.Author.Email))
 		s.filters.Add(filter, commit.Author.Name, 1, "author")
 	}
 
@@ -181,7 +189,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 		df := determineTimeframe(cd)
 		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
-		s.filters.Add(filter, df.Label, 1, "date")
+		s.filters.Add(filter, df.Label, 1, "commit date")
 	}
 
 	if event.Stats.ExcludedForks > 0 {

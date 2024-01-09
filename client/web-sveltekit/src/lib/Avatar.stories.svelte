@@ -1,10 +1,10 @@
 <script lang="ts" context="module">
     import { Story } from '@storybook/addon-svelte-csf'
-    import UserAvatar from './UserAvatar.svelte'
+    import Avatar from './Avatar.svelte'
     import { faker } from '@faker-js/faker'
 
     export const meta = {
-        component: UserAvatar,
+        component: Avatar,
     }
 </script>
 
@@ -17,9 +17,9 @@
 
 <Story name="Default">
     <h2>With <code>avatarURL</code></h2>
-    <UserAvatar user={{ avatarURL }} />
+    <Avatar avatar={{ avatarURL, displayName: null }} />
     <h2>With <code>username</code> "{username}"</h2>
-    <UserAvatar user={{ username }} />
+    <Avatar avatar={{ username, avatarURL: null, displayName: null }} />
     <h2>With <code>displayName</code> "{displayName}"</h2>
-    <UserAvatar user={{ displayName }} />
+    <Avatar avatar={{ displayName, avatarURL: null, username }} />
 </Story>

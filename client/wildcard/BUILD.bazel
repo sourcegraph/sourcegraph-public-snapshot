@@ -1,13 +1,9 @@
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-
-# TODO(bazel): storybook build
-# gazelle:exclude **/*.story.{ts,tsx}
-# gazelle:exclude **/testing/globals.d.ts
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 # gazelle:js_ignore_imports **/global-styles/index.scss
@@ -15,20 +11,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root()
-
-# Temporary ESLint target to lint stories. This will be removed once we have a
-# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
-eslint_test_with_types(
-    name = "stories_eslint",
-    srcs = glob([
-        "src/**/*.story.tsx",
-        "src/**/*.fixtures.ts",
-    ]),
-    config = ":eslint_config",
-    deps = [
-        "//:node_modules/@types/node",
-    ],
-)
 
 ts_config(
     name = "tsconfig",
@@ -599,5 +581,82 @@ vitest_test(
         ":module_styles",
         ":snapshots",
         ":wildcard_tests",
+    ],
+)
+
+ts_project(
+    name = "stories",
+    testonly = True,
+    srcs = [
+        "src/components/Alert/Alert.story.tsx",
+        "src/components/Badge/Badge.story.tsx",
+        "src/components/Badge/ProductStatusBadge.story.tsx",
+        "src/components/Breadcrumbs/Breadcrumbs.story.tsx",
+        "src/components/Button/story/Button.story.tsx",
+        "src/components/ButtonLink/ButtonLink.story.tsx",
+        "src/components/Card/Card.story.tsx",
+        "src/components/Charts/components/bar-chart/BarChart.story.tsx",
+        "src/components/Charts/components/line-chart/components/tooltip/TooltipContent.story.tsx",
+        "src/components/Charts/components/line-chart/story/LineChart.story.tsx",
+        "src/components/Charts/components/pie-chart/PieChart.story.tsx",
+        "src/components/Charts/components/stacked-meter/StackedMeter.story.tsx",
+        "src/components/Charts/core/components/SvgRoot.story.tsx",
+        "src/components/Charts/core/components/scroll-box/ScrollBox.story.tsx",
+        "src/components/Collapse/Collapse.story.tsx",
+        "src/components/Combobox/Combobox.story.tsx",
+        "src/components/Combobox/MultiCombobox.story.tsx",
+        "src/components/Container/Container.story.tsx",
+        "src/components/Feedback/FeedbackBadge/FeedbackBadge.story.tsx",
+        "src/components/Feedback/FeedbackPrompt/FeedbackPrompt.story.tsx",
+        "src/components/Feedback/FeedbackText/FeedbackText.story.tsx",
+        "src/components/Form/Checkbox/Checkbox.story.tsx",
+        "src/components/Form/Input/Input.story.tsx",
+        "src/components/Form/RadioButton/RadioButton.story.tsx",
+        "src/components/Form/Select/Select.story.tsx",
+        "src/components/Form/TextArea/TextArea.story.tsx",
+        "src/components/Grid/Grid.story.tsx",
+        "src/components/Icon/Icon.story.tsx",
+        "src/components/Link/Link/Link.story.tsx",
+        "src/components/LoadingSpinner/LoadingSpinner.story.tsx",
+        "src/components/Menu/Menu.story.tsx",
+        "src/components/Modal/Modal.story.tsx",
+        "src/components/NavMenu/NavMenu.story.tsx",
+        "src/components/PageHeader/PageHeader.story.tsx",
+        "src/components/PageSelector/PageSelector.story.tsx",
+        "src/components/PageSwitcher/PageSwitcher.story.tsx",
+        "src/components/Panel/story/Panel.story.tsx",
+        "src/components/Popover/story/Popover.story.tsx",
+        "src/components/Tabs/Tabs.story.tsx",
+        "src/components/Tooltip/Tooltip.story.tsx",
+        "src/components/Tree/Tree.story.tsx",
+        "src/components/Typography/Typography.story.tsx",
+        "src/global-styles/GlobalStylesStory/GlobalStyles.story.tsx",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":module_style_typings",
+        ":node_modules/@sourcegraph/common",
+        ":wildcard_lib",
+        ":wildcard_tests",
+        "//:node_modules/@mdi/js",
+        "//:node_modules/@storybook/addon-actions",
+        "//:node_modules/@storybook/addon-designs",
+        "//:node_modules/@storybook/addons",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/d3-time-format",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/react-resizable",
+        "//:node_modules/@visx/axis",
+        "//:node_modules/@visx/responsive",
+        "//:node_modules/@visx/scale",
+        "//:node_modules/classnames",
+        "//:node_modules/d3-time-format",
+        "//:node_modules/lodash",
+        "//:node_modules/mdi-react",
+        "//:node_modules/react",
+        "//:node_modules/react-resizable",
+        "//:node_modules/rxjs",
     ],
 )

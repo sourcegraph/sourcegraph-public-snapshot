@@ -2,15 +2,16 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
     import { createPromiseStore } from '$lib/utils'
+    import type { GitBranchesOverview } from './page.gql'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    const { pending, value: branches, set } = createPromiseStore<PageData['deferred']['branches']>()
-    $: set(data.deferred.branches)
+    const { pending, value: branches, set } = createPromiseStore<GitBranchesOverview>()
+    $: set(data.deferred.overview)
     $: defaultBranch = $branches?.defaultBranch
-    $: activeBranches = $branches?.activeBranches
+    $: activeBranches = $branches?.branches.nodes.filter(branch => branch.id !== defaultBranch?.id)
 </script>
 
 <svelte:head>

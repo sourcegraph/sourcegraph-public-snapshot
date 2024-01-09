@@ -4,7 +4,7 @@
 
     import type { FileDiffHunks_Hunk } from './FileDiffHunks.gql'
 
-    export let hunks: FileDiffHunks_Hunk[]
+    export let hunks: readonly FileDiffHunks_Hunk[]
 </script>
 
 {#if hunks.length === 0}

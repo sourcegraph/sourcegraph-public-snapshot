@@ -1,11 +1,9 @@
 <script lang="ts">
-    interface User {
-        avatarURL?: string | null
-        displayName?: string | null
-        username?: string | null
-    }
+    import type { Avatar_User, Avatar_Team, Avatar_Person } from './Avatar.gql'
 
-    export let user: User
+    type Avatar = Avatar_User | Avatar_Team | Avatar_Person
+
+    export let avatar: Avatar
 
     function getInitials(name: string): string {
         const names = name.split(' ')
@@ -16,11 +14,25 @@
         return initials[0]
     }
 
-    $: name = user.displayName || user.username || ''
+    function getName(avatar: Avatar): string {
+        switch (avatar.__typename) {
+            case 'User':
+                return avatar.displayName || avatar.username || ''
+            case 'Person':
+                return avatar.displayName || avatar.name || ''
+            case 'Team':
+                return avatar.displayName || ''
+            default:
+                return ''
+        }
+    }
+
+    $: name = getName(avatar)
+    $: avatarURL = avatar.avatarURL
 </script>
 
-{#if user.avatarURL}
-    <img src={user.avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" />
+{#if avatarURL}
+    <img src={avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" />
 {:else}
     <div>
         <span>{getInitials(name)}</span>
