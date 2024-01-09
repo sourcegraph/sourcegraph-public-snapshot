@@ -38,6 +38,7 @@ var (
 		"cat-file":     {"-p"},
 		"lfs":          {},
 		"config":       {"test"},
+		"remotes":      {"exec"},
 
 		// Commands used by Batch Changes when publishing changesets.
 		"init":       {},
