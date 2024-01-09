@@ -207,6 +207,7 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
+			name:   api.RepoName(name),
 			logger: logtest.Scoped(t),
 		}
 		markdown, _ := r.Label()
