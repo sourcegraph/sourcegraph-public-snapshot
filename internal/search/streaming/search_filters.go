@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -167,7 +170,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 				continue
 			}
 			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
-			s.filters.Add(filter, selectKind, 1, "symbol type")
+			s.filters.Add(filter, cases.Title(language.English, cases.Compact).String(selectKind), 1, "symbol type")
 		}
 	}
 
