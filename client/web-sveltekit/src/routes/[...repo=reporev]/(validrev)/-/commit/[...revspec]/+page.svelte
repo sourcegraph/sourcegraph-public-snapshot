@@ -4,7 +4,7 @@
     import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
-    import FileDiff from './FileDiff.svelte'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
 
     type Deferred = PageData['deferred']
 

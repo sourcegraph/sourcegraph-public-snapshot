@@ -11,14 +11,14 @@
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
-    import type { HistoryResult } from '$lib/graphql-operations'
-    import { fetchRepoCommits } from '$lib/repo/api/commits'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
 
     import HistoryPanel, { type Capture as HistoryPanelCapture } from './HistoryPanel.svelte'
+    import type { BottomPanel_HistoryConnection } from './BottomPanel.gql'
 
-    export let history: Promise<HistoryResult>
+    export let history: Promise<BottomPanel_HistoryConnection | null>
+    export let fetchCommitHistory: (afterCursor: string | null) => Promise<BottomPanel_HistoryConnection | null>
 
     export function capture(): Capture {
         return {
@@ -51,18 +51,6 @@
         selectedTab = event.detail
     }
 
-    async function fetchMoreHistory(pageInfo: HistoryResult['pageInfo']) {
-        if (!$page.data.resolvedRevision) {
-            throw new Error('Unable to resolve repo revision')
-        }
-        return fetchRepoCommits({
-            repoID: $page.data.resolvedRevision.repo.id,
-            revision: $page.data.resolvedRevision.commitID,
-            filePath: $page.params.path,
-            pageInfo,
-        })
-    }
-
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
 
@@ -76,7 +64,7 @@
     <Tabs selected={selectedTab} toggable on:select={selectTab}>
         <TabPanel title="History">
             {#key $page.params.path}
-                <HistoryPanel bind:this={historyPanel} {history} fetchMoreHandler={fetchMoreHistory} />
+                <HistoryPanel bind:this={historyPanel} {history} fetchMoreHandler={fetchCommitHistory} />
             {/key}
         </TabPanel>
     </Tabs>

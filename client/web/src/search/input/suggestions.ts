@@ -881,7 +881,7 @@ interface Caches {
 
 export interface SuggestionsSourceConfig {
     graphqlQuery: <T, V extends Record<string, any>>(query: string, variables: V) => Promise<T>
-    authenticatedUser?: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
     isSourcegraphDotCom?: boolean
     valueType: 'regex' | 'glob'
 }

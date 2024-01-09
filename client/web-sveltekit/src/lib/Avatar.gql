@@ -1,0 +1,16 @@
+fragment Avatar_User on User {
+    avatarURL
+    displayName
+    username
+}
+
+fragment Avatar_Person on Person {
+    displayName
+    avatarURL
+    name
+}
+
+fragment Avatar_Team on Team {
+    avatarURL
+    displayName
+}

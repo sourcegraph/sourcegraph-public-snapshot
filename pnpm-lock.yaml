@@ -10,7 +10,7 @@ overrides:
   cssnano: 4.1.10
   tslib: 2.1.0
 
-packageExtensionsChecksum: 7b118421a6bf16cdf7b3ddb064dd0cee
+packageExtensionsChecksum: dd95e2509ba76d0489f870c0fbed3202
 
 importers:
 
@@ -1423,10 +1423,13 @@ importers:
         version: 8.0.2
       '@graphql-codegen/cli':
         specifier: ^5.0.0
-        version: 5.0.0(@graphql-codegen/near-operation-file-preset@3.0.0)(@graphql-codegen/typescript-operations@4.0.1)(@graphql-codegen/typescript@4.0.1)(@types/node@20.8.0)(graphql@15.4.0)(typescript@5.2.2)
+        version: 5.0.0(@graphql-codegen/near-operation-file-preset@3.0.0)(@graphql-codegen/typed-document-node@5.0.1)(@graphql-codegen/typescript-operations@4.0.1)(@graphql-codegen/typescript@4.0.1)(@types/node@20.8.0)(graphql@15.4.0)(typescript@5.2.2)
       '@graphql-codegen/near-operation-file-preset':
         specifier: ^3.0.0
         version: 3.0.0(graphql@15.4.0)
+      '@graphql-codegen/typed-document-node':
+        specifier: ^5.0.1
+        version: 5.0.1(graphql@15.4.0)
       '@graphql-codegen/typescript':
         specifier: ^4.0.1
         version: 4.0.1(graphql@15.4.0)
@@ -1442,9 +1445,6 @@ importers:
       '@playwright/test':
         specifier: 1.25.0
         version: 1.25.0
-      '@rollup/plugin-graphql':
-        specifier: ^2.0.4
-        version: 2.0.4(graphql@15.4.0)
       '@storybook/addon-essentials':
         specifier: ^7.2.0
         version: 7.2.0(@types/react-dom@18.0.2)(@types/react@18.0.8)(react-dom@18.1.0)(react@18.1.0)
@@ -3893,11 +3893,12 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@graphql-codegen/cli@5.0.0(@graphql-codegen/near-operation-file-preset@3.0.0)(@graphql-codegen/typescript-operations@4.0.1)(@graphql-codegen/typescript@4.0.1)(@types/node@20.8.0)(graphql@15.4.0)(typescript@5.2.2):
+  /@graphql-codegen/cli@5.0.0(@graphql-codegen/near-operation-file-preset@3.0.0)(@graphql-codegen/typed-document-node@5.0.1)(@graphql-codegen/typescript-operations@4.0.1)(@graphql-codegen/typescript@4.0.1)(@types/node@20.8.0)(graphql@15.4.0)(typescript@5.2.2):
     resolution: {integrity: sha512-A7J7+be/a6e+/ul2KI5sfJlpoqeqwX8EzktaKCeduyVKgOLA6W5t+NUGf6QumBDXU8PEOqXk3o3F+RAwCWOiqA==}
     hasBin: true
     peerDependencies:
       '@graphql-codegen/near-operation-file-preset': '*'
+      '@graphql-codegen/typed-document-node': '*'
       '@graphql-codegen/typescript': '*'
       '@graphql-codegen/typescript-operations': '*'
       '@parcel/watcher': ^2.1.0
@@ -3912,6 +3913,7 @@ packages:
       '@graphql-codegen/core': 4.0.0(graphql@15.4.0)
       '@graphql-codegen/near-operation-file-preset': 3.0.0(graphql@15.4.0)
       '@graphql-codegen/plugin-helpers': 5.0.1(graphql@15.4.0)
+      '@graphql-codegen/typed-document-node': 5.0.1(graphql@15.4.0)
       '@graphql-codegen/typescript': 4.0.1(graphql@15.4.0)
       '@graphql-codegen/typescript-operations': 4.0.1(graphql@15.4.0)
       '@graphql-tools/apollo-engine-loader': 8.0.0(graphql@15.4.0)
@@ -4059,6 +4061,22 @@ packages:
       '@graphql-tools/utils': 10.0.11(graphql@15.4.0)
       graphql: 15.4.0
       tslib: 2.1.0
+    dev: true
+
+  /@graphql-codegen/typed-document-node@5.0.1(graphql@15.4.0):
+    resolution: {integrity: sha512-VFkhCuJnkgtbbgzoCAwTdJe2G1H6sd3LfCrDqWUrQe53y2ukfSb5Ov1PhAIkCBStKCMQBUY9YgGz9GKR40qQ8g==}
+    peerDependencies:
+      graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+    dependencies:
+      '@graphql-codegen/plugin-helpers': 5.0.1(graphql@15.4.0)
+      '@graphql-codegen/visitor-plugin-common': 4.0.1(graphql@15.4.0)
+      auto-bind: 4.0.0
+      change-case-all: 1.0.15
+      graphql: 15.4.0
+      tslib: 2.1.0
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
     dev: true
 
   /@graphql-codegen/typescript-apollo-client-helpers@2.2.6(graphql@15.4.0):
@@ -7496,21 +7514,6 @@ packages:
 
   /@repeaterjs/repeater@3.0.4:
     resolution: {integrity: sha512-AW8PKd6iX3vAZ0vA43nOUOnbq/X5ihgU+mSXXqunMkeQADGiqw/PY0JNeYtD5sr0PAy51YPgAPbDoeapv9r8WA==}
-    dev: true
-
-  /@rollup/plugin-graphql@2.0.4(graphql@15.4.0):
-    resolution: {integrity: sha512-TfaqbbK71VHodCDCoRbPnv2+Tsnlvad2OsGEviURHFl+ZBUyf5wfXgXc9RqZ+xKxSl87Z3YbPhD0z6eWYjuByw==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      graphql: '>=0.9.0'
-      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 5.0.2
-      graphql: 15.4.0
-      graphql-tag: 2.12.6(graphql@15.4.0)
     dev: true
 
   /@rollup/pluginutils@5.0.2:
