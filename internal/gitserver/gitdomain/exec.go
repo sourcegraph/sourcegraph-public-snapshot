@@ -182,7 +182,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
 			logger.Warn("IsAllowedGitCmd: unallowed file input for `git commit`", log.String("cmd", cmd), log.String("arg", arg))
 			return false
 		}
-		if strings.HasPrefix(arg, "-ls") {
+		if strings.HasPrefix(arg, "-lslsa") {
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
 			// flags (such as --something=query), so if we did not special-case these, there
