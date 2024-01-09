@@ -6,7 +6,7 @@ The stitched migration generator requires internet access, as it fetches files f
 
 `bazel run //dev:write_all_generated` will write a new stitched migration graph in the source tree, introducing changes only if something changed. The final stitched migration graph will incorporate new migrations that have been introduced since the last minor release if there are any, as it also takes in account the current migrations.
 
-For determining what's the current migration, it relies on constants in `internal/database/migration/shared/data/cmd/generator/consts.go` which have be be manually updated. Once we roll-out the new release process, that new number will be automatically injected at build time by Bazel.
+For determining what's the current migration, it relies on constants in `internal/database/migration/shared/data/cmd/generator/consts.go` which have be be manually updated. Once we roll-out the new release process, that new number will be automatically injected at build time by Bazel. If for some reason, the max version from that file has a corresponding tarball on GCS, which means that it simply wasn't updated after a minor or major release, it will use it instead, to avoid introducing changes that should not be there. 
 
 TODO @jhchabran.
 

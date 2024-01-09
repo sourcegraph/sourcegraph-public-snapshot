@@ -171,7 +171,10 @@ func (s *LocalMigrationsReader) load(path string) error {
 			return errors.Wrap(err, "failed to load current migrations from current migrations")
 		}
 		s.m[s.currentVersion] = contents
+	} else {
+		fmt.Printf("WARNING: a tarball for %s already exists, constant is out of date\n.", s.currentVersion)
 	}
+
 	return nil
 }
 
