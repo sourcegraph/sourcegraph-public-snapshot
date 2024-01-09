@@ -128,19 +128,14 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
-	type repoKey struct {
-		Name types.MinimalRepo
-		Rev  string
-	}
-	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	repoResolvers := make(map[types.MinimalRepo]*RepositoryResolver, 10)
 	gsClient := gitserver.NewClient("graphql.search.results")
-	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+	getRepoResolver := func(repoName types.MinimalRepo) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoName]; ok {
 			return existing
 		}
 		resolver := NewRepositoryResolver(db, gsClient, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
+		repoResolvers[repoName] = resolver
 		return resolver
 	}
 
@@ -151,10 +146,10 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 			resolvers = append(resolvers, &FileMatchResolver{
 				db:           db,
 				FileMatch:    *v,
-				RepoResolver: getRepoResolver(v.Repo, ""),
+				RepoResolver: getRepoResolver(v.Repo),
 			})
 		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
+			resolvers = append(resolvers, getRepoResolver(v.RepoName()))
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,

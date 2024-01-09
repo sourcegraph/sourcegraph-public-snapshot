@@ -12,6 +12,7 @@ import React, {
 } from 'react'
 
 import classNames from 'classnames'
+import { escapeRegExp } from 'lodash'
 import { createPortal } from 'react-dom'
 import { type Location, useLocation, Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
@@ -31,6 +32,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, type SearchContextProps } from '@sourcegraph/shared/src/search'
+import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -50,7 +52,7 @@ import type { ExternalLinkFields, RepositoryFields } from '../graphql-operations
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
-import { repoFilterForRepoRevision, fileFilterForFilePath, type SearchStreamingProps } from '../search'
+import { searchQueryForRepoRevision, type SearchStreamingProps } from '../search'
 import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
@@ -404,17 +406,16 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
         [enableV2QueryInput, selectedSearchContextSpec]
     )
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
-    const patternType = useNavbarQueryState.getState().searchPatternType
     useEffect(() => {
-        let query = queryPrefix + repoFilterForRepoRevision(repoName, revision, patternType)
+        let query = queryPrefix + searchQueryForRepoRevision(repoName, revision)
         if (filePath) {
-            query = `${query.trimEnd()} ${fileFilterForFilePath(filePath, patternType)}`
+            query = `${query.trimEnd()} file:${escapeSpaces('^' + escapeRegExp(filePath))}`
         }
         onNavbarQueryChange({
             query,
             hint: EditorHint.Blur,
         })
-    }, [revision, filePath, repoName, onNavbarQueryChange, queryPrefix, patternType])
+    }, [revision, filePath, repoName, onNavbarQueryChange, queryPrefix])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)
 

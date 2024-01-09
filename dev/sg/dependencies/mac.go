@@ -40,7 +40,7 @@ var Mac = []category{
 		Checks: []*dependency{
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
+				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.42.0"))),
 				Fix:   cmdFix(`brew install git`),
 			},
 			{

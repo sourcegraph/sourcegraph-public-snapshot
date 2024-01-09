@@ -12,9 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//go:generate go run ./data/cmd/generator
-// Ensure data/* files are generated
-
 var (
 	root       = "internal/database/migration/shared/data"
 	stitchfile = filepath.Join(root, "stitched-migration-graph.json")

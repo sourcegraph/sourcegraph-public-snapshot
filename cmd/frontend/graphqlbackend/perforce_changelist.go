@@ -83,15 +83,12 @@ func (r *PerforceChangelistResolver) CanonicalURL() string {
 }
 
 func (r *PerforceChangelistResolver) cidURL() *url.URL {
-	// Do not mutate the URL on the RepoMatch object.
-	repoURL := *r.repositoryResolver.RepoMatch.URL()
-
+	repoURL := r.repositoryResolver.url()
 	// We don't expect cid to be empty, but guard against any potential bugs.
 	if r.cid != "" {
 		repoURL.Path += "@" + r.cid
 	}
-
-	return &repoURL
+	return repoURL
 }
 
 func (r *PerforceChangelistResolver) Commit(ctx context.Context) (_ *GitCommitResolver, err error) {
