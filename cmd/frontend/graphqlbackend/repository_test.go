@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -208,11 +207,8 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
+			name:   api.RepoName(name),
 			logger: logtest.Scoped(t),
-			RepoMatch: result.RepoMatch{
-				Name: api.RepoName(name),
-				ID:   api.RepoID(0),
-			},
 		}
 		markdown, _ := r.Label()
 		html, err := markdown.HTML()
@@ -258,7 +254,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
 			gsClient.GetDefaultBranchFunc.SetDefaultReturn(tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr)
 
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
+			res := &RepositoryResolver{name: "repo", logger: logtest.Scoped(t), gitserverClient: gsClient}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
 				if tt.wantErr.Error() != err.Error() {

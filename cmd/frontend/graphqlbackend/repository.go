@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -36,22 +35,17 @@ import (
 )
 
 type RepositoryResolver struct {
-	logger    log.Logger
-	hydration sync.Once
-	err       error
+	id   api.RepoID
+	name api.RepoName
 
-	// Invariant: Name and ID of RepoMatch are always set and safe to use. They are
-	// used to hydrate the inner repo, and should always be the same as the name and
-	// id of the inner repo, but referring to the inner repo directly is unsafe
-	// because it may cause a race during hydration.
-	result.RepoMatch
+	logger log.Logger
+
+	hydration sync.Once
+	innerRepo *types.Repo
+	err       error
 
 	db              database.DB
 	gitserverClient gitserver.Client
-
-	// innerRepo may only contain ID and Name information.
-	// To access any other repo information, use repo() instead.
-	innerRepo *types.Repo
 
 	defaultBranchOnce sync.Once
 	defaultBranch     *GitRefResolver
@@ -60,21 +54,19 @@ type RepositoryResolver struct {
 
 func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
-	var name api.RepoName
 	var id api.RepoID
+	var name api.RepoName
 	if repo != nil {
 		name = repo.Name
 		id = repo.ID
 	}
 
 	return &RepositoryResolver{
+		id:              id,
+		name:            name,
 		db:              db,
 		innerRepo:       repo,
 		gitserverClient: client,
-		RepoMatch: result.RepoMatch{
-			Name: name,
-			ID:   id,
-		},
 		logger: log.Scoped("repositoryResolver").
 			With(log.Object("repo",
 				log.String("name", string(name)),
@@ -87,7 +79,7 @@ func (r *RepositoryResolver) ID() graphql.ID {
 }
 
 func (r *RepositoryResolver) IDInt32() api.RepoID {
-	return r.RepoMatch.ID
+	return r.id
 }
 
 func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) {
@@ -140,11 +132,11 @@ func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
 }
 
 func (r *RepositoryResolver) RepoName() api.RepoName {
-	return r.RepoMatch.Name
+	return r.name
 }
 
 func (r *RepositoryResolver) Name() string {
-	return string(r.RepoMatch.Name)
+	return string(r.name)
 }
 
 func (r *RepositoryResolver) ExternalRepo(ctx context.Context) (*api.ExternalRepoSpec, error) {
@@ -413,7 +405,7 @@ func (r *RepositoryResolver) URL() string {
 }
 
 func (r *RepositoryResolver) url() *url.URL {
-	return r.RepoMatch.URL()
+	return &url.URL{Path: "/" + string(r.name)}
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -424,18 +416,8 @@ func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 	return externallink.Repository(ctx, r.db, repo)
 }
 
-func (r *RepositoryResolver) Rev() string {
-	return r.RepoMatch.Rev
-}
-
 func (r *RepositoryResolver) Label() (Markdown, error) {
-	var label string
-	if r.Rev() != "" {
-		label = r.Name() + "@" + r.Rev()
-	} else {
-		label = r.Name()
-	}
-	text := "[" + label + "](" + r.URL() + ")"
+	text := "[" + r.Name() + "](" + r.URL() + ")"
 	return Markdown(text), nil
 }
 
