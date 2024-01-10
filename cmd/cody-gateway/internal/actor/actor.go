@@ -222,8 +222,11 @@ func (a *Actor) Limiter(
 	feature codygateway.Feature,
 	rateLimitNotifier notify.RateLimitNotifier,
 ) (limiter.Limiter, bool) {
-	// Start with the base limiter. For most users, this is governed by the app's configuration.
-	// But for users on the Cody Pro plan, their limits may be different.
+	// Start with the base limiter. This limiter enforces rate limits provided
+	// the actor's Source, and each Source implementation owns ensuring that
+	// Cody Gateway has an up-to-date view of the appropriate rate limits for
+	// a particular actor based on the application (e.g. users from enterprise product
+	// subscriptions, Self-Serve-Cody's tiers, etc.
 	baseLimiter, limit, ok := a.baseLimiterAndLimit(redis, feature, rateLimitNotifier)
 	if !ok {
 		return nil, false
