@@ -364,7 +364,9 @@ func (s *teamStore) CountTeamMembers(ctx context.Context, opts ListTeamMembersOp
 	opts.Cursor = TeamMemberListCursor{}
 	conds, joins := opts.SQL()
 
-	joins = append(joins, sqlf.Sprintf("LEFT JOIN users ON team_members.user_id = users.id"))
+	if opts.Search == "" {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN users ON team_members.user_id = users.id"))
+	}
 	conds = append(conds, sqlf.Sprintf("users.deleted_at IS NULL"))
 
 	q := sqlf.Sprintf(
