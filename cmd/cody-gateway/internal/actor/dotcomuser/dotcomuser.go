@@ -134,16 +134,29 @@ func (s *Source) maybeResetUsageData(current actor.Actor, oldAct *actor.Actor) e
 			continue
 		}
 
+		// Get the base limiter for the feature which implements the core rate limiting based on the config.
+		l, ok := current.BaseLimiter(s.redisStore, feature, s.rateLimitNotifier)
+		if !ok {
+			return errors.Errorf("failed to create base limiter for feature: %s and actor id: %s", feature, current.ID)
+		}
+
+		// If the expiry on the key is greater than the intervalSeconds, update the TTL.
+		// This is here as a safeguard for the case where the TTL is wrongly set or the
+		// usage cache is not reset when the intervalSeconds config change. This only covers
+		// the case where the new intervalSeconds in shorter than the present TTL.
+		isTTLGreaterThanInterval := false
+
+		if ttl, err := l.Redis.TTL(l.Identifier); err == nil {
+			if ttl > int(l.Interval.Seconds()) {
+				isTTLGreaterThanInterval = true
+			}
+		}
+
 		// If oldActor is nil/empty, then we reset because we don't have any usage data available.
 		// If the rate limit interval has changed, reset their previous usage as a side-effect.
 		// (e.g. zero out previous usage as part of upgrading the plan. This has the potential for
 		// abuse, which we prevent by limiting how frequently a user can change their subscription plan.)
-		if oldAct.IsEmpty() || rl.Interval != oldAct.RateLimits[feature].Interval {
-			// Get the base limiter for the feature which implements the core rate limiting based on the config.
-			l, ok := current.BaseLimiter(s.redisStore, feature, s.rateLimitNotifier)
-			if !ok {
-				return errors.Errorf("failed to create base limiter for feature: %s and actor id: %s", feature, current.ID)
-			}
+		if oldAct.IsEmpty() || rl.Interval != oldAct.RateLimits[feature].Interval || isTTLGreaterThanInterval {
 			if err := l.ResetUsage(); err != nil {
 				message := fmt.Sprintf("failed to reset usage cache for feature: %s and actor id: %s", feature, current.ID)
 				return errors.Wrap(err, message)

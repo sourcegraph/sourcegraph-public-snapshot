@@ -86,18 +86,6 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		return nil, NoAccessError{}
 	}
 
-	// If the expiry on the key is greater than the intervalSeconds, update the TTL.
-	// This is here as a safeguard for the case where the TTL is wrongly set or the
-	// usage cache is not reset when the intervalSeconds config change. This only covers
-	// the case where the new intervalSeconds in shorter than the present TTL.
-	if ttl, err := l.Redis.TTL(l.Identifier); err == nil {
-		if l.UpdateRateLimitTTL && ttl > int(intervalSeconds) {
-			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
-				return nil, errors.Wrap(err, "failed to set expiry for rate limit counter")
-			}
-		}
-	}
-
 	// Check the current usage. If no record exists, redis will return 0.
 	currentUsage, err = l.Redis.GetInt(l.Identifier)
 	if err != nil {
@@ -176,7 +164,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
 		var alertTTL time.Duration
-		if ttl < 0 {
+		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > int(intervalSeconds)) {
 			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
 				return errors.Wrap(err, "failed to set expiry for rate limit counter")
 			}

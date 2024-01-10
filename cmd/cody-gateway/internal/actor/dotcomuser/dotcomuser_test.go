@@ -247,8 +247,11 @@ func TestActorCacheExpiration(t *testing.T) {
 
 		// A side-effect of calling get will reset the user's usage data. We confirm this by
 		// looking at the operations performed on the Redis cache.
+		assertFirstOperation(t, fakeRedisStore, "TTL(code_completions:123456)")
 		assertFirstOperation(t, fakeRedisStore, "Del(code_completions:123456)")
+		assertFirstOperation(t, fakeRedisStore, "TTL(chat_completions:123456)")
 		assertFirstOperation(t, fakeRedisStore, "Del(chat_completions:123456)")
+		assertFirstOperation(t, fakeRedisStore, "TTL(embeddings:123456)")
 		assertFirstOperation(t, fakeRedisStore, "Del(embeddings:123456)")
 		// Confirm there are no other RedisStore operations performed.
 		assert.Equal(t, 0, len(fakeRedisStore.History))
@@ -338,7 +341,8 @@ func TestActorCacheExpiration(t *testing.T) {
 		assertRateLimitsEqual(t, twoHundredAMinute, gotActor.RateLimits[codygateway.FeatureCodeCompletions])
 
 		// Confirm that the CodeCompletions usage data was deleted as well.
+		assertFirstOperation(t, fakeRedisStore, "TTL(code_completions:123456)")
 		assertFirstOperation(t, fakeRedisStore, "Del(code_completions:123456)")
-		assert.Equal(t, 0, len(fakeRedisStore.History))
+		assert.Equal(t, 2, len(fakeRedisStore.History))
 	})
 }
