@@ -4,7 +4,6 @@
 //
 // TODO
 // - Test things in CI
-// - Turn the rule for this from a bazel run into a bazel test
 // - Use urfave/cli to parse args
 // - Make it so it can fail early if needed perhaps?
 // - Print stuff (fail/pass/errs) as it goes through.
