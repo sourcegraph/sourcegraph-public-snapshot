@@ -11,12 +11,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gogit"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -111,7 +112,6 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	internalReq := protocol.ExecRequest{
 		Repo:      api.RepoName(req.GetRepo()),
 		Args:      byteSlicesToStrings(req.GetArgs()),
-		Stdin:     req.GetStdin(),
 		NoTimeout: req.GetNoTimeout(),
 
 		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
@@ -179,8 +179,16 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		})
 	})
 
+	// This is a long time, but this never blocks a user request for this
+	// long. Even repos that are not that large can take a long time, for
+	// example a search over all repos in an organization may have several
+	// large repos. All of those repos will be competing for IO => we need
+	// a larger timeout.
+	ctx, cancel := context.WithTimeout(ss.Context(), conf.GitLongCommandTimeout())
+	defer cancel()
+
 	// TODO(mucles): set user agent from all grpc clients
-	return gs.doExec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
+	return gs.doExec(ctx, gs.Server.Logger, execReq, "unknown-grpc-client", w)
 }
 
 // doExec executes the given git command and streams the output to the given writer.
@@ -200,7 +208,6 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 				return err
 			}
 			return s.Err()
-
 		} else if errors.Is(err, ErrInvalidCommand) {
 			return status.New(codes.InvalidArgument, "invalid command").Err()
 		} else if ctxErr := ctx.Err(); ctxErr != nil {
@@ -235,13 +242,15 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 }
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
-	var internalReq protocol.GetObjectRequest
-	internalReq.FromProto(req)
+	repoName := api.RepoName(req.GetRepo())
+	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
 
 	// Log which actor is accessing the repo.
-	accesslog.Record(ctx, string(internalReq.Repo), log.String("objectname", internalReq.ObjectName))
+	accesslog.Record(ctx, string(repoName), log.String("objectname", req.GetObjectName()))
 
-	obj, err := git.GetObject(ctx, gs.Server.RecordingCommandFactory, gs.Server.ReposDir, api.RepoName(req.Repo), req.ObjectName)
+	backend := gs.backendForRepo(ctx, repoName, repoDir)
+
+	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
 		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
@@ -307,7 +316,6 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 }
 
 func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
-
 	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
 
 	if _, err := gs.Server.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
@@ -645,22 +653,27 @@ func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		return nil, status.New(codes.InvalidArgument, "head must be specified").Err()
 	}
 
-	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, api.RepoName(req.GetRepo()))
+	repoName := api.RepoName(req.GetRepo())
+	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
 
-	if !repoCloned(repoDir) {
-		cloneProgress, cloneInProgress := gs.Server.Locker.Status(repoDir)
-		// TODO: Status?
-		return nil, &protocol.NotFoundPayload{
-			CloneInProgress: cloneInProgress,
-			CloneProgress:   cloneProgress,
+	// Ensure that the repo is cloned and if not start a background clone, then
+	// return a well-known NotFound payload error.
+	if notFoundPayload, cloned := gs.Server.maybeStartClone(ctx, gs.Server.Logger, repoName); !cloned {
+		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.NotFoundPayload{
+			CloneInProgress: notFoundPayload.CloneInProgress,
+			CloneProgress:   notFoundPayload.CloneProgress,
+			Repo:            req.GetRepo(),
+		})
+		if err != nil {
+			return nil, err
 		}
+		return nil, s.Err()
 	}
 
-	backend, err := gs.backendForRepo(api.RepoName(req.GetRepo()))
-	if err != nil {
-		// TODO: Status?
-		return nil, err
-	}
+	// TODO: This should be included in requests where we do ensure the revision exists.
+	// gs.Server.ensureRevision(ctx, repoName, "THE REVISION", repoDir)
+
+	backend := gs.backendForRepo(ctx, repoName, repoDir)
 
 	sha, err := backend.MergeBase(ctx, req.GetBase(), req.GetHead())
 	if err != nil {
@@ -673,17 +686,8 @@ func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	}, nil
 }
 
-func (gs *GRPCServer) backendForRepo(repoName api.RepoName) (git.GitBackend, error) {
-	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
+func (gs *GRPCServer) backendForRepo(ctx context.Context, repoName api.RepoName, repoDir common.GitDir) git.GitBackend {
 	backend := cli.NewBackend(gs.Server.Logger, gs.Server.RecordingCommandFactory, repoDir, repoName)
-	// TODO: Switch for backend.
-	if true {
-		var err error
-		backend, err = gogit.NewBackend(gs.Server.Logger, repoDir, repoName)
-		if err != nil {
-			return nil, err
-		}
-	}
 
-	return backend, nil
+	return backend
 }

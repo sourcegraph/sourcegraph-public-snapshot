@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
@@ -720,7 +721,15 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, treeish, "--")
 	req.Args = append(req.Args, pathspecs...)
 
-	s.execHTTP(w, r, req)
+	// This is a long time, but this never blocks a user request for this
+	// long. Even repos that are not that large can take a long time, for
+	// example a search over all repos in an organization may have several
+	// large repos. All of those repos will be competing for IO => we need
+	// a larger timeout.
+	ctx, cancel := context.WithTimeout(r.Context(), conf.GitLongCommandTimeout())
+	defer cancel()
+
+	s.execHTTP(w, r.WithContext(ctx), req)
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -1004,33 +1013,22 @@ type execStatus struct {
 // TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
 // because gRPC can handle trailing errors on a stream.
 func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
-	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
-	// See https://github.com/sourcegraph/security-issues/issues/213.
+	repoName := protocol.NormalizeRepo(req.Repo)
+	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
+	backend := cli.NewBackend(s.Logger, s.RecordingCommandFactory, dir, repoName)
 
-	repoPath := string(protocol.NormalizeRepo(req.Repo))
-	repoDir := filepath.Join(s.ReposDir, filepath.FromSlash(repoPath))
-
-	if !gitdomain.IsAllowedGitCmd(logger, req.Args, repoDir) {
-		blockedCommandExecutedCounter.Inc()
-		return execStatus{}, ErrInvalidCommand
-	}
-
-	if !req.NoTimeout {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, executil.ShortGitCommandTimeout(req.Args))
-		defer cancel()
-	}
+	// if !req.NoTimeout {
+	// 	var cancel context.CancelFunc
+	// 	ctx, cancel = context.WithTimeout(ctx, executil.ShortGitCommandTimeout(req.Args))
+	// 	defer cancel()
+	// }
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := executil.UnsetExitStatus
-	var stdoutN, stderrN int64
 	var status string
 	var execErr error
+	var exitStatus int = executil.UnsetExitStatus
 	ensureRevisionStatus := "noop"
-
-	req.Repo = protocol.NormalizeRepo(req.Repo)
-	repoName := req.Repo
 
 	// Instrumentation
 	{
@@ -1053,8 +1051,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 			tr.AddEvent(
 				"done",
 				attribute.String("status", status),
-				attribute.Int64("stdout", stdoutN),
-				attribute.Int64("stderr", stderrN),
 				attribute.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
@@ -1085,9 +1081,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
-				ev.AddField("stdin_size", len(req.Stdin))
-				ev.AddField("stdout_size", stdoutN)
-				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
 				ev.AddField("status", status)
 				if execErr != nil {
@@ -1130,7 +1123,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
-	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
 	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
 		ensureRevisionStatus = "fetched"
 	}
@@ -1155,31 +1147,30 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}
 	}
 
-	var stderrBuf bytes.Buffer
-	stdoutW := &writeCounter{w: w}
-	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
-
 	cmdStart = time.Now()
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoName), "git", req.Args...)
-	dir.Set(cmd.Unwrap())
-	cmd.Unwrap().Stdout = stdoutW
-	cmd.Unwrap().Stderr = stderrW
-	cmd.Unwrap().Stdin = bytes.NewReader(req.Stdin)
+	stdout, err := backend.Exec(ctx, req.Args...)
+	if err != nil {
+		return execStatus{}, err
+	}
+	defer stdout.Close()
+	_, execErr = io.Copy(w, stdout)
+	if err != nil {
+		s.logIfCorrupt(ctx, repoName, dir, err)
+		var commandFailedErr cli.CommandFailedError
+		if errors.As(err, &commandFailedErr) {
+			return execStatus{
+				ExitStatus: commandFailedErr.ExitStatus,
+				Stderr:     string(commandFailedErr.Stderr),
+				Err:        err,
+			}, nil
+		}
+		return execStatus{}, err
+	}
 
-	exitStatus, execErr = executil.RunCommand(ctx, cmd)
-
+	exitStatus = 0
 	status = strconv.Itoa(exitStatus)
-	stdoutN = stdoutW.n
-	stderrN = stderrW.n
 
-	stderr := stderrBuf.String()
-	s.logIfCorrupt(ctx, repoName, dir, stderr)
-
-	return execStatus{
-		Err:        execErr,
-		Stderr:     stderr,
-		ExitStatus: exitStatus,
-	}, nil
+	return execStatus{ExitStatus: exitStatus}, nil
 }
 
 // execHTTP translates the results of an exec into the expected HTTP statuses and payloads
@@ -1254,54 +1245,13 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
-func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
-	if checkMaybeCorruptRepo(ctx, s.Logger, repo, stderr) {
-		reason := stderr
-		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
+func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, err error) {
+	var corruptErr cli.ErrRepoCorrupted
+	if errors.As(err, &corruptErr) {
+		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Stderr, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
 		}
 	}
-}
-
-var (
-	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate
-	// that a repository's packfiles or commit objects might be corrupted.
-	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
-	// context.
-	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
-
-	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
-	// git's supplemental commit-graph might be corrupted.
-	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
-	// context.
-	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
-)
-
-func checkMaybeCorruptRepo(ctx context.Context, logger log.Logger, git git.GitBackend, repo api.RepoName, stderr string) bool {
-	if !stdErrIndicatesCorruption(stderr) {
-		return false
-	}
-
-	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
-	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
-		log.String("stderr", stderr))
-
-	// We set a flag in the config for the cleanup janitor job to fix. The janitor
-	// runs every minute.
-	err := git.Config().Set(ctx, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
-	if err != nil {
-		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
-	}
-
-	return true
-}
-
-// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
-// that there might be repository corruption.
-func stdErrIndicatesCorruption(stderr string) bool {
-	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
 }
 
 // testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
@@ -1607,6 +1557,8 @@ func postRepoFetchActions(
 	remoteURL *vcs.URL,
 	syncer vcssyncer.VCSSyncer,
 ) (errs error) {
+	backend := cli.NewBackend(logger, rcf, dir, repo)
+
 	// Note: We use a multi error in this function to try to make as many of the
 	// post repo fetch actions succeed.
 
@@ -1620,7 +1572,7 @@ func postRepoFetchActions(
 		errs = errors.Append(errs, errors.Wrapf(err, "failed to remove bad refs for repo %q", repo))
 	}
 
-	if err := git.SetRepositoryType(rcf, reposDir, dir, syncer.Type()); err != nil {
+	if err := git.SetRepositoryType(ctx, backend.Config(), syncer.Type()); err != nil {
 		errs = errors.Append(errs, errors.Wrapf(err, "failed to set repository type for repo %q", repo))
 	}
 
@@ -1628,7 +1580,7 @@ func postRepoFetchActions(
 		errs = errors.Append(errs, errors.Wrap(err, "setting git attributes"))
 	}
 
-	if err := gitSetAutoGC(rcf, reposDir, dir); err != nil {
+	if err := gitSetAutoGC(ctx, backend.Config()); err != nil {
 		errs = errors.Append(errs, errors.Wrap(err, "setting git gc mode"))
 	}
 
@@ -1825,10 +1777,10 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				}
 
 				// The repo update might have failed due to the repo being corrupt
-				var gitErr *common.GitCommandError
-				if errors.As(err, &gitErr) {
-					s.logIfCorrupt(ctx, repo, gitserverfs.RepoDirFromName(s.ReposDir, repo), gitErr.Output)
-				}
+				// var gitErr *common.GitCommandError
+				// if errors.As(err, &gitErr) {
+				// 	s.logIfCorrupt(ctx, repo, gitserverfs.RepoDirFromName(s.ReposDir, repo), gitErr.Output)
+				// }
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
@@ -2102,7 +2054,12 @@ func (s *Server) handleGetObject(w http.ResponseWriter, r *http.Request) {
 	// Log which actor is accessing the repo.
 	accesslog.Record(r.Context(), string(req.Repo), log.String("objectname", req.ObjectName))
 
-	obj, err := git.GetObject(r.Context(), s.RecordingCommandFactory, s.ReposDir, req.Repo, req.ObjectName)
+	repo := protocol.NormalizeRepo(req.Repo)
+	dir := gitserverfs.RepoDirFromName(s.ReposDir, repo)
+
+	backend := cli.NewBackend(s.Logger, s.RecordingCommandFactory, dir, repo)
+
+	obj, err := backend.GetObject(r.Context(), req.ObjectName)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "getting object").Error(), http.StatusInternalServerError)
 		return

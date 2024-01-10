@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -20,6 +21,11 @@ type GitBackend interface {
 	// MergeBase finds the merge base commit for the given base and head SHAs.
 	// Returns an empty string and no error if no common merge-base was found.
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
+
+	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
+	// No new usages of it should be introduced and once the migration is done we will
+	// remove this method.
+	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
 }
 
 // GitConfigBackend provides methods for interacting with git configuration.

@@ -7,7 +7,8 @@ import (
 
 var (
 	blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_exec_blocked_command_received",
+		// TODO: Name
+		Name: "src_gitserver_exec_blocked_command_received2",
 		Help: "Incremented each time a command not in the allowlist for gitserver is executed",
 	})
 )

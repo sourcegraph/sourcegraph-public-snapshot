@@ -783,7 +783,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		req := &proto.ExecRequest{
 			Repo:      string(repoName),
 			Args:      stringsToByteSlices(c.args[1:]),
-			Stdin:     c.stdin,
 			NoTimeout: c.noTimeout,
 
 			// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
@@ -811,7 +810,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 			Repo:           repoName,
 			EnsureRevision: c.EnsureRevision(),
 			Args:           c.args[1:],
-			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
 		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)

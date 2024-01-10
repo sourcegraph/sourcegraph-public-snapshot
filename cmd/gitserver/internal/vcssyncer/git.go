@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -48,7 +49,7 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 	}
 
 	args := []string{"ls-remote", remoteURL.String(), "HEAD"}
-	ctx, cancel := context.WithTimeout(ctx, executil.ShortGitCommandTimeout(args))
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	r := urlredactor.New(remoteURL)

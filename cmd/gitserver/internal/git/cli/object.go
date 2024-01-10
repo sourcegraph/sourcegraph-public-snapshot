@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -29,7 +28,7 @@ func getObject(ctx context.Context, rcf *wrexec.RecordingCommandFactory, dir com
 		attribute.String("objectName", objectName))
 	defer tr.EndWithErr(&err)
 
-	if err := git.CheckSpecArgSafety(objectName); err != nil {
+	if err := checkSpecArgSafety(objectName); err != nil {
 		return nil, err
 	}
 

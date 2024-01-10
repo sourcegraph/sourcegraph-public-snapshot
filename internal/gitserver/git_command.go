@@ -51,9 +51,6 @@ type GitCommand interface {
 	// EnsureRevision returns ensureRevision parameter of the command
 	EnsureRevision() string
 
-	// SetStdin will write b to stdin when running the command.
-	SetStdin(b []byte)
-
 	// String returns string representation of the command (in fact prints args parameter of the command)
 	String() string
 
@@ -77,7 +74,6 @@ type LocalGitCommand struct {
 	repo           api.RepoName
 	ensureRevision string
 	args           []string
-	stdin          []byte
 	exitStatus     int
 }
 
@@ -102,7 +98,6 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	var stdoutBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
-	cmd.Stdin = bytes.NewReader(l.stdin)
 
 	dir := protocol.NormalizeRepo(l.Repo())
 	repoPath := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)))
@@ -153,8 +148,6 @@ func (l *LocalGitCommand) SetEnsureRevision(r string) { l.ensureRevision = r }
 
 func (l *LocalGitCommand) EnsureRevision() string { return l.ensureRevision }
 
-func (l *LocalGitCommand) SetStdin(b []byte) { l.stdin = b }
-
 func (l *LocalGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	output, err := l.Output(ctx)
 	return io.NopCloser(bytes.NewReader(output)), err
@@ -167,7 +160,6 @@ type RemoteGitCommand struct {
 	repo           api.RepoName // the repository to execute the command in
 	ensureRevision string
 	args           []string
-	stdin          []byte
 	noTimeout      bool
 	exitStatus     int
 	execer         execer
@@ -240,8 +232,6 @@ func (c *RemoteGitCommand) ExitStatus() int { return c.exitStatus }
 func (c *RemoteGitCommand) SetEnsureRevision(r string) { c.ensureRevision = r }
 
 func (c *RemoteGitCommand) EnsureRevision() string { return c.ensureRevision }
-
-func (c *RemoteGitCommand) SetStdin(b []byte) { c.stdin = b }
 
 func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
 

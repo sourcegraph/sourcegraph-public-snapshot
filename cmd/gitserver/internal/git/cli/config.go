@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"io"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -21,14 +22,20 @@ func (g *gitCLIBackend) Get(ctx context.Context, key string) (string, error) {
 		return "", err
 	}
 
-	out, err := cmd.Output()
+	r, err := g.runGitCommand(ctx, cmd)
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+
+	out, err := io.ReadAll(r)
 	if err != nil {
 		// Exit code 1 means the key is not set.
 		var e *exec.ExitError
 		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
 			return "", nil
 		}
-		return "", commandFailedError(err, cmd, out)
+		return "", err
 	}
 
 	return strings.TrimSpace(string(out)), nil
@@ -41,9 +48,16 @@ func (g *gitCLIBackend) Set(ctx context.Context, key, value string) error {
 		return err
 	}
 
-	out, err := cmd.CombinedOutput()
+	r, err := g.runGitCommand(ctx, cmd)
 	if err != nil {
-		return commandFailedError(err, cmd, out)
+		return err
+	}
+	defer r.Close()
+
+	// Drain reader so process can exit.
+	_, err = io.Copy(io.Discard, r)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -56,7 +70,14 @@ func (g *gitCLIBackend) Unset(ctx context.Context, key string) error {
 		return err
 	}
 
-	out, err := cmd.CombinedOutput()
+	r, err := g.runGitCommand(ctx, cmd)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	// Drain reader so process can exit.
+	_, err = io.Copy(io.Discard, r)
 	if err != nil {
 		// Exit code 5 means the key is not set.
 		var e *exec.ExitError
@@ -64,7 +85,7 @@ func (g *gitCLIBackend) Unset(ctx context.Context, key string) error {
 			return nil
 		}
 
-		return commandFailedError(err, cmd, out)
+		return err
 	}
 
 	return nil

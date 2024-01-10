@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"io"
 	"os/exec"
 	"syscall"
 
@@ -17,18 +18,23 @@ func (g *gitCLIBackend) MergeBase(ctx context.Context, baseRevspec, headRevspec 
 		return "", err
 	}
 
-	out, err := cmd.CombinedOutput()
+	out, err := g.runGitCommand(ctx, cmd)
+	if err != nil {
+		return "", err
+	}
+
+	stdout, err := io.ReadAll(out)
 	if err != nil {
 		// Exit code 1 and empty output most likely means that no common merge-base was found.
 		var e *exec.ExitError
 		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
-			if len(out) == 0 {
+			if len(e.Stderr) == 0 {
 				return "", nil
 			}
 		}
 
-		return "", commandFailedError(err, cmd, out)
+		return "", err
 	}
 
-	return api.CommitID(bytes.TrimSpace(out)), nil
+	return api.CommitID(bytes.TrimSpace(stdout)), nil
 }
