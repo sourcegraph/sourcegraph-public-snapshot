@@ -18,10 +18,6 @@ type MatchCSVWriter struct {
 	host      *url.URL
 }
 
-func (w *MatchCSVWriter) Close() error {
-	return w.w.Close()
-}
-
 func NewCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchCSVWriter, error) {
 	csvWriter := newBlobstoreCSVWriter(ctx, store, prefix)
 	return newMatchCSVWriter(csvWriter)
@@ -34,6 +30,10 @@ func newMatchCSVWriter(w CSVWriterCloser) (*MatchCSVWriter, error) {
 		return nil, err
 	}
 	return &MatchCSVWriter{w: w, host: u}, nil
+}
+
+func (w *MatchCSVWriter) Close() error {
+	return w.w.Close()
 }
 
 func (w *MatchCSVWriter) Write(match result.Match) error {
