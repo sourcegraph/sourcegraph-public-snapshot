@@ -273,6 +273,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bazelPublishExecutorDockerMirror(c),
 			bazelPublishExecutorBinary(c),
 		)
+	case runtype.RFC795PromoteRelease:
+		ops = operations.NewSet(
+			// Promote RFC795 images to release
+			promoteRFC795Images(c),
+		)
 
 	default:
 		// Executor VM image

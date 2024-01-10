@@ -34,6 +34,7 @@ const (
 	// RFC795
 
 	RFC795InternalRelease // Internal release
+	RFC795PromoteRelease  // Public release
 
 	// Main branches
 
@@ -89,6 +90,12 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
+	case RFC795PromoteRelease:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"RELEASE_PUBLIC": "true",
+			},
+		}
 	case RFC795InternalRelease:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -233,6 +240,8 @@ func (t RunType) String() string {
 		return "Bazel command"
 	case RFC795InternalRelease:
 		return "Internal release"
+	case RFC795PromoteRelease:
+		return "Public release"
 	}
 	return ""
 }
