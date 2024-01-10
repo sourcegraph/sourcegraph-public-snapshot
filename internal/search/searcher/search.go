@@ -200,8 +200,6 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	// TODO: In http, this was a N matches callback, now it's one. Is that causing more
-	// events sent than we expect?
 	onMatch := func(searcherMatch *protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
 			Results: convertMatches(repo, commit, &rev, []*protocol.FileMatch{searcherMatch}, s.PathRegexps),

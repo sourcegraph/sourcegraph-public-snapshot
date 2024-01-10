@@ -75,7 +75,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.String("select", p.Select))
 	defer tr.End()
 	defer func(start time.Time) {
-		// TODO: Does code tracking still make sense here?
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
 		// record them as errors to avoid noise

@@ -5,7 +5,6 @@ go_library(
     name = "searcher",
     srcs = [
         "client.go",
-        "client_grpc.go",
         "retry_grpc.go",
         "search.go",
         "symbol_search_job.go",
