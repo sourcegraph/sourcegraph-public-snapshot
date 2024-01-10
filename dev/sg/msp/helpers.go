@@ -16,6 +16,7 @@ import (
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // useServiceArgument retrieves the service spec corresponding to the first
@@ -82,6 +83,10 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 	renderPending.Destroy() // We need to destroy this pending so we can prompt on deletion.
 
 	if c.Bool("delete") {
+		if !pointers.DerefZero(env.AllowDestroys) {
+			return errors.Newf("environments[%s].allowDestroys must be 'true' to delete workspaces", env.ID)
+		}
+
 		std.Out.Promptf("[%s] Deleting workspaces for environment %q - are you sure? (y/N) ",
 			service.ID, env.ID)
 		var input string
