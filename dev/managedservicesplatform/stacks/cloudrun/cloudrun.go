@@ -286,7 +286,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Slug: pointers.Ptr(SentryOrganization),
 		})
 
-		// Get the Sourcegraph team
+		// Get the Sourcegraph team - we don't use individual owner teams
+		// because it's hard to tell whether they already exist or not, and
+		// it's not really important enough to force operators to create a
+		// team by hand. We depend on Opsgenie teams for concrete ownership
+		// instead.
 		sentryTeam := datasentryteam.NewDataSentryTeam(stack, id.TerraformID("team"), &datasentryteam.DataSentryTeamConfig{
 			Organization: organization.Id(),
 			Slug:         pointers.Ptr("sourcegraph"),
