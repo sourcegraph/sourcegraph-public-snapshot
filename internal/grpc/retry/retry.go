@@ -38,7 +38,7 @@ const (
 // The default configuration of the interceptor is to not retry *at all*. This behaviour can be
 // changed through options (e.g. WithMax) on creation of the interceptor or on call (through grpc.CallOptions).
 func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.UnaryClientInterceptor {
-	intOpts := reuseOrNewWithCallOptions(defaultOptions, optFuncs)
+	intOpts := newWithCallOptions(defaultOptions, optFuncs)
 	return func(parentCtx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		tr := trace.FromContext(parentCtx)
 		tr.SetAttributes(attribute.Bool(retriedTraceAttributeKey, false))
@@ -46,7 +46,7 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 		service, method := grpcutil.SplitMethodName(fullMethod)
 
 		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := reuseOrNewWithCallOptions(intOpts, retryOpts)
+		callOpts := newWithCallOptions(intOpts, retryOpts)
 
 		doTrace := makeTracingCallback(parentCtx, logger, service, method)
 		originalCallback := callOpts.onRetryCallback
@@ -104,7 +104,7 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 // to buffer the messages sent by the client. If retry is enabled on any other streams (ClientStreams,
 // BidiStreams), the retry interceptor will fail the call.
 func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.StreamClientInterceptor {
-	intOpts := reuseOrNewWithCallOptions(defaultOptions, optFuncs)
+	intOpts := newWithCallOptions(defaultOptions, optFuncs)
 	return func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		tr := trace.FromContext(parentCtx)
 		tr.SetAttributes(attribute.Bool(retriedTraceAttributeKey, false))
@@ -112,7 +112,7 @@ func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Str
 		service, method := grpcutil.SplitMethodName(fullMethod)
 
 		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := reuseOrNewWithCallOptions(intOpts, retryOpts)
+		callOpts := newWithCallOptions(intOpts, retryOpts)
 		// short circuit for simplicity, and avoiding allocations.
 
 		doTrace := makeTracingCallback(parentCtx, logger, service, method)
