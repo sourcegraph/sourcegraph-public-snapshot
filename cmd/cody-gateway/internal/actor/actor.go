@@ -241,9 +241,8 @@ func (a *Actor) Limiter(
 	}
 
 	// Finally return a concurrency limiter, to ensure that a user cannot have too many
-	// requests in-flight at a time. Note that we are setting the user's limits based on
-	// what we got from baseLimiterAndLimit, as to honor a Cody Pro subscription as
-	// applicable.
+	// requests in-flight at a time. This is generally a percentage of the rate limit
+	// assigned to an Actor by its Source - see RateLimit for more details.
 	concurrentStorePrefix := fmt.Sprintf("concurrent:%s", featurePrefix(feature))
 	return &concurrencyLimiter{
 		logger:             logger.Scoped("concurrency"),
