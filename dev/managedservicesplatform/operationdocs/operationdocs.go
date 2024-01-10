@@ -12,7 +12,11 @@ import (
 )
 
 type Options struct {
+	// GenerateCommand is the command used to generate this documentation -
+	// it will be included in the generated output in a "DO NOT EDIT" comment.
 	GenerateCommand string
+	// Handbook indicates we are generating output for sourcegraph/handbook.
+	Handbook bool
 }
 
 // Render creates a Markdown string with operational guidance for a MSP specification
@@ -27,9 +31,20 @@ func Render(s spec.Spec, opts Options) (string, error) {
 			opts.GenerateCommand)
 	}
 
+	mspURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/"
+	coreServicesURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/"
+	if opts.Handbook {
+		mspURL = relativePathToMSPPage
+		coreServicesURL = relativePathToCoreServicesPage
+	}
+
 	md.Paragraphf(`This document describes operational guidance for %s infrastructure.
-This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).`,
-		s.Service.GetName())
+This service is operated on the %s.`,
+		s.Service.GetName(),
+		markdown.Link("Managed Services Platform (MSP)", mspURL))
+
+	md.Paragraphf("If you need assistance with MSP infrastructure, reach out to the %s team in #discuss-core-services.",
+		markdown.Link("Core Services", coreServicesURL))
 
 	type environmentHeader struct {
 		environmentID string
