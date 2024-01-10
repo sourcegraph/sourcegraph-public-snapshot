@@ -10,6 +10,6 @@ go_library(
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/internal/stack",
         "//lib/pointers",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//provider:go_default_library",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//provider",
     ],
 )
