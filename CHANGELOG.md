@@ -64,8 +64,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Implement adding automatic retry support for idempotent gRPC methods [#59404](https://github.com/sourcegraph/sourcegraph/pull/59404)
+
 ### Fixed
 
+- Fix executors auth header `installSrc` [#59391](https://github.com/sourcegraph/sourcegraph/pull/59391)
 - Avoid constantly rerunning failed embeddings jobs. [#58980](https://github.com/sourcegraph/sourcegraph/pull/58980)
 
 ### Changed
