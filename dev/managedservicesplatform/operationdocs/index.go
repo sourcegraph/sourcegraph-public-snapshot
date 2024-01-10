@@ -3,6 +3,7 @@ package operationdocs
 import (
 	"path/filepath"
 	"slices"
+	"sort"
 
 	"golang.org/x/exp/maps"
 
@@ -112,14 +113,26 @@ For more details, also see [creating and configuring services](https://github.co
 	return md.String()
 }
 
-func collectByOwner(services []*spec.Spec) ([]string, map[string][]*spec.Spec) {
-	m := make(map[string][]*spec.Spec)
+func collectByOwner(services []*spec.Spec) ([]string, map[string]specSet) {
+	m := make(map[string]specSet)
 	for _, s := range services {
 		for _, o := range s.Service.Owners {
 			m[o] = append(m[o], s)
 		}
 	}
+
 	owners := maps.Keys(m)
 	slices.Sort(owners)
+	for _, o := range owners {
+		sort.Sort(m[o])
+	}
 	return owners, m
 }
+
+type specSet []*spec.Spec
+
+func (s specSet) Len() int { return len(s) }
+func (s specSet) Less(i, j int) bool {
+	return s[i].Service.ID < s[j].Service.ID
+}
+func (s specSet) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
