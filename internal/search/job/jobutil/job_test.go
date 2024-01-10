@@ -443,10 +443,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)
-                  (patternInfo.isRegexp . true)
-                  (patternInfo.fileMatchLimit . 500)
-                  (patternInfo.patternMatchesPath . true)
+                  (request.pattern . test)
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
@@ -525,10 +522,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)
-                  (patternInfo.isRegexp . true)
-                  (patternInfo.fileMatchLimit . 500)
-                  (patternInfo.patternMatchesPath . true)
+                  (request.pattern . test)
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),

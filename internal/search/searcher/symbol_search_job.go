@@ -74,7 +74,7 @@ func (s *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue)
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
-		res = append(res, trace.Scoped("patternInfo", s.Request.Fields()...)...)
+		res = append(res, trace.Scoped("request", s.Request.Fields()...)...)
 		res = append(res,
 			attribute.Int("numRepos", len(s.Repos)),
 			attribute.Int("limit", s.Limit),
