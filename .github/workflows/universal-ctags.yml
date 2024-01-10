@@ -20,30 +20,28 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v4
-      - id: auth
-        name: '🔓 Authenticate to Google Cloud'
+      - uses: DeterminateSystems/nix-installer-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
-      - id: nix-build
-        name: Run `nix build`
+      - name: Run `nix build`
         run: |
-          nix build .#ctags
-          sudo codesign --force -s - ./result/bin/universal-ctags-*
-      - id: 'rename-and-upload'
-        name: Rename an prepare for upload
+          nix build .#comby
+      - name: Sign the binary
+        # signing in ./result/bin will cause a cache miss on next invocation
         run: |
           mkdir -p dist
-          cp -R -L ./result/bin/universal-ctags-* dist/
+          cp -L ./result/bin/comby* ./dist/
+          sudo codesign --force -s - ./dist/comby*
+      - name: Rename an prepare for upload
+        run: |
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
-      - id: 'show-hash'
-        name: Show hash of ctags
+      - name: Show hash of ctags
         run: |
           shasum -a 256 ./dist/universal-ctags-*
-      - id: 'upload-file'
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+      - uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
         if: ${{ github.ref_name == 'main' }}
@@ -53,33 +51,31 @@ jobs:
           glob: 'universal-ctags-*'
   aarch64-darwin:
     name: Build ctags aarch64-darwin
-    runs-on: macos-latest
+    runs-on: macos-latest-xlarge
     steps:
       - uses: actions/checkout@v3
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v4
-      - id: auth
-        name: '🔓 Authenticate to Google Cloud'
+      - uses: DeterminateSystems/nix-installer-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
-      - id: nix-build
-        name: Run `nix build`
+      - name: Run `nix build`
         run: |
-          nix build .#ctags-aarch64-darwin
-          sudo codesign --force -s - ./result/bin/universal-ctags-*
-      - id: 'rename-and-upload'
-        name: Rename an prepare for upload
+          nix build .#comby
+      - name: Sign the binary
+        # signing in ./result/bin will cause a cache miss on next invocation
         run: |
           mkdir -p dist
-          cp -R -L ./result/bin/universal-ctags-* dist/
+          cp -L ./result/bin/comby* ./dist/
+          sudo codesign --force -s - ./dist/comby*
+      - name: Rename an prepare for upload
+        run: |
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
-      - id: 'show-hash'
-        name: Show hash of ctags
+      - name: Show hash of ctags
         run: |
           shasum -a 256 ./dist/universal-ctags-*
-      - id: 'upload-file'
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+      - uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
         if: ${{ github.ref_name == 'main' }}
@@ -92,29 +88,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v4
-      - id: auth
-        name: '🔓 Authenticate to Google Cloud'
+      - uses: DeterminateSystems/nix-installer-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
-      - id: nix-build
-        name: Run `nix build`
+      - name: Run `nix build`
         run: |
           nix build .#ctags
-      - id: 'rename-and-upload'
-        name: Rename an prepare for upload
+      - name: Rename an prepare for upload
         run: |
           mkdir -p dist
           cp -R -L ./result/bin/universal-ctags-* dist/
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
-      - id: 'show-hash'
-        name: Show hash of ctags
+      - name: Show hash of ctags
         run: |
           shasum -a 256 ./dist/universal-ctags-*
-      - id: 'upload-file'
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+      - uses: 'google-github-actions/upload-cloud-storage@v1'
         # github.head_ref is only available for pull requests
         # if the event type is not pull_requet we have to use github.ref_name
         if: ${{ github.ref_name == 'main' }}
