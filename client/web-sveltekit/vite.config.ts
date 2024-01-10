@@ -2,7 +2,6 @@ import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 import { generate, type CodegenConfig } from '@graphql-codegen/cli'
-import graphql from '@rollup/plugin-graphql'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
@@ -17,13 +16,25 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 // caused duplicate code generation issues.
 function generateGraphQLTypes(): Plugin {
     const codgegenConfig: CodegenConfig = {
+        hooks: {
+            // This hook removes the 'import type * as Types from ...' import from generated files if it's not used.
+            // The near-operation-file preset generates this import for every file, even if it's not used. This
+            // generally is not a problem, but the issue is reported by `pnpm check`.
+            // See https://github.com/dotansimha/graphql-code-generator/issues/4900
+            beforeOneFileWrite(_path, content) {
+                if (/^import type \* as Types from/m.test(content) && !/Types(\[|\.)/.test(content)) {
+                    return content.replace(/^import type \* as Types from .+$/m, '').trimStart()
+                }
+                return content
+            },
+        },
         generates: {
+            // Legacy graphql-operations.ts file that is still used by some components.
             './src/lib/graphql-operations.ts': {
-                documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts'],
+                documents: ['src/{lib,routes}/**/*.ts', '!src/lib/graphql-{operations,types}.ts', '!src/**/*.gql.ts'],
                 config: {
                     onlyOperationTypes: true,
                     enumValues: '$lib/graphql-types',
-                    //interfaceNameForOperations: 'SvelteKitGraphQlOperations',
                 },
                 plugins: ['typescript', 'typescript-operations'],
             },
@@ -31,16 +42,17 @@ function generateGraphQLTypes(): Plugin {
                 plugins: ['typescript'],
             },
             'src/': {
-                documents: ['src/**/*.gql', '!src/**/*.gql.d.ts'],
+                documents: ['src/**/*.gql', '!src/**/*.gql.ts'],
                 preset: 'near-operation-file',
                 presetConfig: {
                     baseTypesPath: 'lib/graphql-types',
-                    extension: '.gql.d.ts',
+                    extension: '.gql.ts',
                 },
                 config: {
                     useTypeImports: true,
+                    documentVariableSuffix: '', // The default is 'Document'
                 },
-                plugins: ['typescript-operations', `${__dirname}/dev/typed-document-node.cjs`],
+                plugins: ['typescript-operations', 'typed-document-node'],
             },
         },
         schema: '../../cmd/frontend/graphqlbackend/*.graphql',
@@ -77,7 +89,7 @@ function generateGraphQLTypes(): Plugin {
     // Cheap custom function to check whether we should run codegen for the provided path
     function shouldRunCodegen(path: string): boolean {
         // Do not run codegen for generated files
-        if (/(graphql-(operations|types)|\.gql\.d)\.ts$/.test(path)) {
+        if (/(graphql-(operations|types)|\.gql)\.ts$/.test(path)) {
             return false
         }
         if (/\.(ts|gql)$/.test(path)) {
@@ -119,11 +131,9 @@ export default defineConfig(({ mode }) => {
     let config: UserConfig = {
         plugins: [
             sveltekit(),
-            // Generates typescript types for gql-tags and .graphql files
+            // Generates typescript types for gql-tags and .gql files
             generateGraphQLTypes(),
             inspect(),
-            // Parses .graphql files and imports them as AST
-            graphql(),
         ],
         define:
             mode === 'test'
@@ -175,6 +185,12 @@ export default defineConfig(({ mode }) => {
                 {
                     find: /^react-icons\/(.+)$/,
                     replacement: 'react-icons/$1/index.js',
+                },
+                // We generate corresponding .gql.ts files for .gql files.
+                // This alias allows us to import .gql files and have them resolved to the generated .gql.ts files.
+                {
+                    find: /^(.*)\.gql$/,
+                    replacement: '$1.gql.ts',
                 },
             ],
         },

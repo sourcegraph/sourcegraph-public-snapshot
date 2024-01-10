@@ -349,6 +349,7 @@ load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains"
 zig_toolchains(
     host_platform_sha256 = {
         "macos-aarch64": "ed946cd65d00b18342d9a9ee9666b0869025ac2cd544a0fec3c337b5b0ee53c3",
+        "linux-x86_64": "660cc63a8c3991220a5a2d2b6cd478da9bc2a44b4c18efd0cc8f6ab1156bfd12",
     },
     # Fixes flakiness with zig 0.11.0
     # https://bazelbuild.slack.com/archives/C04N6NE1GRM/p1704306009190609?thread_ts=1704306009.190609&cid=C04N6NE1GRM

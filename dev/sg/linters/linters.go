@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/run"
 	"go.bobheadxi.dev/streamline/pipeline"
@@ -74,9 +75,9 @@ var Targets = []Target{
 		Description: "Check client code for linting errors, forbidden imports, etc",
 		Checks: []*linter{
 			inlineTemplates,
-			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
+			runScriptSerialized("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
 			// we only run this linter locally, since on CI it has it's own job
-			onlyLocal(runScript("pnpm list:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
+			onlyLocal(runScriptSerialized("pnpm lint:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
 			checkUnversionedDocsLinks(),
 		},
 	},
@@ -130,6 +131,24 @@ func runScript(name string, script string) *linter {
 	return &linter{
 		Name: name,
 		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
+		},
+	}
+}
+
+var runScriptSerializedMu sync.Mutex
+
+// runScriptSerialized is exactly like runScript, but ensure that all the check functions
+// are run serially by acquiring a lock.
+//
+// This is useful for pnpm for examples, as some tasks might end up writing to the same files
+// concurrently, leading to race conditions and thus CI failures.
+func runScriptSerialized(name string, script string) *linter {
+	return &linter{
+		Name: name,
+		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			runScriptSerializedMu.Lock()
+			defer runScriptSerializedMu.Unlock()
 			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
 		},
 	}

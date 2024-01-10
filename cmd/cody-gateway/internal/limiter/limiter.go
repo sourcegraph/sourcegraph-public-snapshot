@@ -155,7 +155,8 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		}
 
 		// Set expiry on the key. If the key didn't exist prior to the previous INCR,
-		// it will set the expiry of the key to one day.
+		// it will set the expiry of the key to `intervalSeconds`.
+		//
 		// If it did exist before, it should have an expiry set already, so the TTL >= 0
 		// makes sure that we don't overwrite it and restart the 1h bucket.
 		ttl, err := l.Redis.TTL(l.Identifier)
@@ -180,6 +181,10 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 
 		return nil
 	}, nil
+}
+
+func (l StaticLimiter) ResetUsage() error {
+	return l.Redis.Del(l.Identifier)
 }
 
 func (l StaticLimiter) Usage(ctx context.Context) (_ int, _ time.Time, err error) {

@@ -1,45 +1,28 @@
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
-load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:build_code_intel_extensions.bzl", "build_code_intel_extensions")
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# TODO(bazel): storybook build
-# gazelle:exclude **/*.story.{ts,tsx}
+# gazelle:js_custom_files stories src/**/*.story.tsx
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
 # Assets included as data
 # gazelle:js_ignore_imports ../../../../assets/img/sourcegraph-mark.svg
-
-# Bundled [s]css:
-# gazelle:js_resolve **/branded.scss :src/branded.css
+# gazelle:js_ignore_imports **/branded.scss
+# gazelle:js_ignore_imports **/app.scss
 
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root(
     config_deps = [
         "//client/browser/src/end-to-end:tsconfig",
-    ],
-)
-
-# Temporary ESLint target to lint stories. This will be removed once we have a
-# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
-eslint_test_with_types(
-    name = "stories_eslint",
-    srcs = glob([
-        "src/**/*.story.tsx",
-        "src/**/*.fixtures.ts",
-    ]),
-    config = ":eslint_config",
-    deps = [
-        ":node_modules/@sourcegraph/shared",  # required for import/extensions rule not to fail.
-        "//:node_modules/@types/node",
     ],
 )
 
@@ -410,4 +393,31 @@ copy_to_directory(
         "client/browser/build",
     ],
     visibility = ["//visibility:public"],
+)
+
+ts_project(
+    name = "stories",
+    srcs = [
+        "src/browser-extension/after-install-page/AfterInstallPageContent.story.tsx",
+        "src/browser-extension/options-menu/OptionsPage.story.tsx",
+        "src/shared/components/HoverOverlay.story.tsx",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":browser",
+        ":module_style_typings",
+        ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@atlassian/aui",
+        "//:node_modules/@storybook/addon-actions",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/react",
+        "//:node_modules/classnames",
+        "//:node_modules/mdi-react",
+        "//:node_modules/react",
+        "//:node_modules/react-router-dom",
+        "//:node_modules/rxjs",
+    ],
 )

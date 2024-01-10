@@ -9,11 +9,16 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// LimitUpperBound is the maximum (and default) value allowed for Limit request parameter.
+// If a higher value is given, then this default is set.
+const LimitUpperBound = 4
 
 // Request for attribution search. Expected in JSON form as the body of POST request.
 type Request struct {
@@ -43,8 +48,9 @@ type Repository struct {
 // graphql.Client can be nil which disables the search.
 func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a := actor.FromContext(r.Context())
-		logger := a.Logger(trace.Logger(r.Context(), baseLogger))
+		ctx := r.Context()
+		a := actor.FromContext(ctx)
+		logger := a.Logger(trace.Logger(ctx, baseLogger))
 		if got, want := a.GetSource(), codygateway.ActorSourceProductSubscription; got != want {
 			response.JSONError(logger, w, http.StatusUnauthorized, errors.New("only available for enterprise product subscriptions"))
 			return
@@ -58,14 +64,26 @@ func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return
 		}
-		// TODO(#59244): Actually query dotcom for attribution.
-		response := &Response{
-			TotalCount: 0,
-			LimitHit:   false,
+		limit := request.Limit
+		if limit == 0 || limit > LimitUpperBound {
+			limit = LimitUpperBound
+		}
+		searchResponse, err := dotcom.SnippetAttribution(ctx, client, request.Snippet, limit)
+		if err != nil {
+			response.JSONError(logger, w, http.StatusServiceUnavailable, err)
+			return
+		}
+		var rs []Repository
+		for _, n := range searchResponse.SnippetAttribution.Nodes {
+			rs = append(rs, Repository{Name: n.RepositoryName})
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
+		if err := json.NewEncoder(w).Encode(&Response{
+			Repositories: rs,
+			TotalCount:   searchResponse.SnippetAttribution.TotalCount,
+			LimitHit:     searchResponse.SnippetAttribution.LimitHit,
+		}); err != nil {
 			baseLogger.Debug("failed to marshal json response", log.Error(err))
 		}
 	})

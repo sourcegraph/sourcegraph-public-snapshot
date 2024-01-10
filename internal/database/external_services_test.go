@@ -2789,3 +2789,39 @@ func TestExternalServices_CleanupSyncJobs(t *testing.T) {
 		},
 	}, syncJobs)
 }
+
+func TestCalcUnrestricted(t *testing.T) {
+	// Separate test for dotcom mode to test a mix of cases
+	t.Run("dotcom mode always returns false", func(t *testing.T) {
+		require.False(t, calcUnrestricted("", true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}}`, true, false))
+		require.False(t, calcUnrestricted(`{"authorization": {}, "enforcePermissions": false}`, true, false))
+	})
+
+	otherTests := map[string]struct {
+		authorization          bool
+		enforcePermissions     bool
+		permissionsUserMapping bool
+		want                   bool
+	}{
+		"all false returns unrestricted":                                       {want: true},
+		"authorization true returns restricted":                                {authorization: true, want: false},
+		"permissionsUserMapping true returns restrcited":                       {permissionsUserMapping: true, want: false},
+		"enforcePermissions and no permissionsUserMapping returns restrictred": {enforcePermissions: true, want: false},
+	}
+
+	for testName, test := range otherTests {
+		t.Run(testName, func(t *testing.T) {
+			var vals []string
+			if test.authorization {
+				vals = append(vals, `"authorization": {}`)
+			}
+			if test.enforcePermissions {
+				vals = append(vals, `"enforcePermissions": true`)
+			}
+
+			conf := fmt.Sprintf("{%s}", strings.Join(vals, ","))
+			require.Equal(t, test.want, calcUnrestricted(conf, false, test.permissionsUserMapping))
+		})
+	}
+}

@@ -2,15 +2,16 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
     import { createPromiseStore } from '$lib/utils'
+    import type { GitBranchesConnection } from './page.gql'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    const { pending, value: branches, set } = createPromiseStore<PageData['deferred']['branches']>()
+    const { pending, value: connection, set } = createPromiseStore<GitBranchesConnection>()
     $: set(data.deferred.branches)
-    $: nodes = $branches?.nodes
-    $: total = $branches?.totalCount
+    $: nodes = $connection?.nodes
+    $: totalCount = $connection?.totalCount
 </script>
 
 <svelte:head>
@@ -29,8 +30,8 @@
             {/each}
         </tbody>
     </table>
-    {#if total !== null}
-        <small class="text-muted">{total} branches total</small>
+    {#if totalCount !== null}
+        <small class="text-muted">{totalCount} branches total</small>
     {/if}
 {/if}
 

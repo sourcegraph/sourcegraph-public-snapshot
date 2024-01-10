@@ -7422,6 +7422,13 @@ type Site implements SettingsSubject {
     codyLLMConfiguration: CodyLLMConfiguration
 
     """
+    Decides which features to enable for the users of this SG instance
+
+    Site-admin only.
+    """
+    codyConfigFeatures: CodyConfigFeatures
+
+    """
     Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
     If the instance is not using the Cody Gateway there will be no rate limits.
 
@@ -7463,6 +7470,27 @@ type CodyLLMConfiguration {
     Name of the provider being used for LLM interactions.
     """
     provider: String!
+}
+
+"""
+Cody Config features contains information about which LLM features are enabled
+for this SG instance
+"""
+type CodyConfigFeatures {
+    """
+    Enable Cody chat feature.
+    """
+    chat: Boolean!
+
+    """
+    Enable Cody autocomplete feature.
+    """
+    autoComplete: Boolean!
+
+    """
+    Enable Cody special commands feature.
+    """
+    commands: Boolean!
 }
 
 """

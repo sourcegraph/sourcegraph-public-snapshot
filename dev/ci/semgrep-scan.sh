@@ -16,8 +16,10 @@ if [ ! -d "security-semgrep-rules/semgrep-rules/" ]; then
   echo ":red_circle: Semgrep rules directory not found. Reachout to security team at #discuss-security for support :red_circle:"
 fi
 
-# run semgrep
-semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --suppress-errors --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main
+# run semgrep scan on changeset using CI subcommand
+# || true is used to prevent build from failing if semgrep scan reports on blocking findings
+# reference: https://semgrep.dev/docs/semgrep-ci/configuring-blocking-and-errors-in-ci/#configuration-options-for-blocking-findings-and-errors
+semgrep ci -f security-semgrep-rules/semgrep-rules/ --metrics=off --oss-only --sarif -o results.sarif --exclude='semgrep-rules' --baseline-commit main || true
 
 echo -e "--- :rocket: reporting scan results to GitHub\n"
 

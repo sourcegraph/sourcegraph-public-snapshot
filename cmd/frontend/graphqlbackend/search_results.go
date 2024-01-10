@@ -83,7 +83,7 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
 	}, func(repo *types.MinimalRepo) {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, gsClient, repo.ToRepo()))
+		resolvers = append(resolvers, NewMinimalRepositoryResolver(c.db, gsClient, repo.ID, repo.Name))
 	})
 	if err != nil {
 		return nil, err
@@ -128,19 +128,14 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
-	type repoKey struct {
-		Name types.MinimalRepo
-		Rev  string
-	}
-	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	repoResolvers := make(map[types.MinimalRepo]*RepositoryResolver, 10)
 	gsClient := gitserver.NewClient("graphql.search.results")
-	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+	getRepoResolver := func(repoName types.MinimalRepo) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoName]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, gsClient, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
+		resolver := NewMinimalRepositoryResolver(db, gsClient, repoName.ID, repoName.Name)
+		repoResolvers[repoName] = resolver
 		return resolver
 	}
 
@@ -151,10 +146,10 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 			resolvers = append(resolvers, &FileMatchResolver{
 				db:           db,
 				FileMatch:    *v,
-				RepoResolver: getRepoResolver(v.Repo, ""),
+				RepoResolver: getRepoResolver(v.Repo),
 			})
 		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
+			resolvers = append(resolvers, getRepoResolver(v.RepoName()))
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,

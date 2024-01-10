@@ -233,7 +233,7 @@
           "description": "Enables structural search.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
@@ -2891,6 +2891,29 @@
           "accessToken": "abc123",
           "provider": "openai",
           "perUserDailyLimit": 100
+        }
+      ]
+    },
+    "configFeatures": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "properties": {
+        "chat": {
+          "description": "Enable/Disable Chat for the clients",
+          "type": "boolean"
+        },
+        "autoComplete": {
+          "description": "Enable/Disable AutoComplete for the clients",
+          "type": "boolean"
+        },
+        "commands": {
+          "description": "Enable/Disable special commands for the clients",
+          "type": "boolean"
+        }
+      },
+      "examples": [
+        {
+          "chat": true
         }
       ]
     }

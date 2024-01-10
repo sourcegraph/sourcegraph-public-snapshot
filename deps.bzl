@@ -1460,8 +1460,8 @@ def go_dependencies():
         name = "com_github_derision_test_go_mockgen",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/derision-test/go-mockgen",
-        sum = "h1:b/DXAXL2FkaRPpnbYK3ODdZzklmJAwox0tkc6yyXx74=",
-        version = "v1.3.7",
+        sum = "h1:Wo7vx8f7QdBT4jxfgTvs2t9VpyFlvvqzjXoE3m7MQBU=",
+        version = "v1.3.8-0.20240105000756-fb9effb23d90",
     )
     go_repository(
         name = "com_github_dghubble_go_twitter",
@@ -4240,13 +4240,6 @@ def go_dependencies():
         version = "v1.0.4",
     )
     go_repository(
-        name = "com_github_mcuadros_go_version",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/mcuadros/go-version",
-        sum = "h1:YocNLcTBdEdvY3iDK6jfWXvEaM5OCKkjxPKoJRdB3Gg=",
-        version = "v0.0.0-20190830083331-035f6764e8d2",
-    )
-    go_repository(
         name = "com_github_mholt_acmez",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mholt/acmez",
@@ -5587,8 +5580,8 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/conc",
-        sum = "h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=",
-        version = "v0.3.0",
+        sum = "h1:0FsjN+u9fNXTS2C1JnJ6G/gkgcUg8dscyyfu3PwHWUQ=",
+        version = "v0.3.1-0.20240108182409-4afefce20f9b",
     )
     go_repository(
         name = "com_github_sourcegraph_go_ctags",
@@ -5735,8 +5728,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:WhN5CjTjPc4cdv5LD0umuudb6ffvb3cFSo7VGIPvxGc=",
-        version = "v0.0.0-20231211160200-e92f6c764b56",
+        sum = "h1:TB4KxGtcJm98TfyDHhSkbffngM+EVlTu0epG3SxUU0U=",
+        version = "v0.0.0-20240110094557-7487a0d53131",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
