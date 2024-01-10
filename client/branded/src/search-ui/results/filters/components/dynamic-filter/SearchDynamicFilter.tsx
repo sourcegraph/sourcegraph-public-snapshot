@@ -1,4 +1,4 @@
-import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
+import { FC, ReactNode, useMemo, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -61,7 +61,6 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     onSelectedFilterChange,
 }) => {
     const [searchTerm, setSearchTerm] = useState<string>('')
-    const [allFiltersDisplayed, setAllFiltersDisplayed] = useState(false)
     const [visibleFilters, setVisibleFilters] = useState<number>(MAX_FILTERS_NUMBER)
 
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
@@ -94,19 +93,20 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const filteredFilters = mergedFilters.filter(filter => filter.label.toLowerCase().includes(lowerSearchTerm))
     const filtersToShow =
         filteredFilters.length <= visibleFilters ? filteredFilters : filteredFilters.slice(0, visibleFilters)
+    const allFiltersDisplayed = visibleFilters >= filteredFilters.length
 
     const moreOrLessFilters = (): void => {
         const filtersDisplayed = visibleFilters + MAX_FILTERS_NUMBER
 
         if (allFiltersDisplayed) {
-            setAllFiltersDisplayed(false)
+            // setAllFiltersDisplayed(false)
             setVisibleFilters(MAX_FILTERS_NUMBER)
             return
         }
 
         if (filteredFilters.length <= filtersDisplayed) {
             setVisibleFilters(filtersDisplayed)
-            setAllFiltersDisplayed(true)
+            // setAllFiltersDisplayed(true)
             return
         }
 
