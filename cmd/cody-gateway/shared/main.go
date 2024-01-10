@@ -94,39 +94,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Wrap(err, "failed to initialize external http client")
 	}
 
-	// Supported actor/auth sources
-	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
-	var dotcomClient graphql.Client
-	if config.Dotcom.AccessToken != "" {
-		// dotcom-based actor sources only if an access token is provided for
-		// us to talk with the client
-		obctx.Logger.Info("dotcom-based actor sources are enabled")
-		dotcomClient = dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
-		sources.Add(
-			productsubscription.NewSource(
-				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
-				dotcomClient,
-				config.Dotcom.InternalMode,
-				config.ActorConcurrencyLimit,
-			),
-			dotcomuser.NewSource(obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
-				dotcomClient,
-				config.ActorConcurrencyLimit,
-			),
-		)
-	} else {
-		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
-	}
-
-	authr := &auth.Authenticator{
-		Logger:      obctx.Logger.Scoped("auth"),
-		EventLogger: eventLogger,
-		Sources:     sources,
-	}
-
-	rs := newRedisStore(redispool.Cache)
+	// Add a prefix to the store for globally unique keys and simpler pruning.
+	rs := limiter.NewPrefixRedisStore("rate_limit:", newRedisStore(redispool.Cache))
 
 	// Ignore the error because it's already validated in the config.
 	dotcomURL, _ := url.Parse(config.Dotcom.URL)
@@ -147,6 +116,40 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			return slack.PostWebhookCustomHTTPContext(ctx, url, otelhttp.DefaultClient, msg)
 		},
 	)
+
+	// Supported actor/auth sources
+	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
+	var dotcomClient graphql.Client
+	if config.Dotcom.AccessToken != "" {
+		// dotcom-based actor sources only if an access token is provided for
+		// us to talk with the client
+		obctx.Logger.Info("dotcom-based actor sources are enabled")
+		dotcomClient = dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+		sources.Add(
+			productsubscription.NewSource(
+				obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				config.Dotcom.InternalMode,
+				config.ActorConcurrencyLimit,
+			),
+			dotcomuser.NewSource(obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				config.ActorConcurrencyLimit,
+				rs,
+				rateLimitNotifier,
+			),
+		)
+	} else {
+		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
+	}
+
+	authr := &auth.Authenticator{
+		Logger:      obctx.Logger.Scoped("auth"),
+		EventLogger: eventLogger,
+		Sources:     sources,
+	}
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
@@ -257,6 +260,10 @@ func (s *redisStore) TTL(key string) (int, error) {
 
 func (s *redisStore) Expire(key string, ttlSeconds int) error {
 	return s.store.Expire(key, ttlSeconds)
+}
+
+func (s *redisStore) Del(key string) error {
+	return s.store.Del(key)
 }
 
 func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTelemetryConfig) (func(), error) {
