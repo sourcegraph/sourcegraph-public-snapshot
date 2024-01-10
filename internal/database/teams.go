@@ -320,7 +320,9 @@ func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpt
 		opts.Limit++
 	}
 
-	joins = append(joins, sqlf.Sprintf("LEFT JOIN users ON team_members.user_id = users.id"))
+	if opts.Search == "" {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN users ON team_members.user_id = users.id"))
+	}
 	conds = append(conds, sqlf.Sprintf("users.deleted_at IS NULL"))
 
 	q := sqlf.Sprintf(
