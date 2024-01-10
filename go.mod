@@ -568,7 +568,7 @@ require (
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20231211160200-e92f6c764b56
+	github.com/sourcegraph/zoekt v0.0.0-20240110094557-7487a0d53131
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
