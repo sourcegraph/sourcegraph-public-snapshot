@@ -16,6 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// LimitUpperBound is the maximum (and defautl) value allowed for Limit request parameter.
+// If a higher value is given, then this default is set.
+const LimitUpperBound = 4
+
 // Request for attribution search. Expected in JSON form as the body of POST request.
 type Request struct {
 	// Snippet is the text to search attribution of.
@@ -60,7 +64,11 @@ func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return
 		}
-		searchResponse, err := dotcom.SnippetAttribution(ctx, client, request.Snippet, request.Limit)
+		limit := request.Limit
+		if limit == 0 || limit > LimitUpperBound {
+			limit = LimitUpperBound
+		}
+		searchResponse, err := dotcom.SnippetAttribution(ctx, client, request.Snippet, limit)
 		if err != nil {
 			response.JSONError(logger, w, http.StatusServiceUnavailable, err)
 			return
