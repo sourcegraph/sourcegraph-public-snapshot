@@ -42,14 +42,13 @@ promoteToPublic:
     steps:
       - name: "Creating build"
         cmd: |
-          curl -v -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
+          curl --fail-with-body -X POST "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds" -H "Content-Type: application/json" -H "Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" -d '{
               "commit": "HEAD",
               "branch": "rfc795/main",
               "message": "Testing a build from the API",
               "env": {
-                "RELEASE_PUBLIC": "true"
+                "RELEASE_PUBLIC": "true",
                 "VERSION": "{{version}}"
-                ""
               }
             }'
   finalize:

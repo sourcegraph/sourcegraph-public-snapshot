@@ -70,6 +70,7 @@ func NewConfig(now time.Time) Config {
 			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
 			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
+			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
