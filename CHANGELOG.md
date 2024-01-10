@@ -66,6 +66,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Avoid constantly rerunning failed embeddings jobs. [#58980](https://github.com/sourcegraph/sourcegraph/pull/58980)
+
 ### Changed
 
 ### Removed
@@ -80,8 +82,11 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where updating a generic git code host would cause it to become unrestricted if permissions user mapping is enabled. [#58772](https://github.com/sourcegraph/sourcegraph/pull/58772)
+- Fail embeddings jobs immediately if the rate limit is exceeded. [#58869](https://github.com/sourcegraph/sourcegraph/pull/58869)
 
 ### Changed
+
+- Improved the admin page for search indexing. [#58866](https://github.com/sourcegraph/sourcegraph/pull/58866)
 
 ### Removed
 
@@ -95,6 +100,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
+- Fixed performance issue with embeddings job scheduling. (#58651)[https://github.com/sourcegraph/sourcegraph/pull/58651]
 
 ## 5.2.3
 
