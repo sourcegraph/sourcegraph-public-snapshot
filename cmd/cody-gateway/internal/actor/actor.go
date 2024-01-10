@@ -62,7 +62,7 @@ func (a *Actor) GetSource() codygateway.ActorSource {
 	return codygateway.ActorSource(a.Source.Name())
 }
 
-// IsEmpty returns true if the actor is empty, i.e. has no ID.
+// IsEmpty returns true if the actor is empty, e.g. has no ID.
 // An empty actor is saved in the cache on fetch req failure,
 // so that we aren't constantly hitting the dotcom API. Check
 // the implementation of `Source.fetchAndCache`.
@@ -222,24 +222,37 @@ func (a *Actor) Limiter(
 	feature codygateway.Feature,
 	rateLimitNotifier notify.RateLimitNotifier,
 ) (limiter.Limiter, bool) {
+	// Start with the base limiter. This limiter enforces rate limits provided
+	// the actor's Source, and each Source implementation owns ensuring that
+	// Cody Gateway has an up-to-date view of the appropriate rate limits for
+	// a particular actor based on the application (e.g. users from enterprise product
+	// subscriptions, Self-Serve-Cody's tiers, etc.
 	baseLimiter, limit, ok := a.baseLimiterAndLimit(redis, feature, rateLimitNotifier)
 	if !ok {
 		return nil, false
 	}
 
+	// Wrap the base limiter with updateOnErrorLimiter, to call Actor.Update to
+	// refresh the actor cache on any errors.
+	updateOnErrLimiter := updateOnErrorLimiter{
+		logger:      logger.Scoped("updateOnError"),
+		actor:       a,
+		nextLimiter: baseLimiter,
+	}
+
+	// Finally return a concurrency limiter, to ensure that a user cannot have too many
+	// requests in-flight at a time. This is generally a percentage of the rate limit
+	// assigned to an Actor by its Source - see RateLimit for more details.
+	concurrentStorePrefix := fmt.Sprintf("concurrent:%s", featurePrefix(feature))
 	return &concurrencyLimiter{
 		logger:             logger.Scoped("concurrency"),
 		actor:              a,
 		feature:            feature,
-		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix(feature)), redis),
+		redis:              limiter.NewPrefixRedisStore(concurrentStorePrefix, redis),
 		concurrentRequests: limit.ConcurrentRequests,
 		concurrentInterval: limit.ConcurrentRequestsInterval,
-		nextLimiter: updateOnErrorLimiter{
-			logger:      logger.Scoped("updateOnError"),
-			actor:       a,
-			nextLimiter: baseLimiter,
-		},
-		nowFunc: time.Now,
+		nextLimiter:        updateOnErrLimiter,
+		nowFunc:            time.Now,
 	}, true
 }
 
