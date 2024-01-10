@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
 	slackconversation "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack/conversation"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
@@ -70,6 +72,10 @@ type Variables struct {
 
 	// MaxInstanceCount informs service scaling alerts.
 	MaxInstanceCount *int
+	// ExternalDomain informs external health checks on the service domain.
+	ExternalDomain spec.EnvironmentServiceDomainSpec
+	// DiagnosticsSecret is used to configure external health checks.
+	DiagnosticsSecret *random.Output
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
 	// ServiceStartupProbe is used to determine the threshold for service
@@ -371,6 +377,68 @@ func createServiceAlerts(
 				Aligner: alertpolicy.MonitoringAlignMax,
 				Reducer: alertpolicy.MonitoringReduceMax,
 				Period:  "60s",
+			},
+			NotificationChannels: channels,
+		}); err != nil {
+			return err
+		}
+	}
+
+	// If an external DNS name is provisioned, use it to check service availability
+	// from outside Cloud Run.
+	if externalDNS := vars.ExternalDomain.GetDNSName(); externalDNS != "" {
+		uptimeCheck := monitoringuptimecheckconfig.NewMonitoringUptimeCheckConfig(stack, id.TerraformID("external_uptime_check"), &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigConfig{
+			Project:     &vars.ProjectID,
+			DisplayName: pointers.Stringf("External Uptime Check for %s", externalDNS),
+
+			// https://cloud.google.com/monitoring/api/resources#tag_uptime_url
+			MonitoredResource: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigMonitoredResource{
+				Type: pointers.Ptr("uptime_url"),
+				Labels: &map[string]*string{
+					"project_id": &vars.ProjectID,
+					"host":       &externalDNS,
+				},
+			},
+
+			Timeout: pointers.Stringf("%ds", vars.ServiceStartupProbe.MaximumLatencySeconds()),
+			// Only supported values are 60s (1 minute), 300s (5 minutes),
+			// 600s (10 minutes), and 900s (15 minutes)
+			Period: pointers.Ptr("60s"),
+			HttpCheck: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheck{
+				Path:        pointers.Stringf("/-/healthz"),
+				Port:        pointers.Float64(443),
+				UseSsl:      pointers.Ptr(true),
+				ValidateSsl: pointers.Ptr(true),
+				Headers: &map[string]*string{
+					"Authorization": pointers.Stringf("Bearer %s", vars.DiagnosticsSecret.HexValue),
+				},
+				AcceptedResponseStatusCodes: &[]*monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheckAcceptedResponseStatusCodes{
+					{
+						StatusClass: pointers.Ptr("STATUS_CLASS_2XX"),
+					},
+				},
+			},
+		})
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+			ID:          "external_health_check",
+			Name:        "External Uptime Check",
+			Description: pointers.Stringf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
+			ProjectID:   vars.ProjectID,
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+				Filters: map[string]string{
+					"metric.type":           "monitoring.googleapis.com/uptime_check/check_passed",
+					"metric.label.check_id": *uptimeCheck.UptimeCheckId(),
+					"resource.type":         "uptime_url",
+				},
+				Aligner: alertpolicy.MonitoringAlignFractionTrue,
+				Reducer: alertpolicy.MonitoringReduceMean,
+				// Checks occur every 60s, in a 300s window if 2/5 fail we are in trouble
+				Period:     "300s",
+				Duration:   "0s",
+				Comparison: alertpolicy.ComparisonLT,
+				Threshold:  0.4,
+				// Alert when all locations go down
+				Trigger: alertpolicy.TriggerKindAnyViolation,
 			},
 			NotificationChannels: channels,
 		}); err != nil {

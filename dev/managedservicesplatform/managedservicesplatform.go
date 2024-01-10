@@ -134,6 +134,8 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
+		ExternalDomain:      *pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
+		DiagnosticsSecret:   cloudrunOutput.DiagnosticsSecret,
 		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
 		ServiceStartupProbe: pointers.DerefZero(env.EnvironmentServiceSpec).StatupProbe,
 

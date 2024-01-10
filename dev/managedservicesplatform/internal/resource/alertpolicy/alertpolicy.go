@@ -83,6 +83,10 @@ type ThresholdAggregation struct {
 	Period        string
 	Threshold     float64
 	Duration      string
+
+	// Trigger is the strategy for determining if an alert should fire based
+	// on the thresholds.
+	Trigger TriggerKind
 }
 
 // ResponseCodeMetric for alerting when the number of a certain response code exceeds a threshold
@@ -104,6 +108,17 @@ const (
 	CloudRunService CloudService = iota
 	CloudRunJob
 	CloudRedis
+)
+
+type TriggerKind int
+
+const (
+	// TriggerKindAnyViolation is trigger { count: 1 } - any violation will
+	// cause an alert to fire. This is the default.
+	TriggerKindAnyViolation TriggerKind = iota
+	// TriggerKindAllInViolation is trigger { percent: 100 } - all time series
+	// must be in violation for alert to fire.
+	TriggerKindAllInViolation
 )
 
 // Config for a Monitoring Alert Policy
@@ -212,9 +227,21 @@ If you have any questions, reach out to #discuss-core-services.`,
 						Duration:       pointers.Ptr(config.ThresholdAggregation.Duration),
 						Filter:         pointers.Ptr(buildFilter(config)),
 						ThresholdValue: pointers.Float64(config.ThresholdAggregation.Threshold),
-						Trigger: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
-							Count: pointers.Float64(1),
-						},
+						Trigger: func() *monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger {
+							switch config.ThresholdAggregation.Trigger {
+							case TriggerKindAllInViolation:
+								return &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
+									Percent: pointers.Float64(100),
+								}
+
+							case TriggerKindAnyViolation:
+								fallthrough
+							default:
+								return &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
+									Count: pointers.Float64(1),
+								}
+							}
+						}(),
 					},
 				},
 			},
