@@ -28,13 +28,13 @@ jobs:
           credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
       - name: Run `nix build`
         run: |
-          nix build .#comby
+          nix build .#universal-ctags
       - name: Sign the binary
         # signing in ./result/bin will cause a cache miss on next invocation
         run: |
           mkdir -p dist
-          cp -L ./result/bin/comby* ./dist/
-          sudo codesign --force -s - ./dist/comby*
+          cp -L ./result/bin/universal-ctags* ./dist/
+          sudo codesign --force -s - ./dist/universal-ctags*
       - name: Rename an prepare for upload
         run: |
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
@@ -62,13 +62,13 @@ jobs:
           credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
       - name: Run `nix build`
         run: |
-          nix build .#comby
+          nix build .#universal-ctags
       - name: Sign the binary
         # signing in ./result/bin will cause a cache miss on next invocation
         run: |
           mkdir -p dist
-          cp -L ./result/bin/comby* ./dist/
-          sudo codesign --force -s - ./dist/comby*
+          cp -L ./result/bin/universal-ctags* ./dist/
+          sudo codesign --force -s - ./dist/universal-ctags*
       - name: Rename an prepare for upload
         run: |
           cd dist/ && ls | xargs -I{} mv {} "{}.$(git rev-parse --short HEAD)"
