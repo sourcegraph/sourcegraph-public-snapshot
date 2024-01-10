@@ -1,4 +1,4 @@
-import { FC, ReactNode, useMemo, useState } from 'react'
+import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -93,7 +93,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const lowerSearchTerm = searchTerm.toLowerCase()
     const filteredFilters = mergedFilters.filter(filter => filter.label.toLowerCase().includes(lowerSearchTerm))
     const filtersToShow =
-        mergedFilters.length <= visibleFilters ? filteredFilters : filteredFilters.slice(0, visibleFilters)
+        filteredFilters.length <= visibleFilters ? filteredFilters : filteredFilters.slice(0, visibleFilters)
 
     const moreOrLessFilters = (): void => {
         const filtersDisplayed = visibleFilters + MAX_FILTERS_NUMBER
@@ -104,7 +104,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
             return
         }
 
-        if (mergedFilters.length <= filtersDisplayed) {
+        if (filteredFilters.length <= filtersDisplayed) {
             setVisibleFilters(filtersDisplayed)
             setAllFiltersDisplayed(true)
             return
@@ -139,7 +139,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
             </ul>
             {filteredFilters.length > MAX_FILTERS_NUMBER && (
                 <Button variant="link" size="sm" onClick={() => moreOrLessFilters()}>
-                    {allFiltersDisplayed ? `Show less ${filterKind}s...` : `Show more ${filterKind}s...`}
+                    {allFiltersDisplayed ? `Show less ${filterKind}s` : `Show more ${filterKind}s`}
                 </Button>
             )}
         </div>
