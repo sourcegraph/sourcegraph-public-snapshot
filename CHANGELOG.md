@@ -65,6 +65,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 ### Fixed
+
 - Avoid constantly rerunning failed embeddings jobs. [#58980](https://github.com/sourcegraph/sourcegraph/pull/58980)
 
 ### Changed
