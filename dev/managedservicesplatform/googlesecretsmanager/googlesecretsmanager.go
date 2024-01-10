@@ -36,6 +36,8 @@ const (
 	SecretSlackOperatorOAuthToken = "SLACK_OPERATOR_BOT_OAUTH_TOKEN"
 	// SecretSentryAuthToken is a Sentry internal integration auth token with
 	// Project permissions
+	//
+	// The integration is configured in https://sourcegraph.sentry.io/settings/developer-settings/managed-services-platform-fbf7cc/
 	SecretSentryAuthToken = "TFC_MSP_SENTRY_INTEGRATION"
 
 	// SecretSourcegraphWildcardKey and SecretSourcegraphWildcardCert are used
