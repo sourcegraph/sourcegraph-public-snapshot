@@ -203,7 +203,36 @@ To turn Cody off:
 
 ## Enable Cody only for some users
 
-To enable Cody only for some users, for example, when rolling out a Cody POC, follow all the steps mentioned in [Enabling Cody on your Sourcegraph instance](#enable-cody-on-your-sourcegraph-instance). Then, use the feature flag `cody` to turn Cody on selectively for some users. To do so:
+To enable Cody only for some users, for example, when rolling out a Cody POC, follow all the steps mentioned in [Enabling Cody on your Sourcegraph instance](#enable-cody-on-your-sourcegraph-instance). Then, do the following:
+
+<details>
+<summary>Sourcegraph 5.3+</summary>
+
+In Sourcegraph 5.3+, access to Cody is managed via user roles. By default, all users have access.
+
+First, ensure Cody is enabled in your site configuration. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```json
+    {
+      // [...]
+      "cody.enabled": true,
+      // Make sure cody.restrictUsersFeatureFlag is not in your configuration! If it is, remove it.
+    }
+```
+
+**Note:** Ensure `cody.restrictUsersFeatureFlag` is NOT in your site configuration. If it is, remove it or else the old feature-flag approach from Sourcegraph 5.2 and earlier will be used.
+
+Next, go to **Site admin > Users & Auth > Roles** (`/site-admin/roles`) on your instance. On that page, you can:
+
+* Control whether users _by default_ have access to Cody (expand `User [System]` and toggle **Cody** > **Access** as desired)
+* Control whether groups of users have access to Cody (`+Create role` and enable the **Cody** > **Access** toggle as desired)
+
+</details>
+
+<details>
+<summary>Sourcegraph 5.2 and earlier</summary>
+
+In Sourcegraph 5.2 and earlier, you should use the feature flag `cody` to turn Cody on selectively for some users. To do so:
 
 - Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
@@ -221,6 +250,8 @@ To enable Cody only for some users, for example, when rolling out a Cody POC, fo
 - Once added, click on the feature flag and use **add overrides** to pick users that will have access to Cody
 
 <img width="979" alt="Add overides" src="https://user-images.githubusercontent.com/25070988/235454594-9f1a6b27-6882-44d9-be32-258d6c244880.png">
+
+</summary>
 
 ## Using a third-party LLM provider
 
