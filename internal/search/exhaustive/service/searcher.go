@@ -161,7 +161,7 @@ func (s searchQuery) toRepoRevSpecs(ctx context.Context, repoRevSpec types.Repos
 	}, nil
 }
 
-func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevision, w CSVWriter) error {
+func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevision, matchWriter MatchWriter) error {
 	if err := isSameUser(ctx, s.userID); err != nil {
 		return err
 	}
@@ -181,10 +181,6 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 
 	var mu sync.Mutex     // serialize writes to w
 	var writeRowErr error // capture if w.Write fails
-	matchWriter, err := newMatchCSVWriter(w)
-	if err != nil {
-		return err
-	}
 
 	// TODO currently ignoring returned Alert
 	_, err = job.Run(ctx, s.clients, streaming.StreamFunc(func(se streaming.SearchEvent) {

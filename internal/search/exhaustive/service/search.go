@@ -5,11 +5,15 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	types2 "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
@@ -72,7 +76,11 @@ type SearchQuery interface {
 
 	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpecs) ([]types.RepositoryRevision, error)
 
-	Search(context.Context, types.RepositoryRevision, CSVWriter) error
+	Search(context.Context, types.RepositoryRevision, MatchWriter) error
+}
+
+type MatchWriter interface {
+	Write(match result.Match) error
 }
 
 // CSVWriter makes it so we can avoid caring about search types and leave it
@@ -90,7 +98,12 @@ type CSVWriter interface {
 	WriteRow(...string) error
 }
 
-// NewBlobstoreCSVWriter creates a new BlobstoreCSVWriter which writes a CSV to
+type CSVWriterCloser interface {
+	CSVWriter
+	io.Closer
+}
+
+// newBlobstoreCSVWriter creates a new BlobstoreCSVWriter which writes a CSV to
 // the store. BlobstoreCSVWriter takes care of chunking the CSV into blobs of
 // 100MiB, each with the same header row. Blobs are named {prefix}-{shard}
 // except for the first blob, which is named {prefix}.
@@ -100,7 +113,7 @@ type CSVWriter interface {
 //
 // The caller is expected to call Close() once and only once after the last call
 // to WriteRow.
-func NewBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) *BlobstoreCSVWriter {
+func newBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) *BlobstoreCSVWriter {
 
 	c := &BlobstoreCSVWriter{
 		maxBlobSizeBytes: 100 * 1024 * 1024,
@@ -312,15 +325,18 @@ func (s searcherFake) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec 
 	return repoRevs, nil
 }
 
-func (s searcherFake) Search(ctx context.Context, r types.RepositoryRevision, w CSVWriter) error {
+func (s searcherFake) Search(ctx context.Context, r types.RepositoryRevision, w MatchWriter) error {
 	if err := isSameUser(ctx, s.userID); err != nil {
 		return err
 	}
 
-	if err := w.WriteHeader("repo", "revspec", "revision"); err != nil {
-		return err
-	}
-	return w.WriteRow(strconv.Itoa(int(r.Repository)), string(r.RevisionSpecifiers), string(r.Revision))
+	return w.Write(&result.FileMatch{
+		File: result.File{
+			Repo:     types2.MinimalRepo{Name: api.RepoName(strconv.Itoa(int(r.Repository)))},
+			CommitID: api.CommitID(r.Revision),
+			Path:     "path/to/file.go",
+		},
+	})
 }
 
 func isSameUser(ctx context.Context, userID int32) error {

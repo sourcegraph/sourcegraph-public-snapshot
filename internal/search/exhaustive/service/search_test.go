@@ -66,7 +66,7 @@ func (c *csvBuffer) WriteRow(row ...string) error {
 func TestBlobstoreCSVWriter(t *testing.T) {
 	mockStore := setupMockStore(t)
 
-	csvWriter := NewBlobstoreCSVWriter(context.Background(), mockStore, "blob")
+	csvWriter := newBlobstoreCSVWriter(context.Background(), mockStore, "blob")
 	csvWriter.maxBlobSizeBytes = 12
 
 	err := csvWriter.WriteHeader("h", "h", "h") // 3 bytes (letters) + 2 bytes (commas) + 1 byte (newline) = 6 bytes
@@ -116,7 +116,7 @@ func TestBlobstoreCSVWriter(t *testing.T) {
 
 func TestNoUploadIfNotData(t *testing.T) {
 	mockStore := setupMockStore(t)
-	csvWriter := NewBlobstoreCSVWriter(context.Background(), mockStore, "blob")
+	csvWriter := newBlobstoreCSVWriter(context.Background(), mockStore, "blob")
 
 	// No data written, so no upload should happen.
 	err := csvWriter.Close()
