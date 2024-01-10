@@ -215,7 +215,7 @@ func (r *GitCommitResolver) CanonicalURL() string {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.repoResolver.repo(ctx)
+	repo, err := r.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -316,12 +316,7 @@ func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	repo, err := r.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, r.repoResolver.RepoName(), api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -334,12 +329,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	repo, err := r.repoResolver.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, r.repoResolver.RepoName(), api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -427,25 +417,23 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// Dereference to copy to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
 	} else {
 		rev = string(r.oid)
 	}
+	repoUrl := r.repoResolver.url()
 	if rev != "" {
 		repoUrl.Path += "@" + rev
 	}
-	return &repoUrl
+	return repoUrl
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	// Dereference to copy the URL to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
+	repoUrl := r.repoResolver.url()
 	repoUrl.Path += "@" + string(r.oid)
-	return &repoUrl
+	return repoUrl
 }
 
 func (r *GitCommitResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {

@@ -26,7 +26,7 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 			return
 		}
 		gitserverClient := gitserver.NewClient("graphql.search.commitresult")
-		repoResolver := NewRepositoryResolver(r.db, gitserverClient, r.Repo.ToRepo())
+		repoResolver := NewMinimalRepositoryResolver(r.db, gitserverClient, r.Repo.ID, r.Repo.Name)
 		r.gitCommitResolver = NewGitCommitResolver(r.db, gitserverClient, repoResolver, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
 	})
 	return r.gitCommitResolver

@@ -1,10 +1,7 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
-
-# TODO(bazel): storybook build
-# gazelle:exclude **/*.story.{ts,tsx}
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -13,20 +10,6 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root()
-
-# Temporary ESLint target to lint stories. This will be removed once we have a
-# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
-eslint_test_with_types(
-    name = "stories_eslint",
-    srcs = glob([
-        "src/**/*.story.tsx",
-        "src/**/*.fixtures.ts",
-    ]),
-    config = ":eslint_config",
-    deps = [
-        "//:node_modules/@types/node",
-    ],
-)
 
 ts_config(
     name = "tsconfig",
@@ -285,5 +268,36 @@ vitest_test(
         ":branded_tests",
         ":module_styles",
         ":snapshots",
+    ],
+)
+
+ts_project(
+    name = "stories",
+    srcs = [
+        "src/components/CodeSnippet.story.tsx",
+        "src/components/Toggle.story.tsx",
+        "src/components/panel/TabbedPanelContent.story.tsx",
+        "src/search-ui/components/RepoMetadata.story.tsx",
+        "src/search-ui/components/SyntaxHighlightedSearchQuery.story.tsx",
+        "src/search-ui/input/BaseCodeMirrorQueryInput.story.tsx",
+        "src/search-ui/input/SearchBox.story.tsx",
+        "src/search-ui/input/SearchContextMenu.story.tsx",
+        "src/search-ui/input/SearchContextMenuItem.story.tsx",
+        "src/search-ui/results/filters/NewSearchFilters.story.tsx",
+        "src/search-ui/results/progress/StreamingProgress.story.tsx",
+        "src/search-ui/results/progress/StreamingProgressSkippedPopover.story.tsx",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":branded_lib",
+        ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@storybook/addon-actions",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/sinon",
+        "//:node_modules/react",
+        "//:node_modules/rxjs",
+        "//:node_modules/sinon",
     ],
 )

@@ -19,7 +19,7 @@ import (
 
 func regexSearchBatch(
 	ctx context.Context,
-	m matcher,
+	m matchTree,
 	pm *pathMatcher,
 	zf *zipFile,
 	limit int,
@@ -49,7 +49,7 @@ func regexSearchBatch(
 // TODO(keegan) return search statistics
 func regexSearch(
 	ctx context.Context,
-	m matcher,
+	m matchTree,
 	pm *pathMatcher,
 	zf *zipFile,
 	patternMatchesContent, patternMatchesPaths bool,
@@ -61,7 +61,7 @@ func regexSearch(
 	defer tr.EndWithErr(&err)
 
 	tr.SetAttributes(attribute.Stringer("path", pm))
-	tr.SetAttributes(attribute.String("matcher", m.String()))
+	tr.SetAttributes(attribute.String("matchTree", m.String()))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -83,7 +83,7 @@ func regexSearch(
 		files = zf.Files
 	)
 
-	if _, ok := m.(allMatcher); ok || (patternMatchesPaths && !patternMatchesContent) {
+	if _, ok := m.(allMatchTree); ok || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
@@ -155,7 +155,8 @@ func regexSearch(
 					casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
 				}
 
-				match, locs := m.MatchesFile(fileMatchBuf, sender.Remaining())
+				// find limit+1 matches so we know whether we hit the limit
+				match, locs := m.MatchesFile(fileMatchBuf, sender.Remaining()+1)
 				fm := locsToFileMatch(fileBuf, f.Name, locs, contextLines)
 				if !match && patternMatchesPaths {
 					// Try matching against the file path.
@@ -238,13 +239,13 @@ func locsToFileMatch(fileBuf []byte, name string, locs [][]int, contextLines int
 func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 	ranges := make([]protocol.Range, 0, len(locs))
 
-	prevEnd := 0
-	prevEndLine := 0
+	prevStart := 0
+	prevStartLine := 0
 
 	for _, loc := range locs {
 		start, end := loc[0], loc[1]
 
-		startLine := prevEndLine + bytes.Count(buf[prevEnd:start], []byte{'\n'})
+		startLine := prevStartLine + bytes.Count(buf[prevStart:start], []byte{'\n'})
 		endLine := startLine + bytes.Count(buf[start:end], []byte{'\n'})
 
 		firstLineStart := 0
@@ -270,8 +271,8 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 			},
 		})
 
-		prevEnd = end
-		prevEndLine = endLine
+		prevStart = start
+		prevStartLine = startLine
 	}
 
 	return ranges

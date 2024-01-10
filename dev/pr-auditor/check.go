@@ -10,9 +10,11 @@ import (
 )
 
 type checkResult struct {
-	// Reviewed indicates that *any* review has been made on the PR. It is also set to
+	// ReviewSatisfied indicates that *any* review has been made on the PR. It is also set to
 	// true if the test plan indicates that this PR does not need to be review.
-	Reviewed bool
+	ReviewSatisfied bool
+	// CanSkipTestPlan indicates that the test plan is not required for audit.
+	CanSkipTestPlan bool
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
 	// ProtectedBranch indicates that the base branch for this PR is protected and merges
@@ -22,8 +24,12 @@ type checkResult struct {
 	Error error
 }
 
-func (r checkResult) HasTestPlan() bool {
-	return r.TestPlan != ""
+func (r checkResult) IsSatisfied() bool {
+	return r.IsTestPlanSatisfied() && r.ReviewSatisfied && !r.ProtectedBranch
+}
+
+func (r checkResult) IsTestPlanSatisfied() bool {
+	return r.CanSkipTestPlan || r.TestPlan != ""
 }
 
 var (
@@ -36,7 +42,8 @@ var (
 )
 
 type checkOpts struct {
-	ValidateReviews bool
+	SkipReviews     bool
+	SkipTestPlan    bool
 	ProtectedBranch string
 }
 
@@ -51,7 +58,7 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	// might not have any comments so we need to double-check through the GitHub API
 	var err error
 	reviewed := pr.ReviewComments > 0
-	if !reviewed && opts.ValidateReviews {
+	if !reviewed && !opts.SkipReviews {
 		owner, repo := payload.Repository.GetOwnerAndName()
 		var reviews []*github.PullRequestReview
 		// Continue, but return err later
@@ -63,8 +70,9 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	sections := testPlanDividerRegexp.Split(pr.Body, 2)
 	if len(sections) < 2 {
 		return checkResult{
-			Reviewed: reviewed,
-			Error:    err,
+			ReviewSatisfied: reviewed,
+			CanSkipTestPlan: opts.SkipTestPlan,
+			Error:           err,
 		}
 	}
 
@@ -90,7 +98,8 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	mergeAgainstProtected := isProtectedBranch(payload, opts.ProtectedBranch)
 
 	return checkResult{
-		Reviewed:        reviewed,
+		ReviewSatisfied: reviewed,
+		CanSkipTestPlan: opts.SkipTestPlan,
 		TestPlan:        testPlan,
 		ProtectedBranch: mergeAgainstProtected,
 		Error:           err,

@@ -417,7 +417,7 @@ func (f *fakeRepoStore) List(_ context.Context, opts database.ReposListOptions) 
 	for _, r := range f.Repos {
 		for _, id := range opts.IDs {
 			if id == r.ID {
-				repos = append(repos, r.ToRepo())
+				repos = append(repos, &types.Repo{ID: r.ID, Name: r.Name, Stars: r.Stars})
 			}
 		}
 	}
