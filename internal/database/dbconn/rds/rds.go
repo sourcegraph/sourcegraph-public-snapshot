@@ -5,13 +5,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds/rdsutils"
 	"github.com/jackc/pgx/v4"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,7 +26,7 @@ func NewUpdater() *Updater {
 }
 
 func (u *Updater) ShouldUpdate(cfg *pgx.ConnConfig) bool {
-	logger := log.Scoped("rds", "shouldUpdate")
+	logger := log.Scoped("rds")
 	token, err := parseRDSAuthToken(cfg.Password)
 	if err != nil {
 		logger.Warn("Error parsing RDS auth token, refreshing", log.Error(err))
@@ -37,10 +37,10 @@ func (u *Updater) ShouldUpdate(cfg *pgx.ConnConfig) bool {
 }
 
 func (u *Updater) Update(cfg *pgx.ConnConfig) (*pgx.ConnConfig, error) {
-	logger := log.Scoped("rds", "update")
+	logger := log.Scoped("rds")
 	if cfg.Password != "" {
 		// only output the warning once, or it will emit a new entry on every connection
-		syncx.OnceFunc(func() {
+		sync.OnceFunc(func() {
 			logger.Warn("'PG_CONNECTION_UPDATER' is 'EC2_ROLE_CREDENTIALS', but 'PGPASSWORD' is also set. Ignoring 'PGPASSWORD'.")
 		})
 	}

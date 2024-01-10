@@ -32,7 +32,7 @@ func TestSeriesPoints(t *testing.T) {
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -137,7 +137,7 @@ func TestCountData(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -228,7 +228,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -323,7 +323,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -386,7 +386,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
@@ -449,7 +449,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	ctx := context.Background()
 	clock := timeutil.Now
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsDB)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -562,7 +562,7 @@ func TestDelete(t *testing.T) {
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
 
@@ -671,7 +671,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	clock := timeutil.Now
 	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsdb)
 	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
@@ -926,7 +926,7 @@ func TestGetOffsetNRecordingTime(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mainDB := database.NewDB(logger, dbtest.NewDB(t))
 
 	insightStore := NewInsightStore(insightsDB)
 	seriesStore := New(insightsDB, NewInsightPermissionStore(mainDB))

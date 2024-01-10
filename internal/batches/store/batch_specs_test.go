@@ -709,7 +709,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	c := &bt.TestClock{Time: timeutil.Now()}
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
@@ -884,7 +884,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	s := New(db, &observation.TestContext, nil)
 
 	// Create two repos, one of which will be visible to everyone, and one which

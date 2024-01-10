@@ -19,4 +19,4 @@ assignees: ''
 
 <!-- Add any other context or other information you'd like to include. -->
 
-If you would like immediate help on this, please email support@sourcegraph.com (you can still create the issue, but there are no [SLAs](https://about.sourcegraph.com/support/) on issues like there are for support requests).
+If you would like immediate help on this, please email support@sourcegraph.com (you can still create the issue, but there are no [SLAs](https://sourcegraph.com/support/) on issues like there are for support requests).

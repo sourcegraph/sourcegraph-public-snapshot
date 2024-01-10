@@ -195,7 +195,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u := db.Users()
 	r := db.Repos()
 
@@ -235,7 +235,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u := db.Users()
 
 	org, err := db.Orgs().Create(internalCtx, "myorg", nil)
@@ -356,7 +356,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -496,7 +496,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -581,7 +581,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u := db.Users()
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})

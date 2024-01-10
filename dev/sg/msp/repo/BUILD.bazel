@@ -3,14 +3,19 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "repo",
     srcs = [
+        "graph.go",
         "repo.go",
         "root.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/managedservicesplatform/spec",
         "//dev/sg/internal/std",
+        "//lib/cliutil/completions",
         "//lib/errors",
+        "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
+        "@dev_bobheadxi_go_streamline//pipeline",
     ],
 )

@@ -45,7 +45,6 @@ export enum AliasedFilterType {
     since = 'after',
     until = 'before',
 }
-/* eslint-enable unicorn/prevent-abbreviations */
 
 export const ALIASES: Record<string, string> = {
     r: 'repo',
@@ -71,7 +70,7 @@ export const filterTypeKeysWithAliases: (FilterType | AliasedFilterType)[] = [
     ...Object.keys(AliasedFilterType),
 ] as (FilterType | AliasedFilterType)[]
 
-enum NegatedFilters {
+export enum NegatedFilters {
     author = '-author',
     committer = '-committer',
     content = '-content',
@@ -504,10 +503,11 @@ export const escapeSpaces = (value: string): string => {
                 current = current + 1
                 continue
             }
-            default:
+            default: {
                 escaped.push(value[current])
                 current = current + 1
                 continue
+            }
         }
     }
     return escaped.join('')

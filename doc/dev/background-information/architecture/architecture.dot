@@ -68,7 +68,7 @@ digraph architecture {
         worker [
             label="worker"
             fillcolor="#22ffff"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/worker"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/worker"
         ]
 
         subgraph cluster_search {

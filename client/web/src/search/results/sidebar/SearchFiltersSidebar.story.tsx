@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -55,42 +55,42 @@ const filters: Filter[] = [
         label: 'github.com/test/this-is-a-very-long-repo-name',
         value: 'repo:^github\\.com/test/this-is-a-very-long-repo-name$',
         count: 5,
-        limitHit: false,
+        exhaustive: true,
         kind: 'repo',
     },
     {
         label: 'gitlab.com/sourcegraph/sourcegraph',
         value: 'repo:^gitlab\\.com/sourcegraph/sourcegraph$',
         count: 201,
-        limitHit: true,
+        exhaustive: false,
         kind: 'repo',
     },
     {
         label: 'github.com/microsoft/vscode',
         value: 'repo:^github\\.com/microsoft/vscode$',
         count: 10,
-        limitHit: true,
+        exhaustive: false,
         kind: 'repo',
     },
     {
         label: 'bitbucket.org/com/test',
         value: 'repo:^bitbucket\\.org/com/test$',
         count: 1,
-        limitHit: true,
+        exhaustive: false,
         kind: 'repo',
     },
     {
         label: 'bitbucket.org/org/test',
         value: 'repo:^bitbucket\\.org/org/test$',
         count: 1,
-        limitHit: true,
+        exhaustive: false,
         kind: 'repo',
     },
     {
         label: 'gitlab.sgdev.org/example/test',
         value: 'repo:^gitlab\\.sgdev\\.org/example/test$',
         count: 10,
-        limitHit: true,
+        exhaustive: false,
         kind: 'repo',
     },
 
@@ -98,7 +98,7 @@ const filters: Filter[] = [
         label: 'lang:go',
         value: 'lang:go',
         count: 500,
-        limitHit: true,
+        exhaustive: false,
         kind: 'lang',
     },
 
@@ -106,7 +106,7 @@ const filters: Filter[] = [
         label: 'lang:verylonglanguagenameloremipsumdolor',
         value: 'lang:verylonglanguagenameloremipsumdolor',
         count: 241,
-        limitHit: false,
+        exhaustive: true,
         kind: 'lang',
     },
 
@@ -114,7 +114,7 @@ const filters: Filter[] = [
         label: '-file:_test\\.go$',
         value: '-file:_test\\.go$',
         count: 1230,
-        limitHit: false,
+        exhaustive: true,
         kind: 'file',
     },
 
@@ -122,16 +122,16 @@ const filters: Filter[] = [
         label: lang,
         value: `lang:${lang.toLowerCase()}`,
         count: 10,
-        limitHit: true,
+        exhaustive: false,
         kind: 'lang' as Filter['kind'],
     })),
 ]
 
-export const EmptySidebar: Story = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
+export const EmptySidebar: StoryFn = () => <WebStory>{() => <SearchFiltersSidebar {...defaultProps} />}</WebStory>
 
 EmptySidebar.storyName = 'empty sidebar'
 
-export const WithEverything: Story = () => (
+export const WithEverything: StoryFn = () => (
     <WebStory>
         {() => (
             <SearchFiltersSidebar

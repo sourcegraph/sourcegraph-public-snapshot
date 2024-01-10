@@ -2,109 +2,127 @@
 source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
+  package org.example
+//        ^^^^^^^^^^^ definition(Package) scip-ctags `org.example`/
+  
   // Top level constant property
   const val PI = 3.14
-//          ^^ definition scip-ctags PI.
+//          ^^ definition(Constant) scip-ctags `org.example`/PI.
   
   // Top level property with getter
   val version: String
-//    ^^^^^^^ definition scip-ctags version.
+//    ^^^^^^^ definition(Property) scip-ctags `org.example`/version.
       get() = "1.0.0"
   
   // Top level function
   fun printHello() {
-//    ^^^^^^^^^^ definition scip-ctags printHello().
+//    ^^^^^^^^^^ definition(Method) scip-ctags `org.example`/printHello().
       println("Hello, Kotlin!")
   }
   
   // Class with properties and methods
   class MyKotlinClass {
-//      ^^^^^^^^^^^^^ definition scip-ctags MyKotlinClass#
+//      ^^^^^^^^^^^^^ definition(Class) scip-ctags `org.example`/MyKotlinClass#
       var prop: String = "property"
-//        ^^^^ definition scip-ctags MyKotlinClass#prop.
+//        ^^^^ definition(Property) scip-ctags `org.example`/MyKotlinClass#prop.
   
       fun method() {
-//        ^^^^^^ definition scip-ctags MyKotlinClass#method().
+//        ^^^^^^ definition(Method) scip-ctags `org.example`/MyKotlinClass#method().
           println("This is a method")
       }
   }
   
   // Data class
   data class User(val name: String, val age: Int)
-//           ^^^^ definition scip-ctags User#
-//                    ^^^^ definition scip-ctags User#name.
-//                                      ^^^ definition scip-ctags User#age.
+//           ^^^^ definition(Class) scip-ctags `org.example`/User#
+//                    ^^^^ definition(Property) scip-ctags `org.example`/User#name.
+//                                      ^^^ definition(Property) scip-ctags `org.example`/User#age.
   
   // Enum class
   enum class Days {
-//           ^^^^ definition scip-ctags Days#
+//           ^^^^ definition(Enum) scip-ctags `org.example`/Days#
       MONDAY,
-//    ^^^^^^ definition scip-ctags Days#MONDAY.
+//    ^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#MONDAY.
       TUESDAY,
-//    ^^^^^^^ definition scip-ctags Days#TUESDAY.
+//    ^^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#TUESDAY.
       WEDNESDAY,
-//    ^^^^^^^^^ definition scip-ctags Days#WEDNESDAY.
+//    ^^^^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#WEDNESDAY.
       THURSDAY,
-//    ^^^^^^^^ definition scip-ctags Days#THURSDAY.
+//    ^^^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#THURSDAY.
       FRIDAY,
-//    ^^^^^^ definition scip-ctags Days#FRIDAY.
+//    ^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#FRIDAY.
       SATURDAY,
-//    ^^^^^^^^ definition scip-ctags Days#SATURDAY.
+//    ^^^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#SATURDAY.
       SUNDAY
-//    ^^^^^^ definition scip-ctags Days#SUNDAY.
+//    ^^^^^^ definition(EnumMember) scip-ctags `org.example`/Days#SUNDAY.
   }
   
   // Object (singleton)
   object MyObject {
-//       ^^^^^^^^ definition scip-ctags MyObject#
+//       ^^^^^^^^ definition(Object) scip-ctags `org.example`/MyObject#
       val property = "Object property"
-//        ^^^^^^^^ definition scip-ctags MyObject#property.
+//        ^^^^^^^^ definition(Property) scip-ctags `org.example`/MyObject#property.
   }
   
   // Interface
   interface MyInterface {
-//          ^^^^^^^^^^^ definition scip-ctags MyInterface#
+//          ^^^^^^^^^^^ definition(Interface) scip-ctags `org.example`/MyInterface#
       fun interfaceMethod(): String
+//        ^^^^^^^^^^^^^^^ definition(Method) scip-ctags `org.example`/MyInterface#interfaceMethod().
+  }
+  
+  object SimpleSingleton {
+//       ^^^^^^^^^^^^^^^ definition(Object) scip-ctags `org.example`/SimpleSingleton#
+      val answer = 42;
+//        ^^^^^^ definition(Property) scip-ctags `org.example`/SimpleSingleton#answer.
+      fun greet(name: String) = "Hello, $name!"
+//        ^^^^^ definition(Method) scip-ctags `org.example`/SimpleSingleton#greet().
   }
   
   // Type alias
   typealias UserList = List<User>
+//          ^^^^^^^^ definition(TypeAlias) scip-ctags `org.example`/UserList#
   
   // Extension function
   fun String.print() {
-//           ^^^^^ definition scip-ctags print().
+//           ^^^^^ definition(Method) scip-ctags `org.example`/print().
       println(this)
   }
   
   // Sealed class
   sealed class Result {
-//             ^^^^^^ definition scip-ctags Result#
+//             ^^^^^^ definition(Class) scip-ctags `org.example`/Result#
       data class Success(val message: String) : Result()
-//               ^^^^^^^ definition scip-ctags Result#Success#
-//                           ^^^^^^^ definition scip-ctags Result#Success#message.
+//               ^^^^^^^ definition(Class) scip-ctags `org.example`/Result#Success#
+//                           ^^^^^^^ definition(Property) scip-ctags `org.example`/Result#Success#message.
       data class Error(val error: Exception) : Result()
-//               ^^^^^ definition scip-ctags Result#Error#
-//                         ^^^^^ definition scip-ctags Result#Error#error.
+//               ^^^^^ definition(Class) scip-ctags `org.example`/Result#Error#
+//                         ^^^^^ definition(Property) scip-ctags `org.example`/Result#Error#error.
   }
   
   // Inline class
   inline class Password(val value: String)
-//             ^^^^^^^^ definition scip-ctags Password#
-//                          ^^^^^ definition scip-ctags Password#value.
+//             ^^^^^^^^ definition(Class) scip-ctags `org.example`/Password#
+//                          ^^^^^ definition(Property) scip-ctags `org.example`/Password#value.
   
   // Companion object
   class MyClassWithCompanion {
-//      ^^^^^^^^^^^^^^^^^^^^ definition scip-ctags MyClassWithCompanion#
-      companion object {
+//      ^^^^^^^^^^^^^^^^^^^^ definition(Class) scip-ctags `org.example`/MyClassWithCompanion#
+      companion object ConstantCompanion {
+//                     ^^^^^^^^^^^^^^^^^ definition(Object) scip-ctags `org.example`/MyClassWithCompanion#ConstantCompanion#
           const val CONSTANT = "Companion constant"
-//                  ^^^^^^^^ definition scip-ctags MyClassWithCompanion#CONSTANT.
+//                  ^^^^^^^^ definition(Constant) scip-ctags `org.example`/MyClassWithCompanion#ConstantCompanion#CONSTANT.
       }
   }
   
   fun `Escaped`() {}
-//    ^^^^^^^^^ definition scip-ctags . . . ``Escaped``().
+//    ^^^^^^^^^ definition(Method) scip-ctags . . . `org.example`/``Escaped``().
   
+  // Multi-variable declaration
   val (left, right) = directions()
-//     ^^^^ definition scip-ctags left.
-//           ^^^^^ definition scip-ctags right.
+//     ^^^^ definition(Property) scip-ctags `org.example`/left.
+//           ^^^^^ definition(Property) scip-ctags `org.example`/right.
+  
+  // Anonymous function
+  fun(x: Int, y: Int): Int = x + y
 

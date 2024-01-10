@@ -3,7 +3,6 @@ package repoupdater
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,8 +16,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -28,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -223,7 +219,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			sqlDB := dbtest.NewDB(logger, t)
+			sqlDB := dbtest.NewDB(t)
 			store := tc.init(database.NewDB(logger, sqlDB))
 
 			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
@@ -252,7 +248,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 func TestServer_RepoLookup(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(logger, database.NewDB(logger, db))
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -465,7 +461,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Name:         npmRepository.Name,
 				VCS:          protocol.VCSInfo{URL: string(npmRepository.Name)},
 			}},
-			assert: typestest.Assert.ReposEqual(npmRepository),
+			assert: typestest.AssertReposEqual(npmRepository),
 		},
 		{
 			name: "synced - github.com cloud default",
@@ -490,7 +486,7 @@ func TestServer_RepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: typestest.Assert.ReposEqual(githubRepository),
+			assert: typestest.AssertReposEqual(githubRepository),
 		},
 		{
 			name: "found - github.com already exists",
@@ -524,7 +520,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: typestest.Assert.ReposEqual(),
+			assert: typestest.AssertReposEqual(),
 		},
 		{
 			name: "unauthorized - github.com",
@@ -534,7 +530,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			src:    repos.NewFakeSource(&githubSource, &github.APIError{Code: http.StatusUnauthorized}),
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
 			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: typestest.Assert.ReposEqual(),
+			assert: typestest.AssertReposEqual(),
 		},
 		{
 			name: "temporarily unavailable - github.com",
@@ -548,7 +544,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				api.RepoName("github.com/foo/bar"),
 				true,
 			),
-			assert: typestest.Assert.ReposEqual(),
+			assert: typestest.AssertReposEqual(),
 		},
 		{
 			name:   "synced - gitlab.com",
@@ -571,7 +567,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: typestest.Assert.ReposEqual(gitlabRepository),
+			assert: typestest.AssertReposEqual(gitlabRepository),
 		},
 		{
 			name:   "found - gitlab.com",
@@ -632,7 +628,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 			}},
 			assertDelay: time.Second,
-			assert:      typestest.Assert.ReposEqual(),
+			assert:      typestest.AssertReposEqual(),
 		},
 	}
 
@@ -711,653 +707,4 @@ type fakeScheduler struct{}
 func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName) {}
 func (s *fakeScheduler) ScheduleInfo(_ api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
-}
-
-func TestServer_handleExternalServiceValidate(t *testing.T) {
-	tests := []struct {
-		name        string
-		err         error
-		wantErrCode int
-	}{
-		{
-			name:        "unauthorized",
-			err:         &repoupdater.ErrUnauthorized{NoAuthz: true},
-			wantErrCode: 401,
-		},
-		{
-			name:        "forbidden",
-			err:         repos.ErrForbidden{},
-			wantErrCode: 403,
-		},
-		{
-			name:        "other",
-			err:         errors.Errorf("Any error"),
-			wantErrCode: 500,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			src := testSource{
-				fn: func() error {
-					return test.err
-				},
-			}
-
-			es := &types.ExternalService{ID: 1, Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}
-			statusCode, _ := handleExternalServiceValidate(context.Background(), logtest.Scoped(t), es, src)
-			if statusCode != test.wantErrCode {
-				t.Errorf("Code: want %v but got %v", test.wantErrCode, statusCode)
-			}
-		})
-	}
-}
-
-func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
-	var (
-		src    repos.Source
-		called bool
-		ctx    = context.Background()
-	)
-	src = testSource{
-		fn: func() error {
-			called = true
-			return nil
-		},
-	}
-	err := externalServiceValidate(ctx, &types.ExternalService{}, src)
-	if err != nil {
-		t.Errorf("expected nil, got %v", err)
-	}
-	if !called {
-		t.Errorf("expected called, got not called")
-	}
-}
-
-func TestServer_ExternalServiceNamespaces(t *testing.T) {
-	githubConnection := `
-{
-	"url": "https://github.com",
-	"token": "secret-token",
-}`
-
-	githubSource := types.ExternalService{
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubConnection),
-	}
-
-	gitlabConnection := `
-	{
-	   "url": "https://gitlab.com",
-	   "token": "abc",
-	}`
-
-	gitlabSource := types.ExternalService{
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
-	}
-
-	githubOrg := &types.ExternalServiceNamespace{
-		ID:         1,
-		Name:       "sourcegraph",
-		ExternalID: "aaaaa",
-	}
-
-	githubExternalServiceConfig := `
-	{
-		"url": "https://github.com",
-		"token": "secret-token",
-		"repos": ["org/repo1", "owner/repo2"]
-	}`
-
-	githubExternalService := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
-	}
-
-	gitlabExternalServiceConfig := `
-	{
-		"url": "https://gitlab.com",
-		"token": "abc",
-		"projectQuery": ["groups/mygroup/projects"]
-	}`
-
-	gitlabExternalService := types.ExternalService{
-		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
-	}
-
-	gitlabRepository := &types.Repo{
-		Name:        "gitlab.com/gitlab-org/gitaly",
-		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		URI:         "gitlab.com/gitlab-org/gitaly",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "2009901",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
-		},
-		Sources: map[string]*types.SourceInfo{
-			gitlabSource.URN(): {
-				ID:       gitlabSource.URN(),
-				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
-			},
-		},
-	}
-
-	var idDoesNotExist int64 = 99
-
-	testCases := []struct {
-		name              string
-		externalService   *types.ExternalService
-		externalServiceID *int64
-		kind              string
-		config            string
-		result            *protocol.ExternalServiceNamespacesResult
-		src               repos.Source
-		err               string
-	}{
-		{
-			name:   "discoverable source - github",
-			kind:   extsvc.KindGitHub,
-			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
-		},
-		{
-			name:   "unavailable - github.com",
-			kind:   extsvc.KindGitHub,
-			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), true, githubOrg),
-			result: &protocol.ExternalServiceNamespacesResult{Error: "fake source unavailable"},
-			err:    "fake source unavailable",
-		},
-		{
-			name:   "discoverable source - github - empty namespaces result",
-			kind:   extsvc.KindGitHub,
-			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false),
-			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{}, Error: ""},
-		},
-		{
-			name:   "source does not implement discoverable source",
-			kind:   extsvc.KindGitLab,
-			config: gitlabConnection,
-			src:    repos.NewFakeSource(&gitlabSource, nil, &types.Repo{}),
-			result: &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
-			err:    repos.UnimplementedDiscoverySource,
-		},
-		{
-			name:              "discoverable source - github - use existing external service",
-			externalService:   &githubExternalService,
-			externalServiceID: &githubExternalService.ID,
-			kind:              extsvc.KindGitHub,
-			config:            githubConnection,
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result:            &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
-		},
-		{
-			name:              "external service for ID does not exist and other config parameters are not attempted",
-			externalService:   &githubExternalService,
-			externalServiceID: &idDoesNotExist,
-			kind:              extsvc.KindGitHub,
-			config:            githubConnection,
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result:            &protocol.ExternalServiceNamespacesResult{Error: fmt.Sprintf("external service not found: %d", idDoesNotExist)},
-			err:               fmt.Sprintf("external service not found: %d", idDoesNotExist),
-		},
-		{
-			name:              "source does not implement discoverable source - use existing external service",
-			externalService:   &gitlabExternalService,
-			externalServiceID: &gitlabExternalService.ID,
-			kind:              extsvc.KindGitHub,
-			config:            "",
-			src:               repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
-			result:            &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
-			err:               repos.UnimplementedDiscoverySource,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			logger := logtest.Scoped(t)
-			var (
-				sqlDB *sql.DB
-				store repos.Store
-			)
-
-			if tc.externalService != nil {
-				sqlDB = dbtest.NewDB(logger, t)
-				store = repos.NewStore(logtest.Scoped(t), database.NewDB(logger, sqlDB))
-				if err := store.ExternalServiceStore().Upsert(ctx, tc.externalService); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			s := &Server{
-				Store:  store,
-				Logger: logger,
-			}
-
-			mockNewGenericSourcer = func() repos.Sourcer {
-				return repos.NewFakeSourcer(nil, tc.src)
-			}
-			t.Cleanup(func() { mockNewGenericSourcer = nil })
-
-			grpcServer := defaults.NewServer(logger)
-			proto.RegisterRepoUpdaterServiceServer(grpcServer, &RepoUpdaterServiceServer{Server: s})
-			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-
-			srv := httptest.NewServer(handler)
-			defer srv.Close()
-
-			cli := repoupdater.NewClient(srv.URL)
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			args := protocol.ExternalServiceNamespacesArgs{
-				ExternalServiceID: tc.externalServiceID,
-				Kind:              tc.kind,
-				Config:            tc.config,
-			}
-
-			res, err := cli.ExternalServiceNamespaces(ctx, args)
-			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
-			}
-			if err != nil {
-				return
-			}
-
-			if have, want := res.Error, tc.result.Error; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
-			}
-
-			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Fatalf("response mismatch(-have, +want): %s", diff)
-			}
-		})
-	}
-}
-
-func TestServer_ExternalServiceRepositories(t *testing.T) {
-	githubConnection := `
-{
-	"url": "https://github.com",
-	"token": "secret-token",
-}`
-
-	githubSource := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubConnection),
-	}
-
-	gitlabConnection := `
-	{
-	   "url": "https://gitlab.com",
-	   "token": "abc",
-	}`
-
-	gitlabSource := types.ExternalService{
-		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
-	}
-
-	githubRepository := &types.Repo{
-		Name:        "github.com/foo/bar",
-		Description: "The description",
-		Archived:    false,
-		Fork:        false,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com/",
-		},
-		Sources: map[string]*types.SourceInfo{
-			githubSource.URN(): {
-				ID:       githubSource.URN(),
-				CloneURL: "git@github.com:foo/bar.git",
-			},
-		},
-	}
-
-	gitlabRepository := &types.Repo{
-		Name:        "gitlab.com/gitlab-org/gitaly",
-		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		URI:         "gitlab.com/gitlab-org/gitaly",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "2009901",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
-		},
-		Sources: map[string]*types.SourceInfo{
-			gitlabSource.URN(): {
-				ID:       gitlabSource.URN(),
-				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
-			},
-		},
-	}
-
-	githubExternalServiceConfig := `
-	{
-		"url": "https://github.com",
-		"token": "secret-token",
-		"repos": ["org/repo1", "owner/repo2"]
-	}`
-
-	githubExternalService := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
-	}
-
-	gitlabExternalServiceConfig := `
-	{
-		"url": "https://gitlab.com",
-		"token": "abc",
-		"projectQuery": ["groups/mygroup/projects"]
-	}`
-
-	gitlabExternalService := types.ExternalService{
-		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
-	}
-
-	var idDoesNotExist int64 = 99
-
-	testCases := []struct {
-		name              string
-		externalService   *types.ExternalService
-		externalServiceID *int64
-		kind              string
-		config            string
-		query             string
-		first             int32
-		excludeRepos      []string
-		result            *protocol.ExternalServiceRepositoriesResult
-		src               repos.Source
-		err               string
-	}{
-		{
-			name:         "discoverable source - github",
-			kind:         extsvc.KindGitHub,
-			config:       githubConnection,
-			query:        "",
-			first:        5,
-			excludeRepos: []string{},
-			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
-		},
-		{
-			name:         "discoverable source - github - non empty query string",
-			kind:         extsvc.KindGitHub,
-			config:       githubConnection,
-			query:        "myquerystring",
-			first:        5,
-			excludeRepos: []string{},
-			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
-		},
-		{
-			name:         "discoverable source - github - non empty excludeRepos",
-			kind:         extsvc.KindGitHub,
-			config:       githubConnection,
-			query:        "",
-			first:        5,
-			excludeRepos: []string{"org1/repo1", "owner2/repo2"},
-			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
-		},
-		{
-			name:   "unavailable - github.com",
-			kind:   extsvc.KindGitHub,
-			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), true),
-			result: &protocol.ExternalServiceRepositoriesResult{Error: "fake source unavailable"},
-			err:    "fake source unavailable",
-		},
-		{
-			name:   "discoverable source - github - empty repositories result",
-			kind:   extsvc.KindGitHub,
-			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil), false),
-			result: &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{}, Error: ""},
-		},
-		{
-			name:   "source does not implement discoverable source",
-			kind:   extsvc.KindGitLab,
-			config: gitlabConnection,
-			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
-			result: &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
-			err:    repos.UnimplementedDiscoverySource,
-		},
-		{
-			name:              "discoverable source - github - use existing external service",
-			externalService:   &githubExternalService,
-			externalServiceID: &githubExternalService.ID,
-			kind:              extsvc.KindGitHub,
-			config:            "",
-			query:             "",
-			first:             5,
-			excludeRepos:      []string{},
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubExternalService, nil, githubRepository), false),
-			result:            &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
-		},
-		{
-			name:              "external service for ID does not exist and other config parameters are not attempted",
-			externalService:   &githubExternalService,
-			externalServiceID: &idDoesNotExist,
-			kind:              extsvc.KindGitHub,
-			config:            githubExternalServiceConfig,
-			query:             "myquerystring",
-			first:             5,
-			excludeRepos:      []string{},
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubExternalService, nil, githubRepository), false),
-			result:            &protocol.ExternalServiceRepositoriesResult{Error: fmt.Sprintf("external service not found: %d", idDoesNotExist)},
-			err:               fmt.Sprintf("external service not found: %d", idDoesNotExist),
-		},
-		{
-			name:              "source does not implement discoverable source - use existing external service",
-			externalService:   &gitlabExternalService,
-			externalServiceID: &gitlabExternalService.ID,
-			kind:              extsvc.KindGitHub,
-			config:            "",
-			query:             "",
-			first:             5,
-			excludeRepos:      []string{},
-			src:               repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
-			result:            &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
-			err:               repos.UnimplementedDiscoverySource,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			logger := logtest.Scoped(t)
-			var (
-				sqlDB *sql.DB
-				store repos.Store
-			)
-
-			if tc.externalService != nil {
-				sqlDB = dbtest.NewDB(logger, t)
-				store = repos.NewStore(logtest.Scoped(t), database.NewDB(logger, sqlDB))
-				if err := store.ExternalServiceStore().Upsert(ctx, tc.externalService); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			s := &Server{
-				Store:  store,
-				Logger: logger,
-			}
-
-			mockNewGenericSourcer = func() repos.Sourcer {
-				return repos.NewFakeSourcer(nil, tc.src)
-			}
-			t.Cleanup(func() { mockNewGenericSourcer = nil })
-
-			grpcServer := defaults.NewServer(logger)
-			proto.RegisterRepoUpdaterServiceServer(grpcServer, &RepoUpdaterServiceServer{Server: s})
-			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-
-			srv := httptest.NewServer(handler)
-			defer srv.Close()
-
-			cli := repoupdater.NewClient(srv.URL)
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			args := protocol.ExternalServiceRepositoriesArgs{
-				ExternalServiceID: tc.externalServiceID,
-				Kind:              tc.kind,
-				Config:            tc.config,
-				Query:             tc.query,
-				First:             tc.first,
-				ExcludeRepos:      tc.excludeRepos,
-			}
-
-			res, err := cli.ExternalServiceRepositories(ctx, args)
-			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
-			}
-			if err != nil {
-				return
-			}
-
-			if have, want := res.Error, tc.result.Error; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
-			}
-			res.Error = ""
-			tc.result.Error = ""
-
-			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Fatalf("response mismatch(-have, +want): %s", diff)
-			}
-		})
-	}
-}
-
-type testSource struct {
-	fn func() error
-}
-
-var (
-	_ repos.Source     = &testSource{}
-	_ repos.UserSource = &testSource{}
-)
-
-func (t testSource) ListRepos(_ context.Context, _ chan repos.SourceResult) {
-}
-
-func (t testSource) ExternalServices() types.ExternalServices {
-	return nil
-}
-
-func (t testSource) CheckConnection(_ context.Context) error {
-	return nil
-}
-
-func (t testSource) WithAuthenticator(_ auth.Authenticator) (repos.Source, error) {
-	return t, nil
-}
-
-func (t testSource) ValidateAuthenticator(_ context.Context) error {
-	return t.fn()
-}
-
-func TestGrpcErrToStatus(t *testing.T) {
-	testCases := []struct {
-		description  string
-		input        error
-		expectedCode int
-	}{
-		{
-			description:  "nil error",
-			input:        nil,
-			expectedCode: http.StatusOK,
-		},
-		{
-			description:  "non-status error",
-			input:        errors.New("non-status error"),
-			expectedCode: http.StatusInternalServerError,
-		},
-
-		{
-			description:  "status error context.Canceled",
-			input:        context.Canceled,
-			expectedCode: http.StatusInternalServerError,
-		},
-		{
-			description:  "status error context.DeadlineExceeded",
-			input:        context.DeadlineExceeded,
-			expectedCode: http.StatusInternalServerError,
-		},
-		{
-			description:  "status error codes.NotFound",
-			input:        status.Errorf(codes.NotFound, "not found"),
-			expectedCode: http.StatusNotFound,
-		},
-		{
-			description:  "status error codes.Internal",
-			input:        status.Errorf(codes.Internal, "internal error"),
-			expectedCode: http.StatusInternalServerError,
-		},
-		{
-			description:  "status error codes.InvalidArgument",
-			input:        status.Errorf(codes.InvalidArgument, "invalid argument"),
-			expectedCode: http.StatusBadRequest,
-		},
-
-		{
-			description:  "status error codes.PermissionDenied",
-			input:        status.Errorf(codes.PermissionDenied, "permission denied"),
-			expectedCode: http.StatusUnauthorized,
-		},
-
-		{
-			description:  "status error codes.Unavailable",
-			input:        status.Errorf(codes.Unavailable, "unavailable"),
-			expectedCode: http.StatusServiceUnavailable,
-		},
-
-		{
-			description:  "status error codes.unimplemented",
-			input:        status.Errorf(codes.Unimplemented, "unimplemented"),
-			expectedCode: http.StatusNotImplemented,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.description, func(t *testing.T) {
-			result := grpcErrToStatus(tc.input)
-			if result != tc.expectedCode {
-				t.Errorf("Expected status code %d, but got %d", tc.expectedCode, result)
-			}
-		})
-	}
 }

@@ -56,7 +56,7 @@ var pageCommand = &cli.Command{
 }
 
 func pageExec(cmd *cli.Context) error {
-	logger := log.Scoped("pager", "paging client for SG")
+	logger := log.Scoped("pager")
 
 	priority, err := parseOpsGeniePriority(cmd.String("priority"))
 	if err != nil {

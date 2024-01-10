@@ -21,7 +21,7 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating 2 users.
@@ -82,7 +82,7 @@ func TestAssignedOwnersStore_Insert(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating a user.
@@ -117,7 +117,7 @@ func TestAssignedOwnersStore_Delete(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating users.
@@ -170,7 +170,7 @@ func TestAssignedOwnersStore_Count(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating users.

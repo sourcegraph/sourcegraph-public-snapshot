@@ -37,6 +37,7 @@ type client interface {
 
 	GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
+	GetAuthenticatedUserOrgs(ctx context.Context, page int) (orgs []*github.Org, hasNextPage bool, rateLimitCost int, err error)
 	GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error)
 	GetRepository(ctx context.Context, owner, name string) (*github.Repository, error)
 

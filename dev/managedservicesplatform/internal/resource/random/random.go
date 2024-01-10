@@ -9,6 +9,8 @@ import (
 )
 
 type Config struct {
+	// ByteLength is the number of bytes of randomness to generate. The converted
+	// hex value's length is twice this value.
 	ByteLength int `validate:"required"`
 	// Prefix is added to the start of the random output followed by a '-', for
 	// example:
@@ -33,7 +35,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	}
 	rid := randomid.NewId(
 		scope,
-		id.ResourceID("random"),
+		id.TerraformID("random"),
 		&randomid.IdConfig{
 			ByteLength: pointers.Float64(config.ByteLength),
 			Prefix:     prefix,

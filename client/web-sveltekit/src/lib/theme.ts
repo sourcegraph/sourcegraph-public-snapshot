@@ -22,7 +22,7 @@ export const isLightTheme = derived(theme, ($theme, set) => {
     if ($theme === Theme.System) {
         const matchMedia = window.matchMedia('(prefers-color-scheme: light)')
         set(matchMedia.matches)
-        const listener = (event: MediaQueryListEventMap['change']) => {
+        const listener = (event: MediaQueryListEventMap['change']): void => {
             set(event.matches)
         }
         matchMedia.addEventListener('change', listener)
@@ -39,23 +39,49 @@ export const humanTheme = createMappingStore(
     theme,
     theme => {
         switch (theme) {
-            case Theme.Light:
+            case Theme.Light: {
                 return 'Light'
-            case Theme.Dark:
+            }
+            case Theme.Dark: {
                 return 'Dark'
-            case Theme.System:
+            }
+            case Theme.System: {
                 return 'System'
+            }
         }
     },
     value => {
-        console.log(value)
         switch (value) {
-            case 'Light':
+            case 'Light': {
                 return Theme.Light
-            case 'Dark':
+            }
+            case 'Dark': {
                 return Theme.Dark
-            case 'System':
+            }
+            case 'System': {
                 return Theme.System
+            }
         }
     }
 )
+
+/**
+ * Interprets a string as a theme and sets the theme accordingly.
+ */
+export function setThemeFromString(value: string): void {
+    value = value.toLowerCase()
+    switch (value) {
+        case 'light': {
+            theme.set(Theme.Light)
+            break
+        }
+        case 'dark': {
+            theme.set(Theme.Dark)
+            break
+        }
+        case 'system': {
+            theme.set(Theme.System)
+            break
+        }
+    }
+}

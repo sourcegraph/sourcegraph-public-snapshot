@@ -1,3 +1,5 @@
+# Because we have a bunch of ${} in there, which clash with the interpolation for "".format(...),
+# it's simpler to have this in a var and inject it as is, rather than having to escape everything.
 CMD_PREAMBLE = """set -e
 
 export HOME=$(pwd)
@@ -18,73 +20,123 @@ fi
 if [ -z "$CODEINSIGHTS_PGUSER" ]; then
     export CODEINSIGHTS_PGUSER="$PGUSER"
 fi
+
+set +e -x
+test -d "$PGHOST"
+IS_UNIX_POSTGRES=$?
+set -ex
+
+if [ $IS_UNIX_POSTGRES -eq 0 ]; then
+    if [ -z "$PGDATASOURCE" ]; then
+        echo "\\$PGDATASOURCE expected to be set when \\$PGHOST points to the filesystem."
+        exit 1
+    fi
+    PGDATASOURCE_BASE=$PGDATASOURCE
+    export PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-frontend"
+    export CODEINTEL_PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-codeintel"
+    export CODEINSIGHTS_PGDATASOURCE="${PGDATASOURCE_BASE}&dbname=sg-squasher-codeinsights"
+else
+    export PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-frontend"
+    export CODEINTEL_PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-codeintel"
+    export CODEINSIGHTS_PGDATASOURCE="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/sg-squasher-codeinsights"
+fi
 """
 
-def _migration_impl(ctx):
+# Dumping the schema requires running the squash operation first, as it reuses the database, so we do all of those operations
+# in a single step.
+def _generate_schemas_impl(ctx):
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
-        outputs = [ctx.outputs.out],
-        progress_message = "Running squash migration for %s" % ctx.attr.db,
+        outputs = [
+            ctx.outputs.out_frontend_squash,
+            ctx.outputs.out_codeintel_squash,
+            ctx.outputs.out_codeinsights_squash,
+            ctx.outputs.out_frontend_schema,
+            ctx.outputs.out_codeintel_schema,
+            ctx.outputs.out_codeinsights_schema,
+            ctx.outputs.out_frontend_schema_md,
+            ctx.outputs.out_codeintel_schema_md,
+            ctx.outputs.out_codeinsights_schema_md,
+        ],
+        progress_message = "Running sg migration ...",
         use_default_shell_env = True,
         execution_requirements = {"requires-network": "1"},
         command = """{cmd_preamble}
 
-        trap "dropdb --if-exists sg-squasher-{db} && echo 'temp db sg-squasher-{db} dropped'" EXIT
+        trap "dropdb --if-exists sg-squasher-frontend && echo 'temp db sg-squasher-frontend dropped'" EXIT
+        trap "dropdb --if-exists sg-squasher-codeintel && echo 'temp db sg-squasher-codeintel dropped'" EXIT
+        trap "dropdb --if-exists sg-squasher-codeinsights && echo 'temp db sg-squasher-codeinsights dropped'" EXIT
 
-        {sg} migration squash-all -skip-teardown -db {db} -f {output_file}
+        {sg} migration squash-all -skip-teardown -db frontend -f {out_frontend_squash}
+        {sg} migration squash-all -skip-teardown -db codeintel -f {out_codeintel_squash}
+        {sg} migration squash-all -skip-teardown -db codeinsights -f {out_codeinsights_squash}
+
+        {sg} migration describe -db frontend --format=json -force -out {out_frontend_schema}
+        {sg} migration describe -db codeintel --format=json -force -out {out_codeintel_schema}
+        {sg} migration describe -db codeinsights --format=json -force -out {out_codeinsights_schema}
+
+        {sg} migration describe -db frontend --format=psql -force -out {out_frontend_schema_md}
+        {sg} migration describe -db codeintel --format=psql -force -out {out_codeintel_schema_md}
+        {sg} migration describe -db codeinsights --format=psql -force -out {out_codeinsights_schema_md}
+
         """.format(
             cmd_preamble = CMD_PREAMBLE,
             sg = ctx.executable._sg.path,
-            db = ctx.attr.db,
-            output_file = ctx.outputs.out.path,
-        ),
-        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files
-    )
-
-migration = rule(
-    implementation = _migration_impl,
-    attrs = {
-        "srcs": attr.label_list(allow_files= True, mandatory= True),
-        "db": attr.string(mandatory = True),
-        "out": attr.output(mandatory = True),
-        "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
-    },
-)
-
-def _describe_impl(ctx):
-    ctx.actions.run_shell(
-        inputs = ctx.files.srcs,
-        outputs = [ctx.outputs.out],
-        progress_message = "Running describe migration for %s" % ctx.attr.db,
-        use_default_shell_env = True,
-        execution_requirements = {"requires-network": "1"},
-        command = """{cmd_preamble}
-
-        export PGDATABASE="_describe_{name}"
-        dropdb --if-exists $PGDATABASE
-        createdb "$PGDATABASE"
-        trap "dropdb --if-exists $PGDATABASE" exit
-
-        {sg} migration describe -db {db} --format={format} -force -out {output_file}
-        """.format(
-            cmd_preamble = CMD_PREAMBLE,
-            sg = ctx.executable._sg.path,
-            db = ctx.attr.db,
-            format = ctx.attr.format,
-            output_file = ctx.outputs.out.path,
-            name = ctx.attr.name,
+            out_frontend_squash = ctx.outputs.out_frontend_squash.path,
+            out_codeintel_squash = ctx.outputs.out_codeintel_squash.path,
+            out_codeinsights_squash = ctx.outputs.out_codeinsights_squash.path,
+            out_frontend_schema = ctx.outputs.out_frontend_schema.path,
+            out_codeintel_schema = ctx.outputs.out_codeintel_schema.path,
+            out_codeinsights_schema = ctx.outputs.out_codeinsights_schema.path,
+            out_frontend_schema_md = ctx.outputs.out_frontend_schema_md.path,
+            out_codeintel_schema_md = ctx.outputs.out_codeintel_schema_md.path,
+            out_codeinsights_schema_md = ctx.outputs.out_codeinsights_schema_md.path,
         ),
         tools = ctx.attr._sg[DefaultInfo].default_runfiles.files,
     )
 
-describe = rule(
-    implementation = _describe_impl,
+    return [
+        DefaultInfo(
+            files = depset([
+                ctx.outputs.out_frontend_squash,
+                ctx.outputs.out_codeintel_squash,
+                ctx.outputs.out_codeinsights_squash,
+                ctx.outputs.out_frontend_schema,
+                ctx.outputs.out_codeintel_schema,
+                ctx.outputs.out_codeinsights_schema,
+                ctx.outputs.out_frontend_schema_md,
+                ctx.outputs.out_codeintel_schema_md,
+                ctx.outputs.out_codeinsights_schema_md,
+            ]),
+        ),
+        OutputGroupInfo(
+            frontend_squash = depset([ctx.outputs.out_frontend_squash]),
+            codeintel_squash = depset([ctx.outputs.out_codeintel_squash]),
+            codeinsights_squash = depset([ctx.outputs.out_codeinsights_squash]),
+            schemas = depset([
+                ctx.outputs.out_frontend_schema,
+                ctx.outputs.out_codeintel_schema,
+                ctx.outputs.out_codeinsights_schema,
+                ctx.outputs.out_frontend_schema_md,
+                ctx.outputs.out_codeintel_schema_md,
+                ctx.outputs.out_codeinsights_schema_md,
+            ]),
+        ),
+    ]
+
+generate_schemas = rule(
+    implementation = _generate_schemas_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files= True, mandatory= True),
-        "db": attr.string(mandatory = True),
-        "format": attr.string(mandatory = True),
-        "out": attr.output(mandatory = True),
+        "srcs": attr.label_list(allow_files = True, mandatory = True),
+        "out_frontend_squash": attr.output(mandatory = True),
+        "out_codeintel_squash": attr.output(mandatory = True),
+        "out_codeinsights_squash": attr.output(mandatory = True),
+        "out_frontend_schema": attr.output(mandatory = True),
+        "out_codeintel_schema": attr.output(mandatory = True),
+        "out_codeinsights_schema": attr.output(mandatory = True),
+        "out_frontend_schema_md": attr.output(mandatory = True),
+        "out_codeintel_schema_md": attr.output(mandatory = True),
+        "out_codeinsights_schema_md": attr.output(mandatory = True),
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
     },
 )
-

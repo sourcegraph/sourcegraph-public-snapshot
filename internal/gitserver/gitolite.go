@@ -22,14 +22,12 @@ type GitoliteLister struct {
 }
 
 func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
-	atomicConns := getAtomicGitserverConns()
-
 	return &GitoliteLister{
 		httpClient: cli,
 		addrs: func() []string {
-			return atomicConns.get().Addresses
+			return conns.get().Addresses
 		},
-		grpcClient: atomicConns,
+		grpcClient: conns,
 		userAgent:  filepath.Base(os.Args[0]),
 	}
 }

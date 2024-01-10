@@ -38,13 +38,17 @@ Inspired by Jupyter Notebooks and powered by Markdown and Sourcegraph's code sea
 
 ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/notebooks/notebooks_home.gif)
 
-Notebooks have powerful content creation features, like a [notepad](../notebooks/notepad.md) and multiple block types, each with their own unique capabilities. If you're familiar with Jupyter Notebooks, then you already understand the blocks concept. You can add as many of each block as you want to a Sourcegraph notebook.
+Notebooks have powerful content creation features, like multiple block types, each with their own unique capabilities.
+If you're familiar with Jupyter Notebooks, then you already understand the blocks concept. You can add as many of each
+block as you want to a Sourcegraph notebook.
 
 ## Notebook types
 Notebooks can be created in two ways. Through the web interface or via special Markdown files with the special `.snb.md` extension. To view file-based notebooks you must view the files in the file view on sourcegraph.com or on your Sourcegraph instance.
 
 ### Web-based notebooks
-The simplest way to get started with Notebooks is to create one using the web interface. Notebooks created this way have the advantage of being interactive, letting you see the content of your blocks in realtime as you create your notebook. You can also utilize the [notepad](../notebooks/notepad.md) to dramatically speed up notebook creation.
+
+The simplest way to get started with Notebooks is to create one using the web interface. Notebooks created this way have
+the advantage of being interactive, letting you see the content of your blocks in realtime as you create your notebook.
 
 You can also create web-based notebooks by importing plain Markdown files and then augmenting them with Sourcegraph notebook block types in the web interface. A new notebook will automatically be created when you import a standard markdown file. From there, you can modify it however you like in the web interface.
 
@@ -97,5 +101,4 @@ In versions older than 3.39 (beginning in 3.36) Notebooks are behind an experime
 ## Explanations
 - [Sharing notebooks](../notebooks/notebook-sharing.md)
 - [Embedding notebooks](../notebooks/notebook-embedding.md)
-- [The notepad](../notebooks/notepad.md)
 - [Block types](../notebooks/blocks.md)

@@ -8,7 +8,7 @@ Therefore a good solution for that is to also enable custom step notifications, 
 
 ## Editing your step to make it soft failing
 
-In the [CI pipeline generator](../background-information/ci/development.md), you'll find the code that declare all steps, usually located in [ci/operations.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/operations.go)
+In the [CI pipeline generator](../background-information/ci/development.md), you'll find the code that declare all steps, usually located in [ci/operations.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/ci/internal/ci/operations.go)
 
 A good way to find all of them is the following search query:
 
@@ -21,10 +21,10 @@ A good way to find all of them is the following search query:
 Let's use as an example the following:
 
 ```diff
---- a/enterprise/dev/ci/internal/ci/operations.go
-+++ b/enterprise/dev/ci/internal/ci/operations.go
+--- a/dev/ci/internal/ci/operations.go
++++ b/dev/ci/internal/ci/operations.go
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":vitest::java: Test (client/jetbrains)",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
@@ -43,10 +43,10 @@ Now we want to add a custom notification as well:
 > NOTE: You don't need to provide `buildkite.SlackStepNotifyConfigPayload.SlackTokenEnvVarName`, a default value will be injected.
 
 ```diff
---- a/enterprise/dev/ci/internal/ci/operations.go
-+++ b/enterprise/dev/ci/internal/ci/operations.go
+--- a/dev/ci/internal/ci/operations.go
++++ b/dev/ci/internal/ci/operations.go
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":vitest::java: Test (client/jetbrains)",
 		withPnpmCache(),
 +   bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 +     Message:              "JetBrains Unit tests failed, cc <@integrations-eng>",
@@ -70,10 +70,10 @@ And that's it!
 > NOTE: If you want to test your changes before merging your code, so you can see how the notification will look like, you can modify the step as following:
 
 ```diff
---- a/enterprise/dev/ci/internal/ci/operations.go
-+++ b/enterprise/dev/ci/internal/ci/operations.go
+--- a/dev/ci/internal/ci/operations.go
++++ b/dev/ci/internal/ci/operations.go
 unc addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":vitest::java: Test (client/jetbrains)",
 		withPnpmCache(),
     bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
       Message:              "JetBrains Unit tests failed, cc <@integrations-eng>",

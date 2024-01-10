@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -20,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -50,7 +51,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 	ctx := context.Background()
 	soap := NewProvider(cloud.SchemaAuthProviderSourcegraphOperator{
 		ClientID: "soap_client",
-	})
+	}, httpcli.TestExternalClient)
 	serviceID := soap.ConfigID().ID
 
 	mockDB := func(siteAdmin bool) database.DB {
@@ -127,7 +128,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
-				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+				db := database.NewDB(logger, dbtest.NewDB(t))
 
 				// We ensure the GlobalState is initialized so that the first user isn't
 				// a site administrator.
@@ -182,7 +183,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				t.Cleanup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
-				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+				db := database.NewDB(logger, dbtest.NewDB(t))
 
 				// We ensure the GlobalState is initialized so that the first user isn't
 				// a site administrator.
@@ -198,12 +199,16 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				require.NoError(t, err)
 				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
 				require.NoError(t, err)
-				err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
-					ServiceType: auth.SourcegraphOperatorProviderType,
-					ServiceID:   serviceID,
-					ClientID:    "soap_client",
-					AccountID:   "bib",
-				}, extsvc.AccountData{}) // not a service account initially
+				_, err = db.UserExternalAccounts().Upsert(ctx,
+					&extsvc.Account{
+						UserID: u.ID,
+						AccountSpec: extsvc.AccountSpec{
+							ServiceType: auth.SourcegraphOperatorProviderType,
+							ServiceID:   serviceID,
+							ClientID:    "soap_client",
+							AccountID:   "bib",
+						},
+					}) // not a service account initially
 				require.NoError(t, err)
 				return u.ID, db
 			},

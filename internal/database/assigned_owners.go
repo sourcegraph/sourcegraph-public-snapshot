@@ -29,7 +29,7 @@ type AssignedOwnerSummary struct {
 }
 
 func AssignedOwnersStoreWith(other basestore.ShareableStore, logger log.Logger) AssignedOwnersStore {
-	lgr := logger.Scoped("AssignedOwnersStore", "Store for a table containing manually assigned code owners")
+	lgr := logger.Scoped("AssignedOwnersStore")
 	return &assignedOwnersStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
 }
 

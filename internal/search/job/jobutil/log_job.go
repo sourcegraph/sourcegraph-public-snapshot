@@ -150,12 +150,13 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			// New event
 			events.Record(ctx, "search.latencies", telemetry.Action(types[0]), &telemetry.EventParameters{
 				Metadata: telemetry.EventMetadata{
-					"durationMs": duration.Milliseconds(),
+					"durationMs": float64(duration.Milliseconds()),
 				},
 			})
 			// Legacy event
 			value := fmt.Sprintf(`{"durationMs": %d}`, duration.Milliseconds())
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
+			//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
 			err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
 			if err != nil {
 				clients.Logger.Warn("Could not log search latency", log.Error(err))
@@ -164,7 +165,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			if _, _, ok := isOwnershipSearch(q); ok {
 				// New event
 				events.Record(ctx, "search", "file.hasOwners", nil)
-				// Legacy event
+				//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
 				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnerSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 				if err != nil {
 					clients.Logger.Warn("Could not log use of file:has.owners", log.Error(err))
@@ -175,7 +176,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 				if sp, err := filter.SelectPathFromString(v); err == nil && isSelectOwnersSearch(sp) {
 					// New event
 					events.Record(ctx, "search", "select.fileOwners", nil)
-					// Legacy event
+					//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
 					err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "SelectFileOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 					if err != nil {
 						clients.Logger.Warn("Could not log use of select:file.owners", log.Error(err))

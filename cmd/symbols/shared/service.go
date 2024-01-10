@@ -15,11 +15,12 @@ func (svc) Name() string { return "symbols" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	LoadConfig()
-	return nil, []debugserver.Endpoint{GRPCWebUIDebugEndpoint()}
+	config := loadRockskipConfig(env.BaseConfig{}, CtagsConfig, RepositoryFetcherConfig)
+	return &config, []debugserver.Endpoint{GRPCWebUIDebugEndpoint()}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return Main(ctx, observationCtx, ready, SetupSqlite)
+	return Main(ctx, observationCtx, ready, CreateSetup(*config.(*rockskipConfig)))
 }
 
 var Service service.Service = svc{}

@@ -25,7 +25,6 @@ export const mockUser: AuthenticatedUser = {
     completedPostSignup: true,
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
-    searchable: true,
     emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
     latestSettings: null,
     permissions: { nodes: [] },

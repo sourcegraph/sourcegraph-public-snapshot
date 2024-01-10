@@ -28,7 +28,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	ctx := context.Background()
 	dummySyncer := &dummyPermsSyncer{}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	syncJobsStore := db.PermissionSyncJobs()
 
 	t.Run("user sync request", func(t *testing.T) {
@@ -81,7 +81,7 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating users and repos.
@@ -219,7 +219,7 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Creating users and repos.
@@ -378,7 +378,7 @@ loop:
 
 func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbt := dbtest.NewDB(logger, t)
+	dbt := dbtest.NewDB(t)
 	db := database.NewDB(logger, dbt)
 
 	if _, err := dbt.ExecContext(context.Background(), `DELETE FROM permission_sync_jobs;`); err != nil {

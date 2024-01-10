@@ -138,5 +138,5 @@ func Init(
 }
 
 func scopedContext(name string) *observation.Context {
-	return observation.NewContext(log.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"))
+	return observation.NewContext(log.Scoped(name + ".transport.graphql"))
 }

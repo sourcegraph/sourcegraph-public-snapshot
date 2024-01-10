@@ -1,0 +1,23 @@
+fragment RepoPage_ResolvedRevision on Repository {
+    description
+}
+
+query RepoPageReadmeQuery($repoID: ID!, $revspec: String!, $path: String!) {
+    node(id: $repoID) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                blob(path: $path) {
+                    canonicalURL # key field
+                    ...RepoPage_Readme
+                }
+            }
+        }
+    }
+}
+
+fragment RepoPage_Readme on GitBlob {
+    name
+    ...Readme_Blob
+}

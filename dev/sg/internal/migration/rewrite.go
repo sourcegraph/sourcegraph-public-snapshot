@@ -20,7 +20,8 @@ func Rewrite(database db.Database, rev string) error {
 	}
 	migrationsDir := filepath.Join(repoRoot, "migrations", database.Name)
 
-	fs, err := stitch.ReadMigrations(database.Name, repoRoot, rev)
+	ma := stitch.NewLazyMigrationsReader()
+	fs, err := stitch.ReadMigrations(ma, database.Name, rev)
 	if err != nil {
 		return err
 	}

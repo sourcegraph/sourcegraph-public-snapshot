@@ -30,10 +30,6 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         navigate({ hash: '#tab=ownership' })
     }, [navigate])
 
-    const openHistoryPanel = useCallback(() => {
-        navigate({ hash: '#tab=history' })
-    }, [navigate])
-
     const { data, error, loading } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
         FETCH_OWNERS_AND_HISTORY,
         {
@@ -92,15 +88,6 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                         hideExpandCommitMessageBody={true}
                         className={styles.history}
                     />
-                    <Button
-                        variant="link"
-                        size="sm"
-                        display="inline"
-                        className="pt-0 pb-0 border-0"
-                        onClick={openHistoryPanel}
-                    >
-                        Show history
-                    </Button>
                 </div>
             )}
             {ownership && (

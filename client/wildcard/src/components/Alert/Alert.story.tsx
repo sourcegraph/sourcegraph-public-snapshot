@@ -1,11 +1,11 @@
 import React from 'react'
 
 import { action } from '@storybook/addon-actions'
-import type { Story, Meta } from '@storybook/react'
+import type { StoryFn, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { H1, H4, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
@@ -45,7 +45,7 @@ const config: Meta = {
 
 export default config
 
-export const Alerts: Story = () => (
+export const Alerts: StoryFn = () => (
     <>
         <H1>Alerts</H1>
         <Text>

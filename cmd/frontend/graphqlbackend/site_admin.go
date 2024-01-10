@@ -2,12 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
@@ -102,7 +98,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		ids[index] = id
 	}
 
-	logger := r.logger.Scoped("DeleteUsers", "delete users mutation").
+	logger := r.logger.Scoped("DeleteUsers").
 		With(log.Int32s("users", ids))
 
 	// Collect username, verified email addresses, and external accounts to be used
@@ -322,22 +318,9 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 		eventArgs.Reason = (*parentErr).Error()
 	}
 
-	args, err := json.Marshal(eventArgs)
-	if err != nil {
-		log15.Error("logRoleChangeAttempt: failed to marshal JSON", "eventArgs", eventArgs)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, *name, "", uint32(eventArgs.By), "", "BACKEND", eventArgs); err != nil {
+		log.Error(err)
 	}
-
-	event := &database.SecurityEvent{
-		Name:            *name,
-		URL:             "",
-		UserID:          uint32(eventArgs.By),
-		AnonymousUserID: "",
-		Argument:        args,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func missingUserIds(id, affectedIds []int32) []graphql.ID {

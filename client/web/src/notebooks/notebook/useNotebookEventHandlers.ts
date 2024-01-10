@@ -141,6 +141,7 @@ export function useNotebookEventHandlers({
                     const menuItems = document.querySelectorAll<HTMLAnchorElement>(
                         `[data-block-id="${previousBlockId}"] .block-menu [role="menuitem"]`
                     )
+                    // eslint-disable-next-line unicorn/prefer-at
                     menuItems[menuItems.length - 1]?.focus()
                 }
             }

@@ -1,5 +1,5 @@
 <p align="center">
-<a href="https://about.sourcegraph.com/" target="_blank">
+<a href="https://sourcegraph.com/" target="_blank">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/6qub2y6g/8c25cf68-2715-4f0e-9de6-26292fad604f.svg" width="50%">
   <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/12u7NWXL/5e21725d-6e84-4ccd-8300-27bf9a050416.svg" width="50%">
@@ -38,13 +38,12 @@
 
 ## Getting started
 
-- [**Download Sourcegraph**](https://about.sourcegraph.com/app) for macOS and Linux
 - [Use Sourcegraph on the cloud or self-hosted](https://docs.sourcegraph.com/)
 - [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
 <br><br>
 
-<img src="https://about.sourcegraph.com/home/banner.png" />
+<img src="https://sourcegraph.com/home/banner.png" />
 
 ## Development
 
@@ -64,6 +63,4 @@ The `doc` directory has additional documentation for developing and understandin
 
 ## License
 
-This repository contains primarily non-OSS-licensed files, and some OSS licensed files (for example, IDE extensions). We maintain one repository rather than two separate repositories mainly for development convenience.
-
-See the [LICENSE](LICENSE) for an explanation of how files are licensed.
+This repository contains primarily non-OSS-licensed files. See [LICENSE](LICENSE).

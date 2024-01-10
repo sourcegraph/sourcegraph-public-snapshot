@@ -20,7 +20,7 @@ import (
 func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.Repos().Create(ctx, &types.Repo{Name: "does-not-have-codeowners"}); err != nil {
 		t.Fatalf("failed to create test repo: %s", err)
@@ -57,7 +57,7 @@ func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.Repos().Create(ctx, &types.Repo{Name: "does-not-have-codeowners"}); err != nil {
 		t.Fatalf("failed to create test repo: %s", err)
@@ -81,7 +81,7 @@ func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.RepoStatistics().CompactRepoStatistics(ctx); err != nil {
 		t.Fatalf("failed to compact repo stats: %s", err)
@@ -105,7 +105,7 @@ func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 func TestGetOwnershipUsageStatsReposCountStatsNotCompacted(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.Repos().Create(ctx, &types.Repo{Name: "does-not-have-codeowners"}); err != nil {
 		t.Fatalf("failed to create test repo: %s", err)
@@ -159,8 +159,10 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 	} {
 		t.Run(eventName, func(t *testing.T) {
 			t.Parallel()
-			db := database.NewDB(logger, dbtest.NewDB(logger, t))
+			db := database.NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
+
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, &database.Event{
 				UserID: 1,
 				Name:   eventName,
@@ -170,6 +172,8 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 			}); err != nil {
 				t.Fatal(err)
 			}
+
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, &database.Event{
 				UserID: 2,
 				Name:   eventName,
@@ -198,7 +202,7 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 func TestGetOwnershipUsageStatsAssignedOwnersCount(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	var repoID api.RepoID = 1
 	require.NoError(t, db.Repos().Create(ctx, &types.Repo{

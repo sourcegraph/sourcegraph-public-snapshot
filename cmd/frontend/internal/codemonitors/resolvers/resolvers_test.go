@@ -30,7 +30,7 @@ import (
 func TestCreateCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	settings.MockCurrentUserFinal = &schema.Settings{}
@@ -106,7 +106,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 func TestListCodeMonitors(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	user := insertTestUser(t, db, "cm-user1", true)
@@ -152,7 +152,7 @@ func TestListCodeMonitors(t *testing.T) {
 
 func TestIsAllowedToEdit(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -213,7 +213,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 
 func TestIsAllowedToCreate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -283,7 +283,7 @@ func TestQueryMonitor(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -662,7 +662,7 @@ func TestEditCodeMonitor(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -1274,7 +1274,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)

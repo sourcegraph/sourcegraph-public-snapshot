@@ -124,7 +124,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
             </Button>
         ) : undefined
-    if (data?.nodes && data.nodes.length) {
+    if (data?.nodes?.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (

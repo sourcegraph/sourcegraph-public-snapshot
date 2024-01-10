@@ -124,7 +124,7 @@ func cleanUpTables(ctx context.Context, store *basestore.Store) error {
 func TestUnifiedPermissionsMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := basestore.NewWithHandle(db.Handle())
 
 	t.Run("Migrator uses default values for params", func(t *testing.T) {

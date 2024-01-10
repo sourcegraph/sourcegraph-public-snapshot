@@ -66,6 +66,7 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 		es.redactString(c.Token, "token")
 	case *schema.BitbucketCloudConnection:
 		es.redactString(c.AppPassword, "appPassword")
+		es.redactString(c.AccessToken, "accessToken")
 	case *schema.AWSCodeCommitConnection:
 		es.redactString(c.SecretAccessKey, "secretAccessKey")
 		es.redactString(c.GitCredentials.Password, "gitCredentials", "password")
@@ -104,8 +105,6 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
-	case *schema.LocalGitExternalService:
-		// Nothing to redact
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
@@ -184,10 +183,21 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		es.unredactString(c.Token, o.Token, "token")
 	case *schema.BitbucketCloudConnection:
 		o := oldCfg.(*schema.BitbucketCloudConnection)
-		es.unredactString(c.AppPassword, o.AppPassword, "appPassword")
 		if c.Url != o.Url {
-			return errCodeHostIdentityChanged{"apiUrl", "appPassword"}
+			var redactedProperty string
+			if c.AppPassword == RedactedSecret {
+				redactedProperty = "appPassword"
+			}
+			if c.AccessToken == RedactedSecret {
+				redactedProperty = "accessToken"
+			}
+
+			if redactedProperty != "" {
+				return errCodeHostIdentityChanged{"apiUrl", redactedProperty}
+			}
 		}
+		es.unredactString(c.AppPassword, o.AppPassword, "appPassword")
+		es.unredactString(c.AccessToken, o.AccessToken, "accessToken")
 	case *schema.AWSCodeCommitConnection:
 		o := oldCfg.(*schema.AWSCodeCommitConnection)
 		es.unredactString(c.SecretAccessKey, o.SecretAccessKey, "secretAccessKey")

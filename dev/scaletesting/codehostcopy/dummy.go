@@ -17,7 +17,7 @@ var _ CodeHostDestination = (*DummyCodeHostDestination)(nil)
 
 func NewDummyCodeHost(logger log.Logger, def *CodeHostDefinition) *DummyCodeHostDestination {
 	return &DummyCodeHostDestination{
-		logger: logger.Scoped("dummy", "DummyCodeHost, pretending to perform actions"),
+		logger: logger.Scoped("dummy"),
 		def:    def,
 	}
 }

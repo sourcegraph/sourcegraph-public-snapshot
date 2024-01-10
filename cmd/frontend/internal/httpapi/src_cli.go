@@ -60,7 +60,7 @@ func newSrcCliVersionHandler(logger log.Logger) http.Handler {
 	return &srcCliVersionHandler{
 		clock:    glock.NewRealClock(),
 		doer:     httpcli.ExternalClient,
-		logger:   logger.Scoped("srcCliVersionHandler", "HTTP handler for src-cli versions and downloads"),
+		logger:   logger.Scoped("srcCliVersionHandler"),
 		maxStale: srcCliCacheLifetime,
 	}
 }

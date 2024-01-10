@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "authutil",
+    srcs = ["authutil.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/authutil",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/external/session",
+        "//internal/actor",
+        "//internal/database",
+    ],
+)

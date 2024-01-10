@@ -21,7 +21,7 @@ func TestPackageRepoFiltersBlockOnly(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	s := store.New(&observation.TestContext, db)
 
 	deps := []shared.MinimalPackageRepoRef{
@@ -113,7 +113,7 @@ func TestPackageRepoFiltersBlockAllow(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	s := store.New(&observation.TestContext, db)
 
 	deps := []shared.MinimalPackageRepoRef{

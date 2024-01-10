@@ -13,8 +13,10 @@
   "RepositoryTopics": {
    "Nodes": []
   },
+  "visibility": "public",
   "Parent": {
    "NameWithOwner": "sourcegraph/automation-testing",
    "IsFork": false
-  }
+  },
+  "DiskUsage": 705
  }

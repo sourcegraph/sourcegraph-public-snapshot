@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -30,7 +29,7 @@ func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoNa
 	if len(revision) > 0 {
 		options.Range = revision
 	}
-	return g.gitserverClient.Commits(ctx, authz.DefaultSubRepoPermsChecker, repoName, options)
+	return g.gitserverClient.Commits(ctx, repoName, options)
 }
 
 func (g *GitCommitClient) GitserverClient() gitserver.Client {

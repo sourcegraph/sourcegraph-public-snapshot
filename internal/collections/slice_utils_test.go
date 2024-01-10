@@ -1,54 +1,11 @@
 package collections
 
 import (
-	"math"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
-
-func Test_Min(t *testing.T) {
-	t.Run("Returns first int that is smaller", func(t *testing.T) {
-		got := Min(1, 2)
-		want := 1
-		if got != want {
-			t.Errorf("got %v, want %v", got, want)
-		}
-	})
-
-	t.Run("Returns second int that is smaller", func(t *testing.T) {
-		got := Min(2, 1)
-		want := 1
-		if got != want {
-			t.Errorf("got %v, want %v", got, want)
-		}
-	})
-
-	t.Run("Works with a float as well", func(t *testing.T) {
-		got := Min(1.5, 1.52)
-		want := 1.5
-		if got != want {
-			t.Errorf("got %v, want %v", got, want)
-		}
-	})
-
-	t.Run("Works with infinity", func(t *testing.T) {
-		got := Min(1.5, math.Inf(1))
-		want := 1.5
-		if got != want {
-			t.Errorf("got %v, want %v", got, want)
-		}
-	})
-
-	t.Run("Works with negative infinity", func(t *testing.T) {
-		got := Min(1.5, math.Inf(-1))
-		want := math.Inf(-1)
-		if got != want {
-			t.Errorf("got %v, want %v", got, want)
-		}
-	})
-}
 
 func Test_SplitIntoChunks(t *testing.T) {
 	t.Run("Splits a slice into chunks of size 3", func(t *testing.T) {

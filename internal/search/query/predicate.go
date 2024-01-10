@@ -35,13 +35,13 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.commit.after":      func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
-		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
-		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
-		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
 		"has.meta":              func() Predicate { return &RepoHasMetaPredicate{} },
 		"has.topic":             func() Predicate { return &RepoHasTopicPredicate{} },
 
 		// Deprecated predicates
+		"has.tag":  func() Predicate { return &RepoHasTagPredicate{} },
+		"has":      func() Predicate { return &RepoHasKVPPredicate{} },
+		"has.key":  func() Predicate { return &RepoHasKeyPredicate{} },
 		"contains": func() Predicate { return &RepoContainsPredicate{} },
 	},
 	FieldFile: {

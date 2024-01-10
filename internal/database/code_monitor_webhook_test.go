@@ -22,7 +22,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CreateThenGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -39,7 +39,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CreateUpdateGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -60,7 +60,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("ErrorOnUpdateNonexistent", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 
@@ -71,7 +71,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CreateDeleteGet", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -95,7 +95,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("CountCreateCount", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)
@@ -115,7 +115,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 	t.Run("ListCreateList", func(t *testing.T) {
 		t.Parallel()
 
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitorsWith(db)
 		fixtures := s.insertTestMonitor(ctx, t)

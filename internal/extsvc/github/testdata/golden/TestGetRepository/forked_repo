@@ -13,8 +13,10 @@
   "RepositoryTopics": {
    "Nodes": []
   },
+  "visibility": "public",
   "Parent": {
    "NameWithOwner": "sourcegraph/sourcegraph",
    "IsFork": false
-  }
+  },
+  "DiskUsage": 1073588
  }

@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addDays } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -8,7 +8,7 @@ import type { queryBatchSpecs as _queryBatchSpecs } from './backend'
 import { BatchSpecsPage } from './BatchSpecsPage'
 import { NODES, successNode } from './testData'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/settings/specs/BatchSpecsPage',
@@ -47,13 +47,13 @@ const queryNoBatchSpecs: typeof _queryBatchSpecs = () =>
         nodes: [],
     })
 
-export const ListOfSpecs: Story = () => (
+export const ListOfSpecs: StoryFn = () => (
     <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}</WebStory>
 )
 
 ListOfSpecs.storyName = 'List of specs'
 
-export const NoSpecs: Story = () => (
+export const NoSpecs: StoryFn = () => (
     <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryNoBatchSpecs} now={NOW} />}</WebStory>
 )
 

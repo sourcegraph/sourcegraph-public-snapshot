@@ -53,12 +53,7 @@ type Request struct {
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
 
-	// NOTE: This field is no longer read. It is always assumed to be true.
-	//
-	// FeatHybrid is a feature flag which enables hybrid search. Hybrid search
-	// will only search what has changed since Zoekt has indexed as well as
-	// including Zoekt results.
-	FeatHybrid bool `json:"feat_hybrid,omitempty"`
+	NumContextLines int32
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields
@@ -77,9 +72,6 @@ type PatternInfo struct {
 
 	// IsStructuralPat if true will treat the pattern as a Comby structural search pattern.
 	IsStructuralPat bool
-
-	// IsWordMatch if true will only match the pattern at word boundaries.
-	IsWordMatch bool
 
 	// IsCaseSensitive if false will ignore the case of text and pattern
 	// when finding matches.
@@ -143,9 +135,6 @@ func (p *PatternInfo) String() string {
 			args = append(args, "comby")
 		}
 	}
-	if p.IsWordMatch {
-		args = append(args, "word")
-	}
 	if p.IsCaseSensitive {
 		args = append(args, "case")
 	}
@@ -192,7 +181,6 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			IsNegated:                    r.PatternInfo.IsNegated,
 			IsRegexp:                     r.PatternInfo.IsRegExp,
 			IsStructural:                 r.PatternInfo.IsStructuralPat,
-			IsWordMatch:                  r.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              r.PatternInfo.IsCaseSensitive,
 			ExcludePattern:               r.PatternInfo.ExcludePattern,
 			IncludePatterns:              r.PatternInfo.IncludePatterns,
@@ -204,8 +192,8 @@ func (r *Request) ToProto() *proto.SearchRequest {
 			Languages:                    r.PatternInfo.Languages,
 			Select:                       r.PatternInfo.Select,
 		},
-		FetchTimeout: durationpb.New(r.FetchTimeout),
-		FeatHybrid:   r.FeatHybrid,
+		FetchTimeout:    durationpb.New(r.FetchTimeout),
+		NumContextLines: int32(r.NumContextLines),
 	}
 }
 
@@ -221,7 +209,6 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			IsNegated:                    req.PatternInfo.IsNegated,
 			IsRegExp:                     req.PatternInfo.IsRegexp,
 			IsStructuralPat:              req.PatternInfo.IsStructural,
-			IsWordMatch:                  req.PatternInfo.IsWordMatch,
 			IsCaseSensitive:              req.PatternInfo.IsCaseSensitive,
 			ExcludePattern:               req.PatternInfo.ExcludePattern,
 			IncludePatterns:              req.PatternInfo.IncludePatterns,
@@ -233,9 +220,9 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 			CombyRule:                    req.PatternInfo.CombyRule,
 			Select:                       req.PatternInfo.Select,
 		},
-		FetchTimeout: req.FetchTimeout.AsDuration(),
-		Indexed:      req.Indexed,
-		FeatHybrid:   req.FeatHybrid,
+		FetchTimeout:    req.FetchTimeout.AsDuration(),
+		Indexed:         req.Indexed,
+		NumContextLines: req.NumContextLines,
 	}
 }
 
@@ -266,21 +253,21 @@ func (fm *FileMatch) ToProto() *proto.FileMatch {
 		chunkMatches[i] = cm.ToProto()
 	}
 	return &proto.FileMatch{
-		Path:         fm.Path,
+		Path:         []byte(fm.Path),
 		ChunkMatches: chunkMatches,
 		LimitHit:     fm.LimitHit,
 	}
 }
 
 func (fm *FileMatch) FromProto(pm *proto.FileMatch) {
-	chunkMatches := make([]ChunkMatch, len(pm.ChunkMatches))
-	for i, cm := range pm.ChunkMatches {
+	chunkMatches := make([]ChunkMatch, len(pm.GetChunkMatches()))
+	for i, cm := range pm.GetChunkMatches() {
 		chunkMatches[i].FromProto(cm)
 	}
 	*fm = FileMatch{
-		Path:         pm.Path,
+		Path:         string(pm.GetPath()), // WARNING: It is not safe to assume that Path is utf-8 encoded.
 		ChunkMatches: chunkMatches,
-		LimitHit:     pm.LimitHit,
+		LimitHit:     pm.GetLimitHit(),
 	}
 }
 
@@ -316,7 +303,7 @@ func (fm *FileMatch) Limit(limit int) {
 }
 
 type ChunkMatch struct {
-	Content      string
+	Content      string // Warning: It is not safe to assume that Content is utf-8 encoded.
 	ContentStart Location
 	Ranges       []Range
 }
@@ -335,7 +322,7 @@ func (cm *ChunkMatch) ToProto() *proto.ChunkMatch {
 		ranges[i] = r.ToProto()
 	}
 	return &proto.ChunkMatch{
-		Content:      cm.Content,
+		Content:      []byte(cm.Content),
 		ContentStart: cm.ContentStart.ToProto(),
 		Ranges:       ranges,
 	}
@@ -351,7 +338,7 @@ func (cm *ChunkMatch) FromProto(pm *proto.ChunkMatch) {
 	}
 
 	*cm = ChunkMatch{
-		Content:      pm.GetContent(),
+		Content:      string(pm.GetContent()), // WARNING: It is not safe to assume that the chunk match content is utf-8 encoded.
 		ContentStart: contentStart,
 		Ranges:       ranges,
 	}

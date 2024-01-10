@@ -1,23 +1,21 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func serveVerifyEmail(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		logger := log.Scoped("verify-email")
 		email := r.URL.Query().Get("email")
 		verifyCode := r.URL.Query().Get("code")
 		actr := actor.FromContext(ctx)
@@ -31,7 +29,7 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 		// 🚨 SECURITY: require correct authed user to verify email
 		usr, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
-			httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
+			httpLogAndError(w, logger, "Could not get current user", http.StatusUnauthorized)
 			return
 		}
 		email, alreadyVerified, err := db.UserEmails().Get(ctx, usr.ID, email)
@@ -45,7 +43,7 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 		}
 		verified, err := db.UserEmails().Verify(ctx, usr.ID, email, verifyCode)
 		if err != nil {
-			httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
+			httpLogAndError(w, logger, "Could not verify user email", http.StatusInternalServerError, log.Int32("userID", usr.ID), log.String("email", email), log.Error(err))
 			return
 		}
 		if !verified {
@@ -56,40 +54,28 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 		_, _, err = db.UserEmails().GetPrimaryEmail(ctx, usr.ID)
 		if err != nil {
 			if err := db.UserEmails().SetPrimaryEmail(ctx, usr.ID, email); err != nil {
-				httpLogAndError(w, "Could not set primary email.", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
+				httpLogAndError(w, logger, "Could not set primary email.", http.StatusInternalServerError, log.Int32("userID", usr.ID), log.String("email", email), log.Error(err))
 				return
 			}
 		}
 
-		logEmailVerified(ctx, db, r, actr.UID)
+		if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email); err != nil {
+			logger.Warn("Error logging security event", log.Error(err))
+		}
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: usr.ID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
-			log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
+			logger.Error("Failed to grant user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
 		}
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/search", http.StatusFound)
 	}
 }
 
-func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, userID int32) {
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameEmailVerified,
-		URL:       r.URL.Path,
-		UserID:    uint32(userID),
-		Argument:  nil,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
-	}
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
-}
-
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
-	log15.Error(msg, errArgs...)
+func httpLogAndError(w http.ResponseWriter, logger log.Logger, msg string, code int, errArgs ...log.Field) {
+	logger.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

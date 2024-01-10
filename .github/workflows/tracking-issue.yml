@@ -2,29 +2,6 @@ name: Tracking Issue Syncer
 on:
   schedule:
   - cron: '*/15 * * * *'
-  issues:
-    types:
-    - opened
-    - edited
-    - deleted
-    - closed
-    - reopened
-    - assigned
-    - unassigned
-    - labeled
-    - unlabeled
-    - milestoned
-    - demilestoned
-  pull_request:
-    types:
-    - opened
-    - edited
-    - closed
-    - reopened
-    - assigned
-    - unassigned
-    - labeled
-    - unlabeled
 jobs:
   sync-tracking-issues:
     if: github.repository == 'sourcegraph/sourcegraph' || 'sourcegraph/security'
@@ -33,3 +10,9 @@ jobs:
       - uses: docker://sourcegraph/tracking-issue:latest
         env:
           GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN_DEVX_BOT }}
+
+  report_failure:
+    needs: sync-tracking-issues
+    if: ${{ failure() }}
+    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    secrets: inherit

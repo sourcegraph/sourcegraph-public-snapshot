@@ -6,16 +6,15 @@ import { useLocation } from 'react-router-dom'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, type BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import type { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
+import { RepoHeaderContextMenu } from './RepoHeaderContextMenu'
 
 import styles from './RepoHeader.module.scss'
 
@@ -82,6 +81,8 @@ export interface RepoHeaderContribution {
      * Use `actionType` to determine how to render the component.
      */
     children: (context: RepoHeaderContext) => JSX.Element | null
+
+    renderInContextMenu?: boolean
 }
 
 /**
@@ -115,15 +116,7 @@ export interface RepoHeaderContext {
     actionType: 'nav' | 'dropdown'
 }
 
-export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
-
-interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
-    /**
-     * An array of render functions for action buttons that can be configured *in addition* to action buttons
-     * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
-     */
-    actionButtons: readonly RepoHeaderActionButton[]
-
+interface Props extends PlatformContextProps, BreadcrumbsProps {
     /** The repoName from the URL */
     repoName: string
 
@@ -186,7 +179,18 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     const rightActions = useMemo(
         () =>
             repoHeaderContributions
-                .filter(({ position }) => position === 'right')
+                .filter(({ position, renderInContextMenu }) => position === 'right' && !renderInContextMenu)
+                .map(({ children, ...rest }) => ({
+                    ...rest,
+                    element: children({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
+                })),
+        [context, repoHeaderContributions, isLarge]
+    )
+
+    const rightActionsInContextMenu = useMemo(
+        () =>
+            repoHeaderContributions
+                .filter(({ position, renderInContextMenu }) => position === 'right' && renderInContextMenu)
                 .map(({ children, ...rest }) => ({
                     ...rest,
                     element: children({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
@@ -199,7 +203,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             <Breadcrumbs
                 breadcrumbs={props.breadcrumbs}
                 className={classNames(
-                    'justify-content-start flex-grow-1',
+                    'justify-content-start flex-grow-1 w-auto m-0',
                     !props.forceWrap ? styles.breadcrumbWrap : ''
                 )}
             />
@@ -232,6 +236,11 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                 {a.element}
                             </li>
                         ))}
+                        {rightActionsInContextMenu.length > 0 && (
+                            <li className={classNames('nav-item', styles.actionListItem)}>
+                                <RepoHeaderContextMenu actions={rightActionsInContextMenu} />
+                            </li>
+                        )}
                     </ul>
                 ) : (
                     <ul className="navbar-nav">
@@ -241,7 +250,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     <Icon aria-hidden={true} svgPath={mdiDotsVertical} />
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
-                                    {rightActions.map(a => (
+                                    {[...rightActionsInContextMenu, ...rightActions].map(a => (
                                         <React.Fragment key={a.id}>{a.element}</React.Fragment>
                                     ))}
                                 </MenuList>

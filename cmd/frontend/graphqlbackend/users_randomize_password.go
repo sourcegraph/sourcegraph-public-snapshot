@@ -81,7 +81,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		return nil, errors.Wrap(err, "cannot parse user ID")
 	}
 
-	logger := r.logger.Scoped("randomizeUserPassword", "endpoint for resetting user passwords").
+	logger := r.logger.Scoped("randomizeUserPassword").
 		With(log.Int32("userID", userID))
 
 	logger.Info("resetting user password")

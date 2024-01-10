@@ -8,7 +8,7 @@ import {
     type IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import { getWebpackManifest, getIndexHTML } from '../../dev/utils/get-index-html'
+import { getWebBuildManifest, getIndexHTML } from '../../dev/utils/get-index-html'
 import type { WebGraphQlOperations } from '../graphql-operations'
 import type { SourcegraphContext } from '../jscontext'
 
@@ -70,7 +70,7 @@ export const createWebIntegrationTestContext = async ({
             .intercept((request, response) => {
                 response.type('text/html').send(
                     getIndexHTML({
-                        manifestFile: getWebpackManifest(),
+                        manifestFile: getWebBuildManifest(),
                         jsContext: { ...jsContext, ...customContext },
                     })
                 )

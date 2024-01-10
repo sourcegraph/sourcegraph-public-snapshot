@@ -17,7 +17,7 @@ import (
 
 func TestGetConfigurationPolicies(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
@@ -168,7 +168,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
@@ -212,7 +212,7 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 
 func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42

@@ -53,7 +53,6 @@ const defaultFormattingOptions: FormattingOptions = {
 
 /**
  * Simplified jsonc API method to modify jsonc object.
- *
  * @param originalContent Original content (settings)
  * @param path - path to the field which will be modified
  * @param value - new value for modify field

@@ -25,10 +25,11 @@
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
 // https://github.com/WICG/focus-visible because few browsers support :focus-visible.
-:focus:not(:focus-visible) {
+:focus:not(.focus-visible) {
     outline: none;
 }
-:focus-visible {
+
+.focus-visible {
     outline: 0;
     box-shadow: var(--focus-box-shadow);
 }

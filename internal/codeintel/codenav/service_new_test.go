@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -16,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func TestNewGetDefinitions(t *testing.T) {
+func TestGetDefinitions(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
@@ -60,7 +59,7 @@ func TestNewGetDefinitions(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, err := svc.NewGetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -113,7 +112,7 @@ func TestNewGetDefinitions(t *testing.T) {
 		mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(dumps, nil)
 
 		// upload #150's commit no longer exists; all others do
-		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
+		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
 			for _, rc := range rcs {
 				exists = append(exists, rc.CommitID != "deadbeef1")
 			}
@@ -148,7 +147,7 @@ func TestNewGetDefinitions(t *testing.T) {
 			Character: 20,
 		}
 		remoteUploads := dumps
-		adjustedLocations, err := svc.NewGetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -201,7 +200,7 @@ func TestNewGetDefinitions(t *testing.T) {
 	})
 }
 
-func TestNewGetReferences(t *testing.T) {
+func TestGetReferences(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
@@ -250,7 +249,7 @@ func TestNewGetReferences(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, _, err := svc.NewGetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
+		adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
 			t.Fatalf("unexpected error querying references: %s", err)
 		}
@@ -312,7 +311,7 @@ func TestNewGetReferences(t *testing.T) {
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{252, 253}, 0, 2, nil)
 
 		// upload #150/#250's commits no longer exists; all others do
-		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
+		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
 			for _, rc := range rcs {
 				exists = append(exists, rc.CommitID != "deadbeef1")
 			}
@@ -380,7 +379,7 @@ func TestNewGetReferences(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, _, err := svc.NewGetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
+		adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
 			t.Fatalf("unexpected error querying references: %s", err)
 		}
@@ -447,7 +446,7 @@ func TestNewGetReferences(t *testing.T) {
 	})
 }
 
-func TestNewGetImplementations(t *testing.T) {
+func TestGetImplementations(t *testing.T) {
 	t.Run("local", func(t *testing.T) {
 		// Set up mocks
 		mockRepoStore := defaultMockRepoStore()
@@ -494,7 +493,7 @@ func TestNewGetImplementations(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, _, err := svc.NewGetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
+		adjustedLocations, _, err := svc.GetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
 			t.Fatalf("unexpected error querying implementations: %s", err)
 		}

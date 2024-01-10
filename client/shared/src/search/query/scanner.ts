@@ -511,7 +511,39 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
-function detectPatternType(query: string): SearchPatternType | undefined {
+/**
+ * scanNewStandardRC1 is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
+ */
+const scanNewStandardRC1 = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
+export function detectPatternType(query: string): SearchPatternType | undefined {
     const result = scanStandard(query)
     const tokens =
         result.type === 'success'
@@ -538,18 +570,33 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword:
+        case SearchPatternType.keyword: {
             return scanStandard(query)
-        case SearchPatternType.literal:
+        }
+        case SearchPatternType.newStandardRC1: {
+            return scanNewStandardRC1(query)
+        }
+        case SearchPatternType.literal: {
             patternKind = PatternKind.Literal
             break
-        case SearchPatternType.regexp:
+        }
+        case SearchPatternType.regexp: {
             patternKind = PatternKind.Regexp
             break
-        case SearchPatternType.structural:
+        }
+        case SearchPatternType.structural: {
             patternKind = PatternKind.Structural
             break
+        }
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)
+}
+
+export const succeedScan = (query: string): Token[] => {
+    const result = scanSearchQuery(query)
+    if (result.type !== 'success') {
+        throw new Error('Internal error: invariant broken: succeedScan callers must be called with a valid query')
+    }
+    return result.term
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -76,8 +75,8 @@ type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
 	return &workspaceResolver{
 		store:               s,
-		logger:              log.Scoped("batches.workspaceResolver", "The batch changes execution workspace resolver"),
-		gitserverClient:     gitserver.NewClient(),
+		logger:              log.Scoped("batches.workspaceResolver"),
+		gitserverClient:     gitserver.NewClient("batches.workspaceresolver"),
 		frontendInternalURL: internalapi.Client.URL + "/.internal",
 	}
 }
@@ -450,7 +449,7 @@ func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r
 	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", attribute.Int("repoID", int(r.Repo.ID)))
 	defer tr.EndWithErr(&err)
 
-	stat, err := gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, batchIgnoreFilePath)
+	stat, err := gitserverClient.Stat(ctx, r.Repo.Name, r.Commit, batchIgnoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

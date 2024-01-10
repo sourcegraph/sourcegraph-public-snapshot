@@ -11,12 +11,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/zoekt"
 	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
 	"google.golang.org/grpc"
+
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 
 	webproto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/query"
@@ -171,6 +172,23 @@ added.md:1:1:
 hello world I am added
 `,
 	}, {
+		Name:    "example",
+		Pattern: protocol.PatternInfo{Pattern: "example"},
+		Want: `
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}, {
+		Name: "negated-pattern-example",
+		Pattern: protocol.PatternInfo{
+			Pattern:   "example",
+			IsNegated: true,
+		},
+		Want: `
+added.md
+changed.go
+`,
+	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
 			IncludePatterns: []string{"^added"},
@@ -217,6 +235,17 @@ unchanged.md
 changed.go
 unchanged.md:3:3:
 Hello world example in go
+`,
+	}, {
+		Name: "negated-pattern-path",
+		Pattern: protocol.PatternInfo{
+			Pattern:            "go",
+			IsNegated:          true,
+			PatternMatchesPath: true,
+		},
+		Want: `
+added.md
+unchanged.md
 `,
 	}}
 

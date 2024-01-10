@@ -32,7 +32,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 15 Feb 2023 23:40:37 GMT
+      - Thu, 16 Nov 2023 13:32:58 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -52,13 +52,13 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 1A54:2217:246F9F5:4AAA415:63ED6D74
+      - FF00:A2C4:37E6EB3D:38977480:65561A0A
       X-Ratelimit-Limit:
       - "30"
       X-Ratelimit-Remaining:
       - "29"
       X-Ratelimit-Reset:
-      - "1676504497"
+      - "1700141638"
       X-Ratelimit-Resource:
       - search
       X-Ratelimit-Used:

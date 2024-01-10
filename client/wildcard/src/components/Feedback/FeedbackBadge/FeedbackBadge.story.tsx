@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { PRODUCT_STATUSES } from '../../Badge'
@@ -34,7 +34,7 @@ const config: Meta = {
 
 export default config
 
-export const FeedbackBadgeExample: Story = () => (
+export const FeedbackBadgeExample: StoryFn = () => (
     <>
         <H1>FeedbackBadges</H1>
         <Text>Our badges come in different status.</Text>

@@ -45,7 +45,6 @@ type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
 export type AuthProvidersByBaseURL = Partial<Record<string, AuthProvider>>
-export type AccountsByServiceID = Partial<Record<string, UserExternalAccount[]>>
 
 interface UserExternalAccountsResult {
     user: {
@@ -90,15 +89,6 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const setNewPasswordConfirmationField = (element: HTMLInputElement | null): void => {
         newPasswordConfirmationField = element
     }
-
-    // auth providers by service ID
-    const accountsByServiceID = accounts.fetched?.reduce((accumulator: AccountsByServiceID, account) => {
-        const accountArray = accumulator[account.serviceID] ?? []
-        accountArray.push(account)
-        accumulator[account.serviceID] = accountArray
-
-        return accumulator
-    }, {})
 
     useEffect(() => {
         eventLogger.logPageView('UserSettingsPassword')
@@ -209,10 +199,10 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
             )}
 
             {/* fetched external accounts */}
-            {accountsByServiceID && (
+            {accounts.fetched && (
                 <Container>
                     <ExternalAccountsSignIn
-                        accounts={accountsByServiceID}
+                        accounts={accounts.fetched}
                         authProviders={props.context.authProviders}
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}

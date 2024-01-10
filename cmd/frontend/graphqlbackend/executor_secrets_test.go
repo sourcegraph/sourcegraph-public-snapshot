@@ -22,7 +22,7 @@ import (
 
 func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 
@@ -112,7 +112,7 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 
 func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
@@ -202,7 +202,7 @@ func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 
 func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
@@ -279,7 +279,7 @@ func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 
 func TestSchemaResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
@@ -349,7 +349,7 @@ func TestSchemaResolver_ExecutorSecrets(t *testing.T) {
 
 func TestUserResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 
@@ -423,7 +423,7 @@ func TestUserResolver_ExecutorSecrets(t *testing.T) {
 
 func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 
@@ -507,7 +507,7 @@ func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 
 func TestExecutorSecretsIntegration(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})

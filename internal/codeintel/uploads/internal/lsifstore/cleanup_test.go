@@ -22,7 +22,7 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
 		Level: log.LevelError,
 	})
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 
 	t.Run("scip", func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestDeleteAbandonedSchemaVersionsRecords(t *testing.T) {
 	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
 		Level: log.LevelError,
 	})
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
@@ -124,7 +124,7 @@ func TestDeleteAbandonedSchemaVersionsRecords(t *testing.T) {
 
 func TestDeleteUnreferencedDocuments(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	internalStore := basestore.NewWithHandle(codeIntelDB.Handle())
 	store := New(&observation.TestContext, codeIntelDB)
 
@@ -221,7 +221,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 
 func TestIDsWithMeta(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
@@ -256,7 +256,7 @@ func TestIDsWithMeta(t *testing.T) {
 
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 
 	ctx := context.Background()

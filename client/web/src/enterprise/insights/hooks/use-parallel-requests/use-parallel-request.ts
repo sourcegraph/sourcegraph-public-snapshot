@@ -68,7 +68,7 @@ const MAX_PARALLEL_QUERIES = 3
  * these hooks unit tests.
  */
 /* eslint-disable react-hooks/rules-of-hooks */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type,@typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests: MAX_PARALLEL_QUERIES }) {
     const requests = new Subject<Request<T>>()
     const cancelledRequests = new Set<Request<T>>()

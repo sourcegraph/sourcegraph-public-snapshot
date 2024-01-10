@@ -1,7 +1,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # dts-only done manually
 # gazelle:js disabled
@@ -9,18 +9,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root()
-
-# Temporary ESLint target to lint stories. This will be removed once we have a
-# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
-eslint_test_with_types(
-    name = "stories_eslint",
-    srcs = glob(["webview/src/**/*.story.tsx"]),
-    config = ":eslint_config",
-    deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
-        "//:node_modules/@types/node",
-    ],
-)
 
 ts_config(
     name = "tsconfig",

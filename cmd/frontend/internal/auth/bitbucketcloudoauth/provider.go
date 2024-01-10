@@ -6,14 +6,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dghubble/gologin"
-	"github.com/dghubble/gologin/bitbucket"
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin/v2/bitbucket"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,8 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const sessionKey = "bitbucketcloudoauth@0"
-const defaultBBCloudURL = "https://bitbucket.org"
+const (
+	sessionKey        = "bitbucketcloudoauth@0"
+	defaultBBCloudURL = "https://bitbucket.org"
+)
 
 func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
@@ -57,7 +59,6 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 			}
 		},
 		SourceConfig: sourceCfg,
-		StateConfig:  getStateConfig(),
 		ServiceID:    parsedURL.String(),
 		ServiceType:  extsvc.TypeBitbucketCloud,
 		Login: func(oauth2Cfg oauth2.Config) http.Handler {
@@ -87,8 +88,8 @@ func failureHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-	encodedState, err := goauth2.StateFromContext(ctx)
+	var encodedState string
+	err := session.GetData(r, "oauthState", &encodedState)
 	if err != nil {
 		http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
 		return

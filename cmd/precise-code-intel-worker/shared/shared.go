@@ -54,11 +54,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	ready()
 
 	// Initialize sub-repo permissions client
-	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
-	if err != nil {
-		return errors.Wrap(err, "creating sub-repo client")
-	}
+	authz.DefaultSubRepoPermsChecker = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 
 	services, err := codeintel.NewServices(codeintel.ServiceDependencies{
 		DB:             db,
@@ -109,7 +105,7 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	})
 	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
+		log.Scoped("init db").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
 	//
@@ -119,7 +115,7 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	db := database.NewDB(observationCtx.Logger, sqlDB)
 	go func() {
 		for range time.NewTicker(providers.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -136,7 +132,7 @@ func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelsha
 	})
 	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		log.Scoped("init db", "Initialize codeintel database.").Fatal("Failed to connect to codeintel database", log.Error(err))
+		log.Scoped("init db").Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
 	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)

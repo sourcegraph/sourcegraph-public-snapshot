@@ -2,6 +2,7 @@ package subrepoperms
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -95,10 +96,12 @@ func (rules compiledRules) GetPermissionsForPath(path string) authz.Perms {
 //
 // Note that sub-repo permissions are currently opt-in via the
 // experimentalFeatures.enableSubRepoPermissions option.
-func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepoPermsClient, error) {
+func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *SubRepoPermsClient {
 	cache, err := lru.New[int32, cachedRules](defaultCacheSize)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating LRU cache")
+		// Errors should only ever occur if we change the value of defaultCacheSize
+		// to be negative.
+		panic(fmt.Sprintf("failed to create LRU cache for sub repo perms client: %v", err))
 	}
 
 	enabled := atomic.NewBool(false)
@@ -125,7 +128,7 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		group:             &singleflight.Group{},
 		cache:             cache,
 		enabled:           enabled,
-	}, nil
+	}
 }
 
 var (
@@ -385,7 +388,7 @@ func expandDirs(rule string) []string {
 // NewSimpleChecker is exposed for testing and allows creation of a simple
 // checker based on the rules provided. The rules are expected to be in glob
 // format.
-func NewSimpleChecker(repo api.RepoName, paths []string) (authz.SubRepoPermissionChecker, error) {
+func NewSimpleChecker(repo api.RepoName, paths []string) authz.SubRepoPermissionChecker {
 	getter := NewMockSubRepoPermissionsGetter()
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 		return map[api.RepoName]authz.SubRepoPermissions{

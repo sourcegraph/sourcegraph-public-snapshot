@@ -27,8 +27,8 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	logger := srs.logger.Scoped("languages", "provide stats on langauges from the search results")
-	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient(), matches)
+	logger := srs.logger.Scoped("languages")
+	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient("graphql.searchresultlanguages"), matches)
 	if err != nil {
 		return nil, err
 	}
@@ -128,12 +128,12 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 		} else if repoMatch, ok := res.(*result.RepoMatch); ok && !hasNonRepoMatches {
 			sawRepo(repoMatch.RepoName())
 			p.Go(func() error {
-				repoName := repoMatch.RepoName()
-				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName.Name, false)
+				repoName := repoMatch.Name
+				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName, false)
 				if err != nil {
 					return err
 				}
-				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName, oid, true)
 				if err != nil {
 					return err
 				}

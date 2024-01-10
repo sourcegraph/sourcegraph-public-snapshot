@@ -6,12 +6,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 )
 
 // GetOIDCProvider looks up the registered Sourcegraph Operator authentication
@@ -39,8 +40,8 @@ func Init() {
 
 	conf.ContributeValidator(validateConfig)
 
-	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator)
-	logger := log.Scoped(auth.SourcegraphOperatorProviderType, "Sourcegraph Operator config watch")
+	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator, httpcli.ExternalClient)
+	logger := log.Scoped(auth.SourcegraphOperatorProviderType)
 	go func() {
 		if err := p.Refresh(context.Background()); err != nil {
 			logger.Error("failed to fetch Sourcegraph Operator service provider metadata", log.Error(err))
@@ -49,7 +50,7 @@ func Init() {
 	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
 
 	// Register enterprise handler implementation in OSS
-	osssourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
+	sourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {

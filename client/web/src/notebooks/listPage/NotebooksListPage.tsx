@@ -15,7 +15,7 @@ import type { AuthenticatedUser } from '../../auth'
 import type { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { type CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
@@ -35,10 +35,12 @@ type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logEventName:
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
-        case 'notebooks':
+        case 'notebooks': {
             return 'notebooks'
-        case 'getting-started':
+        }
+        case 'getting-started': {
             return 'getting-started'
+        }
     }
     return authenticatedUser ? 'notebooks' : 'getting-started'
 }
@@ -81,7 +83,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     const [hasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
 
     useEffect(() => {
-        if (typeof hasSeenGettingStartedTab !== 'undefined' && !hasSeenGettingStartedTab) {
+        if (hasSeenGettingStartedTab !== undefined && !hasSeenGettingStartedTab) {
             setSelectedTab('getting-started')
         }
     }, [hasSeenGettingStartedTab, setSelectedTab])
@@ -234,7 +236,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
-        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
+        return <Navigate to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
     return (

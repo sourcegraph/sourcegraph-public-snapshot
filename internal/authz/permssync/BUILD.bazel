@@ -7,8 +7,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/permssync",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/api",
+        "//internal/authz",
         "//internal/database",
-        "//internal/repoupdater/protocol",
         "@com_github_sourcegraph_log//:log",
     ],
 )
@@ -22,7 +23,6 @@ go_test(
         "//internal/api",
         "//internal/database",
         "//internal/database/dbmocks",
-        "//internal/repoupdater/protocol",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
     ],

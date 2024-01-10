@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "envelope",
+    srcs = ["envelope.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/envelope",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/encryption/aeshelper",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "envelope_test",
+    srcs = ["envelope_test.go"],
+    embed = [":envelope"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

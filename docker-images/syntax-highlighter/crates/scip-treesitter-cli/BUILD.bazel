@@ -1,0 +1,90 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+rust_binary(
+    name = "scip-treesitter-cli",
+    srcs = glob(["src/main.rs"]),
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = ["//visibility:public"],
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        ":scip-treesitter-cli-lib",
+    ],
+)
+
+WORKSPACE_DEPS = [
+    "//docker-images/syntax-highlighter/crates/scip-syntax",
+    "//docker-images/syntax-highlighter/crates/scip-treesitter",
+    "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+]
+
+# This separate library target is needed so that the integration
+# test can re-use some of the code in the CLI.
+rust_library(
+    name = "scip-treesitter-cli-lib",
+    srcs = glob(
+        [
+            "src/*.rs",
+        ],
+        allow_empty = False,
+        exclude = ["src/main.rs"],
+    ),
+    aliases = aliases(),
+    crate_name = "scip_treesitter_cli",
+    crate_root = "src/lib.rs",
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    visibility = [":__subpackages__"],
+    deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
+)
+
+rust_test(
+    name = "unit_test",
+    size = "small",
+    srcs = glob(["src/*.rs"]),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(normal = True) + WORKSPACE_DEPS,
+)
+
+# This separate integration test is needed because in Cargo,
+# unit tests don't have an implicit dependency on the binary
+# target, but integration tests do.
+#
+# https://users.rust-lang.org/t/cargo-how-do-i-make-a-integration-test-a-depend-on-binary-b/9821
+#
+# This extra target makes sure that Bazel & Cargo have the
+# same configuration.
+rust_test(
+    name = "integration_test",
+    size = "small",
+    srcs = glob(["tests/*.rs"]),
+    compile_data = glob(
+        [
+            "testdata/**",
+        ],
+        allow_empty = False,
+    ),
+    data = [":scip-treesitter-cli"] +
+           glob(
+               ["tests/snapshots/**"],
+               allow_empty = False,
+           ),
+    env = {
+        "INSTA_WORKSPACE_ROOT": ".",
+        "RUST_BACKTRACE": "1",
+        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter-cli)",
+    },
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        ":scip-treesitter-cli",
+        ":scip-treesitter-cli-lib",
+    ] + WORKSPACE_DEPS,
+)

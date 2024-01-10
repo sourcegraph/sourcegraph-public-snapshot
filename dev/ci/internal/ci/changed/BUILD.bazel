@@ -1,0 +1,27 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "changed",
+    srcs = [
+        "diff.go",
+        "files.go",
+        "linters.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed",
+    visibility = ["//dev/ci:__subpackages__"],
+)
+
+go_test(
+    name = "changed_test",
+    timeout = "short",
+    srcs = [
+        "diff_test.go",
+        "linters_test.go",
+    ],
+    embed = [":changed"],
+    deps = [
+        "//dev/sg/linters",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

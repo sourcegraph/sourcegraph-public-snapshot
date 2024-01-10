@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing/core/mocking/mockLink'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -110,7 +110,7 @@ const FILTERS: InsightFilters = {
     },
 }
 
-export const DrillDownFiltersShowcase: Story = () => (
+export const DrillDownFiltersShowcase: StoryFn = () => (
     <MockedTestProvider mocks={[CONTEXTS_GQL_MOCKS]}>
         <DrillDownInsightFilters
             initialValues={FILTERS}
@@ -124,7 +124,7 @@ export const DrillDownFiltersShowcase: Story = () => (
     </MockedTestProvider>
 )
 
-export const DrillDownFiltersHorizontalMode: Story = () => {
+export const DrillDownFiltersHorizontalMode: StoryFn = () => {
     const [mode, setMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.HorizontalSections)
 
     return (

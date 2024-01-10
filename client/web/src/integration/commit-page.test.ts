@@ -1,4 +1,5 @@
 import { subDays } from 'date-fns'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import {
     DiffHunkLineType,
@@ -301,6 +302,7 @@ describe('RepositoryCommitPage', () => {
                 changelist: null,
                 isFork: false,
                 metadata: [],
+                topics: [],
             },
         }),
     }

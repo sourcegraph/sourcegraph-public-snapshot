@@ -10,7 +10,7 @@
     "bundlesize:web:upload": "NODE_ENV=production ts-node-transpile-only ./src/webBundleSize",
     "honeycomb:clone-boards": "ts-node-transpile-only ./src/honeycomb/clone-boards.ts",
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "jest"
+    "test": "vitest"
   },
   "devDependencies": {
     "@sourcegraph/build-config": "workspace:*"

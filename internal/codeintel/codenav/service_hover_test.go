@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -138,7 +137,7 @@ func TestHoverRemote(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
 		for range rcs {
 			exists = append(exists, true)
 		}

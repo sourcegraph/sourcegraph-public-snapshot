@@ -2,7 +2,13 @@ package awskms
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"flag"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,9 +18,13 @@ import (
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
+	"github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption/envelope"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -52,7 +62,7 @@ func TestRoundtrip(t *testing.T) {
 	configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 		readEnvFallback("AWS_ACCESS_KEY_ID", "test"),
 		readEnvFallback("AWS_SECRET_ACCESS_KEY", "test"),
-		"",
+		readEnvFallback("AWS_SESION_TOKEN", ""),
 	)))
 	defaultConfig, err := config.LoadDefaultConfig(ctx, configOpts...)
 	if err != nil {
@@ -63,6 +73,15 @@ func TestRoundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Ensure the secret is stable so that mocked requests always match on the value
+	// to be encrypted.
+	envelope.MockGenerateSecret = func() ([]byte, error) {
+		return []byte("32byteslongsecret..............."), nil
+	}
+	t.Cleanup(func() {
+		envelope.MockGenerateSecret = nil
+	})
 
 	ct, err := k.Encrypt(ctx, []byte(testString))
 	if err != nil {
@@ -76,6 +95,30 @@ func TestRoundtrip(t *testing.T) {
 	if res.Secret() != testString {
 		t.Fatalf("expected %s, got %s", testString, res.Secret())
 	}
+
+	// Now test that the old encrypted values still work:
+	ciphertext, err := oldEncrypt(ctx, k.client, &k.keyID, []byte(testString))
+	require.NoError(t, err)
+	res, err = k.Decrypt(ctx, ciphertext)
+	require.NoError(t, err)
+	if res.Secret() != testString {
+		t.Fatalf("expected %s, got %s", testString, res.Secret())
+	}
+
+	// And finally, test that empty plaintext works:
+	t.Run("empty plaintext", func(t *testing.T) {
+		ct, err = k.Encrypt(ctx, []byte(""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err = k.Decrypt(ctx, ct)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Secret() != "" {
+			t.Fatalf("expected %s, got %s", "", res.Secret())
+		}
+	})
 }
 
 var shouldUpdate = flag.Bool("update", false, "Update testdata")
@@ -115,4 +158,47 @@ func readEnvFallback(key, fallback string) string {
 	} else {
 		return val
 	}
+}
+
+func oldEncrypt(ctx context.Context, client *kms.Client, keyID *string, plaintext []byte) ([]byte, error) {
+	// Encrypt plaintext.
+	res, err := client.GenerateDataKey(ctx, &kms.GenerateDataKeyInput{
+		KeyId:   keyID,
+		KeySpec: types.DataKeySpecAes256,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ev := encryptedValue{
+		Key: res.CiphertextBlob,
+	}
+	ev.Ciphertext, ev.Nonce, err = aesEncrypt(plaintext, res.Plaintext)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonKey, err := json.Marshal(ev)
+	if err != nil {
+		return nil, err
+	}
+	buf := base64.StdEncoding.EncodeToString(jsonKey)
+	return []byte(buf), err
+}
+
+func aesEncrypt(plaintext, key []byte) ([]byte, []byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, nil, err
+	}
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, nil, err
+	}
+	nonce := make([]byte, aesGCM.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, nil, err
+	}
+	ciphertext := aesGCM.Seal(nil, nonce, plaintext, nil)
+	return ciphertext, nonce, nil
 }

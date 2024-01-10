@@ -33,7 +33,7 @@ func verifyCount(t *testing.T, ctx context.Context, db database.DB, signaName st
 func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	insertRepo(t, db, 500, "great-repo-1", true)
@@ -59,7 +59,7 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 func TestOwnRepoIndexSchedulerJob_AnalyticsEnabled(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	insertRepo(t, db, 500, "great-repo-1", true)
@@ -87,7 +87,7 @@ func TestOwnRepoIndexSchedulerJob_AnalyticsEnabled(t *testing.T) {
 func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	store := basestore.NewWithHandle(db.Handle())
 

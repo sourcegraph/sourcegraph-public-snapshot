@@ -26,10 +26,11 @@ let
     unset CC CXX
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
+    unset TMPDIR TMP
     if [ "$1" == "configure" ]; then
       exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
     fi
-    exec ${pkgs.bazel_6}/bin/bazel "$@"
+    exec ${pkgs.bazel_7}/bin/bazel "$@"
   '');
   bazel-watcher = writeShellScriptBin "ibazel" ''
     ${lib.optionalString hostPlatform.isMacOS "unset CC CXX"}
@@ -69,6 +70,8 @@ mkShell {
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
+    bashInteractive
+
     # nix language server.
     nil
 
@@ -82,7 +85,7 @@ mkShell {
     universal-ctags
 
     # Build our backend. Sometimes newer :^)
-    go_1_20
+    go_1_21
 
     # Lots of our tooling and go tests rely on git et al.
     comby
@@ -97,9 +100,10 @@ mkShell {
     shellcheck
 
     # Web tools.
-    nodejs-18_x
-    nodejs-18_x.pkgs.pnpm
-    nodejs-18_x.pkgs.typescript
+    nodejs-20_x
+    nodejs-20_x.pkgs.pnpm
+    nodejs-20_x.pkgs.typescript
+    nodejs-20_x.pkgs.typescript-language-server
 
     # Rust utils for syntax-highlighter service, currently not pinned to the same versions.
     cargo
@@ -107,13 +111,14 @@ mkShell {
     rustfmt
     libiconv
     clippy
-
+  ] ++ lib.optional hostPlatform.isLinux (with pkgs; [
+    # bazel via nix is broken on MacOS for us. Lets just rely on bazelisk from brew.
     # special sauce bazel stuff.
     bazelisk # needed to please sg, but not used directly by us
-    (if hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
+    bazel-fhs
     bazel-watcher
     bazel-buildtools
-  ];
+  ]);
 
   # Startup postgres, redis & set nixos specific stuff
   shellHook = ''
@@ -130,16 +135,14 @@ mkShell {
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 
-  DEV_WEB_BUILDER = "esbuild";
-
   # Some of the bazel actions require some tools assumed to be in the PATH defined by the "strict action env" that we enable
   # through --incompatible_strict_action_env. We can poke a custom PATH through with --action_env=PATH=$BAZEL_ACTION_PATH.
   # See https://sourcegraph.com/github.com/bazelbuild/bazel@6.1.2/-/blob/src/main/java/com/google/devtools/build/lib/bazel/rules/BazelRuleClassProvider.java?L532-547
-  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bash stdenv.cc coreutils unzip zip curl gzip gnutar gnugrep gnused git patch openssh findutils perl python39 which ];
+  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bashInteractive stdenv.cc coreutils unzip zip curl gzip gnutar gnugrep gnused git patch openssh findutils perl python39 which postgresql_13 ];
 
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
   USE_BAZEL_VERSION =
-    if hostPlatform.isMacOS then "" else pkgs.bazel_6.version;
+    if hostPlatform.isMacOS then "" else pkgs.bazel_7.version;
 }

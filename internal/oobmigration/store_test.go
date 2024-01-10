@@ -21,7 +21,7 @@ import (
 func TestSynchronizeMetadata(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := NewStoreWithDB(db)
 
 	compareMigrations := func() {
@@ -91,7 +91,7 @@ func TestSynchronizeMetadata(t *testing.T) {
 func TestSynchronizeMetadataFallback(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := NewStoreWithDB(db)
 
 	if err := store.Exec(ctx, sqlf.Sprintf(`
@@ -161,7 +161,7 @@ func TestList(t *testing.T) {
 	withMigrationIDs(t, []int{1, 2, 3, 4, 5})
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	migrations, err := store.List(context.Background())
@@ -183,7 +183,7 @@ func TestList(t *testing.T) {
 func TestGetMultiple(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	migrations, err := store.GetByIDs(context.Background(), []int{1, 2, 3, 4, 5})
@@ -210,7 +210,7 @@ func TestGetMultiple(t *testing.T) {
 func TestUpdateDirection(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	if err := store.UpdateDirection(context.Background(), 3, true); err != nil {
@@ -237,7 +237,7 @@ func TestUpdateProgress(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	if err := store.updateProgress(context.Background(), 3, 0.7, now); err != nil {
@@ -265,7 +265,7 @@ func TestUpdateMetadata(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	type sampleMeta = struct {
@@ -314,7 +314,7 @@ func TestAddError(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 8)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	if err := store.addError(context.Background(), 2, "oops", now); err != nil {
@@ -347,7 +347,7 @@ func TestAddErrorBounded(t *testing.T) {
 
 	now := testTime.Add(time.Hour * 9)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStore(t, db)
 
 	var expectedErrors []MigrationError

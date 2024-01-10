@@ -38,8 +38,8 @@ func TestS3ClientOptions(t *testing.T) {
 }
 
 func TestS3ClientConfig(t *testing.T) {
-	config := Config{
-		Backend:      "s3",
+	config := normalizeConfig(Config{
+		Backend:      "blobstore",
 		Bucket:       "lsif-uploads",
 		ManageBucket: true,
 		TTL:          8 * time.Hour,
@@ -49,7 +49,7 @@ func TestS3ClientConfig(t *testing.T) {
 			SecretAccessKey: "secret-access-key",
 			SessionToken:    "session-token",
 		},
-	}
+	})
 
 	cfg, err := s3ClientConfig(context.Background(), config.S3)
 	if err != nil {

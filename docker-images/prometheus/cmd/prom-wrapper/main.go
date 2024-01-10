@@ -49,7 +49,7 @@ func main() {
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("prom-wrapper", "sourcegraph/prometheus wrapper program")
+	logger := log.Scoped("prom-wrapper")
 	ctx := context.Background()
 
 	disableAlertmanager := noAlertmanager == "true"
@@ -98,7 +98,7 @@ func main() {
 			logger.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
 		} else {
 			logger.Info("initializing configuration")
-			subscriber := NewSiteConfigSubscriber(logger.Scoped("siteconfig", "site configuration subscriber"), alertmanager)
+			subscriber := NewSiteConfigSubscriber(logger.Scoped("siteconfig"), alertmanager)
 
 			// watch for configuration updates in the background
 			go subscriber.Subscribe(ctx)

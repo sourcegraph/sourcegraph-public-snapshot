@@ -1,8 +1,12 @@
+"Third party dev tooling dependencies"
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.4"
-SRC_CLI_VERSION = "5.1.0"
-CTAGS_VERSION = "5.9.20220403.0"
+SRC_CLI_VERSION = "5.2.1"
+CTAGS_VERSION = "6.0.0.2783f009"
+PACKER_VERSION = "1.8.3"
+P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -12,7 +16,26 @@ filegroup(
 )
 """
 
+GCLOUD_VERSION = "456.0.0"
+GCLOUD_BUILDFILE = """package(default_visibility = ["//visibility:public"])\nexports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])"""
+GCLOUD_PATCH_CMDS = [
+    "ln -s google-cloud-sdk/bin/gcloud gcloud",
+    "ln -s google-cloud-sdk/bin/gsutil gsutil",
+    "ln -s google-cloud-sdk/bin/bq bq",
+    "ln -s google-cloud-sdk/bin/git-credential-gcloud.sh git-credential-gcloud",
+]
+
+PACKER_BUILDFILE = """
+filegroup(
+    name = "packer-{}",
+    srcs = ["packer"],
+    visibility = ["//visibility:public"],
+)
+"""
+
 def tool_deps():
+    "Repository rules to fetch third party tooling used for dev purposes"
+
     # Docsite #
     http_file(
         name = "docsite_darwin_amd64",
@@ -39,42 +62,112 @@ def tool_deps():
     http_archive(
         name = "src-cli-linux-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("linux-amd64"),
-        sha256 = "270ddad7748c1b76f082b637e336b5c7a58af76d207168469f4b7bef957953e3",
+        sha256 = "19671ea6ee8a518fedaa45e6f6fb44767e7057c1c37dad34e36d829d5001a2f6",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-amd64"),
-        sha256 = "f14414e3ff4759cd1fbed0107138214f87d9a69cdb55ed1c4522704069420d9b",
+        sha256 = "a05d95a05c4266e766a7ebb85078dc16c8dd1971bddf7d966cb334638ed55375",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
     http_archive(
         name = "src-cli-darwin-arm64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-arm64"),
-        sha256 = "93dc6c8522792ea16e3c8c81c8cf655a908118e867fda43c048c9b51f4c70e88",
+        sha256 = "af34afa269d29cb24b40c17bb2045e353ac6fa1c1aa1164187c8582b1538fee4",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
-    # universal-ctags #
+    # universal-ctags
+    #
+    # Two step process to update these. First land a commit in main updating
+    # the version in dev/nix/ctags.nix. Then copy the hashes from
+    # https://github.com/sourcegraph/sourcegraph/actions/workflows/universal-ctags.yml
     http_file(
         name = "universal-ctags-darwin-amd64",
-        sha256 = "b69501d497b62021e8438e840e0bea62fdbe91d60cf8375c388f2736cd58a1bf",
-        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        sha256 = "7aead221c07d8092a0cbfad6e69ae526292e405bbe2f06d38d346969e23a6f68",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/dist/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
 
     http_file(
         name = "universal-ctags-darwin-arm64",
-        sha256 = "269d9ae1d1dd39b8b266b31c4ad653b87ba004888bba8a8b9db23bfcc7ac503a",
-        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        sha256 = "ac4a73b69042c60e68f80f8819d5c6b05e233386042ba867205a252046d6471e",
+        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/dist/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
 
     http_file(
         name = "universal-ctags-linux-amd64",
-        sha256 = "1d349d15736a30c9cc18c1fd9efbfc6081fb59125d799b84cef6b34c735fa28a",
-        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        sha256 = "e99b942754ce9d55c9445513236c010753d26decbb38ed932780bec098ac0809",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/dist/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_archive(
+        name = "gcloud-darwin-arm64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "80c31937d3a3dce98d730844ff028715a46cd9fd5d5d44096b16e85fa54e6df1",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-arm.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "gcloud-darwin-amd64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "2961471b9d81092443456de15509f46fea685dfaf401f1b6c444eab63b45ccb7",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "gcloud-linux-amd64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "03d87f71e15f2143e5f2b64b3594464ac51e791658848fc33d748f545ef97889",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "packer-linux-amd64",
+        build_file_content = PACKER_BUILDFILE.format("linux-amd64"),
+        sha256 = "0587f7815ed79589cd9c2b754c82115731c8d0b8fd3b746fe40055d969facba5",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_linux_amd64.zip".format(PACKER_VERSION),
+    )
+
+    http_archive(
+        name = "packer-darwin-arm64",
+        build_file_content = PACKER_BUILDFILE.format("darwin-arm64"),
+        sha256 = "5cc53abbc345fc5f714c8ebe46fd79d5f503f29375981bee6c77f89e5ced92d3",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_arm64.zip".format(PACKER_VERSION),
+    )
+
+    http_archive(
+        name = "packer-darwin-amd64",
+        build_file_content = PACKER_BUILDFILE.format("darwin-amd64"),
+        sha256 = "ef1ceaaafcdada65bdbb45793ad6eedbc7c368d415864776b9d3fa26fb30b896",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_amd64.zip".format(PACKER_VERSION),
+    )
+
+    http_file(
+        name = "p4-fusion-linux-amd64",
+        sha256 = "4c32aa00fa220733faea27a1c6ec4acd0998c1a7f870e08de9947685621f0d06",
+        url = "https://storage.googleapis.com/p4-fusion/x86_64-linux/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "p4-fusion-darwin-amd64",
+        sha256 = "bfa525a8a38d2c2ea205865b1a6d5be0b680e3160a64ba9505953be3294d1b9c",
+        url = "https://storage.googleapis.com/p4-fusion/x86_64-darwin/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "p4-fusion-darwin-arm64",
+        sha256 = "f97942e145902e682a5c1bc2608071a24d17bf943f35faaf18f359cbbaacddcd",
+        url = "https://storage.googleapis.com/p4-fusion/aarch64-darwin/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
         executable = True,
     )

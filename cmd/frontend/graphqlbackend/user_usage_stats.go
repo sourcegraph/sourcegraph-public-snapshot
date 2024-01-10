@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -112,6 +112,7 @@ type EventBatch struct {
 	Events *[]Event
 }
 
+// LogEvent is the deprecated mutation, superceded by { telemetry { recordEvents } }
 func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyResponse, error) {
 	if args == nil {
 		return nil, nil
@@ -120,6 +121,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyRespo
 	return r.LogEvents(ctx, &EventBatch{Events: &[]Event{*args}})
 }
 
+// LogEvents is the deprecated mutation, superceded by { telemetry { recordEvents } }
 func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() || args.Events == nil {
 		return nil, nil
@@ -165,16 +167,24 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 
 			ide := getIdeFromEvent(&args)
 
-			if ide == "vscode" {
+			if strings.ToLower(ide) == "vscode" {
 				if ffs := featureflag.FromContext(ctx); ffs != nil {
 					emailsEnabled = ffs.GetBoolOr("vscodeCodyEmailsEnabled", false)
 				}
 			}
 
-			hubspotutil.SyncUserWithEventParams(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
-				DatabaseID:                   userID,
-				VSCodyInstalledEmailsEnabled: emailsEnabled,
-			}, map[string]string{"ide": ide, "emailsEnabled": strconv.FormatBool(emailsEnabled)})
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+				DatabaseID: userID,
+			})
+
+			hubspotutil.SyncUserWithV3Event(userPrimaryEmail, hubspotutil.CodyClientInstalledV3EventID,
+				&hubspot.ContactProperties{
+					DatabaseID: userID,
+				},
+				&hubspot.CodyInstallV3EventProperties{
+					Ide:           ide,
+					EmailsEnabled: strconv.FormatBool(emailsEnabled),
+				})
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.
@@ -226,6 +236,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		})
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality to back deprecated GraphQL mutation
 	if err := usagestats.LogEvents(ctx, r.db, events); err != nil {
 		return nil, err
 	}

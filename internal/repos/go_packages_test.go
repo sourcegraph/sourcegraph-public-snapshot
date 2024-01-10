@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,25 +37,22 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindGoPackages,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GoModulesConnection{
-			Urls: []string{
-				"https://proxy.golang.org",
-			},
-			Dependencies: []string{
-				"github.com/tsenart/vegeta/v12@v12.8.4",
-				"github.com/coreos/go-oidc@v2.2.1+incompatible",
-				"github.com/google/zoekt@v0.0.0-20211108135652-f8e8ada171c7",
-				"github.com/gorilla/mux@v1.8.0",
-			},
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantGoPackages, &schema.GoModulesConnection{
+		Urls: []string{
+			"https://proxy.golang.org",
+		},
+		Dependencies: []string{
+			"github.com/tsenart/vegeta/v12@v12.8.4",
+			"github.com/coreos/go-oidc@v2.2.1+incompatible",
+			"github.com/google/zoekt@v0.0.0-20211108135652-f8e8ada171c7",
+			"github.com/gorilla/mux@v1.8.0",
+		},
+	})
 
 	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewGoPackagesSource(ctx, &svc, cf)
+	src, err := NewGoPackagesSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

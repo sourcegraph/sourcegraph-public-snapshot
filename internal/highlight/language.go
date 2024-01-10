@@ -133,7 +133,9 @@ var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineTreeSitter,
 	Overrides: map[string]EngineType{
 		// Languages enabled for advanced syntax features
-		"perl": EngineScipSyntax,
+		"perl":   EngineScipSyntax,
+		"matlab": EngineScipSyntax,
+		"java":   EngineScipSyntax,
 	},
 }
 
@@ -248,7 +250,7 @@ func getLanguage(path string, contents string) (string, bool) {
 	}
 
 	// TODO: Consider if we should just ignore getting empty...?
-	lang, _ = languages.GetLanguage(path, contents)
+	lang, _ = languages.GetMostLikelyLanguage(path, contents)
 	return lang, false
 }
 

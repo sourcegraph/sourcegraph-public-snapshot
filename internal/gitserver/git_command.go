@@ -86,7 +86,7 @@ func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
 	return &LocalGitCommand{
 		repo:   repo,
 		args:   args,
-		Logger: log.Scoped("local", "local git command logger"),
+		Logger: log.Scoped("local"),
 	}
 }
 
@@ -172,6 +172,7 @@ type RemoteGitCommand struct {
 	exitStatus     int
 	execer         execer
 	execOp         *observation.Operation
+	scope          string
 }
 
 type execer interface {
@@ -204,10 +205,20 @@ func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, e
 	return stdout, nil, nil
 }
 
-// Output runs the command and returns its standard output.
+// Output runs the command and returns its standard output. If the command
+// fails it usually returns CommandStatusError.
 func (c *RemoteGitCommand) Output(ctx context.Context) ([]byte, error) {
-	stdout, _, err := c.DividedOutput(ctx)
-	return stdout, err
+	// Note: we do not use DividedOutput because we don't want its behaviour
+	// where it throws away stderr in the error message. Stderr in error is
+	// useful to us because the client is not asking for it.
+
+	rc, err := c.sendExec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	return io.ReadAll(rc)
 }
 
 // CombinedOutput runs the command and returns its combined standard output and standard error.

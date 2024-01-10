@@ -4,22 +4,12 @@
     "jsx": "react-jsx",
     "module": "commonjs",
     "sourceRoot": "src",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["../observability-client/src/types/*", "src/types/*", "*"],
-    },
     "rootDir": ".",
     "outDir": "./out",
   },
-  "include": ["**/*", ".*", "./src/**/*.json"],
+  "include": ["src", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
   "references": [
-    {
-      "path": "../client-api",
-    },
-    {
-      "path": "../codeintellify",
-    },
     {
       "path": "../common",
     },

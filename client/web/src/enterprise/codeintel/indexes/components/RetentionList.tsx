@@ -161,7 +161,7 @@ const ReferenceList: FunctionComponent<ReferenceListProps> = ({ items, totalCoun
         </>
     ) : (
         <>
-            {[...items.slice(0, -1), <>and {items[items.length - 1]}</>].map((item, index) => (
+            {[...items.slice(0, -1), <>and {items.at(-1)}</>].map((item, index) => (
                 <>
                     {index !== 0 && <>, </>}
                     {item}

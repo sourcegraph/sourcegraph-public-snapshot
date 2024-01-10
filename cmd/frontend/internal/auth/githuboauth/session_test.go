@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	githublogin "github.com/dghubble/gologin/github"
+	githublogin "github.com/dghubble/gologin/v2/github"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/githubconvert"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -286,7 +287,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					githubsvc.MockGetAuthenticatedUserOrgs.FnMock = nil
 				}()
 
-				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
+				ctx := githublogin.WithUser(context.Background(), githubconvert.ConvertUserV55ToV48(ci.ghUser))
 				s := &sessionIssuerHelper{
 					CodeHost:     codeHost,
 					clientID:     clientID,
@@ -296,7 +297,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, nil)
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -355,7 +356,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		Login: github.String("alice"),
 	}
 
-	ctx := githublogin.WithUser(context.Background(), ghUser)
+	ctx := githublogin.WithUser(context.Background(), githubconvert.ConvertUserV55ToV48(ghUser))
 	s := &sessionIssuerHelper{
 		CodeHost:    codeHost,
 		clientID:    clientID,
@@ -363,7 +364,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err := s.GetOrCreateUser(ctx, tok, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -408,7 +409,7 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 		Login: github.String("alice"),
 	}
 
-	ctx := githublogin.WithUser(context.Background(), ghUser)
+	ctx := githublogin.WithUser(context.Background(), githubconvert.ConvertUserV55ToV48(ghUser))
 	s := &sessionIssuerHelper{
 		CodeHost:    codeHost,
 		clientID:    clientID,
@@ -416,7 +417,7 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err := s.GetOrCreateUser(ctx, tok, nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

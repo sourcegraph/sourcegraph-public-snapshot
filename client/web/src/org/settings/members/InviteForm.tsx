@@ -206,8 +206,8 @@ function inviteUserToOrganization(
 ): Promise<InviteUserToOrganizationResult['inviteUserToOrganization']> {
     return requestGraphQL<InviteUserToOrganizationResult, InviteUserToOrganizationVariables>(
         gql`
-            mutation InviteUserToOrganization($organization: ID!, $username: String, $email: String) {
-                inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
+            mutation InviteUserToOrganization($organization: ID!, $username: String!) {
+                inviteUserToOrganization(organization: $organization, username: $username) {
                     ...InviteUserToOrganizationFields
                 }
             }
@@ -220,7 +220,6 @@ function inviteUserToOrganization(
         {
             username,
             organization,
-            email: null,
         }
     )
         .pipe(

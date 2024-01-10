@@ -29,7 +29,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, true).ID
 
@@ -182,7 +182,7 @@ func TestBatchChangesListing(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))

@@ -99,20 +99,23 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
     const keydownHandler: KeyboardEventHandler<HTMLElement> = useCallback(
         (event: KeyboardEvent) => {
             switch (event.key) {
-                case 'ArrowDown':
+                case 'ArrowDown': {
                     event.preventDefault()
                     setSelectedIndex(index => index + (index + 1 < recentSearches.length ? 1 : 0))
                     break
-                case 'ArrowUp':
+                }
+                case 'ArrowUp': {
                     event.preventDefault()
                     setSelectedIndex(index => index - (index - 1 > -1 ? 1 : 0))
                     break
-                case 'Enter':
+                }
+                case 'Enter': {
                     event.preventDefault()
                     if (recentSearches.length > 0) {
                         onSelect(recentSearches[selectedIndexRef.current])
                     }
                     break
+                }
             }
         },
         [setSelectedIndex, recentSearches, onSelect]

@@ -40,7 +40,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(logger, bstore)
@@ -266,7 +266,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
@@ -506,7 +506,7 @@ func TestBatchSpecResolver_Files(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	resolver := batchSpecResolver{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"testing"
 
@@ -140,7 +141,7 @@ func TestNonLocalDefinition(t *testing.T) {
 			gotSymbolInfo, err := squirrel.SymbolInfo(context.Background(), ref.repoCommitPathPoint)
 			fatalIfErrorLabel(t, err, "symbolInfo")
 
-			if contains(ref.tags, "nodef") {
+			if slices.Contains(ref.tags, "nodef") {
 				if gotSymbolInfo != nil {
 					t.Fatalf("unexpected definition for %s", ref.symbol)
 				}

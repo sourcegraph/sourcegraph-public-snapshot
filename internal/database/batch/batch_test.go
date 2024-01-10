@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -18,8 +16,7 @@ func init() {
 }
 
 func TestBatchInserter(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -49,8 +46,7 @@ func TestBatchInserter(t *testing.T) {
 }
 
 func TestBatchInserterThin(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTableThin(t, db)
 
 	tableSizeFactor := 2
@@ -82,8 +78,7 @@ func TestBatchInserterThin(t *testing.T) {
 }
 
 func TestBatchInserterWithReturn(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -101,8 +96,7 @@ func TestBatchInserterWithReturn(t *testing.T) {
 }
 
 func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -121,8 +115,7 @@ func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
 }
 
 func TestBatchInserterWithConflict(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -153,8 +146,7 @@ func TestBatchInserterWithConflict(t *testing.T) {
 }
 
 func BenchmarkBatchInserter(b *testing.B) {
-	logger := logtest.Scoped(b)
-	db := dbtest.NewDB(logger, b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 0)
 
@@ -167,8 +159,7 @@ func BenchmarkBatchInserter(b *testing.B) {
 }
 
 func BenchmarkBatchInserterLargePayload(b *testing.B) {
-	logger := logtest.Scoped(b)
-	db := dbtest.NewDB(logger, b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 4096)
 

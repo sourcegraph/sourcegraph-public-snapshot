@@ -1,23 +1,22 @@
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 // @ts-check
 
 const path = require('path')
 const { readFileSync } = require('fs')
-const { execSync } = require('child_process')
+const { execFileSync } = require('child_process')
 
 const puppeteer = require('puppeteer')
 const resolveBin = require('resolve-bin')
 
-// Reads environment variables set by Bazel and returns them as a string with the format "KEY=VALUE".
+// Reads environment variables set by Bazel.
 // It also adds a custom environment variable, "PERCY_BROWSER_EXECUTABLE", which points
 // to the Puppeteer browser executable downloaded in the postinstall script.
-function getEnvVariablesString() {
+/** @returns {Record<string, string>} env vars */
+function getEnvVars() {
   // JS_BINARY__EXECROOT – Set by Bazel `js_run_binary` rule.
-  // BAZEL_VOLATILE_STATUS_FILE – Set by Bazel when the `stamp` attribute on the `js_run_binary_rule` equals 1.
-  // https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary#stamp
-  const { JS_BINARY__EXECROOT, BAZEL_VOLATILE_STATUS_FILE } = process.env
+  // BAZEL_BINDIR – Set by Bazel `js_run_binary` rule.
+  const { JS_BINARY__EXECROOT, BAZEL_BINDIR } = process.env
 
-  if (!JS_BINARY__EXECROOT || !BAZEL_VOLATILE_STATUS_FILE) {
+  if (!JS_BINARY__EXECROOT || !BAZEL_BINDIR) {
     throw new Error('Missing required environment variables')
   }
 
@@ -26,7 +25,18 @@ function getEnvVariablesString() {
   // build the correct visual diff report and auto-accept change on `main` if we're on it.
   // https://github.com/percy/cli/blob/059ec21653a07105e223aa5a3ec1f815a7123ad7/packages/env/src/environment.js#L138-L139
   // https://bazel.build/docs/user-manual#workspace-status
-  const statusFilePath = path.join(JS_BINARY__EXECROOT, BAZEL_VOLATILE_STATUS_FILE)
+  //
+  // NB: we derive the volatile-status.txt file path from the BAZEL_BINDIR since we are
+  // intentionally pulling volatile data without defining the volatile status as an input so we
+  // don't bust the cache with its contents of volatile-status.txt
+  // (https://github.com/bazelbuild/bazel/issues/16231). This can be improved in the future by using
+  // the new --experimental_remote_cache_key_ignore_stamping flag in Bazel to filter out the
+  // volatile-status.txt file from the action inputs
+  // (https://github.com/bazelbuild/bazel/pull/16240)
+  const statusFilePath = path.join(
+    path.dirname(path.dirname(path.join(JS_BINARY__EXECROOT, BAZEL_BINDIR))),
+    'volatile-status.txt'
+  )
   const volatileEnvVariables = Object.fromEntries(
     readFileSync(statusFilePath, 'utf8')
       .split('\n')
@@ -45,9 +55,7 @@ function getEnvVariablesString() {
   }
 
   // Convert the merged environment variables to a string with the "KEY=VALUE" format
-  return Object.entries(customEnvVariables)
-    .map(([key, value]) => `${key}=${value}`)
-    .join(' ')
+  return customEnvVariables
 }
 
 // Resolve the binary paths for Percy and Mocha
@@ -56,12 +64,10 @@ const mochaBin = resolveBin.sync('mocha')
 
 // Extract command-line arguments to pass to Mocha
 const args = process.argv.slice(2)
-const testCmd = `${mochaBin} ${args.join(' ')}`
 
-// Create the final command to execute, which includes the environment variables,
-// and wraps the Mocha command with Percy's "exec" command
-// https://docs.percy.io/docs/cli-exec
-const finalCmd = `${getEnvVariablesString()} ${percyBin} exec -- ${testCmd}`
-
-// Execute the final command, inheriting the stdio settings from the parent process
-execSync(finalCmd, { stdio: 'inherit' })
+// Execute the final command, inheriting the stdio settings from the parent process and and wrapping
+// the Mocha command with Percy's "exec" command (https://docs.percy.io/docs/cli-exec).
+execFileSync(percyBin, ['exec', '--', mochaBin, ...args], {
+  env: { ...process.env, ...getEnvVars() },
+  stdio: 'inherit',
+})

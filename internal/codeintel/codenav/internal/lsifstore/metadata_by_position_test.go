@@ -64,6 +64,10 @@ func TestDatabaseHover(t *testing.T) {
 }
 
 func TestGetDiagnostics(t *testing.T) {
-	// NOTE: No SCIP indexer currently emit diagnostics
+	// FIXME(issue: https://github.com/sourcegraph/sourcegraph/issues/57621)
+	// We should add a test case here, but that requires creating a SCIP index
+	// with a diagnostic field, and uploading that to the database, whereas
+	// the current testing infrastructure doesn't support that,
+	// and adding a non-reproducibly generated SQL file for testing is not a good idea.
 	t.Skip()
 }

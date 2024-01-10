@@ -11,7 +11,6 @@ const edgesHeight = 8
 const aboveArrowY = 70
 const belowArrowY = 150
 
-/* eslint-disable jsdoc/check-indentation */
 /**
  * Helper function to create "arrows" of the form
  *
@@ -23,7 +22,7 @@ const belowArrowY = 150
  * the input (above/below) as argument and computes the position and dimensions
  * of the four <line>s that make up this "arrow".
  */
-// eslint-disable-next-line id-length
+
 function arrow(x: number, width: number, position: 'above' | 'below'): React.ReactElement {
     const pointerLine = <line x1={width / 2} x2={width / 2} y1="0" y2={arrowHeight} />
     const centerLine = <line x1="0" x2={width} y1={arrowHeight} y2={arrowHeight} />

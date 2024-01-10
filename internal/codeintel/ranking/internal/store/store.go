@@ -68,7 +68,7 @@ type store struct {
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
-		logger:     logger.Scoped("ranking.store", ""),
+		logger:     logger.Scoped("ranking.store"),
 		operations: newOperations(observationCtx),
 	}
 }

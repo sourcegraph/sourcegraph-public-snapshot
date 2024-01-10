@@ -15,7 +15,6 @@ go_library(
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
         "@io_gitea_code_gitea//modules/hostmatcher",
     ],
 )

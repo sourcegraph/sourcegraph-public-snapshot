@@ -9,7 +9,7 @@
   "IsArchived": false,
   "IsLocked": false,
   "IsDisabled": false,
-  "ViewerPermission": "WRITE",
+  "ViewerPermission": "ADMIN",
   "RepositoryTopics": {
    "Nodes": [
     {
@@ -44,6 +44,8 @@
     }
    ]
   },
-  "StargazerCount": 8662,
-  "ForkCount": 1116
+  "StargazerCount": 9145,
+  "ForkCount": 1191,
+  "visibility": "public",
+  "DiskUsage": 1162483
  }

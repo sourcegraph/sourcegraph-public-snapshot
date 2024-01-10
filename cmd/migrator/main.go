@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -17,9 +18,9 @@ func main() {
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("migrator", "migrator oss edition")
+	logger := log.Scoped("migrator")
 
-	if err := shared.Start(logger, nil); err != nil {
+	if err := shared.Start(logger, register.RegisterEnterpriseMigratorsUsingConfAndStoreFactory); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

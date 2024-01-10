@@ -62,7 +62,7 @@ export function submitSearch({
             query: queryWithContext,
             source,
         },
-        { source }
+        { source, patternType }
     )
 
     const state = {

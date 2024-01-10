@@ -24,7 +24,7 @@ func Init(
 ) error {
 	enterpriseServices.TelemetryRootResolver = &graphqlbackend.TelemetryRootResolver{
 		Resolver: resolvers.New(
-			observationCtx.Logger.Scoped("telemetry", "Telemetry V2 resolver"),
+			observationCtx.Logger.Scoped("telemetry"),
 			db),
 	}
 

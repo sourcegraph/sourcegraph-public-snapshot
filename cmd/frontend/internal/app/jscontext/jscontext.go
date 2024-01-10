@@ -106,7 +106,6 @@ type CurrentUser struct {
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
-	Searchable          bool       `json:"searchable"`
 	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
 	CompletedPostSignUp bool       `json:"completedPostSignup"`
 
@@ -152,8 +151,6 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	CodyAppMode bool `json:"codyAppMode"`
-
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
 	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
@@ -161,8 +158,6 @@ type JSContext struct {
 	AllowSignup bool `json:"allowSignup"`
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
-
-	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
@@ -193,9 +188,10 @@ type JSContext struct {
 	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
 
-	ExecutorsEnabled                         bool `json:"executorsEnabled"`
-	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
-	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	ExecutorsEnabled                               bool `json:"executorsEnabled"`
+	CodeIntelAutoIndexingEnabled                   bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies       bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
 	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
 
@@ -222,8 +218,6 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
-
-	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -308,7 +302,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		}
 	}
 
-	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext"), db)
 	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
 	if err != nil {
 		needsRepositoryConfiguration = false
@@ -316,7 +310,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
-	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -348,7 +341,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		CodyAppMode:           deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -357,8 +349,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
-
-		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 
@@ -380,9 +370,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
-		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
-		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
-		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
+		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies:       conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		CodeIntelRankingDocumentReferenceCountsEnabled: conf.CodeIntelRankingDocumentReferenceCountsEnabled(),
 
 		CodeInsightsEnabled: insights.IsEnabled(),
 
@@ -407,8 +398,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
-
-		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 
@@ -458,7 +447,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		ID:                  userResolver.ID(),
 		LatestSettings:      resolveLatestSettings(ctx, userResolver),
 		Organizations:       resolveUserOrganizations(ctx, userResolver),
-		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
 		TosAccepted:         userResolver.TosAccepted(ctx),

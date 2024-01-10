@@ -1,0 +1,334 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms?%24alt=json%3Benum-encoding%3Dint
+    method: GET
+  response:
+    body: |
+      {
+        "name": "projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+        "primary": {
+          "name": "projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms/cryptoKeyVersions/1",
+          "state": 1,
+          "createTime": "2023-09-16T20:50:00.170234412Z",
+          "protectionLevel": 1,
+          "algorithm": 1,
+          "generateTime": "2023-09-16T20:50:00.170234412Z"
+        },
+        "purpose": 1,
+        "createTime": "2023-09-16T20:50:00.170234412Z",
+        "nextRotationTime": "2023-12-14T23:00:00Z",
+        "rotationPeriod": "7776000s",
+        "versionTemplate": {
+          "protectionLevel": 1,
+          "algorithm": 1
+        },
+        "destroyScheduledDuration": "86400s"
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:22 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"name":"projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+      "plaintext":"MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4=", "plaintextCrc32c":"2336136629"}'
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms:encrypt?%24alt=json%3Benum-encoding%3Dint
+    method: POST
+  response:
+    body: |
+      {
+        "name": "projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms/cryptoKeyVersions/1",
+        "ciphertext": "CiQAX3/OtqWRlYarHoJFjA0tPDA9prRp+scTfYep/luUw2BvLsISSQAPT8To/yAmuj7QzwSdowtBuCnD8xsMKONs6VuJ09+ILOELH2/4A2NZmAfvKHuzO2RoRoFsn5WZcheUdB8tLhhCWnNVeszSXpI=",
+        "ciphertextCrc32c": "2561118397",
+        "verifiedPlaintextCrc32c": true,
+        "protectionLevel": 1
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:22 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"name":"projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+      "ciphertext":"CiQAX3/OtqWRlYarHoJFjA0tPDA9prRp+scTfYep/luUw2BvLsISSQAPT8To/yAmuj7QzwSdowtBuCnD8xsMKONs6VuJ09+ILOELH2/4A2NZmAfvKHuzO2RoRoFsn5WZcheUdB8tLhhCWnNVeszSXpI="}'
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms:decrypt?%24alt=json%3Benum-encoding%3Dint
+    method: POST
+  response:
+    body: |
+      {
+        "plaintext": "MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4=",
+        "plaintextCrc32c": "2336136629",
+        "usedPrimary": true,
+        "protectionLevel": 1
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:23 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"name":"projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+      "plaintext":"dmVyeXNlY3JldHRlc3R2YWx1ZQ==", "plaintextCrc32c":"1094213194"}'
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms:encrypt?%24alt=json%3Benum-encoding%3Dint
+    method: POST
+  response:
+    body: |
+      {
+        "name": "projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms/cryptoKeyVersions/1",
+        "ciphertext": "CiQAX3/OtnALT8O1lG2KHOGDbg06cT+ntMRJ/l0BJUepvW89SzESPAAPT8To8+8Qxs9Q9MJjc8zKkv44tIpXd0OlMaXPiUIrZMtZLiiW/9rMWpMt7PHehpOogZJD3i8HMHBk8Q==",
+        "ciphertextCrc32c": "117593579",
+        "verifiedPlaintextCrc32c": true,
+        "protectionLevel": 1
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:23 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"name":"projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+      "ciphertext":"CiQAX3/OtnALT8O1lG2KHOGDbg06cT+ntMRJ/l0BJUepvW89SzESPAAPT8To8+8Qxs9Q9MJjc8zKkv44tIpXd0OlMaXPiUIrZMtZLiiW/9rMWpMt7PHehpOogZJD3i8HMHBk8Q=="}'
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms:decrypt?%24alt=json%3Benum-encoding%3Dint
+    method: POST
+  response:
+    body: |
+      {
+        "plaintext": "dmVyeXNlY3JldHRlc3R2YWx1ZQ==",
+        "plaintextCrc32c": "1094213194",
+        "usedPrimary": true,
+        "protectionLevel": 1
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:24 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"name":"projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+      "plaintext":"MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4=", "plaintextCrc32c":"2336136629"}'
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms:encrypt?%24alt=json%3Benum-encoding%3Dint
+    method: POST
+  response:
+    body: |
+      {
+        "name": "projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms/cryptoKeyVersions/1",
+        "ciphertext": "CiQAX3/OtigZdgnE2i6zKdAEeLu6pkp8zn/MdAR8TUM0Ap8mupcSSQAPT8To5Fw7i1rtcaoIoRjGeS38KGSLwfqRqKfBBcqm8lOp6nY5JYfqE14MLb+L4VC/X0CTyOmpvmV2LCzJvnNyDrku+COdOsI=",
+        "ciphertextCrc32c": "303237481",
+        "verifiedPlaintextCrc32c": true,
+        "protectionLevel": 1
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:24 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"name":"projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms",
+      "ciphertext":"CiQAX3/OtigZdgnE2i6zKdAEeLu6pkp8zn/MdAR8TUM0Ap8mupcSSQAPT8To5Fw7i1rtcaoIoRjGeS38KGSLwfqRqKfBBcqm8lOp6nY5JYfqE14MLb+L4VC/X0CTyOmpvmV2LCzJvnNyDrku+COdOsI="}'
+    form: {}
+    headers:
+      content-type:
+      - application/json
+      x-goog-api-client:
+      - gl-go/1.20.8 gapic/1.12.1 gax/2.12.0 rest/UNKNOWN
+      x-goog-request-params:
+      - name=projects%2Ferik-test-kms%2Flocations%2Fus%2FkeyRings%2Ferik-test%2FcryptoKeys%2Ftest-kms
+    url: https://cloudkms.googleapis.com/v1/projects/erik-test-kms/locations/us/keyRings/erik-test/cryptoKeys/test-kms:decrypt?%24alt=json%3Benum-encoding%3Dint
+    method: POST
+  response:
+    body: |
+      {
+        "plaintext": "MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4=",
+        "plaintextCrc32c": "2336136629",
+        "usedPrimary": true,
+        "protectionLevel": 1
+      }
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Cache-Control:
+      - private
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Sat, 16 Sep 2023 22:14:24 GMT
+      Server:
+      - ESF
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

@@ -9,7 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+
 	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -56,7 +57,7 @@ func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r 
 			_ = json.NewEncoder(w).Encode(nil)
 
 			// Log the error if it's not an unrecognized file extension or unsupported language error.
-			if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
+			if !errors.Is(err, UnrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
 				log15.Error("failed to generate local code intel payload", "err", err)
 			}
 

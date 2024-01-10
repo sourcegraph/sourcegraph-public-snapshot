@@ -67,7 +67,7 @@ func createEmployees(db database.DB) ([]*types.User, error) {
 func TestUserActivityLastMonth(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	now := bod(time.Now())
 
 	eventLogs := []EventLogRow{
@@ -165,7 +165,7 @@ func TestUserActivityLastMonth(t *testing.T) {
 func TestUserFrequencyLastMonth(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	now := bod(time.Now())
 
 	eventLogs := []EventLogRow{
@@ -255,7 +255,7 @@ func TestMonthlyActiveUsersLast3Month(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	now := bod(time.Now())
 
 	eventLogs := []EventLogRow{

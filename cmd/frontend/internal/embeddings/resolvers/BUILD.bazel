@@ -15,7 +15,6 @@ go_library(
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/api",
         "//internal/auth",
-        "//internal/authz",
         "//internal/cody",
         "//internal/conf",
         "//internal/database",
@@ -34,15 +33,20 @@ go_library(
 
 go_test(
     name = "resolvers_test",
-    srcs = ["resolvers_test.go"],
+    srcs = [
+        "repo_embedding_jobs_test.go",
+        "resolvers_test.go",
+    ],
     embed = [":resolvers"],
+    tags = ["requires-network"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/api",
-        "//internal/authz",
         "//internal/conf",
+        "//internal/database",
         "//internal/database/dbmocks",
+        "//internal/database/dbtest",
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/featureflag",

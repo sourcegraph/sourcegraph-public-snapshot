@@ -2,10 +2,14 @@ import { useMemo } from 'react'
 
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
+import {
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
 import { CodeMirrorEditor, defaultEditorTheme } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { selectableLineNumbers } from '../../repo/blob/codemirror/linenumbers'
@@ -14,19 +18,15 @@ const theme = EditorView.theme({
     '.selected-line, .cm-line.selected-line': {
         backgroundColor: 'var(--code-selection-bg)',
     },
-    '.cm-lineNumbers .cm-gutterElement:hover': {
-        textDecoration: 'none',
-        cursor: 'auto',
-    },
     '.cm-scroller': {
         borderRadius: 'var(--border-radius)',
     },
 })
 
 export const IngestedFileViewer: React.FunctionComponent<{ contents: string }> = ({ contents }) => {
-    const isLightTheme = useIsLightTheme()
-
     const location = useLocation()
+    const navigate = useNavigate()
+    const search = location.search
 
     const lineNumber = useMemo(
         () => parseQueryAndHash(location.search, location.hash).line,
@@ -35,17 +35,25 @@ export const IngestedFileViewer: React.FunctionComponent<{ contents: string }> =
 
     const extensions: Extension[] = useMemo(
         () => [
-            EditorView.darkTheme.of(isLightTheme === false),
             EditorState.readOnly.of(true),
             theme,
             selectableLineNumbers({
-                onSelection: () => {},
+                onSelection(range) {
+                    let query
+                    if (range) {
+                        const position = { line: range.line }
+                        query = toPositionOrRangeQueryParameter(
+                            range.endLine ? { range: { start: position, end: { line: range.endLine } } } : { position }
+                        )
+                    }
+                    const newSearchParameters = addLineRangeQueryParameter(new URLSearchParams(search), query)
+                    navigate('?' + formatSearchParameters(newSearchParameters))
+                },
                 initialSelection: lineNumber ? { line: lineNumber } : null,
-                navigateToLineOnAnyClick: true,
             }),
             defaultEditorTheme,
         ],
-        [isLightTheme, lineNumber]
+        [lineNumber, search, navigate]
     )
 
     return <CodeMirrorEditor value={contents} extensions={extensions} />

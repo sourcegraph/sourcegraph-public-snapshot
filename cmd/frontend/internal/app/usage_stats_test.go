@@ -17,7 +17,7 @@ import (
 
 func TestUsageStatsArchiveHandler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("non-admins can't download archive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)

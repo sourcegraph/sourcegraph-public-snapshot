@@ -1,5 +1,6 @@
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+import { describe, expect, test } from 'vitest'
 
 import { combineLatestOrDefault } from './combineLatestOrDefault'
 

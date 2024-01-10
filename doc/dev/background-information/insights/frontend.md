@@ -33,7 +33,6 @@ Note: that some part of insights logic is stored in `./client/web/src/insights`
 - `analytics.ts` - analytics logic to get insights setting cascade related metrics (such as code insights count)
 - `types.ts` - code insights related types for top-level component props.
 - `utils` - utils functionality such as code insights experimental flags checkers.
-- `./sections` - OSS version of insights grid components that are rendered at the homepage and the directory page .
 
 ## Insight types
 
@@ -249,22 +248,6 @@ by few FE network search API requests in case of Built-In insight.
 
 > NOTE: We load our insights one by one with a maximum of two insight data requests in parallel to avoid HTTP request bombarding and HTTP 1 limit
 > with only six requests in parallel. To do that, we use [`useParallelRequests` react hook](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/hooks/use-parallel-requests/use-parallel-request.ts)
-
-### The directory and search (home) pages
-
-![directory-page.png](https://storage.googleapis.com/sourcegraph-assets/code_insights/directory-page.png)
-
-The directory page is another place where you can find insights (and other extension-based things).
-This page renders an insight grid component with all insights that you have in your subject settings so that we could say that
-this is kind of analog of the All insights dashboard on the dashboard page.
-
-But this page uses a slightly different approach how to load insights data. The directory and search pages render `ExtensionViewsSection`
-component. This component is different from the OSS to Enterprise version (note, the OSS version is removed as of 5.1). But in both cases, this component is responsible for loading
-extension and insight-like views and render them into the grid layout views component as it's shown in the picture above.
-
-- In OSS version (removed in 5.1) it renders only extension views [source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/insights/sections/ExtensionViewsSection.tsx)
-- In Enterprise it renders extension and insight like views together. (Code insights is part of enterprise version)
-[source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/sections/ExtensionViewsSection.tsx)
 
 ## Code Insights loading logic (InsightsApiContext)
 

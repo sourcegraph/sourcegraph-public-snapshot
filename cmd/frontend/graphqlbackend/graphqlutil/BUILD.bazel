@@ -17,6 +17,7 @@ go_library(
     deps = [
         "//internal/database",
         "//lib/errors",
+        "//lib/pointers",
     ],
 )
 

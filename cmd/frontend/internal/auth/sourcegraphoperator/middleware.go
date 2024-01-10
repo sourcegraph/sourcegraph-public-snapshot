@@ -1,7 +1,6 @@
 package sourcegraphoperator
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -11,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -53,13 +52,10 @@ func Middleware(db database.DB) *auth.Middleware {
 // Sourcegraph Operator authentication provider.
 const SessionKey = "soap@0"
 
-const (
-	stateCookieName = "sg-soap-state"
-	usernamePrefix  = "sourcegraph-operator-"
-)
+const usernamePrefix = "sourcegraph-operator-"
 
 func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType+".authHandler", "Sourcegraph Operator authentication handler")
+	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType + ".authHandler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
@@ -69,11 +65,11 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			openidconnect.RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
+			openidconnect.RedirectToAuthRequest(w, r, p, r.URL.Query().Get("redirect"))
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(db, r, stateCookieName, usernamePrefix, GetOIDCProvider)
+			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(db, r, usernamePrefix, GetOIDCProvider)
 			if err != nil {
 				logger.Error("failed to authenticate with Sourcegraph Operator", log.Error(err))
 				http.Error(w, safeErrMsg, errStatus)
@@ -174,26 +170,12 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					log.Error(err),
 				)
 			} else {
-				args, err := json.Marshal(map[string]any{
+				arg := map[string]any{
 					"session_expiry_seconds": int64(expiry.Seconds()),
-				})
-				if err != nil {
-					logger.Error(
-						"failed to marshal JSON for security event log argument",
-						log.String("eventName", string(database.SecurityEventNameSignInSucceeded)),
-						log.Error(err),
-					)
 				}
-				db.SecurityEventLogs().LogEvent(
-					ctx,
-					&database.SecurityEvent{
-						Name:      database.SecurityEventNameSignInSucceeded,
-						UserID:    uint32(act.UID),
-						Argument:  args,
-						Source:    "BACKEND",
-						Timestamp: time.Now(),
-					},
-				)
+				if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSignInSucceeded, r.URL.Path, uint32(act.UID), "", "BACKEND", arg); err != nil {
+					logger.Warn("Error logging security event", log.Error(err))
+				}
 			}
 
 			if !result.User.SiteAdmin {

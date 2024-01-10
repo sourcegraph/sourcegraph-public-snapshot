@@ -22,6 +22,7 @@ go_library(
         "//internal/metrics",
         "//internal/rcache",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/trace",
         "//internal/trace/policy",
         "//internal/types",
@@ -32,6 +33,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_puerkitobio_rehttp//:rehttp",
         "@com_github_sourcegraph_log//:log",
+        "@io_gitea_code_gitea//modules/hostmatcher",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )

@@ -34,3 +34,16 @@
         color: var(--white);
     }
 }
+
+.google-button {
+    background-color: var(--primary);
+    margin-bottom: 1rem;
+
+    :global(.theme-dark) & {
+        color: var(--gray-04);
+    }
+
+    :global(.theme-light) & {
+        color: var(--white);
+    }
+}

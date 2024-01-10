@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { isCodyEnabled } from '../../../cody/isCodyEnabled'
 import { MarketingBlock } from '../../../components/MarketingBlock'
@@ -98,8 +98,8 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                     <MeetCodySVG />
                 </div>
                 <Text>
-                    <Link to="https://about.sourcegraph.com/cody?utm_source=server">Learn about Cody</Link>,
-                    Sourcegraph's AI coding assistant
+                    <Link to="https://sourcegraph.com/cody?utm_source=server">Learn about Cody</Link>, Sourcegraph's AI
+                    coding assistant
                 </Text>
                 <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
                     <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
@@ -120,12 +120,9 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
             >
                 <H3 className="d-flex align-items-center">
                     <CodyInIDEIcon aria-hidden={true} />
-                    Install Cody for your IDE
+                    Get Cody in your editor
                 </H3>
-                <Text>
-                    Cody for your IDE provides the power of LLMs to help you generate and fix code, right where you
-                    commit.
-                </Text>
+                <Text>Cody helps you write, fix, and understand code in your editor.</Text>
                 <div className="mb-2">
                     <ButtonLink
                         to="/help/cody#get-cody"
@@ -140,14 +137,19 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
             {isSourcegraphDotCom ? (
                 <>
                     <div className="d-flex flex-column justify-content-center p-4">
-                        <H3>Cody for Sourcegraph.com</H3>
+                        <H3>
+                            Cody for Sourcegraph.com{' '}
+                            <Badge className="d-inline" variant="info">
+                                Experimental
+                            </Badge>
+                        </H3>
                         <Text>
                             A free, helpful AI assistant, that explains, generates, and transpiles code, in the
                             Sourcegraph web interface.
                         </Text>
                         <Text
                             as={Link}
-                            to="/cody"
+                            to="/cody/chat"
                             className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
                             onClick={onTryWebClick}
                         >
@@ -177,7 +179,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                         </Text>
                         <Text
                             as={Link}
-                            to="/cody"
+                            to="/cody/chat"
                             className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
                             onClick={onTryWebClick}
                         >

@@ -1,0 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codehost_testing",
+    srcs = [
+        "github_client.go",
+        "org.go",
+        "repo.go",
+        "reporter.go",
+        "scenario.go",
+        "team.go",
+        "user.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/codehost_testing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/codehost_testing/config",
+        "//lib/errors",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "codehost_testing_test",
+    srcs = ["scenario_test.go"],
+    embed = [":codehost_testing"],
+)

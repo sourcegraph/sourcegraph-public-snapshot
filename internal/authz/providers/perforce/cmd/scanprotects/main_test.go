@@ -24,9 +24,6 @@ func TestPerformDebugScan(t *testing.T) {
 	run(logger, "//depot/main/", input, false)
 
 	logged := exporter()
-	// For now we'll just check that the count as well as first and last lines are
-	// what we expect
-	assert.Len(t, logged, 444)
 	assert.Equal(t, "Converted depot to glob", logged[0].Message) // fails without error
 	assert.Equal(t, "Include rule", logged[len(logged)-1].Message)
 }

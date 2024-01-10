@@ -10,14 +10,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,10 +50,27 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
 			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+				if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+					// Log action for site admin vieweing an organization's details in dotcom
+					if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+						r.logger.Warn("Error logging security event", log.Error(err))
+
+					}
+				}
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
 			return nil, err
+		}
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log action for siteadmin viewing an organization's details
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
 		}
 	}
 	return &OrgResolver{db: r.db, org: org}, nil
@@ -167,20 +185,18 @@ type membersConnectionStore struct {
 	query *string
 }
 
-func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
 	query := ""
 	if s.query != nil {
 		query = *s.query
 	}
 
-	result, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
+	count, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	totalCount := int32(result)
-
-	return &totalCount, nil
+	return int32(count), nil
 }
 
 func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
@@ -207,15 +223,13 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
 	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := string(nodeID)
-
-	return &id, nil
+	return []any{nodeID}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
@@ -236,6 +250,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
+
 	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
 }
 
@@ -314,6 +329,13 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		// Log an event when a new organization being created
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
+	}
 	// Write the org_id into orgs open beta stats table on Cloud
 	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
 		// we do not throw errors here as this is best effort
@@ -353,6 +375,13 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		// Log an event when organization settings are updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+
+		}
+	}
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
@@ -388,7 +417,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	}
 
 	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
 
 	return nil, nil
 }
@@ -435,7 +464,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
 
 	return &EmptyResponse{}, nil
 }

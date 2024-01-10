@@ -3,7 +3,7 @@ package webhooks
 import (
 	"context"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -48,7 +48,7 @@ type GitHubHandler struct {
 
 func NewGitHubHandler() *GitHubHandler {
 	return &GitHubHandler{
-		logger: log.Scoped("webhooks.GitHubHandler", "github webhook handler"),
+		logger: log.Scoped("webhooks.GitHubHandler"),
 	}
 }
 
@@ -75,7 +75,7 @@ type GitLabHandler struct {
 
 func NewGitLabHandler() *GitLabHandler {
 	return &GitLabHandler{
-		logger: log.Scoped("webhooks.GitLabHandler", "gitlab webhook handler"),
+		logger: log.Scoped("webhooks.GitLabHandler"),
 	}
 }
 
@@ -102,7 +102,7 @@ type BitbucketServerHandler struct {
 
 func NewBitbucketServerHandler() *BitbucketServerHandler {
 	return &BitbucketServerHandler{
-		logger: log.Scoped("webhooks.BitbucketServerHandler", "bitbucket server webhook handler"),
+		logger: log.Scoped("webhooks.BitbucketServerHandler"),
 	}
 }
 
@@ -136,7 +136,7 @@ type BitbucketCloudHandler struct {
 
 func NewBitbucketCloudHandler() *BitbucketCloudHandler {
 	return &BitbucketCloudHandler{
-		logger: log.Scoped("webhooks.BitbucketCloudHandler", "bitbucket cloud webhook handler"),
+		logger: log.Scoped("webhooks.BitbucketCloudHandler"),
 	}
 }
 

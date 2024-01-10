@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/dghubble/gologin/github"
-	"github.com/inconshreveable/log15"
+	"github.com/dghubble/gologin/v2/github"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/githubconvert"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -45,9 +48,12 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventGitHubAuthFailed
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
-	ghUser, err := github.UserFromContext(ctx)
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.ServiceID
+}
 
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, hubSpotProps *hubspot.ContactProperties) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
+	ghUser, err := github.UserFromContext(ctx)
 	if ghUser == nil {
 		if err != nil {
 			err = errors.Wrap(err, "could not read user from context")
@@ -55,16 +61,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			err = errors.New("could not read user from context")
 		}
 		return false, nil, "Could not read GitHub user from callback request.", err
-	}
-	dc := conf.Get().Dotcom
-
-	if dc != nil && dc.MinimumExternalAccountAge > 0 {
-
-		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
-
-		if ghUser.CreatedAt.After(earliestValidCreationDate) {
-			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
-		}
 	}
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
@@ -80,6 +76,21 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return false, nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
 	}
 
+	dc := conf.Get().Dotcom
+	if dc != nil && dc.MinimumExternalAccountAge > 0 {
+		exempted := false
+		for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
+			if slices.Contains(verifiedEmails, exemptedEmail) {
+				exempted = true
+				break
+			}
+		}
+		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
+		if !exempted && ghUser.CreatedAt.After(earliestValidCreationDate) {
+			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
+		}
+	}
+
 	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
 	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
 	if !userBelongsToAllowedOrgsOrTeams {
@@ -89,7 +100,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.AccountData
-	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
+	if err := githubsvc.SetExternalAccountData(&data, githubconvert.ConvertUserV48ToV55(ghUser), token); err != nil {
 		return false, nil, "", err
 	}
 	var (
@@ -145,11 +156,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-				AnonymousUserID: anonymousUserID,
-				FirstSourceURL:  firstSourceURL,
-				LastSourceURL:   lastSourceURL,
-			})
+			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, hubSpotProps)
 			return newUserCreated, actor.FromUser(userID), "", nil // success
 		}
 		lastSafeErrMsg, lastErr = safeErrMsg, err
@@ -159,10 +166,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	return false, nil, fmt.Sprintf("Could not find existing user matching any of the verified emails: %s %s \n\nLast error was: %s", strings.Join(verifiedEmails, ", "), signupErrorMessage, lastSafeErrMsg), lastErr
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := getStateConfig()
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter, r *http.Request) {
+	session.SetData(w, r, "oauthState", "")
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
@@ -193,7 +198,7 @@ func derefInt64(i *int64) int64 {
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
+	return githubsvc.NewV3Client(log.Scoped("session.github.v3"),
 		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 
@@ -232,7 +237,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	var err error
 	page := 1
 	for hasNextPage {
-		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
+		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgs(ctx, page)
 
 		if err != nil {
 			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)

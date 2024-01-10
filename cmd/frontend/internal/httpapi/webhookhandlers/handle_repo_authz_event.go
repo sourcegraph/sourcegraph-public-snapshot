@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -55,7 +54,7 @@ func scheduleRepoUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 
 	logger.Debug("scheduleRepoUpdate: Dispatching permissions update", log.String("repo", repo.GetFullName()))
 
-	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 		RepoIDs: []api.RepoID{r.ID},
 		Options: opts,
 		Reason:  database.ReasonGitHubRepoEvent,

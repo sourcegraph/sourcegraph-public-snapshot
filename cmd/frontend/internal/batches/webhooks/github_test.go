@@ -15,7 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -156,7 +156,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential)
+		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}

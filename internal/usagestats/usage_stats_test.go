@@ -42,6 +42,7 @@ func TestGetArchive(t *testing.T) {
 		Timestamp: now,
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	err = db.EventLogs().Insert(ctx, event)
 	if err != nil {
 		t.Fatal(err)
@@ -702,7 +703,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 func setupForTest(t *testing.T) database.DB {
 	logger := logtest.Scoped(t)
-	return database.NewDB(logger, dbtest.NewDB(logger, t))
+	return database.NewDB(logger, dbtest.NewDB(t))
 }
 
 func mockTimeNow(t time.Time) {

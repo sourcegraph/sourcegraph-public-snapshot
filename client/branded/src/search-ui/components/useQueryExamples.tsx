@@ -53,8 +53,8 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
         return { singleRepoExample: quoteIfNeeded(repositoryName) }
     }
 
-    const repoName = repositoryNameParts[repositoryNameParts.length - 1]
-    const repoOrg = repositoryNameParts[repositoryNameParts.length - 2]
+    const repoName = repositoryNameParts.at(-1)
+    const repoOrg = repositoryNameParts.at(-2)
     return {
         singleRepoExample: quoteIfNeeded(`${repoOrg}/${repoName}`),
         orgReposExample: quoteIfNeeded(`${repoOrg}/`),
@@ -145,7 +145,7 @@ export function useQueryExamples(
 
         const { singleRepoExample, orgReposExample } = getRepoFilterExamples(repositoryName)
         const filePathParts = filePath.split('/')
-        const fileName = quoteIfNeeded(filePathParts[filePathParts.length - 1])
+        const fileName = quoteIfNeeded(filePathParts.at(-1)!)
 
         return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample)
     }, [queryExamplesContent, isSourcegraphDotCom])

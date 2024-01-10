@@ -26,7 +26,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 
 	mockTimeNow(eventDate)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	events := []database.Event{{
 		Name:      "ViewHome",
@@ -43,6 +43,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	}}
 
 	for _, event := range events {
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		err := db.EventLogs().Insert(ctx, &event)
 		if err != nil {
 			t.Fatal(err)

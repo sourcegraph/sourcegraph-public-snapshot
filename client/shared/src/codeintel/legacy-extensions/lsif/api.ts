@@ -23,7 +23,7 @@ export async function queryLSIF<P extends { query: string; uri: string }, R>(
     }: P,
     queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<R>>
 ): Promise<R | null> {
-    const { repo, commit, path } = parseGitURI(new URL(uri))
+    const { repo, commit, path } = parseGitURI(uri)
     const queryArguments = { repository: repo, commit, path, ...rest }
     const data = await queryGraphQL(query, queryArguments)
     return data.repository?.commit?.blob?.lsif || null

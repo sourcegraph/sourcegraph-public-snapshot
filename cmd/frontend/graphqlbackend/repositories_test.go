@@ -710,7 +710,7 @@ func TestRepositories_Integration(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	schema := mustParseGraphQLSchema(t, db)
@@ -1125,17 +1125,17 @@ func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Sch
 	}
 
 	query := fmt.Sprintf(`
-	{ 
-		repositories(%s) { 
-			nodes { 
-				name 
-			} 
-			totalCount 
-			pageInfo { 
-				hasNextPage 
-				hasPreviousPage 
-				startCursor 
-				endCursor 
+	{
+		repositories(%s) {
+			nodes {
+				name
+			}
+			totalCount
+			pageInfo {
+				hasNextPage
+				hasPreviousPage
+				startCursor
+				endCursor
 			}
 		}
 	}`, want.args)

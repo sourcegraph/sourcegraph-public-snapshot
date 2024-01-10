@@ -11,6 +11,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
@@ -31,11 +32,14 @@ var (
 	versionCacheMu sync.RWMutex
 	versionCache   = make(map[string]string)
 
-	_, noAssetVersionString = os.LookupEnv("WEBPACK_DEV_SERVER")
+	_, noAssetVersionString = os.LookupEnv("WEB_BUILDER_DEV_SERVER")
 )
 
 // Functions that are exposed to templates.
 var funcMap = template.FuncMap{
+	"assetURL": func(filePath string) string {
+		return assetsutil.URL(filePath).String()
+	},
 	"version": func(fp string) (string, error) {
 		if noAssetVersionString {
 			return "", nil

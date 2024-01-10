@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -82,7 +81,7 @@ func TestGitCommitResolver(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		client := gitserver.NewMockClient()
-		client.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+		client.GetCommitFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 			return commit, nil
 		})
 
@@ -277,14 +276,13 @@ func TestGitCommitFileNames(t *testing.T) {
 	externalServices.ListFunc.SetDefaultReturn(nil, nil)
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
 	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoID(2), repo.ID)
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		assert.Equal(t, exampleCommitSHA1, rev)
 		return exampleCommitSHA1, nil
 	}
@@ -327,7 +325,7 @@ func TestGitCommitAncestors(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return api.CommitID(rev), nil
 	}
 
@@ -364,7 +362,6 @@ func TestGitCommitAncestors(t *testing.T) {
 
 	client.CommitsFunc.SetDefaultHook(func(
 		ctx context.Context,
-		authz authz.SubRepoPermissionChecker,
 		repo api.RepoName,
 		opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 
@@ -659,7 +656,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return api.CommitID(rev), nil
 	}
 

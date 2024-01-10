@@ -4,12 +4,11 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, isMobile } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
 
-import { tauriShellOpen } from '../../../app/tauriIcpUtils'
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { CopyableText } from '../../../components/CopyableText'
@@ -27,8 +26,8 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' |
      */
     onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
+
 interface TokenRequester {
     /** The name of the source */
     name: string
@@ -47,6 +46,7 @@ interface TokenRequester {
     /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
     forwardDestination?: boolean
 }
+
 // SECURITY: Only accept callback requests from requesters on this allowed list
 const REQUESTERS: Record<string, TokenRequester> = {
     VSCEAUTH: {
@@ -56,15 +56,6 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
-    },
-    APP: {
-        name: 'Cody App',
-        redirectURL: 'sourcegraph://app/auth/callback?code=$TOKEN',
-        successMessage: 'Now opening the Cody App...',
-        infoMessage: 'You will be redirected to Cody App.',
-        callbackType: 'open',
-        onlyDotCom: true,
-        forwardDestination: true,
     },
     CODY: {
         name: 'Cody - VS Code Extension',
@@ -90,10 +81,21 @@ const REQUESTERS: Record<string, TokenRequester> = {
             'Please make sure you still have your IDE (IntelliJ, GoLand, PyCharm, etc.) running on your machine when clicking this link.',
         callbackType: 'open',
     },
+    NEOVIM: {
+        name: 'Neovim',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
+        successMessage: 'Restart Neovim and your credentials will be saved.',
+        infoMessage: 'Please make sure you still have Neovim running on your machine when clicking this link.',
+        callbackType: 'open',
+    },
 }
 
 export function isAccessTokenCallbackPage(): boolean {
     return location.pathname.endsWith('/settings/tokens/new/callback')
+}
+
+function isRedirectable(name: string | null): boolean {
+    return name !== null && (name === 'JETBRAINS' || name === 'NEOVIM')
 }
 
 /**
@@ -110,7 +112,6 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
-    isCodyApp,
 }) => {
     const isLightTheme = useIsLightTheme()
     const navigate = useNavigate()
@@ -121,8 +122,20 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
-    const requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
-    const port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
+    let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
+    let port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
+
+    // Allow a single query parameter `requestFrom=JETBRAIN-PORT_NUMBER`. The motivation for this parameter encoding is that
+    // the separate `port=NUMBER` parameter is lost when we try to log in via GitHub directly from the JetBrains IDE. By encoding the
+    // port number inside requestFrom, we have a single query parameter just like with VS Code.
+    if (requestFrom?.includes('-')) {
+        const [requestFrom1, port1, ...rest] = requestFrom?.split('-')
+        if (requestFrom1 && port1 && rest.length === 0 && port1.match(/^\d/)) {
+            requestFrom = requestFrom1
+            port = port1
+        }
+    }
+
     const destination = useMemo(() => urlSearchParams.get('destination'), [urlSearchParams])
 
     /** The validated requester where the callback request originally comes from. */
@@ -152,7 +165,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         }
 
         // SECURITY: If the request is coming from JetBrains, verify if the port is valid
-        if (requestFrom === 'JETBRAINS' && (!port || !Number.isInteger(Number(port)))) {
+        if (isRedirectable(requestFrom) && (!port || !Number.isInteger(Number(port)))) {
             navigate('../..', { relative: 'path' })
             return
         }
@@ -168,16 +181,11 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             }
         }
 
-        if (isCodyApp) {
-            // Append type=app to the url to indicate to the requester that the callback is fulfilled by App
-            const redirectURL = new URL(nextRequester.redirectURL)
-            redirectURL.searchParams.set('type', 'app')
-            nextRequester.redirectURL = redirectURL.toString()
-        }
-
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, isCodyApp, location.search, navigate, requestFrom, requester, port, destination])
+    }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester, port, destination])
+
+    const isRequestFromMobileDevice = isMobile()
 
     /**
      * We use this to handle token creation request from redirections.
@@ -191,35 +199,27 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                     switchMap(() =>
                         (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
                             tap(result => {
-                                // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
+                                // SECURITY: If the request was from a valid requester and from a non-mobile device,
+                                // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
                                 // SECURITY: Local context ONLY
-                                if (requester) {
+                                if (requester && !isRequestFromMobileDevice) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
-                                    if (requestFrom === 'JETBRAINS' && port) {
+                                    if (isRedirectable(requestFrom) && port) {
                                         uri = replacePlaceholder(uri, 'PORT', port)
                                     }
 
-                                    // If we're in App, override the callbackType
-                                    // because we need to use tauriShellOpen to open the
-                                    // callback in a browser.
-                                    // Then navigate back to the home page since App doesn't
-                                    // have a back button or tab that can be closed.
-                                    if (isCodyApp) {
-                                        tauriShellOpen(uri)
-                                        navigate('/')
-                                        return
-                                    }
-
                                     switch (requester.callbackType) {
-                                        case 'new-tab':
+                                        case 'new-tab': {
                                             window.open(uri, '_blank')
+                                        }
 
                                         // falls through
-                                        default:
+                                        default: {
                                             // open the redirect link in the same tab
                                             window.location.replace(uri)
+                                        }
                                     }
                                 }
                             }),
@@ -228,7 +228,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isCodyApp, navigate]
+            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isRequestFromMobileDevice]
         )
     )
 
@@ -260,6 +260,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             variant="primary"
                             label="Authorize"
                             loading={creationOrError === 'loading'}
+                            // we disable this if the request is made from a mobile device so the access token doesn't
+                            // get created at all. This prevents redirecting to an external site from a mobile app.
+                            disabled={isRequestFromMobileDevice}
                             onClick={onAuthorize}
                         />
                         <Button

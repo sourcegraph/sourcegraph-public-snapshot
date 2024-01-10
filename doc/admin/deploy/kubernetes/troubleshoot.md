@@ -75,7 +75,7 @@ A workaround is available: [Filtering cAdvisor metrics](./configure.md#filtering
 
 #### I don't see any metrics on my Grafana Dashboard.
 
-Missing metrics indicate Sourcegraph is having issues connecting to the Kubernetes API. For instance, running a Sourcegraph instance as non-privileged prevents services from picking up metrics through the Kubernetes API. One of the potential solutions is to grain Prometheus and cAdvisor root access.
+Missing metrics indicate Sourcegraph is having issues connecting to the Kubernetes API. For instance, running a Sourcegraph instance as non-privileged prevents services from picking up metrics through the Kubernetes API. One of the potential solutions is to grant Prometheus and cAdvisor root access.
 
 
 #### Which metrics are using the most resources?

@@ -10,7 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
-        "@com_github_google_go_github_v41//github",
+        "@com_github_google_go_github_v55//github",
         "@com_github_slack_go_slack//:slack",
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@org_golang_x_net//context/ctxhttp",

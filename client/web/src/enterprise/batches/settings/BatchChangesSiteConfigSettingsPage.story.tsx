@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, type WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -12,7 +12,7 @@ import { rolloutWindowConfigMockResult } from '../mocks'
 import { GLOBAL_CODE_HOSTS } from './backend'
 import { BatchChangesSiteConfigSettingsPage } from './BatchChangesSiteConfigSettingsPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/settings/BatchChangesSiteConfigSettingsPage',
@@ -51,7 +51,7 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): WildcardMockedRespo
     nMatches: Number.POSITIVE_INFINITY,
 })
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider
@@ -130,7 +130,7 @@ export const Overview: Story = () => (
     </WebStory>
 )
 
-export const NoItems: Story = () => (
+export const NoItems: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={new WildcardMockLink([ROLLOUT_WINDOWS_CONFIGURATION_MOCK, createMock()])}>
@@ -140,7 +140,7 @@ export const NoItems: Story = () => (
     </WebStory>
 )
 
-export const ConfigAdded: Story = () => (
+export const ConfigAdded: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider

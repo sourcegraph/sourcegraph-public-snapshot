@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { spy } from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -325,6 +325,6 @@ const render = () => (
     </>
 )
 
-export const StreamingProgressStory: Story = () => <BrandedStory>{() => <>{render()}</>}</BrandedStory>
+export const StreamingProgressStory: StoryFn = () => <BrandedStory>{() => <>{render()}</>}</BrandedStory>
 
 StreamingProgressStory.storyName = 'StreamingProgress'

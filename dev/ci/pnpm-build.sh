@@ -9,8 +9,6 @@ echo "--- Pnpm install in root"
 NODE_ENV='' ./dev/ci/pnpm-install-with-retry.sh
 
 cd "$1"
-echo "--- browserslist"
-NODE_ENV='' pnpm browserslist
 
 echo "--- build"
 pnpm run build --color

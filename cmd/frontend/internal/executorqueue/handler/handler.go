@@ -83,7 +83,6 @@ func NewHandler[T workerutil.Record](
 		metricsStore:  metricsStore,
 		logger: log.Scoped(
 			fmt.Sprintf("executor-queue-handler-%s", queueHandler.Name),
-			fmt.Sprintf("The route handler for all executor %s dbworker API tunnel endpoints", queueHandler.Name),
 		),
 		queueHandler: queueHandler,
 	}
@@ -140,7 +139,7 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 		return executortypes.Job{}, false, nil
 	}
 
-	logger := log.Scoped("dequeue", "Select a job record from the database.")
+	logger := log.Scoped("dequeue")
 	job, err := h.queueHandler.RecordTransformer(ctx, metadata.version, record, metadata.resources)
 	if err != nil {
 		if _, err := h.queueHandler.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
@@ -384,7 +383,7 @@ func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids
 		return nil, nil, err
 	}
 
-	logger := log.Scoped("heartbeat", "Write this heartbeat to the database")
+	logger := log.Scoped("heartbeat")
 
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {

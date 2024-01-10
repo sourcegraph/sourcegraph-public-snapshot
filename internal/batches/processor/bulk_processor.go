@@ -188,7 +188,7 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		b.logger.Error("Events", log.Error(err))
 		return nil, errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient("batches.bulkprocessor.mergechangeset"), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		b.logger.Error("UpsertChangesetEvents", log.Error(err))
@@ -224,7 +224,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (afterDone func(*sto
 		b.logger.Error("Events", log.Error(err))
 		return nil, errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient("batches.bulkprocessor.closechangeset"), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		b.logger.Error("UpsertChangesetEvents", log.Error(err))

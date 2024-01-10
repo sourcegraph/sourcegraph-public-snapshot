@@ -17,6 +17,8 @@ public class globals {
 
     public static final String COOLEST_STRING = "probably this one";
 
+    public record Person (String name, String address) {}
+
     public class ClassInAClass {
         boolean classy = true;
 

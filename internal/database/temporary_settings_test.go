@@ -26,7 +26,7 @@ func TestTemporarySettingsStore(t *testing.T) {
 func testGetEmpty(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	temporarySettingsStore := NewDB(logger, dbtest.NewDB(logger, t)).TemporarySettings()
+	temporarySettingsStore := NewDB(logger, dbtest.NewDB(t)).TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -41,7 +41,7 @@ func testGetEmpty(t *testing.T) {
 func testInsertAndGet(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
@@ -65,7 +65,7 @@ func testInsertAndGet(t *testing.T) {
 func testUpdateAndGet(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
@@ -94,7 +94,7 @@ func testUpdateAndGet(t *testing.T) {
 func testInsertWithInvalidData(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 
@@ -112,7 +112,7 @@ func testInsertWithInvalidData(t *testing.T) {
 func testEdit(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	usersStore := db.Users()
 	temporarySettingsStore := db.TemporarySettings()
 

@@ -8,14 +8,16 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
-      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
-      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
-      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"The
+      Sourcegraph dev experience team: https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Engineering","id":6133235,"node_id":"T_kwDOADy5QM4AXZXz","slug":"engineering","description":"Sourcegraph
+      Engineering Department","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/3979584/team/6133235","html_url":"https://github.com/orgs/sourcegraph/teams/engineering","members_url":"https://api.github.com/organizations/3979584/team/6133235/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/6133235/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -31,9 +33,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:24 GMT
+      - Fri, 13 Oct 2023 08:46:34 GMT
       Etag:
-      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      - W/"8d6d17674d2929b4e4234149dd9bdb27bc0db5cd5759162b2352c2e381d1283f"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -43,30 +45,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126F1A:3DFF1D9:61BB7827
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99E20:D8BB2:652903EA
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4986"
+      - "4860"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "14"
+      - "140"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -79,7 +77,9 @@ interactions:
       Accept:
       - application/vnd.github.v3+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions
     method: DELETE
   response:
@@ -95,7 +95,7 @@ interactions:
       Content-Security-Policy:
       - default-src 'none'
       Date:
-      - Thu, 16 Dec 2021 17:32:24 GMT
+      - Fri, 13 Oct 2023 08:46:35 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -104,30 +104,26 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126F36:3DFF1FB:61BB7828
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99E2D:D8BBF:652903EB
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4985"
+      - "4859"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "15"
+      - "141"
       X-Xss-Protection:
       - "0"
     status: 204 No Content
@@ -140,11 +136,13 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -160,9 +158,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:24 GMT
+      - Fri, 13 Oct 2023 08:46:35 GMT
       Etag:
-      - W/"85ca80472d0df1875263e8356a74b6544623e56fdc54f3218ba5ada0ec01b186"
+      - W/"56bdf05c0fb5cf85a6c3919b546ad555e1b9c7f1e00666821704d4b4ebde38d0"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -172,30 +170,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126F65:3DFF235:61BB7828
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99E40:D8BD6:652903EB
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4984"
+      - "4858"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "16"
+      - "142"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -208,11 +202,13 @@ interactions:
       Accept:
       - application/vnd.github.luke-cage-preview+json
       User-Agent:
-      - go-github
+      - go-github/v55.0.0
+      X-Github-Api-Version:
+      - "2022-11-28"
     url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
     method: GET
   response:
-    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":[],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"require_last_push_approval":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":true},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"block_creations":{"enabled":false},"required_conversation_resolution":{"enabled":false},"lock_branch":{"enabled":false},"allow_fork_syncing":{"enabled":false}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -228,9 +224,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 16 Dec 2021 17:32:24 GMT
+      - Fri, 13 Oct 2023 08:46:36 GMT
       Etag:
-      - W/"85ca80472d0df1875263e8356a74b6544623e56fdc54f3218ba5ada0ec01b186"
+      - W/"56bdf05c0fb5cf85a6c3919b546ad555e1b9c7f1e00666821704d4b4ebde38d0"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -240,30 +236,26 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=luke-cage-preview; format=json
       X-Github-Request-Id:
-      - E826:16A2:2126F75:3DFF25F:61BB7828
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - D0C0:D82FB:99E50:D8BE8:652903EC
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4983"
+      - "4857"
       X-Ratelimit-Reset:
-      - "1639679540"
+      - "1697187415"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "17"
+      - "143"
       X-Xss-Protection:
       - "0"
     status: 200 OK

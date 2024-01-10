@@ -9,6 +9,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold/v2"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -18,7 +19,7 @@ import (
 
 func Test_output(t *testing.T) {
 	test := func(input string, cmd *Output) string {
-		content, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
+		content, err := output(context.Background(), logtest.Scoped(t), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
 		if err != nil {
 			return err.Error()
 		}

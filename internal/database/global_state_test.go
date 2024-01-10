@@ -115,5 +115,5 @@ func testGlobalStateStore(t *testing.T) GlobalStateStore {
 	}
 
 	logger := logtest.Scoped(t)
-	return NewDB(logger, dbtest.NewDB(logger, t)).GlobalState()
+	return NewDB(logger, dbtest.NewDB(t)).GlobalState()
 }

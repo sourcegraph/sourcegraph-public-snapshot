@@ -10,7 +10,7 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sourcegraph/conc/pool"
 	"golang.org/x/oauth2"
@@ -66,7 +66,7 @@ func main() {
 		tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	gh, err := github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(cfg.githubURL, cfg.githubURL)
 	if err != nil {
 		writeFailure(out, "Failed to sign-in to GHE")
 		log.Fatal(err)

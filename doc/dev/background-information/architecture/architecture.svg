@@ -297,7 +297,7 @@
 <!-- worker -->
 <g id="node8" class="node">
 <title>worker</title>
-<g id="a_node8"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/worker" xlink:title="worker" target="_blank">
+<g id="a_node8"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/worker" xlink:title="worker" target="_blank">
 <polygon fill="#22ffff" stroke="black" points="627,-512 568,-512 568,-476 627,-476 627,-512"/>
 <text text-anchor="middle" x="597.5" y="-491.5" font-family="Source Code Pro, monospace" font-size="10.00">worker</text>
 </a>

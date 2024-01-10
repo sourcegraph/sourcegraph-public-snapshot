@@ -20,7 +20,7 @@ import (
 func TestRepoIDsByGlobPatterns(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "Darth Vader", true)
@@ -92,7 +92,7 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 func TestUpdateReposMatchingPatterns(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "r1", false)
@@ -159,7 +159,7 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	limit := 50
@@ -198,7 +198,7 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 
 func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 

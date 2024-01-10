@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	sglog "github.com/sourcegraph/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"

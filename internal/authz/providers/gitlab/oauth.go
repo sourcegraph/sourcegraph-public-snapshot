@@ -29,6 +29,8 @@ type OAuthProvider struct {
 	clientURL      *url.URL
 	codeHost       *extsvc.CodeHost
 	db             database.DB
+
+	syncInternalRepoPermissions bool
 }
 
 type OAuthProviderOp struct {
@@ -49,6 +51,8 @@ type OAuthProviderOp struct {
 	DB database.DB
 
 	CLI httpcli.Doer
+
+	SyncInternalRepoPermissions bool
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
@@ -56,11 +60,12 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 		token:     op.Token,
 		tokenType: op.TokenType,
 
-		urn:            op.URN,
-		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
-		clientURL:      op.BaseURL,
-		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
-		db:             op.DB,
+		urn:                         op.URN,
+		clientProvider:              gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
+		clientURL:                   op.BaseURL,
+		codeHost:                    extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
+		db:                          op.DB,
+		syncInternalRepoPermissions: op.SyncInternalRepoPermissions,
 	}
 }
 
@@ -118,7 +123,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		NeedsRefreshBuffer: 5,
 	}
 	client := p.clientProvider.NewClient(token)
-	return listProjects(ctx, client)
+	return listProjects(ctx, client, p.syncInternalRepoPermissions)
 }
 
 // FetchRepoPerms is not implemented for the OAuthProvider type.

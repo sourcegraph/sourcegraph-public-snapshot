@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
 import type { Position, Range } from '@sourcegraph/extension-api-types'
 
 import { type CodeViewProps, DOM } from './testutils/dom'

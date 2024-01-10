@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { fireEvent, screen } from '@testing-library/react'
+import { describe, expect, test } from 'vitest'
 
 import { Shortcut, ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

@@ -29,4 +29,4 @@ This document will take you through how to add, enable, or disable an experiment
 
 * [Sourcegraph - Configuration Settings](https://docs.sourcegraph.com/admin/config/settings)
 * [Sourcegraph - Site configuration](https://docs.sourcegraph.com/admin/config/site_config)
-* Learn more about new experimental features on our [Blog](https://about.sourcegraph.com/blog) or Twitter [@sourcegraph](https://twitter.com/sourcegraph/)
+* Learn more about new experimental features on our [Blog](https://sourcegraph.com/blog) or Twitter [@sourcegraph](https://twitter.com/sourcegraph/)

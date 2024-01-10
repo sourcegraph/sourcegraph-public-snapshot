@@ -27,7 +27,7 @@ func TestRepositoryMetadata(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(t)))
 
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -49,7 +49,7 @@ func TestRepositoryMetadata(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db, gitserver.NewClient())
+	schema := newSchemaResolver(db, gitserver.NewTestClient(t))
 	gqlID := MarshalRepositoryID(repo.ID)
 
 	t.Run("add", func(t *testing.T) {

@@ -51,7 +51,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'settingsURL'
     | 'viewerCanAdminister'
     | 'tosAccepted'
-    | 'searchable'
     | 'organizations'
     | 'session'
     | 'emails'
@@ -115,7 +114,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
-    codyAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -195,20 +193,14 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
+    /** Whether to enable the document reference counts feature (a.k.a ranking job). Currently experimental. */
+    codeIntelRankingDocumentReferenceCountsEnabled: boolean
+
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
 
     /** Whether embeddings are enabled on this site. */
     embeddingsEnabled: boolean
-
-    /**
-     * Local git URL, it's used only to create a local external service
-     * in Cody App.
-     */
-    srcServeGitUrl: string
-
-    /** Whether users are allowed to add their own code and at what permission level. */
-    externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]

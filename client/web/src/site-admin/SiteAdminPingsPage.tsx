@@ -361,33 +361,35 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     <li>
                         IDE extensions data
                         <ul>
-                            Aggregate counts of current daily, weekly, and monthly searches performed:
                             <li>
-                                <ul>Count of unique users who performed searches</ul>
-                                <ul>Count of total searches performed</ul>
+                                Aggregate counts of current daily, weekly, and monthly searches performed:
+                                <ul>
+                                    <li>Count of unique users who performed searches</li>
+                                    <li>Count of total searches performed</li>
+                                </ul>
                             </li>
                         </ul>
                         <ul>
-                            Aggregate counts of daily user state:
-                            <li>
-                                <ul>Count of unique users who installed the extension</ul>
-                                <ul>Count of unique users who uninstalled the extension</ul>
-                            </li>
+                            <li>Aggregate counts of daily user state:</li>
+                            <ul>
+                                <li>Count of unique users who installed the extension</li>
+                                <li>Count of unique users who uninstalled the extension</li>
+                            </ul>
+                            <li>Aggregate count of daily redirects from extension to Sourcegraph instance</li>
                         </ul>
-                        <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
                     </li>
                     <li>
                         Migrated extensions data
                         <ul>
-                            Aggregate data of:
-                            <li>
-                                <ul>Count interactions with the Git blame feature</ul>
-                                <ul>Count of unique users who interacted with the Git blame feature</ul>
-                                <ul>Count interactions with the open in editor feature</ul>
-                                <ul>Count of unique users who interacted with the open in editor feature</ul>
-                                <ul>Count interactions with the search exports feature</ul>
-                                <ul>Count of unique users who interacted with the search exports feature</ul>
-                            </li>
+                            <li>Aggregate data of:</li>
+                            <ul>
+                                <li>Count interactions with the Git blame feature</li>
+                                <li>Count of unique users who interacted with the Git blame feature</li>
+                                <li>Count interactions with the open in editor feature</li>
+                                <li>Count of unique users who interacted with the open in editor feature</li>
+                                <li>Count interactions with the search exports feature</li>
+                                <li>Count of unique users who interacted with the search exports feature</li>
+                            </ul>
                         </ul>
                     </li>
                     <li>
@@ -408,6 +410,30 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </li>
                     <li>Histogram of cloned repository sizes</li>
                     <li>Aggregate daily, weekly, monthly repository metadata usage statistics</li>
+                    <li>
+                        Cody providers data
+                        <ul>
+                            <li>
+                                Completions
+                                <ul>
+                                    <li>
+                                        Provider (e.g., "sourcegraph", "anthropic", "openai", "azure-openai",
+                                        "fireworks", "aws-bedrock", etc.)
+                                    </li>
+                                    <li>Chat model (included only for "sourcegraph" provider)</li>
+                                    <li>Fast chat model (included only for "sourcegraph" provider)</li>
+                                    <li>Completion model (included only for "sourcegraph" provider)</li>
+                                </ul>
+                            </li>
+                            <li>
+                                Embeddings
+                                <ul>
+                                    <li>Provider (e.g., "sourcegraph", "openai", "azure-openai", etc.)</li>
+                                    <li>Model</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
                 {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>

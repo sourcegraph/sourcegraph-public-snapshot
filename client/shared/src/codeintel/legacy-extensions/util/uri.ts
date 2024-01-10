@@ -1,12 +1,15 @@
+import { parseRepoURI } from '../../../util/url'
+
 /**
  * Extracts the components of a text document URI.
  *
- * @param url The text document URL.
+ * @param uri The text document URL.
  */
-export function parseGitURI({ hostname, pathname, search, hash }: URL): { repo: string; commit: string; path: string } {
+export function parseGitURI(uri: string): { repo: string; commit: string; path: string } {
+    const result = parseRepoURI(uri)
     return {
-        repo: hostname + decodeURIComponent(pathname),
-        commit: decodeURIComponent(search.slice(1)),
-        path: decodeURIComponent(hash.slice(1)),
+        repo: result.repoName,
+        commit: result.revision ?? '',
+        path: result.filePath ?? '',
     }
 }

@@ -122,7 +122,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticated
                             <CodyLogo />
                             {showHistory ? 'Chats' : 'Ask Cody'}
                             <div className="ml-2">
-                                <Badge variant="info">Beta</Badge>
+                                <Badge variant="info">Experimental</Badge>
                             </div>
                         </div>
                     </div>

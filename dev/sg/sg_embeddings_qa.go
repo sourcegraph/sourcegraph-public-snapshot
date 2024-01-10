@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -16,7 +16,7 @@ var contextCommand = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "url",
-			Value:   "http://localhost:9991/search",
+			Value:   "http://127.0.0.1:9991/search",
 			Aliases: []string{"u"},
 			Usage:   "Run the evaluation against this endpoint",
 		},

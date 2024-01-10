@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -38,6 +39,7 @@ func Search(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	features search.Features,
+	contextLines int,
 	onMatches func([]*protocol.FileMatch),
 ) (limitHit bool, err error) {
 	if MockSearch != nil {
@@ -62,16 +64,15 @@ func Search(
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,
 			IsStructuralPat:              p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
 			IsCaseSensitive:              p.IsCaseSensitive,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 			IsNegated:                    p.IsNegated,
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
-		Indexed:      indexed,
-		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
+		Indexed:         indexed,
+		FetchTimeout:    fetchTimeout,
+		NumContextLines: int32(contextLines),
 	}
 
 	body, err := json.Marshal(r)

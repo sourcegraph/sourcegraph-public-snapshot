@@ -77,7 +77,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	rcache.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
@@ -190,7 +190,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.ForChangeset(ctx, bstore, c, sources.AuthenticationStrategyUserCredential)
+		src, err := sourcer.ForChangeset(ctx, bstore, c, sources.AuthenticationStrategyUserCredential, githubRepo)
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}

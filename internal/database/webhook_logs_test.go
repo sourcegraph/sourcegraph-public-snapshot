@@ -26,7 +26,7 @@ func TestWebhookLogStore(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("Create", func(t *testing.T) {
 		t.Parallel()

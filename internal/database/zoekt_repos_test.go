@@ -24,13 +24,13 @@ func TestZoektRepos_GetZoektRepo(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 
-	repo1, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo1"})
-	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo2"})
-	repo3, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo3"})
+	repo1, _ := createTestRepo(ctx, t, db, "repo1")
+	repo2, _ := createTestRepo(ctx, t, db, "repo2")
+	repo3, _ := createTestRepo(ctx, t, db, "repo3")
 
 	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
 		repo1.ID: {RepoID: repo1.ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
@@ -45,7 +45,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 	timeUnix := int64(1686763487)
@@ -56,7 +56,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 		"repo2",
 		"repo3",
 	} {
-		r, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: name})
+		r, _ := createTestRepo(ctx, t, db, name)
 		repos = append(repos, types.MinimalRepo{ID: r.ID, Name: r.Name})
 	}
 
@@ -212,7 +212,7 @@ func assertZoektRepos(t *testing.T, ctx context.Context, s *zoektReposStore, wan
 
 func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	logger := logtest.Scoped(b)
-	db := NewDB(logger, dbtest.NewDB(logger, b))
+	db := NewDB(logger, dbtest.NewDB(b))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 

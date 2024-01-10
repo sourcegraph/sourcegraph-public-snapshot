@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -6,7 +6,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { ValueLegendItem, ValueLegendList, type ValueLegendListProps } from './ValueLegendList'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/src/site-admin/analytics/components/ValueLegendList',
@@ -15,7 +15,7 @@ const config: Meta = {
 
 export default config
 
-export const SingleValueLegendItem: Story = () => (
+export const SingleValueLegendItem: StoryFn = () => (
     <WebStory>
         {() => (
             <Container>
@@ -27,7 +27,7 @@ export const SingleValueLegendItem: Story = () => (
 
 SingleValueLegendItem.storyName = 'Single value legend item'
 
-export const ValueLegendListStory: Story = () => {
+export const ValueLegendListStory: StoryFn = () => {
     const items: ValueLegendListProps['items'] = [
         {
             value: 12345,

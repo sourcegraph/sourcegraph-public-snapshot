@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { Card } from '@sourcegraph/wildcard'
@@ -8,7 +8,7 @@ import type { GitCommitFields } from '../../graphql-operations'
 
 import { GitCommitNode } from './GitCommitNode'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
 
@@ -75,7 +75,7 @@ const gitCommitNode: GitCommitFields = {
         'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
 }
 
-export const FullCustomizable: Story = args => (
+export const FullCustomizable: StoryFn = args => (
     <WebStory>
         {() => (
             <Card>
@@ -94,29 +94,31 @@ export const FullCustomizable: Story = args => (
 FullCustomizable.argTypes = {
     compact: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     expandCommitMessageBody: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     showSHAAndParentsRow: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     hideExpandCommitMessageBody: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
     preferAbsoluteTimestamps: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
+}
+FullCustomizable.args = {
+    compact: false,
+    expandCommitMessageBody: false,
+    showSHAAndParentsRow: false,
+    hideExpandCommitMessageBody: false,
+    preferAbsoluteTimestamps: false,
 }
 
 FullCustomizable.storyName = 'Full customizable'
 
-export const Compact: Story = () => (
+export const Compact: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -132,7 +134,7 @@ export const Compact: Story = () => (
     </WebStory>
 )
 
-export const CommitMessageExpand: Story = () => (
+export const CommitMessageExpand: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -150,7 +152,7 @@ export const CommitMessageExpand: Story = () => (
 
 CommitMessageExpand.storyName = 'Commit message expanded'
 
-export const SHAAndParentShown: Story = () => (
+export const SHAAndParentShown: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -168,7 +170,7 @@ export const SHAAndParentShown: Story = () => (
 
 SHAAndParentShown.storyName = 'SHA and parent shown'
 
-export const ExpandCommitMessageButtonHidden: Story = () => (
+export const ExpandCommitMessageButtonHidden: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>
@@ -247,7 +249,7 @@ const perforceChangelistNode: GitCommitFields = {
         'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
 }
 
-export const PerforceChangelist: Story = () => (
+export const PerforceChangelist: StoryFn = () => (
     <WebStory>
         {() => (
             <Card>

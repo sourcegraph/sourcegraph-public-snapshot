@@ -3,12 +3,12 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
+import { Text, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { AuthPageWrapper } from '../../auth/AuthPageWrapper'
 import { type SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
-import { BrandLogo } from '../../components/branding/BrandLogo'
+import { PageTitle } from '../../components/PageTitle'
 import type { SourcegraphContext } from '../../jscontext'
 import { PageRoutes } from '../../routes.constants'
 
@@ -51,10 +51,7 @@ interface Props {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
-    context: Pick<
-        SourcegraphContext,
-        'sourcegraphDotComMode' | 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'
-    >
+    context: Pick<SourcegraphContext, 'authPasswordPolicy' | 'authMinPasswordLength'>
 }
 
 /**
@@ -66,39 +63,46 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
     needsSiteInit = window.context.needsSiteInit,
     context,
 }) => {
-    const isLightTheme = useIsLightTheme()
+    // This page is never shown on dotcom, to keep the API surface
+    // of this component clean, we don't expose this option.
+    const sourcegraphDotComMode = false
 
     if (!needsSiteInit) {
         return <Navigate to={PageRoutes.Search} replace={true} />
     }
 
     return (
-        <div className={styles.siteInitPage}>
-            <Card className={styles.content}>
-                <CardBody className="p-4">
-                    <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
-                    {authenticatedUser ? (
-                        // If there's already a user but the site is not initialized, then the we're in an
-                        // unexpected state, likely because of a previous bug or because someone manually modified
-                        // the site_config DB table.
-                        <Text>
+        <>
+            <PageTitle title="Site initialization" />
+            <AuthPageWrapper
+                title="Welcome to Sourcegraph"
+                description="Create an admin account to get started"
+                sourcegraphDotComMode={sourcegraphDotComMode}
+                className={styles.wrapper}
+            >
+                {authenticatedUser ? (
+                    // If there's already a user but the site is not initialized, then the we're in an
+                    // unexpected state, likely because of a previous bug or because someone manually modified
+                    // the site_config DB table.
+                    <Container>
+                        <Text className="mb-0">
                             You're signed in as <strong>{authenticatedUser.username}</strong>. A site admin must
                             initialize Sourcegraph before you can continue.
                         </Text>
-                    ) : (
-                        <>
-                            <H2 className="site-init-page__header">Welcome</H2>
-                            <Text>Create an admin account to start using Sourcegraph.</Text>
-                            <SignUpForm
-                                className="w-100"
-                                buttonLabel="Create admin account & continue"
-                                onSignUp={initSite}
-                                context={context}
-                            />
-                        </>
-                    )}
-                </CardBody>
-            </Card>
-        </div>
+                    </Container>
+                ) : (
+                    <Container>
+                        <SignUpForm
+                            className="w-100"
+                            buttonLabel="Create admin account and continue"
+                            onSignUp={initSite}
+                            // This page is never shown on dotcom, to keep the API surface
+                            // of this component clean, we don't expose this option.
+                            context={{ ...context, sourcegraphDotComMode, authProviders: [] }}
+                        />
+                    </Container>
+                )}
+            </AuthPageWrapper>
+        </>
     )
 }

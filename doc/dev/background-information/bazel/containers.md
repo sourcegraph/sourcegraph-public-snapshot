@@ -148,13 +148,13 @@ Example:
 
 ```
 # Create a tarball that can be loaded in Docker of the worker service:
-bazel build //enterprise/cmd/worker:image_tarball --config darwin-docker
+bazel build //cmd/worker:image_tarball --config darwin-docker
 
 # Load the image in Docker: 
-docker load --input $(bazel cquery //enterprise/cmd/worker:image_tarball  --config darwin-docker --output=files)
+docker load --input $(bazel cquery //cmd/worker:image_tarball  --config darwin-docker --output=files)
 
 # Run the container structure tests 
-bazel test //enterprise/cmd/worker:image_test --config darwin-docker
+bazel test //cmd/worker:image_test --config darwin-docker
 ```
 
 Finally, _if and only if_ we want our image to be released on registries, we need to add the `oci_push` rule. It will take care of definining which registry to push on, as well as tagging the image, through a process referred as `stamping` that we will cover a bit further. 

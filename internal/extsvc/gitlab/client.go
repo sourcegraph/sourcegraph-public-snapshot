@@ -180,12 +180,12 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
-	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient", ""), p.urn))
+	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), p.urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
 		urn:                 p.urn,
-		log:                 log.Scoped("gitlabAPIClient", "client used to make API requests to Gitlab."),
+		log:                 log.Scoped("gitlabAPIClient"),
 		baseURL:             p.baseURL,
 		httpClient:          p.httpClient,
 		projCache:           projCache,
@@ -268,9 +268,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
-	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
-		return c.httpClient.Do(r)
-	})
+	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client"), c.httpClient, req, c.Auth)
 	if resp != nil {
 		c.externalRateLimiter.Update(resp.Header)
 	}
@@ -302,7 +300,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.internalRateLimiter = ratelimit.NewInstrumentedLimiter(c.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient", ""), c.urn))
+	cc.internalRateLimiter = ratelimit.NewInstrumentedLimiter(c.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), c.urn))
 	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 

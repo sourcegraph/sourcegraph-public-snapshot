@@ -20,12 +20,13 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
                 isRoot: true,
                 url,
                 entries: toplevelFiles.map(name => ({
+                    __typename: 'GitBlob',
+                    languages: [],
                     name,
                     path: name,
                     isDirectory: false,
                     url: `${url}/-/blob/${name}`,
                     submodule: null,
-                    isSingleChild: false,
                 })),
             },
         },
@@ -49,6 +50,7 @@ export const createBlobContentResult = (content: string, lsif?: JsonDocument): B
                     aborted: false,
                     lsif: lsif ? JSON.stringify(lsif) : '',
                 },
+                languages: [], // OK as this is only for testing
             },
         },
         changelist: null,
@@ -104,6 +106,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         changelist: null,
         isFork: false,
         metadata: [],
+        topics: [],
     },
 })
 
@@ -135,6 +138,7 @@ export const createResolveCloningRepoRevisionResult = (
         changelist: null,
         isFork: false,
         metadata: [],
+        topics: [],
     },
     errors: [
         {

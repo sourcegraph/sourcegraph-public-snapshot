@@ -174,3 +174,11 @@
 .not-enabled-block {
     background-color: var(--body-bg);
 }
+
+.storage-quota-error {
+    margin-top: 8rem;
+    text-align: center;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}

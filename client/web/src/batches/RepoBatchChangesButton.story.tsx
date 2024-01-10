@@ -1,4 +1,4 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -9,7 +9,7 @@ import { WebStory } from '../components/WebStory'
 import { REPO_CHANGESETS_STATS } from './backend'
 import { RepoBatchChangesButton } from './RepoBatchChangesButton'
 
-const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container web-content">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/repo',
@@ -20,7 +20,7 @@ export default config
 let openValue = 0
 let mergedValue = 0
 
-export const RepoButton: Story = args => (
+export const RepoButton: StoryFn = args => (
     <WebStory>
         {() => {
             openValue = args.open
@@ -57,12 +57,14 @@ export const RepoButton: Story = args => (
 RepoButton.argTypes = {
     open: {
         control: { type: 'number' },
-        defaultValue: 2,
     },
     merged: {
         control: { type: 'number' },
-        defaultValue: 47,
     },
+}
+RepoButton.args = {
+    open: 2,
+    merged: 47,
 }
 
 RepoButton.storyName = 'RepoButton'

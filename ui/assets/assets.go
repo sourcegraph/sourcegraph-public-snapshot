@@ -6,11 +6,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// AssetsProvider abstracts accessing assets and the Webpack manifest.
+// AssetsProvider abstracts accessing assets and the web build manifest.
 // One implementation must be explicitly set in the main.go using
 // this code. See ui/assets/doc.go
 type AssetsProvider interface {
-	LoadWebpackManifest() (*WebpackManifest, error)
+	LoadWebBuildManifest() (*WebBuildManifest, error)
 	Assets() http.FileSystem
 }
 
@@ -26,10 +26,10 @@ var Provider AssetsProvider = FailingAssetsProvider{}
 // It's meant to be a safeguard against misconfiguration.
 type FailingAssetsProvider struct{}
 
-func (p FailingAssetsProvider) LoadWebpackManifest() (*WebpackManifest, error) {
-	return nil, errors.New("assets are not configured for this binary, please see ui/assets")
+func (p FailingAssetsProvider) LoadWebBuildManifest() (*WebBuildManifest, error) {
+	return nil, errors.New("assets are not configured for this binary, please see ui/assets/doc.go")
 }
 
 func (p FailingAssetsProvider) Assets() http.FileSystem {
-	panic("assets are not configured for this binary, please see ui/assets")
+	panic("assets are not configured for this binary, please see ui/assets/doc.go")
 }

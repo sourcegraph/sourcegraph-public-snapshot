@@ -74,7 +74,7 @@ func TestUpdateTriggerJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("handles null results", func(t *testing.T) {
 		ctx := context.Background()
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		_ = populateCodeMonitorFixtures(t, db)
 		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
 		require.NoError(t, err)
@@ -89,7 +89,7 @@ func TestListTriggerJobs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("handles null results", func(t *testing.T) {
 		ctx := context.Background()
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		f := populateCodeMonitorFixtures(t, db)
 		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
 		require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestEnqueueTriggerJobs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("does not enqueue jobs for deleted users", func(t *testing.T) {
 		ctx := context.Background()
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		f := populateCodeMonitorFixtures(t, db)
 
 		err := db.Users().Delete(ctx, f.User.ID)

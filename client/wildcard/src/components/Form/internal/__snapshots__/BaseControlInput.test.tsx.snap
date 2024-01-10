@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`BaseControlInput checkbox input renders correctly with a hidden label 1`] = `
+exports[`BaseControlInput > checkbox input > renders correctly with a hidden label 1`] = `
 <div
   class="form-check"
 >
@@ -13,7 +13,7 @@ exports[`BaseControlInput checkbox input renders correctly with a hidden label 1
 </div>
 `;
 
-exports[`BaseControlInput checkbox input renders correctly with a visible label 1`] = `
+exports[`BaseControlInput > checkbox input > renders correctly with a visible label 1`] = `
 <div
   class="form-check"
 >
@@ -32,7 +32,7 @@ exports[`BaseControlInput checkbox input renders correctly with a visible label 
 </div>
 `;
 
-exports[`BaseControlInput checkbox input renders correctly with an externally provided label 1`] = `
+exports[`BaseControlInput > checkbox input > renders correctly with an externally provided label 1`] = `
 <div>
   <span
     id="test-label"
@@ -52,7 +52,7 @@ exports[`BaseControlInput checkbox input renders correctly with an externally pr
 </div>
 `;
 
-exports[`BaseControlInput checkbox input renders with correct styles when invalid 1`] = `
+exports[`BaseControlInput > checkbox input > renders with correct styles when invalid 1`] = `
 <div
   class="form-check"
 >
@@ -76,7 +76,7 @@ exports[`BaseControlInput checkbox input renders with correct styles when invali
 </div>
 `;
 
-exports[`BaseControlInput checkbox input renders with correct styles when valid 1`] = `
+exports[`BaseControlInput > checkbox input > renders with correct styles when valid 1`] = `
 <div
   class="form-check"
 >
@@ -100,7 +100,7 @@ exports[`BaseControlInput checkbox input renders with correct styles when valid 
 </div>
 `;
 
-exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
+exports[`BaseControlInput > checkbox input > renders with message correctly 1`] = `
 <div
   class="form-check"
 >
@@ -124,7 +124,7 @@ exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
 </div>
 `;
 
-exports[`BaseControlInput radio input renders correctly with a hidden label 1`] = `
+exports[`BaseControlInput > radio input > renders correctly with a hidden label 1`] = `
 <div
   class="form-check"
 >
@@ -137,7 +137,7 @@ exports[`BaseControlInput radio input renders correctly with a hidden label 1`] 
 </div>
 `;
 
-exports[`BaseControlInput radio input renders correctly with a visible label 1`] = `
+exports[`BaseControlInput > radio input > renders correctly with a visible label 1`] = `
 <div
   class="form-check"
 >
@@ -156,7 +156,7 @@ exports[`BaseControlInput radio input renders correctly with a visible label 1`]
 </div>
 `;
 
-exports[`BaseControlInput radio input renders correctly with an externally provided label 1`] = `
+exports[`BaseControlInput > radio input > renders correctly with an externally provided label 1`] = `
 <div>
   <span
     id="test-label"
@@ -176,7 +176,7 @@ exports[`BaseControlInput radio input renders correctly with an externally provi
 </div>
 `;
 
-exports[`BaseControlInput radio input renders with correct styles when invalid 1`] = `
+exports[`BaseControlInput > radio input > renders with correct styles when invalid 1`] = `
 <div
   class="form-check"
 >
@@ -200,7 +200,7 @@ exports[`BaseControlInput radio input renders with correct styles when invalid 1
 </div>
 `;
 
-exports[`BaseControlInput radio input renders with correct styles when valid 1`] = `
+exports[`BaseControlInput > radio input > renders with correct styles when valid 1`] = `
 <div
   class="form-check"
 >
@@ -224,7 +224,7 @@ exports[`BaseControlInput radio input renders with correct styles when valid 1`]
 </div>
 `;
 
-exports[`BaseControlInput radio input renders with message correctly 1`] = `
+exports[`BaseControlInput > radio input > renders with message correctly 1`] = `
 <div
   class="form-check"
 >

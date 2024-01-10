@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../../../../../stories/BrandedStory'
 import { H2 } from '../../../../../Typography'
@@ -89,7 +89,7 @@ const ACTIVE_POINT: MinimumPointInfo = {
     xValue: new Date('2020-05-07T19:21:40.286Z'),
 }
 
-export const TooltipLayoutDemo: Story = () => (
+export const TooltipLayoutDemo: StoryFn = () => (
     <div className="d-flex flex-column" style={{ gap: 20 }}>
         <div>
             <H2>Regular tooltip</H2>

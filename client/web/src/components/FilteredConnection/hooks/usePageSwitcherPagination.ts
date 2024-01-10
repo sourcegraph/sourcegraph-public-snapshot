@@ -92,7 +92,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
 
     // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... }
     // does not work here and get rid of the any cast.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     const queryVariables: TVariables = {
         ...variables,
         ...initialPaginationArgs,

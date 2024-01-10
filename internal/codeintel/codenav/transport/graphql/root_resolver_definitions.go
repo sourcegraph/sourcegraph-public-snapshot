@@ -37,7 +37,7 @@ func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolve
 	}})
 	defer endObservation()
 
-	def, err := r.codeNavSvc.NewGetDefinitions(ctx, requestArgs, r.requestState)
+	def, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState)
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetDefinitions")
 	}

@@ -32,7 +32,7 @@ type ReposStore interface {
 
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.Index, err error)
-	QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error)
+	QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo) (err error)
 }
 
 type RepoUpdaterClient interface {

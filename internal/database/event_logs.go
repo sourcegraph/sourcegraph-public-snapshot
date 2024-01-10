@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type EventLogStore interface {
@@ -45,7 +46,19 @@ type EventLogStore interface {
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
+	// BulkInsert should only be used in internal/telemetry/teestore.
+	// BulkInsert does NOT respect context cancellation, as it is assumed that
+	// we never drop events once we attempt to store it.
+	//
+	// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+	// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 	BulkInsert(ctx context.Context, events []*Event) error
+
+	// Insert is a legacy mechanism for inserting a single event.
+	//
+	// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+	// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
+	Insert(ctx context.Context, e *Event) error
 
 	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
 	CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error)
@@ -81,6 +94,9 @@ type EventLogStore interface {
 	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
 
+	// CountBySQL gets a count of event logged based on the query.
+	CountBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error)
+
 	// CountByUserID gets a count of events logged by a given user.
 	CountByUserID(ctx context.Context, userID int32) (int, error)
 
@@ -111,9 +127,6 @@ type EventLogStore interface {
 
 	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
 	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
-
-	// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
-	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
 	LatestPing(ctx context.Context) (*Event, error)
@@ -213,6 +226,8 @@ type Event struct {
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
+	// We should eventually remove this Insert helper entirely.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
@@ -256,10 +271,21 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 				true,
 				EventLogsSourcegraphOperatorKey,
 			)
-			publicArgument = json.RawMessage(result)
 			if err != nil {
 				return errors.Wrap(err, `edit "public_argument" for Sourcegraph operator`)
 			}
+			publicArgument = json.RawMessage(result)
+		}
+		if tr := trace.FromContext(ctx); tr.SpanContext().IsValid() {
+			result, err := jsonc.Edit(
+				string(publicArgument),
+				tr.SpanContext().TraceID().String(),
+				"interaction.trace_id",
+			)
+			if err != nil {
+				return errors.Wrap(err, `edit "interaction.trace_id" for trace context`)
+			}
+			publicArgument = json.RawMessage(result)
 		}
 
 		rowValues <- []any{
@@ -289,8 +315,14 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	}
 	close(rowValues)
 
+	// Create a cancel-free context to avoid interrupting the insert when
+	// the parent context is cancelled, and add our own timeout on the insert
+	// to make sure things don't get stuck in an unbounded manner.
+	insertCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
+	defer cancel()
+
 	return batch.InsertValues(
-		ctx,
+		insertCtx,
 		l.Handle(),
 		"event_logs",
 		batch.MaxNumPostgresParameters,
@@ -392,15 +424,15 @@ func (l *eventLogStore) LatestPing(ctx context.Context) (*Event, error) {
 }
 
 func (l *eventLogStore) CountByUserID(ctx context.Context, userID int32) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
 func (l *eventLogStore) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
 }
 
 func (l *eventLogStore) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
 }
 
 func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
@@ -408,11 +440,11 @@ func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID i
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name IN (%s)", userID, sqlf.Join(items, ",")))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name IN (%s)", userID, sqlf.Join(items, ",")))
 }
 
-// countBySQL gets a count of event logs.
-func (l *eventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
+// CountBySQL gets a count of event logs.
+func (l *eventLogStore) CountBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 	var count int
@@ -1169,10 +1201,10 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 		}
 
 		byLanguage[language] = CodeIntelligenceRepositoryCountsForLanguage{
-			NumRepositoriesWithUploadRecords:      safeDerefIntPtr(numRepositoriesWithUploadRecords),
-			NumRepositoriesWithFreshUploadRecords: safeDerefIntPtr(numRepositoriesWithFreshUploadRecords),
-			NumRepositoriesWithIndexRecords:       safeDerefIntPtr(numRepositoriesWithIndexRecords),
-			NumRepositoriesWithFreshIndexRecords:  safeDerefIntPtr(numRepositoriesWithFreshIndexRecords),
+			NumRepositoriesWithUploadRecords:      pointers.DerefZero(numRepositoriesWithUploadRecords),
+			NumRepositoriesWithFreshUploadRecords: pointers.DerefZero(numRepositoriesWithFreshUploadRecords),
+			NumRepositoriesWithIndexRecords:       pointers.DerefZero(numRepositoriesWithIndexRecords),
+			NumRepositoriesWithFreshIndexRecords:  pointers.DerefZero(numRepositoriesWithFreshIndexRecords),
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -1180,14 +1212,6 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 	}
 
 	return byLanguage, nil
-}
-
-func safeDerefIntPtr(v *int) int {
-	if v != nil {
-		return *v
-	}
-
-	return 0
 }
 
 var codeIntelligenceRepositoryCountsByLanguageQuery = `

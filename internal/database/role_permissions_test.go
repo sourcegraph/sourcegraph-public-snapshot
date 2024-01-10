@@ -21,7 +21,7 @@ func TestRolePermissionAssign(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -97,7 +97,7 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	_, p := createRoleAndPermission(ctx, t, db)
@@ -152,7 +152,7 @@ func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	_, p := createRoleAndPermission(ctx, t, db)
@@ -196,7 +196,7 @@ func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	r, p := createRoleAndPermission(ctx, t, db)
@@ -254,7 +254,7 @@ func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 func TestRolePermissionGetByRoleID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	r := createTestRoleForRolePermission(ctx, "TEST ROLE", t, db)
@@ -298,7 +298,7 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 func TestRolePermissionGetByPermissionID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	p := createTestPermissionForRolePermission(ctx, "READ", t, db)
@@ -343,7 +343,7 @@ func TestRolePermissionRevoke(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -435,7 +435,7 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -511,7 +511,7 @@ func TestBulkRevokePermissionsForRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -580,7 +580,7 @@ func TestSetPermissionsForRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 

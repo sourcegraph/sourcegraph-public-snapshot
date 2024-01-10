@@ -1,5 +1,6 @@
 import { RangeSet, Text } from '@codemirror/state'
 import { Decoration } from '@codemirror/view'
+import { describe, expect, it } from 'vitest'
 
 import type { DocumentHighlight } from '@sourcegraph/codeintellify'
 

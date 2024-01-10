@@ -1,10 +1,10 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { ClosedNotice } from './ClosedNotice'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/details/ClosedNotice',
@@ -13,6 +13,6 @@ const config: Meta = {
 
 export default config
 
-export const BatchChangeClosed: Story = () => <WebStory>{() => <ClosedNotice closedAt="2021-02-02" />}</WebStory>
+export const BatchChangeClosed: StoryFn = () => <WebStory>{() => <ClosedNotice closedAt="2021-02-02" />}</WebStory>
 
 BatchChangeClosed.storyName = 'Batch change closed'

@@ -16,6 +16,12 @@
       "group": "Search",
       "examples": [true]
     },
+    "search.index.shardConcurrency": {
+      "description": "The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. This is exposed as a safeguard and should usually not require being set.",
+      "type": "integer",
+      "group": "Search",
+      "examples": ["10"]
+    },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
       "type": "array",
@@ -29,7 +35,7 @@
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["20"]]
+      "examples": ["20"]
     },
     "cloneProgress.log": {
       "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
@@ -48,6 +54,37 @@
       "description": "Prompts user to install new browser for non es5",
       "type": "boolean",
       "default": false
+    },
+    "rateLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "graphQLMaxDepth": {
+          "description": "Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.",
+          "type": "integer",
+          "default": 30
+        },
+        "graphQLMaxAliases": {
+          "description": "Maximum number of aliases allowed in a GraphQL query",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxFieldCount": {
+          "description": "Maximum number of estimated fields allowed in a GraphQL response",
+          "type": "integer",
+          "default": 500000
+        },
+        "graphQLMaxDuplicateFieldCount": {
+          "description": "Maximum number of duplicate fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxUniqueFieldCount": {
+          "description": "Maximum number of unique fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
+        }
+      }
     },
     "exportUsageTelemetry": {
       "type": "object",
@@ -196,7 +233,7 @@
           "description": "Enables structural search.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
@@ -429,7 +466,7 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": 24,
               "type": "integer",
               "group": "Search",
@@ -438,7 +475,7 @@
               }
             },
             "maxQueueMatchCount": {
-              "description": "The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": -1,
               "type": "integer",
               "group": "Search",
@@ -456,7 +493,7 @@
               }
             },
             "maxReorderDurationMS": {
-              "description": "The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.",
+              "description": "DEPRECATED: This setting has no effect.",
               "type": "integer",
               "default": 0,
               "group": "Search"
@@ -540,6 +577,20 @@
           "type": "boolean",
           "group": "BatchChanges",
           "default": false
+        },
+        "languageDetection": {
+          "description": "Setting for customizing language detection behavior",
+          "type": "object",
+          "required": ["graphQL"],
+          "additionalProperties": false,
+          "properties": {
+            "graphQL": {
+              "description": "What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.",
+              "type": "string",
+              "enum": ["useFileContents", "useFileNamesOnly"],
+              "default": "useFileContents"
+            }
+          }
         }
       },
       "examples": [
@@ -564,6 +615,7 @@
       ],
       "group": "Experimental"
     },
+
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
@@ -877,7 +929,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages", "symbols"],
+      "required": ["engine", "languages"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -965,8 +1017,8 @@
             },
             "patterns": [
               {
-                "match": "^package main$",
-                "language": "go"
+                "match": "cobol_.*\\.txt",
+                "language": "cobol"
               }
             ]
           }
@@ -1084,6 +1136,11 @@
         }
       ]
     },
+    "auth.dailyEmailDomainSignupLimit": {
+      "type": "integer",
+      "default": 0,
+      "description": "The maximum number of users that can sign from Google using the same email domain in a 24 hour period."
+    },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
       "type": "object",
@@ -1109,6 +1166,59 @@
       ],
       "group": "Security"
     },
+    "auth.allowedIpAddress": {
+      "description": "IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether to enable the IP allowlist.",
+          "type": "boolean",
+          "default": false
+        },
+        "clientIpAddress": {
+          "description": "List of client IP addresses to allow. If empty, all IP addresses are allowed. This is useful to restrict who can open connection with the Sorcegraph instance, e.g., the request source range of the upsteam application load balancer.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["100.100.100.0/25", "23.34.56.21"]
+        },
+        "trustedClientIpAddress": {
+          "description": "List of trusted client IP addresses that will bypass user IP address check. If empty, nothing can be bypass. This is useful to support access from trusted internal services. It will always permit connection from `127.0.0.1`. You must include the IP range allocated for the Sourcegraph deployment services to allow inter-service communication, e.g., kubernetes pod ip range.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["100.100.100.0/25", "23.34.56.21"]
+        },
+        "userIpAddress": {
+          "description": "List of user IP addresses to allow. If empty, all IP addresses are allowed.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["100.100.100.0/25", "23.34.56.21"]
+        },
+        "userIpRequestHeaders": {
+          "description": "An optional list of case-insensitive request header names to use for resolving the callers user IP address. You must ensure that the header is coming from a trusted source. If the header contains multiple IP addresses, the right-most is used. If no IP is found from provided headers, the connected client IP address is used.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": ["X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP"]
+        },
+        "errorMessageTemplate": {
+          "description": "A template to customize the error message display to users on unauthorized access.  Available template variables: `{{.Error}}`, `{{.UserIP}}`",
+          "type": "string",
+          "default": "Access from your IP address is not allowed.",
+          "examples": [
+            "Please reach out to your Sourcegraph instance admin at admin@acme.com to unblock your IP address: {{.UserIP}}.",
+            "{{.Error}}. Please reach out to your Sourcegraph instance admin at admin@acme.com to request access."
+          ]
+        }
+      },
+      "group": "Security"
+    },
     "authz.enforceForSiteAdmins": {
       "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
       "type": "boolean",
@@ -1118,12 +1228,6 @@
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
       "type": "integer",
       "default": 5
-    },
-    "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
-      "type": "string",
-      "enum": ["public", "disabled", "all"],
-      "default": "disabled"
     },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
@@ -1208,7 +1312,7 @@
       "minimum": 1
     },
     "branding": {
-      "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
+      "description": "Customize Sourcegraph homepage logo and search icon.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1947,6 +2051,14 @@
         }
       ]
     },
+    "batchChanges.rejectUnverifiedCommit": {
+      "description": "Reject unverified commits when creating a Batch Change",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
+    },
     "gitserver.diskUsageWarningThreshold": {
       "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
       "type": "integer",
@@ -1964,34 +2076,11 @@
           "type": "integer",
           "default": 0
         },
-        "app.notifications": {
-          "description": "Notifications to display in the Sourcegraph app.",
+        "minimumExternalAccountAgeExemptList": {
+          "description": "A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.",
           "type": "array",
           "items": {
-            "type": "object",
-            "required": ["key", "message"],
-            "properties": {
-              "key": {
-                "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
-                "type": "string",
-                "minLength": 1
-              },
-              "message": {
-                "description": "The Markdown message to display",
-                "type": "string",
-                "minLength": 1
-              },
-              "version.min": {
-                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
-                "type": "string",
-                "minLength": 1
-              },
-              "version.max": {
-                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
-                "type": "string",
-                "minLength": 1
-              }
-            }
+            "type": "string"
           }
         },
         "slackLicenseExpirationWebhook": {
@@ -2001,6 +2090,11 @@
         },
         "slackLicenseAnomallyWebhook": {
           "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
+        "slackLicenseCreationWebhook": {
+          "description": "Slack webhook for when a license key is created.",
           "type": "string",
           "group": "Sourcegraph.com"
         },
@@ -2079,24 +2173,6 @@
         }
       },
       "group": "Sourcegraph.com"
-    },
-    "app": {
-      "description": "Configuration options for App only.",
-      "type": "object",
-      "properties": {
-        "dotcomAuthToken": {
-          "description": "Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.",
-          "type": "string",
-          "group": "Sourcegraph.com"
-        }
-      },
-      "examples": [
-        {
-          "app": {
-            "dotcomAuthToken": "abc123"
-          }
-        }
-      ]
     },
     "notifications": {
       "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",
@@ -2479,6 +2555,16 @@
           "type": "string",
           "format": "uri"
         },
+        "perCommunityUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
         "fileFilters": {
           "description": "Filters that allow you to specify which files in a repository should get embedded.",
           "type": "object",
@@ -2748,19 +2834,59 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "sourcegraph",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
         },
         "endpoint": {
           "type": "string",
           "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
           "type": "integer",
           "default": 0
         },
         "perUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         }
@@ -2773,6 +2899,29 @@
           "accessToken": "abc123",
           "provider": "openai",
           "perUserDailyLimit": 100
+        }
+      ]
+    },
+    "configFeatures": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "properties": {
+        "chat": {
+          "description": "Enable/Disable Chat for the clients",
+          "type": "boolean"
+        },
+        "autoComplete": {
+          "description": "Enable/Disable AutoComplete for the clients",
+          "type": "boolean"
+        },
+        "commands": {
+          "description": "Enable/Disable special commands for the clients",
+          "type": "boolean"
+        }
+      },
+      "examples": [
+        {
+          "chat": true
         }
       ]
     }
@@ -3158,6 +3307,14 @@
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
           "default": 10,
           "type": "integer"
+        },
+        "syncInternalRepoPermissions": {
+          "description": "Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },

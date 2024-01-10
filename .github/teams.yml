@@ -1,11 +1,5 @@
-team/code-exploration:
-  - '@umpox'
-  - '@valerybugakov'
-  - '@lrhacker'
-  - '@philipp-spiess'
-
-team/iam:
+team/source:
   - '@ryphil'
-  - '@mrnugget'
   - '@pjlast'
-  - '@thenamankumar'
+  - '@eseliger'
+  - '@ggilmore'

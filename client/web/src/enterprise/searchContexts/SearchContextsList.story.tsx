@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import {
     mockAuthenticatedUser,
@@ -11,7 +11,7 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextsList, type SearchContextsListProps } from './SearchContextsList'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container" style={{ position: 'static' }}>
         {story()}
     </div>
@@ -35,4 +35,4 @@ const defaultProps: SearchContextsListProps = {
     setAlert: () => undefined,
 }
 
-export const Default: Story = () => <WebStory>{() => <SearchContextsList {...defaultProps} />}</WebStory>
+export const Default: StoryFn = () => <WebStory>{() => <SearchContextsList {...defaultProps} />}</WebStory>

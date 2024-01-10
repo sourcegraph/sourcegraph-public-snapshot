@@ -24,7 +24,7 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
 
 	ctx := context.Background()
@@ -145,7 +145,7 @@ func TestRescheduleAll(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
 	ctx := context.Background()
 
@@ -189,7 +189,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
 
 	ctx := context.Background()
@@ -245,7 +245,7 @@ func TestGetEmbeddableRepos(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
 	ctx := context.Background()
 
@@ -290,7 +290,7 @@ func TestEmbeddingsPolicyWithFailures(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
 	ctx := context.Background()
 
@@ -333,7 +333,7 @@ func TestEmbeddingsPolicyWithFailures(t *testing.T) {
 
 func TestGetEmbeddableReposLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
 	ctx := context.Background()
 

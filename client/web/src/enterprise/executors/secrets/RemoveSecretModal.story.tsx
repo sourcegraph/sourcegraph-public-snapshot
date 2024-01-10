@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 import { noop } from 'lodash'
 
@@ -9,7 +9,7 @@ import type { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { RemoveSecretModal } from './RemoveSecretModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/executors/secrets/RemoveSecretModal',
@@ -43,7 +43,7 @@ const secret: ExecutorSecretFields = {
     updatedAt: subHours(new Date(), 12).toISOString(),
 }
 
-export const Confirm: Story = () => (
+export const Confirm: StoryFn = () => (
     <WebStory>{props => <RemoveSecretModal {...props} secret={secret} afterDelete={noop} onCancel={noop} />}</WebStory>
 )
 

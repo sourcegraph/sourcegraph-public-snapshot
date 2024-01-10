@@ -69,6 +69,7 @@ go_test(
         "//internal/httptestutil",
         "//internal/observation",
         "//internal/ratelimit",
+        "//internal/rcache",
         "//internal/repos",
         "//internal/timeutil",
         "//internal/types",

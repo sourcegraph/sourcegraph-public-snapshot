@@ -14,7 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -114,7 +114,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	secret := "secret"

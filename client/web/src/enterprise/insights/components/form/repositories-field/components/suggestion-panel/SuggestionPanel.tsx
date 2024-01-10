@@ -23,7 +23,7 @@ export const SuggestionsPanel: React.FunctionComponent<React.PropsWithChildren<S
 
     if (suggestions === undefined) {
         return (
-            <div className={classNames(styles.loadingPanel, classNames)}>
+            <div className={classNames(styles.loadingPanel, className)}>
                 <LoadingSpinner inline={false} />
             </div>
         )

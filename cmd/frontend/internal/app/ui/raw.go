@@ -15,12 +15,11 @@ import (
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -34,7 +33,7 @@ import (
 //
 // Get a file's contents (as text/plain, images will not be rendered by browsers):
 //     http://localhost:3080/github.com/gorilla/mux/-/raw/mux.go
-//     http://localhost:3080/github.com/sourcegraph/sourcegraph/-/raw/ui/assets/img/bg-hero.png
+//     http://localhost:3080/github.com/sourcegraph/sourcegraph/-/raw/client/web/dist/img/bg-hero.png
 //
 // Get a zip archive of a repository:
 //     curl -H 'Accept: application/zip' http://localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
@@ -61,7 +60,7 @@ import (
 // - This route would ideally be using strict slashes, in order for us to support symlinks via HTTP redirects.
 //
 
-func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
+func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Client) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		const (
 			textPlain       = "text/plain"
@@ -133,7 +132,17 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 		)
 		defer func() {
 			duration := time.Since(start)
-			log15.Debug("raw endpoint", "repo", common.Repo.Name, "commit", common.CommitID, "contentType", contentType, "type", requestType, "path", requestedPath, "size", size, "duration", duration, "error", err)
+			logger.Debug(
+				"raw endpoint",
+				log.String("repo", string(common.Repo.Name)),
+				log.String("commit", string(common.CommitID)),
+				log.String("contentType", contentType),
+				log.String("type", requestType),
+				log.String("path", requestedPath),
+				log.Int64("size", size),
+				log.Duration("duration", duration),
+				log.Error(err),
+			)
 			var errorS string
 			switch {
 			case err == nil:
@@ -185,7 +194,7 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 			// caching locally is not useful. Additionally we transfer the output over the
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
-			f, err := gitserverClient.ArchiveReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name,
+			f, err := gitserverClient.ArchiveReader(r.Context(), common.Repo.Name,
 				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitdomain.Pathspec{gitdomain.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err
@@ -237,7 +246,7 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
-			fi, err := gitserverClient.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
+			fi, err := gitserverClient.Stat(r.Context(), common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				if os.IsNotExist(err) {
 					requestType = "404"
@@ -249,7 +258,7 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 
 			if fi.IsDir() {
 				requestType = "dir"
-				infos, err := gitserverClient.ReadDir(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
+				infos, err := gitserverClient.ReadDir(r.Context(), common.Repo.Name, common.CommitID, requestedPath, false)
 				if err != nil {
 					return err
 				}
@@ -272,7 +281,7 @@ func serveRaw(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 			// File
 			requestType = "file"
 			size = fi.Size()
-			f, err := gitserverClient.NewFileReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
+			f, err := gitserverClient.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				return err
 			}

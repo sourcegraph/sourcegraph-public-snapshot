@@ -27,7 +27,7 @@ import (
 func TestMarshalBatchChange(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	marshalledUserID := gql.MarshalUserID(userID)

@@ -4,25 +4,17 @@ filegroup(
     name = "doc_files",
     srcs = glob(
         ["**/*"],
-        [
-            ".gitattributes",
-        ],
+        [".gitattributes"],
     ),
     visibility = ["//doc:__pkg__"],
 )
 
 write_generated_to_source_files(
     name = "write_monitoring_docs",
-    src = "//monitoring:generate_config",
-    # :generate_config creates an outputs folder with:
-    # - grafana dashboards
-    # - prometheus config
-    # - docs describing dashboards and alerts
-    files = [
-        "monitoring/outputs/docs/alerts.md",
-        "monitoring/outputs/docs/dashboards.md",
-    ],
-    # since :generate_config stores all the generated files under monitroing/outputs when outside of the monitoring package
-    strip_prefix = "monitoring/outputs/docs/",
+    output_files = {
+        "alerts.md": "monitoring/outputs/docs/alerts.md",
+        "dashboards.md": "monitoring/outputs/docs/dashboards.md",
+    },
     tags = ["go_generate"],
+    target = "//monitoring:generate_config",
 )

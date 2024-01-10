@@ -5,7 +5,7 @@
   "description": "Custom rules and recommended config for consumers of the Wildcard component library",
   "main": "lib/index.js",
   "peerDependencies": {
-    "eslint-plugin-react": "^7.32.1"
+    "eslint-plugin-react": "^7.33.2"
   },
   "license": "Apache-2.0"
 }

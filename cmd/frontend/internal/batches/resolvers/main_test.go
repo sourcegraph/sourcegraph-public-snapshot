@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/log"
 
@@ -176,7 +176,7 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		byRev[r] = struct{}{}
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ api.RepoName, rev string) (api.CommitID, error) {
 		if _, ok := byRev[api.CommitID(rev)]; !ok {
 			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
 		}
@@ -189,7 +189,7 @@ func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, bas
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
+	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}

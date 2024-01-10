@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subMonths } from 'date-fns'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -17,7 +17,7 @@ import { SearchResultList } from './SearchResultList'
 
 import globalStyles from '../../index.scss'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'jetbrains/SearchResultList',
@@ -29,7 +29,7 @@ export default config
 // Use a consistent diff for date to avoid monthly snapshot failures
 const AUTHOR_DATE = subMonths(new Date(), 7).toISOString()
 
-export const JetBrainsSearchResultListStory: Story = () => {
+export const JetBrainsSearchResultListStory: StoryFn = () => {
     const rootElementRef = useRef<HTMLDivElement>(null)
     const isDarkTheme = useDarkMode()
 

@@ -19,7 +19,6 @@ type lintError struct {
 var lintsByName = map[string]Lint{
 	"NoBinarySpecificSharedCode": NoBinarySpecificSharedCode,
 	"NoDeadPackages":             NoDeadPackages,
-	"NoEnterpriseImportsFromOSS": NoEnterpriseImportsFromOSS,
 	"NoLooseCommands":            NoLooseCommands,
 	"NoReachingIntoCommands":     NoReachingIntoCommands,
 	"NoUnusedSharedCommandCode":  NoUnusedSharedCommandCode,

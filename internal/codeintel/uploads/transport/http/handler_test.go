@@ -34,7 +34,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := backend.NewRepos(logger, db, gitserver.NewMockClient())
 	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
 	mockUploadStore := uploadstoremocks.NewMockStore()
@@ -146,7 +146,7 @@ func setupRepoMocks(t testing.TB) {
 		return &types.Repo{ID: 50}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != testCommit {
 			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
 		}

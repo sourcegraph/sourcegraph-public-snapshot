@@ -13,10 +13,573 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	inventory "github.com/sourcegraph/sourcegraph/internal/inventory"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+// MockExternalServicesService is a mock implementation of the
+// ExternalServicesService interface (from the package
+// github.com/sourcegraph/sourcegraph/cmd/frontend/backend) used for unit
+// testing.
+type MockExternalServicesService struct {
+	// DiscoverReposFunc is an instance of a mock function object
+	// controlling the behavior of the method DiscoverRepos.
+	DiscoverReposFunc *ExternalServicesServiceDiscoverReposFunc
+	// ExcludeRepoFromExternalServicesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ExcludeRepoFromExternalServices.
+	ExcludeRepoFromExternalServicesFunc *ExternalServicesServiceExcludeRepoFromExternalServicesFunc
+	// ListNamespacesFunc is an instance of a mock function object
+	// controlling the behavior of the method ListNamespaces.
+	ListNamespacesFunc *ExternalServicesServiceListNamespacesFunc
+	// ValidateConnectionFunc is an instance of a mock function object
+	// controlling the behavior of the method ValidateConnection.
+	ValidateConnectionFunc *ExternalServicesServiceValidateConnectionFunc
+}
+
+// NewMockExternalServicesService creates a new mock of the
+// ExternalServicesService interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockExternalServicesService() *MockExternalServicesService {
+	return &MockExternalServicesService{
+		DiscoverReposFunc: &ExternalServicesServiceDiscoverReposFunc{
+			defaultHook: func(context.Context, *int64, string, string, int32, string, []string) (r0 []*types.ExternalServiceRepository, r1 error) {
+				return
+			},
+		},
+		ExcludeRepoFromExternalServicesFunc: &ExternalServicesServiceExcludeRepoFromExternalServicesFunc{
+			defaultHook: func(context.Context, []int64, api.RepoID) (r0 error) {
+				return
+			},
+		},
+		ListNamespacesFunc: &ExternalServicesServiceListNamespacesFunc{
+			defaultHook: func(context.Context, *int64, string, string) (r0 []*types.ExternalServiceNamespace, r1 error) {
+				return
+			},
+		},
+		ValidateConnectionFunc: &ExternalServicesServiceValidateConnectionFunc{
+			defaultHook: func(context.Context, *types.ExternalService) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockExternalServicesService creates a new mock of the
+// ExternalServicesService interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockExternalServicesService() *MockExternalServicesService {
+	return &MockExternalServicesService{
+		DiscoverReposFunc: &ExternalServicesServiceDiscoverReposFunc{
+			defaultHook: func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error) {
+				panic("unexpected invocation of MockExternalServicesService.DiscoverRepos")
+			},
+		},
+		ExcludeRepoFromExternalServicesFunc: &ExternalServicesServiceExcludeRepoFromExternalServicesFunc{
+			defaultHook: func(context.Context, []int64, api.RepoID) error {
+				panic("unexpected invocation of MockExternalServicesService.ExcludeRepoFromExternalServices")
+			},
+		},
+		ListNamespacesFunc: &ExternalServicesServiceListNamespacesFunc{
+			defaultHook: func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error) {
+				panic("unexpected invocation of MockExternalServicesService.ListNamespaces")
+			},
+		},
+		ValidateConnectionFunc: &ExternalServicesServiceValidateConnectionFunc{
+			defaultHook: func(context.Context, *types.ExternalService) error {
+				panic("unexpected invocation of MockExternalServicesService.ValidateConnection")
+			},
+		},
+	}
+}
+
+// NewMockExternalServicesServiceFrom creates a new mock of the
+// MockExternalServicesService interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockExternalServicesServiceFrom(i ExternalServicesService) *MockExternalServicesService {
+	return &MockExternalServicesService{
+		DiscoverReposFunc: &ExternalServicesServiceDiscoverReposFunc{
+			defaultHook: i.DiscoverRepos,
+		},
+		ExcludeRepoFromExternalServicesFunc: &ExternalServicesServiceExcludeRepoFromExternalServicesFunc{
+			defaultHook: i.ExcludeRepoFromExternalServices,
+		},
+		ListNamespacesFunc: &ExternalServicesServiceListNamespacesFunc{
+			defaultHook: i.ListNamespaces,
+		},
+		ValidateConnectionFunc: &ExternalServicesServiceValidateConnectionFunc{
+			defaultHook: i.ValidateConnection,
+		},
+	}
+}
+
+// ExternalServicesServiceDiscoverReposFunc describes the behavior when the
+// DiscoverRepos method of the parent MockExternalServicesService instance
+// is invoked.
+type ExternalServicesServiceDiscoverReposFunc struct {
+	defaultHook func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error)
+	hooks       []func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error)
+	history     []ExternalServicesServiceDiscoverReposFuncCall
+	mutex       sync.Mutex
+}
+
+// DiscoverRepos delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExternalServicesService) DiscoverRepos(v0 context.Context, v1 *int64, v2 string, v3 string, v4 int32, v5 string, v6 []string) ([]*types.ExternalServiceRepository, error) {
+	r0, r1 := m.DiscoverReposFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.DiscoverReposFunc.appendCall(ExternalServicesServiceDiscoverReposFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DiscoverRepos method
+// of the parent MockExternalServicesService instance is invoked and the
+// hook queue is empty.
+func (f *ExternalServicesServiceDiscoverReposFunc) SetDefaultHook(hook func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DiscoverRepos method of the parent MockExternalServicesService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServicesServiceDiscoverReposFunc) PushHook(hook func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServicesServiceDiscoverReposFunc) SetDefaultReturn(r0 []*types.ExternalServiceRepository, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServicesServiceDiscoverReposFunc) PushReturn(r0 []*types.ExternalServiceRepository, r1 error) {
+	f.PushHook(func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServicesServiceDiscoverReposFunc) nextHook() func(context.Context, *int64, string, string, int32, string, []string) ([]*types.ExternalServiceRepository, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServicesServiceDiscoverReposFunc) appendCall(r0 ExternalServicesServiceDiscoverReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExternalServicesServiceDiscoverReposFuncCall objects describing the
+// invocations of this function.
+func (f *ExternalServicesServiceDiscoverReposFunc) History() []ExternalServicesServiceDiscoverReposFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServicesServiceDiscoverReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServicesServiceDiscoverReposFuncCall is an object that describes
+// an invocation of method DiscoverRepos on an instance of
+// MockExternalServicesService.
+type ExternalServicesServiceDiscoverReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int32
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.ExternalServiceRepository
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServicesServiceDiscoverReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServicesServiceDiscoverReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExternalServicesServiceExcludeRepoFromExternalServicesFunc describes the
+// behavior when the ExcludeRepoFromExternalServices method of the parent
+// MockExternalServicesService instance is invoked.
+type ExternalServicesServiceExcludeRepoFromExternalServicesFunc struct {
+	defaultHook func(context.Context, []int64, api.RepoID) error
+	hooks       []func(context.Context, []int64, api.RepoID) error
+	history     []ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall
+	mutex       sync.Mutex
+}
+
+// ExcludeRepoFromExternalServices delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockExternalServicesService) ExcludeRepoFromExternalServices(v0 context.Context, v1 []int64, v2 api.RepoID) error {
+	r0 := m.ExcludeRepoFromExternalServicesFunc.nextHook()(v0, v1, v2)
+	m.ExcludeRepoFromExternalServicesFunc.appendCall(ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ExcludeRepoFromExternalServices method of the parent
+// MockExternalServicesService instance is invoked and the hook queue is
+// empty.
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) SetDefaultHook(hook func(context.Context, []int64, api.RepoID) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExcludeRepoFromExternalServices method of the parent
+// MockExternalServicesService instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) PushHook(hook func(context.Context, []int64, api.RepoID) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int64, api.RepoID) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int64, api.RepoID) error {
+		return r0
+	})
+}
+
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) nextHook() func(context.Context, []int64, api.RepoID) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) appendCall(r0 ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall objects
+// describing the invocations of this function.
+func (f *ExternalServicesServiceExcludeRepoFromExternalServicesFunc) History() []ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall is an
+// object that describes an invocation of method
+// ExcludeRepoFromExternalServices on an instance of
+// MockExternalServicesService.
+type ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServicesServiceExcludeRepoFromExternalServicesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExternalServicesServiceListNamespacesFunc describes the behavior when the
+// ListNamespaces method of the parent MockExternalServicesService instance
+// is invoked.
+type ExternalServicesServiceListNamespacesFunc struct {
+	defaultHook func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error)
+	hooks       []func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error)
+	history     []ExternalServicesServiceListNamespacesFuncCall
+	mutex       sync.Mutex
+}
+
+// ListNamespaces delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServicesService) ListNamespaces(v0 context.Context, v1 *int64, v2 string, v3 string) ([]*types.ExternalServiceNamespace, error) {
+	r0, r1 := m.ListNamespacesFunc.nextHook()(v0, v1, v2, v3)
+	m.ListNamespacesFunc.appendCall(ExternalServicesServiceListNamespacesFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListNamespaces
+// method of the parent MockExternalServicesService instance is invoked and
+// the hook queue is empty.
+func (f *ExternalServicesServiceListNamespacesFunc) SetDefaultHook(hook func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListNamespaces method of the parent MockExternalServicesService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServicesServiceListNamespacesFunc) PushHook(hook func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServicesServiceListNamespacesFunc) SetDefaultReturn(r0 []*types.ExternalServiceNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServicesServiceListNamespacesFunc) PushReturn(r0 []*types.ExternalServiceNamespace, r1 error) {
+	f.PushHook(func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExternalServicesServiceListNamespacesFunc) nextHook() func(context.Context, *int64, string, string) ([]*types.ExternalServiceNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServicesServiceListNamespacesFunc) appendCall(r0 ExternalServicesServiceListNamespacesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExternalServicesServiceListNamespacesFuncCall objects describing the
+// invocations of this function.
+func (f *ExternalServicesServiceListNamespacesFunc) History() []ExternalServicesServiceListNamespacesFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServicesServiceListNamespacesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServicesServiceListNamespacesFuncCall is an object that describes
+// an invocation of method ListNamespaces on an instance of
+// MockExternalServicesService.
+type ExternalServicesServiceListNamespacesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.ExternalServiceNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServicesServiceListNamespacesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServicesServiceListNamespacesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExternalServicesServiceValidateConnectionFunc describes the behavior when
+// the ValidateConnection method of the parent MockExternalServicesService
+// instance is invoked.
+type ExternalServicesServiceValidateConnectionFunc struct {
+	defaultHook func(context.Context, *types.ExternalService) error
+	hooks       []func(context.Context, *types.ExternalService) error
+	history     []ExternalServicesServiceValidateConnectionFuncCall
+	mutex       sync.Mutex
+}
+
+// ValidateConnection delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServicesService) ValidateConnection(v0 context.Context, v1 *types.ExternalService) error {
+	r0 := m.ValidateConnectionFunc.nextHook()(v0, v1)
+	m.ValidateConnectionFunc.appendCall(ExternalServicesServiceValidateConnectionFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ValidateConnection
+// method of the parent MockExternalServicesService instance is invoked and
+// the hook queue is empty.
+func (f *ExternalServicesServiceValidateConnectionFunc) SetDefaultHook(hook func(context.Context, *types.ExternalService) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ValidateConnection method of the parent MockExternalServicesService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ExternalServicesServiceValidateConnectionFunc) PushHook(hook func(context.Context, *types.ExternalService) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServicesServiceValidateConnectionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types.ExternalService) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServicesServiceValidateConnectionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types.ExternalService) error {
+		return r0
+	})
+}
+
+func (f *ExternalServicesServiceValidateConnectionFunc) nextHook() func(context.Context, *types.ExternalService) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServicesServiceValidateConnectionFunc) appendCall(r0 ExternalServicesServiceValidateConnectionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExternalServicesServiceValidateConnectionFuncCall objects describing the
+// invocations of this function.
+func (f *ExternalServicesServiceValidateConnectionFunc) History() []ExternalServicesServiceValidateConnectionFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServicesServiceValidateConnectionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServicesServiceValidateConnectionFuncCall is an object that
+// describes an invocation of method ValidateConnection on an instance of
+// MockExternalServicesService.
+type ExternalServicesServiceValidateConnectionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.ExternalService
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServicesServiceValidateConnectionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServicesServiceValidateConnectionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
 
 // MockReposService is a mock implementation of the ReposService interface
 // (from the package
@@ -32,9 +595,6 @@ type MockReposService struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.
 	GetByNameFunc *ReposServiceGetByNameFunc
-	// GetCommitFunc is an instance of a mock function object controlling
-	// the behavior of the method GetCommit.
-	GetCommitFunc *ReposServiceGetCommitFunc
 	// GetInventoryFunc is an instance of a mock function object controlling
 	// the behavior of the method GetInventory.
 	GetInventoryFunc *ReposServiceGetInventoryFunc
@@ -71,13 +631,8 @@ func NewMockReposService() *MockReposService {
 				return
 			},
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID) (r0 *gitdomain.Commit, r1 error) {
-				return
-			},
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (r0 *inventory.Inventory, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, bool) (r0 *inventory.Inventory, r1 error) {
 				return
 			},
 		},
@@ -97,7 +652,7 @@ func NewMockReposService() *MockReposService {
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -123,13 +678,8 @@ func NewStrictMockReposService() *MockReposService {
 				panic("unexpected invocation of MockReposService.GetByName")
 			},
 		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-				panic("unexpected invocation of MockReposService.GetCommit")
-			},
-		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
-			defaultHook: func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 				panic("unexpected invocation of MockReposService.GetInventory")
 			},
 		},
@@ -149,7 +699,7 @@ func NewStrictMockReposService() *MockReposService {
 			},
 		},
 		ResolveRevFunc: &ReposServiceResolveRevFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockReposService.ResolveRev")
 			},
 		},
@@ -169,9 +719,6 @@ func NewMockReposServiceFrom(i ReposService) *MockReposService {
 		},
 		GetByNameFunc: &ReposServiceGetByNameFunc{
 			defaultHook: i.GetByName,
-		},
-		GetCommitFunc: &ReposServiceGetCommitFunc{
-			defaultHook: i.GetCommit,
 		},
 		GetInventoryFunc: &ReposServiceGetInventoryFunc{
 			defaultHook: i.GetInventory,
@@ -515,129 +1062,18 @@ func (c ReposServiceGetByNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ReposServiceGetCommitFunc describes the behavior when the GetCommit
-// method of the parent MockReposService instance is invoked.
-type ReposServiceGetCommitFunc struct {
-	defaultHook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)
-	hooks       []func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)
-	history     []ReposServiceGetCommitFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCommit delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockReposService) GetCommit(v0 context.Context, v1 *types.Repo, v2 api.CommitID) (*gitdomain.Commit, error) {
-	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
-	m.GetCommitFunc.appendCall(ReposServiceGetCommitFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetCommit method of
-// the parent MockReposService instance is invoked and the hook queue is
-// empty.
-func (f *ReposServiceGetCommitFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCommit method of the parent MockReposService instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ReposServiceGetCommitFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ReposServiceGetCommitFunc) SetDefaultReturn(r0 *gitdomain.Commit, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ReposServiceGetCommitFunc) PushReturn(r0 *gitdomain.Commit, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-		return r0, r1
-	})
-}
-
-func (f *ReposServiceGetCommitFunc) nextHook() func(context.Context, *types.Repo, api.CommitID) (*gitdomain.Commit, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ReposServiceGetCommitFunc) appendCall(r0 ReposServiceGetCommitFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ReposServiceGetCommitFuncCall objects
-// describing the invocations of this function.
-func (f *ReposServiceGetCommitFunc) History() []ReposServiceGetCommitFuncCall {
-	f.mutex.Lock()
-	history := make([]ReposServiceGetCommitFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ReposServiceGetCommitFuncCall is an object that describes an invocation
-// of method GetCommit on an instance of MockReposService.
-type ReposServiceGetCommitFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.Repo
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *gitdomain.Commit
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ReposServiceGetCommitFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ReposServiceGetCommitFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ReposServiceGetInventoryFunc describes the behavior when the GetInventory
 // method of the parent MockReposService instance is invoked.
 type ReposServiceGetInventoryFunc struct {
-	defaultHook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)
-	hooks       []func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)
 	history     []ReposServiceGetInventoryFuncCall
 	mutex       sync.Mutex
 }
 
 // GetInventory delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockReposService) GetInventory(v0 context.Context, v1 *types.Repo, v2 api.CommitID, v3 bool) (*inventory.Inventory, error) {
+func (m *MockReposService) GetInventory(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 bool) (*inventory.Inventory, error) {
 	r0, r1 := m.GetInventoryFunc.nextHook()(v0, v1, v2, v3)
 	m.GetInventoryFunc.appendCall(ReposServiceGetInventoryFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -646,7 +1082,7 @@ func (m *MockReposService) GetInventory(v0 context.Context, v1 *types.Repo, v2 a
 // SetDefaultHook sets function that is called when the GetInventory method
 // of the parent MockReposService instance is invoked and the hook queue is
 // empty.
-func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)) {
+func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)) {
 	f.defaultHook = hook
 }
 
@@ -654,7 +1090,7 @@ func (f *ReposServiceGetInventoryFunc) SetDefaultHook(hook func(context.Context,
 // GetInventory method of the parent MockReposService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error)) {
+func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -663,19 +1099,19 @@ func (f *ReposServiceGetInventoryFunc) PushHook(hook func(context.Context, *type
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ReposServiceGetInventoryFunc) SetDefaultReturn(r0 *inventory.Inventory, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ReposServiceGetInventoryFunc) PushReturn(r0 *inventory.Inventory, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposServiceGetInventoryFunc) nextHook() func(context.Context, *types.Repo, api.CommitID, bool) (*inventory.Inventory, error) {
+func (f *ReposServiceGetInventoryFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, bool) (*inventory.Inventory, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -713,7 +1149,7 @@ type ReposServiceGetInventoryFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *types.Repo
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 api.CommitID
@@ -1063,15 +1499,15 @@ func (c ReposServiceRequestRepositoryCloneFuncCall) Results() []interface{} {
 // ReposServiceResolveRevFunc describes the behavior when the ResolveRev
 // method of the parent MockReposService instance is invoked.
 type ReposServiceResolveRevFunc struct {
-	defaultHook func(context.Context, *types.Repo, string) (api.CommitID, error)
-	hooks       []func(context.Context, *types.Repo, string) (api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string) (api.CommitID, error)
 	history     []ReposServiceResolveRevFuncCall
 	mutex       sync.Mutex
 }
 
 // ResolveRev delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockReposService) ResolveRev(v0 context.Context, v1 *types.Repo, v2 string) (api.CommitID, error) {
+func (m *MockReposService) ResolveRev(v0 context.Context, v1 api.RepoName, v2 string) (api.CommitID, error) {
 	r0, r1 := m.ResolveRevFunc.nextHook()(v0, v1, v2)
 	m.ResolveRevFunc.appendCall(ReposServiceResolveRevFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1080,7 +1516,7 @@ func (m *MockReposService) ResolveRev(v0 context.Context, v1 *types.Repo, v2 str
 // SetDefaultHook sets function that is called when the ResolveRev method of
 // the parent MockReposService instance is invoked and the hook queue is
 // empty.
-func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (api.CommitID, error)) {
+func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -1088,7 +1524,7 @@ func (f *ReposServiceResolveRevFunc) SetDefaultHook(hook func(context.Context, *
 // ResolveRev method of the parent MockReposService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.Repo, string) (api.CommitID, error)) {
+func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, api.RepoName, string) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1097,19 +1533,19 @@ func (f *ReposServiceResolveRevFunc) PushHook(hook func(context.Context, *types.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ReposServiceResolveRevFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ReposServiceResolveRevFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReposServiceResolveRevFunc) nextHook() func(context.Context, *types.Repo, string) (api.CommitID, error) {
+func (f *ReposServiceResolveRevFunc) nextHook() func(context.Context, api.RepoName, string) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1147,7 +1583,7 @@ type ReposServiceResolveRevFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *types.Repo
+	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string

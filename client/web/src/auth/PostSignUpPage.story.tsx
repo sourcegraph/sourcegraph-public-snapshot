@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
@@ -6,7 +6,7 @@ import { WebStory } from '../components/WebStory'
 import { PostSignUpPage } from './PostSignUpPage'
 
 const config: Meta = {
-    title: 'web/src/auth/PostSignUpPage',
+    title: 'web/auth/PostSignUpPage',
 }
 
 export default config
@@ -20,8 +20,10 @@ const mockUser = {
     completedPostSignup: false,
 } as AuthenticatedUser
 
-export const UnverifiedEmail: Story = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+export const UnverifiedEmail: StoryFn = () => (
+    <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+)
 
-export const VerifiedEmail: Story = () => (
+export const VerifiedEmail: StoryFn = () => (
     <WebStory>{() => <PostSignUpPage authenticatedUser={{ ...mockUser, hasVerifiedEmail: true }} />}</WebStory>
 )

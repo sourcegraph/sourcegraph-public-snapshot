@@ -23,7 +23,7 @@ export function nodeToLocation(
     textDocument: sourcegraph.TextDocument,
     { resource: { repository, commit, path }, range }: LocationConnectionNode
 ): sourcegraph.Location {
-    const { repo: currentRepo, commit: currentCommit } = parseGitURI(new URL(textDocument.uri))
+    const { repo: currentRepo, commit: currentCommit } = parseGitURI(textDocument.uri)
 
     return {
         uri: new URL(`git://${repository?.name || currentRepo}?${commit?.oid || currentCommit}#${path}`),

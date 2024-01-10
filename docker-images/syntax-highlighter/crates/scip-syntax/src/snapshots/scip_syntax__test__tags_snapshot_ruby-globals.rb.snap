@@ -1,0 +1,24 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"MyModule","path":"ruby-globals.rb","language":"ruby","line":44,"kind":"module","scope":null}
+{"_type":"tag","name":"MyClass","path":"ruby-globals.rb","language":"ruby","line":48,"kind":"class","scope":"MyModule"}
+{"_type":"tag","name":"woo","path":"ruby-globals.rb","language":"ruby","line":52,"kind":"singletonMethod","scope":"MyModule.MyClass"}
+{"_type":"tag","name":"yay","path":"ruby-globals.rb","language":"ruby","line":49,"kind":"method","scope":"MyModule.MyClass"}
+{"_type":"tag","name":"abc","path":"ruby-globals.rb","language":"ruby","line":45,"kind":"singletonMethod","scope":"MyModule"}
+{"_type":"tag","name":"Foo","path":"ruby-globals.rb","language":"ruby","line":57,"kind":"class","scope":null}
+{"_type":"tag","name":"qux=","path":"ruby-globals.rb","language":"ruby","line":60,"kind":"setter","scope":"Foo"}
+{"_type":"tag","name":"baz","path":"ruby-globals.rb","language":"ruby","line":59,"kind":"getter","scope":"Foo"}
+{"_type":"tag","name":"bar=","path":"ruby-globals.rb","language":"ruby","line":58,"kind":"accessor","scope":"Foo"}
+{"_type":"tag","name":"bar","path":"ruby-globals.rb","language":"ruby","line":58,"kind":"accessor","scope":"Foo"}
+{"_type":"tag","name":"Aliased","path":"ruby-globals.rb","language":"ruby","line":63,"kind":"class","scope":null}
+{"_type":"tag","name":"baz","path":"ruby-globals.rb","language":"ruby","line":67,"kind":"methodAlias","scope":"Aliased"}
+{"_type":"tag","name":"bar","path":"ruby-globals.rb","language":"ruby","line":64,"kind":"method","scope":"Aliased"}
+{"_type":"tag","name":"Parental","path":"ruby-globals.rb","language":"ruby","line":70,"kind":"class","scope":null}
+{"_type":"tag","name":"parental_func","path":"ruby-globals.rb","language":"ruby","line":71,"kind":"method","scope":"Parental"}
+{"_type":"tag","name":"Composed","path":"ruby-globals.rb","language":"ruby","line":75,"kind":"class","scope":null}
+{"_type":"tag","name":"grade","path":"ruby-globals.rb","language":"ruby","line":37,"kind":"variable","scope":null}
+{"_type":"tag","name":"counter","path":"ruby-globals.rb","language":"ruby","line":19,"kind":"variable","scope":null}
+{"_type":"tag","name":"SOME_CONSTANT","path":"ruby-globals.rb","language":"ruby","line":1,"kind":"constant","scope":null}
+

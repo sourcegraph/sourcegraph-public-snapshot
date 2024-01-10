@@ -139,7 +139,6 @@ The list below designates source code exempt from the testing guidelines because
 
 - [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph)
   - `dev/*`: internal tools, scripts for the local environment and continuous integration.
-  - `enterprise/dev/*`: internal tools, scripts for the local environment and continuous integration that fall under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
   - Dev environment configuration (e.g. `.editorconfig`, `shell.nix`, etc.)
 
 To indicate exceptions like these, simply write `n/a` within your pull request's [test plan](#test-plans).

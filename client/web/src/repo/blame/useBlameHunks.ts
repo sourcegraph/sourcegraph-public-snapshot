@@ -12,14 +12,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import type {
-    ExternalServiceKind,
-    FirstCommitDateResult,
-    FirstCommitDateVariables,
-    GitBlameResult,
-    GitBlameVariables,
-} from '../../graphql-operations'
+import type { ExternalServiceKind, FirstCommitDateResult, FirstCommitDateVariables } from '../../graphql-operations'
 
 import { useBlameVisibility } from './useBlameVisibility'
 
@@ -69,84 +62,6 @@ export interface BlameHunkData {
     firstCommitDate: Date | undefined
 }
 
-const fetchBlameViaGraphQL = memoizeObservable(
-    ({
-        repoName,
-        revision,
-        filePath,
-        sourcegraphURL,
-    }: {
-        repoName: string
-        revision: string
-        filePath: string
-        sourcegraphURL: string
-    }): Observable<BlameHunkData> =>
-        requestGraphQL<GitBlameResult, GitBlameVariables>(
-            gql`
-                query GitBlame($repo: String!, $rev: String!, $path: String!) {
-                    repository(name: $repo) {
-                        externalURLs {
-                            url
-                            serviceKind
-                        }
-                        firstEverCommit {
-                            author {
-                                date
-                            }
-                        }
-                        commit(rev: $rev) {
-                            blob(path: $path) {
-                                blame(startLine: 0, endLine: 0) {
-                                    startLine
-                                    endLine
-                                    author {
-                                        person {
-                                            email
-                                            displayName
-                                            avatarURL
-                                            user {
-                                                username
-                                                displayName
-                                                avatarURL
-                                            }
-                                        }
-                                        date
-                                    }
-                                    message
-                                    rev
-                                    commit {
-                                        url
-                                        parents {
-                                            oid
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            { repo: repoName, rev: revision, path: filePath }
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(({ repository }) => {
-                const hunks = repository?.commit?.blob?.blame
-                const firstCommitDate = repository?.firstEverCommit?.author?.date
-                const externalURLs = repository?.externalURLs
-                if (hunks) {
-                    return {
-                        current: hunks.map(blame => addDisplayInfoForHunk(blame, sourcegraphURL)),
-                        externalURLs,
-                        firstCommitDate: firstCommitDate ? new Date(firstCommitDate) : undefined,
-                    }
-                }
-
-                return { current: undefined, externalURLs: undefined, firstCommitDate: undefined }
-            })
-        ),
-    makeRepoURI
-)
-
 interface RawStreamHunk {
     author: {
         Name: string
@@ -175,9 +90,6 @@ interface RawStreamHunk {
  *
  * To reduce the backend pressure and improve the experience, this fetch
  * implementation uses a SSE stream to load the blame hunks in chunks.
- *
- * It is controlled via the `enable-streaming-git-blame` feature flag and is
- * currently not enabled by default.
  *
  * Since we also need the first commit date for the blame recency calculations,
  * this implementation uses Promise.all() to load both data sources in parallel.
@@ -347,8 +259,6 @@ export const useBlameHunks = (
     },
     sourcegraphURL: string
 ): BlameHunkData => {
-    const [enableStreamingGitBlame, status] = useFeatureFlag('enable-streaming-git-blame')
-
     const [isBlameVisible] = useBlameVisibility(isPackage)
     const shouldFetchBlame = isBlameVisible && status !== 'initial'
 
@@ -356,11 +266,9 @@ export const useBlameHunks = (
         useMemo(
             () =>
                 shouldFetchBlame
-                    ? enableStreamingGitBlame
-                        ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
-                        : fetchBlameViaGraphQL({ revision, repoName, filePath, sourcegraphURL })
+                    ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
                     : of({ current: undefined, externalURLs: undefined, firstCommitDate: undefined }),
-            [shouldFetchBlame, enableStreamingGitBlame, revision, repoName, filePath, sourcegraphURL]
+            [shouldFetchBlame, revision, repoName, filePath, sourcegraphURL]
         )
     )
 

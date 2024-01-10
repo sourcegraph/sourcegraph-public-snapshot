@@ -7,9 +7,7 @@ import LRU from 'lru-cache'
 import { createAggregateError, type ErrorLike } from '@sourcegraph/common'
 import type { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
-import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
@@ -29,6 +27,7 @@ import {
     type SearchResult,
     searchResultToResults,
     searchWithFallback,
+    type RepoFilter,
 } from './searchBased'
 import { sortByProximity } from './sort'
 
@@ -51,7 +50,7 @@ interface UseSearchBasedCodeIntelOptions {
     searchToken: string
     fileContent: string
 
-    spec: LanguageSpec
+    languages: string[]
 
     isFork: boolean
     isArchived: boolean
@@ -120,183 +119,151 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
     }
 }
 
-// searchBasedReferences is 90% copy&paste from code-intel-extension's
-export async function searchBasedReferences({
-    repo,
-    isFork,
-    isArchived,
-    commit,
-    searchToken,
-    path,
-    position,
-    fileContent,
-    spec,
-    getSetting,
-    filter,
-}: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+function searchBasedReferencesViaSCIPLocals(options: UseSearchBasedCodeIntelOptions): Location[] | undefined {
     const view = getBlobEditView()
-    if (view !== null) {
-        const occurrences = view.state.facet(syntaxHighlight).occurrences
-        for (const occurrence of occurrences) {
-            if (
-                occurrence.symbol?.startsWith('local ') &&
-                occurrence.range.contains(new ScipPosition(position.line, position.character))
-            ) {
-                return occurrences
-                    .filter(reference => reference.symbol === occurrence.symbol)
-                    .map(reference => ({
-                        repo,
-                        file: path,
-                        content: fileContent,
-                        commitID: commit,
-                        range: reference.range,
-                        url: toPrettyBlobURL({
-                            filePath: path,
-                            revision: commit,
-                            repoName: repo,
-                            commitID: commit,
-                            position: {
-                                line: reference.range.start.line + 1,
-                                character: reference.range.start.character + 1,
-                            },
-                        }),
-                        lines: split(fileContent),
-                        precise: false,
-                    }))
-            }
-        }
+    if (view === null) {
+        return
     }
-    const filterReferences = (results: Location[]): Location[] =>
-        filter ? results.filter(location => location.file.includes(filter)) : results
+    const occurrences = view.state.facet(syntaxHighlight).occurrences
+    const { path, repo, position, fileContent: content, commit: commitID } = options
+    const lines = split(content)
+    const scipPosition = new ScipPosition(position.line, position.character)
+    for (const occurrence of occurrences) {
+        const symbol = occurrence.symbol
+        if (!(symbol?.startsWith('local ') && occurrence.range.contains(scipPosition))) {
+            continue
+        }
+        return occurrences
+            .filter(reference => reference.symbol === symbol)
+            .map(reference => ({
+                repo,
+                file: path,
+                content,
+                commitID,
+                range: reference.range,
+                url: toPrettyBlobURL({
+                    filePath: path,
+                    revision: commitID,
+                    repoName: repo,
+                    commitID,
+                    position: {
+                        line: reference.range.start.line + 1,
+                        character: reference.range.start.character + 1,
+                    },
+                }),
+                lines,
+                precise: false,
+            }))
+    }
+    return
+}
 
+async function searchBasedReferencesViaSquirrel(
+    options: UseSearchBasedCodeIntelOptions
+): Promise<Location[] | undefined> {
+    const { repo, position, path, commit, fileContent } = options
+    const symbol = await findSymbol({ repository: repo, path, commit, row: position.line, column: position.character })
+    if (!symbol?.refs) {
+        return
+    }
+    // HISTORICAL NOTE: Squirrel only support find refs for locals
+    // (the code below uses the same 'path' value for all references,
+    // and is based as-is on the original code written by Chris),
+    // so we can delete this code once we have SCIP locals support
+    // for all the same languages that Squirrel does.
+    const lines = split(fileContent)
+    return symbol.refs.map(reference => ({
+        repo,
+        file: path,
+        content: fileContent,
+        commitID: commit,
+        range: rangeToExtensionRange(reference),
+        url: toPrettyBlobURL({
+            filePath: path,
+            revision: commit,
+            repoName: repo,
+            commitID: commit,
+            position: {
+                line: reference.row + 1,
+                character: reference.column + 1,
+            },
+        }),
+        lines,
+        precise: false,
+    }))
+}
+
+async function searchBasedDefinitionsViaSquirrel(
+    options: UseSearchBasedCodeIntelOptions
+): Promise<Location[] | undefined> {
+    const { repo, commit, path, position, fileContent } = options
     const symbol = await findSymbol({ repository: repo, commit, path, row: position.line, column: position.character })
-    if (symbol?.refs) {
-        return symbol.refs.map(reference => ({
+    if (!symbol?.def) {
+        return
+    }
+    return [
+        {
             repo,
             file: path,
             content: fileContent,
             commitID: commit,
-            range: rangeToExtensionRange(reference),
+            range: rangeToExtensionRange(symbol.def),
             url: toPrettyBlobURL({
                 filePath: path,
                 revision: commit,
                 repoName: repo,
                 commitID: commit,
                 position: {
-                    line: reference.row + 1,
-                    character: reference.column + 1,
+                    line: symbol.def.row + 1,
+                    character: symbol.def.column + 1,
                 },
             }),
             lines: split(fileContent),
             precise: false,
-        }))
-    }
+        },
+    ]
+}
 
-    const queryTerms = referencesQuery({ searchToken, path, fileExts: spec.fileExts })
-    const queryArguments = {
-        repo,
-        isFork,
-        isArchived,
-        commit,
-        queryTerms,
-        filterReferences,
-    }
+async function searchBasedReferencesViaSearchQueries(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const { searchToken, path, languages, repo, isFork, isArchived, commit, filter } = options
+    const queryTerms = referencesQuery({ searchToken, path, languages })
+    const filterReferences = (results: Location[]): Location[] =>
+        filter ? results.filter(location => location.file.includes(filter)) : results
 
-    const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
+    const doSearch = (repoFilter: RepoFilter): Promise<Location[]> =>
         searchWithFallback(
             args => searchAndFilterReferences({ queryTerms: args.queryTerms, filterReferences }),
-            queryArguments,
-            negateRepoFilter,
-            getSetting
+            { repo, isFork, isArchived, commit, queryTerms, filterReferences },
+            repoFilter,
+            options.getSetting
         )
 
-    // Perform a search in the current git tree
-    const sameRepoReferences = doSearch(false)
+    const sameRepoReferences = doSearch('current-repo')
 
     // Perform an indexed search over all _other_ repositories. This
     // query is ineffective on DotCom as we do not keep repositories
     // in the index permanently.
-    const remoteRepoReferences = isSourcegraphDotCom() ? Promise.resolve([]) : doSearch(true)
+    const remoteRepoReferences = isSourcegraphDotCom() ? Promise.resolve([]) : doSearch('all-other-repos')
 
-    // Resolve then merge all references and sort them by proximity
-    // to the current text document path.
-    const referenceChunk = [sameRepoReferences, remoteRepoReferences]
-    const mergedReferences = flatten(await Promise.all(referenceChunk))
-    return sortByProximity(mergedReferences, location.pathname)
+    return flatten(await Promise.all([sameRepoReferences, remoteRepoReferences]))
 }
 
-export async function searchBasedDefinitions({
-    repo,
-    isFork,
-    isArchived,
-    commit,
-    searchToken,
-    fileContent,
-    path,
-    position,
-    spec,
-    getSetting,
-    filter,
-}: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
-    const symbol = await findSymbol({ repository: repo, commit, path, row: position.line, column: position.character })
-    if (symbol?.def) {
-        return [
-            {
-                repo,
-                file: path,
-                content: fileContent,
-                commitID: commit,
-                range: rangeToExtensionRange(symbol.def),
-                url: toPrettyBlobURL({
-                    filePath: path,
-                    revision: commit,
-                    repoName: repo,
-                    commitID: commit,
-                    position: {
-                        line: symbol.def.row + 1,
-                        character: symbol.def.column + 1,
-                    },
-                }),
-                lines: split(fileContent),
-                precise: false,
-            },
-        ]
-    }
-
-    const filterDefinitions = (results: Location[]): Location[] => {
-        const filteredByName = filter ? results.filter(location => location.file.includes(filter)) : results
-        return spec?.filterDefinitions
-            ? spec.filterDefinitions<Location>(filteredByName, {
-                  repo,
-                  fileContent,
-                  filePath: path,
-              })
-            : filteredByName
-    }
-
+async function searchBasedDefinitionsViaSearchQueries(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const { searchToken, path, repo, isFork, fileContent, isArchived, commit, languages, filter } = options
     // Construct base definition query without scoping terms
-    const queryTerms = definitionQuery({ searchToken, path, fileExts: spec.fileExts })
-    const queryArguments = {
-        repo,
-        isFork,
-        isArchived,
-        commit,
-        path,
-        fileContent,
-        filterDefinitions,
-        queryTerms,
-    }
+    const queryTerms = definitionQuery({ searchToken, path, languages })
+    const filterDefinitions = (results: Location[]): Location[] =>
+        filter ? results.filter(location => location.file.includes(filter)) : results
 
-    const doSearch = (negateRepoFilter: boolean): Promise<Location[]> =>
+    const doSearch = (repoFilter: RepoFilter): Promise<Location[]> =>
         searchWithFallback(
-            args => searchAndFilterDefinitions({ spec, path, filterDefinitions, queryTerms: args.queryTerms }),
-            queryArguments,
-            negateRepoFilter,
-            getSetting
+            args => searchAndFilterDefinitions({ languages, path, filterDefinitions, queryTerms: args.queryTerms }),
+            { repo, isFork, isArchived, commit, path, fileContent, filterDefinitions, queryTerms },
+            repoFilter,
+            options.getSetting
         )
 
-    // Perform a search in the current git tree
-    const sameRepoDefinitions = doSearch(false)
+    const sameRepoDefinitions = doSearch('current-repo')
 
     // Return any local location definitions first
     const results = await sameRepoDefinitions
@@ -308,25 +275,48 @@ export async function searchBasedDefinitions({
     // an indexed search over all repositories. Do not do this on the DotCom
     // instance as we are unlikely to have indexed the relevant definition
     // and we'd end up jumping to what would seem like a random line of code.
-    return isSourcegraphDotCom() ? Promise.resolve([]) : doSearch(true)
+    return isSourcegraphDotCom() ? Promise.resolve([]) : doSearch('all-other-repos')
+}
+
+// Originally based on the code from code-intel-extension
+export async function searchBasedReferences(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const refsViaSCIPLocals = searchBasedReferencesViaSCIPLocals(options)
+    if (refsViaSCIPLocals) {
+        return refsViaSCIPLocals
+    }
+
+    const refsViaSquirrel = await searchBasedReferencesViaSquirrel(options)
+    if (refsViaSquirrel) {
+        return refsViaSquirrel
+    }
+
+    const refsViaSearchQueries = await searchBasedReferencesViaSearchQueries(options)
+    return sortByProximity(refsViaSearchQueries, options.path)
+}
+
+export async function searchBasedDefinitions(options: UseSearchBasedCodeIntelOptions): Promise<Location[]> {
+    const defsViaSquirrel = await searchBasedDefinitionsViaSquirrel(options)
+    if (defsViaSquirrel) {
+        return defsViaSquirrel
+    }
+
+    return searchBasedDefinitionsViaSearchQueries(options)
 }
 
 /**
  * Perform a search query for definitions. Returns results converted to locations,
  * filtered by the language's definition filter, and sorted by proximity to the
  * current text document path.
- *
  * @param api The GraphQL API instance.
  * @param args Parameter bag.
  */
 async function searchAndFilterDefinitions({
-    spec,
+    languages,
     path,
     filterDefinitions,
     queryTerms,
 }: {
-    /** The LanguageSpec of the language in which we're searching */
-    spec: LanguageSpec
+    languages: string[]
     /** The file we're in */
     path: string
     /** The function used to filter definitions. */
@@ -339,7 +329,7 @@ async function searchAndFilterDefinitions({
     const result = await executeSearchQuery(queryTerms)
     const preFilteredResults = result
         .flatMap(searchResultToResults)
-        .filter(result => !isExternalPrivateSymbol(spec, path, result))
+        .filter(result => !isExternalPrivateSymbol(languages, path, result))
         .map(buildSearchBasedLocation)
 
     // Filter results based on language spec
@@ -363,11 +353,6 @@ async function searchAndFilterReferences({
 }
 
 async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
-    const context = searchContext()
-    if (context) {
-        terms.push(`context:${context}`)
-    }
-
     interface Response {
         search: {
             results: {
@@ -400,7 +385,7 @@ const findSymbol = async (
         return
     }
 
-    for (const symbol of payload.symbols) {
+    for (const symbol of payload.symbols ?? []) {
         if (isInRange(repositoryCommitPathPosition, symbol.def)) {
             return symbol
         }
@@ -455,7 +440,7 @@ const fetchLocalCodeIntelPayload = cache(
             return undefined
         }
 
-        for (const symbol of payload.symbols) {
+        for (const symbol of payload.symbols ?? []) {
             if (symbol.refs) {
                 symbol.refs = sortBy(symbol.refs, reference => reference.row)
             }
@@ -475,7 +460,7 @@ interface RepositoryCommitPath {
 type RepositoryCommitPathPosition = RepositoryCommitPath & Position
 
 type LocalCodeIntelPayload = {
-    symbols: LocalSymbol[]
+    symbols: LocalSymbol[] | null
 } | null
 
 interface LocalSymbol {

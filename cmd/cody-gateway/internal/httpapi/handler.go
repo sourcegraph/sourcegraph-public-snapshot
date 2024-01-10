@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
@@ -25,17 +27,22 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier              notify.RateLimitNotifier
-	AnthropicAccessToken           string
-	AnthropicAllowedModels         []string
-	AnthropicAllowedPromptPatterns []string
-	AnthropicMaxTokensToSample     int
-	OpenAIAccessToken              string
-	OpenAIOrgID                    string
-	OpenAIAllowedModels            []string
-	FireworksAccessToken           string
-	FireworksAllowedModels         []string
-	EmbeddingsAllowedModels        []string
+	RateLimitNotifier                           notify.RateLimitNotifier
+	AnthropicAccessToken                        string
+	AnthropicAllowedModels                      []string
+	AnthropicAllowedPromptPatterns              []string
+	AnthropicRequestBlockingEnabled             bool
+	AnthropicMaxTokensToSample                  int
+	OpenAIAccessToken                           string
+	OpenAIOrgID                                 string
+	OpenAIAllowedModels                         []string
+	FireworksAccessToken                        string
+	FireworksDisableSingleTenant                bool
+	FireworksAllowedModels                      []string
+	FireworksLogSelfServeCodeCompletionRequests bool
+	EmbeddingsAllowedModels                     []string
+	AutoFlushStreamingResponses                 bool
+	EnableAttributionSearch                     bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -55,6 +62,7 @@ func NewHandler(
 	authr *auth.Authenticator,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
+	dotcomClient graphql.Client,
 ) (http.Handler, error) {
 	// Initialize metrics
 	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
@@ -62,9 +70,6 @@ func NewHandler(
 	if err != nil {
 		return nil, errors.Wrap(err, "init metric 'concurrent_upstream_requests'")
 	}
-
-	// Add a prefix to the store for globally unique keys and simpler pruning.
-	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
 	r := mux.NewRouter()
 
 	// V1 service routes
@@ -82,6 +87,8 @@ func NewHandler(
 			config.AnthropicMaxTokensToSample,
 			promptRecorder,
 			config.AnthropicAllowedPromptPatterns,
+			config.AnthropicRequestBlockingEnabled,
+			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
@@ -121,6 +128,7 @@ func NewHandler(
 								config.OpenAIAccessToken,
 								config.OpenAIOrgID,
 								config.OpenAIAllowedModels,
+								config.AutoFlushStreamingResponses,
 							),
 						),
 					),
@@ -187,6 +195,9 @@ func NewHandler(
 								httpClient,
 								config.FireworksAccessToken,
 								config.FireworksAllowedModels,
+								config.FireworksLogSelfServeCodeCompletionRequests,
+								config.FireworksDisableSingleTenant,
+								config.AutoFlushStreamingResponses,
 							),
 						),
 					),
@@ -202,13 +213,37 @@ func NewHandler(
 			authr.Middleware(
 				requestlogger.Middleware(
 					logger,
-					featurelimiter.ListLimitsHandler(logger, eventLogger, rs),
+					featurelimiter.ListLimitsHandler(logger, rs),
+				),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
+	// Register a route where actors can refresh their rate limit state.
+	v1router.Path("/limits/refresh").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.limits",
+			authr.Middleware(
+				requestlogger.Middleware(
+					logger,
+					featurelimiter.RefreshLimitsHandler(logger),
 				),
 			),
 			otelhttp.WithPublicEndpoint(),
 		),
 	)
 
+	var attributionClient graphql.Client
+	if config.EnableAttributionSearch {
+		attributionClient = dotcomClient
+	}
+	v1router.Path("/attribution").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.attribution",
+			authr.Middleware(
+				attribution.NewHandler(attributionClient, logger),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
 	return r, nil
 }
 

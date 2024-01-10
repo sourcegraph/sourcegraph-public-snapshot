@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -102,7 +101,7 @@ func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Co
 		return err
 	}
 
-	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repo)
+	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, repo)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.RefDescriptions")
 	}

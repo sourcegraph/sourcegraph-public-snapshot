@@ -67,14 +67,18 @@ export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<Co
             node.actions.nodes
                 .map(action => {
                     switch (action.__typename) {
-                        case 'MonitorEmail':
+                        case 'MonitorEmail': {
                             return 'Sends email notification'
-                        case 'MonitorSlackWebhook':
+                        }
+                        case 'MonitorSlackWebhook': {
                             return 'Sends Slack notification'
-                        case 'MonitorWebhook':
+                        }
+                        case 'MonitorWebhook': {
                             return 'Calls webhook'
-                        default:
+                        }
+                        default: {
                             return ''
+                        }
                     }
                 })
                 .filter(string => string !== '')

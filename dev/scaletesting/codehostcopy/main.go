@@ -68,7 +68,7 @@ var app = &cli.App{
 		},
 	},
 	Action: func(cmd *cli.Context) error {
-		return doRun(cmd.Context, log.Scoped("runner", ""), cmd.String("state"), cmd.String("config"))
+		return doRun(cmd.Context, log.Scoped("runner"), cmd.String("state"), cmd.String("config"))
 	},
 	Commands: []*cli.Command{
 		{
@@ -83,7 +83,7 @@ var app = &cli.App{
 			Name:        "list",
 			Description: "list repos from the 'from' codehost defined in the configuration",
 			Action: func(cmd *cli.Context) error {
-				return doList(cmd.Context, log.Scoped("list", ""), cmd.String("state"), cmd.String("config"), cmd.Int("limit"))
+				return doList(cmd.Context, log.Scoped("list"), cmd.String("state"), cmd.String("config"), cmd.Int("limit"))
 			},
 			Flags: []cli.Flag{
 				&cli.IntFlag{
@@ -179,7 +179,7 @@ func main() {
 		Name: "codehostcopy",
 	})
 	defer cb.Sync()
-	logger := log.Scoped("main", "")
+	logger := log.Scoped("main")
 
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))

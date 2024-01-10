@@ -24,7 +24,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -39,10 +38,10 @@ import (
 // User hooks
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
@@ -59,6 +58,12 @@ type UserStore interface {
 	Count(context.Context, *UsersListOptions) (int, error)
 	CountForSCIM(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
+	// CreateWithExternalAccount is used to create a new Sourcegraph user account from an external account
+	// (e.g., "signup from SAML").
+	//
+	// It creates a new user and associates it with the specified external account. If the user to
+	// create already exists, it returns an error.
+	CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
 	Delete(context.Context, int32) error
@@ -89,6 +94,7 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
+	ChangeCodyPlan(ctx context.Context, id int32, plan bool) error
 	SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error
 	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
@@ -258,6 +264,26 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	return newUser, err
 }
 
+func (u *userStore) CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (_ *types.User, err error) {
+	tx, err := u.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	createdUser, err := tx.CreateInTransaction(ctx, newUser, &acct.AccountSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	acct.UserID = createdUser.ID
+	acct, err = ExternalAccountsWith(u.logger, tx).Insert(ctx, acct)
+	if err == nil {
+		logAccountCreatedEvent(ctx, NewDBWith(u.logger, tx), createdUser, acct.AccountSpec.ServiceType)
+	}
+	return createdUser, err
+}
+
 // CheckPassword returns an error depending on the method used for validation
 func CheckPassword(pw string) error {
 	return security.ValidatePassword(pw)
@@ -281,7 +307,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, errors.New("no email verification code provided for new user with unverified email")
 	}
 
-	searchable := true
 	createdAt := timeutil.Now()
 	updatedAt := createdAt
 	invalidatedSessionsAt := createdAt
@@ -326,8 +351,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin, searchable",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin, &searchable)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
@@ -386,7 +411,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		SiteAdmin:             siteAdmin,
 		BuiltinAuth:           info.Password != "",
 		InvalidatedSessionsAt: invalidatedSessionsAt,
-		Searchable:            searchable,
 	}
 
 	{
@@ -436,7 +460,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 
 func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceType string) {
 	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
+	arg := struct {
 		Creator     int32  `json:"creator"`
 		SiteAdmin   bool   `json:"site_admin"`
 		ServiceType string `json:"service_type"`
@@ -444,19 +468,10 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Creator:     a.UID,
 		SiteAdmin:   u.SiteAdmin,
 		ServiceType: serviceType,
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccountCreated,
-		URL:             "",
-		UserID:          uint32(u.ID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
 	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, SecurityEventNameAccountCreated, "", uint32(u.ID), "", "BACKEND", arg); err != nil {
+		log.Error(err)
+	}
 
 	eArg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
@@ -477,30 +492,8 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
-}
-
-func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
-	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
-		Modifier    int32  `json:"modifier"`
-		ServiceType string `json:"service_type"`
-	}{
-		Modifier:    a.UID,
-		ServiceType: serviceType,
-	})
-
-	event := &SecurityEvent{
-		Name:            SecurityEventNameAccountModified,
-		URL:             "",
-		UserID:          uint32(userID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -529,7 +522,6 @@ type UserUpdate struct {
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
-	Searchable             *bool
 	CompletedPostSignup    *bool
 }
 
@@ -571,9 +563,6 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if update.TosAccepted != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
 	}
-	if update.Searchable != nil {
-		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("searchable=%s", *update.Searchable))
-	}
 	if update.CompletedPostSignup != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
 	}
@@ -593,6 +582,42 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if nrows == 0 {
 		return userNotFoundErr{args: []any{id}}
 	}
+	return nil
+}
+
+// NOTE(naman): THIS IS TEMPORARY FOR DEC GA
+// Upgrade user to cody pro plan
+func (u *userStore) ChangeCodyPlan(ctx context.Context, id int32, pro bool) (err error) {
+	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NULL WHERE id=%d AND cody_pro_enabled_at IS NOT NULL AND deleted_at IS NULL", id)
+
+	if pro {
+		query = sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL AND deleted_at IS NULL", id)
+	}
+
+	res, err := u.ExecResult(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if nrows == 0 {
+		user, err := u.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if user == nil {
+			return userNotFoundErr{args: []any{id}}
+		}
+
+		// Intentionally not returning an error if the user is already pro/commiunity. This makes the mutation idempotent.
+		return nil
+	}
+
 	return nil
 }
 
@@ -782,6 +807,8 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Timestamp:       now,
 		}
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
@@ -903,6 +930,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
@@ -1287,18 +1315,18 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
 	q := sqlf.Sprintf(`
 SELECT u.id,
-       u.username,
-       u.display_name,
-       u.avatar_url,
-       u.created_at,
-       u.updated_at,
-       u.site_admin,
-       u.passwd IS NOT NULL,
-       u.invalidated_sessions_at,
-       u.tos_accepted,
-       u.completed_post_signup,
-       u.searchable,
-       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
+	u.username,
+	u.display_name,
+	u.avatar_url,
+	u.created_at,
+	u.updated_at,
+	u.site_admin,
+	u.passwd IS NOT NULL,
+	u.invalidated_sessions_at,
+	u.tos_accepted,
+	u.completed_post_signup,
+	EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled,
+	u.cody_pro_enabled_at
 FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
@@ -1310,7 +1338,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.Searchable, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled, &u.CodyProEnabledAt)
 		if err != nil {
 			return nil, err
 		}
@@ -1345,7 +1373,6 @@ SELECT u.id,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
        u.tos_accepted,
-       u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
        sa.account_id AS scim_external_id,
        sa.account_data AS scim_account_data
@@ -1366,7 +1393,7 @@ func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
 	var deletedAt sql.NullTime
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
@@ -1587,11 +1614,11 @@ func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.
 
 func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name SecurityEventName, userID int32) {
 	a := actor.FromContext(ctx)
-	args, _ := json.Marshal(struct {
+	args := struct {
 		Requester int32 `json:"requester"`
 	}{
 		Requester: a.UID,
-	})
+	}
 
 	var path string
 	var host string
@@ -1599,17 +1626,9 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		path = r.URL.Path
 		host = r.URL.Host
 	}
-	event := &SecurityEvent{
-		Name:      name,
-		URL:       path,
-		UserID:    uint32(userID),
-		Argument:  args,
-		Source:    "BACKEND",
-		Timestamp: time.Now(),
+	if err := db.SecurityEventLogs().LogSecurityEvent(ctx, name, path, uint32(userID), "", "BACKEND", args); err != nil {
+		log.Error(err)
 	}
-	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-
-	db.SecurityEventLogs().LogEvent(ctx, event)
 
 	eArgs, _ := json.Marshal(struct {
 		Requester int32 `json:"requester"`
@@ -1627,6 +1646,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp:       time.Now(),
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 

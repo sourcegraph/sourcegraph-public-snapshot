@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/conc/pool"
 )
 
@@ -51,7 +51,7 @@ func getGitHubUsers(ctx context.Context) []*github.User {
 	var users []*github.User
 	var since int64
 	for {
-		//writeInfo(out, "Fetching user page, last ID seen is %d", since)
+		// writeInfo(out, "Fetching user page, last ID seen is %d", since)
 		usersPage, _, err := gh.Users.ListAll(ctx, &github.UserListOptions{
 			Since:       since,
 			ListOptions: github.ListOptions{PerPage: 100},
@@ -76,7 +76,7 @@ func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
 	var currentPage int
 	for _, o := range orgs {
 		for {
-			//writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
+			// writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
 			teamsPage, _, err := gh.Teams.ListTeams(ctx, o.Login, &github.ListOptions{
 				Page:    currentPage,
 				PerPage: 100,
@@ -106,7 +106,7 @@ func getGitHubOrgs(ctx context.Context) []*github.Organization {
 	var orgs []*github.Organization
 	var since int64
 	for {
-		//writeInfo(out, "Fetching org page, last ID seen is %d", since)
+		// writeInfo(out, "Fetching org page, last ID seen is %d", since)
 		orgsPage, _, err := gh.Organizations.ListAll(ctx, &github.OrganizationsListOptions{
 			Since:       since,
 			ListOptions: github.ListOptions{PerPage: 100},

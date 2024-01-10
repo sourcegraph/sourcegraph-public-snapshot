@@ -16,7 +16,7 @@ import (
 
 func TestProductSubscriptionByAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	r := ProductSubscriptionLicensingResolver{Logger: logger, DB: db}
 

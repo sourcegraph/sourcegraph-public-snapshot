@@ -1,32 +1,47 @@
-import { fetchRepoCommit, queryRepositoryComparisonFileDiffs } from '$lib/repo/api/commits'
-
 import type { PageLoad } from './$types'
+import { CommitQuery, DiffQuery } from './page.gql'
 
 export const load: PageLoad = async ({ parent, params }) => {
-    const { resolvedRevision } = await parent()
-    const commit = fetchRepoCommit(resolvedRevision.repo.id, params.revspec).then(data => {
-        if (data?.node?.__typename === 'Repository') {
-            return { commit: data.node.commit, repo: resolvedRevision.repo }
-        }
-        return { commit: null, repo: resolvedRevision.repo }
-    })
+    const {
+        resolvedRevision: { repo },
+        graphqlClient,
+    } = await parent()
+    const commit = graphqlClient
+        .query({ query: CommitQuery, variables: { repo: repo.id, revspec: params.revspec } })
+        .then(result => {
+            if (result.data.node?.__typename === 'Repository') {
+                return result.data.node.commit
+            }
+            return null
+        })
 
     return {
         deferred: {
-            commit: commit.then(result => result?.commit ?? null),
-            diff: commit.then(result => {
-                if (!result.commit?.oid || !result.commit.parents[0]?.oid) {
-                    return null
-                }
-                return queryRepositoryComparisonFileDiffs({
-                    repo: result.repo.id,
-                    base: result.commit?.parents[0].oid,
-                    head: result.commit?.oid,
-                    paths: [],
-                    first: null,
-                    after: null,
+            commit,
+            // TODO: Support pagination
+            diff: commit
+                .then(commit => {
+                    if (!commit?.oid || !commit.parents[0]?.oid) {
+                        return null
+                    }
+                    return graphqlClient.query({
+                        query: DiffQuery,
+                        variables: {
+                            repo: repo.id,
+                            base: commit.parents[0].oid,
+                            head: commit.oid,
+                            paths: [],
+                            first: null,
+                            after: null,
+                        },
+                    })
                 })
-            }),
+                .then(result => {
+                    if (result?.data.node?.__typename === 'Repository') {
+                        return result.data.node.comparison.fileDiffs
+                    }
+                    return null
+                }),
         },
     }
 }

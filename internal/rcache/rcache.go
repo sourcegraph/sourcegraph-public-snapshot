@@ -3,11 +3,12 @@ package rcache
 import (
 	"fmt"
 	"os"
+	"testing"
 	"time"
 	"unicode/utf8"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -168,7 +169,7 @@ type TB interface {
 
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
-func SetupForTest(t TB) {
+func SetupForTest(t testing.TB) {
 	t.Helper()
 
 	pool := &redis.Pool{

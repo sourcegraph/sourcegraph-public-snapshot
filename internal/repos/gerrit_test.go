@@ -11,27 +11,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGerritSource_ListRepos(t *testing.T) {
 	ratelimit.SetupForTest(t)
 
-	cfName := t.Name()
 	t.Run("no filtering", func(t *testing.T) {
-		conf := &schema.GerritConnection{
+		cf, save := NewClientFactory(t, t.Name())
+		defer save(t)
+
+		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
 			Url:      "https://gerrit.sgdev.org",
 			Username: os.Getenv("GERRIT_USERNAME"),
 			Password: os.Getenv("GERRIT_PASSWORD"),
-		}
-		cf, save := NewClientFactory(t, cfName)
-		defer save(t)
-
-		svc := &types.ExternalService{
-			Kind:   extsvc.KindGerrit,
-			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
-		}
+		})
 
 		ctx := context.Background()
 		src, err := NewGerritSource(ctx, svc, cf)
@@ -46,21 +41,17 @@ func TestGerritSource_ListRepos(t *testing.T) {
 	})
 
 	t.Run("with filtering", func(t *testing.T) {
-		conf := &schema.GerritConnection{
+		cf, save := NewClientFactory(t, t.Name())
+		defer save(t)
+
+		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
 			Projects: []string{
 				"src-cli",
 			},
 			Url:      "https://gerrit.sgdev.org",
 			Username: os.Getenv("GERRIT_USERNAME"),
 			Password: os.Getenv("GERRIT_PASSWORD"),
-		}
-		cf, save := NewClientFactory(t, cfName)
-		defer save(t)
-
-		svc := &types.ExternalService{
-			Kind:   extsvc.KindGerrit,
-			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
-		}
+		})
 
 		ctx := context.Background()
 		src, err := NewGerritSource(ctx, svc, cf)

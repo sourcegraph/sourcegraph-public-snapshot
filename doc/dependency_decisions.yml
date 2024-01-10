@@ -2,7 +2,7 @@
 - - :restrict
   - unknown
   - &1
-    :who: 
+    :who:
     :why: Import licenses-npm.sh FAIL_ON
     :versions: []
     :when: 2020-06-05 18:25:53.630259000 Z
@@ -30,7 +30,7 @@
 - - :permit
   - 0BSD
   - &2
-    :who: 
+    :who:
     :why: Import approved licenses from ThirdPartyLicensesNpm.csv
     :versions: []
     :when: 2020-06-05 19:02:14.987331000 Z
@@ -105,7 +105,7 @@
   - *2
 - - :ignore_group
   - devDependencies
-  - :who: 
+  - :who:
     :why: Exclude development dependencies that are not included in bundles
     :versions: []
     :when: 2020-06-05 21:28:58.197862000 Z
@@ -113,8 +113,8 @@
   - sourcegraph
   - Apache-2.0
   - &3
-    :who: 
-    :why: 
+    :who:
+    :why:
     :versions: []
     :when: 2020-06-15 06:45:58.540797000 Z
 - - :homepage
@@ -303,25 +303,25 @@
   - *3
 - - :ignore
   - github.com/OpenPeeDeeP/depguard
-  - :who: 
+  - :who:
     :why: Development dependency
     :versions: []
     :when: 2020-06-16 02:19:49.896604000 Z
 - - :ignore
   - github.com/golangci/check
-  - :who: 
+  - :who:
     :why: Development dependency
     :versions: []
     :when: 2020-06-16 02:20:06.274998000 Z
 - - :name_project
   - sourcegraph/sourcegraph
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2020-06-16 02:20:33.870044000 Z
 - - :approve
   - mdi-react
-  - :who: 
+  - :who:
     :why: Seems to be a bug approving this dependency, despite its license already
       being on the approvelist
     :versions: []
@@ -329,95 +329,95 @@
 - - :license
   - github.com/sourcegraph/gosaml2
   - Apache 2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2020-08-12 08:03:13.360476000 Z
 - - :permit
   - CC-BY-4.0
-  - :who: 
+  - :who:
     :why: Used by caniuse-lite
     :when: 2020-09-23 12:14:34.205000000 Z
 - - :ignore
-  - "./enterprise/dev/ci/images"
-  - :who: 
+  - "./dev/ci/images"
+  - :who:
     :why: Internal module
     :versions: []
     :when: 2020-11-29 06:02:35.623296000 Z
 - - :ignore
   - "./lib"
-  - :who: 
+  - :who:
     :why: Internal module
     :versions: []
     :when: 2021-03-09 19:42:12.214862934 Z
 - - :license
   - github.com/aws/smithy-go
   - Apache 2.0
-  - :who: 
+  - :who:
     :why: Inference broken, LICENSE file lives at https://github.com/aws/smithy-go/blob/main/LICENSE
     :versions: []
     :when: 2021-04-14 12:51:19.503802000 Z
 - - :permit
   - Python-2.0
-  - :who: 
+  - :who:
     :why: Used by argparse
     :versions: []
     :when: 2021-10-12 11:17:37.706276000 Z
 - - :license
   - github.com/DataDog/sketches-go
   - Apache 2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2022-02-18 21:09:06.289293214 Z
 - - :license
   - github.com/layeh/gopher-json
   - Public domain
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2022-04-18 21:25:36.854878000 Z
 - - :ignore
   - root-workspace-0b6124
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2022-12-05 09:54:08.112251000 Z
 - - :ignore
   - trim
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2022-12-05 09:54:31.944623000 Z
 - - :ignore
   - "./monitoring"
-  - :who: 
+  - :who:
     :why: Internal module
     :versions: []
     :when: 2022-12-16 22:04:46.864944000 Z
 - - :license
   - "@atlassian/aui"
   - Apache 2.0
-  - :who: 
+  - :who:
     :why: Inference broken, LICENSE file lives at https://bitbucket.org/atlassian/aui/src/master/packages/core/LICENSE.md
     :versions: []
     :when: 2023-01-09 04:35:08.321179000 Z
 - - :license
   - browser-assert
   - MIT
-  - :who: 
+  - :who:
     :why: Inference broken, LICENSE file lives at https://github.com/socialally/browser-assert/blob/master/LICENSE
     :versions: []
     :when: 2023-01-09 04:44:39.507826000 Z
 - - :ignore
   - buffers
-  - :who: 
+  - :who:
     :why: No LICENSE file, see https://www.npmjs.com/package/buffers
     :versions: []
     :when: 2023-01-09 04:47:26.508863000 Z
 - - :permit
   - MIT/X11
-  - :who: 
+  - :who:
     :why: The MIT license and the MIT/X11 license are actually the same thing. The
       MIT/X11 license is just an older name for the MIT license, which was adopted
       in the 1980s when the X Window System (also known as X11) was popular.
@@ -425,120 +425,120 @@
     :when: 2023-01-09 04:50:14.994464000 Z
 - - :permit
   - Public Domain
-  - :who: 
+  - :who:
     :why: The Public Domain license is a legal designation that indicates that a work
       is not protected by copyright and can be used freely by anyone, for any purpose.
     :versions: []
     :when: 2023-01-09 04:53:01.534607000 Z
 - - :ignore
   - language-tags
-  - :who: 
+  - :who:
     :why: Used by the `eslint-plugin-jsx-a11y` dependency.
     :versions: []
     :when: 2023-01-09 04:55:27.641853000 Z
 - - :ignore
   - language-subtag-registry
-  - :who: 
+  - :who:
     :why: Used by the `eslint-plugin-jsx-a11y` dependency.
     :versions: []
     :when: 2023-01-09 04:55:27.641853000 Z
 - - :license
   - skatejs-template-html
   - MIT
-  - :who: 
+  - :who:
     :why: Inference broken, LICENSE file lives at https://www.npmjs.com/package/skatejs-template-html#license
     :versions: []
     :when: 2023-01-09 04:56:45.936694000 Z
 - - :license
   - stdin
   - MIT
-  - :who: 
+  - :who:
     :why: Inference broken, LICENSE file lives at https://www.npmjs.com/package/stdin#license
     :versions: []
     :when: 2023-01-09 04:58:41.642155000 Z
 - - :ignore
   - eslint-plugin-deprecation
-  - :who: 
+  - :who:
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:03:11.764982000 Z
 - - :ignore
   - fast-shallow-equal
-  - :who: 
+  - :who:
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:03:33.000495000 Z
 - - :ignore
   - pako
-  - :who: 
+  - :who:
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:03:51.213298000 Z
 - - :ignore
   - react-universal-interface
-  - :who: 
+  - :who:
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:04:06.690991000 Z
 - - :ignore
   - tosource
-  - :who: 
+  - :who:
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:25:48.126482000 Z
 - - :ignore
   - rollup-plugin-dts
-  - :who: 
+  - :who:
     :why: dependency from backstage
     :versions: []
     :when: 2023-01-19 20:26:01.138835000 Z
 - - :license
   - github.com/xi2/xz
   - Public domain
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-01-12 01:20:17.504279000 Z
 - - :license
   - github.com/hashicorp/cronexpr
   - Apache 2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-06-02 13:33:29.979046000 Z
 - - :license
   - "@jspm/core"
   - Apache 2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-06-19 14:46:26.158816000 Z
 - - :license
   - require-like
   - MIT
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-06-19 14:47:16.005983000 Z
 - - :license
   - github.com/ricochet2200/go-disk-usage/du
   - Unlicense
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-06-19 19:11:34.298774000 Z
 - - :license
   - github.com/hashicorp/go-retryablehttp
   - MPL-2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-07-17 17:10:16.265371000 Z
 - - :approve
   - github.com/hashicorp/go-retryablehttp
   - &4
-    :who: 
-    :why: 
+    :who:
+    :why:
     :versions: []
     :when: 2023-07-17 18:09:46.313307000 Z
 - - :approve
@@ -546,21 +546,27 @@
   - *4
 - - :permit
   - BlueOak-1.0.0
-  - :who: 
+  - :who:
     :why: Approved permissive license (https://handbook.sourcegraph.com/departments/engineering/dev/process/licenses/#allowed-licenses-permissive-licenses)
     :versions: []
     :when: 2023-07-27 21:22:46.362043095 Z
 - - :license
   - github.com/hashicorp/terraform-cdk-go/cdktf
   - MPL-2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-08-23 22:45:52.736440000 Z
 - - :license
   - github.com/hashicorp/go-tfe
   - MPL-2.0
-  - :who: 
-    :why: 
+  - :who:
+    :why:
     :versions: []
     :when: 2023-09-06 22:04:27.722891000 Z
+- - :ignore
+  - "./lib/managedservicesplatform"
+  - :who:
+    :why: Internal module
+    :versions: []
+    :when: 2023-09-23 22:04:27.722891000 Z

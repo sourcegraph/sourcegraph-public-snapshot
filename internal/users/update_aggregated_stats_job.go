@@ -51,7 +51,7 @@ func updateAggregatedUsersStatisticsTable(ctx context.Context, db database.DB) e
 var started bool
 
 func StartUpdateAggregatedUsersStatisticsTable(ctx context.Context, db database.DB) {
-	logger := log.Scoped("aggregated_user_statistics:cache-refresh", "aggregated_user_statistics cache refresh")
+	logger := log.Scoped("aggregated_user_statistics:cache-refresh")
 
 	if started {
 		panic("already started")

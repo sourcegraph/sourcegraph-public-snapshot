@@ -44,8 +44,8 @@ func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
 		}
 	}
 
-	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("unaryMethod", "errors that originated from a unary method")
+	logger := l.Scoped(logScope)
+	logger = logger.Scoped("unaryMethod")
 
 	return func(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		err := invoker(ctx, fullMethod, req, reply, cc, opts...)
@@ -74,8 +74,8 @@ func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
 		}
 	}
 
-	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("streamingMethod", "errors that originated from a streaming method")
+	logger := l.Scoped(logScope)
+	logger = logger.Scoped("streamingMethod")
 
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
@@ -86,7 +86,7 @@ func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
 			// until after the stream is created.
 			//
 			// This is fine since the error is already available, and the non-utf8 string check is robust against nil messages.
-			logger := logger.Scoped("postInit", "errors that occurred after stream initialization, but before the first message was sent")
+			logger := logger.Scoped("postInit")
 			doLog(logger, serviceName, methodName, nil, nil, err)
 			return nil, err
 		}
@@ -106,8 +106,8 @@ func LoggingUnaryServerInterceptor(l log.Logger) grpc.UnaryServerInterceptor {
 		}
 	}
 
-	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("unaryMethod", "errors that originated from a unary method")
+	logger := l.Scoped(logScope)
+	logger = logger.Scoped("unaryMethod")
 
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		response, err := handler(ctx, req)
@@ -136,8 +136,8 @@ func LoggingStreamServerInterceptor(l log.Logger) grpc.StreamServerInterceptor {
 		}
 	}
 
-	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("streamingMethod", "errors that originated from a streaming method")
+	logger := l.Scoped(logScope)
+	logger = logger.Scoped("streamingMethod")
 
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		serviceName, methodName := grpcutil.SplitMethodName(info.FullMethod)
@@ -148,8 +148,8 @@ func LoggingStreamServerInterceptor(l log.Logger) grpc.StreamServerInterceptor {
 }
 
 func newLoggingServerStream(s grpc.ServerStream, logger log.Logger, serviceName, methodName string) grpc.ServerStream {
-	sendLogger := logger.Scoped("postMessageSend", "errors that occurred after sending a message")
-	receiveLogger := logger.Scoped("postMessageReceive", "errors that occurred after receiving a message")
+	sendLogger := logger.Scoped("postMessageSend")
+	receiveLogger := logger.Scoped("postMessageReceive")
 
 	requestSaver := requestSavingServerStream{ServerStream: s}
 
@@ -171,8 +171,8 @@ func newLoggingServerStream(s grpc.ServerStream, logger log.Logger, serviceName,
 }
 
 func newLoggingClientStream(s grpc.ClientStream, logger log.Logger, serviceName, methodName string) grpc.ClientStream {
-	sendLogger := logger.Scoped("postMessageSend", "errors that occurred after sending a message")
-	receiveLogger := logger.Scoped("postMessageReceive", "errors that occurred after receiving a message")
+	sendLogger := logger.Scoped("postMessageSend")
+	receiveLogger := logger.Scoped("postMessageReceive")
 
 	requestSaver := requestSavingClientStream{ClientStream: s}
 

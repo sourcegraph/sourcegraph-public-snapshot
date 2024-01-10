@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,7 +26,7 @@ type permissionsInfoResolver struct {
 	perms        authz.Perms
 	syncedAt     time.Time
 	updatedAt    time.Time
-	source       *string
+	source       string
 	unrestricted bool
 }
 
@@ -46,7 +46,11 @@ func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
 }
 
 func (r *permissionsInfoResolver) Source() *string {
-	return r.source
+	if r.source == "" {
+		return nil
+	}
+
+	return &r.source
 }
 
 func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
@@ -56,9 +60,9 @@ func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 var permissionsInfoRepositoryConnectionMaxPageSize = 100
 
 var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "repo.name"}},
+	OrderBy:     database.OrderBy{{Field: "repo.id"}},
 	Ascending:   true,
-	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
+	MaxPageSize: permissionsInfoRepositoryConnectionMaxPageSize,
 }
 
 func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
@@ -87,25 +91,27 @@ type permissionsInfoRepositoriesStore struct {
 }
 
 func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.PermissionsInfoRepositoryResolver, _ database.OrderBy) (*string, error) {
-	cursor := node.Repository().Name()
+	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	cursorSQL := fmt.Sprintf("'%s'", cursor)
-
-	return &cursorSQL, nil
-}
-
-func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
+func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	return []any{int32(repoID)}, nil
+}
+
+func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (int32, error) {
+	count, err := s.db.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(count), nil
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
@@ -131,8 +137,14 @@ func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
 	return graphqlbackend.MarshalRepositoryID(r.perm.Repo.ID)
 }
 
-func (r permissionsInfoRepositoryResolver) Repository() *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), r.perm.Repo)
+func (r permissionsInfoRepositoryResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	repo, err := r.db.Repos().Get(ctx, r.perm.Repo.ID)
+	// If the errcode is NotFound, we return nil, nil, as we know that the repo should exist at this point.
+	// So this should mean that this user simply cannot see the repository.
+	if err != nil && errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient("graphql.authz.permissions"), repo), err
 }
 
 func (r permissionsInfoRepositoryResolver) Reason() string {
@@ -148,7 +160,7 @@ var permissionsInfoUserConnectionMaxPageSize = 100
 var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOptions{
 	OrderBy:     database.OrderBy{{Field: "users.username"}},
 	Ascending:   true,
-	MaxPageSize: &permissionsInfoUserConnectionMaxPageSize,
+	MaxPageSize: permissionsInfoUserConnectionMaxPageSize,
 }
 
 func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
@@ -184,15 +196,13 @@ func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.Permission
 	return &cursor, nil
 }
 
-func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	cursorSQL := fmt.Sprintf("'%s'", cursor)
-
-	return &cursorSQL, nil
+func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) ([]any, error) {
+	return []any{cursor}, nil
 }
 
 // TODO(naman): implement total count
-func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	return nil, nil
+func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
 func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {

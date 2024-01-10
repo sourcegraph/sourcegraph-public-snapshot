@@ -10,30 +10,105 @@ interactions:
       Content-Type:
       - application/x-amz-json-1.1
       User-Agent:
-      - aws-sdk-go-v2/1.3.2
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
       X-Amz-Target:
       - TrentService.DescribeKey
-      X-Amz-User-Agent:
-      - aws-sdk-go-v2/1.3.2 os/other lang/go/1.16.3 md/GOOS/darwin md/GOARCH/amd64
     url: https://kms.us-west-2.amazonaws.com/
     method: POST
   response:
-    body: '{"KeyMetadata":{"AWSAccountId":"185007729374","Arn":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","CreationDate":1.619445087217E9,"CustomerMasterKeySpec":"SYMMETRIC_DEFAULT","Description":"","Enabled":true,"EncryptionAlgorithms":["SYMMETRIC_DEFAULT"],"KeyId":"4b739277-5a93-4551-b71c-99608c9c805d","KeyManager":"CUSTOMER","KeySpec":"SYMMETRIC_DEFAULT","KeyState":"Enabled","KeyUsage":"ENCRYPT_DECRYPT","Origin":"AWS_KMS"}}'
+    body: '{"KeyMetadata":{"AWSAccountId":"185007729374","Arn":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","CreationDate":1.619445087217E9,"CustomerMasterKeySpec":"SYMMETRIC_DEFAULT","Description":"","Enabled":true,"EncryptionAlgorithms":["SYMMETRIC_DEFAULT"],"KeyId":"4b739277-5a93-4551-b71c-99608c9c805d","KeyManager":"CUSTOMER","KeySpec":"SYMMETRIC_DEFAULT","KeyState":"Enabled","KeyUsage":"ENCRYPT_DECRYPT","MultiRegion":false,"Origin":"AWS_KMS"}}'
     headers:
       Cache-Control:
       - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
       Content-Length:
-      - "454"
+      - "474"
       Content-Type:
       - application/x-amz-json-1.1
       Date:
-      - Wed, 19 May 2021 18:18:16 GMT
+      - Sat, 16 Sep 2023 22:13:48 GMT
       Expires:
       - "0"
       Pragma:
       - no-cache
       X-Amzn-Requestid:
-      - a1f235ec-4e7d-4306-838f-914c582123f2
+      - 2960fc61-92ec-4414-b92e-d259456f2f70
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"KeyId":"4b739277-5a93-4551-b71c-99608c9c805d","Plaintext":"MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4="}'
+    form: {}
+    headers:
+      Amz-Sdk-Request:
+      - attempt=1; max=3
+      Content-Type:
+      - application/x-amz-json-1.1
+      User-Agent:
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
+      X-Amz-Target:
+      - TrentService.Encrypt
+    url: https://kms.us-west-2.amazonaws.com/
+    method: POST
+  response:
+    body: '{"CiphertextBlob":"AQICAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAFo5xYs+F8wW7YxrMSGag9cAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMBuC5xQ3+Dh0E8UZIAgEQgDs3I6F0QwxqLyJz+gBxPuye0MN5J8vacNwO1D1J2ipXNTJJiWrMOsVr3zZsY7WsoYNFQxnVVrjawwaCxA==","EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d"}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - "397"
+      Content-Type:
+      - application/x-amz-json-1.1
+      Date:
+      - Sat, 16 Sep 2023 22:13:48 GMT
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      X-Amzn-Requestid:
+      - 957235f8-1c0e-4e1c-95aa-e297b1f64247
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"CiphertextBlob":"AQICAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAFo5xYs+F8wW7YxrMSGag9cAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMBuC5xQ3+Dh0E8UZIAgEQgDs3I6F0QwxqLyJz+gBxPuye0MN5J8vacNwO1D1J2ipXNTJJiWrMOsVr3zZsY7WsoYNFQxnVVrjawwaCxA==","KeyId":"4b739277-5a93-4551-b71c-99608c9c805d"}'
+    form: {}
+    headers:
+      Amz-Sdk-Request:
+      - attempt=1; max=3
+      Content-Type:
+      - application/x-amz-json-1.1
+      User-Agent:
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
+      X-Amz-Target:
+      - TrentService.Decrypt
+    url: https://kms.us-west-2.amazonaws.com/
+    method: POST
+  response:
+    body: '{"EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","KeyOrigin":"AWS_KMS","Plaintext":"MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4="}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - "210"
+      Content-Type:
+      - application/x-amz-json-1.1
+      Date:
+      - Sat, 16 Sep 2023 22:13:48 GMT
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      X-Amzn-Requestid:
+      - 838ea516-ecaa-4261-8f93-d0f1c64efa10
     status: 200 OK
     code: 200
     duration: ""
@@ -46,35 +121,36 @@ interactions:
       Content-Type:
       - application/x-amz-json-1.1
       User-Agent:
-      - aws-sdk-go-v2/1.3.2
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
       X-Amz-Target:
       - TrentService.GenerateDataKey
-      X-Amz-User-Agent:
-      - aws-sdk-go-v2/1.3.2 os/other lang/go/1.16.3 md/GOOS/darwin md/GOARCH/amd64
     url: https://kms.us-west-2.amazonaws.com/
     method: POST
   response:
-    body: '{"CiphertextBlob":"AQIDAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAE1T8ohbUu9/ML5cGkdZqWjAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQM4gx3vKEbMij95UIkAgEQgDu7NxS3T7Vcm4rNtzT8JXu7z8o+IXmporkXsRhJQmjOL4D/tS22/7XJGeegY5nI17/U0drejAJTgRq8kg==","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","Plaintext":"+zne20Pvs2NZcA25YwfcqaIbdjIn36JDgp6cOTQ14XA="}'
+    body: '{"CiphertextBlob":"AQIDAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAGEj+E+OjC39ea2aC7+NqInAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMcA71cY76V9rsk0qiAgEQgDtbnnCn/4EdNisuciiBPHgsH6/2CpKhGgUscoPOGTwxN3RLwVstQwdi6RNCigYNYDNMMJvScI5OkhIMIQ==","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","KeyOrigin":"AWS_KMS","Plaintext":"I35vnlsysvnqb4P8p4JqVaLS/XsmmgucczxEoDy0obo="}'
     headers:
       Cache-Control:
       - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
       Content-Length:
-      - "414"
+      - "436"
       Content-Type:
       - application/x-amz-json-1.1
       Date:
-      - Wed, 19 May 2021 18:18:17 GMT
+      - Sat, 16 Sep 2023 22:13:49 GMT
       Expires:
       - "0"
       Pragma:
       - no-cache
       X-Amzn-Requestid:
-      - 52133c7f-1fa4-4b95-9ca2-dac230f40b83
+      - 25e3f841-f8f5-46b1-8858-269f57198883
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"CiphertextBlob":"AQIDAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAE1T8ohbUu9/ML5cGkdZqWjAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQM4gx3vKEbMij95UIkAgEQgDu7NxS3T7Vcm4rNtzT8JXu7z8o+IXmporkXsRhJQmjOL4D/tS22/7XJGeegY5nI17/U0drejAJTgRq8kg==","KeyId":"4b739277-5a93-4551-b71c-99608c9c805d"}'
+    body: '{"CiphertextBlob":"AQIDAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAGEj+E+OjC39ea2aC7+NqInAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMcA71cY76V9rsk0qiAgEQgDtbnnCn/4EdNisuciiBPHgsH6/2CpKhGgUscoPOGTwxN3RLwVstQwdi6RNCigYNYDNMMJvScI5OkhIMIQ==","KeyId":"4b739277-5a93-4551-b71c-99608c9c805d"}'
     form: {}
     headers:
       Amz-Sdk-Request:
@@ -82,30 +158,105 @@ interactions:
       Content-Type:
       - application/x-amz-json-1.1
       User-Agent:
-      - aws-sdk-go-v2/1.3.2
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
       X-Amz-Target:
       - TrentService.Decrypt
-      X-Amz-User-Agent:
-      - aws-sdk-go-v2/1.3.2 os/other lang/go/1.16.3 md/GOOS/darwin md/GOARCH/amd64
     url: https://kms.us-west-2.amazonaws.com/
     method: POST
   response:
-    body: '{"EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","Plaintext":"+zne20Pvs2NZcA25YwfcqaIbdjIn36JDgp6cOTQ14XA="}'
+    body: '{"EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","KeyOrigin":"AWS_KMS","Plaintext":"I35vnlsysvnqb4P8p4JqVaLS/XsmmgucczxEoDy0obo="}'
     headers:
       Cache-Control:
       - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
       Content-Length:
-      - "188"
+      - "210"
       Content-Type:
       - application/x-amz-json-1.1
       Date:
-      - Wed, 19 May 2021 18:18:17 GMT
+      - Sat, 16 Sep 2023 22:13:49 GMT
       Expires:
       - "0"
       Pragma:
       - no-cache
       X-Amzn-Requestid:
-      - 0d5a4806-f4f3-4f2f-be1d-ca93e4c3d966
+      - 9a34e1d3-ecfb-41bf-958c-d19b4c2a9edc
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"KeyId":"4b739277-5a93-4551-b71c-99608c9c805d","Plaintext":"MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4="}'
+    form: {}
+    headers:
+      Amz-Sdk-Request:
+      - attempt=1; max=3
+      Content-Type:
+      - application/x-amz-json-1.1
+      User-Agent:
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
+      X-Amz-Target:
+      - TrentService.Encrypt
+    url: https://kms.us-west-2.amazonaws.com/
+    method: POST
+  response:
+    body: '{"CiphertextBlob":"AQICAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAHHR611RT4Xe8R3go2t+1WXAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMizK1WCE+5X+GFNn5AgEQgDtQZq0gPkXt3RFrIv9wxLj6PFF7fHkVbMND9x8JfgJGBQsbK2v8EE0RlIsJYkqsn7ISoyVNog1IkUNvWA==","EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d"}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - "397"
+      Content-Type:
+      - application/x-amz-json-1.1
+      Date:
+      - Sat, 16 Sep 2023 22:13:49 GMT
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      X-Amzn-Requestid:
+      - 2faf1e7b-6ee1-49c9-a573-37da5a9c34fc
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"CiphertextBlob":"AQICAHgVKhdyNRw2H1EOImj+ZiPtPzBL/QnBteec2v9iergqpAHHR611RT4Xe8R3go2t+1WXAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMizK1WCE+5X+GFNn5AgEQgDtQZq0gPkXt3RFrIv9wxLj6PFF7fHkVbMND9x8JfgJGBQsbK2v8EE0RlIsJYkqsn7ISoyVNog1IkUNvWA==","KeyId":"4b739277-5a93-4551-b71c-99608c9c805d"}'
+    form: {}
+    headers:
+      Amz-Sdk-Request:
+      - attempt=1; max=3
+      Content-Type:
+      - application/x-amz-json-1.1
+      User-Agent:
+      - aws-sdk-go-v2/1.17.4 os/macos lang/go/1.20.8 md/GOOS/darwin md/GOARCH/arm64
+        api/kms/1.14.0
+      X-Amz-Target:
+      - TrentService.Decrypt
+    url: https://kms.us-west-2.amazonaws.com/
+    method: POST
+  response:
+    body: '{"EncryptionAlgorithm":"SYMMETRIC_DEFAULT","KeyId":"arn:aws:kms:us-west-2:185007729374:key/4b739277-5a93-4551-b71c-99608c9c805d","KeyOrigin":"AWS_KMS","Plaintext":"MzJieXRlc2xvbmdzZWNyZXQuLi4uLi4uLi4uLi4uLi4="}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - "210"
+      Content-Type:
+      - application/x-amz-json-1.1
+      Date:
+      - Sat, 16 Sep 2023 22:13:49 GMT
+      Expires:
+      - "0"
+      Pragma:
+      - no-cache
+      X-Amzn-Requestid:
+      - 4fc89223-5e15-4afc-a04d-705ac7c3f07a
     status: 200 OK
     code: 200
     duration: ""

@@ -34,6 +34,7 @@ func SearchGRPC(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	features search.Features,
+	contextLines int,
 	onMatch func(*proto.FileMatch),
 ) (limitHit bool, err error) {
 	r := (&protocol.Request{
@@ -51,16 +52,15 @@ func SearchGRPC(
 			Limit:                        int(p.FileMatchLimit),
 			IsRegExp:                     p.IsRegExp,
 			IsStructuralPat:              p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
 			IsCaseSensitive:              p.IsCaseSensitive,
 			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
 			IsNegated:                    p.IsNegated,
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
-		Indexed:      indexed,
-		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
+		Indexed:         indexed,
+		FetchTimeout:    fetchTimeout,
+		NumContextLines: int32(contextLines),
 	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is
@@ -89,7 +89,7 @@ func SearchGRPC(
 			return false, err
 		}
 
-		client := proto.NewSearcherServiceClient(conn)
+		client := &automaticRetryClient{proto.NewSearcherServiceClient(conn)}
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err

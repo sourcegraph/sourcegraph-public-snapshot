@@ -12,9 +12,3 @@ batches.go @eseliger
 
 # Insights
 insights.go @sourcegraph/code-insights-backend
-
-# Code intelligence
-codeintel.go @efritz
-
-# Migrations
-oobmigrations.go @efritz

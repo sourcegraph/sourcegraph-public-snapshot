@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
@@ -28,13 +29,18 @@ func TestPublish(t *testing.T) {
 		}
 	}
 
-	publisher, err := events.NewPublisherForStream(memTopic, &telemetrygatewayv1.RecordEventsRequestMetadata{})
+	const concurrency = 50
+	publisher, err := events.NewPublisherForStream(memTopic, &telemetrygatewayv1.RecordEventsRequestMetadata{}, events.PublishStreamOptions{
+		ConcurrencyLimit: concurrency,
+	})
 	require.NoError(t, err)
 
-	events := make([]*telemetrygatewayv1.Event, 100)
+	events := make([]*telemetrygatewayv1.Event, concurrency)
 	for i := range events {
 		events[i] = &telemetrygatewayv1.Event{
-			Id: strconv.Itoa(i),
+			Id:      strconv.Itoa(i),
+			Feature: t.Name(),
+			Action:  strconv.Itoa(i),
 		}
 	}
 
@@ -63,11 +69,14 @@ func TestPublish(t *testing.T) {
 	// Collect all the messages we published
 	for _, m := range memTopic.Messages {
 		var payload map[string]json.RawMessage
-		require.NoError(t, json.Unmarshal(m, &payload))
+		require.NoError(t, json.Unmarshal(m.Data, &payload))
 
 		var event telemetrygatewayv1.Event
 		require.NoError(t, json.Unmarshal(payload["event"], &event))
 		publishedEvents[event.GetId()] = true
+
+		assert.Equal(t, event.Feature, m.Attributes["event.feature"])
+		assert.Equal(t, event.Action, m.Attributes["event.action"])
 	}
 
 	// Make our assertions - all events should be have results or be published

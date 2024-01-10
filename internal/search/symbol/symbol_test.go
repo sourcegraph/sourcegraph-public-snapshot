@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSearchZoektDoesntPanicWithNilQuery(t *testing.T) {
@@ -22,12 +22,8 @@ func TestSearchZoektDoesntPanicWithNilQuery(t *testing.T) {
 	mockStreamer := NewMockStreamer()
 	expectedErr := errors.New("short circuit")
 	mockStreamer.SearchFunc.SetDefaultReturn(nil, expectedErr)
-	search.IndexedMock = mockStreamer
-	t.Cleanup(func() {
-		search.IndexedMock = nil
-	})
 
-	_, err := searchZoekt(context.Background(), types.MinimalRepo{ID: 1}, "commitID", nil, "branch", nil, nil, nil)
+	_, err := searchZoekt(context.Background(), mockStreamer, types.MinimalRepo{ID: 1}, "commitID", nil, "branch", nil, nil, nil)
 	assert.ErrorIs(t, err, expectedErr)
 }
 
@@ -48,10 +44,8 @@ func TestFilterZoektResults(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	checker, err := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	checker := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
+
 	results := []*result.SymbolMatch{
 		{
 			Symbol: result.Symbol{},
@@ -66,7 +60,7 @@ func TestFilterZoektResults(t *testing.T) {
 			},
 		},
 	}
-	filtered, err := FilterZoektResults(ctx, checker, repoName, results)
+	filtered, err := filterZoektResults(ctx, checker, repoName, results)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -19,7 +19,7 @@ func InitPrometheusMetric[T workerutil.Record](observationCtx *observation.Conte
 		teamAndResource = team + "_" + teamAndResource
 	}
 
-	logger := observationCtx.Logger.Scoped("InitPrometheusMetric", "")
+	logger := observationCtx.Logger.Scoped("InitPrometheusMetric")
 	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name:        fmt.Sprintf("src_%s_total", teamAndResource),
 		Help:        fmt.Sprintf("Total number of %s records in the queued state.", resource),

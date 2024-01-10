@@ -19,9 +19,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -39,11 +41,11 @@ import (
 
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db database.DB) http.Handler {
-	logger := log.Scoped("searchStreamHandler", "")
+	logger := log.Scoped("searchStreamHandler")
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.New(logger, db),
+		searchClient:        client.New(logger, db, gitserver.NewClient("http.search.stream")),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -104,6 +106,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
+		args.ContextLines,
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -113,6 +116,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		} else {
 			return err
 		}
+	}
+
+	if actor.FromContext(ctx).IsAuthenticated() {
+		// Used for development to quickly test different zoekt.SearchOptions without having
+		// to change the code.
+		inputs.Features.ZoektSearchOptionsOverride = args.ZoektSearchOptionsOverride
 	}
 
 	// Display is the number of results we send down. If display is < 0 we
@@ -210,12 +219,14 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 }
 
 type args struct {
-	Query              string
-	Version            string
-	PatternType        string
-	Display            int
-	EnableChunkMatches bool
-	SearchMode         int
+	Query                      string
+	Version                    string
+	PatternType                string
+	Display                    int
+	EnableChunkMatches         bool
+	SearchMode                 int
+	ContextLines               *int32
+	ZoektSearchOptionsOverride string
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -228,9 +239,10 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:       get("q", ""),
-		Version:     get("v", "V3"),
-		PatternType: get("t", ""),
+		Query:                      get("q", ""),
+		Version:                    get("v", "V3"),
+		PatternType:                get("t", ""),
+		ZoektSearchOptionsOverride: get("zoekt-search-opts", ""),
 	}
 
 	if a.Query == "" {
@@ -246,6 +258,14 @@ func parseURLQuery(q url.Values) (*args, error) {
 	chunkMatches := get("cm", "f")
 	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	}
+
+	if contextLines := q.Get("cl"); contextLines != "" {
+		parsedContextLines, err := strconv.ParseUint(contextLines, 10, 32)
+		if err != nil {
+			return nil, errors.Errorf("context lines must be parseable as a boolean, got %q: %w", contextLines, err)
+		}
+		a.ContextLines = pointers.Ptr(int32(parsedContextLines))
 	}
 
 	searchMode := get("sm", "0")
@@ -451,6 +471,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
 		repoEvent.Metadata = r.KeyValuePairs
+		repoEvent.Topics = r.Topics
 	}
 
 	return repoEvent
@@ -688,7 +709,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	// Instantly send results if we have not sent any yet.
 	if h.first && len(event.Results) > 0 {
 		h.first = false
-		h.eventWriter.Filters(h.filters.Compute())
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		h.logLatency()
 	}
@@ -706,7 +727,11 @@ func (h *eventHandler) Done() {
 	h.progressTimer = nil
 
 	// Flush the final state
-	h.eventWriter.Filters(h.filters.Compute())
+	// TODO: make sure we actually respect timeouts
+	exhaustive := !h.progress.Stats.IsLimitHit &&
+		!h.progress.Stats.Status.Any(search.RepoStatusLimitHit) &&
+		!h.progress.Stats.Status.Any(search.RepoStatusTimedOut)
+	h.eventWriter.Filters(h.filters.Compute(), exhaustive)
 	h.matchesBuf.Flush()
 	h.eventWriter.Progress(h.progress.Final())
 }
@@ -730,7 +755,9 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		h.eventWriter.Filters(h.filters.Compute())
+		if h.filters.Dirty {
+			h.eventWriter.Filters(h.filters.Compute(), false)
+		}
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())

@@ -19,7 +19,7 @@ import (
 
 func TestProductSubscriptions_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subscriptions := dbSubscriptions{db: db}
@@ -66,7 +66,7 @@ func TestProductSubscriptions_Create(t *testing.T) {
 
 func TestProductSubscriptions_List(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	u1, err := db.Users().Create(ctx, database.NewUser{Username: "u1"})
@@ -107,7 +107,7 @@ func TestProductSubscriptions_List(t *testing.T) {
 
 func TestProductSubscriptions_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})

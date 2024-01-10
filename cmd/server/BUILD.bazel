@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/server",
     visibility = ["//visibility:private"],
     deps = [
+        "//client/web/dist",
         "//cmd/server/shared",
         "//internal/sanitycheck",
-        "//ui/assets/enterprise",
     ],
 )
 
@@ -92,13 +92,13 @@ pkg_tar(
 DEPS = [
     "//cmd/precise-code-intel-worker",
     "//cmd/searcher",
-    "//enterprise/cmd/embeddings",
+    "//cmd/embeddings",
     "//cmd/frontend",
     "//cmd/gitserver",
-    "//enterprise/cmd/migrator",
+    "//cmd/migrator",
     "//cmd/repo-updater",
-    "//enterprise/cmd/symbols",
-    "//enterprise/cmd/worker",
+    "//cmd/symbols",
+    "//cmd/worker",
 ]
 
 ZOEKT_DEPS = [

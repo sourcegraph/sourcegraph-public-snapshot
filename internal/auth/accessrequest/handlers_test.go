@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,7 +26,7 @@ func TestRequestAccess(t *testing.T) {
 	}
 
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	handler := HandleRequestAccess(logger, db)
 
 	t.Run("accessRequest feature is disabled", func(t *testing.T) {

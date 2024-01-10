@@ -2,7 +2,7 @@ import React from 'react'
 
 import { startCase } from 'lodash'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { logger } from '@sourcegraph/common'
 

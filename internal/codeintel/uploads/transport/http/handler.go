@@ -25,7 +25,7 @@ func newHandler(
 	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
 	operations *uploadhandler.Operations,
 ) http.Handler {
-	logger := log.Scoped("UploadHandler", "")
+	logger := log.Scoped("UploadHandler")
 
 	metadataFromRequest := func(ctx context.Context, r *http.Request) (uploads.UploadMetadata, int, error) {
 		commit := getQuery(r, "commit")
@@ -89,7 +89,7 @@ func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName
 	//
 	// 2. Resolve commit
 
-	if _, err := repoStore.ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := repoStore.ResolveRev(ctx, repo.Name, commit); err != nil {
 		var reason string
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			reason = "commit not found"

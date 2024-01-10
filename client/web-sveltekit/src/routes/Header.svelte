@@ -1,33 +1,69 @@
 <script lang="ts">
     import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
-    import { mark } from '$lib/images'
-    import type { AuthenticatedUser } from '$lib/shared'
+    import { mark, svelteLogoEnabled } from '$lib/images'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
     import { Button } from '$lib/wildcard'
     import UserMenu from './UserMenu.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import { page } from '$app/stores'
+    import CodyIcon from '$lib/icons/Cody.svelte'
+    import CodeMonitoringIcon from '$lib/icons/CodeMonitoring.svelte'
+    import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
+    import type { Header_User } from './Header.gql'
 
-    export let authenticatedUser: AuthenticatedUser | null | undefined
+    export let authenticatedUser: Header_User | null | undefined
+
+    $: reactURL = (function (url) {
+        const urlCopy = new URL(url)
+        urlCopy.searchParams.delete('feat')
+        for (let feature of urlCopy.searchParams.getAll('feat')) {
+            if (feature !== 'enable-sveltekit') {
+                urlCopy.searchParams.append('feat', feature)
+            }
+        }
+        urlCopy.searchParams.append('feat', '-enable-sveltekit')
+        return urlCopy.toString()
+    })($page.url)
 </script>
 
 <header>
-    <a href="/search">
+    <a class="logo" href="/search">
         <img src={mark} alt="Sourcegraph" width="25" height="25" />
     </a>
-    <nav class="ml-2">
+    <nav>
         <ul>
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
-            <HeaderNavLink href="/notebooks" svgIconPath={mdiBookOutline} external>Notebooks</HeaderNavLink>
-            <HeaderNavLink href="/insights" svgIconPath={mdiChartBar} external>Insights</HeaderNavLink>
+            <HeaderNavLink external href="/cody/chat">
+                <CodyIcon slot="icon" />
+                Cody
+            </HeaderNavLink>
+            <HeaderNavLink external href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
+            <HeaderNavLink external href="/code-monitoring">
+                <CodeMonitoringIcon slot="icon" />
+                Monitoring
+            </HeaderNavLink>
+            <HeaderNavLink external href="/batch-changes">
+                <BatchChangesIcon slot="icon" />
+                Batch Changes
+            </HeaderNavLink>
+            <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
-    <div class="user">
+    <Tooltip tooltip="Disable SvelteKit (go to React)">
+        <a href={reactURL} data-sveltekit-reload>
+            <img src={svelteLogoEnabled} alt="Svelte logo" width="20" height="20" />
+        </a>
+    </Tooltip>
+    <div>
         {#if authenticatedUser}
-            <UserMenu {authenticatedUser} />
+            <UserMenu user={authenticatedUser} />
         {:else}
             <Button variant="secondary" outline>
-                <a slot="custom" let:className class={className} href="/sign-in" data-sveltekit-reload>Sign in</a>
+                <svelte:fragment slot="custom" let:buttonClass>
+                    <a class={buttonClass} href="/sign-in" data-sveltekit-reload>Sign in</a>
+                </svelte:fragment>
             </Button>
         {/if}
     </div>
@@ -37,14 +73,15 @@
     header {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid var(--border-color-2);
+        gap: 0.5rem;
         height: var(--navbar-height);
         min-height: 40px;
         padding: 0 0.5rem;
+        border-bottom: 1px solid var(--border-color-2);
         background-color: var(--color-bg-1);
     }
 
-    img {
+    .logo img {
         &:hover {
             @keyframes spin {
                 50% {
@@ -65,6 +102,7 @@
         display: flex;
         align-self: stretch;
         flex: 1;
+        overflow-y: auto;
     }
 
     ul {

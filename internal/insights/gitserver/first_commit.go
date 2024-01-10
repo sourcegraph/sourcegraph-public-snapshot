@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,7 +29,7 @@ func isFirstCommitEmptyRepoError(err error) bool {
 }
 
 func GitFirstEverCommit(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName) (*gitdomain.Commit, error) {
-	commit, err := gitserverClient.FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repoName)
+	commit, err := gitserverClient.FirstEverCommit(ctx, repoName)
 	if err != nil && isFirstCommitEmptyRepoError(err) {
 		return nil, errors.Wrap(EmptyRepoErr, err.Error())
 	}

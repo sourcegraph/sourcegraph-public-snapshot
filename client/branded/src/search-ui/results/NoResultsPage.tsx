@@ -3,12 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import {
-    type QueryState,
-    type SearchContextProps,
-    SearchMode,
-    type SubmitSearchParameters,
-} from '@sourcegraph/shared/src/search'
+import { type SearchContextProps, SearchMode, type SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -53,7 +48,6 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
     showQueryExamples?: boolean
-    setQueryState?: (query: QueryState) => void
     searchMode?: SearchMode
     setSearchMode?: (mode: SearchMode) => void
     submitSearch?: (parameters: SubmitSearchParameters) => void
@@ -68,7 +62,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     showQueryExamples,
-    setQueryState,
     searchMode,
     setSearchMode,
     submitSearch,
@@ -107,7 +100,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     />
                 )}
 
-            {showQueryExamples && setQueryState && (
+            {showQueryExamples && (
                 <>
                     <H3 as={H2}>Search basics</H3>
                     <div className={styles.queryExamplesContainer}>

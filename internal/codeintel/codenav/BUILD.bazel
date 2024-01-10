@@ -51,7 +51,6 @@ go_test(
         "service_definitions_test.go",
         "service_diagnostics_test.go",
         "service_hover_test.go",
-        "service_implementations_test.go",
         "service_new_test.go",
         "service_ranges_test.go",
         "service_references_test.go",

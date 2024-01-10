@@ -65,7 +65,7 @@ const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
-/** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
+/** Displays a MonacoSettingsEditor component without loading Monaco in the current chunk. */
 export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> extends React.PureComponent<
     Props<T>,
     State

@@ -39,13 +39,30 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 	// sourcegraph.image.repository.
 	existingReg, err := readRegistry(values)
 	if err != nil {
-		return err
+		// github.com/sourcegraph/deploy-sourcegraph-dogfood-k8s doesn't have the
+		// sourcegraph.image.repository object being defined, so we can't swap registries
+		// if we want to use an internal release.
+		//
+		// This is fine as long as we go for using the public registry, so we can safely
+		// ignore the error. But we don't we try to build a private release, in which
+		// case we *need* to define explictly the registry.
+		//
+		// This is a case of deviations between the two helm repos, and best be addressed
+		// by the release team.
+		if !registry.Public() {
+			return err
+		} else {
+			std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping updating registry as it's public which we assume is the default, %q", err.Error())))
+		}
 	}
-	valuesFileString = strings.ReplaceAll(
-		valuesFileString,
-		existingReg,
-		filepath.Join(registry.Host(), registry.Org()),
-	)
+
+	if existingReg != "" {
+		valuesFileString = strings.ReplaceAll(
+			valuesFileString,
+			existingReg,
+			filepath.Join(registry.Host(), registry.Org()),
+		)
+	}
 
 	// Collect all images.
 	var imgs []string

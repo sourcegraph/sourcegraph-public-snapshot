@@ -37,6 +37,12 @@ func (r *GCR) Org() string {
 	return r.org
 }
 
+// Public returns if the registry is used for public purposes or not.
+// Right now, we never use GCR for public releases, so it's always false.
+func (r *GCR) Public() bool {
+	return false
+}
+
 // LoadToken gets the access-token to reach GCR through the environment.
 func (r *GCR) LoadToken() error {
 	b, err := exec.Command("gcloud", "auth", "print-access-token").Output()

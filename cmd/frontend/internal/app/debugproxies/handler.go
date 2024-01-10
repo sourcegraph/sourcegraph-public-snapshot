@@ -3,7 +3,6 @@ package debugproxies
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"sort"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -141,7 +139,6 @@ func reverseProxyFromHost(db database.DB, host string, pathPrefix string) http.H
 				req.URL.Path = req.URL.Path[i+len(pathPrefix):]
 			}
 		},
-		ErrorLog: log.New(env.DebugOut, fmt.Sprintf("k8s %s debug proxy: ", host), log.LstdFlags),
 	})
 }
 

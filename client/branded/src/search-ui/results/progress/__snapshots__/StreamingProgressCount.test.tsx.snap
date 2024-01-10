@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`StreamingProgressCount should render correctly for 0 items in progress 1`] = `
+exports[`StreamingProgressCount > should render correctly for 0 items in progress 1`] = `
 <DocumentFragment>
   <span
     aria-live="polite"
@@ -31,7 +31,7 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
 </DocumentFragment>
 `;
 
-exports[`StreamingProgressCount should render correctly for 0 repositories 1`] = `
+exports[`StreamingProgressCount > should render correctly for 0 repositories 1`] = `
 <DocumentFragment>
   <span
     aria-live="polite"
@@ -76,7 +76,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
 </DocumentFragment>
 `;
 
-exports[`StreamingProgressCount should render correctly for 1 item complete 1`] = `
+exports[`StreamingProgressCount > should render correctly for 1 item complete 1`] = `
 <DocumentFragment>
   <small
     class="d-flex align-items-center count"
@@ -115,7 +115,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
 </DocumentFragment>
 `;
 
-exports[`StreamingProgressCount should render correctly for 123 items complete 1`] = `
+exports[`StreamingProgressCount > should render correctly for 123 items complete 1`] = `
 <DocumentFragment>
   <small
     class="d-flex align-items-center count"
@@ -154,7 +154,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
 </DocumentFragment>
 `;
 
-exports[`StreamingProgressCount should render correctly for big numbers complete 1`] = `
+exports[`StreamingProgressCount > should render correctly for big numbers complete 1`] = `
 <DocumentFragment>
   <small
     class="d-flex align-items-center count"
@@ -193,7 +193,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
 </DocumentFragment>
 `;
 
-exports[`StreamingProgressCount should render correctly for limithit 1`] = `
+exports[`StreamingProgressCount > should render correctly for limithit 1`] = `
 <DocumentFragment>
   <small
     class="d-flex align-items-center count"

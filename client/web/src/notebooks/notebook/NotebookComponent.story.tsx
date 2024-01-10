@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -10,7 +10,7 @@ import { WebStory } from '../../components/WebStory'
 
 import { NotebookComponent } from './NotebookComponent'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/search/notebooks/notebook/NotebookComponent',
@@ -38,7 +38,7 @@ const blocks: BlockInit[] = [
     },
 ]
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebookComponent
@@ -48,7 +48,7 @@ export const Default: Story = () => (
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
@@ -61,7 +61,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const DefaultReadOnly: Story = () => (
+export const DefaultReadOnly: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebookComponent
@@ -72,7 +72,7 @@ export const DefaultReadOnly: Story = () => (
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}

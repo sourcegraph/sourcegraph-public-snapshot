@@ -2644,7 +2644,7 @@ func TestHardDeleteSeries(t *testing.T) {
 	clock := timeutil.Now
 	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	permStore := NewInsightPermissionStore(postgres)
 	insightStore := NewInsightStore(insightsdb)
 	timeseriesStore := NewWithClock(insightsdb, permStore, clock)

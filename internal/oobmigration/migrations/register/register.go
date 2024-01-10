@@ -8,13 +8,13 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
+	workerCodeInsights "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeinsights"
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	internalinsights "github.com/sourcegraph/sourcegraph/internal/insights"
-	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
@@ -97,12 +97,12 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 
 	var insightsStore *basestore.Store
 	if internalinsights.IsEnabled() {
-		codeInsightsDB, err := insightsdb.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
+		insightsDB, err := workerCodeInsights.InitRawDB(&observation.TestContext)
 		if err != nil {
 			return err
 		}
 
-		insightsStore = basestore.NewWithHandle(codeInsightsDB.Handle())
+		insightsStore = basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), insightsDB, sql.TxOptions{}))
 	}
 
 	defaultKeyring := keyring.Default()

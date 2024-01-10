@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const Popover: Story = () => {
+export const Popover: StoryFn = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -80,7 +80,7 @@ export const Popover: Story = () => {
     )
 }
 
-export const ShouldCloseAllInfo: Story = () => {
+export const ShouldCloseAllInfo: StoryFn = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -125,7 +125,7 @@ export const ShouldCloseAllInfo: Story = () => {
 
 ShouldCloseAllInfo.storyName = 'only info, all should be closed'
 
-export const ShouldOpenOneInfo: Story = () => {
+export const ShouldOpenOneInfo: StoryFn = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,

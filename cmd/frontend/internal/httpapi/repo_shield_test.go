@@ -45,8 +45,8 @@ func TestRepoShield(t *testing.T) {
 			panic("wrong path")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "master" {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
+		if repo != "github.com/gorilla/mux" || rev != "master" {
 			t.Error("wrong arguments to ResolveRev")
 		}
 		return "aed", nil
@@ -59,7 +59,7 @@ func TestRepoShield(t *testing.T) {
 	}
 
 	var resp map[string]any
-	if err := c.GetJSON("/repos/github.com/gorilla/mux/-/shield", &resp); err != nil {
+	if err := c.GetJSON("/.api/repos/github.com/gorilla/mux/-/shield", &resp); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(resp, wantResp) {

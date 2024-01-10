@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/log"
 
@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -166,7 +165,7 @@ func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB,
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
-	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, h.logger, db, permssync.ScheduleSyncOpts{
 		UserIDs:      []int32{externalAccounts[0].UserID},
 		Reason:       reason,
 		ProcessAfter: time.Now().Add(sleepTime),
@@ -183,7 +182,7 @@ func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB,
 		return err
 	}
 
-	permssync.SchedulePermsSync(ctx, h.logger, db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, h.logger, db, permssync.ScheduleSyncOpts{
 		RepoIDs:      []api.RepoID{repo.ID},
 		Reason:       reason,
 		ProcessAfter: time.Now().Add(sleepTime),

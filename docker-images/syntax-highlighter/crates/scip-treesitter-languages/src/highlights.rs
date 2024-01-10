@@ -151,6 +151,7 @@ lazy_static::lazy_static! {
             Javascript,
             Jsonnet,
             Kotlin,
+            Matlab,
             Nickel,
             Perl,
             Pod,

@@ -11,7 +11,7 @@ import (
 
 	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -866,25 +866,25 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "perforce closed - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateClosed),
+			changeset: perforceChangeset(daysAgo(10), perforce.ChangelistStateClosed),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "perforce submitted - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateSubmitted),
+			changeset: perforceChangeset(daysAgo(10), perforce.ChangelistStateSubmitted),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateMerged,
 		},
 		{
 			name:      "perforce pending - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStatePending),
+			changeset: perforceChangeset(daysAgo(10), perforce.ChangelistStatePending),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "perforce shelved - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateShelved),
+			changeset: perforceChangeset(daysAgo(10), perforce.ChangelistStateShelved),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateOpen,
 		},
@@ -1051,11 +1051,11 @@ func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes 
 	}
 }
 
-func perforceChangeset(updatedAt time.Time, state protocol.PerforceChangelistState) *btypes.Changeset {
+func perforceChangeset(updatedAt time.Time, state perforce.ChangelistState) *btypes.Changeset {
 	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypePerforce,
 		UpdatedAt:           updatedAt,
-		Metadata: &protocol.PerforceChangelist{
+		Metadata: &perforce.Changelist{
 			State: state,
 		},
 	}

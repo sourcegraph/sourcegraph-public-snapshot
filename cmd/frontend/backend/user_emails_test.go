@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -286,9 +287,34 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 	}
 }
 
+type noopAuthzStore struct{}
+
+func (*noopAuthzStore) GrantPendingPermissions(_ context.Context, _ *database.GrantPendingPermissionsArgs) error {
+	return nil
+}
+
+func (*noopAuthzStore) AuthorizedRepos(_ context.Context, _ *database.AuthorizedReposArgs) ([]*types.Repo, error) {
+	return []*types.Repo{}, nil
+}
+
+func (*noopAuthzStore) RevokeUserPermissions(_ context.Context, _ *database.RevokeUserPermissionsArgs) error {
+	return nil
+}
+
+func (*noopAuthzStore) RevokeUserPermissionsList(_ context.Context, _ []*database.RevokeUserPermissionsArgs) error {
+	return nil
+}
+
 func TestUserEmailsAddRemove(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -356,8 +382,15 @@ func TestUserEmailsAddRemove(t *testing.T) {
 }
 
 func TestUserEmailsSetPrimary(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -397,8 +430,15 @@ func TestUserEmailsSetPrimary(t *testing.T) {
 }
 
 func TestUserEmailsSetVerified(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -447,7 +487,7 @@ func TestUserEmailsSetVerified(t *testing.T) {
 
 func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -520,7 +560,7 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 
 func TestRemoveStalePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -567,7 +607,13 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		data := extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		}
-		require.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+		_, err = db.UserExternalAccounts().Insert(ctx,
+			&extsvc.Account{
+				UserID:      createdUser.ID,
+				AccountSpec: spec,
+				AccountData: data,
+			})
+		require.NoError(t, err)
 
 		// Confirm that the external account was added
 		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{

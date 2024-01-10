@@ -34,7 +34,7 @@ func StartCheckForUpcomingLicenseExpirations(logger log.Logger, db database.DB) 
 	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
 
 	t := time.NewTicker(1 * time.Hour)
-	logger = logger.Scoped("StartCheckForUpcomingLicenseExpirations", "starts the various checks for upcoming license expiry")
+	logger = logger.Scoped("StartCheckForUpcomingLicenseExpirations")
 	for range t.C {
 		checkLicensesIfNeeded(logger, db, client)
 	}

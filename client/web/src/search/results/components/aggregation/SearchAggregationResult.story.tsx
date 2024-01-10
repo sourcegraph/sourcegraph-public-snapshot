@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing/core'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -138,7 +138,7 @@ const SEARCH_AGGREGATION_MOCK: MockedResponse<GetSearchAggregationResult> = {
     },
 }
 
-export const SearchAggregationResultDemo: Story = () => (
+export const SearchAggregationResultDemo: StoryFn = () => (
     <BrandedStory>
         {() => (
             <MockedTestProvider mocks={[SEARCH_AGGREGATION_MOCK]}>

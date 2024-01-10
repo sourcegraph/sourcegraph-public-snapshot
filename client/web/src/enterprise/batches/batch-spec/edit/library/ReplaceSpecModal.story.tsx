@@ -1,11 +1,11 @@
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 
 import { ReplaceSpecModal } from './ReplaceSpecModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/library/ReplaceSpecModal',
@@ -14,14 +14,16 @@ const config: Meta = {
         libraryItemName: {
             name: 'Name',
             control: { type: 'text' },
-            defaultValue: 'my-batch-change',
         },
+    },
+    args: {
+        libraryItemName: 'my-batch-change',
     },
 }
 
 export default config
 
-export const ReplaceSpecModalStory: Story = args => (
+export const ReplaceSpecModalStory: StoryFn = args => (
     <WebStory>
         {props => (
             <ReplaceSpecModal

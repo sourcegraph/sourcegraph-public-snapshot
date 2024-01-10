@@ -20,7 +20,7 @@ import (
 
 func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})

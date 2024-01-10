@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -105,12 +106,17 @@ func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err err
 	// HACK: Inject Sourcegraph actor that is held in the span context
 	event.Metadata["sg.actor"] = sgactor.FromContext(spanCtx)
 
+	// Inject trace metadata
+	event.Metadata["trace_id"] = oteltrace.SpanContextFromContext(spanCtx).TraceID().String()
+
 	metadata, err := json.Marshal(event.Metadata)
 	if err != nil {
 		return errors.Wrap(err, "marshaling metadata")
 	}
 	if err := l.tableInserter.Put(
-		backgroundContextWithSpan(spanCtx),
+		// Create a cancel-free context to avoid interrupting the log when
+		// the parent context is cancelled.
+		context.WithoutCancel(spanCtx),
 		bigQueryEvent{
 			Name:       string(event.Name),
 			Source:     event.Source,
@@ -134,7 +140,7 @@ func NewStdoutLogger(logger log.Logger) Logger {
 	// demo tracing in dev.
 	return &instrumentedLogger{
 		Scope:  "stdoutLogger",
-		Logger: &stdoutLogger{logger: logger.Scoped("events", "event logger")},
+		Logger: &stdoutLogger{logger: logger.Scoped("events")},
 	}
 }
 
@@ -144,7 +150,20 @@ func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 			log.String("name", string(event.Name)),
 			log.String("source", event.Source),
 			log.String("identifier", event.Identifier),
+			log.String("metadata", fmt.Sprint(event.Metadata)),
 		),
 	)
 	return nil
+}
+
+// MergeMaps returns a map that contains all the keys from the given maps.
+// If two or more maps contain the same key, the last value (in the order the maps are passed as parameters) is retained.
+// dst is modified in-place.
+func MergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
+	for _, src := range srcs {
+		for k, v := range src {
+			dst[k] = v
+		}
+	}
+	return dst
 }

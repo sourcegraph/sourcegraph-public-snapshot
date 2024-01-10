@@ -20,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -151,7 +150,8 @@ func TestRevisionValidation(t *testing.T) {
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
-			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
+			if !errors.Is(err, tt.wantErr) {
+				diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err))
 				t.Error(diff)
 			}
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -273,15 +273,15 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 func TestResolverIterator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	for i := 1; i <= 5; i++ {
-		r := types.MinimalRepo{
+		r := &types.Repo{
 			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 
-		if err := db.Repos().Create(ctx, r.ToRepo()); err != nil {
+		if err := db.Repos().Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -413,7 +413,8 @@ func TestResolverIterator(t *testing.T) {
 			}
 
 			err = it.Err()
-			if diff := cmp.Diff(errors.UnwrapAll(err), tc.err); diff != "" {
+			if !errors.Is(err, tc.err) {
+				diff := cmp.Diff(errors.UnwrapAll(err), tc.err)
 				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, diff)
 			}
 
@@ -427,25 +428,27 @@ func TestResolverIterator(t *testing.T) {
 func TestResolverIterateRepoRevs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	// intentionally nil so it panics if we call it
 	var gsClient gitserver.Client = nil
 
 	var all []RepoRevSpecs
 	for i := 1; i <= 5; i++ {
-		r := types.MinimalRepo{
+		r := &types.Repo{
 			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 
-		repo := r.ToRepo()
-		if err := db.Repos().Create(ctx, repo); err != nil {
+		if err := db.Repos().Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
-		r.ID = repo.ID
 
-		all = append(all, RepoRevSpecs{Repo: r})
+		all = append(all, RepoRevSpecs{Repo: types.MinimalRepo{
+			ID:    r.ID,
+			Name:  r.Name,
+			Stars: r.Stars,
+		}})
 	}
 
 	withRevSpecs := func(rrs []RepoRevSpecs, revs ...query.RevisionSpecifier) []RepoRevSpecs {
@@ -787,7 +790,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, _ string, _ string) (bool, error) {
+	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ string, _ string) (bool, error) {
 		switch repoName {
 		case repoA.Name:
 			return true, nil

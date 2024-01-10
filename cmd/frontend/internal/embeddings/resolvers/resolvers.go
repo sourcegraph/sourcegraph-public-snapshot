@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -148,7 +147,7 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 	}
 	forceReschedule := args.Force != nil && *args.Force
 
-	err = embeddings.ScheduleRepositoriesForEmbedding(
+	err = embeddings.ScheduleRepositories(
 		ctx,
 		repoNames,
 		forceReschedule,
@@ -220,7 +219,7 @@ func embeddingsSearchResultsToResolvers(
 		for i, result := range results {
 			i, result := i, result
 			p.Go(func() {
-				content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
+				content, err := gs.ReadFile(ctx, result.RepoName, result.Revision, result.FileName)
 				allContents[i] = content
 				allErrors[i] = err
 			})

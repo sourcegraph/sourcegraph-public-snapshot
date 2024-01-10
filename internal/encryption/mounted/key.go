@@ -4,17 +4,20 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/json"
-	"hash/crc32"
-	"io"
 	"os"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/aeshelper"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/envelope"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/wrapper"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+const (
+	mechanismEncrypt  = "encrypt"
+	mechanismEnvelope = "envelope"
 )
 
 func NewKey(ctx context.Context, k schema.MountedEncryptionKey) (*Key, error) {
@@ -64,85 +67,101 @@ func (k *Key) Version(ctx context.Context) (encryption.KeyVersion, error) {
 }
 
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
-	block, err := aes.NewCipher(k.secret)
+	ev, err := envelope.Encrypt(plaintext)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating AES cipher")
+		return nil, errors.Wrap(err, "envelope encrypting plaintext")
 	}
 
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating GCM block cipher")
-	}
-
-	nonce := make([]byte, gcm.NonceSize())
-	_, err = io.ReadFull(rand.Reader, nonce)
+	// Encrypt the envelope key using the keys secret.
+	keyCiphertext, keyNonce, err := aeshelper.Encrypt(k.secret, ev.Key)
 	if err != nil {
 		return nil, err
 	}
 
-	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+	// Store both the nonce and the ciphertext in the wrappedKey field.
+	wrappedKey := append(keyNonce, keyCiphertext...)
 
-	out := encryptedValue{
+	ek := wrapper.StorableEncryptedKey{
+		Mechanism:  mechanismEnvelope,
 		KeyName:    k.keyname,
-		Ciphertext: ciphertext,
-		Checksum:   crc32Sum(plaintext),
+		WrappedKey: wrappedKey,
+		Ciphertext: ev.Ciphertext,
+		Nonce:      ev.Nonce,
 	}
-	jsonKey, err := json.Marshal(out)
-	if err != nil {
-		return nil, err
-	}
-	buf := base64.StdEncoding.EncodeToString(jsonKey)
-	return []byte(buf), err
+
+	return ek.Serialize()
 }
 
 func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
-	block, err := aes.NewCipher(k.secret)
+	wr, err := wrapper.FromCiphertext(ciphertext)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating AES cipher")
+		return nil, errors.Wrap(err, "unmarshalling encrypted key")
 	}
 
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating GCM block cipher")
+	if wr.Mechanism == "" {
+		wr.Mechanism = mechanismEncrypt
 	}
 
-	buf, err := base64.StdEncoding.DecodeString(string(ciphertext))
-	if err != nil {
-		return nil, err
-	}
-	// unmarshal the encrypted value into encryptedValue, this struct contains the raw
-	// ciphertext, the key name, and a crc32 checksum
-	ev := encryptedValue{}
-	err = json.Unmarshal(buf, &ev)
-	if err != nil {
-		return nil, err
-	}
-	if !strings.HasPrefix(ev.KeyName, k.keyname) {
+	if !strings.HasPrefix(wr.KeyName, k.keyname) {
 		return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
 	}
 
-	if len(ev.Ciphertext) < gcm.NonceSize() {
-		return nil, errors.New("malformed ciphertext")
+	switch wr.Mechanism {
+	case mechanismEncrypt:
+		nonceSize, err := getNonceSize(k.secret)
+		if err != nil {
+			return nil, err
+		}
+		if len(wr.Ciphertext) < nonceSize {
+			return nil, errors.New("malformed ciphertext")
+		}
+		plaintext, err := aeshelper.Decrypt(k.secret, wr.Ciphertext[nonceSize:], wr.Ciphertext[:nonceSize])
+		if err != nil {
+			return nil, err
+		}
+
+		s := encryption.NewSecret(string(plaintext))
+		return &s, nil
+	case mechanismEnvelope:
+		nonceSize, err := getNonceSize(k.secret)
+		if err != nil {
+			return nil, err
+		}
+		if len(wr.WrappedKey) < nonceSize {
+			return nil, errors.New("malformed ciphertext")
+		}
+		keyCiphertext := wr.WrappedKey[nonceSize:]
+		keyNonce := wr.WrappedKey[:nonceSize]
+
+		key, err := aeshelper.Decrypt(k.secret, keyCiphertext, keyNonce)
+		if err != nil {
+			return nil, err
+		}
+
+		plaintext, err := envelope.Decrypt(&envelope.Envelope{
+			Key:        key,
+			Ciphertext: wr.Ciphertext,
+			Nonce:      wr.Nonce,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		s := encryption.NewSecret(string(plaintext))
+		return &s, nil
+	default:
+		return nil, errors.Errorf("unsupported encryption mechanism: %s", wr.Mechanism)
 	}
-	plaintext, err := gcm.Open(nil, ev.Ciphertext[:gcm.NonceSize()], ev.Ciphertext[gcm.NonceSize():], nil)
+}
+
+func getNonceSize(secret []byte) (int, error) {
+	block, err := aes.NewCipher(secret)
 	if err != nil {
-		return nil, err
+		return 0, errors.Wrap(err, "creating AES cipher")
 	}
-
-	if crc32Sum(plaintext) != ev.Checksum {
-		return nil, errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return 0, errors.Wrap(err, "creating GCM block cipher")
 	}
-	s := encryption.NewSecret(string(plaintext))
-	return &s, nil
-}
-
-type encryptedValue struct {
-	KeyName    string
-	Ciphertext []byte
-	Checksum   uint32
-}
-
-func crc32Sum(data []byte) uint32 {
-	t := crc32.MakeTable(crc32.Castagnoli)
-	return crc32.Checksum(data, t)
+	return gcm.NonceSize(), nil
 }

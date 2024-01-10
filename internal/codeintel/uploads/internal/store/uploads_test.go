@@ -26,7 +26,7 @@ import (
 
 func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 	ctx := context.Background()
 
@@ -239,7 +239,7 @@ func TestGetUploads(t *testing.T) {
 func TestGetUploadByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// Upload does not exist initially
@@ -301,7 +301,7 @@ func TestGetUploadByID(t *testing.T) {
 
 func TestGetUploadByIDDeleted(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// Upload does not exist initially
@@ -343,7 +343,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 
 func TestGetDumpsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// Dumps do not exist initially
@@ -415,7 +415,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 func TestGetUploadsByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
@@ -468,7 +468,7 @@ func TestGetUploadsByIDs(t *testing.T) {
 
 func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
@@ -589,7 +589,7 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 
 func TestDefinitionDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	moniker1 := precise.QualifiedMonikerData{
@@ -728,7 +728,7 @@ func TestDefinitionDumps(t *testing.T) {
 
 func TestUploadAuditLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -762,7 +762,7 @@ func transitionForColumn(t *testing.T, key string, transitions []map[string]*str
 
 func TestDeleteUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -811,7 +811,7 @@ func TestDeleteUploads(t *testing.T) {
 
 func TestDeleteUploadsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// note: queued so we delete, not go to deleting state first (makes assertion simpler)
@@ -852,7 +852,7 @@ func TestDeleteUploadsWithIndexerKey(t *testing.T) {
 
 func TestDeleteUploadByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
@@ -890,7 +890,7 @@ func TestDeleteUploadByID(t *testing.T) {
 
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -902,7 +902,7 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
@@ -940,7 +940,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 
 func TestReindexUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
@@ -966,7 +966,7 @@ func TestReindexUploads(t *testing.T) {
 
 func TestReindexUploadsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
@@ -999,7 +999,7 @@ func TestReindexUploadsWithIndexerKey(t *testing.T) {
 
 func TestReindexUploadByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})

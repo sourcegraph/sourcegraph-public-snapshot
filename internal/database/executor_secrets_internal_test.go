@@ -15,7 +15,7 @@ func TestExecutorSecret_Value(t *testing.T) {
 	logger := logtest.NoOp(t)
 	ctx := context.Background()
 
-	sqldb := dbtest.NewDB(logger, t)
+	sqldb := dbtest.NewDB(t)
 	db := NewDB(logger, sqldb)
 
 	u, err := db.Users().Create(ctx, NewUser{Username: "testuser"})

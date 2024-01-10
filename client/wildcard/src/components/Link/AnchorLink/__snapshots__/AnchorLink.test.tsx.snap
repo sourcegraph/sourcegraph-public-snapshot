@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`AnchorLink renders anchor link correctly 1`] = `
+exports[`AnchorLink > renders anchor link correctly 1`] = `
 <DocumentFragment>
   <a
     class=""

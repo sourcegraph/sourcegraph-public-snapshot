@@ -8,20 +8,22 @@ interactions:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/collaborators?page=1&per_page=100&affiliation=direct
     method: GET
   response:
-    body: '[{"login":"sourcegraph-vcr-bob","id":66464926,"node_id":"MDQ6VXNlcjY2NDY0OTI2","avatar_url":"https://avatars.githubusercontent.com/u/66464926?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-bob","html_url":"https://github.com/sourcegraph-vcr-bob","followers_url":"https://api.github.com/users/sourcegraph-vcr-bob/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-bob/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-bob/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-bob/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-bob/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-bob/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-bob/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-bob/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-bob/received_events","type":"User","site_admin":false,"permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true}}]'
+    body: '[{"login":"sourcegraph-vcr-bob","id":66464926,"node_id":"MDQ6VXNlcjY2NDY0OTI2","avatar_url":"https://avatars.githubusercontent.com/u/66464926?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-bob","html_url":"https://github.com/sourcegraph-vcr-bob","followers_url":"https://api.github.com/users/sourcegraph-vcr-bob/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-bob/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-bob/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-bob/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-bob/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-bob/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-bob/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-bob/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-bob/received_events","type":"User","site_admin":false,"permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true},"role_name":"read"}]'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -29,11 +31,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
+      - Mon, 18 Sep 2023 10:44:02 GMT
       Etag:
-      - W/"5eb539ffe61ac6472d3682fc0bef3dd4fc2b002a754b7bd361dc9dd2bc5d6fd8"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
+      - W/"ca0c84fbe190abaaeec2130e5cb43ee12c1bfe8631354379d27cdb92200abbf7"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -43,110 +43,29 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D32C:7D36:E3A6E:283790:612E73DC
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - E8BF:613F:7D60E:98FE6:650829F1
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4976"
+      - "4998"
       X-Ratelimit-Reset:
-      - "1630436467"
+      - "1695037441"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "24"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/collaborators?page=2&per_page=100&affiliation=direct
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
       - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/repositories/263034151/collaborators?page=1&per_page=100&affiliation=direct>;
-        rel="prev", <https://api.github.com/repositories/263034151/collaborators?page=1&per_page=100&affiliation=direct>;
-        rel="last", <https://api.github.com/repositories/263034151/collaborators?page=1&per_page=100&affiliation=direct>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3A77:2837AA:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4975"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "25"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -159,20 +78,22 @@ interactions:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/orgs/sourcegraph-vcr-repos
     method: GET
   response:
-    body: '{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","type":"Organization","total_private_repos":2,"owned_private_repos":2,"private_gists":0,"disk_usage":2,"collaborators":1,"billing_email":"joe+sourcegraph-vcr@sourcegraph.com","default_repository_permission":"none","members_can_create_repositories":true,"two_factor_requirement_enabled":false,"members_can_create_pages":true,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"free","space":976562499,"private_repos":10000,"filled_seats":4,"seats":0}}'
+    body: '{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","archived_at":null,"type":"Organization","total_private_repos":2,"owned_private_repos":2,"private_gists":0,"disk_usage":2,"collaborators":1,"billing_email":"joe+sourcegraph-vcr@sourcegraph.com","default_repository_permission":"none","members_can_create_repositories":true,"two_factor_requirement_enabled":false,"members_allowed_repository_creation_type":"all","members_can_create_public_repositories":true,"members_can_create_private_repositories":true,"members_can_create_internal_repositories":false,"members_can_create_pages":true,"members_can_fork_private_repositories":false,"web_commit_signoff_required":false,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"free","space":976562499,"private_repos":10000,"filled_seats":4,"seats":0},"advanced_security_enabled_for_new_repositories":false,"dependabot_alerts_enabled_for_new_repositories":false,"dependabot_security_updates_enabled_for_new_repositories":false,"dependency_graph_enabled_for_new_repositories":false,"secret_scanning_enabled_for_new_repositories":false,"secret_scanning_push_protection_enabled_for_new_repositories":false,"secret_scanning_push_protection_custom_link_enabled":false,"secret_scanning_push_protection_custom_link":null}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -180,11 +101,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
+      - Mon, 18 Sep 2023 10:44:02 GMT
       Etag:
-      - W/"ef67b7cb09bfb5b613b8298efc45d44f9df04f8dc247c79f8b29cc4826a28643"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
+      - W/"f7b8dbaabc4f49069e9394034d71f60e872b15449c44d1e5376e256278e824a9"
       Last-Modified:
       - Mon, 11 May 2020 12:18:26 GMT
       Referrer-Policy:
@@ -196,31 +115,29 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D32C:7D36:E3A7F:2837C6:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - E8BF:613F:7D620:98FF8:650829F2
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4974"
+      - "4997"
       X-Ratelimit-Reset:
-      - "1630436467"
+      - "1695037441"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "26"
+      - "3"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -233,20 +150,22 @@ interactions:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/teams?page=1&per_page=100
     method: GET
   response:
-    body: '[{"name":"private-access","id":3878345,"node_id":"MDQ6VGVhbTM4NzgzNDU=","slug":"private-access","description":"","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/3878345","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/private-access","members_url":"https://api.github.com/organizations/65169595/team/3878345/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/3878345/repos","permission":"pull","permissions":{"pull":true,"triage":false,"push":false,"maintain":false,"admin":false},"parent":null},{"name":"all_read_only","id":5058995,"node_id":"T_kwDOA-Jou84ATTGz","slug":"all_read_only","description":"all_read_only","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/5058995","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only","members_url":"https://api.github.com/organizations/65169595/team/5058995/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/5058995/repos","permission":"pull","permissions":{"pull":true,"triage":false,"push":false,"maintain":false,"admin":false},"parent":null}]'
+    body: '[{"name":"all_read_only","id":5058995,"node_id":"T_kwDOA-Jou84ATTGz","slug":"all_read_only","description":"all_read_only","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/65169595/team/5058995","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only","members_url":"https://api.github.com/organizations/65169595/team/5058995/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/5058995/repos","permission":"pull","permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true},"parent":null},{"name":"private-access","id":3878345,"node_id":"MDQ6VGVhbTM4NzgzNDU=","slug":"private-access","description":"","privacy":"closed","notification_setting":"notifications_enabled","url":"https://api.github.com/organizations/65169595/team/3878345","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/private-access","members_url":"https://api.github.com/organizations/65169595/team/3878345/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/3878345/repos","permission":"pull","permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true},"parent":null}]'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -254,11 +173,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
+      - Mon, 18 Sep 2023 10:44:03 GMT
       Etag:
-      - W/"23f51a896a765b67fec535a175a21ef6d29cbb678ea50106dcc152baf824f16a"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
+      - W/"19c179250345f7799da64e3d9350047d98a7d6ca50fc3c0d387db7f48704164f"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -268,31 +185,29 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D32C:7D36:E3A93:2837F2:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - E8BF:613F:7D62F:9900B:650829F2
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4973"
+      - "4996"
       X-Ratelimit-Reset:
-      - "1630436467"
+      - "1695037441"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "27"
+      - "4"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -305,85 +220,8 @@ interactions:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/teams?page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
       Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/repositories/263034151/teams?page=1&per_page=100>;
-        rel="prev", <https://api.github.com/repositories/263034151/teams?page=1&per_page=100>;
-        rel="last", <https://api.github.com/repositories/263034151/teams?page=1&per_page=100>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3AA2:28380E:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4972"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "28"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/orgs/sourcegraph-vcr-repos/members?page=1&per_page=100&role=admin
@@ -396,8 +234,8 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -405,11 +243,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
+      - Mon, 18 Sep 2023 10:44:03 GMT
       Etag:
-      - W/"407ae025cba52ae5108604de6620dea8b9e05f5f52403be6b6a21f1b263078e5"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
+      - W/"efa69297fac2d429a70d7c0777f14f2b3910400f4c3951351a02cd3eb446e8a9"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -419,31 +255,29 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D32C:7D36:E3AAA:283825:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - E8BF:613F:7D63A:99013:650829F3
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4971"
+      - "4995"
       X-Ratelimit-Reset:
-      - "1630436467"
+      - "1695037441"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "29"
+      - "5"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -456,236 +290,8 @@ interactions:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/members?page=2&per_page=100&role=admin
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
       Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:30 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/organizations/65169595/members?page=1&per_page=100&role=admin>;
-        rel="prev", <https://api.github.com/organizations/65169595/members?page=1&per_page=100&role=admin>;
-        rel="last", <https://api.github.com/organizations/65169595/members?page=1&per_page=100&role=admin>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3AB5:28383B:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4970"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "30"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/private-access/members?page=1&per_page=100
-    method: GET
-  response:
-    body: '[{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false},{"login":"sourcegraph-vcr-amy","id":66464773,"node_id":"MDQ6VXNlcjY2NDY0Nzcz","avatar_url":"https://avatars.githubusercontent.com/u/66464773?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-amy","html_url":"https://github.com/sourcegraph-vcr-amy","followers_url":"https://api.github.com/users/sourcegraph-vcr-amy/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-amy/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-amy/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-amy/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-amy/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-amy/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-amy/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-amy/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-amy/received_events","type":"User","site_admin":false}]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
-      Etag:
-      - W/"679de3be94e6ec36243f303ef557d2495f4aba102fb1f4332947a9dcfcc231f8"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3ABF:28384D:612E73DE
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4969"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "31"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/private-access/members?page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/organizations/65169595/team/3878345/members?page=1&per_page=100>;
-        rel="prev", <https://api.github.com/organizations/65169595/team/3878345/members?page=1&per_page=100>;
-        rel="last", <https://api.github.com/organizations/65169595/team/3878345/members?page=1&per_page=100>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3ACA:283870:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4968"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "32"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only/members?page=1&per_page=100
@@ -698,8 +304,8 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -707,11 +313,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
+      - Mon, 18 Sep 2023 10:44:03 GMT
       Etag:
-      - W/"fe4b2166d243b019d04e34e8dc52798263f1e50a60e8a347808052072a114515"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
+      - W/"087cf9bb822dd525224e1762d430cceca51550518108ab49e255f6ae4cd240f7"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -721,31 +325,29 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D32C:7D36:E3AD8:283895:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - E8BF:613F:7D642:99028:650829F3
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4967"
+      - "4994"
       X-Ratelimit-Reset:
-      - "1630436467"
+      - "1695037441"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "33"
+      - "6"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -758,612 +360,8 @@ interactions:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only/members?page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
       Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/organizations/65169595/team/5058995/members?page=1&per_page=100>;
-        rel="prev", <https://api.github.com/organizations/65169595/team/5058995/members?page=1&per_page=100>;
-        rel="last", <https://api.github.com/organizations/65169595/team/5058995/members?page=1&per_page=100>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3AE7:2838BD:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4966"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "34"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/collaborators?page=1&per_page=100&affiliation=direct
-    method: GET
-  response:
-    body: '[{"login":"sourcegraph-vcr-bob","id":66464926,"node_id":"MDQ6VXNlcjY2NDY0OTI2","avatar_url":"https://avatars.githubusercontent.com/u/66464926?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-bob","html_url":"https://github.com/sourcegraph-vcr-bob","followers_url":"https://api.github.com/users/sourcegraph-vcr-bob/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-bob/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-bob/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-bob/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-bob/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-bob/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-bob/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-bob/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-bob/received_events","type":"User","site_admin":false,"permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true}}]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
-      Etag:
-      - W/"5eb539ffe61ac6472d3682fc0bef3dd4fc2b002a754b7bd361dc9dd2bc5d6fd8"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3AF7:2838EA:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4965"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "35"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/collaborators?page=2&per_page=100&affiliation=direct
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/repositories/263034151/collaborators?page=1&per_page=100&affiliation=direct>;
-        rel="prev", <https://api.github.com/repositories/263034151/collaborators?page=1&per_page=100&affiliation=direct>;
-        rel="last", <https://api.github.com/repositories/263034151/collaborators?page=1&per_page=100&affiliation=direct>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B07:283907:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4964"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "36"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos
-    method: GET
-  response:
-    body: '{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","type":"Organization","total_private_repos":2,"owned_private_repos":2,"private_gists":0,"disk_usage":2,"collaborators":1,"billing_email":"joe+sourcegraph-vcr@sourcegraph.com","default_repository_permission":"none","members_can_create_repositories":true,"two_factor_requirement_enabled":false,"members_can_create_pages":true,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"free","space":976562499,"private_repos":10000,"filled_seats":4,"seats":0}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:31 GMT
-      Etag:
-      - W/"ef67b7cb09bfb5b613b8298efc45d44f9df04f8dc247c79f8b29cc4826a28643"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Last-Modified:
-      - Mon, 11 May 2020 12:18:26 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B0C:283922:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4963"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "37"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/teams?page=1&per_page=100
-    method: GET
-  response:
-    body: '[{"name":"private-access","id":3878345,"node_id":"MDQ6VGVhbTM4NzgzNDU=","slug":"private-access","description":"","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/3878345","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/private-access","members_url":"https://api.github.com/organizations/65169595/team/3878345/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/3878345/repos","permission":"pull","permissions":{"pull":true,"triage":false,"push":false,"maintain":false,"admin":false},"parent":null},{"name":"all_read_only","id":5058995,"node_id":"T_kwDOA-Jou84ATTGz","slug":"all_read_only","description":"all_read_only","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/5058995","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only","members_url":"https://api.github.com/organizations/65169595/team/5058995/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/5058995/repos","permission":"pull","permissions":{"pull":true,"triage":false,"push":false,"maintain":false,"admin":false},"parent":null}]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
-      Etag:
-      - W/"23f51a896a765b67fec535a175a21ef6d29cbb678ea50106dcc152baf824f16a"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B19:283942:612E73DF
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4962"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "38"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph-vcr-repos/private-org-repo-1/teams?page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/repositories/263034151/teams?page=1&per_page=100>;
-        rel="prev", <https://api.github.com/repositories/263034151/teams?page=1&per_page=100>;
-        rel="last", <https://api.github.com/repositories/263034151/teams?page=1&per_page=100>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B27:283972:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4961"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "39"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/members?page=1&per_page=100&role=admin
-    method: GET
-  response:
-    body: '[{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false}]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
-      Etag:
-      - W/"407ae025cba52ae5108604de6620dea8b9e05f5f52403be6b6a21f1b263078e5"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B33:28398A:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4960"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "40"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/members?page=2&per_page=100&role=admin
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/organizations/65169595/members?page=1&per_page=100&role=admin>;
-        rel="prev", <https://api.github.com/organizations/65169595/members?page=1&per_page=100&role=admin>;
-        rel="last", <https://api.github.com/organizations/65169595/members?page=1&per_page=100&role=admin>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B38:2839A8:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4959"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "41"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/private-access/members?page=1&per_page=100
@@ -1376,8 +374,8 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -1385,11 +383,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
+      - Mon, 18 Sep 2023 10:44:04 GMT
       Etag:
-      - W/"679de3be94e6ec36243f303ef557d2495f4aba102fb1f4332947a9dcfcc231f8"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
+      - W/"194e031f9bbb06cd492fc5eb9911381b4944162d48d19a4396370d1166213518"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1399,261 +395,29 @@ interactions:
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D32C:7D36:E3B45:2839C7:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - E8BF:613F:7D658:99036:650829F4
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4958"
+      - "4993"
       X-Ratelimit-Reset:
-      - "1630436467"
+      - "1695037441"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "42"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
+      - "7"
+      X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/private-access/members?page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/organizations/65169595/team/3878345/members?page=1&per_page=100>;
-        rel="prev", <https://api.github.com/organizations/65169595/team/3878345/members?page=1&per_page=100>;
-        rel="last", <https://api.github.com/organizations/65169595/team/3878345/members?page=1&per_page=100>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B53:2839EA:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4957"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "43"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only/members?page=1&per_page=100
-    method: GET
-  response:
-    body: '[{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false},{"login":"sourcegraph-vcr-amy","id":66464773,"node_id":"MDQ6VXNlcjY2NDY0Nzcz","avatar_url":"https://avatars.githubusercontent.com/u/66464773?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-amy","html_url":"https://github.com/sourcegraph-vcr-amy","followers_url":"https://api.github.com/users/sourcegraph-vcr-amy/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-amy/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-amy/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-amy/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-amy/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-amy/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-amy/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-amy/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-amy/received_events","type":"User","site_admin":false},{"login":"sourcegraph-vcr-dave","id":89494884,"node_id":"MDQ6VXNlcjg5NDk0ODg0","avatar_url":"https://avatars.githubusercontent.com/u/89494884?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr-dave","html_url":"https://github.com/sourcegraph-vcr-dave","followers_url":"https://api.github.com/users/sourcegraph-vcr-dave/followers","following_url":"https://api.github.com/users/sourcegraph-vcr-dave/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr-dave/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr-dave/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr-dave/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr-dave/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr-dave/repos","events_url":"https://api.github.com/users/sourcegraph-vcr-dave/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr-dave/received_events","type":"User","site_admin":false}]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:32 GMT
-      Etag:
-      - W/"fe4b2166d243b019d04e34e8dc52798263f1e50a60e8a347808052072a114515"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B5E:283A1A:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4956"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "44"
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only/members?page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Length:
-      - "2"
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Tue, 31 Aug 2021 18:24:33 GMT
-      Etag:
-      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-25 19:00:13 UTC
-      Link:
-      - <https://api.github.com/organizations/65169595/team/5058995/members?page=1&per_page=100>;
-        rel="prev", <https://api.github.com/organizations/65169595/team/5058995/members?page=1&per_page=100>;
-        rel="last", <https://api.github.com/organizations/65169595/team/5058995/members?page=1&per_page=100>;
-        rel="first"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - admin:org, read:org, repo, user, write:org
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - D32C:7D36:E3B71:283A42:612E73E0
-      X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4955"
-      X-Ratelimit-Reset:
-      - "1630436467"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "45"
       X-Xss-Protection:
       - "0"
     status: 200 OK

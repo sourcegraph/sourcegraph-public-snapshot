@@ -271,15 +271,18 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         const { value } = event.target
         switch (event.currentTarget.id) {
-            case contributorsPageInputIds.REVISION_RANGE:
+            case contributorsPageInputIds.REVISION_RANGE: {
                 setRevisionRange(value)
                 break
-            case contributorsPageInputIds.AFTER:
+            }
+            case contributorsPageInputIds.AFTER: {
                 setAfter(value)
                 break
-            case contributorsPageInputIds.PATH:
+            }
+            case contributorsPageInputIds.PATH: {
                 setPath(value)
                 break
+            }
         }
     }
 

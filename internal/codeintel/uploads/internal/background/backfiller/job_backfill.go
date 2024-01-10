@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -71,7 +70,7 @@ func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int
 
 func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commit string) (string, error) {
 	repo := api.RepoName(repositoryName)
-	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
+	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repo, api.CommitID(commit))
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver.CommitDate")
 	}

@@ -41,46 +41,4 @@
         // remaining space on the page.
         flex: none;
     }
-
-    .spacer {
-        // Allows scrolling past last blocks in the notebook
-        // for easier editing. It will also ensure that there is enough space
-        // between the notepad cta and the content
-        margin-top: 10rem;
-        // Spacer should never shrink. This makes sure that
-        // (1) there is always space between the bottom of the notebookpage and the screen and
-        // (2) the notepad CTA doesn't overlap with notebook content.
-        flex: 1 0 auto;
-        display: flex;
-        // Aligns notepad CTA at the bottom of the page
-        align-items: flex-end;
-    }
-}
-
-.notepad-cta {
-    position: relative;
-    bottom: 0;
-    max-width: var(--viewport-md);
-    margin: auto;
-    margin-bottom: 1rem;
-
-    &--close-button {
-        position: absolute;
-        right: 0;
-        top: 0;
-        margin: 0.5rem;
-    }
-
-    &--content {
-        display: flex;
-        align-items: center;
-
-        @media (--xs-breakpoint-down) {
-            flex-direction: column;
-        }
-
-        p:last-child {
-            margin-bottom: 0;
-        }
-    }
 }

@@ -1,7 +1,7 @@
 import React from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -1331,7 +1331,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
     },
 }
 
-export const BackendInsightDemoCasesShowcase: Story = () => (
+export const BackendInsightDemoCasesShowcase: StoryFn = () => (
     <div>
         <MockedTestProvider mocks={[BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK]}>
             <BackendInsightView
@@ -1359,7 +1359,7 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
     </div>
 )
 
-export const BackendInsightVitrine: Story = () => (
+export const BackendInsightVitrine: StoryFn = () => (
     <section>
         <article>
             <H2>Card</H2>

@@ -23,7 +23,7 @@ func TestSiteGetLatestDefault(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	latest, err := db.Conf().SiteGetLatest(ctx)
@@ -42,7 +42,7 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	malformedJSON := "[This is malformed.}"
@@ -278,7 +278,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
 				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, 0, p.input.contents, false)
@@ -367,7 +367,7 @@ func TestGetSiteConfigCount(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := db.Conf()
@@ -390,7 +390,7 @@ func TestListSiteConfigs(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	s := db.Conf()
@@ -455,7 +455,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 2, after: 5",
 			listOptions: &PaginationArgs{
 				First: pointers.Ptr(2),
-				After: pointers.Ptr("5"),
+				After: []any{int32(5)},
 			},
 			expectedIDs: []int32{3, 2},
 		},
@@ -463,7 +463,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 6, after: 5 (overflow)",
 			listOptions: &PaginationArgs{
 				First: pointers.Ptr(6),
-				After: pointers.Ptr("5"),
+				After: []any{int32(5)},
 			},
 			expectedIDs: []int32{3, 2, 1},
 		},
@@ -471,7 +471,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 2, after: 5",
 			listOptions: &PaginationArgs{
 				Last:  pointers.Ptr(2),
-				After: pointers.Ptr("5"),
+				After: []any{int32(5)},
 			},
 			expectedIDs: []int32{1, 2},
 		},
@@ -479,7 +479,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 6, after: 5 (overflow)",
 			listOptions: &PaginationArgs{
 				Last:  pointers.Ptr(6),
-				After: pointers.Ptr("5"),
+				After: []any{int32(5)},
 			},
 			expectedIDs: []int32{1, 2, 3},
 		},
@@ -487,7 +487,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 2, before: 1",
 			listOptions: &PaginationArgs{
 				First:  pointers.Ptr(2),
-				Before: pointers.Ptr("1"),
+				Before: []any{int32(1)},
 			},
 			expectedIDs: []int32{5, 3},
 		},
@@ -495,7 +495,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "first: 6, before: 1 (overflow)",
 			listOptions: &PaginationArgs{
 				First:  pointers.Ptr(6),
-				Before: pointers.Ptr("1"),
+				Before: []any{int32(1)},
 			},
 			expectedIDs: []int32{5, 3, 2},
 		},
@@ -503,7 +503,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 2, before: 2",
 			listOptions: &PaginationArgs{
 				Last:   pointers.Ptr(2),
-				Before: pointers.Ptr("2"),
+				Before: []any{int32(2)},
 			},
 			expectedIDs: []int32{3, 5},
 		},
@@ -511,7 +511,7 @@ func TestListSiteConfigs(t *testing.T) {
 			name: "last: 6, before: 2 (overflow)",
 			listOptions: &PaginationArgs{
 				Last:   pointers.Ptr(6),
-				Before: pointers.Ptr("2"),
+				Before: []any{int32(2)},
 			},
 			expectedIDs: []int32{3, 5},
 		},

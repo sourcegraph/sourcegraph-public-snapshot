@@ -13,7 +13,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -31,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -112,9 +111,23 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
 		// is set to true.
 		if returnSafeConfigsOnly {
+			if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+				// Log an event when site config is viewed by non-admin user.
+				if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigRedactedViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+					r.logger.Warn("Error logging security event", log.Error(err))
+				}
+			}
 			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
+	}
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when site config is viewed by admin user.
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigViewed, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
 	}
 	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
@@ -171,70 +184,6 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
 	return canUpdateSiteConfiguration()
-}
-
-func (r *siteResolver) ExternalServicesCounts(ctx context.Context) (*externalServicesCountsResolver, error) {
-	// 🚨 SECURITY: Only admins can view repositories counts
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	return &externalServicesCountsResolver{db: r.db}, nil
-}
-
-type externalServicesCountsResolver struct {
-	remoteExternalServicesCount int32
-	localExternalServicesCount  int32
-
-	db   database.DB
-	once sync.Once
-	err  error
-}
-
-func (r *externalServicesCountsResolver) compute(ctx context.Context) (int32, int32, error) {
-	r.once.Do(func() {
-		remoteCount, localCount, err := backend.NewAppExternalServices(r.db).ExternalServicesCounts(ctx)
-		if err != nil {
-			r.err = err
-		}
-
-		// if this is not sourcegraph app then local repos count should be zero because
-		// serve-git service only runs in sourcegraph app
-		// see /internal/service/servegit/serve.go
-		if !deploy.IsApp() {
-			localCount = 0
-		}
-
-		r.remoteExternalServicesCount = int32(remoteCount)
-		r.localExternalServicesCount = int32(localCount)
-	})
-
-	return r.remoteExternalServicesCount, r.localExternalServicesCount, r.err
-}
-
-func (r *externalServicesCountsResolver) RemoteExternalServicesCount(ctx context.Context) (int32, error) {
-	remoteCount, _, err := r.compute(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return remoteCount, nil
-}
-
-func (r *externalServicesCountsResolver) LocalExternalServicesCount(ctx context.Context) (int32, error) {
-	_, localCount, err := r.compute(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return localCount, nil
-}
-
-func (r *siteResolver) AppHasConnectedDotComAccount() bool {
-	if !deploy.IsApp() {
-		return false
-	}
-
-	appConfig := conf.SiteConfig().App
-	return appConfig != nil && appConfig.DotcomAuthToken != ""
 }
 
 type siteConfigurationResolver struct {
@@ -351,15 +300,36 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	}
 
 	prev := conf.Raw()
+
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so take the redacted version for logging purposes.
+	prevSCredacted, _ := conf.RedactSecrets(prev)
+	arg := struct {
+		PrevConfig string `json:"prev_config"`
+		NewConfig  string `json:"new_config"`
+	}{
+		PrevConfig: prevSCredacted.Site,
+		NewConfig:  args.Input,
+	}
+
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
+
 	prev.Site = unredacted
 
 	server := globals.ConfigurationServerFrontendOnly
 	if err := server.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
 		return false, err
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		// Log an event when site config is updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
 	}
 	return server.NeedServerRestart(), nil
 }
@@ -367,7 +337,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func canUpdateSiteConfiguration() bool {
-	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
+	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
 
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
@@ -377,7 +347,7 @@ func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessR
 	}
 
 	return &upgradeReadinessResolver{
-		logger: r.logger.Scoped("upgradeReadiness", ""),
+		logger: r.logger.Scoped("upgradeReadiness"),
 		db:     r.db,
 	}, nil
 }
@@ -609,15 +579,6 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	// This section can be removed if dotcom stops requiring verified emails
-	if deploy.IsApp() {
-		c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-		// App users can specify their own keys using one of the regular providers.
-		// If they use their own keys requests are not going through Cody Gateway
-		// which means a verified email is not needed.
-		return c == nil || c.Provider == conftypes.CompletionsProviderNameSourcegraph
-	}
-
 	// We only require this on dotcom
 	if !envvar.SourcegraphDotComMode() {
 		return false
@@ -638,8 +599,26 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 	return &codyLLMConfigurationResolver{config: c}
 }
 
+func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
+	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
+	if c == nil {
+		return nil
+	}
+	return &codyConfigFeaturesResolver{config: c}
+}
+
+func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
+
+func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
+
+func (c *codyConfigFeaturesResolver) Commands() bool { return c.config.Commands }
+
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig
+}
+
+type codyConfigFeaturesResolver struct {
+	config *conftypes.ConfigFeatures
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }

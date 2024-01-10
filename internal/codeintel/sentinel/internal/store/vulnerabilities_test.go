@@ -36,7 +36,7 @@ var testVulnerabilities = []shared.Vulnerability{
 func TestVulnerabilityByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
@@ -58,7 +58,7 @@ func TestVulnerabilityByID(t *testing.T) {
 func TestGetVulnerabilitiesByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
@@ -77,7 +77,7 @@ func TestGetVulnerabilitiesByIDs(t *testing.T) {
 func TestGetVulnerabilities(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {

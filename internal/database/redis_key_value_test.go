@@ -12,7 +12,7 @@ import (
 func TestRedisKeyValue(t *testing.T) {
 	require := require.New(t)
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	kv := db.RedisKeyValue()
 

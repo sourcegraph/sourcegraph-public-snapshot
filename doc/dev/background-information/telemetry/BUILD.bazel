@@ -13,10 +13,7 @@ filegroup(
 
 write_generated_to_source_files(
     name = "write_telemetrygateway_doc",
-    src = "//internal/telemetrygateway/v1:protocol.md",
-    files = [
-        "internal/telemetrygateway/v1/protocol.md/protocol.md",
-    ],
-    strip_prefix = "internal/telemetrygateway/v1/protocol.md/",
+    output_files = {"protocol.md": "internal/telemetrygateway/v1/protocol.md/protocol.md"},
     tags = ["go_generate"],
+    target = "//internal/telemetrygateway/v1:protocol.md",
 )

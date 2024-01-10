@@ -25,7 +25,7 @@ type fakeSourcer struct {
 	source sources.ChangesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy, repo *types.Repo) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
@@ -217,6 +217,7 @@ func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 
 	return types.ExternalServices{s.Svc}
 }
+
 func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.LoadChangesetCalled = true
 
@@ -237,12 +238,6 @@ func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *sources.Chan
 
 	s.LoadedChangesets = append(s.LoadedChangesets, c)
 	return nil
-}
-
-type noReposErr struct{ name string }
-
-func (e noReposErr) Error() string {
-	return "no " + e.name + " repository set on Changeset"
 }
 
 func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *sources.Changeset) error {
@@ -323,4 +318,10 @@ func (s *FakeChangesetSource) IsArchivedPushError(output string) bool {
 func (s *FakeChangesetSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, cfg *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	s.BuildCommitOptsCalled = true
 	return sources.BuildCommitOptsCommon(repo, spec, cfg)
+}
+
+type noReposErr struct{ name string }
+
+func (e noReposErr) Error() string {
+	return "no " + e.name + " repository set on Changeset"
 }

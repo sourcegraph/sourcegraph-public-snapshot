@@ -1,1 +1,1 @@
-export { isWebpackChunkError } from './shouldErrorBeReported'
+export { isChunkLoadError } from './shouldErrorBeReported'

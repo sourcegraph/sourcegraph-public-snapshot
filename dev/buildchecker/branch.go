@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -69,14 +69,20 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 	}
 
 	return func() error {
+		requiredStatusChecks := protects.GetRequiredStatusChecks()
+		// Contexts is deprecated and GitHub prefers one to use Checks but
+		// only one can be set, and normally both are set. So we set Contexts
+		// to nil here.
+		requiredStatusChecks.Contexts = nil
 		if _, _, err := b.ghc.Repositories.UpdateBranchProtection(ctx, b.owner, b.repo, b.branch, &github.ProtectionRequest{
 			// Restrict push access
 			Restrictions: &github.BranchRestrictionsRequest{
 				Users: allowAuthors,
 				Teams: []string{fallbackTeam},
+				Apps:  []string{}, // have to explicity set it to be empty as it cannot be nil
 			},
 			// This is a replace operation, so we must set all the desired rules here as well
-			RequiredStatusChecks: protects.GetRequiredStatusChecks(),
+			RequiredStatusChecks: requiredStatusChecks,
 			RequireLinearHistory: github.Bool(true),
 			RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
 				RequiredApprovingReviewCount: 1,
@@ -98,7 +104,7 @@ func (b *repoBranchLocker) Unlock(ctx context.Context) (func() error, error) {
 		// no restrictions in place, we are done
 		return nil, nil
 	}
-
+	// This removes restrictions but NOT THE BRANCH PROTECTION!
 	req, err := b.ghc.NewRequest(http.MethodDelete,
 		fmt.Sprintf("/repos/%s/%s/branches/%s/protection/restrictions",
 			b.owner, b.repo, b.branch),

@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { parseISO } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -10,7 +10,7 @@ import { WebStory } from '../../components/WebStory'
 import { CodeMonitoringLogs, CODE_MONITOR_EVENTS } from './CodeMonitoringLogs'
 import { mockLogs } from './testing/util'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/enterprise/code-monitoring/CodeMonitoringLogs',
@@ -34,7 +34,7 @@ const mockedResponse: MockedResponse[] = [
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={mockedResponse}>
@@ -44,7 +44,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const Open: Story = () => (
+export const Open: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={mockedResponse}>
@@ -54,7 +54,7 @@ export const Open: Story = () => (
     </WebStory>
 )
 
-export const Empty: Story = () => {
+export const Empty: StoryFn = () => {
     const emptyMockedResponse: MockedResponse[] = [
         {
             request: {

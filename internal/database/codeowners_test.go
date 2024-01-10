@@ -35,7 +35,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	createRepos(t, ctx, db.Repos(), 6)
 	store := db.Codeowners()
@@ -103,7 +103,7 @@ func TestCodeowners_GetListCount(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	createRepos(t, ctx, db.Repos(), 2)
 

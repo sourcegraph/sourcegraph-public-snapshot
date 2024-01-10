@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from 'react'
 
-import classNames from 'classnames'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
-import { Text, Link, ErrorAlert, Form, Input, Button, LoadingSpinner, TextArea, Label } from '@sourcegraph/wildcard'
+import { Text, Link, ErrorAlert, Form, Input, TextArea, Container, Alert } from '@sourcegraph/wildcard'
 
-import { HeroPage } from '../components/HeroPage'
+import { LoaderButton } from '../components/LoaderButton'
 import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
-import { SourcegraphIcon } from './icons'
+import { AuthPageWrapper } from './AuthPageWrapper'
 import { getReturnTo } from './SignInSignUpCommon'
 
-import RequestAccessSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import styles from './RequestAccessPage.module.scss'
 
-interface RequestAccessFormProps {
+export interface RequestAccessFormProps {
     onSuccess: () => void
     onError: (error?: any) => void
     xhrHeaders: SourcegraphContext['xhrHeaders']
@@ -69,59 +68,50 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
         }
     }
     return (
-        <Form onSubmit={handleSubmit} data-testid="request-access-form">
-            <Label className="w-100">
-                <Text alignment="left" className="mb-2">
-                    Name
-                </Text>
-                <Input
-                    id="name"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
-                    required={true}
-                    value={name}
-                    disabled={loading}
-                    autoCapitalize="off"
-                    autoFocus={true}
-                    className="form-group"
-                    placeholder="Your name"
-                    autoComplete="name"
-                />
-            </Label>
-            <Label className="w-100">
-                <Text alignment="left" className="mb-2">
-                    Email Address
-                </Text>
-                <Input
-                    id="email"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)}
-                    required={true}
-                    value={email}
-                    disabled={loading}
-                    autoCapitalize="off"
-                    autoFocus={true}
-                    placeholder="Your work email to get access"
-                    className="form-group"
-                    autoComplete="email"
-                />
-            </Label>
-            <Label className="w-100">
-                <Text alignment="left" className="mb-2">
-                    Notes for administrator
-                </Text>
-                <TextArea
-                    id="additionalInfo"
-                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setAdditionalInfo(event.target.value)}
-                    className="mb-4"
-                    value={additionalInfo}
-                    placeholder="Use this field to provide extra info for your access request"
-                />
-            </Label>
+        <Form onSubmit={handleSubmit} className="mb-0" data-testid="request-access-form">
+            <Input
+                id="name"
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
+                required={true}
+                value={name}
+                disabled={loading}
+                autoCapitalize="off"
+                autoFocus={true}
+                placeholder="Your name"
+                autoComplete="name"
+                label="Name"
+            />
 
-            <div className={classNames('form-group')}>
-                <Button display="block" type="submit" disabled={loading} variant="primary">
-                    {loading ? <LoadingSpinner /> : 'Request access'}
-                </Button>
-            </div>
+            <Input
+                id="email"
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)}
+                required={true}
+                value={email}
+                disabled={loading}
+                autoCapitalize="off"
+                autoFocus={true}
+                placeholder="Your work email to get access"
+                autoComplete="email"
+                label="Email Address"
+            />
+
+            <TextArea
+                id="additionalInfo"
+                onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setAdditionalInfo(event.target.value)}
+                value={additionalInfo}
+                placeholder="Use this field to provide extra info for your access request"
+                label="Notes for administrator"
+                className="mb-3"
+            />
+
+            <LoaderButton
+                display="block"
+                loading={loading}
+                type="submit"
+                disabled={loading}
+                variant="primary"
+                label="Request access"
+            />
         </Form>
     )
 }
@@ -146,54 +136,45 @@ export const RequestAccessPage: React.FunctionComponent = () => {
         return <Navigate to={PageRoutes.SignIn} replace={true} />
     }
 
-    const body = (
-        <div className={classNames('mb-4 pb-5', RequestAccessSignUpCommonStyles.signinPageContainer)}>
-            {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
-            <div
-                className={classNames(
-                    'rounded p-4 my-3',
-                    RequestAccessSignUpCommonStyles.signinSignupForm,
-                    error ? 'mt-3' : 'mt-4'
-                )}
+    return (
+        <>
+            <PageTitle title="Request access" />
+            <AuthPageWrapper
+                title="Request access to Sourcegraph"
+                sourcegraphDotComMode={sourcegraphDotComMode}
+                className={styles.wrapper}
             >
+                {error && <ErrorAlert error={error} />}
                 <Routes>
                     <Route
                         path="done"
                         element={
-                            <Text data-testid="request-access-post-submit">
-                                Thank you! We notified the admin of your request.
-                            </Text>
+                            <Container>
+                                <Alert variant="info" data-testid="request-access-post-submit" className="mb-0">
+                                    Thank you! We notified the admin of your request.
+                                </Alert>
+                            </Container>
                         }
                     />
                     <Route
                         path=""
                         element={
-                            <RequestAccessForm
-                                onError={setError}
-                                xhrHeaders={xhrHeaders}
-                                onSuccess={() => navigate('done')}
-                            />
+                            <>
+                                <Container>
+                                    <RequestAccessForm
+                                        onError={setError}
+                                        xhrHeaders={xhrHeaders}
+                                        onSuccess={() => navigate('done')}
+                                    />
+                                </Container>
+                                <Text className="text-center mt-3">
+                                    Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
+                                </Text>
+                            </>
                         }
                     />
                 </Routes>
-            </div>
-            <Text className="mt-3">
-                Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
-            </Text>
-        </div>
-    )
-
-    return (
-        <div className={RequestAccessSignUpCommonStyles.signinSignupPage}>
-            <PageTitle title="Request access" />
-            <HeroPage
-                icon={SourcegraphIcon}
-                iconLinkTo={sourcegraphDotComMode ? '/search' : undefined}
-                iconClassName="bg-transparent"
-                lessPadding={true}
-                title="Request access to Sourcegraph"
-                body={body}
-            />
-        </div>
+            </AuthPageWrapper>
+        </>
     )
 }

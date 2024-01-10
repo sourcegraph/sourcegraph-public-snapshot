@@ -17,7 +17,7 @@ import (
 
 func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -125,7 +125,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 
 func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
@@ -198,7 +198,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 func TestMarkRepoRevsAsProcessed(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	expected := []RepoRev{

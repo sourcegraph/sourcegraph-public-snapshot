@@ -17,7 +17,7 @@ func TestCreateNamespacePermission(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.NamespacePermissions()
 
 	user := createUserForNamespacePermission(ctx, t, db, "TestUser")
@@ -89,7 +89,7 @@ func TestDeleteNamespacePermission(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.NamespacePermissions()
 
 	user := createUserForNamespacePermission(ctx, t, db, "user1")
@@ -134,7 +134,7 @@ func TestGetNamespacePermission(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.NamespacePermissions()
 
 	user := createUserForNamespacePermission(ctx, t, db, "user1")

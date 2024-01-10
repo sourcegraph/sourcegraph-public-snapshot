@@ -42,10 +42,10 @@ type InviteUserToOrganizationResult struct {
 }
 
 // InviteUserToOrganization invites a user to the given organization.
-func (c *Client) InviteUserToOrganization(orgID, username string, email string) (*InviteUserToOrganizationResult, error) {
+func (c *Client) InviteUserToOrganization(orgID, username string) (*InviteUserToOrganizationResult, error) {
 	const query = `
-mutation InviteUserToOrganization($organization: ID!, $username: String, $email: String) {
-	inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
+mutation InviteUserToOrganization($organization: ID!, $username: String!) {
+	inviteUserToOrganization(organization: $organization, username: $username) {
 		... on InviteUserToOrganizationResult {
 			sentInvitationEmail
 			invitationURL
@@ -56,7 +56,6 @@ mutation InviteUserToOrganization($organization: ID!, $username: String, $email:
 	variables := map[string]any{
 		"organization": orgID,
 		"username":     username,
-		"email":        email,
 	}
 	var resp struct {
 		Data struct {

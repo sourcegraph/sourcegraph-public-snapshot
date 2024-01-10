@@ -32,15 +32,15 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 
 	return &gitService{
 		checker: checker,
-		client:  gitserver.NewClient(),
+		client:  gitserver.NewClient("codeintel.interence"),
 	}
 }
 
 func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	return s.client.LsFiles(ctx, s.checker, repo, api.CommitID(commit), pathspecs...)
+	return s.client.LsFiles(ctx, repo, api.CommitID(commit), pathspecs...)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	// Note: the sub-repo perms checker is nil here because all paths were already checked via a previous call to s.ListFiles
-	return s.client.ArchiveReader(ctx, nil, repo, opts)
+	return s.client.ArchiveReader(ctx, repo, opts)
 }

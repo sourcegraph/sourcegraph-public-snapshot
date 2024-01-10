@@ -4,10 +4,12 @@ import { BrandedStory } from '../../../../../stories/BrandedStory'
 
 import { ScrollBox } from './ScrollBox'
 
-export default {
+const meta: Meta = {
     title: 'wildcard/Charts/Core',
     decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
-} as Meta
+}
+
+export default meta
 
 export const ScrollBoxDemo = () => (
     <ScrollBox style={{ height: 400, width: 200, border: '1px solid var(--border-color)' }}>

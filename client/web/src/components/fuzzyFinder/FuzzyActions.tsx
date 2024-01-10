@@ -20,10 +20,12 @@ export function getAllFuzzyActions(props: FuzzyActionProps): FuzzyAction[] {
     return [
         new FuzzyAction('toggle.theme', 'Toggle Between Dark/Light Theme', () => {
             switch (theme) {
-                case Theme.Dark:
+                case Theme.Dark: {
                     return setThemeSetting(ThemeSetting.Light)
-                case Theme.Light:
+                }
+                case Theme.Light: {
                     return setThemeSetting(ThemeSetting.Dark)
+                }
             }
         }),
     ]

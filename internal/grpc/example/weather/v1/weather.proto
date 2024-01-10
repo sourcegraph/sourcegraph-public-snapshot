@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package grpc.example.weather.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/grpc/example/weather/v1";
+
+// The weather service definition.
+service WeatherService {
+  // Each of the RPCs in this service documents its idempotency level if applicable. This is useful for client authors
+  // to know whether they can retry a failed RPC without causing side effects, or if they need to take more care.
+  //
+  // When thinking about the difference between IDEMPOTENT and NO_SIDE_EFFECTS, the following StackOverflow answer might be
+  // helpful: https://softwareengineering.stackexchange.com/a/411619 (quoted below).
+
+  //
+  // > Safe means no side effects. Idempotent means any side effects must be the same, and therefore that it doesn't matter if they are repeated.
+  // >
+  // > Say I ask my daughter to check if the oven is preheated. That's a safe operation because it has no side effects. She is just looking.
+  // >
+  // > If I ask her to preheat the oven, that's an idempotent operation. If it's already preheating, she is just going to check and leave it in the same state. I can ask her 10 times to preheat the oven, and she will roll her eyes at my terrible memory, but the oven always ends up in the on state.
+  // >
+  // > If I ask her to flip the switch on the oven, that is not idempotent. Whether the oven ends up preheating depends on if it was already preheating.
+
+  // Unary RPC: Get current weather for a location.
+  rpc GetCurrentWeather(GetCurrentWeatherRequest) returns (GetCurrentWeatherResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // Server Streaming RPC: Subscribe to severe weather alerts in the provided region.
+  rpc SubscribeWeatherAlerts(SubscribeWeatherAlertsRequest) returns (stream SubscribeWeatherAlertsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // Client Streaming RPC: Send continuous weather data from sensors.
+  rpc UploadWeatherData(stream UploadWeatherDataRequest) returns (UploadWeatherDataResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // Bidirectional Streaming RPC: Get real-time weather updates as the client moves around.
+  rpc RealTimeWeather(stream RealTimeWeatherRequest) returns (stream RealTimeWeatherResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // Client Streaming RPC: Upload a photo of the current weather from a given sensor.
+  rpc UploadWeatherPhoto(stream UploadWeatherPhotoRequest) returns (UploadWeatherPhotoResponse) {
+    // This RPC is not idempotent, as the server does not deduplicate the photo uploads.
+  }
+
+  // Deprecated RPC: Get current weather for a location.
+  rpc GetCurrentWeatherOld(GetCurrentWeatherOldRequest) returns (GetCurrentWeatherOldResponse) {
+    option deprecated = true; // Mark the RPC as deprecated. Nobody should use this anymore.
+    // When generating go code, the deprecated option will be translated to a deprecated comment. And gopls and various tools
+    // will show a warning when using this RPC.
+
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message GetCurrentWeatherRequest {
+  string location = 1;
+}
+
+message GetCurrentWeatherResponse {
+  string description = 1;
+  Temperature temperature = 2;
+}
+
+message Temperature {
+  enum Unit {
+    UNIT_UNSPECIFIED = 0;
+    UNIT_CELSIUS = 1;
+    UNIT_FAHRENHEIT = 2;
+    UNIT_KELVIN = 3;
+  }
+
+  double value = 1;
+  Unit unit = 2;
+}
+
+message SensorOfflineError {
+  // Note: renaming this message would break backwards compatibility, as older clients would not be able to
+  // identify this message since it would be passed as an "Any" type when sending the error details.
+
+  string sensor_id = 1;
+  string message = 2;
+}
+
+message UploadWeatherPhotoRequest {
+  message Metadata {
+    string location = 1;
+    string sensor_id = 2;
+    string file_name = 3;
+    google.protobuf.Timestamp timestamp = 4;
+  }
+
+  message Payload {
+    bytes data = 1;
+  }
+
+  oneof content {
+    Metadata metadata = 1;
+    Payload payload = 2;
+  }
+}
+
+message UploadWeatherDataResponse {
+  string message = 1;
+}
+
+message SubscribeWeatherAlertsRequest {
+  string region = 1;
+}
+
+message SubscribeWeatherAlertsResponse {
+  string alert = 1;
+}
+
+message UploadWeatherDataRequest {
+  string sensor_id = 1;
+  Temperature temperature = 2;
+  double humidity = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message UploadWeatherPhotoResponse {
+  string message = 1;
+}
+
+message RealTimeWeatherRequest {
+  string location = 1;
+}
+
+message RealTimeWeatherResponse {
+  string description = 1;
+  Temperature temperature = 2;
+}
+
+message GetCurrentWeatherOldRequest {
+  string location = 1;
+}
+
+message GetCurrentWeatherOldResponse {
+  string description = 1;
+  Temperature temperature = 2;
+}

@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
@@ -26,7 +28,7 @@ func TestOutboundWebhooks(t *testing.T) {
 
 	runBothEncryptionStates(t, func(t *testing.T, logger log.Logger, db DB, key encryption.Key) {
 		user, err := db.Users().Create(ctx, NewUser{
-			Username: "test",
+			Username: strconv.Itoa(int(time.Now().UnixMilli())),
 		})
 		require.NoError(t, err)
 
@@ -437,14 +439,15 @@ func newTestWebhook(t *testing.T, user *types.User, scopes ...ScopedEventType) *
 func runBothEncryptionStates(t *testing.T, f func(t *testing.T, logger log.Logger, db DB, key encryption.Key)) {
 	t.Helper()
 
-	var key encryption.Key
-
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	t.Run("unencrypted", func(t *testing.T) { f(t, logger, db, key) })
+	db := NewDB(logger, dbtest.NewDB(t))
+	t.Run("unencrypted", func(t *testing.T) {
+		t.Cleanup(func() {
+			_, err := db.ExecContext(context.Background(), "DELETE FROM outbound_webhooks CASCADE")
+			require.NoError(t, err)
+		})
+		f(t, logger, db, nil)
+	})
 
-	logger = logtest.Scoped(t)
-	db = NewDB(logger, dbtest.NewDB(logger, t))
-	key = et.ByteaTestKey{}
-	t.Run("encrypted", func(t *testing.T) { f(t, logger, db, key) })
+	t.Run("encrypted", func(t *testing.T) { f(t, logger, db, et.ByteaTestKey{}) })
 }

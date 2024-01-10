@@ -52,7 +52,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	refs, refCursor, err := r.codeNavSvc.NewGetReferences(ctx, requestArgs, r.requestState, cursor)
+	refs, refCursor, err := r.codeNavSvc.GetReferences(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "svc.GetReferences")
 	}
@@ -93,32 +93,6 @@ func decodeTraversalCursor(rawEncoded string) (codenav.Cursor, error) {
 }
 
 func encodeTraversalCursor(cursor codenav.Cursor) string {
-	rawEncoded, _ := json.Marshal(cursor)
-	return base64.RawURLEncoding.EncodeToString(rawEncoded)
-}
-
-//
-//
-
-// decodeReferencesCursor is the inverse of encodeCursor. If the given encoded string is empty, then
-// a fresh cursor is returned.
-func decodeReferencesCursor(rawEncoded string) (codenav.ReferencesCursor, error) {
-	if rawEncoded == "" {
-		return codenav.ReferencesCursor{Phase: "local"}, nil
-	}
-
-	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
-	if err != nil {
-		return codenav.ReferencesCursor{}, err
-	}
-
-	var cursor codenav.ReferencesCursor
-	err = json.Unmarshal(raw, &cursor)
-	return cursor, err
-}
-
-// encodeReferencesCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
-func encodeReferencesCursor(cursor codenav.ReferencesCursor) string {
 	rawEncoded, _ := json.Marshal(cursor)
 	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }

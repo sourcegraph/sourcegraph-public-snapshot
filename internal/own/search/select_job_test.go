@@ -9,7 +9,6 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -40,7 +39,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 			return nil, fs.ErrNotExist
 		})
 
@@ -64,7 +63,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 			// return a codeowner path for no which doesn't match the path of the match below.
 			return []byte("NO.md @test\n"), nil
 		})
@@ -88,7 +87,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		ctx := context.Background()
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 			// README is owned by a user and a team.
 			// code.go is owner by another user and an unknown entity.
 			return []byte("README.md @testUserHandle @testTeamHandle\ncode.go user@email.com @unknown"), nil

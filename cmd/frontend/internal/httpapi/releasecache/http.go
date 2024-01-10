@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
@@ -38,10 +38,10 @@ type handler struct {
 
 func NewHandler(logger log.Logger) http.Handler {
 	ctx := context.Background()
-	logger = logger.Scoped("srcclicache", "src-cli release cache")
+	logger = logger.Scoped("srcclicache")
 
 	handler := &handler{
-		logger: logger.Scoped("handler", "src-cli release cache HTTP handler"),
+		logger: logger.Scoped("handler"),
 	}
 
 	// We'll build all the state up in a conf watcher, since the behaviour of

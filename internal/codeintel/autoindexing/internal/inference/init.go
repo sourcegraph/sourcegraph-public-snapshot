@@ -19,7 +19,7 @@ var (
 )
 
 func NewService(db database.DB) *Service {
-	observationCtx := observation.NewContext(log.Scoped("inference.service", "inference service"))
+	observationCtx := observation.NewContext(log.Scoped("inference.service"))
 
 	return newService(
 		observationCtx,

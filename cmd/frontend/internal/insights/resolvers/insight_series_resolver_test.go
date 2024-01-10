@@ -35,7 +35,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		logger := logtest.Scoped(t)
 		clock := func() time.Time { return now }
 		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+		postgres := database.NewDB(logger, dbtest.NewDB(t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 		insightStore := store.NewInsightStore(insightsDB)
 
@@ -234,7 +234,7 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	insightStore := store.NewInsightStore(insightsDB)
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
 
@@ -291,7 +291,7 @@ func Test_NumSamplesFiltering(t *testing.T) {
 	// now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(t))
 	insightStore := store.NewInsightStore(insightsDB)
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
 

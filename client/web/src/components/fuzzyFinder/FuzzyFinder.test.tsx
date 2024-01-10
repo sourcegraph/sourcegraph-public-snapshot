@@ -1,13 +1,13 @@
 import { MockedProvider } from '@apollo/client/testing'
 import { render, type RenderResult } from '@testing-library/react'
 import { spy } from 'sinon'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import { FuzzyWrapper, FUZZY_FILES_MOCK } from './FuzzyFinder.mocks'
 
 describe('FuzzyModal', () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalScrollIntoView = Element.prototype.scrollIntoView
     beforeAll(() => {
         // scrollIntoView is not supported in JSDOM, so we mock it for this one test
