@@ -117,6 +117,9 @@ type CallOption struct {
 }
 
 func newWithCallOptions(opt *options, callOptions []CallOption) *options {
+	if len(callOptions) == 0 {
+		return opt
+	}
 	optCopy := &options{}
 	*optCopy = *opt
 	for _, f := range callOptions {
