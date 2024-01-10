@@ -137,7 +137,7 @@ func (r *Renderer) RenderEnvironment(
 		ExternalDomain:      *pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
 		DiagnosticsSecret:   cloudrunOutput.DiagnosticsSecret,
 		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
-		ServiceStartupProbe: pointers.DerefZero(env.EnvironmentServiceSpec).StatupProbe,
+		ServiceHealthProbes: pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
 
 		// Notification configuration
 		EnvironmentCategory: env.Category,

@@ -78,9 +78,9 @@ type Variables struct {
 	DiagnosticsSecret *random.Output
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
-	// ServiceStartupProbe is used to determine the threshold for service
+	// ServiceHealthProbes is used to determine the threshold for service
 	// startup latency alerts.
-	ServiceStartupProbe *spec.EnvironmentServiceStartupProbeSpec
+	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
 
 	// EnvironmentCategory dictates what kind of notifications are set up:
 	//
@@ -340,7 +340,7 @@ func createCommonAlerts(
 					}
 					// otherwise, use the startup probe configuration to
 					// determine the threshold for how long we should be waiting
-					return float64(vars.ServiceStartupProbe.MaximumLatencySeconds()) * 1000 // ms
+					return float64(vars.ServiceHealthProbes.MaximumLatencySeconds()) * 1000 // ms
 				}(),
 			},
 		},
@@ -387,6 +387,18 @@ func createServiceAlerts(
 	// If an external DNS name is provisioned, use it to check service availability
 	// from outside Cloud Run.
 	if externalDNS := vars.ExternalDomain.GetDNSName(); externalDNS != "" {
+		var (
+			healthcheckPath    = "/"
+			healthcheckHeaders = map[string]*string{}
+		)
+		// Only use MSP runtime standards is probe is disabled.
+		if vars.ServiceHealthProbes.UseHealthzProbes() {
+			healthcheckPath = "/-/healthz"
+			healthcheckHeaders = map[string]*string{
+				"Authorization": pointers.Stringf("Bearer %s", vars.DiagnosticsSecret.HexValue),
+			}
+		}
+
 		uptimeCheck := monitoringuptimecheckconfig.NewMonitoringUptimeCheckConfig(stack, id.TerraformID("external_uptime_check"), &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigConfig{
 			Project:     &vars.ProjectID,
 			DisplayName: pointers.Stringf("External Uptime Check for %s", externalDNS),
@@ -400,18 +412,17 @@ func createServiceAlerts(
 				},
 			},
 
-			Timeout: pointers.Stringf("%ds", vars.ServiceStartupProbe.MaximumLatencySeconds()),
+			// 1 to 60 seconds.
+			Timeout: pointers.Stringf("%ds", vars.ServiceHealthProbes.MaximumLatencySeconds()),
 			// Only supported values are 60s (1 minute), 300s (5 minutes),
 			// 600s (10 minutes), and 900s (15 minutes)
 			Period: pointers.Ptr("60s"),
 			HttpCheck: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheck{
-				Path:        pointers.Stringf("/-/healthz"),
 				Port:        pointers.Float64(443),
 				UseSsl:      pointers.Ptr(true),
 				ValidateSsl: pointers.Ptr(true),
-				Headers: &map[string]*string{
-					"Authorization": pointers.Stringf("Bearer %s", vars.DiagnosticsSecret.HexValue),
-				},
+				Path:        &healthcheckPath,
+				Headers:     &healthcheckHeaders,
 				AcceptedResponseStatusCodes: &[]*monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheckAcceptedResponseStatusCodes{
 					{
 						StatusClass: pointers.Ptr("STATUS_CLASS_2XX"),
