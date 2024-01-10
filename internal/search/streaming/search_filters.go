@@ -78,8 +78,8 @@ const (
 
 	// After/Before Values
 	YESTERDAY     = "yesterday"
-	ONE_WEEK_AGO  = "1 week ago"
-	ONE_MONTH_AGO = "1 month ago"
+	ONE_WEEK_AGO  = `"1 week ago"`
+	ONE_MONTH_AGO = `"1 month ago"`
 )
 
 type dateFilterInfo struct {
@@ -114,7 +114,7 @@ func determineTimeframe(date time.Time) dateFilterInfo {
 	default:
 		return dateFilterInfo{
 			Timeframe: BEFORE,
-			Value:     "2 months ago",
+			Value:     `"2 months ago"`,
 			Label:     "Older than 2 months",
 		}
 	}
