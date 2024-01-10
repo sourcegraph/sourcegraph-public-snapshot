@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// LimitUpperBound is the maximum (and defautl) value allowed for Limit request parameter.
+// LimitUpperBound is the maximum (and default) value allowed for Limit request parameter.
 // If a higher value is given, then this default is set.
 const LimitUpperBound = 4
 
