@@ -13,9 +13,9 @@ import (
 
 // HandbookDirectory designates where in sourcegraph/handbook operation docs should go.
 //
-// Place under top-level 'engineering/infrastructure' since it's too much work
+// Place under top-level 'engineering/managed-services' since it's too much work
 // to find the appropriate team-specific content tree, and they change frequently.
-const HandbookDirectory = "content/departments/engineering/infrastructure/managed-services"
+const HandbookDirectory = "content/departments/engineering/managed-services"
 
 // ServiceHandbookPath designates where in sourcegraph/handbook the contents
 // of operationdocs.Render should go.
@@ -32,8 +32,8 @@ func IndexPathHandbookPath() string {
 // Relative paths to pages we want to link to in handbook mode, expecting that
 // the index page and service-specific pages be housed in HandbookPath.
 const (
-	relativePathToMSPPage          = "../../teams/core-services/managed-services/platform.md"
-	relativePathToCoreServicesPage = "../../teams/core-services/index.md"
+	relativePathToMSPPage          = "../teams/core-services/managed-services/platform.md"
+	relativePathToCoreServicesPage = "../teams/core-services/index.md"
 )
 
 // RenderIndexPage renders an index page for use at HandbookPath, assuming that
@@ -62,7 +62,8 @@ In addition to service-specific guidance, %s is also available.`,
 		markdown.Link(markdown.Code("sourcegraph/managed-services"), "https://github.com/sourcegraph/managed-services"))
 
 	md.Admonitionf(markdown.AdmonitionNote,
-		"This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages.")
+		"This page may be out of date if a service or environment was recently added or updated - reach out to #discuss-core-services for help updating these pages, or use %s to view the generated documentation in your terminal.",
+		markdown.Code("sg msp operations $SERVICE_ID"))
 
 	owners, byOwner := collectByOwner(services)
 	for _, o := range owners {
