@@ -278,7 +278,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// Promote RFC795 images to release
 			promoteRFC795Images(c),
 		)
-
 	default:
 		// Executor VM image
 		alwaysRebuild := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.RFC795InternalRelease) || c.Diff.Has(changed.ExecutorVMImage)

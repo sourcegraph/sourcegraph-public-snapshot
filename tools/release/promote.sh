@@ -61,6 +61,6 @@ images=(
 for name in "${images[@]}"; do
   echo "--- Copying ${name} from private registry to public registry"
   docker pull "${INTERNAL_REGISTRY}/${name}:${version}"
-  docker tag "${INTERNAL_REGISTRY}/${name}:${version}" "${PUBLIC_REGISTRY}/${name}:${version}"
+  docker tag "${INTERNAL_REGISTRY}/${name}:${version}" "${PUBLIC_REGISTRY}/${name}:${VERSION}"
   docker push "${PUBLIC_REGISTRY}/${name}:${version}"
 done
