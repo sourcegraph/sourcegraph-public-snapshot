@@ -95,7 +95,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const filtersToShow =
         mergedFilters.length <= visibleFilters ? filteredFilters : filteredFilters.slice(0, visibleFilters)
 
-    const moreOrLessFilters = () => {
+    const moreOrLessFilters = (): void => {
         const filtersDisplayed = visibleFilters + MAX_FILTERS_NUMBER
 
         if (allFiltersDisplayed) {
