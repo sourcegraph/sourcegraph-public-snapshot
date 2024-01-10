@@ -12,6 +12,7 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -419,7 +420,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := compilePathPatterns(&protocol.PatternInfo{
+	pm, err := compilePathPatterns(&protocol.PatternInfo{
 		IncludePatterns: []string{`a\.go`},
 		ExcludePattern:  `README\.md`,
 	})
@@ -427,9 +428,17 @@ func TestRegexSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	zipData, _ := createZip(map[string]string{
+		"a.go":      "aaaaa11111",
+		"b.go":      "bbbbb22222",
+		"c.go":      "ccccc3333",
+		"README.md": "important info on go",
+	})
+	file, _ := mockZipFile(zipData)
+
 	type args struct {
 		ctx                   context.Context
-		m                     matcher
+		m                     matchTree
 		pm                    *pathMatcher
 		zf                    *zipFile
 		limit                 int
@@ -437,27 +446,168 @@ func TestRegexSearch(t *testing.T) {
 		patternMatchesPaths   bool
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantFm       []protocol.FileMatch
-		wantLimitHit bool
-		wantErr      bool
+		name    string
+		args    args
+		wantFm  []protocol.FileMatch
+		wantErr bool
 	}{
 		{
-			name: "nil matcher returns a FileMatch with no LineMatches",
+			name: "nil matchTree returns a FileMatch with no LineMatches",
 			args: args{
 				ctx: context.Background(),
 				// Check this case specifically.
-				m:  &allMatcher{},
-				pm: match,
-				zf: &zipFile{
-					Files: []srcFile{
-						{
-							Name: "a.go",
-						},
-					},
-				},
+				m:                     &allMatchTree{},
+				pm:                    pm,
+				zf:                    file,
 				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+		},
+		{
+			name: "'and' matchTree with matches",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("11111"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{
+				Path: "a.go",
+				ChunkMatches: []protocol.ChunkMatch{{
+					Content:      "aaaaa11111",
+					ContentStart: protocol.Location{0, 0, 0},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{0, 0, 0},
+						End:   protocol.Location{5, 0, 5},
+					}, {
+						Start: protocol.Location{5, 0, 5},
+						End:   protocol.Location{10, 0, 10},
+					}},
+				}},
+			}},
+		},
+		{
+			name: "'and' matchTree with no match",
+			args: args{
+				ctx: context.Background(),
+				m: &andMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("22222"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "empty 'and' matchTree",
+			args: args{
+				ctx:                   context.Background(),
+				m:                     &andMatchTree{},
+				pm:                    pm,
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+		},
+		{
+			name: "'or' matchTree with matches",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("aaaaa"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("99999"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: []protocol.FileMatch{{
+				Path: "a.go",
+				ChunkMatches: []protocol.ChunkMatch{{
+					Content:      "aaaaa11111",
+					ContentStart: protocol.Location{0, 0, 0},
+					Ranges: []protocol.Range{{
+						Start: protocol.Location{0, 0, 0},
+						End:   protocol.Location{5, 0, 5},
+					}},
+				}},
+			}},
+		},
+		{
+			name: "'or' matchTree with no match",
+			args: args{
+				ctx: context.Background(),
+				m: &orMatchTree{
+					children: []matchTree{
+						&regexMatchTree{
+							re: regexp.MustCompile("jjjjj"),
+						},
+						&regexMatchTree{
+							re: regexp.MustCompile("99999"),
+						},
+					}},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "empty 'or' matchTree",
+			args: args{
+				ctx:                   context.Background(),
+				m:                     &orMatchTree{},
+				pm:                    &pathMatcher{},
+				zf:                    file,
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+				limit:                 5,
+			},
+			wantFm: nil,
+		},
+		{
+			name: "matchTree matches on content AND path",
+			args: args{
+				ctx: context.Background(),
+				m: &regexMatchTree{
+					re: regexp.MustCompile("go"),
+				},
+				pm:                    pm,
+				zf:                    file,
+				patternMatchesPaths:   true,
 				patternMatchesContent: true,
 				limit:                 5,
 			},
@@ -466,16 +616,13 @@ func TestRegexSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, 0)
+			gotFm, _, err := regexSearchBatch(tt.args.ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotFm, tt.wantFm) {
 				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
-			}
-			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
 		})
 	}
@@ -529,7 +676,47 @@ func Test_locsToRanges(t *testing.T) {
 			Start: protocol.Location{0, 0, 0},
 			End:   protocol.Location{25, 2, 3},
 		}},
-	}}
+	}, {
+		// multiple matches on different lines
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{0, 2}, {2, 3}, {10, 14}, {23, 28}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{0, 0, 0},
+			End:   protocol.Location{2, 0, 2},
+		}, {
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{3, 0, 3},
+		}, {
+			Start: protocol.Location{10, 0, 7},
+			End:   protocol.Location{14, 1, 2},
+		}, {
+			Start: protocol.Location{23, 2, 1},
+			End:   protocol.Location{28, 2, 6},
+		}},
+	}, {
+		// multiple matches with overlap
+		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
+		locs: [][]int{{1, 8}, {2, 3}, {8, 11}, {8, 9}, {13, 16}, {14, 17}},
+		ranges: []protocol.Range{{
+			Start: protocol.Location{1, 0, 1},
+			End:   protocol.Location{8, 0, 5},
+		}, {
+			Start: protocol.Location{2, 0, 2},
+			End:   protocol.Location{3, 0, 3},
+		}, {
+			Start: protocol.Location{8, 0, 5},
+			End:   protocol.Location{11, 0, 8},
+		}, {
+			Start: protocol.Location{8, 0, 5},
+			End:   protocol.Location{9, 0, 6},
+		}, {
+			Start: protocol.Location{13, 1, 1},
+			End:   protocol.Location{16, 1, 4},
+		}, {
+			Start: protocol.Location{14, 1, 2},
+			End:   protocol.Location{17, 1, 5},
+		}}},
+	}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {

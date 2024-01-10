@@ -24,27 +24,28 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult, addition
 		issueAssignees  = []string{}
 	)
 
-	if !result.Reviewed {
+	if !result.ReviewSatisfied {
 		exceptionLabels = append(exceptionLabels, "exception/review")
 	}
-	if !result.HasTestPlan() {
+
+	if !result.IsTestPlanSatisfied() {
 		exceptionLabels = append(exceptionLabels, "exception/test-plan")
 	}
 	if result.ProtectedBranch {
 		exceptionLabels = append(exceptionLabels, "exception/protected-branch")
 	}
 
-	if !result.Reviewed {
-		if result.HasTestPlan() {
-			issueBody = fmt.Sprintf("%s %q **has a test plan** but **was not reviewed**.", payload.PullRequest.URL, prTitle)
+	if !result.ReviewSatisfied {
+		if result.IsTestPlanSatisfied() {
+			issueBody = fmt.Sprintf("%s %q **has a test plan (or does not require one)** but **was not reviewed**.", payload.PullRequest.URL, prTitle)
 		} else {
 			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, prTitle)
 		}
-	} else if !result.HasTestPlan() {
+	} else if !result.IsTestPlanSatisfied() {
 		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, prTitle)
 	}
 
-	if !result.HasTestPlan() {
+	if !result.IsTestPlanSatisfied() {
 		issueBody += fmt.Sprintf("\n\nLearn more about test plans in our [testing guidelines](%s).", testPlanDocs)
 	}
 

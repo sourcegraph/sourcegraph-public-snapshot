@@ -171,7 +171,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
@@ -288,7 +288,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
@@ -386,7 +386,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(repo, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != parameterRevision {
 			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
 		}
@@ -473,7 +473,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(repo, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != parameterRevision {
 			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
 		}
@@ -696,7 +696,7 @@ func TestOwnershipPagination(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
@@ -813,7 +813,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
@@ -986,7 +986,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{
@@ -1181,7 +1181,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
@@ -1460,7 +1460,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
 	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
