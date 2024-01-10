@@ -220,7 +220,7 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 // asserts that the resulting graph has the expected root, leaf, and version boundary values.
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int, expectedBoundsByRev map[string]shared.MigrationBounds) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		stitched, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		stitched, err := StitchDefinitions(NewLazyMigrationsReader(), schemaName, makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
@@ -247,7 +247,7 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 // compared against the target version's description (in the git-tree).
 func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		stitched, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		stitched, err := StitchDefinitions(NewLazyMigrationsReader(), schemaName, makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}

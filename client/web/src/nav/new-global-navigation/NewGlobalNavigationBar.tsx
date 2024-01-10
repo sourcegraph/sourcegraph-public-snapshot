@@ -214,7 +214,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     }, [])
 
     // TODO: Move this check outside of navigation component and share it via context
-    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
+    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
 
     return (
         <>

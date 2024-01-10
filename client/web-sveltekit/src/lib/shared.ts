@@ -7,9 +7,6 @@ export {
     parseQueryAndHash,
     buildSearchURLQuery,
     makeRepoURI,
-    type RevisionSpec,
-    type ResolvedRevisionSpec,
-    type RepoSpec,
 } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
@@ -58,18 +55,11 @@ export {
     rankByLine,
     truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export {
-    type SettingsCascade,
-    type SettingsSubject,
-    type SettingsCascadeOrError,
-    SettingsProvider,
-    gqlToCascade,
-} from '@sourcegraph/shared/src/settings/settings'
+export { type Settings, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'

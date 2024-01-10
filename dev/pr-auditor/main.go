@@ -32,6 +32,9 @@ type Flags struct {
 
 	// SkipStatus if true will skip updating commit status on GitHub and just record exceptions. Useful when crawling through failed runs caused by infrastructure issues.
 	SkipStatus bool
+
+	SkipCheckTestPlan bool
+	SkipCheckReview   bool
 }
 
 func (f *Flags) Parse() {
@@ -43,6 +46,8 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.ProtectedBranch, "protected-branch", "", "name of branch that if set as the base branch in a PR, will always open an exception")
 	flag.StringVar(&f.AdditionalContext, "additional-context", "", "additional information that will be appended to the recorded exception, if any.")
 	flag.BoolVar(&f.SkipStatus, "skip-status", false, "skip updating commit status on GitHub and just record exceptions")
+	flag.BoolVar(&f.SkipCheckTestPlan, "skip-check-test-plan", false, "Allows PRs without a test plan to pass audit")
+	flag.BoolVar(&f.SkipCheckReview, "skip-check-review", false, "Allows PRs without any approving reviews to be merged")
 	flag.Parse()
 }
 
@@ -115,12 +120,13 @@ const (
 
 func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: true,
+		SkipReviews:     flags.SkipCheckReview,
+		SkipTestPlan:    flags.SkipCheckTestPlan,
 		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
 
-	if result.HasTestPlan() && result.Reviewed && !result.ProtectedBranch {
+	if result.IsSatisfied() {
 		log.Println("Acceptance checked and PR reviewed, done")
 		// Don't create status that likely nobody will check anyway
 		return nil
@@ -175,7 +181,8 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: false, // only validate reviews on post-merge
+		SkipReviews:     true, // only validate reviews on post-merge
+		SkipTestPlan:    flags.SkipCheckTestPlan,
 		ProtectedBranch: flags.ProtectedBranch,
 	})
 	log.Printf("checkPR: %+v\n", result)
@@ -186,7 +193,7 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	case result.Error != nil:
 		prState = "error"
 		stateDescription = fmt.Sprintf("checkPR: %s", result.Error.Error())
-	case !result.HasTestPlan():
+	case !result.IsTestPlanSatisfied():
 		prState = "failure"
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"

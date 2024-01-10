@@ -26,6 +26,7 @@ let
     unset CC CXX
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
+    unset TMPDIR TMP
     if [ "$1" == "configure" ]; then
       exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
     fi

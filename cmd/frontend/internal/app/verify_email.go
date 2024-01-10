@@ -60,7 +60,7 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 		}
 
 		if err := db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameEmailVerified, r.URL.Path, uint32(actr.UID), "", "BACKEND", email); err != nil {
-			log.Error(err)
+			logger.Warn("Error logging security event", log.Error(err))
 		}
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{

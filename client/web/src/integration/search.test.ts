@@ -352,6 +352,7 @@ describe('Search', () => {
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: applySettings() }),
                     })
+                    testContext.overrideJsContext({ experimentalFeatures: { structuralSearch: 'enabled' } })
                 })
 
                 test('Clicking toggle turns on structural search', async () => {

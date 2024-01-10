@@ -1,0 +1,17 @@
+query GitHistoryQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
+    node(id: $repo) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
+                    ...GitHistory_HistoryConnection
+                }
+            }
+        }
+    }
+}
+
+fragment GitHistory_HistoryConnection on GitCommitConnection {
+    ...BottomPanel_HistoryConnection
+}

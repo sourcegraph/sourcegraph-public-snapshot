@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp/syntax"
+	"sort"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -14,29 +15,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 )
 
-type matcher interface {
+type matchTree interface {
 	// MatchesString returns whether the string matches
 	MatchesString(s string) bool
 
-	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches
+	// MatchesFile returns whether the file matches, plus a LineMatch for each line that matches.
+	// Note: even if the returned matches slice is empty, match can be true. This can happen if
+	// a query matches all content, or if the query is negated.
 	MatchesFile(fileBuf []byte, limit int) (match bool, matches [][]int)
 
-	// ToZoektQuery returns a zoekt query representing the same rules as as this matcher
+	// ToZoektQuery returns a zoekt query representing the same rules as as this matchTree
 	ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error)
 
-	// String returns a simple string representation of the matcher
+	// String returns a simple string representation of the matchTree
 	String() string
 }
 
-// compilePattern returns a matcher for matching the pattern info
-func compilePattern(p *protocol.PatternInfo) (matcher, error) {
+// compilePattern returns a matchTree for matching the pattern info
+func compilePattern(p *protocol.PatternInfo) (matchTree, error) {
 	var (
 		re               *regexp.Regexp
 		literalSubstring []byte
 	)
 
 	if p.Pattern == "" {
-		return &allMatcher{}, nil
+		return &allMatchTree{}, nil
 	}
 
 	expr := p.Pattern
@@ -88,7 +91,7 @@ func compilePattern(p *protocol.PatternInfo) (matcher, error) {
 		literalSubstring = []byte(longestLiteral(ast))
 	}
 
-	return &regexMatcher{
+	return &regexMatchTree{
 		re:               re,
 		ignoreCase:       !p.IsCaseSensitive,
 		isNegated:        p.IsNegated,
@@ -125,25 +128,25 @@ func longestLiteral(re *syntax.Regexp) string {
 	return ""
 }
 
-type allMatcher struct{}
+type allMatchTree struct{}
 
-func (a allMatcher) MatchesString(_ string) bool {
+func (a allMatchTree) MatchesString(_ string) bool {
 	return true
 }
 
-func (a allMatcher) MatchesFile(_ []byte, _ int) (match bool, matches [][]int) {
+func (a allMatchTree) MatchesFile(_ []byte, _ int) (match bool, matches [][]int) {
 	return true, nil
 }
 
-func (a allMatcher) ToZoektQuery(_ bool, _ bool) (zoektquery.Q, error) {
+func (a allMatchTree) ToZoektQuery(_ bool, _ bool) (zoektquery.Q, error) {
 	return &zoektquery.Const{Value: true}, nil
 }
 
-func (a allMatcher) String() string {
+func (a allMatchTree) String() string {
 	return "all"
 }
 
-type regexMatcher struct {
+type regexMatchTree struct {
 	// re is the regexp to match, should never be nil
 	re *regexp.Regexp
 
@@ -160,29 +163,29 @@ type regexMatcher struct {
 	literalSubstring []byte
 }
 
-func (rm *regexMatcher) String() string {
+func (rm *regexMatchTree) String() string {
 	return fmt.Sprintf("re: %q", rm.re)
 }
 
-func (rm *regexMatcher) MatchesString(s string) bool {
+func (rm *regexMatchTree) MatchesString(s string) bool {
 	matches := rm.matchesString(s)
 	return matches == !rm.isNegated
 }
 
-func (rm *regexMatcher) matchesString(s string) bool {
+func (rm *regexMatchTree) matchesString(s string) bool {
 	if rm.ignoreCase {
 		s = strings.ToLower(s)
 	}
 	return rm.re.MatchString(s)
 }
 
-func (rm *regexMatcher) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+func (rm *regexMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
 	matches := rm.matchesFile(fileBuf, limit)
 	match := len(matches) > 0
 	return match == !rm.isNegated, matches
 }
 
-func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
+func (rm *regexMatchTree) matchesFile(fileBuf []byte, limit int) [][]int {
 	// Most files will not have a match and we bound the number of matched
 	// files we return. So we can avoid the overhead of parsing out new lines
 	// and repeatedly running the regex engine by running a single match over
@@ -194,11 +197,10 @@ func (rm *regexMatcher) matchesFile(fileBuf []byte, limit int) [][]int {
 		return nil
 	}
 
-	// find limit+1 matches so we know whether we hit the limit
-	return rm.re.FindAllIndex(fileBuf, limit+1)
+	return rm.re.FindAllIndex(fileBuf, limit)
 }
 
-func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+func (rm *regexMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
 	re, err := syntax.Parse(rm.re.String(), syntax.Perl)
 	if err != nil {
 		return nil, err
@@ -231,9 +233,121 @@ func (rm *regexMatcher) ToZoektQuery(matchContent bool, matchPath bool) (zoektqu
 		}), nil
 }
 
-func (rm *regexMatcher) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
+func (rm *regexMatchTree) negateIfNeeded(q zoektquery.Q) zoektquery.Q {
 	if rm.isNegated {
 		return &zoektquery.Not{Child: q}
 	}
 	return q
+}
+
+type andMatchTree struct {
+	children []matchTree
+}
+
+func (am *andMatchTree) MatchesString(s string) bool {
+	for _, m := range am.children {
+		if !m.MatchesString(s) {
+			return false
+		}
+	}
+	return true
+}
+
+func (am *andMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+	var matches [][]int
+	for _, m := range am.children {
+		// Pass the full limit to the children instead of tracking how many matches we
+		// have left. This is slightly wasteful but keeps the logic simpler.
+		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
+		if !childMatch {
+			return false, nil
+		}
+		matches = append(matches, childMatches...)
+	}
+
+	return true, mergeMatches(matches, limit)
+}
+
+func (am *andMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+	var children []zoektquery.Q
+	for _, m := range am.children {
+		q, err := m.ToZoektQuery(matchContent, matchPath)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, q)
+	}
+	return &zoektquery.And{Children: children}, nil
+}
+
+func (am *andMatchTree) String() string {
+	return fmt.Sprintf("AND (%d children)", len(am.children))
+}
+
+type orMatchTree struct {
+	children []matchTree
+}
+
+func (om *orMatchTree) MatchesString(s string) bool {
+	for _, m := range om.children {
+		if m.MatchesString(s) {
+			return true
+		}
+	}
+	return false
+}
+
+func (om *orMatchTree) MatchesFile(fileBuf []byte, limit int) (bool, [][]int) {
+	match := false
+	var matches [][]int
+	for _, m := range om.children {
+		// Pass the full limit to the children instead of tracking how many matches we
+		// have left. This is slightly wasteful but keeps the logic simpler.
+		childMatch, childMatches := m.MatchesFile(fileBuf, limit)
+		match = match || childMatch
+		matches = append(matches, childMatches...)
+	}
+
+	return match, mergeMatches(matches, limit)
+}
+
+func (om *orMatchTree) ToZoektQuery(matchContent bool, matchPath bool) (zoektquery.Q, error) {
+	var children []zoektquery.Q
+	for _, m := range om.children {
+		q, err := m.ToZoektQuery(matchContent, matchPath)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, q)
+	}
+	return &zoektquery.Or{Children: children}, nil
+}
+
+func (om *orMatchTree) String() string {
+	return fmt.Sprintf("OR (%d children)", len(om.children))
+}
+
+// mergeMatches sorts the matched ranges and truncates the list
+// to obey limit. Consistent with behavior for diff/ commit search,
+// it does not merge or remove overlapping ranges.
+func mergeMatches(matches [][]int, limit int) [][]int {
+	sort.Sort(matchSlice(matches))
+	if len(matches) > limit {
+		return matches[:limit]
+	}
+	return matches
+}
+
+type matchSlice [][]int
+
+func (ms matchSlice) Len() int {
+	return len(ms)
+}
+
+func (ms matchSlice) Swap(i, j int) {
+	ms[i], ms[j] = ms[j], ms[i]
+}
+
+func (ms matchSlice) Less(i, j int) bool {
+	return ms[i][0] < ms[j][0]
 }

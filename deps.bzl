@@ -4240,13 +4240,6 @@ def go_dependencies():
         version = "v1.0.4",
     )
     go_repository(
-        name = "com_github_mcuadros_go_version",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/mcuadros/go-version",
-        sum = "h1:YocNLcTBdEdvY3iDK6jfWXvEaM5OCKkjxPKoJRdB3Gg=",
-        version = "v0.0.0-20190830083331-035f6764e8d2",
-    )
-    go_repository(
         name = "com_github_mholt_acmez",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mholt/acmez",

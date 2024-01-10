@@ -18,14 +18,15 @@ func TestCheckTestPlan(t *testing.T) {
 		labels          []string
 		baseBranch      string
 		protectedBranch string
+		canSkipTestPlan bool
 		want            checkResult
 	}{
 		{
 			name:     "has test plan",
 			bodyFile: "testdata/pull_request_body/has-plan.md",
 			want: checkResult{
-				Reviewed: false,
-				TestPlan: "I have a plan!",
+				ReviewSatisfied: false,
+				TestPlan:        "I have a plan!",
 			},
 		},
 		{
@@ -34,7 +35,7 @@ func TestCheckTestPlan(t *testing.T) {
 			baseBranch:      "release",
 			protectedBranch: "release",
 			want: checkResult{
-				Reviewed:        false,
+				ReviewSatisfied: false,
 				TestPlan:        "I have a plan!",
 				ProtectedBranch: true,
 			},
@@ -45,7 +46,7 @@ func TestCheckTestPlan(t *testing.T) {
 			baseBranch:      "preprod",
 			protectedBranch: "release",
 			want: checkResult{
-				Reviewed:        false,
+				ReviewSatisfied: false,
 				TestPlan:        "I have a plan!",
 				ProtectedBranch: false,
 			},
@@ -54,14 +55,14 @@ func TestCheckTestPlan(t *testing.T) {
 			name:     "no test plan",
 			bodyFile: "testdata/pull_request_body/no-plan.md",
 			want: checkResult{
-				Reviewed: false,
+				ReviewSatisfied: false,
 			},
 		},
 		{
 			name:     "complicated test plan",
 			bodyFile: "testdata/pull_request_body/has-plan-fancy.md",
 			want: checkResult{
-				Reviewed: false,
+				ReviewSatisfied: false,
 				TestPlan: `This is a plan!
 Quite lengthy
 
@@ -76,7 +77,7 @@ And a little complicated; there's also the following reasons:
 			name:     "inline test plan",
 			bodyFile: "testdata/pull_request_body/inline-plan.md",
 			want: checkResult{
-				Reviewed: false,
+				ReviewSatisfied: false,
 				TestPlan: `This is a plan!
 Quite lengthy
 
@@ -91,16 +92,16 @@ And a little complicated; there's also the following reasons:
 			name:     "no review required",
 			bodyFile: "testdata/pull_request_body/no-review-required.md",
 			want: checkResult{
-				Reviewed: true,
-				TestPlan: "I have a plan! No review required: this is a bot PR",
+				ReviewSatisfied: true,
+				TestPlan:        "I have a plan! No review required: this is a bot PR",
 			},
 		},
 		{
 			name:     "bad markdown still passes",
 			bodyFile: "testdata/pull_request_body/bad-markdown.md",
 			want: checkResult{
-				Reviewed: true,
-				TestPlan: "This is still a plan! No review required: just trust me",
+				ReviewSatisfied: true,
+				TestPlan:        "This is still a plan! No review required: just trust me",
 			},
 		},
 		{
@@ -108,8 +109,8 @@ And a little complicated; there's also the following reasons:
 			bodyFile: "testdata/pull_request_body/has-plan.md",
 			labels:   []string{"automerge"},
 			want: checkResult{
-				Reviewed: true,
-				TestPlan: "I have a plan!",
+				ReviewSatisfied: true,
+				TestPlan:        "I have a plan!",
 			},
 		},
 		{
@@ -117,8 +118,8 @@ And a little complicated; there's also the following reasons:
 			bodyFile: "testdata/pull_request_body/has-plan.md",
 			labels:   []string{"no-review-required"},
 			want: checkResult{
-				Reviewed: true,
-				TestPlan: "I have a plan!",
+				ReviewSatisfied: true,
+				TestPlan:        "I have a plan!",
 			},
 		},
 		{
@@ -126,7 +127,7 @@ And a little complicated; there's also the following reasons:
 			bodyFile: "testdata/pull_request_body/no-plan.md",
 			labels:   []string{"automerge"},
 			want: checkResult{
-				Reviewed: false,
+				ReviewSatisfied: false,
 			},
 		},
 		{
@@ -134,7 +135,7 @@ And a little complicated; there's also the following reasons:
 			bodyFile: "testdata/pull_request_body/no-plan.md",
 			labels:   []string{"no-review-required"},
 			want: checkResult{
-				Reviewed: false,
+				ReviewSatisfied: false,
 			},
 		},
 		{
@@ -142,8 +143,17 @@ And a little complicated; there's also the following reasons:
 			bodyFile: "testdata/pull_request_body/has-plan.md",
 			labels:   []string{"random-label"},
 			want: checkResult{
-				Reviewed: false,
-				TestPlan: "I have a plan!",
+				ReviewSatisfied: false,
+				TestPlan:        "I have a plan!",
+			},
+		},
+		{
+			name:            "no test plan but skip-test-plans enabled",
+			bodyFile:        "testdata/pull_request_body/no-plan.md",
+			canSkipTestPlan: true,
+			want: checkResult{
+				ReviewSatisfied: false,
+				CanSkipTestPlan: true,
 			},
 		},
 	}
@@ -164,7 +174,8 @@ And a little complicated; there's also the following reasons:
 				}
 			}
 			checkOpts := checkOpts{
-				ValidateReviews: false,
+				SkipReviews:  true,
+				SkipTestPlan: tt.canSkipTestPlan,
 			}
 
 			if tt.baseBranch != "" && tt.protectedBranch != "" {
@@ -173,7 +184,7 @@ And a little complicated; there's also the following reasons:
 			}
 
 			got := checkPR(context.Background(), nil, payload, checkOpts)
-			assert.Equal(t, tt.want.HasTestPlan(), got.HasTestPlan())
+			assert.Equal(t, tt.want.IsTestPlanSatisfied(), got.IsTestPlanSatisfied())
 			t.Log("got.TestPlan: ", got.TestPlan)
 			if tt.want.TestPlan == "" {
 				assert.Empty(t, got.TestPlan)
@@ -182,7 +193,7 @@ And a little complicated; there's also the following reasons:
 					cmp.Diff(got.TestPlan, tt.want.TestPlan))
 			}
 			assert.Equal(t, tt.want.ProtectedBranch, got.ProtectedBranch)
-			assert.Equal(t, tt.want.Reviewed, got.Reviewed)
+			assert.Equal(t, tt.want.ReviewSatisfied, got.ReviewSatisfied)
 		})
 	}
 }
