@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
     export interface Capture {
-        history: HistoryResult | null
+        history: HistoryPanel_HistoryConnection | null
         scroller?: ScrollerCapture
     }
 </script>
@@ -11,17 +11,17 @@
 
     import { page } from '$app/stores'
     import { scrollIntoView } from '$lib/actions'
-    import type { HistoryResult } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { createHistoryPanelStore } from '$lib/repo/stores'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
+    import Avatar from '$lib/Avatar.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
+    import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
-    export let history: Promise<HistoryResult>
-    export let fetchMoreHandler: (pageInfo: HistoryResult['pageInfo']) => Promise<HistoryResult>
+    export let history: Promise<HistoryPanel_HistoryConnection | null>
+    export let fetchMoreHandler: (afterCursor: string | null) => Promise<HistoryPanel_HistoryConnection | null>
 
     export function capture(): Capture {
         return {
@@ -67,6 +67,7 @@
 
     $: selectedRev = $page.url?.searchParams.get('rev')
     $: clearURL = getClearURL()
+    $: canShowInlineDiff = $page.route.id?.includes('/blob/')
 
     let scroller: Scroller
 </script>
@@ -77,11 +78,11 @@
             {@const selected = commit.abbreviatedOID === selectedRev}
             <tr class:selected use:scrollIntoView={selected}>
                 <td>
-                    <UserAvatar user={commit.author.person} />&nbsp;
+                    <Avatar avatar={commit.author.person} />&nbsp;
                     {commit.author.person.displayName}
                 </td>
                 <td class="subject">
-                    {#if $page.params?.path}
+                    {#if canShowInlineDiff}
                         <a href="?rev={commit.abbreviatedOID}">{commit.subject}</a>
                     {:else}
                         {commit.subject}

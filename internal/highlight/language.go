@@ -136,6 +136,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"perl":   EngineScipSyntax,
 		"matlab": EngineScipSyntax,
 		"java":   EngineScipSyntax,
+		"go":     EngineScipSyntax,
 	},
 }
 

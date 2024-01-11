@@ -5,6 +5,8 @@ set -euf -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
+# shellcheck disable=SC2317
+# false positive by shellcheck https://github.com/koalaman/shellcheck/issues/2660
 function cleanup() {
   echo "Removing $tmpdir"
   rm -rf "$tmpdir"

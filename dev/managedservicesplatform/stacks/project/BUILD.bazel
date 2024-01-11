@@ -4,7 +4,10 @@ go_library(
     name = "project",
     srcs = ["project.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/project",
-    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    visibility = [
+        "//dev/managedservicesplatform:__subpackages__",
+        "//dev/sg/msp:__pkg__",
+    ],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/internal/stack",

@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, isMobile } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
@@ -185,6 +185,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         setNote(REQUESTERS[requestFrom].name)
     }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester, port, destination])
 
+    const isRequestFromMobileDevice = isMobile()
+
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -197,9 +199,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                     switchMap(() =>
                         (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
                             tap(result => {
-                                // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
+                                // SECURITY: If the request was from a valid requester and from a non-mobile device,
+                                // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
                                 // SECURITY: Local context ONLY
-                                if (requester) {
+                                if (requester && !isRequestFromMobileDevice) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
                                     let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
@@ -225,7 +228,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port]
+            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isRequestFromMobileDevice]
         )
     )
 
@@ -257,6 +260,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             variant="primary"
                             label="Authorize"
                             loading={creationOrError === 'loading'}
+                            // we disable this if the request is made from a mobile device so the access token doesn't
+                            // get created at all. This prevents redirecting to an external site from a mobile app.
+                            disabled={isRequestFromMobileDevice}
                             onClick={onAuthorize}
                         />
                         <Button

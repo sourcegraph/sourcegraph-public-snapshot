@@ -300,10 +300,23 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	}
 
 	prev := conf.Raw()
+
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so take the redacted version for logging purposes.
+	prevSCredacted, _ := conf.RedactSecrets(prev)
+	arg := struct {
+		PrevConfig string `json:"prev_config"`
+		NewConfig  string `json:"new_config"`
+	}{
+		PrevConfig: prevSCredacted.Site,
+		NewConfig:  args.Input,
+	}
+
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
+
 	prev.Site = unredacted
 
 	server := globals.ConfigurationServerFrontendOnly
@@ -314,7 +327,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when site config is updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -586,8 +599,26 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 	return &codyLLMConfigurationResolver{config: c}
 }
 
+func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeaturesResolver {
+	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
+	if c == nil {
+		return nil
+	}
+	return &codyConfigFeaturesResolver{config: c}
+}
+
+func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
+
+func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
+
+func (c *codyConfigFeaturesResolver) Commands() bool { return c.config.Commands }
+
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig
+}
+
+type codyConfigFeaturesResolver struct {
+	config *conftypes.ConfigFeatures
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }

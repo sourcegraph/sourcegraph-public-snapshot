@@ -45,7 +45,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Name:    &config.Spec.Subdomain,
 			Type:    pointers.Ptr("A"),
 			Value:   config.Target.ExternalAddress.Address(),
-			Proxied: pointers.Ptr(config.Spec.Proxied),
+			Proxied: pointers.Ptr(config.Spec.ShouldProxy()),
 			Comment: pointers.Ptr("Managed Services Platform service"),
 			Tags:    pointers.Ptr(pointers.Slice([]string{"msp"})),
 		})

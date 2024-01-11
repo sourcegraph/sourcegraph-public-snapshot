@@ -1,7 +1,13 @@
 # msp-testbed infrastructure operations
 
+<!--
+Generated from: unknown revision of https://github.com/sourcegraph/managed-services
+-->
+
 This document describes operational guidance for msp-testbed infrastructure.
 This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).
+
+If you need assistance with MSP infrastructure, reach out to the [Core Services](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/) team in #discuss-core-services.
 
 ## Service overview
 
@@ -10,13 +16,13 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 | Service ID   | [`msp-testbed`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml)                     |
 | Owners       |                                                                                                                                  |
 | Service kind | Cloud Run service                                                                                                                |
-| Environments | [dev environment](#dev-environment)                                                                                              |
+| Environments | [dev](#dev)                                                                                                                      |
 | Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
 | Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
 
 ## Environments
 
-### dev environment
+### dev
 
 |  PROPERTY  |                                                           DETAILS                                                           |
 |------------|-----------------------------------------------------------------------------------------------------------------------------|
@@ -28,10 +34,10 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges.
 Test environments have less stringent requirements.
 
-|          ACCESS          |                                              ENTITLE REQUEST TEMPLATE                                              |
-|--------------------------|--------------------------------------------------------------------------------------------------------------------|
-| GCP project read access  | no Entitle request needed; all engineers have access to this environment through the 'Engineering Projects' folder |
-| GCP project write access | no Entitle request needed; all engineers have access to this environment through the 'Engineering Projects' folder |
+|          ACCESS          |                                                                                                                                                                 ENTITLE REQUEST TEMPLATE                                                                                                                                                                  |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GCP project read access  | [Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiZGY3NWJkNWMtYmUxOC00MjhmLWEzNjYtYzlhYTU1MGIwODIzIiwidGhyb3VnaCI6ImRmNzViZDVjLWJlMTgtNDI4Zi1hMzY2LWM5YWE1NTBiMDgyMyIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D) |
+| GCP project write access | [Entitle request for the 'Engineering Projects' folder](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IkVOVEVSIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiYzJkMTUwOGEtMGQ0ZS00MjA1LWFiZWUtOGY1ODg1ZGY3ZDE4IiwidGhyb3VnaCI6ImMyZDE1MDhhLTBkNGUtNDIwNS1hYmVlLThmNTg4NWRmN2QxOCIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D) |
 
 #### dev Cloud Run
 

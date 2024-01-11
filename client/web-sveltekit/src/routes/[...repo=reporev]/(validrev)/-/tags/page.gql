@@ -1,0 +1,18 @@
+query GitTagsQuery($repo: ID!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
+    node(id: $repo) {
+        id
+        ... on Repository {
+            gitRefs(first: $first, type: GIT_TAG, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                ...GitTagsConnection
+            }
+        }
+    }
+}
+
+fragment GitTagsConnection on GitRefConnection {
+    nodes {
+        id
+        ...GitReference_Ref
+    }
+    totalCount
+}

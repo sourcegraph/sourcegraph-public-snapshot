@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -190,6 +191,16 @@ func (_ *OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body ope
 		}
 		if len(event.Choices) > 0 {
 			completionUsage.characters += len(event.Choices[0].Delta.Content)
+		}
+		// These are only included in the last message, so we're not worried about overwriting
+		if event.Usage.PromptTokens > 0 {
+			promptUsage.tokens = event.Usage.PromptTokens
+		}
+		if event.Usage.CompletionTokens > 0 {
+			completionUsage.tokens = event.Usage.CompletionTokens
+		}
+		if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
+			logger.Warn("did not extract token counts from OpenAI streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 		}
 	}
 	if err := dec.Err(); err != nil {

@@ -79,7 +79,8 @@ type EnvironmentSpec struct {
 
 	// AllowDestroys, if false, configures Terraform lifecycle guards against
 	// deletion of potentially critical resources. This includes things like the
-	// environment project and databases.
+	// environment project and databases, and also guards against the deletion
+	// of Terraform Cloud workspaces as well.
 	// https://developer.hashicorp.com/terraform/tutorials/state/resource-lifecycle#prevent-resource-deletion
 	//
 	// To tear down an environment, or to apply a change that intentionally
@@ -264,11 +265,21 @@ type EnvironmentDomainCloudflareSpec struct {
 
 	// Proxied configures whether Cloudflare should proxy all traffic to get
 	// WAF protection instead of only DNS resolution.
-	Proxied bool `yaml:"proxied,omitempty"`
+	//
+	// Default: true
+	Proxied *bool `yaml:"proxied,omitempty"`
 
 	// Required configures whether traffic can only be allowed through Cloudflare.
 	// TODO: Unimplemented.
 	Required bool `yaml:"required,omitempty"`
+}
+
+// ShouldProxy evaluates whether Cloudflare WAF proxying should be used.
+func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
+	if e == nil {
+		return false
+	}
+	return pointers.Deref(e.Proxied, true)
 }
 
 type EnvironmentInstancesSpec struct {

@@ -1,5 +1,7 @@
 package database
 
+// pre-commit:ignore_sourcegraph_token
+
 import (
 	"context"
 	"reflect"

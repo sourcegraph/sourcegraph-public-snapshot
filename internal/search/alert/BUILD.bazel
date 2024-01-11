@@ -15,6 +15,7 @@ go_library(
         "//internal/endpoint",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
+        "//internal/grpc/defaults",
         "//internal/search",
         "//internal/search/query",
         "//internal/search/repos",

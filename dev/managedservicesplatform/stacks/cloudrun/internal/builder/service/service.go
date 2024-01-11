@@ -250,7 +250,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 
 		// Provision SSL cert
 		var sslCertificate loadbalancer.SSLCertificate
-		if domain.Cloudflare.Proxied {
+		if domain.Cloudflare.ShouldProxy() {
 			sslCertificate = cloudflareorigincert.New(stack,
 				resourceid.New("cf-origin-cert"),
 				cloudflareorigincert.Config{

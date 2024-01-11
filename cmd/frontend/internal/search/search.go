@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
@@ -178,6 +179,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 
 		return h.searchClient.Execute(ctx, batchedStream, inputs)
 	}()
+
+	if err != nil && errors.HasType(err, &query.UnsupportedError{}) {
+		eventWriter.Alert(search.AlertForQuery(inputs.OriginalQuery, err))
+		err = nil
+	}
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
@@ -755,8 +761,9 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		// TODO(camdencheek): add a `dirty` to filters so we don't send them every tick
-		h.eventWriter.Filters(h.filters.Compute(), false)
+		if h.filters.Dirty {
+			h.eventWriter.Filters(h.filters.Compute(), false)
+		}
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())
