@@ -83,12 +83,8 @@ type MatchWriter interface {
 	Write(match result.Match) error
 }
 
-// CSVWriter makes it so we can avoid caring about search types and leave it
+// CSVWriter makes it, so we can avoid caring about search types and leave it
 // up to the search job to decide the shape of data.
-//
-// Note: I expect the implementation of this to handle things like chunking up
-// the CSV/etc. EG once we hit 100MB of data it can write the data out then
-// start a new file. It takes care of remembering the header for the new file.
 type CSVWriter interface {
 	// WriteHeader should be called first and only once.
 	WriteHeader(...string) error
@@ -96,10 +92,7 @@ type CSVWriter interface {
 	// WriteRow should have the same number of values as WriteHeader and can be
 	// called zero or more times.
 	WriteRow(...string) error
-}
 
-type CSVWriterCloser interface {
-	CSVWriter
 	io.Closer
 }
 

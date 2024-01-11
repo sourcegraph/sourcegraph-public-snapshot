@@ -13,7 +13,7 @@ import (
 )
 
 type MatchCSVWriter struct {
-	w         CSVWriterCloser
+	w         CSVWriter
 	headerTyp string
 	host      *url.URL
 }
@@ -23,7 +23,7 @@ func NewCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) (
 	return newMatchCSVWriter(csvWriter)
 }
 
-func newMatchCSVWriter(w CSVWriterCloser) (*MatchCSVWriter, error) {
+func newMatchCSVWriter(w CSVWriter) (*MatchCSVWriter, error) {
 	externalURL := conf.Get().ExternalURL
 	u, err := url.Parse(externalURL)
 	if err != nil {

@@ -365,7 +365,7 @@ func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher,
 
 	// Test Search
 	var csv csvBuffer
-	matchWriter, err := newMatchCSVWriter(NopCloser(&csv))
+	matchWriter, err := newMatchCSVWriter(&csv)
 	assert.NoError(err)
 
 	for _, repoRev := range repoRevs {
@@ -375,16 +375,4 @@ func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher,
 	if tc.WantCSV != nil {
 		tc.WantCSV.Equal(t, csv.buf.String())
 	}
-}
-
-func NopCloser(w CSVWriter) CSVWriterCloser {
-	return nopCloser{w}
-}
-
-type nopCloser struct {
-	CSVWriter
-}
-
-func (nopCloser) Close() error {
-	return nil
 }

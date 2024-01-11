@@ -63,6 +63,10 @@ func (c *csvBuffer) WriteRow(row ...string) error {
 	return err
 }
 
+func (c *csvBuffer) Close() error {
+	return nil
+}
+
 func TestBlobstoreCSVWriter(t *testing.T) {
 	mockStore := setupMockStore(t)
 
