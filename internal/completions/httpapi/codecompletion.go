@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -42,25 +41,11 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 
 func allowedCustomModel(ctx context.Context, model string) string {
 	switch model {
-	// These special model strings allow the server to choose the model. This allows us to instantly
-	// route traffic from Fireworks multi-tenant cluster to our single-tenant cluster and
-	// vice-versa, without the client having to know about it
-	case "fireworks/starcoder-16b",
-		"fireworks/starcoder-7b":
-
-		flags := featureflag.FromContext(ctx)
-		singleTenant := flags.GetBoolOr("cody-autocomplete-default-starcoder-hybrid-sourcegraph", false)
-
-		if model == "fireworks/starcoder-16b" {
-			if singleTenant {
-				return "fireworks/accounts/sourcegraph/models/starcoder-16b"
-			}
-			return "fireworks/accounts/fireworks/models/starcoder-16b-w8a16"
-		}
-
-		if singleTenant {
-			return "fireworks/accounts/sourcegraph/models/starcoder-7b"
-		}
+	// These virtual model strings allow the server to choose the model.
+	// TODO: Move the translation of these virtual model strings to cody gateway.
+	case "fireworks/starcoder-16b":
+		return "fireworks/accounts/fireworks/models/starcoder-16b-w8a16"
+	case "fireworks/starcoder-7b":
 		return "fireworks/accounts/fireworks/models/starcoder-7b-w8a16"
 
 	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
