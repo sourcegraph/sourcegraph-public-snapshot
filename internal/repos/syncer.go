@@ -90,7 +90,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 			minSyncInterval: opts.MinSyncInterval,
 		}, SyncWorkerOptions{
 			WorkerInterval: opts.DequeueInterval,
-			NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
+			NumHandlers:    conf.RepoConcurrentExternalServiceSyncers(),
 			CleanupOldJobs: true,
 		},
 	)
