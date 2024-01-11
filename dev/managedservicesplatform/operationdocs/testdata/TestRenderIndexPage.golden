@@ -1,7 +1,10 @@
 # Managed Services infrastructure
 
 <!--
-Generated documentation; DO NOT EDIT. Regenerate using this command: 'go test -run TestRenderIndexPage ./dev/managedservicesplatform/operationdocs'
+Generated documentation; DO NOT EDIT. Regenerate using this command: '2024-01-11 18:07:45.236683 +0000 UTC'
+
+Last updated: go test -run TestRenderIndexPage ./dev/managedservicesplatform/operationdocs
+Generated from: unknown revision of https://github.com/sourcegraph/managed-services
 -->
 
 These pages contain generated operational guidance for the infrastructure of [Managed Services Platform (MSP)](../teams/core-services/managed-services/platform.md) services.

@@ -289,7 +289,15 @@ sg msp generate -all <service>
 				if err != nil {
 					return err
 				}
-				doc, err := operationdocs.Render(*svc, operationdocs.Options{})
+
+				repoRev, err := msprepo.GitRevision(c.Context)
+				if err != nil {
+					return errors.Wrap(err, "msprepo.GitRevision")
+				}
+
+				doc, err := operationdocs.Render(*svc, operationdocs.Options{
+					ManagedServicesRevision: repoRev,
+				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
 				}
@@ -337,9 +345,15 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 							return err
 						}
 
+						repoRev, err := msprepo.GitRevision(c.Context)
+						if err != nil {
+							return errors.Wrap(err, "msprepo.GitRevision")
+						}
+
 						opts := operationdocs.Options{
-							GenerateCommand: strings.Join(os.Args, " "),
-							Handbook:        true,
+							ManagedServicesRevision: repoRev,
+							GenerateCommand:         strings.Join(os.Args, " "),
+							Handbook:                true,
 						}
 
 						// Reset directory to ensure we don't have lingering references

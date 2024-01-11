@@ -43,10 +43,7 @@ func RenderIndexPage(services []*spec.Spec, opts Options) string {
 
 	md.Headingf(1, "Managed Services infrastructure")
 
-	if opts.GenerateCommand != "" {
-		md.Commentf("Generated documentation; DO NOT EDIT. Regenerate using this command: '%s'",
-			opts.GenerateCommand)
-	}
+	opts.AddDocumentComment(md)
 
 	generalGuidanceLink, generalGuidance := markdown.HeadingLinkf("General guidance")
 	md.Paragraphf(`These pages contain generated operational guidance for the infrastructure of %s services.
