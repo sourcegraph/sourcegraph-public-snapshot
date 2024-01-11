@@ -88,11 +88,12 @@ You can request access to a project in Entitle by following these steps:
   - Role: %[2]s (or %[3]s if you need additional privileges - use with care!)
   - Duration: choose your own adventure!
 
-These custom roles are configured [in  in the infrastructure repo](https://github.com/sourcegraph/infrastructure/blob/main/gcp/custom-roles/msp.tf).`,
+These custom roles are [configured in %[5]s](https://github.com/sourcegraph/infrastructure/blob/main/gcp/custom-roles/msp.tf).`,
 		markdown.Code("category: test"),                // %[1]s
 		markdown.Code("mspServiceReader"),              // %[2]s
 		markdown.Code("mspServiceEditor"),              // %[3]s
 		markdown.Code("gcp/org/customer-roles/msp.tf"), // %[4]s
+		markdown.Code("sourcegraph/infrastructure"),    // %[5]s
 	)
 
 	md.Headingf(3, "Terraform Cloud access")
