@@ -73,7 +73,7 @@ type Variables struct {
 	// MaxInstanceCount informs service scaling alerts.
 	MaxInstanceCount *int
 	// ExternalDomain informs external health checks on the service domain.
-	ExternalDomain spec.EnvironmentServiceDomainSpec
+	ExternalDomain *spec.EnvironmentServiceDomainSpec
 	// DiagnosticsSecret is used to configure external health checks.
 	DiagnosticsSecret *random.Output
 	// If Redis is enabled we configure alerts for it
