@@ -901,13 +901,14 @@ Generated query for critical alert: `max((sum(increase(src_cloudkms_cryptographi
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> frontend: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> frontend: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> frontend: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -923,9 +924,9 @@ Generated query for critical alert: `max((sum(increase(src_cloudkms_cryptographi
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="frontend"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="frontend"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -1646,13 +1647,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> gitserver: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> gitserver: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> gitserver: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1668,9 +1670,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="gitserver"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="gitserver"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -2424,13 +2426,14 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2446,9 +2449,9 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="precise-code-intel-worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="precise-code-intel-worker"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -3436,13 +3439,14 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> worker: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> worker: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> worker: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> worker: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3458,9 +3462,9 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="worker"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="worker"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -4684,13 +4688,14 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> repo-updater: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4706,9 +4711,9 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="repo-updater"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="repo-updater"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -5128,13 +5133,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> searcher: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> searcher: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> searcher: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> searcher: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5150,9 +5156,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="searcher"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="searcher"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -5549,13 +5555,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> symbols: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> symbols: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> symbols: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> symbols: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -5571,9 +5578,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="symbols"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="symbols"}[5m]))) >= 0.5)`
 
 </details>
 
@@ -7968,13 +7975,14 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> embeddings: 0.05s+ mean blocked seconds per conn request for 10m0s
-- <span class="badge badge-critical">critical</span> embeddings: 0.1s+ mean blocked seconds per conn request for 15m0s
+- <span class="badge badge-warning">warning</span> embeddings: 0.1s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> embeddings: 0.5s+ mean blocked seconds per conn request for 10m0s
 
 **Next steps**
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -7990,9 +7998,9 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.05)`
+Generated query for warning alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.1)`
 
-Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.1)`
+Generated query for critical alert: `max((sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name="embeddings"}[5m])) / sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name="embeddings"}[5m]))) >= 0.5)`
 
 </details>
 
