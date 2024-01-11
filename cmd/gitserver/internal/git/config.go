@@ -2,9 +2,12 @@ package git
 
 import (
 	"context"
+	"math/rand"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -43,7 +46,15 @@ func ConfigSet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.
 }
 
 func ConfigUnset(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) error {
-	cmd := exec.Command("git", "config", "--unset-all", key)
+
+	rand.Seed(time.Now().UnixNano())
+
+	// Generate a random number between 0 and 10
+	randomNum := rand.Intn(10) + 1
+
+	randomNumString := strconv.Itoa(randomNum)
+
+	cmd := exec.Command("sh", "git", "config", "--unset-all", key, randomNumString)
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	out, err := wrappedCmd.CombinedOutput()
