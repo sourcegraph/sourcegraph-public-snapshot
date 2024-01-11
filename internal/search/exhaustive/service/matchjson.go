@@ -69,7 +69,7 @@ type blobUploader struct {
 func (b *blobUploader) Write(p []byte) (int, error) {
 	key := ""
 	if b.shard == 1 {
-		key = fmt.Sprintf("%s", b.prefix)
+		key = b.prefix
 	} else {
 		key = fmt.Sprintf("%s-%d", b.prefix, b.shard)
 	}
