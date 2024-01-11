@@ -376,7 +376,8 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 			attrs[i] = attribute.StringSlice(key, strings)
 
 		default: // in case we miss anything
-			attrs[i] = attribute.String(key, fmt.Sprintf("%v", v))
+			// To prevent very large attributes, render at most 128 characters.
+			attrs[i] = attribute.String(key, fmt.Sprintf("%.128v", v))
 		}
 	}
 	return attrs
