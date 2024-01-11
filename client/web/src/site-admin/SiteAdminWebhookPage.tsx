@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -39,10 +40,10 @@ import { WebhookLogNode } from './webhooks/WebhookLogNode'
 
 import styles from './SiteAdminWebhookPage.module.scss'
 
-export interface WebhookPageProps extends TelemetryProps {}
+export interface WebhookPageProps extends TelemetryProps, TelemetryV2Props {}
 
 export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
-    const { telemetryService } = props
+    const { telemetryService, telemetryRecorder } = props
 
     const { id = '' } = useParams<{ id: string }>()
     const navigate = useNavigate()
@@ -53,7 +54,8 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhook')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminWebhook', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
         DeleteWebhookResult,

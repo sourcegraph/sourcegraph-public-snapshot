@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { mdiWebhook, mdiMapSearch, mdiPlus } from '@mdi/js'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
@@ -22,14 +23,16 @@ import { PerformanceGauge } from './webhooks/PerformanceGauge'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps, TelemetryV2Props {}
 
 export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhooks')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminWebhooks', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
     const headerTotals = useWebhookPageHeader()

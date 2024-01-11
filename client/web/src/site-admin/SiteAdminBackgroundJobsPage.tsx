@@ -16,6 +16,7 @@ import format from 'date-fns/format'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -40,7 +41,7 @@ import { BACKGROUND_JOBS, BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS } from './backen
 
 import styles from './SiteAdminBackgroundJobsPage.module.scss'
 
-export interface SiteAdminBackgroundJobsPageProps extends TelemetryProps {}
+export interface SiteAdminBackgroundJobsPageProps extends TelemetryProps, TelemetryV2Props {}
 
 export type BackgroundJob = BackgroundJobsResult['backgroundJobs']['nodes'][0]
 export type BackgroundRoutine = BackgroundJob['routines'][0]
@@ -63,11 +64,12 @@ const routineTypeToIcon: Record<BackgroundRoutineType, string> = {
 
 export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminBackgroundJobsPageProps>
-> = ({ telemetryService }) => {
+> = ({ telemetryService, telemetryRecorder }) => {
     // Log page view
     useEffect(() => {
         telemetryService.logPageView('SiteAdminBackgroundJobs')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('SiteAdminBackgroundJobs', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     // Data query and polling setting
     const { data, loading, error, stopPolling, startPolling } = useQuery<BackgroundJobsResult, BackgroundJobsVariables>(
