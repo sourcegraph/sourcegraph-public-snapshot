@@ -17,7 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -114,12 +113,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	syncer := repos.NewSyncer(observationCtx, store, src)
 	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
 	server := &repoupdater.Server{
-		Logger:                logger,
-		ObservationCtx:        observationCtx,
-		Store:                 store,
-		Syncer:                syncer,
-		Scheduler:             updateScheduler,
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		Logger:    logger,
+		Store:     store,
+		Syncer:    syncer,
+		Scheduler: updateScheduler,
 	}
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
@@ -215,18 +212,10 @@ func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 
 	m := repoupdater.NewHandlerMetrics()
 	m.MustRegister(prometheus.DefaultRegisterer)
-	handler := repoupdater.ObservedHandler(
-		logger,
-		m,
-		otel.GetTracerProvider(),
-	)(server.Handler())
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	serviceServer := &repoupdater.RepoUpdaterServiceServer{
-		Server: server,
-	}
-	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	proto.RegisterRepoUpdaterServiceServer(grpcServer, server)
 	reflection.Register(grpcServer)
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
+	handler := internalgrpc.MultiplexHandlers(grpcServer, healthServer())
 
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
@@ -655,4 +644,12 @@ FROM
 		}
 		return count
 	})
+}
+
+func healthServer() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	return mux
 }
