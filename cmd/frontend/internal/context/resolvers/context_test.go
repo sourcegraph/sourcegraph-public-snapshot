@@ -164,8 +164,6 @@ func TestContextResolver(t *testing.T) {
 	)
 
 	ctx = actor.WithActor(ctx, actor.FromMockUser(1))
-	// ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
-	// ctx = featureflag.WithFlags(ctx, ffs)
 
 	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
 		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
