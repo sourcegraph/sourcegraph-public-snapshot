@@ -6,6 +6,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
@@ -81,6 +83,14 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		},
 	})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
+	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
+	if !ok {
+		// TODO
+		return nil, nil
+	}
+
+	cgc.
+
 	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
 	if err != nil {
 		return nil, err
