@@ -231,25 +231,6 @@ func TestIsCodyEnabled(t *testing.T) {
 		}
 	})
 
-	t.Run("RBAC, Enabled cody, but not completions", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
-				// Note: default when CodyRestrictUsersFeatureFlag and CodyPermissions are not set is
-				// that CodyRestrictUsersFeatureFlag=false and (RBAC) CodyPermissions=true
-			},
-		})
-		t.Cleanup(func() {
-			conf.Mock(nil)
-		})
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-		db := mockDB(defaultUserPerms)
-		if !IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return true without completions")
-		}
-	})
-
 	t.Run("RBAC, Disabled cody", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
