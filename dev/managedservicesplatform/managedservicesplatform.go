@@ -136,10 +136,11 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
-		ExternalDomain:      pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
-		DiagnosticsSecret:   cloudrunOutput.DiagnosticsSecret,
-		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
-		ServiceHealthProbes: pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
+		ExternalDomain:        pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
+		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,
+		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
+		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
+		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
 
 		// Notification configuration
 		EnvironmentCategory: env.Category,

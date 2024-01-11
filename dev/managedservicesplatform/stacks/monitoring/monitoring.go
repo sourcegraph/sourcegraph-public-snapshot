@@ -74,6 +74,9 @@ type Variables struct {
 	MaxInstanceCount *int
 	// ExternalDomain informs external health checks on the service domain.
 	ExternalDomain *spec.EnvironmentServiceDomainSpec
+	// ServiceAuthentication informs external health checks on the service
+	// domain. Currently, any configuration will disable external health checks.
+	ServiceAuthentication *spec.EnvironmentServiceAuthenticationSpec
 	// DiagnosticsSecret is used to configure external health checks.
 	DiagnosticsSecret *random.Output
 	// If Redis is enabled we configure alerts for it
@@ -385,76 +388,90 @@ func createServiceAlerts(
 	}
 
 	// If an external DNS name is provisioned, use it to check service availability
-	// from outside Cloud Run.
-	if externalDNS := vars.ExternalDomain.GetDNSName(); externalDNS != "" {
-		var (
-			healthcheckPath    = "/"
-			healthcheckHeaders = map[string]*string{}
-		)
-		// Only use MSP runtime standards is probe is disabled.
-		if vars.ServiceHealthProbes.UseHealthzProbes() {
-			healthcheckPath = "/-/healthz"
-			healthcheckHeaders = map[string]*string{
-				"Authorization": pointers.Stringf("Bearer %s", vars.DiagnosticsSecret.HexValue),
-			}
-		}
-
-		uptimeCheck := monitoringuptimecheckconfig.NewMonitoringUptimeCheckConfig(stack, id.TerraformID("external_uptime_check"), &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigConfig{
-			Project:     &vars.ProjectID,
-			DisplayName: pointers.Stringf("External Uptime Check for %s", externalDNS),
-
-			// https://cloud.google.com/monitoring/api/resources#tag_uptime_url
-			MonitoredResource: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigMonitoredResource{
-				Type: pointers.Ptr("uptime_url"),
-				Labels: &map[string]*string{
-					"project_id": &vars.ProjectID,
-					"host":       &externalDNS,
-				},
-			},
-
-			// 1 to 60 seconds.
-			Timeout: pointers.Stringf("%ds", vars.ServiceHealthProbes.MaximumLatencySeconds()),
-			// Only supported values are 60s (1 minute), 300s (5 minutes),
-			// 600s (10 minutes), and 900s (15 minutes)
-			Period: pointers.Ptr("60s"),
-			HttpCheck: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheck{
-				Port:        pointers.Float64(443),
-				UseSsl:      pointers.Ptr(true),
-				ValidateSsl: pointers.Ptr(true),
-				Path:        &healthcheckPath,
-				Headers:     &healthcheckHeaders,
-				AcceptedResponseStatusCodes: &[]*monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheckAcceptedResponseStatusCodes{
-					{
-						StatusClass: pointers.Ptr("STATUS_CLASS_2XX"),
-					},
-				},
-			},
-		})
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			ID:          "external_health_check",
-			Name:        "External Uptime Check",
-			Description: pointers.Stringf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
-			ProjectID:   vars.ProjectID,
-			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				Filters: map[string]string{
-					"metric.type":           "monitoring.googleapis.com/uptime_check/check_passed",
-					"metric.label.check_id": *uptimeCheck.UptimeCheckId(),
-					"resource.type":         "uptime_url",
-				},
-				Aligner: alertpolicy.MonitoringAlignFractionTrue,
-				Reducer: alertpolicy.MonitoringReduceMean,
-				// Checks occur every 60s, in a 300s window if 2/5 fail we are in trouble
-				Period:     "300s",
-				Duration:   "0s",
-				Comparison: alertpolicy.ComparisonLT,
-				Threshold:  0.4,
-				// Alert when all locations go down
-				Trigger: alertpolicy.TriggerKindAnyViolation,
-			},
-			NotificationChannels: channels,
-		}); err != nil {
+	// from outside Cloud Run. The service must not use IAM auth.
+	if vars.ServiceAuthentication == nil && vars.ExternalDomain.GetDNSName() != "" {
+		if err := createExternalHealthcheckAlert(stack, id, vars, channels); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func createExternalHealthcheckAlert(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+) error {
+	var (
+		healthcheckPath    = "/"
+		healthcheckHeaders = map[string]*string{}
+	)
+	// Only use MSP runtime standards if we know the service supports it.
+	if vars.ServiceHealthProbes.UseHealthzProbes() {
+		healthcheckPath = "/-/healthz"
+		healthcheckHeaders = map[string]*string{
+			"Authorization": pointers.Stringf("Bearer %s", vars.DiagnosticsSecret.HexValue),
+		}
+	}
+
+	externalDNS := vars.ExternalDomain.GetDNSName()
+	uptimeCheck := monitoringuptimecheckconfig.NewMonitoringUptimeCheckConfig(stack, id.TerraformID("external_uptime_check"), &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigConfig{
+		Project:     &vars.ProjectID,
+		DisplayName: pointers.Stringf("External Uptime Check for %s", externalDNS),
+
+		// https://cloud.google.com/monitoring/api/resources#tag_uptime_url
+		MonitoredResource: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigMonitoredResource{
+			Type: pointers.Ptr("uptime_url"),
+			Labels: &map[string]*string{
+				"project_id": &vars.ProjectID,
+				"host":       &externalDNS,
+			},
+		},
+
+		// 1 to 60 seconds.
+		Timeout: pointers.Stringf("%ds", vars.ServiceHealthProbes.MaximumLatencySeconds()),
+		// Only supported values are 60s (1 minute), 300s (5 minutes),
+		// 600s (10 minutes), and 900s (15 minutes)
+		Period: pointers.Ptr("60s"),
+		HttpCheck: &monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheck{
+			Port:        pointers.Float64(443),
+			UseSsl:      pointers.Ptr(true),
+			ValidateSsl: pointers.Ptr(true),
+			Path:        &healthcheckPath,
+			Headers:     &healthcheckHeaders,
+			AcceptedResponseStatusCodes: &[]*monitoringuptimecheckconfig.MonitoringUptimeCheckConfigHttpCheckAcceptedResponseStatusCodes{
+				{
+					StatusClass: pointers.Ptr("STATUS_CLASS_2XX"),
+				},
+			},
+		},
+	})
+
+	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		ID:          "external_health_check",
+		Name:        "External Uptime Check",
+		Description: pointers.Stringf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
+		ProjectID:   vars.ProjectID,
+		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+			Filters: map[string]string{
+				"metric.type":           "monitoring.googleapis.com/uptime_check/check_passed",
+				"metric.label.check_id": *uptimeCheck.UptimeCheckId(),
+				"resource.type":         "uptime_url",
+			},
+			Aligner: alertpolicy.MonitoringAlignFractionTrue,
+			Reducer: alertpolicy.MonitoringReduceMean,
+			// Checks occur every 60s, in a 300s window if 2/5 fail we are in trouble
+			Period:     "300s",
+			Duration:   "0s",
+			Comparison: alertpolicy.ComparisonLT,
+			Threshold:  0.4,
+			// Alert when all locations go down
+			Trigger: alertpolicy.TriggerKindAnyViolation,
+		},
+		NotificationChannels: channels,
+	}); err != nil {
+		return err
 	}
 	return nil
 }
