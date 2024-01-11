@@ -45,6 +45,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/repo-updater/internal/scheduler",
         "//internal/api",
         "//internal/conf/reposource",
         "//internal/database",
@@ -59,7 +60,6 @@ go_test(
         "//internal/grpc/defaults",
         "//internal/observation",
         "//internal/repos",
-        "//internal/repos/scheduler",
         "//internal/repoupdater",
         "//internal/repoupdater/protocol",
         "//internal/repoupdater/v1:repoupdater",
