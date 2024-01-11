@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -12,7 +13,36 @@ import (
 )
 
 type Options struct {
+	// ManagedServicesRevision is the revision of sourcegraph/managed-services
+	// used to generate page.
+	ManagedServicesRevision string
+	// GenerateCommand is the command used to generate this documentation -
+	// it will be included in the generated output in a "DO NOT EDIT" comment.
 	GenerateCommand string
+	// Handbook indicates we are generating output for sourcegraph/handbook.
+	Handbook bool
+}
+
+// AddDocumentComment adds a comment to the markdown document with details about
+// how this documentation was generated.
+func (o Options) AddDocumentComment(md *markdown.Builder) {
+	generatedFromComment := fmt.Sprintf("Generated from: https://github.com/sourcegraph/managed-services/tree/%s",
+		o.ManagedServicesRevision)
+	if o.ManagedServicesRevision == "" {
+		generatedFromComment = "Generated from: unknown revision of https://github.com/sourcegraph/managed-services"
+	}
+
+	if o.GenerateCommand != "" {
+		md.Commentf(`Generated documentation; DO NOT EDIT. Regenerate using this command: '%s'
+
+Last updated: %s
+%s`,
+			o.GenerateCommand,
+			time.Now().UTC().String(),
+			generatedFromComment)
+	} else {
+		md.Commentf(generatedFromComment)
+	}
 }
 
 // Render creates a Markdown string with operational guidance for a MSP specification
@@ -22,14 +52,22 @@ func Render(s spec.Spec, opts Options) (string, error) {
 
 	md.Headingf(1, "%s infrastructure operations", s.Service.GetName())
 
-	if opts.GenerateCommand != "" {
-		md.Commentf("Generated documentation; DO NOT EDIT. Regenerate using this command: '%s'",
-			opts.GenerateCommand)
+	opts.AddDocumentComment(md)
+
+	mspURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/"
+	coreServicesURL := "https://handbook.sourcegraph.com/departments/engineering/teams/core-services/"
+	if opts.Handbook {
+		mspURL = relativePathToMSPPage
+		coreServicesURL = relativePathToCoreServicesPage
 	}
 
 	md.Paragraphf(`This document describes operational guidance for %s infrastructure.
-This service is operated on the [Managed Services Platform (MSP)](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/).`,
-		s.Service.GetName())
+This service is operated on the %s.`,
+		s.Service.GetName(),
+		markdown.Link("Managed Services Platform (MSP)", mspURL))
+
+	md.Paragraphf("If you need assistance with MSP infrastructure, reach out to the %s team in #discuss-core-services.",
+		markdown.Link("Core Services", coreServicesURL))
 
 	type environmentHeader struct {
 		environmentID string
@@ -49,7 +87,7 @@ This service is operated on the [Managed Services Platform (MSP)](https://handbo
 			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
 			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
 			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
-				l, h := markdown.HeadingLinkf("%s environment", e.ID)
+				l, h := markdown.HeadingLinkf(e.ID)
 				environmentHeaders = append(environmentHeaders, environmentHeader{
 					environmentID: e.ID,
 					header:        h,

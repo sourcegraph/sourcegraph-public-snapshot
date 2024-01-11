@@ -1,11 +1,14 @@
 package repo
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -97,4 +100,18 @@ func ServiceYAMLPath(serviceID string) string {
 
 func ServiceStackPath(serviceID, envID, stackID string) string {
 	return filepath.Join("services", serviceID, "terraform", envID, "stacks", stackID)
+}
+
+// GitRevision gets the revision of the managed-services repository.
+// Requires UseManagedServicesRepo.
+func GitRevision(ctx context.Context) (string, error) {
+	return run.Cmd(ctx, "git rev-parse HEAD").
+		Environ(append(os.Environ(),
+			// Options copy-pasta from dev/sg/internal/run
+			// Don't use the system wide git config.
+			"GIT_CONFIG_NOSYSTEM=1",
+			// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
+			"GIT_CONFIG=/dev/null")).
+		Run().
+		String()
 }

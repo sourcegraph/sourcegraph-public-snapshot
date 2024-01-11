@@ -272,7 +272,7 @@ sg msp generate -all <service>
 				&cli.BoolFlag{
 					Name:  "pretty",
 					Usage: "Render syntax-highlighed Markdown",
-					Value: false,
+					Value: true,
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -280,8 +280,14 @@ sg msp generate -all <service>
 				if err != nil {
 					return err
 				}
+
+				repoRev, err := msprepo.GitRevision(c.Context)
+				if err != nil {
+					return errors.Wrap(err, "msprepo.GitRevision")
+				}
+
 				doc, err := operationdocs.Render(*svc, operationdocs.Options{
-					GenerateCommand: strings.Join(os.Args, " "),
+					ManagedServicesRevision: repoRev,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -291,6 +297,96 @@ sg msp generate -all <service>
 				}
 				std.Out.Write(doc)
 				return nil
+			},
+			Subcommands: []*cli.Command{
+				{
+					Name:   "generate-handbook-pages",
+					Usage:  "Generate operations handbook pages for all services",
+					Hidden: true, // not meant for day-to-day use
+					Description: `By default, we expect the 'sourcegraph/handbook' repository to be checked out adjacent to the 'sourcegraph/managed-services' repository, i.e.:
+	/
+	├─ managed-services/ <-- current directory
+	├─ handbook/         <-- github.com/sourcegraph/handbook
+
+The '-handbook-path' flag can also be used to specify where sourcegraph/handbook is cloned.`,
+					Before: msprepo.UseManagedServicesRepo,
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:  "handbook-path",
+							Usage: "Path to the directory in which sourcegraph/handbook is cloned",
+							Value: "../handbook",
+							Action: func(_ *cli.Context, v string) error {
+								// 'Required: true' will error out even if a default
+								// value is set, so do our own validation here.
+								if v == "" {
+									return errors.New("cannot be empty")
+								}
+								return nil
+							},
+						},
+					},
+					Action: func(c *cli.Context) error {
+						handbookPath := c.String("handbook-path")
+						if err := isHandbookRepo(handbookPath); err != nil {
+							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
+						}
+
+						services, err := msprepo.ListServices()
+						if err != nil {
+							return err
+						}
+
+						repoRev, err := msprepo.GitRevision(c.Context)
+						if err != nil {
+							return errors.Wrap(err, "msprepo.GitRevision")
+						}
+
+						opts := operationdocs.Options{
+							ManagedServicesRevision: repoRev,
+							GenerateCommand:         strings.Join(os.Args, " "),
+							Handbook:                true,
+						}
+
+						// Reset directory to ensure we don't have lingering references
+						{
+							dir := filepath.Join(handbookPath, operationdocs.HandbookDirectory)
+							_ = os.RemoveAll(dir)
+							_ = os.Mkdir(dir, os.ModePerm)
+							std.Out.Writef("Reset destination directory %q.", dir)
+						}
+
+						var serviceSpecs []*spec.Spec
+						for _, s := range services {
+							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
+							if err != nil {
+								return err
+							}
+							serviceSpecs = append(serviceSpecs, svc)
+							doc, err := operationdocs.Render(*svc, opts)
+							if err != nil {
+								return errors.Wrap(err, s)
+							}
+							pagePath := filepath.Join(handbookPath,
+								operationdocs.ServiceHandbookPath(s))
+							if err := os.WriteFile(pagePath, []byte(doc), 0o644); err != nil {
+								return errors.Wrap(err, s)
+							}
+							std.Out.WriteNoticef("[%s]\tWrote %q", s, pagePath)
+						}
+
+						indexDoc := operationdocs.RenderIndexPage(serviceSpecs, opts)
+						indexPath := filepath.Join(handbookPath,
+							operationdocs.IndexPathHandbookPath())
+						if err := os.WriteFile(indexPath, []byte(indexDoc), 0o644); err != nil {
+							return errors.Wrap(err, "index page")
+						}
+						std.Out.WriteNoticef("[index]\tWrote %q", indexPath)
+
+						std.Out.WriteSuccessf("All pages generated!")
+						std.Out.WriteSuggestionf("Make sure to commit the generated changes and open a pull request in github.com/sourcegraph/handbook.")
+						return nil
+					},
+				},
 			},
 		},
 		{
