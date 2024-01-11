@@ -26,8 +26,8 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 		types.CompletionsFeatureCode,
 		rl,
 		"code",
-		func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
-			customModel := allowedCustomModel(ctx, requestParams.Model)
+		func(_ context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+			customModel := allowedCustomModel(requestParams.Model)
 			if customModel != "" {
 				return customModel, nil
 			}
@@ -39,7 +39,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	)
 }
 
-func allowedCustomModel(ctx context.Context, model string) string {
+func allowedCustomModel(model string) string {
 	switch model {
 	// These virtual model strings allow the server to choose the model.
 	// TODO: Move the translation of these virtual model strings to cody gateway.
