@@ -384,7 +384,6 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
-			"fireworks/accounts/sourcegraph/models/starcoder-7b",
 			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
 			"fireworks/accounts/sourcegraph/models/starcoder-16b",
 		}

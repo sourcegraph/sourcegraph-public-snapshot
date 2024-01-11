@@ -42,13 +42,14 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 func allowedCustomModel(model string) string {
 	switch model {
 	// These virtual model strings allow the server to choose the model.
-	// TODO: Move the translation of these virtual model strings to cody gateway.
+	// TODO: Cody Gateway can already translate these but due to rollout orders, this step is
+	// 		 currently duplicated.
 	case "fireworks/starcoder-16b":
 		return "fireworks/accounts/fireworks/models/starcoder-16b-w8a16"
 	case "fireworks/starcoder-7b":
 		return "fireworks/accounts/fireworks/models/starcoder-7b-w8a16"
-
-	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
+	case "fireworks/starcoder",
+		"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
 		"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
 		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
 		"fireworks/accounts/fireworks/models/starcoder-1b-w8a16",
