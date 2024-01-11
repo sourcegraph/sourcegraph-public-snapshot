@@ -3260,6 +3260,101 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 
 <br />
 
+## worker: perms_syncer_outdated_perms
+
+<p class="subtitle">number of entities with outdated permissions</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 100+ number of entities with outdated permissions for 5m0s
+
+**Next steps**
+
+- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-outdated-perms).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_perms_syncer_outdated_perms"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max by (type) (src_repo_perms_syncer_outdated_perms)) >= 100)`
+
+</details>
+
+<br />
+
+## worker: perms_syncer_sync_duration
+
+<p class="subtitle">95th permissions sync duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 30s+ 95th permissions sync duration for 5m0s
+
+**Next steps**
+
+- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-sync-duration).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_perms_syncer_sync_duration"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repo_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
+
+</details>
+
+<br />
+
+## worker: perms_syncer_sync_errors
+
+<p class="subtitle">permissions sync error rate</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 1+ permissions sync error rate for 1m0s
+
+**Next steps**
+
+- Check the network connectivity the Sourcegraph and the code host.
+- Check if API rate limit quota is exhausted on the code host.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-sync-errors).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_perms_syncer_sync_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max by (type) (ceil(rate(src_repo_perms_syncer_sync_errors_total[1m])))) >= 1)`
+
+</details>
+
+<br />
+
 ## worker: insights_queue_unutilized_size
 
 <p class="subtitle">insights queue size that is not utilized (not processing)</p>
@@ -4122,101 +4217,6 @@ Generated query for warning alert: `max((max(src_repoupdater_stale_repos)) >= 1)
 <summary>Technical details</summary>
 
 Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1m]))) >= 1)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_outdated_perms
-
-<p class="subtitle">number of entities with outdated permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with outdated permissions for 5m0s
-
-**Next steps**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-outdated-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_outdated_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_outdated_perms)) >= 100)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_sync_duration
-
-<p class="subtitle">95th permissions sync duration</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 30s+ 95th permissions sync duration for 5m0s
-
-**Next steps**
-
-- Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-duration).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_sync_duration"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_sync_errors
-
-<p class="subtitle">permissions sync error rate</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> repo-updater: 1+ permissions sync error rate for 1m0s
-
-**Next steps**
-
-- Check the network connectivity the Sourcegraph and the code host.
-- Check if API rate limit quota is exhausted on the code host.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-errors).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_perms_syncer_sync_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))) >= 1)`
 
 </details>
 
