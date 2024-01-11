@@ -1,7 +1,6 @@
 package operationdocs
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -42,8 +41,6 @@ func TestRenderIndexPage(t *testing.T) {
 		},
 	}
 
-	doc := RenderIndexPage(services, Options{
-		GenerateCommand: fmt.Sprintf("go test -run %s ./dev/managedservicesplatform/operationdocs", t.Name()),
-	})
+	doc := RenderIndexPage(services, Options{})
 	autogold.ExpectFile(t, autogold.Raw(doc))
 }
