@@ -134,7 +134,7 @@ This service is operated on the %s.`,
 		if env.EnvironmentServiceSpec != nil {
 			if domain := env.Domain.GetDNSName(); domain != "" {
 				overview = append(overview, []string{"Domain", markdown.Link(domain, "https://"+domain)})
-				if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.Proxied {
+				if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.ShouldProxy() {
 					overview = append(overview, []string{"Cloudflare WAF", "✅"})
 				}
 			}

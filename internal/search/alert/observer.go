@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -25,10 +26,11 @@ import (
 )
 
 type Observer struct {
-	Logger   log.Logger
-	Db       database.DB
-	Zoekt    zoekt.Streamer
-	Searcher *endpoint.Map
+	Logger                      log.Logger
+	Db                          database.DB
+	Zoekt                       zoekt.Streamer
+	Searcher                    *endpoint.Map
+	SearcherGRPCConnectionCache *defaults.ConnectionCache
 
 	// Inputs are used to generate alert messages based on the query.
 	*search.Inputs
@@ -47,7 +49,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient("search.alertobserver"), o.Searcher, o.Zoekt)
+	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient("search.alertobserver"), o.Searcher, o.SearcherGRPCConnectionCache, o.Zoekt)
 	it := repositoryResolver.Iterator(ctx, options)
 	for it.Next() {
 		resolved := it.Current()

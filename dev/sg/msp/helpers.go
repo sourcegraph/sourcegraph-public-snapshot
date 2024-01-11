@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
-	"time"
 
 	"github.com/urfave/cli/v2"
 
@@ -55,34 +55,7 @@ func useServiceAndEnvironmentArguments(c *cli.Context) (*spec.Spec, *spec.Enviro
 	return svc, env, nil
 }
 
-func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
-	if os.TempDir() == "" {
-		return errors.New("no temp dir available")
-	}
-
-	renderer := &managedservicesplatform.Renderer{
-		// Even though we're not synthesizing we still
-		// need an output dir or CDKTF will not work
-		OutputDir: filepath.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
-			service.ID, env.ID, time.Now().Unix())),
-		GCP: managedservicesplatform.GCPOptions{},
-		TFC: managedservicesplatform.TerraformCloudOptions{
-			Enabled: true, // required to generate all workspaces
-		},
-		// Avoid external resource access
-		StableGenerate: true,
-	}
-	defer os.RemoveAll(renderer.OutputDir)
-
-	renderPending := std.Out.Pending(output.Styledf(output.StylePending,
-		"[%s] Rendering required Terraform Cloud workspaces for environment %q",
-		service.ID, env.ID))
-	cdktf, err := renderer.RenderEnvironment(service, build, env, monitoring)
-	if err != nil {
-		return err
-	}
-	renderPending.Destroy() // We need to destroy this pending so we can prompt on deletion.
-
+func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, env spec.EnvironmentSpec) error {
 	if c.Bool("delete") {
 		if !pointers.DerefZero(env.AllowDestroys) {
 			return errors.Newf("environments[%s].allowDestroys must be 'true' to delete workspaces", env.ID)
@@ -100,7 +73,11 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 
 		pending := std.Out.Pending(output.Styledf(output.StylePending,
 			"[%s] Deleting Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-		if errs := tfc.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
+
+		// Destroy stacks in reverse order
+		stacks := managedservicesplatform.StackNames()
+		slices.Reverse(stacks)
+		if errs := tfc.DeleteWorkspaces(c.Context, service, env, stacks); len(errs) > 0 {
 			for _, err := range errs {
 				std.Out.WriteWarningf(err.Error())
 			}
@@ -114,7 +91,7 @@ func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, servi
 
 	pending := std.Out.Pending(output.Styledf(output.StylePending,
 		"[%s] Synchronizing Terraform Cloud workspaces for environment %q", service.ID, env.ID))
-	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
+	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, managedservicesplatform.StackNames())
 	if err != nil {
 		return errors.Wrap(err, "sync Terraform Cloud workspace")
 	}
@@ -140,8 +117,6 @@ type generateTerraformOptions struct {
 	// stableGenerate disables updating of any values that are evaluated at
 	// generation time
 	stableGenerate bool
-	// useTFC enables Terraform Cloud integration
-	useTFC bool
 }
 
 func generateTerraform(serviceID string, opts generateTerraformOptions) error {
@@ -169,11 +144,7 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 		pending := std.Out.Pending(output.Styledf(output.StylePending,
 			"[%s] Preparing Terraform for environment %q", serviceID, env.ID))
 		renderer := managedservicesplatform.Renderer{
-			OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
-			GCP:       managedservicesplatform.GCPOptions{},
-			TFC: managedservicesplatform.TerraformCloudOptions{
-				Enabled: opts.useTFC,
-			},
+			OutputDir:      filepath.Join(filepath.Dir(serviceSpecPath), "terraform", env.ID),
 			StableGenerate: opts.stableGenerate,
 		}
 
