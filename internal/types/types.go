@@ -2100,6 +2100,7 @@ const (
 	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+	AccessRequestStatusCanceled AccessRequestStatus = "CANCELED"
 )
 
 type PerforceChangelist struct {
