@@ -79,7 +79,8 @@ type EnvironmentSpec struct {
 
 	// AllowDestroys, if false, configures Terraform lifecycle guards against
 	// deletion of potentially critical resources. This includes things like the
-	// environment project and databases.
+	// environment project and databases, and also guards against the deletion
+	// of Terraform Cloud workspaces as well.
 	// https://developer.hashicorp.com/terraform/tutorials/state/resource-lifecycle#prevent-resource-deletion
 	//
 	// To tear down an environment, or to apply a change that intentionally

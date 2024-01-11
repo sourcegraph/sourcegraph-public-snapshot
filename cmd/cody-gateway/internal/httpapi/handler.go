@@ -70,9 +70,6 @@ func NewHandler(
 	if err != nil {
 		return nil, errors.Wrap(err, "init metric 'concurrent_upstream_requests'")
 	}
-
-	// Add a prefix to the store for globally unique keys and simpler pruning.
-	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
 	r := mux.NewRouter()
 
 	// V1 service routes
