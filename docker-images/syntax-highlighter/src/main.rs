@@ -7,7 +7,6 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use scip_syntax;
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
@@ -75,14 +74,10 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    let (mut scope, hint) = match match scip_syntax::get_globals(parser, q.content.as_bytes()) {
-        Some(globals) => globals,
+    let (mut scope, hint) = match scip_syntax::get_globals(parser, q.content.as_bytes()) {
+        Some(Ok(vals)) => vals,
+        Some(Err(err)) => return jsonify_err(err),
         None => return json!({"error": "Failed to get globals"}),
-    } {
-        Ok(vals) => vals,
-        Err(err) => {
-            return jsonify_err(err);
-        }
     };
 
     let document = scope.into_document(hint, vec![]);
