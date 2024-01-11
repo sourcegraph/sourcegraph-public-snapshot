@@ -11,15 +11,13 @@ import (
 
 	"github.com/sourcegraph/run"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/monitoring"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/project"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/tfcworkspaces"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/cloudsqlproxy"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
@@ -216,18 +214,12 @@ sg msp generate -all <service>
 					Usage: "Disable updating of any values that are evaluated at generation time",
 					Value: false,
 				},
-				&cli.BoolFlag{
-					Name:  "tfc",
-					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
-					Value: true,
-				},
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
 					generateAll    = c.Bool("all")
 					stableGenerate = c.Bool("stable")
-					useTFC         = c.Bool("tfc")
 				)
 
 				if stableGenerate {
@@ -246,7 +238,6 @@ sg msp generate -all <service>
 					return generateTerraform(serviceID, generateTerraformOptions{
 						targetEnv:      targetEnv,
 						stableGenerate: stableGenerate,
-						useTFC:         useTFC,
 					})
 				}
 
@@ -261,7 +252,6 @@ sg msp generate -all <service>
 				for _, serviceID := range serviceIDs {
 					if err := generateTerraform(serviceID, generateTerraformOptions{
 						stableGenerate: stableGenerate,
-						useTFC:         useTFC,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
@@ -270,9 +260,10 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:   "operations",
-			Usage:  "Generate operational reference for a service",
-			Before: msprepo.UseManagedServicesRepo,
+			Name:    "operations",
+			Aliases: []string{"ops"},
+			Usage:   "Generate operational reference for a service",
+			Before:  msprepo.UseManagedServicesRepo,
 			BashComplete: completions.CompleteArgs(func() (options []string) {
 				ss, _ := msprepo.ListServices()
 				return ss
@@ -566,7 +557,7 @@ Supports completions on services and environments.`,
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env, *service.Monitoring); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, *env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
@@ -574,7 +565,7 @@ Supports completions on services and environments.`,
 								return errors.New("second argument environment ID is required without the '-all' flag")
 							}
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env, *service.Monitoring); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
@@ -595,14 +586,7 @@ Supports completions on services and environments.`,
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(
 						func(cli.Args) (options []string) {
-							// Common stack names
-							return []string{
-								project.StackName,
-								iam.StackName,
-								cloudrun.StackName,
-								monitoring.StackName,
-								tfcworkspaces.StackName,
-							}
+							return managedservicesplatform.StackNames()
 						},
 					),
 					Action: func(c *cli.Context) error {
