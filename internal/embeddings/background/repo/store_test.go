@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,6 +23,8 @@ import (
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
 	t.Parallel()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -243,6 +246,8 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 
 func TestGetEmbeddableRepos(t *testing.T) {
 	t.Parallel()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
@@ -395,6 +400,8 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 }
 
 func TestGetEmbeddableRepoOpts(t *testing.T) {
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
