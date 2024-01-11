@@ -25,9 +25,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
@@ -52,7 +53,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repos/scheduler"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -317,7 +317,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
-		_, providers := ossAuthz.GetProviders()
+		_, providers := authz.GetProviders()
 		infos := make([]providerInfo, len(providers))
 		for i, p := range providers {
 			_, id := extsvc.DecodeURN(p.URN())
@@ -481,7 +481,7 @@ func watchAuthzProviders(ctx context.Context, db database.DB) {
 				conf.Get(),
 				db,
 			)
-			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
 }
