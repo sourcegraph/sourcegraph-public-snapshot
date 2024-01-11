@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -156,6 +157,23 @@ func (r *externalServiceResolver) CreatedAt() gqlutil.DateTime {
 
 func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
+}
+
+func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, error) {
+	fmt.Println("es creator:", r.externalService.CreatorID)
+	if *r.externalService.CreatorID <= 0 {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.CreatorID)
+	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
 }
 
 func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {

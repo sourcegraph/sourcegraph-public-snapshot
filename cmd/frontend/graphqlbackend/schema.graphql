@@ -3331,6 +3331,11 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
+    The creator of this external service. Null if the user was deleted or created by a background routine.
+    """
+    creator: User
+
+    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
