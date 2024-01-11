@@ -16,7 +16,7 @@ import (
 )
 
 func ConfigGet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) (string, error) {
-	cmd := exec.Command("git", "config", "--get", key)
+	cmd := exec.Command("sh", "git", "config", "--get", key)
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	out, err := wrappedCmd.Output()
