@@ -22,7 +22,6 @@ import (
 )
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
-	t.Parallel()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
@@ -145,8 +144,6 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 }
 
 func TestRescheduleAll(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
@@ -189,8 +186,6 @@ func TestRescheduleAll(t *testing.T) {
 }
 
 func TestCancelRepoEmbeddingJob(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
@@ -245,7 +240,6 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 }
 
 func TestGetEmbeddableRepos(t *testing.T) {
-	t.Parallel()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
@@ -292,8 +286,6 @@ func TestGetEmbeddableRepos(t *testing.T) {
 }
 
 func TestEmbeddingsPolicyWithFailures(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	repoStore := db.Repos()
