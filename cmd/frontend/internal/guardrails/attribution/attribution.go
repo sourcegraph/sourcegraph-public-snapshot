@@ -19,6 +19,7 @@ type ServiceOpts struct {
 
 	// SourcegraphDotComClient is a graphql client that is queried if
 	// federating out to sourcegraph.com is enabled.
+	// TODO Remove dotcom client.
 	SourcegraphDotComClient dotcom.Client
 
 	// SourcegraphDotComFederate is true if this instance should also federate
@@ -83,27 +84,19 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		},
 	})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
+	// TODO move codygateway client to ops
 	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
 	if !ok {
 		// TODO
 		return nil, nil
 	}
-
-	cgc.
-
-	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
+	attribution, err := cgc.Attribution(ctx, snippet, limit)
 	if err != nil {
 		return nil, err
 	}
-
-	var repoNames []string
-	for _, node := range resp.SnippetAttribution.Nodes {
-		repoNames = append(repoNames, node.RepositoryName)
-	}
-
 	return &SnippetAttributions{
-		RepositoryNames: repoNames,
-		TotalCount:      resp.SnippetAttribution.TotalCount,
-		LimitHit:        resp.SnippetAttribution.LimitHit,
+		RepositoryNames: attribution.Repositories,
+		TotalCount:      len(attribution.Repositories), // TODO: Remove total count.
+		LimitHit:        attribution.LimitHit,
 	}, nil
 }
