@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -135,7 +136,7 @@ Hello world example in go`, typeFile},
 		Service: service,
 	})
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, service)
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
 	ts := httptest.NewServer(handler)
 
@@ -260,7 +261,7 @@ unchanged.md
 				FetchTimeout: fetchTimeoutForCI(t),
 			}
 
-			m, err := doSearch(ts.URL, &req)
+			m, err := doSearch(t, ts.URL, &req)
 			if err != nil {
 				t.Fatal(err)
 			}
