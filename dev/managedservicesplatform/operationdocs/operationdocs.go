@@ -64,7 +64,7 @@ This service is operated on the %s.`,
 			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
 			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
 			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
-				l, h := markdown.HeadingLinkf("%s environment", e.ID)
+				l, h := markdown.HeadingLinkf(e.ID)
 				environmentHeaders = append(environmentHeaders, environmentHeader{
 					environmentID: e.ID,
 					header:        h,

@@ -12,13 +12,13 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 | Service ID   | [`msp-testbed`](https://github.com/sourcegraph/managed-services/blob/main/services/msp-testbed/service.yaml)                     |
 | Owners       |                                                                                                                                  |
 | Service kind | Cloud Run service                                                                                                                |
-| Environments | [dev environment](#dev-environment)                                                                                              |
+| Environments | [dev](#dev)                                                                                                                      |
 | Docker image | `us.gcr.io/sourcegraph-dev/msp-example`                                                                                          |
 | Source code  | [`github.com/sourcegraph/sourcegraph` - `cmd/msp-example`](https://github.com/sourcegraph/sourcegraph/tree/HEAD/cmd/msp-example) |
 
 ## Environments
 
-### dev environment
+### dev
 
 |  PROPERTY  |                                               DETAILS                                               |
 |------------|-----------------------------------------------------------------------------------------------------|
