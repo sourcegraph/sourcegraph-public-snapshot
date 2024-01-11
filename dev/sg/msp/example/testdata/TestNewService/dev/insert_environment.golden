@@ -43,7 +43,7 @@ environments:
         minCount: 1
     healthProbes:
       # Only enable if your service implements MSP /-/healthz conventions.
-      enabled: false
+      healthzProbes: false
   - id: second
     projectID: msp-example-second-xxxx
     # TODO: We initially provision in 'test' to make it easy to access the project

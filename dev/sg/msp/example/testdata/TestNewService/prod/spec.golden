@@ -45,4 +45,4 @@ environments:
         minCount: 1
     healthProbes:
       # Only enable if your service implements MSP /-/healthz conventions.
-      enabled: false
+      healthzProbes: false
