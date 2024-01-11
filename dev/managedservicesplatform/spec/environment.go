@@ -265,11 +265,21 @@ type EnvironmentDomainCloudflareSpec struct {
 
 	// Proxied configures whether Cloudflare should proxy all traffic to get
 	// WAF protection instead of only DNS resolution.
-	Proxied bool `yaml:"proxied,omitempty"`
+	//
+	// Default: true
+	Proxied *bool `yaml:"proxied,omitempty"`
 
 	// Required configures whether traffic can only be allowed through Cloudflare.
 	// TODO: Unimplemented.
 	Required bool `yaml:"required,omitempty"`
+}
+
+// ShouldProxy evaluates whether Cloudflare WAF proxying should be used.
+func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
+	if e == nil {
+		return false
+	}
+	return pointers.Deref(e.Proxied, true)
 }
 
 type EnvironmentInstancesSpec struct {
