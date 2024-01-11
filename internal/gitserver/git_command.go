@@ -5,11 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 
@@ -176,8 +174,6 @@ type RemoteGitCommand struct {
 }
 
 type execer interface {
-	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
-	AddrForRepo(ctx context.Context, repo api.RepoName) string
 	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 }
 
@@ -250,45 +246,4 @@ func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
 // started command.
 func (c *RemoteGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	return c.sendExec(ctx)
-}
-
-type cmdReader struct {
-	rc      io.ReadCloser
-	trailer http.Header
-}
-
-func (c *cmdReader) Read(p []byte) (int, error) {
-	n, err := c.rc.Read(p)
-	if err == io.EOF {
-		statusCode, err := strconv.Atoi(c.trailer.Get("X-Exec-Exit-Status"))
-		if err != nil {
-			return n, errors.Wrap(err, "failed to parse exit status code")
-		}
-
-		errorMessage := c.trailer.Get("X-Exec-Error")
-
-		// did the command exit cleanly?
-		if statusCode == 0 && errorMessage == "" {
-			// yes - propagate io.EOF
-
-			return n, io.EOF
-		}
-
-		// no - report it
-
-		stderr := c.trailer.Get("X-Exec-Stderr")
-		err = &CommandStatusError{
-			Stderr:     stderr,
-			StatusCode: int32(statusCode),
-			Message:    errorMessage,
-		}
-
-		return n, err
-	}
-
-	return n, err
-}
-
-func (c *cmdReader) Close() error {
-	return c.rc.Close()
 }

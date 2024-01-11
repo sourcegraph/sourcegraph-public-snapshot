@@ -44,7 +44,7 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
-func assertGitHubUserPermissions(t *testing.T, ctx context.Context, userID int32, ghURL string, syncer *PermsSyncer, permsStore database.PermsStore, wantIDs []int32) {
+func assertGitHubUserPermissions(t *testing.T, ctx context.Context, userID int32, ghURL string, syncer *permsSyncerImpl, permsStore database.PermsStore, wantIDs []int32) {
 	t.Helper()
 
 	_, providerStates, err := syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
@@ -72,7 +72,7 @@ func assertGitHubUserPermissions(t *testing.T, ctx context.Context, userID int32
 	}
 }
 
-func assertGitHubRepoPermissions(t *testing.T, ctx context.Context, repoID api.RepoID, userID int32, ghURL string, syncer *PermsSyncer, permsStore database.PermsStore, wantIDs []int32) {
+func assertGitHubRepoPermissions(t *testing.T, ctx context.Context, repoID api.RepoID, userID int32, ghURL string, syncer *permsSyncerImpl, permsStore database.PermsStore, wantIDs []int32) {
 	t.Helper()
 
 	_, providerStates, err := syncer.syncRepoPerms(ctx, repoID, false, authz.FetchPermsOptions{})
@@ -180,7 +180,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	permsStore := database.Perms(logger, testDB, timeutil.Now)
-	syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+	syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 	// This integration tests performs a repository-centric permissions syncing against
 	// https://github.com, then check if permissions are correctly granted for the test
@@ -370,7 +370,7 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	}
 
 	permsStore := database.Perms(logger, testDB, timeutil.Now)
-	syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+	syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 	assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 }
@@ -489,7 +489,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		require.NoError(t, err)
 
 		permsStore := database.Perms(logger, testDB, timeutil.Now)
-		syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+		syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 		assertUserPermissions := func(t *testing.T, wantIDs []int32) {
 			t.Helper()

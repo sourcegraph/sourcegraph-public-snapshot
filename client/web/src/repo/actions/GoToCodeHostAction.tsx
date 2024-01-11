@@ -122,6 +122,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
                   props.range,
                   props.position
               )
+
     if (!serviceKind || !url) {
         return null
     }

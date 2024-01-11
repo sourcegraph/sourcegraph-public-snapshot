@@ -486,7 +486,6 @@ go_test(
         "//internal/authz/permssync",
         "//internal/binary",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbmocks",
