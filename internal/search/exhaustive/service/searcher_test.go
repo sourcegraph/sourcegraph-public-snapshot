@@ -38,10 +38,10 @@ func TestBackendFake(t *testing.T) {
 		Query:        "1@rev1 1@rev2 2@rev3",
 		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
 		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
-		WantCSV: autogold.Expect(`repo,revspec,revision
-1,spec,rev1
-1,spec,rev2
-2,spec,rev3
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
+1,rev1,path/to/file.go,0,/1@rev1/-/blob/path/to/file.go
+1,rev2,path/to/file.go,0,/1@rev2/-/blob/path/to/file.go
+2,rev3,path/to/file.go,0,/2@rev3/-/blob/path/to/file.go
 `),
 	})
 }
@@ -365,8 +365,11 @@ func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher,
 
 	// Test Search
 	var csv csvBuffer
+	matchWriter, err := newMatchCSVWriter(&csv)
+	assert.NoError(err)
+
 	for _, repoRev := range repoRevs {
-		err := searcher.Search(ctx, repoRev, &csv)
+		err := searcher.Search(ctx, repoRev, matchWriter)
 		assert.NoError(err)
 	}
 	if tc.WantCSV != nil {

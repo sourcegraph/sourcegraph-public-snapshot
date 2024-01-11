@@ -1,31 +1,42 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type matchCSVWriter struct {
+type MatchCSVWriter struct {
 	w         CSVWriter
 	headerTyp string
 	host      *url.URL
 }
 
-func newMatchCSVWriter(w CSVWriter) (*matchCSVWriter, error) {
+func NewCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchCSVWriter, error) {
+	csvWriter := newBlobstoreCSVWriter(ctx, store, prefix)
+	return newMatchCSVWriter(csvWriter)
+}
+
+func newMatchCSVWriter(w CSVWriter) (*MatchCSVWriter, error) {
 	externalURL := conf.Get().ExternalURL
 	u, err := url.Parse(externalURL)
 	if err != nil {
 		return nil, err
 	}
-	return &matchCSVWriter{w: w, host: u}, nil
+	return &MatchCSVWriter{w: w, host: u}, nil
 }
 
-func (w *matchCSVWriter) Write(match result.Match) error {
+func (w *MatchCSVWriter) Close() error {
+	return w.w.Close()
+}
+
+func (w *MatchCSVWriter) Write(match result.Match) error {
 	// TODO compare to logic used by the webapp to convert
 	// results into csv. See
 	// client/web/src/search/results/export/searchResultsExport.ts
@@ -38,7 +49,7 @@ func (w *matchCSVWriter) Write(match result.Match) error {
 	}
 }
 
-func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
+func (w *MatchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 	// Differences to "Export CSV" in webapp. We have removed columns since it
 	// is easier to add columns than to remove them.
 	//
@@ -159,7 +170,7 @@ func minRange(ranges result.Ranges) (result.Range, bool) {
 	return min, true
 }
 
-func (w *matchCSVWriter) writeHeader(typ string) (bool, error) {
+func (w *MatchCSVWriter) writeHeader(typ string) (bool, error) {
 	if w.headerTyp == "" {
 		w.headerTyp = typ
 		return true, nil
