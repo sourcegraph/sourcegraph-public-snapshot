@@ -26,16 +26,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ permsSyncer = &PermsSyncer{}
+var _ permsSyncer = &permsSyncerImpl{}
 
 type permsSyncer interface {
 	syncRepoPerms(context.Context, api.RepoID, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
 	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
 }
 
-// PermsSyncer is in charge of keeping permissions up-to-date for users and
+// permsSyncerImpl is in charge of keeping permissions up-to-date for users and
 // repositories.
-type PermsSyncer struct {
+type permsSyncerImpl struct {
 	// The logger to use when logging messages and errors.
 	logger log.Logger
 	// The generic database handle.
@@ -59,15 +59,15 @@ type PermsSyncer struct {
 	permsStore database.PermsStore
 }
 
-// NewPermsSyncer returns a new permissions syncer.
-func NewPermsSyncer(
+// newPermsSyncer returns a new permissions syncer.
+func newPermsSyncer(
 	logger log.Logger,
 	db database.DB,
 	reposStore repos.Store,
 	permsStore database.PermsStore,
 	clock func() time.Time,
-) *PermsSyncer {
-	return &PermsSyncer{
+) *permsSyncerImpl {
+	return &permsSyncerImpl{
 		logger:     logger,
 		db:         db,
 		reposStore: reposStore,
@@ -79,7 +79,7 @@ func NewPermsSyncer(
 // syncRepoPerms processes permissions syncing request in repository-centric way.
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
-func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
+func (s *permsSyncerImpl) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
@@ -255,7 +255,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+func (s *permsSyncerImpl) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	var err error
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms")
 	defer save(requestTypeUser, userID, &err)
@@ -340,7 +340,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 // providersByServiceID returns a list of authz.Provider configured in the external services.
 // Keys are ServiceID, e.g. "https://github.com/".
-func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
+func (s *permsSyncerImpl) providersByServiceID() map[string]authz.Provider {
 	_, ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
@@ -351,7 +351,7 @@ func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
 
 // providersByURNs returns a list of authz.Provider configured in the external services.
 // Keys are URN, e.g. "extsvc:github:1".
-func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
+func (s *permsSyncerImpl) providersByURNs() map[string]authz.Provider {
 	_, ps := authz.GetProviders()
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
@@ -377,7 +377,7 @@ type fetchUserPermsViaExternalAccountsResults struct {
 //
 // It returns a list of internal database repository IDs and is a noop when
 // `envvar.SourcegraphDotComMode()` is true.
-func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (results fetchUserPermsViaExternalAccountsResults, err error) {
+func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (results fetchUserPermsViaExternalAccountsResults, err error) {
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
@@ -652,7 +652,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // elements at a time to workaround Postgres' limit of 65535 bind parameters
 // using exact name matching. This method only includes private repository names
 // and does not do deduplication on the returned list.
-func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.MinimalRepo, error) {
+func (s *permsSyncerImpl) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.MinimalRepo, error) {
 	if len(repoSpecs) == 0 {
 		return []types.MinimalRepo{}, nil
 	}
@@ -685,7 +685,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) (*database.SetPermissionsResult, error) {
+func (s *permsSyncerImpl) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) (*database.SetPermissionsResult, error) {
 	logger := s.logger.Scoped("saveUserPermsForAccount").With(
 		log.Object("user",
 			log.Int32("ID", userID),
@@ -709,7 +709,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	return stats, nil
 }
 
-func (s *PermsSyncer) observe(ctx context.Context, name string) (context.Context, func(requestType, int32, *error)) {
+func (s *permsSyncerImpl) observe(ctx context.Context, name string) (context.Context, func(requestType, int32, *error)) {
 	began := s.clock()
 	tr, ctx := trace.New(ctx, name)
 

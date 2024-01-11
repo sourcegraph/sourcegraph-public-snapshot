@@ -131,7 +131,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -207,7 +207,7 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
 		_, _, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
@@ -303,7 +303,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		return nil, errors.New("should never call fetchUserPerms for github")
 	}
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	tests := []struct {
 		name                string
@@ -462,7 +462,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		// DeadlineExceeded implements the Temporary interface
@@ -545,7 +545,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	tests := []struct {
 		name     string
@@ -629,7 +629,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	reposStore := repos.NewMockStore()
 
 	perms := dbmocks.NewMockPermsStore()
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	t.Run("invalid token", func(t *testing.T) {
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -737,7 +737,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -821,7 +821,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -866,8 +866,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
 
-	newPermsSyncer := func(reposStore repos.Store, perms database.PermsStore) *PermsSyncer {
-		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	newPermsSyncer := func(reposStore repos.Store, perms database.PermsStore) *permsSyncerImpl {
+		return newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 	}
 
 	t.Run("Err is nil when no authz provider", func(t *testing.T) {

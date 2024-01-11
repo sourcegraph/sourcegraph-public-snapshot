@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/require"
 )
 
 const errorMsg = "Sorry, wrong number."
@@ -32,7 +33,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	syncJobsStore := db.PermissionSyncJobs()
 
 	t.Run("user sync request", func(t *testing.T) {
-		worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer, SyncTypeUser, syncJobsStore)
+		worker := makePermsSyncerWorker(&observation.TestContext, dummySyncer, syncTypeUser, syncJobsStore)
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               99,
 			UserID:           1234,
@@ -54,7 +55,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	})
 
 	t.Run("repo sync request", func(t *testing.T) {
-		worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer, SyncTypeRepo, syncJobsStore)
+		worker := makePermsSyncerWorker(&observation.TestContext, dummySyncer, syncTypeRepo, syncJobsStore)
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               777,
 			RepositoryID:     4567,
@@ -101,8 +102,8 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
-	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeRepo)
-	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeRepo, syncJobsStore)
+	workerStore := makeStore(observationCtx, db.Handle(), syncTypeRepo)
+	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, syncTypeRepo, syncJobsStore)
 	go worker.Start()
 	t.Cleanup(worker.Stop)
 
@@ -244,8 +245,8 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
-	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeUser)
-	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeUser, syncJobsStore)
+	workerStore := makeStore(observationCtx, db.Handle(), syncTypeUser)
+	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, syncTypeUser, syncJobsStore)
 	go worker.Start()
 	t.Cleanup(worker.Stop)
 
@@ -422,7 +423,7 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	store := MakeStore(&observation.TestContext, db.Handle(), SyncTypeRepo)
+	store := makeStore(&observation.TestContext, db.Handle(), syncTypeRepo)
 	jobIDs := make([]int, 0)
 	wantJobIDs := []int{5, 6, 8, 7, 3, 4, 10, 9, 1, 2, 12, 11, 0, 0, 0, 0}
 	var dequeueErr error
@@ -449,7 +450,7 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 }
 
 func MakeTestWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer permsSyncer, typ syncType, jobsStore database.PermissionSyncJobStore) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, typ, jobsStore)
+	handler := makePermsSyncerWorker(observationCtx, permsSyncer, typ, jobsStore)
 	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "permission_sync_job_worker",
 		Interval:          time.Second,
