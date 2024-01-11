@@ -1,6 +1,7 @@
 schema:
   - ../../../../cmd/frontend/graphqlbackend/schema.graphql
   - ../../../../cmd/frontend/graphqlbackend/dotcom.graphql
+  - ../../../../cmd/frontend/graphqlbackend/guardrails.graphql
 operations:
   - operations.graphql
 generated: operations.go

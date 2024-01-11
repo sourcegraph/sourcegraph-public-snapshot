@@ -62,6 +62,14 @@ func (a *Actor) GetSource() codygateway.ActorSource {
 	return codygateway.ActorSource(a.Source.Name())
 }
 
+// IsEmpty returns true if the actor is empty, e.g. has no ID.
+// An empty actor is saved in the cache on fetch req failure,
+// so that we aren't constantly hitting the dotcom API. Check
+// the implementation of `Source.fetchAndCache`.
+func (a *Actor) IsEmpty() bool {
+	return a == nil || a.ID == ""
+}
+
 func (a *Actor) IsDotComActor() bool {
 	// Corresponds to sourcegraph.com subscription ID, or using a dotcom access token
 	return a != nil && (a.GetSource() == codygateway.ActorSourceProductSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygateway.ActorSourceDotcomUser
@@ -148,37 +156,37 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) Limiter(
-	logger log.Logger,
+// featurePrefix is the prefix used by redis store for the given
+// feature because we need to rate limit by feature.
+func featurePrefix(feature codygateway.Feature) string {
+	return fmt.Sprintf("%s:", feature)
+}
+
+// baseLimiterAndLimit returns the base limiter for the given feature,
+// and the rate limits for the actor.
+func (a *Actor) baseLimiterAndLimit(
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
 	rateLimitNotifier notify.RateLimitNotifier,
-) (limiter.Limiter, bool) {
+) (*limiter.StaticLimiter, RateLimit, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
-		return nil, false
+		return nil, RateLimit{}, false
 	}
+
 	limit, ok := a.RateLimits[feature]
 	if !ok {
-		return nil, false
+		return nil, RateLimit{}, false
 	}
-
 	if !limit.IsValid() {
 		// No valid limit, cannot provide limiter.
-		return nil, false
+		return nil, RateLimit{}, false
 	}
 
-	// The redis store has to use a prefix for the given feature because we need to
-	// rate limit by feature.
-	featurePrefix := fmt.Sprintf("%s:", feature)
-
-	// baseLimiter is the core Limiter that naively applies the specified
-	// rate limits. This will get wrapped in various other layers of limiter
-	// behaviour.
 	baseLimiter := limiter.StaticLimiter{
 		LimiterName: "actor.Limiter",
 		Identifier:  a.ID,
-		Redis:       limiter.NewPrefixRedisStore(featurePrefix, redis),
+		Redis:       limiter.NewPrefixRedisStore(featurePrefix(feature), redis),
 		Limit:       limit.Limit,
 		Interval:    limit.Interval,
 		// Only update rate limit TTL if the actor has been updated recently.
@@ -189,21 +197,62 @@ func (a *Actor) Limiter(
 		},
 	}
 
+	return &baseLimiter, limit, true
+}
+
+// BaseLimiter is the core Limiter that naively applies the specified
+// rate limits. This will get wrapped in various other layers of limiter
+// behaviour. Do not use this directly to apply rate limits, use Limiter instead.
+func (a *Actor) BaseLimiter(
+	redis limiter.RedisStore,
+	feature codygateway.Feature,
+	rateLimitNotifier notify.RateLimitNotifier,
+) (*limiter.StaticLimiter, bool) {
+	baseLimiter, _, ok := a.baseLimiterAndLimit(redis, feature, rateLimitNotifier)
+
+	return baseLimiter, ok
+}
+
+// Limiter is the main limiter used to apply rate limits to requests. It
+// applies the base rate limit, and wraps it in layers of concurrency
+// and update-on-error rate limiters.
+func (a *Actor) Limiter(
+	logger log.Logger,
+	redis limiter.RedisStore,
+	feature codygateway.Feature,
+	rateLimitNotifier notify.RateLimitNotifier,
+) (limiter.Limiter, bool) {
+	// Start with the base limiter. This limiter enforces rate limits provided
+	// the actor's Source, and each Source implementation owns ensuring that
+	// Cody Gateway has an up-to-date view of the appropriate rate limits for
+	// a particular actor based on the application (e.g. users from enterprise product
+	// subscriptions, Self-Serve-Cody's tiers, etc.
+	baseLimiter, limit, ok := a.baseLimiterAndLimit(redis, feature, rateLimitNotifier)
+	if !ok {
+		return nil, false
+	}
+
+	// Wrap the base limiter with updateOnErrorLimiter, to call Actor.Update to
+	// refresh the actor cache on any errors.
+	updateOnErrLimiter := updateOnErrorLimiter{
+		logger:      logger.Scoped("updateOnError"),
+		actor:       a,
+		nextLimiter: baseLimiter,
+	}
+
+	// Finally return a concurrency limiter, to ensure that a user cannot have too many
+	// requests in-flight at a time. This is generally a percentage of the rate limit
+	// assigned to an Actor by its Source - see RateLimit for more details.
+	concurrentStorePrefix := fmt.Sprintf("concurrent:%s", featurePrefix(feature))
 	return &concurrencyLimiter{
 		logger:             logger.Scoped("concurrency"),
 		actor:              a,
 		feature:            feature,
-		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
+		redis:              limiter.NewPrefixRedisStore(concurrentStorePrefix, redis),
 		concurrentRequests: limit.ConcurrentRequests,
 		concurrentInterval: limit.ConcurrentRequestsInterval,
-
-		nextLimiter: updateOnErrorLimiter{
-			logger: logger.Scoped("updateOnError"),
-			actor:  a,
-
-			nextLimiter: baseLimiter,
-		},
-		nowFunc: time.Now,
+		nextLimiter:        updateOnErrLimiter,
+		nowFunc:            time.Now,
 	}, true
 }
 
