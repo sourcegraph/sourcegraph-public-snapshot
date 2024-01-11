@@ -443,10 +443,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)
-                  (patternInfo.isRegexp . true)
-                  (patternInfo.fileMatchLimit . 500)
-                  (patternInfo.patternMatchesPath . true)
+                  (request.pattern . test)
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
@@ -525,10 +522,7 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)
-                  (patternInfo.isRegexp . true)
-                  (patternInfo.fileMatchLimit . 500)
-                  (patternInfo.patternMatchesPath . true)
+                  (request.pattern . test)
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
@@ -965,12 +959,6 @@ func TestToTextPatternInfo(t *testing.T) {
 		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
 		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["commit"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["symbol"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
-	}, {
-		input:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["symbol"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
-	}, {
 		input:  `foo\d "bar*" patterntype:regexp`,
 		output: autogold.Expect(`{"Pattern":"(?:foo\\d).*?(?:bar\\*)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
 	}, {
@@ -1003,6 +991,53 @@ func TestToTextPatternInfo(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.input, func(t *testing.T) {
 			tc.output.Equal(t, test(tc.input))
+		})
+	}
+}
+
+func TestToSymbolSearchRequest(t *testing.T) {
+	cases := []struct {
+		input   string
+		output  autogold.Value
+		wantErr bool
+	}{{
+		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:symbol  file:^README\.md `,
+		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":["^README\\.md"],"ExcludePattern":""}`),
+	}, {
+		input:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol -file:^README\.md `,
+		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"^README\\.md"}`),
+	}, {
+		input:   `type:symbol NOT option`,
+		output:  autogold.Expect("null"),
+		wantErr: true,
+	}}
+
+	createRequest := func(input string) (*searcher.SymbolSearchRequest, error) {
+		plan, err := query.Pipeline(query.Init(input, query.SearchTypeLiteral))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		b := plan[0]
+		var pattern query.Pattern
+		if p, ok := b.Pattern.(query.Pattern); ok {
+			pattern = p
+		} else {
+			t.Fatal(err)
+		}
+
+		f := query.Flat{Parameters: b.Parameters, Pattern: &pattern}
+		return toSymbolSearchRequest(f)
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.input, func(t *testing.T) {
+			r, err := createRequest(tc.input)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("mismatch error = %v, wantErr %v", err, tc.wantErr)
+			}
+			v, _ := json.Marshal(r)
+			tc.output.Equal(t, string(v))
 		})
 	}
 }
