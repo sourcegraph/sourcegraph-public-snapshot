@@ -65,7 +65,6 @@ expression: dumped
           public void myCoolMethod() {
 //                    ^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#myCoolMethod().
               class WhatIsGoingOn {}
-//                  ^^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#WhatIsGoingOn#
               boolean iThinkThisIsAllowedButWeDontReallyCare = true;
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local 1
           }
