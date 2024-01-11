@@ -19,7 +19,7 @@ import (
 )
 
 func ConfigGet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) (string, error) {
-	cmd := exec.Command("sh", "git", "config", "--get", key)
+	cmd := exec.Command("git", "config", "--get", key)
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	out, err := wrappedCmd.Output()
@@ -54,7 +54,7 @@ func ConfigUnset(rcf *wrexec.RecordingCommandFactory, reposDir string, dir commo
 
 	randomNumString := strconv.Itoa(randomNum)
 
-	cmd := exec.Command("sh", "git", "config", "--unset-all", key, randomNumString)
+	cmd := exec.Command("git", "config", "--unset-all", key, randomNumString)
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), gitserverfs.RepoNameFromDir(reposDir, dir), cmd)
 	out, err := wrappedCmd.CombinedOutput()

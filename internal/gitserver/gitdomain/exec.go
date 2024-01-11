@@ -45,7 +45,6 @@ var (
 		"push":       {"--force"},
 		"update-ref": {},
 		"apply":      {"--cached", "-p0"},
-		"applied":    {"--cached", "-p0"},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
