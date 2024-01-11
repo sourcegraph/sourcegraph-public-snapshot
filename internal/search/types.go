@@ -219,7 +219,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
+		UseKeywordScoring: o.PatternType == query.SearchTypeCodyContext,
 		NumContextLines:   o.NumContextLines,
 	}
 

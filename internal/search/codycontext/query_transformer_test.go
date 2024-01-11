@@ -1,4 +1,4 @@
-package keyword
+package codycontext
 
 import (
 	"testing"
@@ -79,16 +79,16 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			keywordQuery, err := queryStringToKeywordQuery(tt.query)
+			q, err := queryStringToKeywordQuery(tt.query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if keywordQuery == nil {
-				t.Fatal("keywordQuery == nil")
+			if q == nil {
+				t.Fatal("q == nil")
 			}
 
-			tt.wantPatterns.Equal(t, keywordQuery.patterns)
-			tt.wantQuery.Equal(t, query.StringHuman(keywordQuery.query.ToParseTree()))
+			tt.wantPatterns.Equal(t, q.patterns)
+			tt.wantQuery.Equal(t, query.StringHuman(q.query.ToParseTree()))
 		})
 	}
 }

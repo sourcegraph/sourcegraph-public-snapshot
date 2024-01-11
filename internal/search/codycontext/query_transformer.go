@@ -1,4 +1,4 @@
-package keyword
+package codycontext
 
 import (
 	"strings"
@@ -140,6 +140,6 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	return &keywordQuery{newBasic, transformedPatterns}, nil
 }
 
-func basicQueryToKeywordQuery(basicQuery query.Basic) (*keywordQuery, error) {
+func transformBasicQuery(basicQuery query.Basic) (*keywordQuery, error) {
 	return queryStringToKeywordQuery(query.StringHuman(basicQuery.ToParseTree()))
 }
