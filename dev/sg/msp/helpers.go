@@ -54,7 +54,7 @@ func useServiceAndEnvironmentArguments(c *cli.Context) (*spec.Spec, *spec.Enviro
 	return svc, env, nil
 }
 
-func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec, monitoring spec.MonitoringSpec) error {
+func syncEnvironmentWorkspaces(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, env spec.EnvironmentSpec) error {
 	if c.Bool("delete") {
 		if !pointers.DerefZero(env.AllowDestroys) {
 			return errors.Newf("environments[%s].allowDestroys must be 'true' to delete workspaces", env.ID)

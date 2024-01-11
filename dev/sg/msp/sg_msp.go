@@ -557,7 +557,7 @@ Supports completions on services and environments.`,
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env, *service.Monitoring); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, *env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
@@ -565,7 +565,7 @@ Supports completions on services and environments.`,
 								return errors.New("second argument environment ID is required without the '-all' flag")
 							}
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env, *service.Monitoring); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
