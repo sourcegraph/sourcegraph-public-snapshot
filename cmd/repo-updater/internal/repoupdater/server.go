@@ -4,82 +4,48 @@ package repoupdater
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type Scheduler interface {
+	UpdateOnce(id api.RepoID, name api.RepoName)
+	ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
+}
+
 // Server is a repoupdater server.
 type Server struct {
-	repos.Store
-	*repos.Syncer
+	proto.UnimplementedRepoUpdaterServiceServer
+
+	Store                 repos.Store
+	Syncer                *repos.Syncer
 	Logger                log.Logger
-	ObservationCtx        *observation.Context
-	SourcegraphDotComMode bool
-	Scheduler             interface {
-		UpdateOnce(id api.RepoID, name api.RepoName)
-		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
-	}
+	Scheduler             Scheduler
 	ChangesetSyncRegistry syncer.ChangesetSyncRegistry
 }
 
-// Handler returns the http.Handler that should be used to serve requests.
-func (s *Server) Handler() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	return mux
+func (s *Server) RepoUpdateSchedulerInfo(_ context.Context, req *proto.RepoUpdateSchedulerInfoRequest) (*proto.RepoUpdateSchedulerInfoResponse, error) {
+	res := s.Scheduler.ScheduleInfo(api.RepoID(req.GetId()))
+	return res.ToProto(), nil
 }
 
-func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
-	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", attribute.Stringer("req", req))
-	defer func() {
-		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
-		if resp != nil {
-			tr.SetAttributes(
-				attribute.Int("resp.id", int(resp.ID)),
-				attribute.String("resp.name", resp.Name),
-			)
-		}
-		tr.SetError(err)
-		tr.End()
-	}()
+func (s *Server) RepoLookup(ctx context.Context, req *proto.RepoLookupRequest) (result *proto.RepoLookupResponse, err error) {
+	repoName := api.RepoName(req.GetRepo())
 
-	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
-	}
-
-	if len(rs) != 1 {
-		return nil, http.StatusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
-	}
-
-	repo := rs[0]
-
-	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
-
-	return &protocol.RepoUpdateResponse{
-		ID:   repo.ID,
-		Name: string(repo.Name),
-	}, http.StatusOK, nil
-}
-
-var mockRepoLookup func(api.RepoName) (*protocol.RepoLookupResult, error)
-
-func (s *Server) repoLookup(ctx context.Context, repoName api.RepoName) (result *protocol.RepoLookupResult, err error) {
 	// Sourcegraph.com: this is on the user path, do not block forever if codehost is
 	// being bad. Ideally block before cloudflare 504s the request (1min). Other: we
 	// only speak to our database, so response should be in a few ms.
@@ -97,26 +63,68 @@ func (s *Server) repoLookup(ctx context.Context, repoName api.RepoName) (result 
 		return nil, errors.New("Repo must be set (is blank)")
 	}
 
-	if mockRepoLookup != nil {
-		return mockRepoLookup(repoName)
-	}
-
 	repo, err := s.Syncer.SyncRepo(ctx, repoName, true)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
+			return (&protocol.RepoLookupResult{ErrorNotFound: true}).ToProto(), nil
 		}
 		if errcode.IsUnauthorized(err) || errcode.IsForbidden(err) {
-			return &protocol.RepoLookupResult{ErrorUnauthorized: true}, nil
+			return (&protocol.RepoLookupResult{ErrorUnauthorized: true}).ToProto(), nil
 		}
 		if errcode.IsTemporary(err) {
-			return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
+			return (&protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}).ToProto(), nil
 		}
 		if errcode.IsRepoDenied(err) {
-			return &protocol.RepoLookupResult{ErrorRepoDenied: err.Error()}, nil
+			return (&protocol.RepoLookupResult{ErrorRepoDenied: err.Error()}).ToProto(), nil
 		}
 		return nil, err
 	}
 
-	return &protocol.RepoLookupResult{Repo: protocol.NewRepoInfo(repo)}, nil
+	return (&protocol.RepoLookupResult{Repo: protocol.NewRepoInfo(repo)}).ToProto(), nil
+}
+
+func (s *Server) EnqueueRepoUpdate(ctx context.Context, req *proto.EnqueueRepoUpdateRequest) (resp *proto.EnqueueRepoUpdateResponse, err error) {
+	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", attribute.Stringer("req", req))
+	defer func() {
+		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.String("resp", fmt.Sprint(resp)), log.Error(err)))
+		if resp != nil {
+			tr.SetAttributes(
+				attribute.Int("resp.id", int(resp.Id)),
+				attribute.String("resp.name", resp.Name),
+			)
+		}
+		tr.SetError(err)
+		tr.End()
+	}()
+
+	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+	if err != nil {
+		return nil, errors.Wrap(err, "store.list-repos")
+	}
+
+	if len(rs) != 1 {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("repo %q not found in store", req.Repo))
+	}
+
+	repo := rs[0]
+
+	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+
+	return &proto.EnqueueRepoUpdateResponse{
+		Id:   int32(repo.ID),
+		Name: string(repo.Name),
+	}, nil
+}
+
+func (s *Server) EnqueueChangesetSync(ctx context.Context, req *proto.EnqueueChangesetSyncRequest) (*proto.EnqueueChangesetSyncResponse, error) {
+	if s.ChangesetSyncRegistry == nil {
+		s.Logger.Warn("ChangesetSyncer is nil")
+		return nil, status.Error(codes.Internal, "changeset syncer is not configured")
+	}
+
+	if len(req.Ids) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "no ids provided")
+	}
+
+	return &proto.EnqueueChangesetSyncResponse{}, s.ChangesetSyncRegistry.EnqueueChangesetSyncs(ctx, req.Ids)
 }

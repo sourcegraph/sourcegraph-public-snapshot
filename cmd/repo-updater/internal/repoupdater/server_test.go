@@ -119,9 +119,9 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
 			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
-			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
+			proto.RegisterRepoUpdaterServiceServer(gs, s)
 
-			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
+			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, http.NotFoundHandler()))
 			defer srv.Close()
 
 			cli := repoupdater.NewClient(srv.URL)
@@ -563,9 +563,9 @@ func TestServer_RepoLookup(t *testing.T) {
 			}
 
 			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
-			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
+			proto.RegisterRepoUpdaterServiceServer(gs, s)
 
-			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
+			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, http.NotFoundHandler()))
 			defer srv.Close()
 
 			cli := repoupdater.NewClient(srv.URL)
