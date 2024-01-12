@@ -77,8 +77,10 @@ In addition to service-specific guidance, %s is also available.`,
 	md.Paragraphf(`For MSP service environments other than %[1]s, access needs to be requested through Entitle.
 Test environments are placed in the "Engineering Projects" GCP folder, which should have access granted to engineers by default.
 
-Entitle access to a production MSP project is most easily provisioned through the %[2]s and  custom roles, which provide read-only and editing access respectively.
-You can request access to a project in Entitle by following these steps:
+Entitle access to a production MSP project is generally provisioned through the %[2]s and %[3]s custom GCP roles, which provide read-only and editing access respectively.
+Convenience links for requesting these roles are available in the per-service operation pages above, based on each environment.
+
+You can also choose to request access to an individual project in Entitle by following these steps:
 
 - Go to [app.entitle.io/request](https://app.entitle.io/request) and select **Specific Permission**
 - Fill out the following:
@@ -88,11 +90,12 @@ You can request access to a project in Entitle by following these steps:
   - Role: %[2]s (or %[3]s if you need additional privileges - use with care!)
   - Duration: choose your own adventure!
 
-These custom roles are configured [in  in the infrastructure repo](https://github.com/sourcegraph/infrastructure/blob/main/gcp/custom-roles/msp.tf).`,
+The custom roles used for MSP infrastructure access are [configured in %[5]s](https://github.com/sourcegraph/infrastructure/blob/main/gcp/custom-roles/msp.tf).`,
 		markdown.Code("category: test"),                // %[1]s
 		markdown.Code("mspServiceReader"),              // %[2]s
 		markdown.Code("mspServiceEditor"),              // %[3]s
 		markdown.Code("gcp/org/customer-roles/msp.tf"), // %[4]s
+		markdown.Code("sourcegraph/infrastructure"),    // %[5]s
 	)
 
 	md.Headingf(3, "Terraform Cloud access")
