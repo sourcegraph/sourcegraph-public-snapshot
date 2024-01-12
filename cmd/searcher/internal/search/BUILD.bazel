@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "search",
     srcs = [
+        "chunk.go",
         "filter.go",
         "hybrid.go",
         "matchtree.go",
@@ -110,6 +111,7 @@ go_test(
     name = "search_test",
     timeout = "short",
     srcs = [
+        "chunk_test.go",
         "filter_test.go",
         "github_archive_test.go",
         "hybrid_test.go",

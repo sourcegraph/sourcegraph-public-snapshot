@@ -22,7 +22,7 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
-import { useFilterQuery } from './hooks'
+import { useUrlFilters } from './hooks'
 import { SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
@@ -34,7 +34,7 @@ interface NewSearchFiltersProps {
 }
 
 export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange }) => {
-    const [selectedFilters, setSelectedFilters] = useFilterQuery()
+    const [selectedFilters, setSelectedFilters] = useUrlFilters()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)

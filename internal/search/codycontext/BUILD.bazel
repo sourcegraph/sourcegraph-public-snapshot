@@ -2,15 +2,15 @@ load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "keyword",
+    name = "codycontext",
     srcs = [
-        "keyword_search_job.go",
+        "job.go",
         "query_transformer.go",
         "stop_words.go",
         "string_set.go",
         "term_utils.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/search/keyword",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/codycontext",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search",
@@ -24,10 +24,9 @@ go_library(
 )
 
 go_test(
-    name = "keyword_test",
-    timeout = "short",
+    name = "codycontext_test",
     srcs = ["query_transformer_test.go"],
-    embed = [":keyword"],
+    embed = [":codycontext"],
     deps = [
         "//internal/search/query",
         "@com_github_hexops_autogold_v2//:autogold",

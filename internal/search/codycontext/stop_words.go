@@ -1,4 +1,4 @@
-package keyword
+package codycontext
 
 // A large set of stopwords, taken from the ATIRE list here: https://github.com/igorbrigadir/stopwords/tree/master.
 var stopWords = stringSet{

@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ownsearch "github.com/sourcegraph/sourcegraph/internal/own/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -45,12 +45,12 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
 
-	if inputs.PatternType == query.SearchTypeKeyword {
+	if inputs.PatternType == query.SearchTypeCodyContext {
 		if inputs.SearchMode == search.SmartSearch {
 			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
 		}
 
-		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
+		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
 		if err != nil {
 			return nil, err
 		}
