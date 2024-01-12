@@ -11,10 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
-// NewJSONWriter returns a MatchJSONWriter that serializes matches to a JSON
-// array and writes them to the store. Matches are uploaded as blobs with a max
-// size of 100MB. The object key is the prefix + shard number. For the first
-// shard, the shard number is omitted.
+// NewJSONWriter creates a MatchJSONWriter which appends matches to a JSON array
+// and uploads them to the object store once the internal buffer size has
+// reached 100 MiB or Close() is called. The object key combines a prefix with
+// the shard number, except for the first shard where the shard number is
+// excluded.
 func NewJSONWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchJSONWriter, error) {
 	blobUploader := &blobUploader{
 		ctx:    ctx,
