@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -29,10 +30,7 @@ func NewFireworksHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	allowedModels []string,
-	logSelfServeCodeCompletionRequests bool,
-	disableSingleTenant bool,
+	config config.FireworksConfig,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[fireworksRequest](
@@ -49,8 +47,8 @@ func NewFireworksHandler(
 				return fireworksAPIURL
 			}
 		},
-		allowedModels,
-		&FireworksHandlerMethods{accessToken: accessToken, baseLogger: baseLogger, eventLogger: eventLogger, logSelfServeCodeCompletionRequests: logSelfServeCodeCompletionRequests, disableSingleTenant: disableSingleTenant},
+		config.AllowedModels,
+		&FireworksHandlerMethods{accessToken: config.AccessToken, baseLogger: baseLogger, eventLogger: eventLogger, logSelfServeCodeCompletionRequests: config.LogSelfServeCodeCompletionRequests, disableSingleTenant: config.DisableSingleTenant},
 
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
