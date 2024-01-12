@@ -13,9 +13,10 @@ import (
 
 // NewJSONWriter creates a MatchJSONWriter which appends matches to a JSON array
 // and uploads them to the object store once the internal buffer size has
-// reached 100 MiB or Close() is called. The object key combines a prefix with
+// reached 100 MiB or Flush() is called. The object key combines a prefix with
 // the shard number, except for the first shard where the shard number is
 // excluded.
+
 func NewJSONWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchJSONWriter, error) {
 	blobUploader := &blobUploader{
 		ctx:    ctx,
@@ -32,7 +33,7 @@ type MatchJSONWriter struct {
 	w *http.JSONArrayBuf
 }
 
-func (m MatchJSONWriter) Close() error {
+func (m MatchJSONWriter) Flush() error {
 	return m.w.Flush()
 }
 

@@ -27,7 +27,7 @@ func TestMatchJsonWriter(t *testing.T) {
 	err = matchJSONWriter.Write(testMatch2)
 	require.NoError(t, err)
 
-	err = matchJSONWriter.Close()
+	err = matchJSONWriter.Flush()
 	require.NoError(t, err)
 
 	iter, err := mockStore.List(context.Background(), "")
