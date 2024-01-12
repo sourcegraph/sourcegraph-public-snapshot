@@ -350,8 +350,8 @@ func createCommonAlerts(
 	} {
 		config.ServiceEnvironmentSlug = fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID)
 		config.ProjectID = vars.ProjectID
-		config.ServiceName = vars.Service.ID
-		config.ServiceKind = serviceKind
+		config.ResourceName = vars.Service.ID
+		config.ResourceKind = serviceKind
 		config.NotificationChannels = channels
 		if _, err := alertpolicy.New(stack, id, &config); err != nil {
 			return err
@@ -372,12 +372,12 @@ func createServiceAlerts(
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
 
-			ID:          "instance_count",
-			Name:        "Container Instance Count",
-			Description: pointers.Ptr("There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count"),
-			ProjectID:   vars.ProjectID,
-			ServiceName: vars.Service.ID,
-			ServiceKind: alertpolicy.CloudRunService,
+			ID:           "instance_count",
+			Name:         "Container Instance Count",
+			Description:  pointers.Ptr("There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count"),
+			ProjectID:    vars.ProjectID,
+			ResourceName: vars.Service.ID,
+			ResourceKind: alertpolicy.CloudRunService,
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{"metric.type": "run.googleapis.com/container/instance_count"},
 				Aligner: alertpolicy.MonitoringAlignMax,
@@ -458,11 +458,13 @@ func createExternalHealthcheckAlert(
 		Name:        "External Uptime Check",
 		Description: pointers.Stringf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
 		ProjectID:   vars.ProjectID,
+
+		ResourceKind: alertpolicy.URLUptime,
+		ResourceName: *uptimeCheck.UptimeCheckId(),
+
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 			Filters: map[string]string{
-				"metric.type":           "monitoring.googleapis.com/uptime_check/check_passed",
-				"metric.label.check_id": *uptimeCheck.UptimeCheckId(),
-				"resource.type":         "uptime_url",
+				"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
 			},
 			Aligner: alertpolicy.MonitoringAlignFractionTrue,
 			Reducer: alertpolicy.MonitoringReduceMean,
@@ -491,12 +493,12 @@ func createJobAlerts(
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
 
-		ID:          "job_failures",
-		Name:        "Cloud Run Job Failures",
-		Description: pointers.Ptr("Failed executions of Cloud Run Job"),
-		ProjectID:   vars.ProjectID,
-		ServiceName: vars.Service.ID,
-		ServiceKind: alertpolicy.CloudRunJob,
+		ID:           "job_failures",
+		Name:         "Cloud Run Job Failures",
+		Description:  pointers.Ptr("Failed executions of Cloud Run Job"),
+		ProjectID:    vars.ProjectID,
+		ResourceName: vars.Service.ID,
+		ResourceKind: alertpolicy.CloudRunJob,
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 			Filters: map[string]string{
 				"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
@@ -526,11 +528,11 @@ func createResponseCodeMetrics(
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
 
-			ID:          config.ID,
-			ProjectID:   vars.ProjectID,
-			Name:        config.Name,
-			ServiceName: vars.Service.ID,
-			ServiceKind: alertpolicy.CloudRunService,
+			ID:           config.ID,
+			ProjectID:    vars.ProjectID,
+			Name:         config.Name,
+			ResourceName: vars.Service.ID,
+			ResourceKind: alertpolicy.CloudRunService,
 			ResponseCodeMetric: &alertpolicy.ResponseCodeMetric{
 				Code:         config.Code,
 				CodeClass:    config.CodeClass,
@@ -593,8 +595,8 @@ func createRedisAlerts(
 	} {
 		config.ServiceEnvironmentSlug = fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID)
 		config.ProjectID = vars.ProjectID
-		config.ServiceName = *vars.RedisInstanceID
-		config.ServiceKind = alertpolicy.CloudRedis
+		config.ResourceName = *vars.RedisInstanceID
+		config.ResourceKind = alertpolicy.CloudRedis
 		config.NotificationChannels = channels
 		if _, err := alertpolicy.New(stack, id, &config); err != nil {
 			return err

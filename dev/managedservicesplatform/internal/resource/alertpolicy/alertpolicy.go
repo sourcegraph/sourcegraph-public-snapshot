@@ -102,12 +102,13 @@ type ResponseCodeMetric struct {
 	Duration     *string
 }
 
-type CloudService int
+type ResourceKind int
 
 const (
-	CloudRunService CloudService = iota
+	CloudRunService ResourceKind = iota + 1
 	CloudRunJob
 	CloudRedis
+	URLUptime
 )
 
 type TriggerKind int
@@ -133,10 +134,12 @@ type Config struct {
 	Name        string
 	Description *string
 	ProjectID   string
-	// Name of the service/job/redis to filter the alert on
-	ServiceName string
-	// Type of the service/job/redis
-	ServiceKind CloudService
+
+	// ResourceKind identifies what is being monitored.
+	ResourceKind ResourceKind
+	// ResourceName is the identifier for the monitored resource of ResourceKind.
+	ResourceName string
+
 	// NotificationChannels to subscribe on this alert
 	NotificationChannels []monitoringnotificationchannel.MonitoringNotificationChannel
 
@@ -187,7 +190,7 @@ If you need additional assistance, reach out to #discuss-core-services.`,
 // threshholdAggregation defines a monitoring alert policy based on a single metric threshold
 func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	// Set some defaults
-	switch config.ServiceKind {
+	switch config.ResourceKind {
 	case CloudRunService:
 		config.ThresholdAggregation.GroupByFields = append([]string{"resource.label.revision_name"}, config.ThresholdAggregation.GroupByFields...)
 	case CloudRunJob:
@@ -195,7 +198,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 	case CloudRedis:
 		// No defaults
 	default:
-		return nil, errors.Newf("invalid service kind %q", config.ServiceKind)
+		return nil, errors.Newf("invalid service kind %q", config.ResourceKind)
 	}
 
 	if config.ThresholdAggregation.Comparison == "" {
@@ -273,21 +276,26 @@ func buildFilter(config *Config) string {
 	// config.ThresholdAggregation.Filters is a map.
 	sort.Strings(filters)
 
-	switch config.ServiceKind {
+	switch config.ResourceKind {
 	case CloudRunService:
 		filters = append(filters,
 			`resource.type = "cloud_run_revision"`,
-			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ResourceName),
 		)
 	case CloudRunJob:
 		filters = append(filters,
 			`resource.type = "cloud_run_job"`,
-			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ResourceName),
 		)
 	case CloudRedis:
 		filters = append(filters,
 			`resource.type = "redis_instance"`,
-			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ResourceName),
+		)
+	case URLUptime:
+		filters = append(filters,
+			`resource.type = "uptime_url"`,
+			fmt.Sprintf(`resource.labels.check_id = "%s"`, config.ResourceName),
 		)
 	}
 
