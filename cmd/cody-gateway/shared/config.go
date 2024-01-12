@@ -140,17 +140,14 @@ func (c *Config) Load() {
 	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
-			// Virtual model strings:
+			// Virtual model strings. Setting these will allow one or more of the specific models
+			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
-			"starcoder-7b",
-			"starcoder-16b",
-			// Bespoke hosted models:
+			// Fireworks multi-tenant models:
 			"accounts/fireworks/models/starcoder-16b-w8a16",
 			"accounts/fireworks/models/starcoder-7b-w8a16",
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
-			"accounts/sourcegraph/models/starcoder-7b",
-			"accounts/sourcegraph/models/starcoder-16b",
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
