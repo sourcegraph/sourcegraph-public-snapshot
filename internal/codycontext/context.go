@@ -112,7 +112,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	ctx, _, endObservation := c.getCodyContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+	if isEnabled := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
 		return nil, errors.New("cody is not enabled for current user")
 	}
 
