@@ -34,5 +34,17 @@
     "archived": false,
     "default_branch": "main",
     "topics": ["topic1", "topic2"]
+  },
+  {
+    "id": 4,
+    "path_with_namespace": "gitlab-org/gitaly-4",
+    "description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+    "web_url": "https://gitlab.com/gitlab-org/gitaly-4",
+    "http_url_to_repo": "iap://gitlab.com/gitlab-org/gitaly-4.git",
+    "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly-4.git",
+    "visibility": "private",
+    "archived": false,
+    "default_branch": "main",
+    "topics": ["topic1", "topic2"]
   }
 ]

@@ -254,7 +254,28 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
+	// gitlab supports special protocol to support custom git remote plugin, e.g., iap://
+	// Sourcegraph does not support custom git remote plugin nor handle custom authentication protocol in addition to code host authentication,
+	// so we need to ensure we fallback to http
+	if (s.config.GitURLType == "" || s.config.GitURLType == "http") && !strings.HasPrefix(proj.HTTPURLToRepo, "http") {
+		uri, err := url.Parse(proj.HTTPURLToRepo)
+		if err != nil {
+			s.logger.Warn("parse GitLab project URL", log.String("url", proj.HTTPURLToRepo), log.Error(err))
+			return proj.HTTPURLToRepo
+		}
+		if s.isHTTPS() {
+			uri.Scheme = "https"
+		} else {
+			uri.Scheme = "http"
+		}
+		return uri.String()
+	}
 	return proj.HTTPURLToRepo
+}
+
+// isHTTPS returns true if the configured GitLab connection uses HTTPS.
+func (s *GitLabSource) isHTTPS() bool {
+	return strings.HasPrefix(s.config.Url, "https")
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {

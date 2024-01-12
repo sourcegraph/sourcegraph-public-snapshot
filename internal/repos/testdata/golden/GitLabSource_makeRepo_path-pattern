@@ -34,7 +34,10 @@
     "forks_count": 0,
     "empty_repo": false,
     "default_branch": "main",
-    "topics": ["topic1", "topic2"]
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
    }
   },
   {
@@ -72,7 +75,10 @@
     "forks_count": 0,
     "empty_repo": false,
     "default_branch": "main",
-    "topics": ["topic1", "topic2"]
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
    }
   },
   {
@@ -110,7 +116,51 @@
     "forks_count": 0,
     "empty_repo": false,
     "default_branch": "main",
-    "topics": ["topic1", "topic2"]
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "gl/gitlab-org/gitaly-4",
+   "URI": "gitlab.com/gitlab-org/gitaly-4",
+   "Description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "4",
+    "ServiceType": "gitlab",
+    "ServiceID": "https://gitlab.com/"
+   },
+   "Sources": {
+    "extsvc:gitlab:1": {
+     "ID": "extsvc:gitlab:1",
+     "CloneURL": "https://gitlab.com/gitlab-org/gitaly-4.git"
+    }
+   },
+   "Metadata": {
+    "id": 4,
+    "path_with_namespace": "gitlab-org/gitaly-4",
+    "description": "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+    "web_url": "https://gitlab.com/gitlab-org/gitaly-4",
+    "http_url_to_repo": "iap://gitlab.com/gitlab-org/gitaly-4.git",
+    "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly-4.git",
+    "visibility": "private",
+    "archived": false,
+    "star_count": 0,
+    "forks_count": 0,
+    "empty_repo": false,
+    "default_branch": "main",
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
    }
   }
  ]
