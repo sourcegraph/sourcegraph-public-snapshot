@@ -231,6 +231,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     path="*"
                     element={
                         <LegacyLayout
+                            telemetryRecorder={window.context.telemetryRecorder}
                             {...legacyContext}
                             {...this.props}
                             batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
@@ -269,7 +270,10 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
-                    <LegacyRouteContextProvider context={legacyContext} />,
+                    <LegacyRouteContextProvider
+                        context={legacyContext}
+                        telemetryRecorder={window.context.telemetryRecorder}
+                    />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >

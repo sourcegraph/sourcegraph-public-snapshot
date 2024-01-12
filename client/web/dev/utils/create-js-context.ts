@@ -1,3 +1,5 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
@@ -70,6 +72,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             requireAtLeastOneNumber: true,
             requireUpperandLowerCase: true,
         },
+        telemetryRecorder: noOpTelemetryRecorder,
         openTelemetry: {
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
