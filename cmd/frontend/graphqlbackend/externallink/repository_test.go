@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,10 +36,8 @@ func TestRepository(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := Repository(context.Background(), db, repo)
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, repo, "")
+		links := linker.Repository()
 		if want := []*Resolver{
 			{
 				url:         "http://github.com/foo/bar",
@@ -64,10 +61,8 @@ func TestRepository(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := Repository(context.Background(), db, &types.Repo{Name: "myrepo"})
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, &types.Repo{Name: "myrepo"}, "")
+		links := linker.Repository()
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/diffusion/MYREPO",
@@ -86,10 +81,8 @@ func TestRepository(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := Repository(context.Background(), db, &types.Repo{Name: "myrepo"})
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, &types.Repo{Name: "myrepo"}, "")
+		links := linker.Repository()
 		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
@@ -136,10 +129,8 @@ func TestFileOrDir(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			links, err := FileOrDir(context.Background(), db, gitserver.NewTestClient(t), repo, rev, path, isDir)
-			if err != nil {
-				t.Fatal(err)
-			}
+			linker := NewRepositoryLinker(context.Background(), db, repo, "")
+			links := linker.FileOrDir(rev, path, isDir)
 			if want := []*Resolver{
 				{
 					url:         wantURL,
@@ -164,13 +155,8 @@ func TestFileOrDir(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		gsClient := gitserver.NewMockClient()
-		gsClient.GetDefaultBranchFunc.SetDefaultReturn("mybranch", "", nil)
-
-		links, err := FileOrDir(context.Background(), db, gsClient, &types.Repo{Name: "myrepo"}, rev, path, true)
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, &types.Repo{Name: "myrepo"}, "mybranch")
+		links := linker.FileOrDir(rev, path, true)
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/source/MYREPO/browse/mybranch/mydir/myfile;myrev",
@@ -189,10 +175,8 @@ func TestFileOrDir(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := FileOrDir(context.Background(), db, gitserver.NewTestClient(t), &types.Repo{Name: "myrepo"}, rev, path, true)
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, &types.Repo{Name: "myrepo"}, "")
+		links := linker.FileOrDir(rev, path, true)
 		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
@@ -220,10 +204,8 @@ func TestCommit(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := Commit(context.Background(), db, repo, commit)
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, repo, "")
+		links := linker.Commit(commit)
 		if want := []*Resolver{
 			{
 				url:         "http://github.com/foo/bar/commit/mycommit",
@@ -247,10 +229,8 @@ func TestCommit(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := Commit(context.Background(), db, &types.Repo{Name: "myrepo"}, commit)
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, &types.Repo{Name: "myrepo"}, "")
+		links := linker.Commit(commit)
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/rMYREPOmycommit",
@@ -269,10 +249,8 @@ func TestCommit(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := Commit(context.Background(), db, &types.Repo{Name: "myrepo"}, commit)
-		if err != nil {
-			t.Fatal(err)
-		}
+		linker := NewRepositoryLinker(context.Background(), db, &types.Repo{Name: "myrepo"}, "")
+		links := linker.Commit(commit)
 		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
