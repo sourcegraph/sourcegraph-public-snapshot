@@ -41,6 +41,7 @@ func TestAccessTokens(t *testing.T) {
 		t.Run("testAccessToken_Lookup_deletedUser", testAccessTokens_Lookup_deletedUser)
 		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
 		t.Run("testAccessTokens_GetOrCreateInternalToken", testAccessTokens_GetOrCreateInternalToken)
+		t.Run("testAccessTokens_Expiration", testAccessTokens_Expiration)
 	})
 
 	// Don't run parallel as it's mocking an expired license
@@ -280,6 +281,10 @@ func testAccessTokens_List(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "expired", subject1.ID, time.Now().Add(-1*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	{
 		// List all tokens.
@@ -406,7 +411,7 @@ func testAccessTokens_Lookup(t *testing.T) {
 	// frequency.
 	t.Run("last_used_at Updates", func(t *testing.T) {
 		// Create a new access token.
-		testTokenID, testTokenValue, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b", "c"}, "n0", creator.ID)
+		testTokenID, testTokenValue, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b", "c"}, "n0", creator.ID, time.Time{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -564,6 +569,62 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal("Create: want error creating token for deleted creator user")
 		}
 	})
+}
+
+// 🚨 SECURITY: This tests that tokens past the expiration time are invalid
+// This test is run in TestAccessTokens
+func testAccessTokens_Expiration(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	// Create the DB instance as well as a handle to the underlying implementation,
+	// so we can modify the table directly. We alias db because the local variable
+	// db will shadow the type without any way to disambiguate.
+	type dbType = db
+	db := NewDB(logger, dbtest.NewDB(t))
+	rawDB, ok := db.(*dbType)
+	if !ok {
+		t.Fatal("NewDB returns a DB handle that is using unexpected implementation.")
+	}
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u1@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create an access token that expires in the future
+	testTokenID, tv0, err := db.AccessTokens().Create(ctx, user.ID, []string{"a"}, "n0", user.ID, time.Now().Add(1*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure we can lookup the token
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err != nil {
+		t.Fatal("Lookup: no error expected")
+	}
+
+	// Update the expiration to a time in the past
+	updateQuery := sqlf.Sprintf(
+		`UPDATE access_tokens SET expires_at = %s WHERE id = %d`,
+		time.Now().Add(-1*time.Hour), testTokenID)
+	err = rawDB.Store.Exec(ctx, updateQuery)
+	if err != nil {
+		t.Fatalf("Updating test token's expiration to the past: %v", err)
+	}
+
+	// Ensure we can no longer lookup the token
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
+		t.Fatal("Lookup: want error looking up expired token")
+	}
+
 }
 
 // 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
