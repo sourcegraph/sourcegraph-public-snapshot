@@ -20,6 +20,9 @@ import (
 type RateLimit struct {
 	// AllowedModels is a set of models in Cody Gateway's model configuration
 	// format, "$PROVIDER/$MODEL_NAME".
+	//
+	// Virtual model names, like "fireworks/starcoder" should be expanded to the
+	// list of all possible real model names used by the Gateway.
 	AllowedModels []string `json:"allowedModels"`
 
 	Limit    int64         `json:"limit"`

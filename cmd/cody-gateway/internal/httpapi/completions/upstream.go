@@ -240,7 +240,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// the prefix yet when extracted - we need to add it back here. This
 			// full gatewayModel is also used in events tracking.
 			gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-			if allowed := intersection(allowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+			allowed := intersection(allowedModels, rateLimit.AllowedModels)
+			if !isAllowedModel(allowed, gatewayModel) {
 				response.JSONError(logger, w, http.StatusBadRequest,
 					errors.Newf("model %q is not allowed, allowed: [%s]",
 						gatewayModel, strings.Join(allowed, ", ")))
@@ -417,7 +418,13 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		if strings.EqualFold(m, model) {
 			return true
 		}
+
+		// Expand virtual model names
+		if m == "fireworks/starcoder" && (model == "fireworks/accounts/fireworks/models/starcoder-7b-w8a16" || model == "fireworks/accounts/fireworks/models/starcoder-16b-w8a16") {
+			return true
+		}
 	}
+
 	return false
 }
 
