@@ -1,4 +1,4 @@
-package shared
+package config
 
 import (
 	"net/url"
@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Config struct {
+type GatewayConfig struct {
 	env.BaseConfig
 
 	InsecureDev bool
@@ -27,26 +27,11 @@ type Config struct {
 		InternalMode bool
 	}
 
-	Anthropic struct {
-		AllowedModels          []string
-		AccessToken            string
-		MaxTokensToSample      int
-		AllowedPromptPatterns  []string
-		RequestBlockingEnabled bool
-	}
+	Anthropic AnthropicConfig
 
-	OpenAI struct {
-		AllowedModels []string
-		AccessToken   string
-		OrgID         string
-	}
+	OpenAI OpenAIConfig
 
-	Fireworks struct {
-		AllowedModels                      []string
-		AccessToken                        string
-		LogSelfServeCodeCompletionRequests bool
-		DisableSingleTenant                bool
-	}
+	Fireworks FireworksConfig
 
 	AllowedEmbeddingsModels []string
 
@@ -80,7 +65,28 @@ type OpenTelemetryConfig struct {
 	GCPProjectID string
 }
 
-func (c *Config) Load() {
+type AnthropicConfig struct {
+	AllowedModels          []string
+	AccessToken            string
+	MaxTokensToSample      int
+	AllowedPromptPatterns  []string
+	RequestBlockingEnabled bool
+}
+
+type FireworksConfig struct {
+	AllowedModels                      []string
+	AccessToken                        string
+	LogSelfServeCodeCompletionRequests bool
+	DisableSingleTenant                bool
+}
+
+type OpenAIConfig struct {
+	AllowedModels []string
+	AccessToken   string
+	OrgID         string
+}
+
+func (c *GatewayConfig) Load() {
 	c.InsecureDev = env.InsecureDev
 	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
 	// TODO: Eventually migrate to MSP standard (no prefix)

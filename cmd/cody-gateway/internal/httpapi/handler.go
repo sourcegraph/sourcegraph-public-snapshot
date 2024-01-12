@@ -7,6 +7,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -27,22 +28,13 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier                           notify.RateLimitNotifier
-	AnthropicAccessToken                        string
-	AnthropicAllowedModels                      []string
-	AnthropicAllowedPromptPatterns              []string
-	AnthropicRequestBlockingEnabled             bool
-	AnthropicMaxTokensToSample                  int
-	OpenAIAccessToken                           string
-	OpenAIOrgID                                 string
-	OpenAIAllowedModels                         []string
-	FireworksAccessToken                        string
-	FireworksDisableSingleTenant                bool
-	FireworksAllowedModels                      []string
-	FireworksLogSelfServeCodeCompletionRequests bool
-	EmbeddingsAllowedModels                     []string
-	AutoFlushStreamingResponses                 bool
-	EnableAttributionSearch                     bool
+	RateLimitNotifier           notify.RateLimitNotifier
+	Anthropic                   config.AnthropicConfig
+	OpenAI                      config.OpenAIConfig
+	Fireworks                   config.FireworksConfig
+	EmbeddingsAllowedModels     []string
+	AutoFlushStreamingResponses bool
+	EnableAttributionSearch     bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -75,19 +67,19 @@ func NewHandler(
 	// V1 service routes
 	v1router := r.PathPrefix("/v1").Subrouter()
 
-	if config.AnthropicAccessToken != "" {
+	if config.Anthropic.AccessToken != "" {
 		anthropicHandler, err := completions.NewAnthropicHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
 			httpClient,
-			config.AnthropicAccessToken,
-			config.AnthropicAllowedModels,
-			config.AnthropicMaxTokensToSample,
+			config.Anthropic.AccessToken,
+			config.Anthropic.AllowedModels,
+			config.Anthropic.MaxTokensToSample,
 			promptRecorder,
-			config.AnthropicAllowedPromptPatterns,
-			config.AnthropicRequestBlockingEnabled,
+			config.Anthropic.AllowedPromptPatterns,
+			config.Anthropic.RequestBlockingEnabled,
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
@@ -110,7 +102,7 @@ func NewHandler(
 			),
 		)
 	}
-	if config.OpenAIAccessToken != "" {
+	if config.OpenAI.AccessToken != "" {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.openai",
 				gaugeHandler(
@@ -125,9 +117,9 @@ func NewHandler(
 								rs,
 								config.RateLimitNotifier,
 								httpClient,
-								config.OpenAIAccessToken,
-								config.OpenAIOrgID,
-								config.OpenAIAllowedModels,
+								config.OpenAI.AccessToken,
+								config.OpenAI.OrgID,
+								config.OpenAI.AllowedModels,
 								config.AutoFlushStreamingResponses,
 							),
 						),
@@ -167,7 +159,7 @@ func NewHandler(
 								rs,
 								config.RateLimitNotifier,
 								embeddings.ModelFactoryMap{
-									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
+									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
 								},
 								config.EmbeddingsAllowedModels,
 							),
@@ -178,7 +170,7 @@ func NewHandler(
 			),
 		)
 	}
-	if config.FireworksAccessToken != "" {
+	if config.Fireworks.AccessToken != "" {
 		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.fireworks",
 				gaugeHandler(
@@ -193,10 +185,10 @@ func NewHandler(
 								rs,
 								config.RateLimitNotifier,
 								httpClient,
-								config.FireworksAccessToken,
-								config.FireworksAllowedModels,
-								config.FireworksLogSelfServeCodeCompletionRequests,
-								config.FireworksDisableSingleTenant,
+								config.Fireworks.AccessToken,
+								config.Fireworks.AllowedModels,
+								config.Fireworks.LogSelfServeCodeCompletionRequests,
+								config.Fireworks.DisableSingleTenant,
 								config.AutoFlushStreamingResponses,
 							),
 						),
