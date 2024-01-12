@@ -1269,7 +1269,7 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		LookupFunc: &AccessTokenStoreLookupFunc{
-			defaultHook: func(context.Context, string, string) (r0 int32, r1 error) {
+			defaultHook: func(context.Context, string, database.TokenLookupOpts) (r0 int32, r1 error) {
 				return
 			},
 		},
@@ -1341,7 +1341,7 @@ func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		LookupFunc: &AccessTokenStoreLookupFunc{
-			defaultHook: func(context.Context, string, string) (int32, error) {
+			defaultHook: func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 				panic("unexpected invocation of MockAccessTokenStore.Lookup")
 			},
 		},
@@ -2517,7 +2517,7 @@ func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 database
 // SetDefaultHook sets function that is called when the Lookup method of the
 // parent MockAccessTokenStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, string, string) (int32, error)) {
+func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, string, database.TokenLookupOpts) (int32, error)) {
 	f.defaultHook = hook
 }
 
@@ -2525,7 +2525,7 @@ func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, s
 // Lookup method of the parent MockAccessTokenStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string, string) (int32, error)) {
+func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string, database.TokenLookupOpts) (int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2534,14 +2534,14 @@ func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessTokenStoreLookupFunc) SetDefaultReturn(r0 int32, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string) (int32, error) {
+	f.SetDefaultHook(func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessTokenStoreLookupFunc) PushReturn(r0 int32, r1 error) {
-	f.PushHook(func(context.Context, string, string) (int32, error) {
+	f.PushHook(func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 		return r0, r1
 	})
 }
@@ -2587,7 +2587,7 @@ type AccessTokenStoreLookupFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2  database.TokenLookupOpts
+	Arg2 database.TokenLookupOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int32
