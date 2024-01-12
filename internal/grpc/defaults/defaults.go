@@ -19,17 +19,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
-
-	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
-	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
