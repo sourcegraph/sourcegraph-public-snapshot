@@ -184,7 +184,11 @@ func opsUpdateImages(
 			}
 
 			// custom regisry is in the format <host>/<org>, so host = parts[0], org = parts[1]
-			registry = images.NewGCR(parts[0], parts[1])
+			gcr := images.NewGCR(parts[0], parts[1])
+			if err := gcr.LoadToken(); err != nil {
+				return err
+			}
+			registry = gcr
 			std.Out.WriteNoticef("using custom gcr registry %q", registryType)
 		}
 
