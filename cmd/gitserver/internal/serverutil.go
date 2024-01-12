@@ -3,11 +3,8 @@ package internal
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"os"
-	"reflect"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -105,111 +102,6 @@ func (l *limitWriter) Write(p []byte) (int, error) {
 		n = origLen
 	}
 	return n, err
-}
-
-// flushingResponseWriter is a http.ResponseWriter that flushes all writes
-// to the underlying connection within a certain time period after Write is
-// called (instead of buffering them indefinitely).
-//
-// This lets, e.g., clients with a context deadline see as much partial response
-// body as possible.
-type flushingResponseWriter struct {
-	// mu ensures we don't concurrently call Flush and Write. It also protects
-	// state.
-	mu      sync.Mutex
-	w       http.ResponseWriter
-	flusher http.Flusher
-	closed  bool
-	doFlush bool
-}
-
-var logUnflushableResponseWriterOnce sync.Once
-
-// newFlushingResponseWriter creates a new flushing response writer. Callers
-// must call Close to free the resources created by the writer.
-//
-// If w does not support flushing, it returns nil.
-func newFlushingResponseWriter(logger log.Logger, w http.ResponseWriter) *flushingResponseWriter {
-	// We panic if we don't implement the needed interfaces.
-	flusher := hackilyGetHTTPFlusher(w)
-	if flusher == nil {
-		logUnflushableResponseWriterOnce.Do(func() {
-			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",
-				log.String("type", reflect.TypeOf(w).String()))
-		})
-		return nil
-	}
-
-	w.Header().Set("Transfer-Encoding", "chunked")
-
-	f := &flushingResponseWriter{w: w, flusher: flusher}
-	go f.periodicFlush()
-	return f
-}
-
-// hackilyGetHTTPFlusher attempts to get an http.Flusher from w. It (hackily) handles the case where w is a
-// nethttp.statusCodeTracker (which wraps http.ResponseWriter and does not implement http.Flusher). See
-// https://github.com/opentracing-contrib/go-stdlib/pull/11#discussion_r164295773 and
-// https://github.com/sourcegraph/sourcegraph/issues/9045.
-//
-// I (@sqs) wrote this hack instead of fixing it upstream immediately because seems to be some reluctance to merge
-// a fix (because it'd make the http.ResponseWriter falsely appear to implement many interfaces that it doesn't
-// actually implement, so it would break the correctness of Go type-assertion impl checks).
-func hackilyGetHTTPFlusher(w http.ResponseWriter) http.Flusher {
-	if f, ok := w.(http.Flusher); ok {
-		return f
-	}
-	if reflect.TypeOf(w).String() == "*nethttp.statusCodeTracker" {
-		v := reflect.ValueOf(w).Elem()
-		if v.Kind() == reflect.Struct {
-			if rwv := v.FieldByName("ResponseWriter"); rwv.IsValid() {
-				f, ok := rwv.Interface().(http.Flusher)
-				if ok {
-					return f
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// Header implements http.ResponseWriter.
-func (f *flushingResponseWriter) Header() http.Header { return f.w.Header() }
-
-// WriteHeader implements http.ResponseWriter.
-func (f *flushingResponseWriter) WriteHeader(code int) { f.w.WriteHeader(code) }
-
-// Write implements http.ResponseWriter.
-func (f *flushingResponseWriter) Write(p []byte) (int, error) {
-	f.mu.Lock()
-	n, err := f.w.Write(p)
-	if n > 0 {
-		f.doFlush = true
-	}
-	f.mu.Unlock()
-	return n, err
-}
-
-func (f *flushingResponseWriter) periodicFlush() {
-	for {
-		time.Sleep(100 * time.Millisecond)
-		f.mu.Lock()
-		if f.closed {
-			f.mu.Unlock()
-			break
-		}
-		if f.doFlush {
-			f.flusher.Flush()
-		}
-		f.mu.Unlock()
-	}
-}
-
-// Close signals to the flush goroutine to stop.
-func (f *flushingResponseWriter) Close() {
-	f.mu.Lock()
-	f.closed = true
-	f.mu.Unlock()
 }
 
 // mapToLoggerField translates a map to log context fields.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,13 +23,13 @@ import (
 type syncType int
 
 const (
-	SyncTypeRepo syncType = iota
-	SyncTypeUser
+	syncTypeRepo syncType = iota
+	syncTypeUser
 )
 
-func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *permsSyncerWorker {
+func makePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *permsSyncerWorker {
 	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo")
-	if syncType == SyncTypeUser {
+	if syncType == syncTypeUser {
 		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker")
 	}
 	return &permsSyncerWorker{
@@ -51,7 +52,7 @@ type permsSyncerWorker struct {
 // dequeue corresponding jobs from the table.
 func (h *permsSyncerWorker) PreDequeue(_ context.Context, _ log.Logger) (bool, any, error) {
 	query := "repository_id IS NOT NULL"
-	if h.syncType == SyncTypeUser {
+	if h.syncType == syncTypeUser {
 		query = "user_id IS NOT NULL"
 	}
 	return true, []*sqlf.Query{sqlf.Sprintf(query)}, nil
@@ -118,9 +119,9 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 	return err
 }
 
-func MakeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle, syncType syncType) dbworkerstore.Store[*database.PermissionSyncJob] {
+func makeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle, syncType syncType) dbworkerstore.Store[*database.PermissionSyncJob] {
 	name := "repo_permissions_sync_job_worker_store"
-	if syncType == SyncTypeUser {
+	if syncType == syncTypeUser {
 		name = "user_permissions_sync_job_worker_store"
 	}
 
@@ -139,12 +140,12 @@ func MakeStore(observationCtx *observation.Context, dbHandle basestore.Transacta
 	})
 }
 
-func MakeWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *PermsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, syncType, jobsStore)
+func makeWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer *permsSyncerImpl, syncType syncType, jobsStore database.PermissionSyncJobStore) *workerutil.Worker[*database.PermissionSyncJob] {
+	handler := makePermsSyncerWorker(observationCtx, permsSyncer, syncType, jobsStore)
 	// Number of handlers depends on a type of perms sync jobs this worker processes.
 	numHandlers := 1
 	name := "repo_permissions_sync_job_worker"
-	if syncType == SyncTypeUser {
+	if syncType == syncTypeUser {
 		name = "user_permissions_sync_job_worker"
 		numHandlers = syncUsersMaxConcurrency()
 	}
@@ -158,7 +159,7 @@ func MakeWorker(ctx context.Context, observationCtx *observation.Context, worker
 	})
 }
 
-func MakeResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob]) *dbworker.Resetter[*database.PermissionSyncJob] {
+func makeResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob]) *dbworker.Resetter[*database.PermissionSyncJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "permissions_sync_job_worker_resetter",
 		Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds

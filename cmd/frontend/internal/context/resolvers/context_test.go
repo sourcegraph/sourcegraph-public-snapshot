@@ -19,14 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -40,6 +41,7 @@ func TestContextResolver(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: &truePtr,
+			LicenseKey:  "asdf",
 			Embeddings: &schema.Embeddings{
 				Provider:    "sourcegraph",
 				Enabled:     &truePtr,
@@ -47,6 +49,18 @@ func TestContextResolver(t *testing.T) {
 			},
 		},
 	})
+
+	defer func() {
+		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
+	}()
+
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if feature == licensing.FeatureCody {
+			return nil
+		}
+		return errors.New("error")
+	}
+
 	// Create populates the IDs in the passed in types.Repo
 	err := db.Repos().Create(ctx, &repo1, &repo2)
 	require.NoError(t, err)
@@ -150,8 +164,6 @@ func TestContextResolver(t *testing.T) {
 	)
 
 	ctx = actor.WithActor(ctx, actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
-	ctx = featureflag.WithFlags(ctx, ffs)
 
 	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
 		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
