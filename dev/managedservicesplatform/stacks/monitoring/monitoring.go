@@ -452,6 +452,8 @@ func createExternalHealthcheckAlert(
 	})
 
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
 		Description: pointers.Stringf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
