@@ -16,7 +16,6 @@ import (
 // reached 100 MiB or Flush() is called. The object key combines a prefix with
 // the shard number, except for the first shard where the shard number is
 // excluded.
-
 func NewJSONWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchJSONWriter, error) {
 	blobUploader := &blobUploader{
 		ctx:    ctx,
