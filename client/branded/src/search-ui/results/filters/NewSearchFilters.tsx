@@ -1,11 +1,11 @@
 import { FC, useMemo } from 'react'
 
-import { FilterType, NegatedFilters, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
-import type { Filter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import {
     authorFilter,
@@ -22,29 +22,25 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
-import { useFilterQuery } from './hooks'
-import { COMMIT_DATE_FILTERS, DynamicClientFilter, SearchFilterType, SYMBOL_KIND_FILTERS } from './types'
-import { generateAuthorFilters } from './utils'
+import { useUrlFilters } from './hooks'
+import { SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
 interface NewSearchFiltersProps {
     query: string
-    results: SearchMatch[] | undefined
-    filters?: DynamicClientFilter[]
+    filters?: Filter[]
     onQueryChange: (nextQuery: string) => void
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
-    const { query, results, filters, onQueryChange } = props
-
-    const [filterQuery, setFilterQuery] = useFilterQuery()
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange }) => {
+    const [selectedFilters, setSelectedFilters] = useUrlFilters()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)
 
         if (tokens.type === 'success') {
-            const filters = tokens.term.filter(token => token.type === 'filter') as Filter[]
+            const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
             const typeFilters = filters.filter(filter => resolveFilter(filter.field.value)?.type === 'type')
 
             if (typeFilters.length === 0 || typeFilters.length > 1) {
@@ -56,8 +52,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
 
         return SearchFilterType.Code
     }, [query])
-
-    const authorFilters = useMemo(() => generateAuthorFilters(results ?? []), [results])
 
     const handleFilterTypeChange = (filterType: SearchFilterType): void => {
         switch (filterType) {
@@ -84,13 +78,11 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
             {type === SearchFilterType.Symbols && (
                 <SearchDynamicFilter
                     title="By symbol kind"
-                    filterType={FilterType.select}
-                    filters={SYMBOL_KIND_FILTERS}
-                    exclusive={true}
-                    staticFilters={true}
-                    filterQuery={filterQuery}
+                    filterKind="symbol type"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
                     renderItem={symbolFilter}
-                    onFilterQueryChange={setFilterQuery}
+                    onSelectedFilterChange={setSelectedFilters}
                 />
             )}
 
@@ -98,62 +90,57 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = props => {
                 <>
                     <SearchDynamicFilter
                         title="By author"
-                        filterType={FilterType.author}
-                        filters={authorFilters}
-                        exclusive={true}
-                        filterQuery={filterQuery}
+                        filterKind="author"
+                        filters={filters}
+                        selectedFilters={selectedFilters}
                         renderItem={authorFilter}
-                        onFilterQueryChange={setFilterQuery}
+                        onSelectedFilterChange={setSelectedFilters}
                     />
 
                     <SearchDynamicFilter
                         title="By commit date"
-                        filterType={[FilterType.after, FilterType.before]}
-                        filters={COMMIT_DATE_FILTERS}
-                        exclusive={true}
-                        staticFilters={true}
-                        filterQuery={filterQuery}
+                        filterKind="commit date"
+                        filters={filters}
+                        selectedFilters={selectedFilters}
                         renderItem={commitDateFilter}
-                        onFilterQueryChange={setFilterQuery}
+                        onSelectedFilterChange={setSelectedFilters}
                     />
                 </>
             )}
 
             <SearchDynamicFilter
                 title="By language"
-                filterType={FilterType.lang}
+                filterKind="lang"
                 filters={filters}
-                filterQuery={filterQuery}
+                selectedFilters={selectedFilters}
                 renderItem={languageFilter}
-                onFilterQueryChange={setFilterQuery}
+                onSelectedFilterChange={setSelectedFilters}
             />
 
             <SearchDynamicFilter
                 title="By repositories"
-                filterType={FilterType.repo}
+                filterKind="repo"
                 filters={filters}
-                filterQuery={filterQuery}
+                selectedFilters={selectedFilters}
                 renderItem={repoFilter}
-                onFilterQueryChange={setFilterQuery}
+                onSelectedFilterChange={setSelectedFilters}
             />
 
             <SearchDynamicFilter
                 title="By file"
-                filterType={FilterType.file}
-                filterAlias={NegatedFilters.file}
+                filterKind="file"
                 filters={filters}
-                filterQuery={filterQuery}
-                onFilterQueryChange={setFilterQuery}
+                selectedFilters={selectedFilters}
+                onSelectedFilterChange={setSelectedFilters}
             />
 
             <SearchDynamicFilter
                 title="Utility"
-                filterType="utility"
-                filterAlias={[FilterType.archived, FilterType.fork]}
+                filterKind="utility"
                 filters={filters}
-                filterQuery={filterQuery}
+                selectedFilters={selectedFilters}
                 renderItem={utilityFilter}
-                onFilterQueryChange={setFilterQuery}
+                onSelectedFilterChange={setSelectedFilters}
             />
 
             <FiltersDocFooter className={styles.footer} />

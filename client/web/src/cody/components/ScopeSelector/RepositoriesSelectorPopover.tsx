@@ -1,17 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 
-import {
-    mdiChevronUp,
-    mdiChevronDown,
-    mdiMinusCircleOutline,
-    mdiCheck,
-    mdiCloseCircle,
-    mdiDatabaseOutline,
-    mdiDatabaseCheckOutline,
-    mdiDatabaseClockOutline,
-    mdiDatabaseRefreshOutline,
-    mdiDatabaseRemoveOutline,
-} from '@mdi/js'
+import { mdiChevronUp, mdiChevronDown, mdiMinusCircleOutline, mdiCheck, mdiCloseCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
@@ -27,8 +16,6 @@ import {
     Card,
     Text,
     Input,
-    Tooltip,
-    Link,
     useDebounce,
     Position,
     Flipping,
@@ -47,17 +34,9 @@ import styles from './ScopeSelector.module.scss'
 export interface IRepo {
     id: string
     name: string
-    embeddingExists: boolean
     externalRepository: {
         serviceType: string
     }
-    embeddingJobs?: {
-        nodes: {
-            id: string
-            state: string
-            failureMessage: string | null
-        }[]
-    } | null
 }
 
 export const MAX_ADDITIONAL_REPOSITORIES = 10
@@ -124,12 +103,12 @@ export const RepositoriesSelectorPopover: React.FC<{
         if (searchTextDebounced) {
             /* eslint-disable no-console */
             searchRepositories({
-                variables: { query: searchTextDebounced, includeJobs: !!authenticatedUser?.siteAdmin },
+                variables: { query: searchTextDebounced },
                 pollInterval: 5000,
             }).catch(console.error)
             /* eslint-enable no-console */
         }
-    }, [searchTextDebounced, searchRepositories, authenticatedUser?.siteAdmin])
+    }, [searchTextDebounced, searchRepositories])
 
     const [isCalloutDismissed = true, setIsCalloutDismissed] = useTemporarySetting(
         'cody.contextCallout.dismissed',
@@ -180,9 +159,6 @@ export const RepositoriesSelectorPopover: React.FC<{
                         styles.repositoryNamesText
                     )}
                 >
-                    <div className="mr-1">
-                        <EmbeddingStatusIndicator repos={netRepositories} />
-                    </div>
                     <div className="text-truncate mr-1">
                         {netRepositories.length > 1 ? (
                             <>
@@ -266,10 +242,6 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                                 {getFileName(inferredFilePath)}
                                                             </span>
                                                         </div>
-                                                        <EmbeddingExistsIcon
-                                                            repo={inferredRepository}
-                                                            authenticatedUser={authenticatedUser}
-                                                        />
                                                     </button>
                                                 )}
                                                 <button
@@ -299,10 +271,6 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                             {getRepoName(inferredRepository.name)}
                                                         </span>
                                                     </div>
-                                                    <EmbeddingExistsIcon
-                                                        repo={inferredRepository}
-                                                        authenticatedUser={authenticatedUser}
-                                                    />
                                                 </button>
                                             </div>
                                         )}
@@ -474,7 +442,6 @@ const AdditionalRepositoriesListItem: React.FC<{
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 <span className="text-truncate">{getRepoName(repository.name)}</span>
             </div>
-            <EmbeddingExistsIcon repo={repository} authenticatedUser={authenticatedUser} />
         </button>
     )
 })
@@ -529,7 +496,6 @@ const SearchResultsListItem: React.FC<{
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 {getTintedText(getRepoName(repository.name), searchText)}
             </div>
-            <EmbeddingExistsIcon repo={repository} authenticatedUser={authenticatedUser} />
         </button>
     )
 })
@@ -567,212 +533,3 @@ export const getRepoName = (path: string): string => {
     const parts = path.split('/')
     return parts.slice(-2).join('/')
 }
-
-enum RepoEmbeddingStatus {
-    NOT_INDEXED = 'NOT_INDEXED',
-    QUEUED = 'QUEUED',
-    INDEXING = 'INDEXING',
-    INDEXED = 'INDEXED',
-    FAILED = 'FAILED',
-}
-
-const getEmbeddingStatus = ({
-    embeddingExists,
-    embeddingJobs,
-}: IRepo): { status: RepoEmbeddingStatus; tooltip: string; icon: string; className: string } => {
-    if (embeddingExists) {
-        return {
-            status: RepoEmbeddingStatus.INDEXED,
-            tooltip: 'Repository is indexed',
-            icon: mdiDatabaseCheckOutline,
-            className: 'text-success',
-        }
-    }
-
-    if (!embeddingJobs?.nodes.length) {
-        return {
-            status: RepoEmbeddingStatus.NOT_INDEXED,
-            tooltip: 'Repository is not indexed',
-            icon: mdiDatabaseRemoveOutline,
-            className: 'text-warning',
-        }
-    }
-
-    const job = embeddingJobs.nodes[0]
-    switch (job.state) {
-        case 'QUEUED': {
-            return {
-                status: RepoEmbeddingStatus.QUEUED,
-                tooltip: 'Repository is queued for indexing',
-                icon: mdiDatabaseClockOutline,
-                className: 'text-warning',
-            }
-        }
-        case 'PROCESSING': {
-            return {
-                status: RepoEmbeddingStatus.INDEXING,
-                tooltip: 'Repository is being indexed',
-                icon: mdiDatabaseRefreshOutline,
-                className: 'text-warning',
-            }
-        }
-        case 'COMPLETED': {
-            return {
-                status: RepoEmbeddingStatus.INDEXED,
-                tooltip: 'Repository is indexed',
-                icon: mdiDatabaseCheckOutline,
-                className: 'text-success',
-            }
-        }
-        case 'ERRORED': {
-            return {
-                status: RepoEmbeddingStatus.FAILED,
-                tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
-                icon: mdiDatabaseRemoveOutline,
-                className: 'text-danger',
-            }
-        }
-        case 'FAILED': {
-            return {
-                status: RepoEmbeddingStatus.FAILED,
-                tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
-                icon: mdiDatabaseRemoveOutline,
-                className: 'text-danger',
-            }
-        }
-        default: {
-            return {
-                status: RepoEmbeddingStatus.NOT_INDEXED,
-                tooltip: 'Repository is not indexed',
-                icon: mdiDatabaseRemoveOutline,
-                className: 'text-warning',
-            }
-        }
-    }
-}
-
-export const isRepoIndexed = (repo: IRepo): boolean => getEmbeddingStatus(repo).status === RepoEmbeddingStatus.INDEXED
-
-const EmbeddingExistsIcon: React.FC<{
-    repo: IRepo
-    authenticatedUser: AuthenticatedUser | null
-}> = React.memo(function EmbeddingExistsIconContent({ repo, authenticatedUser }) {
-    const { tooltip, icon, className } = getEmbeddingStatus(repo)
-
-    return (
-        <Tooltip content={tooltip}>
-            {authenticatedUser?.siteAdmin ? (
-                <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
-                    <Icon aria-hidden={true} className={classNames(styles.icon, className)} svgPath={icon} />
-                </Link>
-            ) : (
-                <Icon aria-hidden={true} className={classNames(styles.icon, className)} svgPath={icon} />
-            )}
-        </Tooltip>
-    )
-})
-
-const EmbeddingStatusIndicator: React.FC<{ repos: IRepo[] }> = React.memo(function EmbeddingsStatusIndicatorContent({
-    repos,
-}) {
-    const repoStatusCounts = useMemo(
-        () =>
-            repos.reduce(
-                (statuses, repo) => {
-                    const { status } = getEmbeddingStatus(repo)
-                    statuses[status] = statuses[status] + 1
-                    return statuses
-                },
-                {
-                    [RepoEmbeddingStatus.NOT_INDEXED]: 0,
-                    [RepoEmbeddingStatus.INDEXING]: 0,
-                    [RepoEmbeddingStatus.INDEXED]: 0,
-                    [RepoEmbeddingStatus.QUEUED]: 0,
-                    [RepoEmbeddingStatus.FAILED]: 0,
-                } as Record<RepoEmbeddingStatus, number>
-            ),
-        [repos]
-    )
-
-    if (!repos.length) {
-        return (
-            <Icon
-                aria-label="Database icon"
-                className={classNames('align-center text-muted', styles.icon)}
-                svgPath={mdiDatabaseOutline}
-            />
-        )
-    }
-
-    if (repos.length === 1) {
-        const { tooltip, icon, className } = getEmbeddingStatus(repos[0])
-
-        return (
-            <Tooltip content={tooltip}>
-                <Icon
-                    aria-label="Database icon"
-                    className={classNames('align-center', styles.icon, className)}
-                    svgPath={icon}
-                />
-            </Tooltip>
-        )
-    }
-
-    if (repoStatusCounts[RepoEmbeddingStatus.FAILED]) {
-        return (
-            <Tooltip content="Indexing failed for some repositories">
-                <Icon
-                    aria-label="Database icon"
-                    className={classNames('align-center text-danger', styles.icon)}
-                    svgPath={mdiDatabaseRemoveOutline}
-                />
-            </Tooltip>
-        )
-    }
-
-    if (repoStatusCounts[RepoEmbeddingStatus.INDEXING]) {
-        return (
-            <Tooltip content="Some repositories are being indexed">
-                <Icon
-                    aria-label="Database icon"
-                    className={classNames('align-center text-warning', styles.icon)}
-                    svgPath={mdiDatabaseRefreshOutline}
-                />
-            </Tooltip>
-        )
-    }
-
-    if (repoStatusCounts[RepoEmbeddingStatus.QUEUED]) {
-        return (
-            <Tooltip content="Some repositories are queued for indexing">
-                <Icon
-                    aria-label="Database icon"
-                    className={classNames('align-center text-warning', styles.icon)}
-                    svgPath={mdiDatabaseClockOutline}
-                />
-            </Tooltip>
-        )
-    }
-
-    if (repoStatusCounts[RepoEmbeddingStatus.NOT_INDEXED]) {
-        return (
-            <Tooltip content="Some repositories are not indexed">
-                <Icon
-                    aria-label="Database icon"
-                    className={classNames('align-center text-warning', styles.icon)}
-                    svgPath={mdiDatabaseRemoveOutline}
-                />
-            </Tooltip>
-        )
-    }
-
-    return (
-        <Tooltip content="All repositories are indexed">
-            <Icon
-                aria-label="Database icon with a check mark"
-                className={classNames('align-center text-success', styles.icon)}
-                svgPath={mdiDatabaseCheckOutline}
-            />
-        </Tooltip>
-    )
-})

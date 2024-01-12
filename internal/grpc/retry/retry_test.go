@@ -235,6 +235,97 @@ func (s *RetrySuite) TestUnary_SucceedsOnRetriableError() {
 	require.EqualValues(s.T(), 3, s.srv.requestCount(), "three requests should have been made")
 }
 
+func (s *RetrySuite) TestParallel_NoRace() {
+	// These tests are meant to catch race conditions,
+	// such as the issue in https://github.com/sourcegraph/sourcegraph/pull/59487
+
+	s.Run("Unary", func() {
+
+		s.Run("no call options", func() {
+			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
+
+			var wg sync.WaitGroup
+			for i := 0; i < 2; i++ {
+				wg.Add(1)
+
+				go func() {
+					defer wg.Done()
+
+					out, err := s.Client.Ping(context.Background(), testpb.GoodPing)
+					require.NoError(s.T(), err, "one of these invocations should succeed")
+					require.NotNil(s.T(), out, "Pong must be not nil")
+				}()
+			}
+
+			wg.Wait()
+			require.EqualValues(s.T(), 4, s.srv.requestCount(), "4 requests should have been in total (2 per worker)")
+		})
+
+		s.Run("some call options", func() {
+			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
+
+			var wg sync.WaitGroup
+			for i := 0; i < 2; i++ {
+				wg.Add(1)
+
+				go func() {
+					defer wg.Done()
+
+					out, err := s.Client.Ping(context.Background(), testpb.GoodPing, WithMax(99))
+					require.NoError(s.T(), err, "one of these invocations should succeed")
+					require.NotNil(s.T(), out, "Pong must be not nil")
+				}()
+			}
+
+			wg.Wait()
+			require.EqualValues(s.T(), 4, s.srv.requestCount(), "4 requests should have been in total (2 per worker)")
+		})
+	})
+
+	s.Run("streaming", func() {
+
+		s.Run("no call options", func() {
+			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
+
+			var wg sync.WaitGroup
+			for i := 0; i < 2; i++ {
+				wg.Add(1)
+
+				go func() {
+					defer wg.Done()
+
+					stream, err := s.Client.PingList(context.Background(), testpb.GoodPingList)
+					require.NoError(s.T(), err, "one of these invocations should succeed")
+					s.assertPingListWasCorrect(stream)
+				}()
+			}
+
+			wg.Wait()
+			require.EqualValues(s.T(), 4, s.srv.requestCount(), "4 requests should have been in total (2 per worker)")
+		})
+
+		s.Run("some call options", func() {
+			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(2), codes.DataLoss, noSleep) // fail every other request
+
+			var wg sync.WaitGroup
+			for i := 0; i < 2; i++ {
+				wg.Add(1)
+
+				go func() {
+					defer wg.Done()
+
+					stream, err := s.Client.PingList(context.Background(), testpb.GoodPingList, WithMax(99))
+					require.NoError(s.T(), err, "one of these invocations should succeed")
+					s.assertPingListWasCorrect(stream)
+				}()
+			}
+
+			wg.Wait()
+			require.EqualValues(s.T(), 4, s.srv.requestCount(), "4 requests should have been in total (2 per worker)")
+		})
+	})
+}
+
 func (s *RetrySuite) TestUnary_OverrideFromDialOpts() {
 	s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(5), codes.ResourceExhausted, noSleep) // default is 3 and retriable_errors
 	out, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing, WithCodes(codes.ResourceExhausted), WithMax(5))
@@ -436,6 +527,7 @@ func TestChainedRetrySuite(t *testing.T) {
 			},
 		},
 	}
+
 	suite.Run(t, s)
 }
 

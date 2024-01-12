@@ -42,6 +42,7 @@ go_test(
     srcs = [
         "anthropic_test.go",
         "fireworks_test.go",
+        "openai_test.go",
     ],
     embed = [":completions"],
     deps = [

@@ -1,6 +1,6 @@
 import { resolvePath } from '@sveltejs/kit'
 
-import type { ResolvedRevision } from '$lib/repo/api/repo'
+import type { ResolvedRevision } from '../../routes/[...repo=reporev]/+layout'
 
 const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
 

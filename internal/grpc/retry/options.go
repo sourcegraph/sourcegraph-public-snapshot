@@ -116,10 +116,7 @@ type CallOption struct {
 	applyFunc            func(opt *options)
 }
 
-func reuseOrNewWithCallOptions(opt *options, callOptions []CallOption) *options {
-	if len(callOptions) == 0 {
-		return opt
-	}
+func newWithCallOptions(opt *options, callOptions []CallOption) *options {
 	optCopy := &options{}
 	*optCopy = *opt
 	for _, f := range callOptions {

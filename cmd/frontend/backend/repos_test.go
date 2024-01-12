@@ -155,16 +155,16 @@ func TestReposGetInventory(t *testing.T) {
 	ctx := testContext()
 
 	const (
-		wantRepo     = "a"
+		wantRepoName = "a"
 		wantCommitID = "cccccccccccccccccccccccccccccccccccccccc"
 		wantRootOID  = "oid-root"
 	)
 	gitserverClient := gitserver.NewMockClient()
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+		if args.Repo != wantRepoName {
+			t.Errorf("got %q, want %q", args.Repo, wantRepoName)
 		}
-		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
+		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepoName}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
@@ -239,7 +239,7 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
 			defer func() { useEnhancedLanguageDetection = orig }() // reset
 
-			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, false)
+			inv, err := s.GetInventory(ctx, wantRepoName, wantCommitID, false)
 			if err != nil {
 				t.Fatal(err)
 			}

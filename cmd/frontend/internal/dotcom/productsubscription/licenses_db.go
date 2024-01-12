@@ -99,8 +99,15 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		arg := struct {
+			SubscriptionID string    `json:"subscriptionID"`
+			NewUUID        uuid.UUID `json:"newUUID"`
+		}{
+			SubscriptionID: subscriptionID,
+			NewUUID:        newUUID,
+		}
 		// Log an event when a license is created in DotCom
-		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+		if err := s.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameDotComLicenseCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
 			logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -141,7 +148,7 @@ A new license was created by *%s* for subscription <https://sourcegraph.com/site
 • *User count*: %s
 • *License tags*: %s
 • *Salesforce subscription ID*: %s
-• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s|%s>
+• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s/view|%s>
 
 Reply with a :approved_stamp: when this is approved
 Reply with a :white_check_mark: when this has been sent to the customer

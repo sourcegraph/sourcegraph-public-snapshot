@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -132,17 +133,22 @@ func bazelPrechecks() func(*bk.Pipeline) {
 		bk.Key("bazel-prechecks"),
 		bk.SoftFail(100),
 		bk.Agent("queue", "bazel"),
-		bk.ArtifactPaths("./bazel-configure.diff"),
+		bk.ArtifactPaths("./bazel-configure.diff", "./sg"),
 		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
 				Type:         bk.AnnotationTypeError,
 				IncludeNames: false,
 			},
 		}),
+		// We want to build sg on a bazel agent, but without the overhead
+		// of its own pipeline step. After pre-checks have passed seems
+		// the most natural, as we then know that the bazel files are
+		// up-to-date for building sg.
+		bk.Cmd("dev/ci/bazel-build-sg.sh"),
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Perform bazel prechecks",
+		pipeline.AddStep(":bazel: Bazel prechecks & build `sg`",
 			cmds...,
 		)
 	}

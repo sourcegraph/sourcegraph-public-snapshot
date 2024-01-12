@@ -1,0 +1,18 @@
+query GitBranchesQuery($repo: ID!, $first: Int!, $withBehindAhead: Boolean!, $revspec: String = "") {
+    node(id: $repo) {
+        id
+        ... on Repository {
+            branches(first: $first, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                ...GitBranchesConnection
+            }
+        }
+    }
+}
+
+fragment GitBranchesConnection on GitRefConnection {
+    nodes {
+        id
+        ...GitReference_Ref
+    }
+    totalCount
+}

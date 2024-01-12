@@ -9,6 +9,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -142,14 +145,15 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				return ss
 			}),
 			Action: func(c *cli.Context) error {
+				if c.Args().Len() != 2 {
+					return errors.Newf("exactly 2 arguments required, '<service ID>' and '<env ID>' - " +
+						" this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
+				}
 				svc, err := useServiceArgument(c)
 				if err != nil {
 					return err
 				}
-				envID := c.Args().Get(1)
-				if envID == "" {
-					return errors.New("second argument <environment ID> is required")
-				}
+				envID := c.Args().Get(1) // we already validate 2 arguments
 				if existing := svc.GetEnvironment(envID); existing != nil {
 					return errors.Newf("environment %q already exists", envID)
 				}
@@ -211,18 +215,12 @@ sg msp generate -all <service>
 					Usage: "Disable updating of any values that are evaluated at generation time",
 					Value: false,
 				},
-				&cli.BoolFlag{
-					Name:  "tfc",
-					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
-					Value: true,
-				},
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
 					generateAll    = c.Bool("all")
 					stableGenerate = c.Bool("stable")
-					useTFC         = c.Bool("tfc")
 				)
 
 				if stableGenerate {
@@ -241,7 +239,6 @@ sg msp generate -all <service>
 					return generateTerraform(serviceID, generateTerraformOptions{
 						targetEnv:      targetEnv,
 						stableGenerate: stableGenerate,
-						useTFC:         useTFC,
 					})
 				}
 
@@ -256,7 +253,6 @@ sg msp generate -all <service>
 				for _, serviceID := range serviceIDs {
 					if err := generateTerraform(serviceID, generateTerraformOptions{
 						stableGenerate: stableGenerate,
-						useTFC:         useTFC,
 					}); err != nil {
 						return errors.Wrap(err, serviceID)
 					}
@@ -265,9 +261,10 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:   "operations",
-			Usage:  "Generate operational reference for a service",
-			Before: msprepo.UseManagedServicesRepo,
+			Name:    "operations",
+			Aliases: []string{"ops"},
+			Usage:   "Generate operational reference for a service",
+			Before:  msprepo.UseManagedServicesRepo,
 			BashComplete: completions.CompleteArgs(func() (options []string) {
 				ss, _ := msprepo.ListServices()
 				return ss
@@ -276,7 +273,7 @@ sg msp generate -all <service>
 				&cli.BoolFlag{
 					Name:  "pretty",
 					Usage: "Render syntax-highlighed Markdown",
-					Value: false,
+					Value: true,
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -284,8 +281,14 @@ sg msp generate -all <service>
 				if err != nil {
 					return err
 				}
+
+				repoRev, err := msprepo.GitRevision(c.Context)
+				if err != nil {
+					return errors.Wrap(err, "msprepo.GitRevision")
+				}
+
 				doc, err := operationdocs.Render(*svc, operationdocs.Options{
-					GenerateCommand: strings.Join(os.Args, " "),
+					ManagedServicesRevision: repoRev,
 				})
 				if err != nil {
 					return errors.Wrap(err, "operationdocs.Render")
@@ -295,6 +298,96 @@ sg msp generate -all <service>
 				}
 				std.Out.Write(doc)
 				return nil
+			},
+			Subcommands: []*cli.Command{
+				{
+					Name:   "generate-handbook-pages",
+					Usage:  "Generate operations handbook pages for all services",
+					Hidden: true, // not meant for day-to-day use
+					Description: `By default, we expect the 'sourcegraph/handbook' repository to be checked out adjacent to the 'sourcegraph/managed-services' repository, i.e.:
+	/
+	├─ managed-services/ <-- current directory
+	├─ handbook/         <-- github.com/sourcegraph/handbook
+
+The '-handbook-path' flag can also be used to specify where sourcegraph/handbook is cloned.`,
+					Before: msprepo.UseManagedServicesRepo,
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:  "handbook-path",
+							Usage: "Path to the directory in which sourcegraph/handbook is cloned",
+							Value: "../handbook",
+							Action: func(_ *cli.Context, v string) error {
+								// 'Required: true' will error out even if a default
+								// value is set, so do our own validation here.
+								if v == "" {
+									return errors.New("cannot be empty")
+								}
+								return nil
+							},
+						},
+					},
+					Action: func(c *cli.Context) error {
+						handbookPath := c.String("handbook-path")
+						if err := isHandbookRepo(handbookPath); err != nil {
+							return errors.Wrapf(err, "expecting github.com/sourcegraph/handbook at %q", handbookPath)
+						}
+
+						services, err := msprepo.ListServices()
+						if err != nil {
+							return err
+						}
+
+						repoRev, err := msprepo.GitRevision(c.Context)
+						if err != nil {
+							return errors.Wrap(err, "msprepo.GitRevision")
+						}
+
+						opts := operationdocs.Options{
+							ManagedServicesRevision: repoRev,
+							GenerateCommand:         strings.Join(os.Args, " "),
+							Handbook:                true,
+						}
+
+						// Reset directory to ensure we don't have lingering references
+						{
+							dir := filepath.Join(handbookPath, operationdocs.HandbookDirectory)
+							_ = os.RemoveAll(dir)
+							_ = os.Mkdir(dir, os.ModePerm)
+							std.Out.Writef("Reset destination directory %q.", dir)
+						}
+
+						var serviceSpecs []*spec.Spec
+						for _, s := range services {
+							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
+							if err != nil {
+								return errors.Wrapf(err, "load service %q", s)
+							}
+							serviceSpecs = append(serviceSpecs, svc)
+							doc, err := operationdocs.Render(*svc, opts)
+							if err != nil {
+								return errors.Wrap(err, s)
+							}
+							pagePath := filepath.Join(handbookPath,
+								operationdocs.ServiceHandbookPath(s))
+							if err := os.WriteFile(pagePath, []byte(doc), 0o644); err != nil {
+								return errors.Wrap(err, s)
+							}
+							std.Out.WriteNoticef("[%s]\tWrote %q", s, pagePath)
+						}
+
+						indexDoc := operationdocs.RenderIndexPage(serviceSpecs, opts)
+						indexPath := filepath.Join(handbookPath,
+							operationdocs.IndexPathHandbookPath())
+						if err := os.WriteFile(indexPath, []byte(indexDoc), 0o644); err != nil {
+							return errors.Wrap(err, "index page")
+						}
+						std.Out.WriteNoticef("[index]\tWrote %q", indexPath)
+
+						std.Out.WriteSuccessf("All pages generated!")
+						std.Out.WriteSuggestionf("Make sure to commit the generated changes and open a pull request in github.com/sourcegraph/handbook.")
+						return nil
+					},
+				},
 			},
 		},
 		{
@@ -561,7 +654,7 @@ Supports completions on services and environments.`,
 								return errors.Newf("environment %q not found in service spec", targetEnv)
 							}
 
-							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, *env, *service.Monitoring); err != nil {
+							if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, *env); err != nil {
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
@@ -569,12 +662,65 @@ Supports completions on services and environments.`,
 								return errors.New("second argument environment ID is required without the '-all' flag")
 							}
 							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env, *service.Monitoring); err != nil {
+								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
 								}
 							}
 						}
 
+						return nil
+					},
+				},
+				{
+					Name:      "graph",
+					Usage:     "EXPERIMENTAL: Graph the core resources within a Terraform workspace",
+					ArgsUsage: "<service ID> <environment ID> <stack ID>",
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "dot",
+							Usage: "Dump dot graph configuration instead of rendering the image with 'dot'",
+						},
+					},
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(
+						func(cli.Args) (options []string) {
+							return managedservicesplatform.StackNames()
+						},
+					),
+					Action: func(c *cli.Context) error {
+						service, env, err := useServiceAndEnvironmentArguments(c)
+						if err != nil {
+							return err
+						}
+
+						stack := c.Args().Get(2)
+						if stack == "" {
+							return errors.New("third argument <stack ID> is required")
+						}
+
+						dotgraph, err := msprepo.TerraformGraph(c.Context, service.Service.ID, env.ID, stack)
+						if err != nil {
+							return err
+						}
+
+						if c.Bool("dot") {
+							std.Out.Write(dotgraph)
+							return nil
+						}
+
+						output := fmt.Sprintf("./%s-%s.%s.png", service.Service.ID, env.ID, stack)
+						f, err := os.OpenFile(output, os.O_RDWR|os.O_CREATE, 0o644)
+						if err != nil {
+							return errors.Wrapf(err, "open %q", output)
+						}
+						defer f.Close()
+						if err := run.Cmd(c.Context, "dot -Tpng").
+							Input(strings.NewReader(dotgraph + "\n")).
+							Environ(os.Environ()).
+							Run().
+							Stream(f); err != nil {
+							return err
+						}
+						std.Out.WriteSuccessf("Graph rendered in %q", output)
 						return nil
 					},
 				},

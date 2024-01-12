@@ -3,7 +3,7 @@
 
     import type { Commit } from './Commit.gql'
     import Icon from '$lib/Icon.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
+    import Avatar from '$lib/Avatar.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
@@ -31,13 +31,13 @@
 <div class="root">
     <div class="avatar">
         <Tooltip tooltip={authorAvatarTooltip}>
-            <UserAvatar user={author} />
+            <Avatar avatar={author} />
         </Tooltip>
     </div>
     {#if committer && committer.name !== author.name}
         <div class="avatar">
             <Tooltip tooltip="{committer.name} (committer)">
-                <UserAvatar user={committer} />
+                <Avatar avatar={committer} />
             </Tooltip>
         </div>
     {/if}
@@ -50,7 +50,7 @@
                 </button>
             {/if}
         </span>
-        <span>committed by <strong>{commit.author.person.name}</strong> <Timestamp date={commitDate} /></span>
+        <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
         {#if expanded}
             <pre>{commit.body}</pre>
         {/if}
