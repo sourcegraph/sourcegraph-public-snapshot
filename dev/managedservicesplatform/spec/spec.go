@@ -30,11 +30,23 @@ type Spec struct {
 }
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
-// and load any extraneous configuration.
+// and load any extraneous configuration. Callsites that return an error to the
+// user should wrap the error with the name of the service to avoid any confusion,
+// e.g.
+//
+//	s, err := spec.Open(serviceSpecPath)
+//	if err != nil {
+//		return errors.Wrapf(err, "load service %q", serviceID)
+//	}
+//
+// This is helpful because this function only accepts the spec path.
 func Open(specPath string) (*Spec, error) {
 	specData, err := os.ReadFile(specPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "ReadFile")
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errors.Wrap(err, "service does not exist")
+		}
+		return nil, errors.Wrap(err, "read service specification")
 	}
 	spec, err := parse(specData)
 	if err != nil {
