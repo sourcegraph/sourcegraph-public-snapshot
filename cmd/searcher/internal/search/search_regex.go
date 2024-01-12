@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"time"
-	"unicode/utf8"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
@@ -242,6 +241,10 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 	prevStart := 0
 	prevStartLine := 0
 
+	c := columnHelper{
+		data: buf,
+	}
+
 	for _, loc := range locs {
 		start, end := loc[0], loc[1]
 
@@ -262,12 +265,12 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 			Start: protocol.Location{
 				Offset: int32(start),
 				Line:   int32(startLine),
-				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
+				Column: int32(c.get(firstLineStart, start)),
 			},
 			End: protocol.Location{
 				Offset: int32(end),
 				Line:   int32(endLine),
-				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
+				Column: int32(c.get(lastLineStart, end)),
 			},
 		})
 
