@@ -71,7 +71,7 @@ export enum SearchFiltersPanelUIMode {
     Modal = 'modal',
 }
 
-export function useSearchFiltersPanelUIMode() {
+export function useSearchFiltersPanelUIMode(): SearchFiltersPanelUIMode {
     const { width } = useWindowSize()
 
     // Hardcoded media query value in order to switch between desktop and mobile
