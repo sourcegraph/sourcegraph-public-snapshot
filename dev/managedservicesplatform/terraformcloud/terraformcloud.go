@@ -89,6 +89,8 @@ type workspaceOptions struct {
 	GlobalRemoteState *bool
 
 	QueueAllRuns *bool
+
+	AllowDestroy bool
 }
 
 // AsCreate should be kept up to date with AsUpdate.
@@ -110,6 +112,8 @@ func (c workspaceOptions) AsCreate(tags []*tfe.Tag) tfe.WorkspaceCreateOptions {
 		GlobalRemoteState: c.GlobalRemoteState,
 
 		QueueAllRuns: c.QueueAllRuns,
+
+		AllowDestroyPlan: &c.AllowDestroy,
 	}
 }
 
@@ -131,6 +135,8 @@ func (c workspaceOptions) AsUpdate() tfe.WorkspaceUpdateOptions {
 		GlobalRemoteState: c.GlobalRemoteState,
 
 		QueueAllRuns: c.QueueAllRuns,
+
+		AllowDestroyPlan: &c.AllowDestroy,
 	}
 }
 
@@ -229,6 +235,8 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 
 			// Allow all stacks to reference each other.
 			GlobalRemoteState: pointers.Ptr(true),
+
+			AllowDestroy: pointers.DerefZero(env.AllowDestroys),
 		}
 		switch c.workspaceConfig.RunMode {
 		case WorkspaceRunModeVCS:

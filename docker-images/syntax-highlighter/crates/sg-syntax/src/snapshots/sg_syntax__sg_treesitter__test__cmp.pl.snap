@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 419
 expression: "snapshot_treesitter_syntax_and_symbols(&document, &contents)"
 ---
   #! /usr/bin/env perl
@@ -46,11 +45,11 @@ expression: "snapshot_treesitter_syntax_and_symbols(&document, &contents)"
 //        ^^^ Keyword
   
   $tot=0;
-//^^^^ Identifier definition local 1
+//^^^^ Identifier
 //    ^ IdentifierOperator
 //     ^ NumericLiteral
   $ret=1;
-//^^^^ Identifier definition local 2
+//^^^^ Identifier
 //    ^ IdentifierOperator
 //     ^ NumericLiteral
   for (;;)
@@ -93,14 +92,14 @@ expression: "snapshot_treesitter_syntax_and_symbols(&document, &contents)"
 //               ^ NumericLiteral
       {
           $ret=0;
-//        ^^^^ Identifier reference local 2
+//        ^^^^ Identifier
 //            ^ IdentifierOperator
 //             ^ NumericLiteral
           last;
 //        ^^^^ Keyword
       }
       $tot+=$n1;
-//    ^^^^ Identifier reference local 1
+//    ^^^^ Identifier
 //          ^^^ Identifier
   }
   
@@ -112,7 +111,7 @@ expression: "snapshot_treesitter_syntax_and_symbols(&document, &contents)"
 //      ^^^ Keyword
   if ($ret)
 //^^ Keyword
-//    ^^^^ Identifier reference local 2
+//    ^^^^ Identifier
   {
       printf STDERR "$ARGV[0] and $ARGV[1] are different\n";
 //                  ^ StringLiteral
@@ -173,15 +172,15 @@ expression: "snapshot_treesitter_syntax_and_symbols(&document, &contents)"
       $nm=$tot+$n1;
 //    ^^^ Identifier
 //       ^ IdentifierOperator
-//        ^^^^ Identifier reference local 1
+//        ^^^^ Identifier
 //             ^^^ Identifier
       $tot+=$i+1;
-//    ^^^^ Identifier reference local 1
+//    ^^^^ Identifier
 //          ^^ Identifier
 //             ^ NumericLiteral
       printf STDERR "diff at char $tot of $nm\n";
 //                  ^^^^^^^^^^^^^^ StringLiteral
-//                                ^^^^ Identifier reference local 1
+//                                ^^^^ Identifier
 //                                    ^^^^ StringLiteral
 //                                        ^^^ Identifier
 //                                           ^^ StringLiteral
@@ -189,5 +188,5 @@ expression: "snapshot_treesitter_syntax_and_symbols(&document, &contents)"
   }
   exit($ret);
 //^^^^ IdentifierBuiltin
-//     ^^^^ Identifier reference local 2
+//     ^^^^ Identifier
 

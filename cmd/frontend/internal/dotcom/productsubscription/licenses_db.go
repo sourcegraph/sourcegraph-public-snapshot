@@ -148,7 +148,7 @@ A new license was created by *%s* for subscription <https://sourcegraph.com/site
 • *User count*: %s
 • *License tags*: %s
 • *Salesforce subscription ID*: %s
-• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s|%s>
+• *Salesforce opportunity ID*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/%s/view|%s>
 
 Reply with a :approved_stamp: when this is approved
 Reply with a :white_check_mark: when this has been sent to the customer

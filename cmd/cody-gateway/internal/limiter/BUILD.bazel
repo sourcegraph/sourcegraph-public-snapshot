@@ -22,7 +22,10 @@ go_library(
 
 go_test(
     name = "limiter_test",
-    srcs = ["limiter_test.go"],
+    srcs = [
+        "limiter_test.go",
+        "store_test.go",
+    ],
     embed = [":limiter"],
     deps = [
         "@com_github_hexops_autogold_v2//:autogold",

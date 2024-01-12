@@ -9,6 +9,8 @@ go_library(
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/dotcom",
+        "//cmd/cody-gateway/internal/limiter",
+        "//cmd/cody-gateway/internal/notify",
         "//internal/accesstoken",
         "//internal/codygateway",
         "//internal/trace",
@@ -27,9 +29,16 @@ go_test(
     srcs = ["dotcomuser_test.go"],
     embed = [":dotcomuser"],
     deps = [
+        "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/dotcom",
+        "//cmd/cody-gateway/internal/limiter",
+        "//internal/accesstoken",
         "//internal/codygateway",
+        "//lib/errors",
         "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

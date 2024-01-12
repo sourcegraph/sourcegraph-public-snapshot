@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,6 +33,7 @@ type handler struct {
 	getQdrantInserter      func() (db.VectorInserter, error)
 	contextService         embed.ContextService
 	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
+	rankingService         *ranking.Service
 }
 
 var _ workerutil.Handler[*bgrepo.RepoEmbeddingJob] = &handler{}
@@ -161,7 +163,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		}
 	}
 
-	ranks, err := getDocumentRanks(ctx, string(repo.Name))
+	ranks, err := h.rankingService.GetDocumentRanks(ctx, repo.Name)
 	if err != nil {
 		return err
 	}
