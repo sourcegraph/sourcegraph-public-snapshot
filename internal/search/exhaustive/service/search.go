@@ -79,7 +79,6 @@ type SearchQuery interface {
 	Search(context.Context, types.RepositoryRevision, MatchWriter) error
 }
 
-// TODO (stefan): Should this be a io.Closer, too?
 type MatchWriter interface {
 	Write(match result.Match) error
 }

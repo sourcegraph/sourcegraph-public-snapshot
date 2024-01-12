@@ -3,18 +3,18 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
-// NewJSONWriter returns a MatchWriter that serializes matches to JSON and
-// writes them to the store. Files are rotated every 100MB. The key is the
-// prefix + shard number. The shard number is omitted for the first shard.
+// NewJSONWriter returns a MatchJSONWriter that serializes matches to a JSON
+// array and writes them to the store. Matches are uploaded as blobs with a max
+// size of 100MB. The object key is the prefix + shard number. For the first
+// shard, the shard number is omitted.
 func NewJSONWriter(ctx context.Context, store uploadstore.Store, prefix string) (*MatchJSONWriter, error) {
 	blobUploader := &blobUploader{
 		ctx:    ctx,
@@ -23,40 +23,22 @@ func NewJSONWriter(ctx context.Context, store uploadstore.Store, prefix string) 
 		shard:  1,
 	}
 
-	bufferedWriter := &bufferedWriter{
-		maxSizeBytes: 100_000_000, // 100MB
-		w:            blobUploader,
-	}
-
 	return &MatchJSONWriter{
-		w: bufferedWriter,
-	}, nil
+		w: http.NewJSONArrayBuf(1024*1024*100, blobUploader.write)}, nil
 }
 
 type MatchJSONWriter struct {
-	w io.WriteCloser
+	w *http.JSONArrayBuf
 }
 
 func (m MatchJSONWriter) Close() error {
-	return m.w.Close()
+	return m.w.Flush()
 }
 
 func (m MatchJSONWriter) Write(match result.Match) error {
 	eventMatch := search.FromMatch(match, nil, true) // chunk matches enabled
 
-	// TODO (stefan) check that this is how the Stream API does it.
-	b, err := json.Marshal(eventMatch)
-	if err != nil {
-		return err
-	}
-
-	_, err = m.w.Write(b)
-	if err != nil {
-		return err
-	}
-
-	_, err = m.w.Write([]byte("\n"))
-	return err
+	return m.w.Append(eventMatch)
 }
 
 type blobUploader struct {
@@ -66,48 +48,20 @@ type blobUploader struct {
 	shard  int
 }
 
-func (b *blobUploader) Write(p []byte) (int, error) {
+func (b *blobUploader) write(p []byte) error {
 	key := ""
 	if b.shard == 1 {
 		key = b.prefix
 	} else {
 		key = fmt.Sprintf("%s-%d", b.prefix, b.shard)
 	}
-	n64, err := b.store.Upload(b.ctx, key, bytes.NewBuffer(p))
+
+	_, err := b.store.Upload(b.ctx, key, bytes.NewBuffer(p))
 	if err != nil {
-		return int(n64), err
+		return err
 	}
 
 	b.shard += 1
 
-	return int(n64), nil
-}
-
-// bufferedWriter is a writer that will write to the underlying writer once the
-// total number of bytes written exceeds maxSizeBytes.
-type bufferedWriter struct {
-	maxSizeBytes int64
-	buf          bytes.Buffer
-	w            io.Writer
-}
-
-func (w *bufferedWriter) Close() error {
-	return w.flush()
-}
-
-func (w *bufferedWriter) flush() error {
-	_, err := w.w.Write(w.buf.Bytes())
-	w.buf.Reset()
-	return err
-}
-
-func (w *bufferedWriter) Write(b []byte) (int, error) {
-	if int64(w.buf.Len()) >= w.maxSizeBytes {
-		err := w.flush()
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return w.buf.Write(b)
+	return nil
 }
