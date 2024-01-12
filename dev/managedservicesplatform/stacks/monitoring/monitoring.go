@@ -348,6 +348,7 @@ func createCommonAlerts(
 			},
 		},
 	} {
+		config.ServiceEnvironmentSlug = fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID)
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = vars.Service.ID
 		config.ServiceKind = serviceKind
@@ -369,6 +370,8 @@ func createServiceAlerts(
 	// Only provision if MaxCount is specified above 5
 	if pointers.Deref(vars.MaxInstanceCount, 0) > 5 {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+			ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+
 			ID:          "instance_count",
 			Name:        "Container Instance Count",
 			Description: pointers.Ptr("There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count"),
@@ -484,6 +487,8 @@ func createJobAlerts(
 ) error {
 	// Alert whenever a Cloud Run Job fails
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+
 		ID:          "job_failures",
 		Name:        "Cloud Run Job Failures",
 		Description: pointers.Ptr("Failed executions of Cloud Run Job"),
@@ -517,6 +522,8 @@ func createResponseCodeMetrics(
 ) error {
 	for _, config := range vars.Monitoring.Alerts.ResponseCodeRatios {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+			ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+
 			ID:          config.ID,
 			ProjectID:   vars.ProjectID,
 			Name:        config.Name,
@@ -582,6 +589,7 @@ func createRedisAlerts(
 			},
 		},
 	} {
+		config.ServiceEnvironmentSlug = fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID)
 		config.ProjectID = vars.ProjectID
 		config.ServiceName = *vars.RedisInstanceID
 		config.ServiceKind = alertpolicy.CloudRedis

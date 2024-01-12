@@ -145,14 +145,15 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				return ss
 			}),
 			Action: func(c *cli.Context) error {
+				if c.Args().Len() != 2 {
+					return errors.Newf("exactly 2 arguments required, '<service ID>' and '<env ID>' - " +
+						" this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
+				}
 				svc, err := useServiceArgument(c)
 				if err != nil {
 					return err
 				}
-				envID := c.Args().Get(1)
-				if envID == "" {
-					return errors.New("second argument <environment ID> is required")
-				}
+				envID := c.Args().Get(1) // we already validate 2 arguments
 				if existing := svc.GetEnvironment(envID); existing != nil {
 					return errors.Newf("environment %q already exists", envID)
 				}
@@ -359,7 +360,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						for _, s := range services {
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
-								return err
+								return errors.Wrapf(err, "load service %q", s)
 							}
 							serviceSpecs = append(serviceSpecs, svc)
 							doc, err := operationdocs.Render(*svc, opts)
