@@ -5,35 +5,16 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
-
-// ServiceOpts configures Service.
-type ServiceOpts struct {
-	// SearchClient is used to find attribution on the local instance.
-	SearchClient client.SearchClient
-
-	// SourcegraphDotComClient is a graphql client that is queried if
-	// federating out to sourcegraph.com is enabled.
-	// TODO Remove dotcom client.
-	SourcegraphDotComClient dotcom.Client
-
-	// SourcegraphDotComFederate is true if this instance should also federate
-	// to sourcegraph.com.
-	SourcegraphDotComFederate bool
-}
 
 // Service is for the attribution service which searches for matches on
 // snippets of code.
 //
 // Use NewService to construct this value.
 type Service struct {
-	ServiceOpts
-
+	client     codygateway.Client
 	operations *operations
 }
 
@@ -41,10 +22,10 @@ type Service struct {
 //
 // Note: this registers metrics so should only be called once with the same
 // observationCtx.
-func NewService(observationCtx *observation.Context, opts ServiceOpts) *Service {
+func NewService(observationCtx *observation.Context, client codygateway.Client) *Service {
 	return &Service{
-		operations:  newOperations(observationCtx),
-		ServiceOpts: opts,
+		operations: newOperations(observationCtx),
+		client:     client,
 	}
 }
 
@@ -84,13 +65,7 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		},
 	})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
-	// TODO move codygateway client to ops
-	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
-	if !ok {
-		// TODO
-		return nil, nil
-	}
-	attribution, err := cgc.Attribution(ctx, snippet, limit)
+	attribution, err := c.client.Attribution(ctx, snippet, limit)
 	if err != nil {
 		return nil, err
 	}
