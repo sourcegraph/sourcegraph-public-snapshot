@@ -8,11 +8,4 @@ export const OwnershipAssignPermission: RbacPermission = 'OWNERSHIP#ASSIGN'
 
 export const RepoMetadataWritePermission: RbacPermission = 'REPO_METADATA#WRITE'
 
-export const CodyAccessPermission: RbacPermission = 'CODY#ACCESS'
-
-export type RbacPermission =
-    | 'BATCH_CHANGES#READ'
-    | 'BATCH_CHANGES#WRITE'
-    | 'OWNERSHIP#ASSIGN'
-    | 'REPO_METADATA#WRITE'
-    | 'CODY#ACCESS'
+export type RbacPermission = 'BATCH_CHANGES#READ' | 'BATCH_CHANGES#WRITE' | 'OWNERSHIP#ASSIGN' | 'REPO_METADATA#WRITE'

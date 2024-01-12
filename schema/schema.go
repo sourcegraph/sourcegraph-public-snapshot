@@ -2706,9 +2706,7 @@ type SiteConfiguration struct {
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
-	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://docs.sourcegraph.com/admin/access_control
-	CodyPermissions *bool `json:"cody.permissions,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
@@ -2970,7 +2968,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
 	delete(m, "cody.enabled")
-	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
 	delete(m, "completions")
 	delete(m, "configFeatures")

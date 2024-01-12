@@ -367,7 +367,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
 		CodyEnabled:               conf.CodyEnabled(),
-		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx, db),
+		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		ExecutorsEnabled:                               conf.ExecutorsEnabled(),

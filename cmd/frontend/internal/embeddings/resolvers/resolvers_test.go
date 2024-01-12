@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log/logtest"
@@ -14,14 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -42,27 +39,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.GetByIDsFunc.SetDefaultReturn([]*types.Repo{{ID: 1, Name: "repo1"}}, nil)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
-
-	type Perm struct {
-		namespace rtypes.PermissionNamespace
-		action    rtypes.NamespaceAction
-	}
-	defaultUserPerms := map[Perm]bool{
-		{rtypes.CodyNamespace, rtypes.CodyAccessAction}: true, // Cody access
-	}
-	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	})
-	mockDB.UsersFunc.SetDefaultReturn(users)
-	permissions := dbmocks.NewMockPermissionStore()
-	permissions.GetPermissionForUserFunc.SetDefaultHook(func(ctx context.Context, opt database.GetPermissionForUserOpts) (*types.Permission, error) {
-		if hasPermission, ok := defaultUserPerms[Perm{opt.Namespace, opt.Action}]; ok && hasPermission {
-			return &types.Permission{ID: 1, Namespace: opt.Namespace, Action: opt.Action, CreatedAt: time.Now()}, nil
-		}
-		return nil, nil
-	})
-	mockDB.PermissionsFunc.SetDefaultReturn(permissions)
 
 	mockGitserver := gitserver.NewMockClient()
 	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
