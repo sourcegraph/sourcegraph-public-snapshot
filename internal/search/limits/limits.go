@@ -10,7 +10,7 @@ import (
 
 const (
 	DefaultMaxSearchResults          = 30
-	DefaultMaxSearchResultsStreaming = 500
+	DefaultMaxSearchResultsStreaming = 1000
 
 	// The default timeout to use for queries.
 	DefaultTimeout = 20 * time.Second
