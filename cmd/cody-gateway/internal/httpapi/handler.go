@@ -74,12 +74,9 @@ func NewHandler(
 			rs,
 			config.RateLimitNotifier,
 			httpClient,
-			config.Anthropic.AccessToken,
-			config.Anthropic.AllowedModels,
-			config.Anthropic.MaxTokensToSample,
+			config.Anthropic,
 			promptRecorder,
-			config.Anthropic.AllowedPromptPatterns,
-			config.Anthropic.RequestBlockingEnabled,
+
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -103,12 +104,8 @@ func NewAnthropicHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	allowedModels []string,
-	maxTokensToSample int,
+	config config.AnthropicConfig,
 	promptRecorder PromptRecorder,
-	allowedPromptPatterns []string,
-	requestBlockingEnabled bool,
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
@@ -117,7 +114,7 @@ func NewAnthropicHandler(
 		return nil, err
 	}
 	promptRegexps := []*regexp.Regexp{}
-	for _, pattern := range allowedPromptPatterns {
+	for _, pattern := range config.AllowedPromptPatterns {
 		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
 	}
 	return makeUpstreamHandler[anthropicRequest](
@@ -128,8 +125,8 @@ func NewAnthropicHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicAPIURL },
-		allowedModels,
-		&AnthropicHandlerMethods{accessToken: accessToken, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, maxTokensToSample: maxTokensToSample, promptRecorder: promptRecorder, requestBlockingEnabled: requestBlockingEnabled},
+		config.AllowedModels,
+		&AnthropicHandlerMethods{accessToken: config.AccessToken, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, maxTokensToSample: config.MaxTokensToSample, promptRecorder: promptRecorder, requestBlockingEnabled: config.RequestBlockingEnabled},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
