@@ -47,6 +47,7 @@ var timeToFirstEventMetrics = metrics.NewREDMetrics(
 
 func newCompletionsHandler(
 	logger log.Logger,
+	db database.DB,
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
@@ -66,7 +67,7 @@ func newCompletionsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+		if isEnabled := cody.IsCodyEnabled(ctx, db); !isEnabled {
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
