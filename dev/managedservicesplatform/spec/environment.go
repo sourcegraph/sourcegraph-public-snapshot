@@ -324,7 +324,7 @@ func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
 	}
 
 	// https://cloud.google.com/run/docs/configuring/services/memory-limits
-	bytes, err := units.ParseStrictBytes(s.Memory)
+	bytes, err := units.ParseUnit(s.Memory, units.MakeUnitMap("i", "B", 1024))
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, "resources.memory is invalid"))
 	}

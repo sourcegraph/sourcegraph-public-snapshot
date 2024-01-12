@@ -91,10 +91,26 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 			wantErrors: nil,
 		},
 		{
+			name: "ok 1Gi",
+			spec: &EnvironmentInstancesResourcesSpec{
+				CPU:    1,
+				Memory: "1Gi",
+			},
+			wantErrors: nil,
+		},
+		{
+			name: "ok 512Mi",
+			spec: &EnvironmentInstancesResourcesSpec{
+				CPU:    1,
+				Memory: "512Mi",
+			},
+			wantErrors: nil,
+		},
+		{
 			name: "cpu, memory too low",
 			spec: &EnvironmentInstancesResourcesSpec{
 				CPU:    0,
-				Memory: "256MiB",
+				Memory: "256Mi",
 			},
 			wantErrors: autogold.Expect([]string{"resources.cpu must be >= 1", "resources.memory must be >= 512MiB"}),
 		},
@@ -102,7 +118,7 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 			name: "cpu, memory too high",
 			spec: &EnvironmentInstancesResourcesSpec{
 				CPU:    10,
-				Memory: "60GiB",
+				Memory: "60Gi",
 			},
 			wantErrors: autogold.Expect([]string{
 				"resources.cpu > 8 not supported - considering decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead",
@@ -113,7 +129,7 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 			name: "cpu too high for memory",
 			spec: &EnvironmentInstancesResourcesSpec{
 				CPU:    8,
-				Memory: "1GiB",
+				Memory: "1Gi",
 			},
 			wantErrors: autogold.Expect([]string{"resources.cpu > 6 requires resources.memory >= 4GiB"}),
 		},
@@ -121,9 +137,20 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 			name: "memory too high for cpu",
 			spec: &EnvironmentInstancesResourcesSpec{
 				CPU:    1,
-				Memory: "32GiB",
+				Memory: "32Gi",
 			},
 			wantErrors: autogold.Expect([]string{"resources.memory > 24GiB requires resources.cpu >= 8"}),
+		},
+		{
+			name: "invalid memory unit",
+			spec: &EnvironmentInstancesResourcesSpec{
+				CPU:    1,
+				Memory: "8GiB",
+			},
+			wantErrors: autogold.Expect([]string{
+				"resources.memory is invalid: units: unknown unit GiB in 8GiB",
+				"resources.memory must be >= 512MiB",
+			}),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
