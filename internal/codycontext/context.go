@@ -278,11 +278,11 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		patternTypeKeyword := "keyword"
+		patternType := "codyContext"
 		plan, err := c.searchClient.Plan(
 			ctx,
 			"V3",
-			&patternTypeKeyword,
+			&patternType,
 			query,
 			search.Precise,
 			search.Streaming,

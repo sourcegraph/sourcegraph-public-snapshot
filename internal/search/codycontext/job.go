@@ -1,4 +1,4 @@
-package keyword
+package codycontext
 
 import (
 	"context"
@@ -12,40 +12,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewKeywordSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
+func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
 	if len(plan) > 1 {
-		return nil, errors.New("The 'keyword' patterntype does not support multiple clauses")
+		return nil, errors.New("The 'codyContext' patterntype does not support multiple clauses")
 	}
 
-	keywordQuery, err := basicQueryToKeywordQuery(plan[0])
-	if err != nil || keywordQuery == nil {
+	q, err := transformBasicQuery(plan[0])
+	if err != nil || q == nil {
 		return nil, err
 	}
 
-	child, err := newJob(keywordQuery.query)
+	child, err := newJob(q.query)
 	if err != nil {
 		return nil, err
 	}
-	return &keywordSearchJob{child: child, patterns: keywordQuery.patterns}, nil
+	return &searchJob{child: child, patterns: q.patterns}, nil
 }
 
-type keywordSearchJob struct {
+type searchJob struct {
 	child    job.Job
 	patterns []string
 }
 
-func (j *keywordSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (j *searchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
 	return j.child.Run(ctx, clients, stream)
 }
 
-func (j *keywordSearchJob) Name() string {
+func (j *searchJob) Name() string {
 	return "KeywordSearchJob"
 }
 
-func (j *keywordSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *searchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
@@ -57,11 +57,11 @@ func (j *keywordSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue
 	return res
 }
 
-func (j *keywordSearchJob) Children() []job.Describer {
+func (j *searchJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *keywordSearchJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *searchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *j
 	cp.child = job.Map(j.child, fn)
 	return &cp
