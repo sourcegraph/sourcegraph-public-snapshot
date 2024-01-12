@@ -260,7 +260,7 @@ func (r *releaseRunner) PromoteFinalize(ctx context.Context) error {
 		return nil
 	}
 	announce2("finalize", "Running promote finalize steps for %s", r.version)
-	return r.runSteps(ctx, r.m.Internal.Finalize.Steps)
+	return r.runSteps(ctx, r.m.PromoteToPublic.Finalize.Steps)
 }
 
 func (r *releaseRunner) Test(ctx context.Context) error {
