@@ -48,7 +48,6 @@ go_library(
         "//internal/env",
         "//internal/observation",
         "//internal/oobmigration/migrations/register",
-        "//internal/ratelimit",
         "//internal/service",
         "//schema",
         "@com_github_sourcegraph_log//:log",

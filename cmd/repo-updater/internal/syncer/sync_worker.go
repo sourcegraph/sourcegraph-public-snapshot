@@ -1,4 +1,4 @@
-package repos
+package syncer
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -23,16 +24,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type SyncWorkerOptions struct {
+type syncWorkerOptions struct {
 	NumHandlers            int           // defaults to 3
 	WorkerInterval         time.Duration // defaults to 10s
 	CleanupOldJobs         bool          // run a background process to cleanup old jobs
 	CleanupOldJobsInterval time.Duration // defaults to 1h
 }
 
-// NewSyncWorker creates a new external service sync worker, resetter, and janitor
+// newSyncWorker creates a new external service sync worker, resetter, and janitor
 // to clean up old job records.
-func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob], goroutine.BackgroundRoutine) {
+func newSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts syncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob], goroutine.BackgroundRoutine) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -156,4 +157,25 @@ func (s *SyncJob) RecordID() int {
 
 func (s *SyncJob) RecordUID() string {
 	return strconv.Itoa(s.ID)
+}
+
+func scanJob(sc dbutil.Scanner) (*SyncJob, error) {
+	// required field for the sync worker, but
+	// the value is thrown out here
+	var executionLogs *[]any
+
+	var job SyncJob
+	return &job, sc.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&executionLogs,
+		&job.ExternalServiceID,
+		&job.NextSyncAt,
+	)
 }

@@ -25,11 +25,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
+	batchessyncer "github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -90,13 +91,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	mustRegisterMetrics(log.Scoped("MustRegisterMetrics"), db, envvar.SourcegraphDotComMode())
 
-	store := repos.NewStore(logger.Scoped("store"), db)
-	{
-		m := repos.NewStoreMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
-		store.SetMetrics(m)
-	}
-
 	sourcerLogger := logger.Scoped("repos.Sourcer")
 	cf := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
@@ -112,12 +106,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.WithDependenciesService(dependencies.NewService(observationCtx, db)),
 		repos.ObservedSource(sourcerLogger, sourceMetrics),
 	)
-	syncer := repos.NewSyncer(observationCtx, store, src)
+	repoSyncer := syncer.NewSyncer(observationCtx, db, src)
 	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
 	server := &repoupdater.Server{
 		Logger:    logger,
-		Store:     store,
-		Syncer:    syncer,
+		DB:        db,
+		Syncer:    repoSyncer,
 		Scheduler: updateScheduler,
 	}
 
@@ -130,18 +124,18 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	go globals.WatchExternalURL()
 	go watchAuthzProviders(ctx, db)
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
+	go watchSyncer(ctx, logger, repoSyncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	routines := []goroutine.BackgroundRoutine{
 		makeHTTPServer(logger, server),
-		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
-		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker"), store),
+		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, db),
+		phabricator.NewRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker")),
 		// Run git fetches scheduler
 		updateScheduler,
 	}
 
 	routines = append(routines,
-		syncer.Routines(ctx, store, repos.RunOptions{
+		repoSyncer.Routines(ctx, syncer.RunOptions{
 			EnqueueInterval: conf.RepoListUpdateInterval,
 			IsDotCom:        envvar.SourcegraphDotComMode(),
 			MinSyncInterval: conf.RepoListUpdateInterval,
@@ -325,9 +319,9 @@ func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.Ha
 func watchSyncer(
 	ctx context.Context,
 	logger log.Logger,
-	syncer *repos.Syncer,
+	syncer *syncer.Syncer,
 	sched *scheduler.UpdateScheduler,
-	changesetSyncer syncer.UnarchivedChangesetSyncRegistry,
+	changesetSyncer batchessyncer.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
 
@@ -357,7 +351,7 @@ func watchSyncer(
 // the uncloned repositories on gitserver and update the scheduler with the list.
 // It also ensures that if any of our indexable repos are missing from the cloned
 // list they will be added for cloning ASAP.
-func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *scheduler.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
+func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *scheduler.UpdateScheduler, db database.DB) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -366,15 +360,13 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 				return nil
 			}
 
-			baseRepoStore := database.ReposWith(logger, store)
-
 			if isSourcegraphDotCom {
 				// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 				// scheduler.
 				opts := database.ListSourcegraphDotComIndexableReposOptions{
 					CloneStatus: types.CloneStatusNotCloned,
 				}
-				indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
+				indexable, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, opts)
 				if err != nil {
 					return errors.Wrap(err, "listing indexable repos")
 				}
@@ -386,7 +378,7 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 			// of the queue.
 			managed := sched.ListRepoIDs()
 
-			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
+			uncloned, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
 			if err != nil {
 				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
 			}

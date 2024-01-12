@@ -10,12 +10,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater",
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/repo-updater/internal/syncer",
         "//internal/api",
         "//internal/batches/syncer",
         "//internal/database",
         "//internal/errcode",
         "//internal/metrics",
-        "//internal/repos",
         "//internal/repoupdater/protocol",
         "//internal/repoupdater/v1:repoupdater",
         "//internal/trace",
@@ -42,6 +42,7 @@ go_test(
     ],
     deps = [
         "//cmd/repo-updater/internal/scheduler",
+        "//cmd/repo-updater/internal/syncer",
         "//internal/api",
         "//internal/conf/reposource",
         "//internal/database",

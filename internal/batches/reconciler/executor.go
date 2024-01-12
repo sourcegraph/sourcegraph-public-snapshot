@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
 	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
@@ -23,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -711,7 +711,7 @@ func (e *executor) handleArchivedRepo(ctx context.Context) error {
 
 	return handleArchivedRepo(
 		ctx,
-		repos.NewStore(e.logger, e.tx.DatabaseDB()),
+		e.tx.DatabaseDB(),
 		repo,
 		e.ch,
 	)
@@ -719,14 +719,15 @@ func (e *executor) handleArchivedRepo(ctx context.Context) error {
 
 func handleArchivedRepo(
 	ctx context.Context,
-	store repos.Store,
+	db database.DB,
 	repo *types.Repo,
 	ch *btypes.Changeset,
 ) error {
 	// We need to mark the repo as archived so that the later check for whether
 	// the repo is still archived isn't confused.
 	repo.Archived = true
-	if _, err := store.UpdateRepo(ctx, repo); err != nil {
+	q := sqlf.Sprintf("UPDATE repo SET archived = true, updated_at = NOW() WHERE id = %s", repo.ID)
+	if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 		return errors.Wrapf(err, "updating archived status of repo %d", int(repo.ID))
 	}
 

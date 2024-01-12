@@ -3,8 +3,6 @@ package authz
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -12,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -38,17 +35,9 @@ func (j *permsSyncerJob) Routines(_ context.Context, observationCtx *observation
 		return nil, err
 	}
 
-	store := repos.NewStore(observationCtx.Logger.Scoped("store"), db)
-	{
-		m := repos.NewStoreMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
-		store.SetMetrics(m)
-	}
-
 	permsSyncer := newPermsSyncer(
 		observationCtx.Logger.Scoped("PermsSyncer"),
 		db,
-		store,
 		database.Perms(observationCtx.Logger, db, timeutil.Now),
 		timeutil.Now,
 	)

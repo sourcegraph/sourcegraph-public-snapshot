@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -111,8 +110,7 @@ func TestGitHubWebhooks(t *testing.T) {
 
 	ghWebhook := NewGitHubWebhook(logger)
 
-	reposStore := repos.NewStore(logger, db)
-	reposStore.CreateExternalServiceRepo(ctx, es, repo)
+	db.Repos().CreateExternalServiceRepo(ctx, es, repo)
 
 	wh, err := whStore.Create(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)

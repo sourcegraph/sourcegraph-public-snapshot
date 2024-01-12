@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -94,6 +95,29 @@ type RepoStore interface {
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
 	RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error)
+	// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo
+	// not in the given ids that is owned by the given external service. We run one
+	// query per repo rather than one batch query in order to reduce the chances of
+	// this whole operation blocking on locks other queries acquire when referencing
+	// external_service_repos or repo. Since the syncer runs periodically, it's
+	// better to fail to delete some repos and try to delete them again in the next
+	// run, than to have one failure prevent all deletes from happening.
+	DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error)
+
+	// DeleteExternalServiceRepo deletes a repo's association to an external service
+	// and the repo itself if there are no more associations to that repo by any
+	// other external service.
+	DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error)
+
+	// CreateExternalServiceRepo inserts a single repo and its association to an
+	// external service, respectively in the repo and "external_service_repos" table.
+	// The associated external service must already exist.
+	CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
+
+	// UpdateExternalServiceRepo updates a single repo and its association to an
+	// external service, respectively in the repo and external_service_repos table.
+	// The associated external service must already exist.
+	UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -1679,6 +1703,225 @@ func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string)
 	}
 
 	return s.GetByName(ctx, repoName)
+}
+
+func (s *repoStore) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
+	set := make(pq.Int64Array, 0, len(ids))
+	for id := range ids {
+		set = append(set, int64(id))
+	}
+
+	sort.Slice(set, func(a, b int) bool { return set[a] < set[b] })
+
+	var toDelete pq.Int64Array
+	if err = s.QueryRow(ctx, sqlf.Sprintf(listExternalServiceReposNotInQuery, svc.ID, set)).Scan(&toDelete); err != nil {
+		return nil, errors.Wrap(err, "failed to list external service repo ids")
+	}
+
+	var errs error
+	for _, id := range toDelete {
+		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
+			errs = errors.Append(errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+		} else {
+			deleted = append(deleted, api.RepoID(id))
+		}
+	}
+
+	return deleted, errs
+}
+
+const listExternalServiceReposNotInQuery = `
+SELECT array_agg(repo_id)
+FROM external_service_repos
+WHERE external_service_id = %s AND repo_id != ALL(%s)
+`
+
+func (s *repoStore) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
+	tx, err := s.Handle().Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "DeleteExternalServiceRepo")
+	}
+	defer func() { err = s.Done(err) }()
+
+	{
+		q := sqlf.Sprintf(deleteExternalServiceRepoQuery, svc.ID, id)
+		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return errors.Wrap(err, "failed to delete external service repo")
+		}
+	}
+
+	{
+		q := sqlf.Sprintf(deleteRepoIfOrphanQuery, id, id)
+		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return errors.Wrap(err, "failed to delete orphaned repo")
+		}
+	}
+
+	return nil
+}
+
+const deleteExternalServiceRepoQuery = `
+DELETE FROM external_service_repos
+WHERE external_service_id = %s AND repo_id = %s
+`
+
+const deleteRepoIfOrphanQuery = `
+UPDATE repo
+SET name = soft_deleted_repository_name(name), deleted_at = now()
+WHERE id = %s AND NOT EXISTS (
+	SELECT FROM external_service_repos
+	WHERE repo_id = %s LIMIT 1
+)
+`
+
+func (s *repoStore) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
+	metadata, err := json.Marshal(r.Metadata)
+	if err != nil {
+		return err
+	}
+
+	src := r.Sources[svc.URN()]
+	if src == nil {
+		return errors.Newf("CreateExternalServiceRepo: repo %q missing source info for external service", r.Name)
+	} else if src.CloneURL == "" {
+		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
+	}
+
+	tx, err := s.Handle().Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "CreateExternalServiceRepo")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	q := sqlf.Sprintf(createRepoQuery,
+		r.Name,
+		r.URI,
+		r.Description,
+		r.ExternalRepo.ServiceType,
+		r.ExternalRepo.ServiceID,
+		r.ExternalRepo.ID,
+		r.Archived,
+		r.Fork,
+		r.Stars,
+		r.Private,
+		metadata,
+	)
+
+	if err = tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&r.ID, &r.CreatedAt); err != nil {
+		return err
+	}
+
+	q = sqlf.Sprintf(upsertExternalServiceRepoQuery,
+		svc.ID,
+		r.ID,
+		src.CloneURL,
+	)
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
+}
+
+const createRepoQuery = `
+INSERT INTO repo (
+	name,
+	uri,
+	description,
+	external_service_type,
+	external_service_id,
+	external_id,
+	archived,
+	fork,
+	stars,
+	private,
+	metadata,
+	created_at
+)
+VALUES (%s, NULLIF(%s, ''), %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
+RETURNING id, created_at
+`
+
+const upsertExternalServiceRepoQuery = `
+INSERT INTO external_service_repos (
+	external_service_id,
+	repo_id,
+	clone_url
+)
+VALUES (%s, %s, %s)
+ON CONFLICT (external_service_id, repo_id)
+DO UPDATE SET
+	clone_url = excluded.clone_url
+WHERE
+	external_service_repos.clone_url != excluded.clone_url
+`
+
+const updateRepoQuery = `
+UPDATE repo
+SET
+	name                  = %s,
+	uri                   = NULLIF(%s, ''),
+	description           = %s,
+	external_service_type = %s,
+	external_service_id   = %s,
+	external_id           = %s,
+	archived              = %s,
+	fork                  = %s,
+	stars                 = %s,
+	private               = %s,
+	metadata              = %s,
+	updated_at            = now(),
+	deleted_at            = NULL
+WHERE id = %s
+RETURNING updated_at
+`
+
+func (s *repoStore) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
+	if r.ID == 0 {
+		return errors.New("empty repo id in update")
+	}
+
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return errors.Wrapf(err, "metadata marshalling failed")
+	}
+
+	q := sqlf.Sprintf(updateRepoQuery,
+		r.Name,
+		r.URI,
+		r.Description,
+		r.ExternalRepo.ServiceType,
+		r.ExternalRepo.ServiceID,
+		r.ExternalRepo.ID,
+		r.Archived,
+		r.Fork,
+		r.Stars,
+		r.Private,
+		metadata,
+		r.ID,
+	)
+
+	src := r.Sources[svc.URN()]
+	if src == nil || src.CloneURL == "" {
+		return errors.Newf("UpdateExternalServiceRepo: repo %q missing source info for external service", r.Name)
+	}
+
+	tx, err := s.Handle().Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "UpdateExternalServiceRepo")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err = tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&r.UpdatedAt); err != nil {
+		return err
+	}
+
+	q = sqlf.Sprintf(upsertExternalServiceRepoQuery,
+		svc.ID,
+		r.ID,
+		src.CloneURL,
+	)
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 func parsePattern(tr trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {

@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -139,9 +138,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	testDB := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	reposStore := repos.NewStore(logtest.Scoped(t), testDB)
-
-	err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+	err = testDB.ExternalServices().Upsert(ctx, &svc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +159,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		},
 	}
 
-	err = reposStore.RepoStore().Create(ctx, &repo)
+	err = testDB.Repos().Create(ctx, &repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +177,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	permsStore := database.Perms(logger, testDB, timeutil.Now)
-	syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+	syncer := newPermsSyncer(logger, testDB, permsStore, timeutil.Now)
 
 	// This integration tests performs a repository-centric permissions syncing against
 	// https://github.com, then check if permissions are correctly granted for the test
@@ -314,9 +311,7 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	testDB := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	reposStore := repos.NewStore(logtest.Scoped(t), testDB)
-
-	err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+	err = testDB.ExternalServices().Upsert(ctx, &svc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +342,7 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 			},
 		},
 	}
-	err = reposStore.RepoStore().Create(ctx, &repo)
+	err = testDB.Repos().Create(ctx, &repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +365,7 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	}
 
 	permsStore := database.Perms(logger, testDB, timeutil.Now)
-	syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+	syncer := newPermsSyncer(logger, testDB, permsStore, timeutil.Now)
 
 	assertGitHubUserPermissions(t, ctx, user.ID, uri.String(), syncer, permsStore, []int32{1})
 }
@@ -461,9 +456,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 
 		ctx := actor.WithInternalActor(context.Background())
 
-		reposStore := repos.NewStore(logtest.Scoped(t), testDB)
-
-		err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+		err = testDB.ExternalServices().Upsert(ctx, &svc)
 		require.NoError(t, err)
 
 		provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
@@ -476,7 +469,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{provider})
 		defer authz.SetProviders(true, nil)
 		for _, repo := range testRepos {
-			err = reposStore.RepoStore().Create(ctx, &repo)
+			err = testDB.Repos().Create(ctx, &repo)
 			require.NoError(t, err)
 		}
 
@@ -489,7 +482,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		require.NoError(t, err)
 
 		permsStore := database.Perms(logger, testDB, timeutil.Now)
-		syncer := newPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+		syncer := newPermsSyncer(logger, testDB, permsStore, timeutil.Now)
 
 		assertUserPermissions := func(t *testing.T, wantIDs []int32) {
 			t.Helper()

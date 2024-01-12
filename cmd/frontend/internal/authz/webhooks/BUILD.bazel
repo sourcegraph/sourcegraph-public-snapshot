@@ -36,7 +36,6 @@ go_test(
         "//internal/database/dbtest",
         "//internal/encryption/keyring",
         "//internal/extsvc",
-        "//internal/repos",
         "//internal/types",
         "//schema",
         "@com_github_google_go_github_v55//github",

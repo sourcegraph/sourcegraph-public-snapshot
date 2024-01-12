@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,8 +39,6 @@ type permsSyncerImpl struct {
 	logger log.Logger
 	// The generic database handle.
 	db database.DB
-	// The database interface for any repos and external services operations.
-	reposStore repos.Store
 	// The mockable function to return the current time.
 	clock func() time.Time
 
@@ -63,14 +60,12 @@ type permsSyncerImpl struct {
 func newPermsSyncer(
 	logger log.Logger,
 	db database.DB,
-	reposStore repos.Store,
 	permsStore database.PermsStore,
 	clock func() time.Time,
 ) *permsSyncerImpl {
 	return &permsSyncerImpl{
 		logger:     logger,
 		db:         db,
-		reposStore: reposStore,
 		permsStore: permsStore,
 		clock:      clock,
 	}
@@ -83,7 +78,7 @@ func (s *permsSyncerImpl) syncRepoPerms(ctx context.Context, repoID api.RepoID, 
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	repo, err := s.reposStore.RepoStore().Get(ctx, repoID)
+	repo, err := s.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return result, providerStates, nil
@@ -621,7 +616,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 		// are meaningless and no need to trigger a DB query.
 		if len(includeContainsSpecs) > 0 {
-			rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
+			rs, err := s.db.Repos().ListMinimalRepos(ctx,
 				database.ReposListOptions{
 					ExternalRepoIncludeContains: includeContainsSpecs,
 					ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -665,7 +660,7 @@ func (s *permsSyncerImpl) listPrivateRepoNamesBySpecs(ctx context.Context, repoS
 
 	repoNames := make([]types.MinimalRepo, 0, len(repoSpecs))
 	for nextCut > 0 {
-		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
+		rs, err := s.db.Repos().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepos: remaining[:nextCut],
 				OnlyPrivate:   true,

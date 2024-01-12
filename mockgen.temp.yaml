@@ -85,10 +85,6 @@
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
     - Client
-- filename: internal/repos/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/repos
-  interfaces:
-    - Store
 - filename: internal/search/client/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/search/client
   interfaces:

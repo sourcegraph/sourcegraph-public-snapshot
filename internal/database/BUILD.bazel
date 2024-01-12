@@ -248,6 +248,7 @@ go_test(
         "search_contexts_test.go",
         "security_event_logs_test.go",
         "settings_test.go",
+        "store_test.go",
         "sub_repo_perms_store_test.go",
         "survey_responses_test.go",
         "teams_test.go",

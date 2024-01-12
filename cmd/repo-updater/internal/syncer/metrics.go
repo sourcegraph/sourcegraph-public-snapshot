@@ -1,4 +1,4 @@
-package repos
+package syncer
 
 import (
 	"github.com/prometheus/client_golang/prometheus"

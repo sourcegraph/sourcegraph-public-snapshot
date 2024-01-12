@@ -273,13 +273,13 @@ func (e *externalServices) ExcludeRepoFromExternalServices(ctx context.Context, 
 	// Error during triggering a sync is omitted, because this should not prevent
 	// from excluding the repo. The repo stays excluded and the sync will come
 	// eventually.
-	s := internalrepos.NewStore(logger, e.db)
 	for _, externalService := range externalServices {
-		err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
+		err = e.db.ExternalServices().EnqueueSingleSyncJob(ctx, externalService.ID)
 		if err != nil {
 			logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
 		}
 	}
+
 	return nil
 }
 

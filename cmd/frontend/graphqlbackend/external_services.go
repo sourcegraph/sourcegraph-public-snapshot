@@ -97,8 +97,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		}
 	}
 	// Now, schedule the external service for syncing immediately.
-	s := repos.NewStore(r.logger, r.db)
-	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
+	err = r.db.ExternalServices().EnqueueSingleSyncJob(ctx, externalService.ID)
 	if err != nil {
 		// Not a fatal issue, it will be picked up by the scheduler again.
 		r.logger.Warn("Failed to trigger external service sync")
@@ -214,8 +213,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	}
 	// Now, schedule the external service for syncing immediately.
-	s := repos.NewStore(r.logger, r.db)
-	err = s.EnqueueSingleSyncJob(ctx, es.ID)
+	err = r.db.ExternalServices().EnqueueSingleSyncJob(ctx, es.ID)
 	if err != nil {
 		// Not a fatal issue, it will be picked up by the scheduler again.
 		r.logger.Warn("Failed to trigger external service sync")
@@ -527,8 +525,7 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	}
 
 	// Enqueue a sync job for the external service, if none exists yet.
-	rstore := repos.NewStore(r.logger, r.db)
-	if err := rstore.EnqueueSingleSyncJob(ctx, es.ID); err != nil {
+	if err := r.db.ExternalServices().EnqueueSingleSyncJob(ctx, es.ID); err != nil {
 		return nil, err
 	}
 

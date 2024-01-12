@@ -33,7 +33,6 @@ import (
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
@@ -56,15 +55,12 @@ func TestGitHubHandler(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := repos.NewStore(logger, db)
-	repoStore := store.RepoStore()
-	esStore := store.ExternalServiceStore()
 
 	repo := &types.Repo{
 		ID:   1,
 		Name: "ghe.sgdev.org/milton/test",
 	}
-	if err := repoStore.Create(ctx, repo); err != nil {
+	if err := db.Repos().Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -85,7 +81,7 @@ func TestGitHubHandler(t *testing.T) {
 		DisplayName: "TestService",
 		Config:      extsvc.NewUnencryptedConfig(string(config)),
 	}
-	if err := esStore.Upsert(ctx, svc); err != nil {
+	if err := db.ExternalServices().Upsert(ctx, svc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -100,7 +96,7 @@ func TestGitHubHandler(t *testing.T) {
 	gs := grpc.NewServer(defaults.ServerOptions(logger)...)
 	v1.RegisterRepoUpdaterServiceServer(gs, &mockGRPCServer{
 		f: func(req *v1.EnqueueRepoUpdateRequest) (*v1.EnqueueRepoUpdateResponse, error) {
-			repositories, err := repoStore.List(ctx, database.ReposListOptions{Names: []string{req.Repo}})
+			repositories, err := db.Repos().List(ctx, database.ReposListOptions{Names: []string{req.Repo}})
 			if err != nil {
 				return nil, status.Error(codes.NotFound, err.Error())
 			}
@@ -128,7 +124,7 @@ func TestGitHubHandler(t *testing.T) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
-		repositories, err := repoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+		repositories, err := db.Repos().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		}

@@ -394,10 +394,8 @@ func TestExternalService_ListNamespaces(t *testing.T) {
 
 			db := database.NewDB(logger, dbtest.NewDB(t))
 
-			var store internalrepos.Store
 			if tc.externalService != nil {
-				store = internalrepos.NewStore(logtest.Scoped(t), db)
-				if err := store.ExternalServiceStore().Upsert(ctx, tc.externalService); err != nil {
+				if err := db.ExternalServices().Upsert(ctx, tc.externalService); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -627,10 +625,8 @@ func TestExternalService_DiscoverRepos(t *testing.T) {
 
 			db := database.NewDB(logger, dbtest.NewDB(t))
 
-			var store internalrepos.Store
 			if tc.externalService != nil {
-				store = internalrepos.NewStore(logtest.Scoped(t), db)
-				if err := store.ExternalServiceStore().Upsert(ctx, tc.externalService); err != nil {
+				if err := db.ExternalServices().Upsert(ctx, tc.externalService); err != nil {
 					t.Fatal(err)
 				}
 			}

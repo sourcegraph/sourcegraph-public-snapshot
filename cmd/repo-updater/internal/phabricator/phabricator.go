@@ -33,7 +33,7 @@ var (
 )
 
 // NewRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph.
-func NewRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Logger, s repos.Store) goroutine.BackgroundRoutine {
+func NewRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Logger) goroutine.BackgroundRoutine {
 	cf := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(logger),
 	)
@@ -41,7 +41,7 @@ func NewRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Log
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			phabs, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
+			phabs, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 				Kinds: []string{extsvc.KindPhabricator},
 			})
 			if err != nil {

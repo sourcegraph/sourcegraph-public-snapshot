@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -63,15 +64,14 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		Metadata: new(github.Repository),
 	}
 
-	initStore := func(db database.DB) repos.Store {
-		store := repos.NewStore(logtest.Scoped(t), db)
-		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
+	initStore := func(db database.DB) database.DB {
+		if err := db.ExternalServices().Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
-		if err := store.RepoStore().Create(ctx, &repo); err != nil {
+		if err := db.Repos().Create(ctx, &repo); err != nil {
 			t.Fatal(err)
 		}
-		return store
+		return db
 	}
 
 	type testCase struct {
@@ -79,17 +79,17 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		repo api.RepoName
 		res  *protocol.RepoUpdateResponse
 		err  string
-		init func(database.DB) repos.Store
+		init func(database.DB) database.DB
 	}
 
 	testCases := []testCase{{
 		name: "returns an error on store failure",
-		init: func(realDB database.DB) repos.Store {
+		init: func(realDB database.DB) database.DB {
 			mockRepos := dbmocks.NewMockRepoStore()
 			mockRepos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
 			realStore := initStore(realDB)
-			mockStore := repos.NewMockStoreFrom(realStore)
-			mockStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+			mockStore := dbmocks.NewMockDBFrom(realStore)
+			mockStore.ReposFunc.SetDefaultReturn(mockRepos)
 			return mockStore
 		},
 		err: `store.list-repos: boom`,
@@ -117,7 +117,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 			sqlDB := dbtest.NewDB(t)
 			store := tc.init(database.NewDB(logger, sqlDB))
 
-			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
+			s := &Server{Logger: logger, DB: store, Scheduler: &fakeScheduler{}}
 			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
 			proto.RegisterRepoUpdaterServiceServer(gs, s)
 
@@ -142,9 +142,8 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 }
 
 func TestServer_RepoLookup(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(t)
-	store := repos.NewStore(logger, database.NewDB(logger, db))
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
+
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -192,7 +191,7 @@ func TestServer_RepoLookup(t *testing.T) {
 `),
 	}
 
-	if err := store.ExternalServiceStore().Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
+	if err := db.ExternalServices().Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
 		t.Fatal(err)
 	}
 
@@ -539,16 +538,16 @@ func TestServer_RepoLookup(t *testing.T) {
 			}
 
 			rs := tc.stored.Clone()
-			err = store.RepoStore().Create(ctx, rs...)
+			err = db.Repos().Create(ctx, rs...)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			clock := clock
 			logger := logtest.Scoped(t)
-			syncer := &repos.Syncer{
+			syncer := &syncer.Syncer{
 				Now:     clock.Now,
-				Store:   store,
+				DB:      db,
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 				ObsvCtx: observation.TestContextTB(t),
 			}
@@ -558,7 +557,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			s := &Server{
 				Logger:    logger,
 				Syncer:    syncer,
-				Store:     store,
+				DB:        db,
 				Scheduler: scheduler,
 			}
 
@@ -587,7 +586,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				if tc.assertDelay != 0 {
 					time.Sleep(tc.assertDelay)
 				}
-				rs, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+				rs, err := db.Repos().List(ctx, database.ReposListOptions{})
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -11,11 +11,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
+	batchessyncer "github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -31,11 +31,11 @@ type Scheduler interface {
 type Server struct {
 	proto.UnimplementedRepoUpdaterServiceServer
 
-	Store                 repos.Store
-	Syncer                *repos.Syncer
+	DB                    database.DB
+	Syncer                *syncer.Syncer
 	Logger                log.Logger
 	Scheduler             Scheduler
-	ChangesetSyncRegistry syncer.ChangesetSyncRegistry
+	ChangesetSyncRegistry batchessyncer.ChangesetSyncRegistry
 }
 
 func (s *Server) RepoUpdateSchedulerInfo(_ context.Context, req *proto.RepoUpdateSchedulerInfoRequest) (*proto.RepoUpdateSchedulerInfoResponse, error) {
@@ -97,7 +97,7 @@ func (s *Server) EnqueueRepoUpdate(ctx context.Context, req *proto.EnqueueRepoUp
 		tr.End()
 	}()
 
-	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.DB.Repos().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, errors.Wrap(err, "store.list-repos")
 	}

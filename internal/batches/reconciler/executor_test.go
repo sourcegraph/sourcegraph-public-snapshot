@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -35,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -736,7 +736,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Ensure we reset the state of the repo after executing the plan.
 			t.Cleanup(func() {
 				repo.Archived = false
-				_, err := repos.NewStore(logtest.Scoped(t), bstore.DatabaseDB()).UpdateRepo(ctx, repo)
+				q := sqlf.Sprintf("UPDATE repo SET archived = false, updated_at = NOW() WHERE id = %s", repo.ID)
+				_, err := bstore.DatabaseDB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				require.NoError(t, err)
 			})
 
@@ -1258,36 +1259,22 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 func TestHandleArchivedRepo(t *testing.T) {
 	ctx := context.Background()
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
 
-	t.Run("success", func(t *testing.T) {
-		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
-		repo := &types.Repo{Archived: false}
+	repo := &types.Repo{Archived: false}
+	require.NoError(t, db.Repos().Create(ctx, repo))
 
-		mockStore := repos.NewMockStore()
-		mockStore.UpdateRepoFunc.SetDefaultReturn(repo, nil)
+	ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 
-		err := handleArchivedRepo(ctx, mockStore, repo, ch)
-		assert.NoError(t, err)
-		assert.True(t, repo.Archived)
-		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
-		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
-	})
+	err := handleArchivedRepo(ctx, db, repo, ch)
+	assert.NoError(t, err)
+	assert.True(t, repo.Archived)
+	assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
 
-	t.Run("store error", func(t *testing.T) {
-		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
-		repo := &types.Repo{Archived: false}
+	dbRepo, err := db.Repos().Get(ctx, repo.ID)
+	require.NoError(t, err)
 
-		mockStore := repos.NewMockStore()
-		want := errors.New("")
-		mockStore.UpdateRepoFunc.SetDefaultReturn(nil, want)
-
-		have := handleArchivedRepo(ctx, mockStore, repo, ch)
-		assert.Error(t, have)
-		assert.ErrorIs(t, have, want)
-		assert.True(t, repo.Archived)
-		assert.Equal(t, btypes.ChangesetExternalStateDraft, ch.ExternalState)
-		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
-	})
+	require.True(t, dbRepo.Archived)
 }
 
 type mockRepoArchivedError struct{}

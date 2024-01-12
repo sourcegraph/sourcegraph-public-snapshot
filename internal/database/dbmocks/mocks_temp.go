@@ -31395,6 +31395,12 @@ type MockExternalServiceStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *ExternalServiceStoreDoneFunc
+	// EnqueueSingleSyncJobFunc is an instance of a mock function object
+	// controlling the behavior of the method EnqueueSingleSyncJob.
+	EnqueueSingleSyncJobFunc *ExternalServiceStoreEnqueueSingleSyncJobFunc
+	// EnqueueSyncJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method EnqueueSyncJobs.
+	EnqueueSyncJobsFunc *ExternalServiceStoreEnqueueSyncJobsFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *ExternalServiceStoreGetByIDFunc
@@ -31487,6 +31493,16 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 		},
 		DoneFunc: &ExternalServiceStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		EnqueueSingleSyncJobFunc: &ExternalServiceStoreEnqueueSingleSyncJobFunc{
+			defaultHook: func(context.Context, int64) (r0 error) {
+				return
+			},
+		},
+		EnqueueSyncJobsFunc: &ExternalServiceStoreEnqueueSyncJobsFunc{
+			defaultHook: func(context.Context, bool) (r0 error) {
 				return
 			},
 		},
@@ -31618,6 +31634,16 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.Done")
 			},
 		},
+		EnqueueSingleSyncJobFunc: &ExternalServiceStoreEnqueueSingleSyncJobFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockExternalServiceStore.EnqueueSingleSyncJob")
+			},
+		},
+		EnqueueSyncJobsFunc: &ExternalServiceStoreEnqueueSyncJobsFunc{
+			defaultHook: func(context.Context, bool) error {
+				panic("unexpected invocation of MockExternalServiceStore.EnqueueSyncJobs")
+			},
+		},
 		GetByIDFunc: &ExternalServiceStoreGetByIDFunc{
 			defaultHook: func(context.Context, int64) (*types.ExternalService, error) {
 				panic("unexpected invocation of MockExternalServiceStore.GetByID")
@@ -31729,6 +31755,12 @@ func NewMockExternalServiceStoreFrom(i database.ExternalServiceStore) *MockExter
 		},
 		DoneFunc: &ExternalServiceStoreDoneFunc{
 			defaultHook: i.Done,
+		},
+		EnqueueSingleSyncJobFunc: &ExternalServiceStoreEnqueueSingleSyncJobFunc{
+			defaultHook: i.EnqueueSingleSyncJob,
+		},
+		EnqueueSyncJobsFunc: &ExternalServiceStoreEnqueueSyncJobsFunc{
+			defaultHook: i.EnqueueSyncJobs,
 		},
 		GetByIDFunc: &ExternalServiceStoreGetByIDFunc{
 			defaultHook: i.GetByID,
@@ -32636,6 +32668,223 @@ func (c ExternalServiceStoreDoneFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExternalServiceStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExternalServiceStoreEnqueueSingleSyncJobFunc describes the behavior when
+// the EnqueueSingleSyncJob method of the parent MockExternalServiceStore
+// instance is invoked.
+type ExternalServiceStoreEnqueueSingleSyncJobFunc struct {
+	defaultHook func(context.Context, int64) error
+	hooks       []func(context.Context, int64) error
+	history     []ExternalServiceStoreEnqueueSingleSyncJobFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueSingleSyncJob delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) EnqueueSingleSyncJob(v0 context.Context, v1 int64) error {
+	r0 := m.EnqueueSingleSyncJobFunc.nextHook()(v0, v1)
+	m.EnqueueSingleSyncJobFunc.appendCall(ExternalServiceStoreEnqueueSingleSyncJobFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EnqueueSingleSyncJob
+// method of the parent MockExternalServiceStore instance is invoked and the
+// hook queue is empty.
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueSingleSyncJob method of the parent MockExternalServiceStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) PushHook(hook func(context.Context, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) nextHook() func(context.Context, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) appendCall(r0 ExternalServiceStoreEnqueueSingleSyncJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExternalServiceStoreEnqueueSingleSyncJobFuncCall objects describing the
+// invocations of this function.
+func (f *ExternalServiceStoreEnqueueSingleSyncJobFunc) History() []ExternalServiceStoreEnqueueSingleSyncJobFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreEnqueueSingleSyncJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreEnqueueSingleSyncJobFuncCall is an object that
+// describes an invocation of method EnqueueSingleSyncJob on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreEnqueueSingleSyncJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreEnqueueSingleSyncJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreEnqueueSingleSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExternalServiceStoreEnqueueSyncJobsFunc describes the behavior when the
+// EnqueueSyncJobs method of the parent MockExternalServiceStore instance is
+// invoked.
+type ExternalServiceStoreEnqueueSyncJobsFunc struct {
+	defaultHook func(context.Context, bool) error
+	hooks       []func(context.Context, bool) error
+	history     []ExternalServiceStoreEnqueueSyncJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueSyncJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) EnqueueSyncJobs(v0 context.Context, v1 bool) error {
+	r0 := m.EnqueueSyncJobsFunc.nextHook()(v0, v1)
+	m.EnqueueSyncJobsFunc.appendCall(ExternalServiceStoreEnqueueSyncJobsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EnqueueSyncJobs
+// method of the parent MockExternalServiceStore instance is invoked and the
+// hook queue is empty.
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) SetDefaultHook(hook func(context.Context, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueSyncJobs method of the parent MockExternalServiceStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) PushHook(hook func(context.Context, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, bool) error {
+		return r0
+	})
+}
+
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) nextHook() func(context.Context, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) appendCall(r0 ExternalServiceStoreEnqueueSyncJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreEnqueueSyncJobsFuncCall
+// objects describing the invocations of this function.
+func (f *ExternalServiceStoreEnqueueSyncJobsFunc) History() []ExternalServiceStoreEnqueueSyncJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreEnqueueSyncJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreEnqueueSyncJobsFuncCall is an object that describes
+// an invocation of method EnqueueSyncJobs on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreEnqueueSyncJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreEnqueueSyncJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreEnqueueSyncJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -60798,9 +61047,21 @@ type MockRepoStore struct {
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *RepoStoreCreateFunc
+	// CreateExternalServiceRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CreateExternalServiceRepo.
+	CreateExternalServiceRepoFunc *RepoStoreCreateExternalServiceRepoFunc
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *RepoStoreDeleteFunc
+	// DeleteExternalServiceRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteExternalServiceRepo.
+	DeleteExternalServiceRepoFunc *RepoStoreDeleteExternalServiceRepoFunc
+	// DeleteExternalServiceReposNotInFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteExternalServiceReposNotIn.
+	DeleteExternalServiceReposNotInFunc *RepoStoreDeleteExternalServiceReposNotInFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *RepoStoreDoneFunc
@@ -60857,6 +61118,10 @@ type MockRepoStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *RepoStoreTransactFunc
+	// UpdateExternalServiceRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateExternalServiceRepo.
+	UpdateExternalServiceRepoFunc *RepoStoreUpdateExternalServiceRepoFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *RepoStoreWithFunc
@@ -60876,8 +61141,23 @@ func NewMockRepoStore() *MockRepoStore {
 				return
 			},
 		},
+		CreateExternalServiceRepoFunc: &RepoStoreCreateExternalServiceRepoFunc{
+			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) (r0 error) {
+				return
+			},
+		},
 		DeleteFunc: &RepoStoreDeleteFunc{
 			defaultHook: func(context.Context, ...api.RepoID) (r0 error) {
+				return
+			},
+		},
+		DeleteExternalServiceRepoFunc: &RepoStoreDeleteExternalServiceRepoFunc{
+			defaultHook: func(context.Context, *types.ExternalService, api.RepoID) (r0 error) {
+				return
+			},
+		},
+		DeleteExternalServiceReposNotInFunc: &RepoStoreDeleteExternalServiceReposNotInFunc{
+			defaultHook: func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) (r0 []api.RepoID, r1 error) {
 				return
 			},
 		},
@@ -60971,6 +61251,11 @@ func NewMockRepoStore() *MockRepoStore {
 				return
 			},
 		},
+		UpdateExternalServiceRepoFunc: &RepoStoreUpdateExternalServiceRepoFunc{
+			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) (r0 error) {
+				return
+			},
+		},
 		WithFunc: &RepoStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 database.RepoStore) {
 				return
@@ -60993,9 +61278,24 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.Create")
 			},
 		},
+		CreateExternalServiceRepoFunc: &RepoStoreCreateExternalServiceRepoFunc{
+			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) error {
+				panic("unexpected invocation of MockRepoStore.CreateExternalServiceRepo")
+			},
+		},
 		DeleteFunc: &RepoStoreDeleteFunc{
 			defaultHook: func(context.Context, ...api.RepoID) error {
 				panic("unexpected invocation of MockRepoStore.Delete")
+			},
+		},
+		DeleteExternalServiceRepoFunc: &RepoStoreDeleteExternalServiceRepoFunc{
+			defaultHook: func(context.Context, *types.ExternalService, api.RepoID) error {
+				panic("unexpected invocation of MockRepoStore.DeleteExternalServiceRepo")
+			},
+		},
+		DeleteExternalServiceReposNotInFunc: &RepoStoreDeleteExternalServiceReposNotInFunc{
+			defaultHook: func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error) {
+				panic("unexpected invocation of MockRepoStore.DeleteExternalServiceReposNotIn")
 			},
 		},
 		DoneFunc: &RepoStoreDoneFunc{
@@ -61088,6 +61388,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.Transact")
 			},
 		},
+		UpdateExternalServiceRepoFunc: &RepoStoreUpdateExternalServiceRepoFunc{
+			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) error {
+				panic("unexpected invocation of MockRepoStore.UpdateExternalServiceRepo")
+			},
+		},
 		WithFunc: &RepoStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) database.RepoStore {
 				panic("unexpected invocation of MockRepoStore.With")
@@ -61106,8 +61411,17 @@ func NewMockRepoStoreFrom(i database.RepoStore) *MockRepoStore {
 		CreateFunc: &RepoStoreCreateFunc{
 			defaultHook: i.Create,
 		},
+		CreateExternalServiceRepoFunc: &RepoStoreCreateExternalServiceRepoFunc{
+			defaultHook: i.CreateExternalServiceRepo,
+		},
 		DeleteFunc: &RepoStoreDeleteFunc{
 			defaultHook: i.Delete,
+		},
+		DeleteExternalServiceRepoFunc: &RepoStoreDeleteExternalServiceRepoFunc{
+			defaultHook: i.DeleteExternalServiceRepo,
+		},
+		DeleteExternalServiceReposNotInFunc: &RepoStoreDeleteExternalServiceReposNotInFunc{
+			defaultHook: i.DeleteExternalServiceReposNotIn,
 		},
 		DoneFunc: &RepoStoreDoneFunc{
 			defaultHook: i.Done,
@@ -61162,6 +61476,9 @@ func NewMockRepoStoreFrom(i database.RepoStore) *MockRepoStore {
 		},
 		TransactFunc: &RepoStoreTransactFunc{
 			defaultHook: i.Transact,
+		},
+		UpdateExternalServiceRepoFunc: &RepoStoreUpdateExternalServiceRepoFunc{
+			defaultHook: i.UpdateExternalServiceRepo,
 		},
 		WithFunc: &RepoStoreWithFunc{
 			defaultHook: i.With,
@@ -61387,6 +61704,117 @@ func (c RepoStoreCreateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// RepoStoreCreateExternalServiceRepoFunc describes the behavior when the
+// CreateExternalServiceRepo method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreCreateExternalServiceRepoFunc struct {
+	defaultHook func(context.Context, *types.ExternalService, *types.Repo) error
+	hooks       []func(context.Context, *types.ExternalService, *types.Repo) error
+	history     []RepoStoreCreateExternalServiceRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateExternalServiceRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) CreateExternalServiceRepo(v0 context.Context, v1 *types.ExternalService, v2 *types.Repo) error {
+	r0 := m.CreateExternalServiceRepoFunc.nextHook()(v0, v1, v2)
+	m.CreateExternalServiceRepoFunc.appendCall(RepoStoreCreateExternalServiceRepoFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateExternalServiceRepo method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreCreateExternalServiceRepoFunc) SetDefaultHook(hook func(context.Context, *types.ExternalService, *types.Repo) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateExternalServiceRepo method of the parent MockRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoStoreCreateExternalServiceRepoFunc) PushHook(hook func(context.Context, *types.ExternalService, *types.Repo) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreCreateExternalServiceRepoFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types.ExternalService, *types.Repo) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreCreateExternalServiceRepoFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types.ExternalService, *types.Repo) error {
+		return r0
+	})
+}
+
+func (f *RepoStoreCreateExternalServiceRepoFunc) nextHook() func(context.Context, *types.ExternalService, *types.Repo) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreCreateExternalServiceRepoFunc) appendCall(r0 RepoStoreCreateExternalServiceRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreCreateExternalServiceRepoFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreCreateExternalServiceRepoFunc) History() []RepoStoreCreateExternalServiceRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreCreateExternalServiceRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreCreateExternalServiceRepoFuncCall is an object that describes an
+// invocation of method CreateExternalServiceRepo on an instance of
+// MockRepoStore.
+type RepoStoreCreateExternalServiceRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.ExternalService
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types.Repo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreCreateExternalServiceRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreCreateExternalServiceRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // RepoStoreDeleteFunc describes the behavior when the Delete method of the
 // parent MockRepoStore instance is invoked.
 type RepoStoreDeleteFunc struct {
@@ -61496,6 +61924,232 @@ func (c RepoStoreDeleteFuncCall) Args() []interface{} {
 // invocation.
 func (c RepoStoreDeleteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// RepoStoreDeleteExternalServiceRepoFunc describes the behavior when the
+// DeleteExternalServiceRepo method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreDeleteExternalServiceRepoFunc struct {
+	defaultHook func(context.Context, *types.ExternalService, api.RepoID) error
+	hooks       []func(context.Context, *types.ExternalService, api.RepoID) error
+	history     []RepoStoreDeleteExternalServiceRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteExternalServiceRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) DeleteExternalServiceRepo(v0 context.Context, v1 *types.ExternalService, v2 api.RepoID) error {
+	r0 := m.DeleteExternalServiceRepoFunc.nextHook()(v0, v1, v2)
+	m.DeleteExternalServiceRepoFunc.appendCall(RepoStoreDeleteExternalServiceRepoFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteExternalServiceRepo method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreDeleteExternalServiceRepoFunc) SetDefaultHook(hook func(context.Context, *types.ExternalService, api.RepoID) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteExternalServiceRepo method of the parent MockRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoStoreDeleteExternalServiceRepoFunc) PushHook(hook func(context.Context, *types.ExternalService, api.RepoID) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreDeleteExternalServiceRepoFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types.ExternalService, api.RepoID) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreDeleteExternalServiceRepoFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types.ExternalService, api.RepoID) error {
+		return r0
+	})
+}
+
+func (f *RepoStoreDeleteExternalServiceRepoFunc) nextHook() func(context.Context, *types.ExternalService, api.RepoID) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreDeleteExternalServiceRepoFunc) appendCall(r0 RepoStoreDeleteExternalServiceRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreDeleteExternalServiceRepoFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreDeleteExternalServiceRepoFunc) History() []RepoStoreDeleteExternalServiceRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreDeleteExternalServiceRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreDeleteExternalServiceRepoFuncCall is an object that describes an
+// invocation of method DeleteExternalServiceRepo on an instance of
+// MockRepoStore.
+type RepoStoreDeleteExternalServiceRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.ExternalService
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreDeleteExternalServiceRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreDeleteExternalServiceRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RepoStoreDeleteExternalServiceReposNotInFunc describes the behavior when
+// the DeleteExternalServiceReposNotIn method of the parent MockRepoStore
+// instance is invoked.
+type RepoStoreDeleteExternalServiceReposNotInFunc struct {
+	defaultHook func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error)
+	hooks       []func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error)
+	history     []RepoStoreDeleteExternalServiceReposNotInFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteExternalServiceReposNotIn delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) DeleteExternalServiceReposNotIn(v0 context.Context, v1 *types.ExternalService, v2 map[api.RepoID]struct{}) ([]api.RepoID, error) {
+	r0, r1 := m.DeleteExternalServiceReposNotInFunc.nextHook()(v0, v1, v2)
+	m.DeleteExternalServiceReposNotInFunc.appendCall(RepoStoreDeleteExternalServiceReposNotInFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteExternalServiceReposNotIn method of the parent MockRepoStore
+// instance is invoked and the hook queue is empty.
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) SetDefaultHook(hook func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteExternalServiceReposNotIn method of the parent MockRepoStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) PushHook(hook func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) SetDefaultReturn(r0 []api.RepoID, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) PushReturn(r0 []api.RepoID, r1 error) {
+	f.PushHook(func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) nextHook() func(context.Context, *types.ExternalService, map[api.RepoID]struct{}) ([]api.RepoID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) appendCall(r0 RepoStoreDeleteExternalServiceReposNotInFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoStoreDeleteExternalServiceReposNotInFuncCall objects describing the
+// invocations of this function.
+func (f *RepoStoreDeleteExternalServiceReposNotInFunc) History() []RepoStoreDeleteExternalServiceReposNotInFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreDeleteExternalServiceReposNotInFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreDeleteExternalServiceReposNotInFuncCall is an object that
+// describes an invocation of method DeleteExternalServiceReposNotIn on an
+// instance of MockRepoStore.
+type RepoStoreDeleteExternalServiceReposNotInFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.ExternalService
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 map[api.RepoID]struct{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreDeleteExternalServiceReposNotInFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreDeleteExternalServiceReposNotInFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // RepoStoreDoneFunc describes the behavior when the Done method of the
@@ -63457,6 +64111,117 @@ func (c RepoStoreTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c RepoStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreUpdateExternalServiceRepoFunc describes the behavior when the
+// UpdateExternalServiceRepo method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreUpdateExternalServiceRepoFunc struct {
+	defaultHook func(context.Context, *types.ExternalService, *types.Repo) error
+	hooks       []func(context.Context, *types.ExternalService, *types.Repo) error
+	history     []RepoStoreUpdateExternalServiceRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateExternalServiceRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) UpdateExternalServiceRepo(v0 context.Context, v1 *types.ExternalService, v2 *types.Repo) error {
+	r0 := m.UpdateExternalServiceRepoFunc.nextHook()(v0, v1, v2)
+	m.UpdateExternalServiceRepoFunc.appendCall(RepoStoreUpdateExternalServiceRepoFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateExternalServiceRepo method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreUpdateExternalServiceRepoFunc) SetDefaultHook(hook func(context.Context, *types.ExternalService, *types.Repo) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateExternalServiceRepo method of the parent MockRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoStoreUpdateExternalServiceRepoFunc) PushHook(hook func(context.Context, *types.ExternalService, *types.Repo) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreUpdateExternalServiceRepoFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types.ExternalService, *types.Repo) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreUpdateExternalServiceRepoFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types.ExternalService, *types.Repo) error {
+		return r0
+	})
+}
+
+func (f *RepoStoreUpdateExternalServiceRepoFunc) nextHook() func(context.Context, *types.ExternalService, *types.Repo) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreUpdateExternalServiceRepoFunc) appendCall(r0 RepoStoreUpdateExternalServiceRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreUpdateExternalServiceRepoFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreUpdateExternalServiceRepoFunc) History() []RepoStoreUpdateExternalServiceRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreUpdateExternalServiceRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreUpdateExternalServiceRepoFuncCall is an object that describes an
+// invocation of method UpdateExternalServiceRepo on an instance of
+// MockRepoStore.
+type RepoStoreUpdateExternalServiceRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.ExternalService
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types.Repo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreUpdateExternalServiceRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreUpdateExternalServiceRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // RepoStoreWithFunc describes the behavior when the With method of the

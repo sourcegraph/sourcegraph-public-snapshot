@@ -93,6 +93,27 @@ type ExternalServiceStore interface {
 	// GetSyncJobs gets all sync jobs.
 	GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
 
+	// EnqueueSingleSyncJob enqueues a single sync job for the given external
+	// service if the external service is not deleted and no other job is
+	// already queued or processing.
+	//
+	// Additionally, it also skips queueing up a sync job for cloud_default
+	// external services. This is done to avoid the sync job for the
+	// cloud_default triggering a deletion of repos because:
+	//  1. cloud_default does not define any repos in its config
+	//  2. repos under the cloud_default are lazily synced the first time a user accesses them
+	//
+	// This is a limitation of our current repo syncing architecture. The
+	// cloud_default flag is only set on sourcegraph.com and manages public GitHub
+	// and GitLab repositories that have been lazily synced.
+	//
+	// It can block if a row-level lock is held on the given external service,
+	// for example if it's being deleted.
+	EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error)
+
+	// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
+	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
+
 	// CountSyncJobs counts all sync jobs.
 	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
 
@@ -1702,6 +1723,66 @@ WHERE EXISTS(
 	}
 	return v && exists, nil
 }
+
+const enqueueSingleSyncJobQueryFmtstr = `
+WITH es AS (
+	SELECT id
+	FROM external_services es
+	WHERE
+		id = %s
+		AND NOT cloud_default
+		AND deleted_at IS NULL
+	FOR UPDATE
+)
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT es.id
+FROM es
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM external_service_sync_jobs j
+	WHERE
+		es.id = j.external_service_id
+		AND j.state IN ('queued', 'processing')
+)
+`
+
+func (s *externalServiceStore) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
+	q := sqlf.Sprintf(enqueueSingleSyncJobQueryFmtstr, extSvcID)
+	return s.Exec(ctx, q)
+}
+
+func (s *externalServiceStore) EnqueueSyncJobs(ctx context.Context, isDotCom bool) (err error) {
+	filter := "TRUE"
+	// On Sourcegraph.com we don't sync our default sources in the background, they are synced
+	// on demand instead.
+	if isDotCom {
+		filter = "cloud_default = false"
+	}
+	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
+	return s.Exec(ctx, q)
+}
+
+// We ignore Phabricator repos here as they are currently synced using
+// RunPhabricatorRepositorySyncWorker
+const enqueueSyncJobsQueryFmtstr = `
+WITH due AS (
+    SELECT id
+    FROM external_services
+    WHERE (next_sync_at <= clock_timestamp() OR next_sync_at IS NULL)
+    AND deleted_at IS NULL
+    AND LOWER(kind) != 'phabricator'
+    AND %s
+    FOR UPDATE OF external_services -- We query 'FOR UPDATE' so we don't enqueue
+                                    -- sync jobs while an external service is being deleted.
+),
+busy AS (
+    SELECT DISTINCT external_service_id id FROM external_service_sync_jobs
+    WHERE state = 'queued'
+    OR state = 'processing'
+)
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT id from due EXCEPT SELECT id from busy
+`
 
 // calcUnrestricted determines whether or not permissions should be enforced
 // on an external service.
