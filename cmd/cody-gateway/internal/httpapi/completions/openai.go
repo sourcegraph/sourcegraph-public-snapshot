@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
@@ -29,9 +30,7 @@ func NewOpenAIHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	orgID string,
-	allowedModels []string,
+	config config.OpenAIConfig,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[openaiRequest](
@@ -42,8 +41,8 @@ func NewOpenAIHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameOpenAI),
 		func(_ codygateway.Feature) string { return openAIURL },
-		allowedModels,
-		&OpenAIHandlerMethods{accessToken: accessToken, orgID: orgID},
+		config.AllowedModels,
+		&OpenAIHandlerMethods{accessToken: config.AccessToken, orgID: config.OrgID},
 
 		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
 		// in requests, so set a very high retry-after to discourage Sourcegraph
