@@ -136,6 +136,13 @@ func (s Spec) Validate() []error {
 			}
 		}
 	}
+	if s.Service.Kind.Is(ServiceKindService) {
+		for _, e := range s.Environments {
+			if e.EnvironmentJobSpec != nil {
+				errs = append(errs, errors.New("job specifications are not supported for 'kind: service'"))
+			}
+		}
+	}
 
 	for _, env := range s.Environments {
 		projectDisplayName := fmt.Sprintf("%s - %s", s.Service.GetName(), env.ID)
