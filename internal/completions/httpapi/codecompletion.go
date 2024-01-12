@@ -42,8 +42,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 func allowedCustomModel(model string) string {
 	switch model {
 	// These virtual model strings allow the server to choose the model.
-	// TODO: Cody Gateway can already translate these but due to rollout orders, this step is
-	// 		 currently duplicated.
+	// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
 	case "fireworks/starcoder-16b":
 		return "fireworks/accounts/fireworks/models/starcoder-16b-w8a16"
 	case "fireworks/starcoder-7b":

@@ -47,14 +47,11 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
             case 'openai/gpt-4-1106-preview':
-            // Virtual models that are translated by Cody Gateway
+            // Virtual models that are translated by Cody Gateway and allows access to all StarCoder
+            // models hosted for us by Fireworks.
             case 'fireworks/starcoder':
-            // Bespoken models hosted for us by Fireworks. These are also allowed on the Cody
-            // Gateway side
-            case 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16':
-            case 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16':
-            case 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16':
-            case 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16':
+            // Bespoken alternative models hosted for us by Fireworks. These are also allowed on the
+            // Cody Gateway side
             case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':

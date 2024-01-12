@@ -384,8 +384,7 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"fireworks/starcoder",
-			// Todo: Remove the specific model identifiers below when Cody Gateway for PLG was
-			//       updated.
+			// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
 			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
 			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
 		}
