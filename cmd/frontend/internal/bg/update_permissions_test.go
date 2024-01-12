@@ -6,13 +6,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpdatePermissions(t *testing.T) {
@@ -21,7 +20,6 @@ func TestUpdatePermissions(t *testing.T) {
 	ctx := context.Background()
 
 	allPerms := []*types.Permission{
-		{Namespace: rtypes.CodyNamespace, Action: rtypes.CodyAccessAction},
 		{Namespace: rtypes.BatchChangesNamespace, Action: rtypes.BatchChangesReadAction},
 		{Namespace: rtypes.BatchChangesNamespace, Action: rtypes.BatchChangesWriteAction},
 		{Namespace: rtypes.RepoMetadataNamespace, Action: rtypes.RepoMetadataWriteAction},
@@ -45,7 +43,7 @@ func TestUpdatePermissions(t *testing.T) {
 	userPermissions, err := permissionStore.List(ctx, database.PermissionListOpts{RoleID: userRole.ID, PaginationArgs: &database.PaginationArgs{}})
 	require.NoError(t, err)
 	userPermissions = clearTimeAndID(userPermissions)
-	assert.ElementsMatch(t, allPerms[:4], userPermissions, "unexpected number of permissions")
+	assert.ElementsMatch(t, allPerms[:3], userPermissions, "unexpected number of permissions")
 }
 
 func clearTimeAndID(perms []*types.Permission) []*types.Permission {

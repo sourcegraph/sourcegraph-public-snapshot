@@ -588,7 +588,7 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	return !isAdmin
 }
 
-func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx, r.db) }
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
 	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())

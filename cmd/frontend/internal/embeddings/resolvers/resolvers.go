@@ -63,7 +63,7 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
-	if isEnabled := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return nil, errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
@@ -109,7 +109,7 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 }
 
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
-	if isEnabled := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return false, errors.New("cody experimental feature flag is not enabled for current user")
 	}
 

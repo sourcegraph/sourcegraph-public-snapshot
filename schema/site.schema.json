@@ -2498,17 +2498,8 @@
       },
       "group": "Cody"
     },
-    "cody.permissions": {
-      "description": "Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://docs.sourcegraph.com/admin/access_control",
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      },
-      "group": "Cody"
-    },
     "cody.restrictUsersFeatureFlag": {
-      "description": "DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
       "type": "boolean",
       "default": false,
       "!go": {

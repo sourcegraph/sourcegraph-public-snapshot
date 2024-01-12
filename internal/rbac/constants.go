@@ -8,5 +8,3 @@ const BatchChangesWritePermission string = "BATCH_CHANGES#WRITE"
 const OwnershipAssignPermission string = "OWNERSHIP#ASSIGN"
 
 const RepoMetadataWritePermission string = "REPO_METADATA#WRITE"
-
-const CodyAccessPermission string = "CODY#ACCESS"
