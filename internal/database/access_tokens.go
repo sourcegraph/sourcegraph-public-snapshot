@@ -306,12 +306,12 @@ func (o TokenLookupOpts) toGetQuery() string {
 	FROM access_tokens t
 	JOIN users subject_user ON t.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 	JOIN users creator_user ON t.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE 
-	    t.value_sha256=$1 
-	    AND 
-		t.deleted_at IS NULL 
-		AND		
-		(t2.expires_at IS NULL OR t2.expires_at > NOW())
+	WHERE
+	    t.value_sha256=$1
+	    AND
+		t.deleted_at IS NULL
+		AND
+		(t.expires_at IS NULL OR t.expires_at > NOW())
 		AND
 	    $2 = ANY (t.scopes)
 `
@@ -363,24 +363,24 @@ func (s *accessTokenStore) Lookup(ctx context.Context, token string, opts TokenL
 	return subjectID, nil
 }
 
-const accessTokensLookupQueryFmtstr = `
-UPDATE access_tokens t
-SET last_used_at=now()
-WHERE t.id IN (
-	SELECT t2.id FROM access_tokens t2
-	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
-	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE
-		t2.value_sha256=%s
-		AND
-		t2.deleted_at IS NULL
-		AND
-		(t2.expires_at IS NULL OR t2.expires_at > NOW())
-		AND
-		%s = ANY (t2.scopes)
-	)
-RETURNING t.subject_user_id
-`
+// const accessTokensLookupQueryFmtstr = `
+// UPDATE access_tokens t
+// SET last_used_at=now()
+// WHERE t.id IN (
+// 	SELECT t2.id FROM access_tokens t2
+// 	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+// 	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+// 	WHERE
+// 		t2.value_sha256=%s
+// 		AND
+// 		t2.deleted_at IS NULL
+// 		AND
+// 		(t2.expires_at IS NULL OR t2.expires_at > NOW())
+// 		AND
+// 		%s = ANY (t2.scopes)
+// 	)
+// RETURNING t.subject_user_id
+// `
 
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
 	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)})
