@@ -320,7 +320,7 @@ func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
 		errs = append(errs, errors.New("resources.cpu must be >= 1"))
 	} else if s.CPU > 8 {
 		errs = append(errs,
-			errors.New("resources.cpu > 8 not supported - considering decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+			errors.New("resources.cpu > 8 not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
 	}
 
 	// https://cloud.google.com/run/docs/configuring/services/memory-limits
@@ -334,7 +334,7 @@ func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
 	gib := units.Base2Bytes(bytes) / units.GiB
 	if gib > 32 {
 		errs = append(errs,
-			errors.New("resources.memory > 32GiB not supported - considering decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+			errors.New("resources.memory > 32GiB not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
 	}
 
 	// Enforce min CPUs: https://cloud.google.com/run/docs/configuring/services/memory-limits#cpu-minimum
