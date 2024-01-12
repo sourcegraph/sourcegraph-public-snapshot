@@ -322,10 +322,24 @@ class SearchPanel implements Panel {
 
     private findNext = (): void => {
         findNext(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     private findPrevious = (): void => {
         findPrevious(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     // Taken from CodeMirror's default search panel implementation. This is
