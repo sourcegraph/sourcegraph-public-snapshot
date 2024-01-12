@@ -19,17 +19,5 @@ echo "--- :writing_hand: Generate pipeline"
 $pipeline_gen | tee generated-pipeline.yml
 
 echo ""
-echo "--- :bazel: Build sg cli"
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  build \
-  //dev/sg:sg
-
-sg_cli="$(bazel cquery //dev/sg:sg --output files)"
-cp "$sg_cli" ./sg
-
-echo ""
 echo "--- :arrow_up: Upload pipeline"
 buildkite-agent pipeline upload generated-pipeline.yml

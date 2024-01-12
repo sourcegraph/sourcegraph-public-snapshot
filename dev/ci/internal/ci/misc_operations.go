@@ -69,7 +69,8 @@ func addSgLints(targets []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withPnpmCache(),
-			bk.Cmd("buildkite-agent artifact download sg . --step pipeline-gen"),
+			bk.DependsOn("bazel-prechecks"),
+			bk.Cmd("buildkite-agent artifact download sg . --step bazel-prechecks"),
 			bk.Cmd("chmod +x ./sg"),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
