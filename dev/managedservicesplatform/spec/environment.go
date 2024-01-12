@@ -324,35 +324,43 @@ func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
 	}
 
 	// https://cloud.google.com/run/docs/configuring/services/memory-limits
+	// NOTE: Cloud Run documentation uses 'MiB' as the unit but the configuration
+	// only accepts 'Mi', 'Gi', etc. Make sure our errors are in terms of the
+	// format the configuration accepts to avoid confusion.
 	bytes, err := units.ParseUnit(s.Memory, units.MakeUnitMap("i", "B", 1024))
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, "resources.memory is invalid"))
+
+		// Exit early - all following checks rely on knowing the memory that
+		// was configured, so there's not point continuing validation if we
+		// couldn't parse the memory field.
+		return errs
 	}
 	if units.Base2Bytes(bytes)/units.MiB < 512 {
-		errs = append(errs, errors.New("resources.memory must be >= 512MiB"))
+		errs = append(errs, errors.New("resources.memory must be >= 512Mi"))
 	}
 	gib := units.Base2Bytes(bytes) / units.GiB
 	if gib > 32 {
 		errs = append(errs,
-			errors.New("resources.memory > 32GiB not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+			errors.New("resources.memory > 32Gi not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
 	}
 
 	// Enforce min CPUs: https://cloud.google.com/run/docs/configuring/services/memory-limits#cpu-minimum
 	if gib > 24 && s.CPU < 8 {
-		errs = append(errs, errors.New("resources.memory > 24GiB requires resources.cpu >= 8"))
+		errs = append(errs, errors.New("resources.memory > 24Gi requires resources.cpu >= 8"))
 	} else if gib > 16 && s.CPU < 6 {
-		errs = append(errs, errors.New("resources.memory > 16GiB requires resources.cpu >= 6"))
+		errs = append(errs, errors.New("resources.memory > 16Gi requires resources.cpu >= 6"))
 	} else if gib > 8 && s.CPU < 4 {
-		errs = append(errs, errors.New("resources.memory > 8GiB requires resources.cpu >= 4"))
+		errs = append(errs, errors.New("resources.memory > 8Gi requires resources.cpu >= 4"))
 	} else if gib > 4 && s.CPU < 2 {
-		errs = append(errs, errors.New("resources.memory > 4GiB requires resources.cpu >= 2"))
+		errs = append(errs, errors.New("resources.memory > 4Gi requires resources.cpu >= 2"))
 	}
 
 	// Enforce min memory: https://cloud.google.com/run/docs/configuring/services/cpu#cpu-memory
 	if s.CPU > 6 && gib < 4 {
-		errs = append(errs, errors.New("resources.cpu > 6 requires resources.memory >= 4GiB"))
+		errs = append(errs, errors.New("resources.cpu > 6 requires resources.memory >= 4Gi"))
 	} else if s.CPU > 4 && gib < 2 {
-		errs = append(errs, errors.New("resources.cpu > 4 requires resources.memory >= 2GiB"))
+		errs = append(errs, errors.New("resources.cpu > 4 requires resources.memory >= 2Gi"))
 	}
 
 	return errs

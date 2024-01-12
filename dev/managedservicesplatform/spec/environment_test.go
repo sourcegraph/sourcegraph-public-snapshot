@@ -112,7 +112,7 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 				CPU:    0,
 				Memory: "256Mi",
 			},
-			wantErrors: autogold.Expect([]string{"resources.cpu must be >= 1", "resources.memory must be >= 512MiB"}),
+			wantErrors: autogold.Expect([]string{"resources.cpu must be >= 1", "resources.memory must be >= 512Mi"}),
 		},
 		{
 			name: "cpu, memory too high",
@@ -121,8 +121,8 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 				Memory: "60Gi",
 			},
 			wantErrors: autogold.Expect([]string{
-				"resources.cpu > 8 not supported - considering decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead",
-				"resources.memory > 32GiB not supported - considering decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead",
+				"resources.cpu > 8 not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead",
+				"resources.memory > 32Gi not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead",
 			}),
 		},
 		{
@@ -131,7 +131,7 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 				CPU:    8,
 				Memory: "1Gi",
 			},
-			wantErrors: autogold.Expect([]string{"resources.cpu > 6 requires resources.memory >= 4GiB"}),
+			wantErrors: autogold.Expect([]string{"resources.cpu > 6 requires resources.memory >= 4Gi"}),
 		},
 		{
 			name: "memory too high for cpu",
@@ -139,7 +139,7 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 				CPU:    1,
 				Memory: "32Gi",
 			},
-			wantErrors: autogold.Expect([]string{"resources.memory > 24GiB requires resources.cpu >= 8"}),
+			wantErrors: autogold.Expect([]string{"resources.memory > 24Gi requires resources.cpu >= 8"}),
 		},
 		{
 			name: "invalid memory unit",
@@ -147,10 +147,7 @@ func TestEnvironmentInstancesResourcesSpecValdiate(t *testing.T) {
 				CPU:    1,
 				Memory: "8GiB",
 			},
-			wantErrors: autogold.Expect([]string{
-				"resources.memory is invalid: units: unknown unit GiB in 8GiB",
-				"resources.memory must be >= 512MiB",
-			}),
+			wantErrors: autogold.Expect([]string{"resources.memory is invalid: units: unknown unit GiB in 8GiB"}),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
