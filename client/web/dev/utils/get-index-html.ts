@@ -36,6 +36,8 @@ interface GetHTMLPageOptions {
  * between our development server and the actual production server.
  */
 export function getIndexHTML({ manifest, jsContext, jsContextScript }: GetHTMLPageOptions): string {
+    const toFullURL = (asset: string) => (manifest.url ? path.join(manifest.url, asset) : assetPathPrefix + asset)
+
     if (!manifest.assets['src/enterprise/main']) {
         throw new Error('entrypoint asset not found')
     }
@@ -55,7 +57,7 @@ export function getIndexHTML({ manifest, jsContext, jsContextScript }: GetHTMLPa
         }
         ${
             manifest.assets['src/enterprise/main']?.css
-                ? `<link rel="stylesheet" href="${assetPathPrefix}/${manifest.assets['src/enterprise/main']?.css}">`
+                ? `<link rel="stylesheet" href="${toFullURL(manifest.assets['src/enterprise/main']?.css)}">`
                 : ''
         }
     </head>
@@ -74,7 +76,7 @@ export function getIndexHTML({ manifest, jsContext, jsContextScript }: GetHTMLPa
             }
         </script>
 
-        <script src="${assetPathPrefix}/${manifest.assets['src/enterprise/main'].js}" type="module"></script>
+        <script src="${toFullURL(manifest.assets['src/enterprise/main'].js)}" type="module"></script>
     </body>
 </html>
 `
