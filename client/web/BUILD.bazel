@@ -1391,6 +1391,7 @@ ts_project(
         "src/search/results/components/aggregation/index.ts",
         "src/search/results/components/aggregation/pings.ts",
         "src/search/results/components/aggregation/types.ts",
+        "src/search/results/components/filters-panel/SearchFiltersPanel.tsx",
         "src/search/results/components/new-search-content/NewSearchContent.tsx",
         "src/search/results/components/search-content/SearchContent.tsx",
         "src/search/results/components/search-results-info-bar/SearchResultsInfoBar.tsx",
