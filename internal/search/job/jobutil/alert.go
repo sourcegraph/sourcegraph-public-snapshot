@@ -41,12 +41,13 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
-		Logger:     clients.Logger,
-		Db:         clients.DB,
-		Zoekt:      clients.Zoekt,
-		Searcher:   clients.SearcherURLs,
-		Inputs:     j.inputs,
-		HasResults: countingStream.Count() > 0,
+		Logger:                      clients.Logger,
+		Db:                          clients.DB,
+		Zoekt:                       clients.Zoekt,
+		Searcher:                    clients.SearcherURLs,
+		SearcherGRPCConnectionCache: clients.SearcherGRPCConnectionCache,
+		Inputs:                      j.inputs,
+		HasResults:                  countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)
@@ -59,7 +60,7 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
+		if !statsObserver.Status.Any(search.RepoStatusTimedOut) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
 			return search.AlertForTimeout(usedTime, suggestTime, j.inputs.OriginalQuery, j.inputs.PatternType), nil

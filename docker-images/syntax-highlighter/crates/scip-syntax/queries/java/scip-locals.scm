@@ -37,10 +37,9 @@
 ;     name: (identifier) @definition.function
 ; )
 
-
-(enum_constant
-  name: (identifier) @definition.term
-)
+; (enum_constant
+;   name: (identifier) @definition.term
+; )
 
 (enhanced_for_statement
     name: (identifier) @definition.term)
@@ -56,9 +55,18 @@
   ]
 )
 
+(record_declaration
+ (formal_parameters
+  (formal_parameter
+   name: (identifier) @occurrence.skip)))
+
 (formal_parameter
     name: (identifier) @definition.term
 )
+
+(field_declaration
+ (variable_declarator
+  name: (identifier) @occurrence.skip))
 
 (variable_declarator
     name: (identifier) @definition.term
@@ -74,5 +82,6 @@
     (type_identifier) @definition.type
 )
 
+(field_access field: (identifier) @occurrence.skip)
 (identifier) @reference
 (type_identifier) @reference

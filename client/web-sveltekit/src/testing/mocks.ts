@@ -3,7 +3,7 @@ import signale from 'signale'
 import { writable, type Readable, type Writable } from 'svelte/store'
 import { vi } from 'vitest'
 
-import type { SettingsCascade } from '$lib/shared'
+import type { Settings } from '$lib/shared'
 import { KEY, type SourcegraphContext } from '$lib/stores'
 import type { FeatureFlagName } from '$lib/web'
 
@@ -116,7 +116,7 @@ export function unmockFeatureFlags(): void {
  * calling `unmockUserSettings` in between then subsequent calls will update the underlying settings
  * store, updating all subscribers.
  */
-export function mockUserSettings(settings: Partial<SettingsCascade['final']>): void {
+export function mockUserSettings(settings: Partial<Settings>): void {
     if (mockedSourcgraphContext.settings === unmocked) {
         mockedSourcgraphContext.settings = writable(settings)
     } else {

@@ -1,17 +1,25 @@
-import { GitRefType } from '$lib/graphql-operations'
-import { queryGitReferences } from '$lib/repo/api/refs'
-
 import type { PageLoad } from './$types'
+import { GitBranchesQuery } from './page.gql'
 
 export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision } = await parent()
+    const { resolvedRevision, graphqlClient } = await parent()
     return {
         deferred: {
-            branches: queryGitReferences({
-                repo: resolvedRevision.repo.id,
-                type: GitRefType.GIT_BRANCH,
-                first: 20,
-            }),
+            branches: graphqlClient
+                .query({
+                    query: GitBranchesQuery,
+                    variables: {
+                        repo: resolvedRevision.repo.id,
+                        first: 20,
+                        withBehindAhead: true,
+                    },
+                })
+                .then(result => {
+                    if (result.data.node?.__typename !== 'Repository') {
+                        throw new Error('Expected Repository')
+                    }
+                    return result.data.node.branches
+                }),
         },
     }
 }

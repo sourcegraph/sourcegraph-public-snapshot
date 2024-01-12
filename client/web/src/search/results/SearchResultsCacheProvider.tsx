@@ -14,6 +14,7 @@ import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, tap, throttleTime } from 'rxjs/operators'
 
+import { URLQueryFilter, serializeURLQueryFilters } from '@sourcegraph/branded'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
@@ -41,7 +42,7 @@ interface CachedSearchResultsInput {
      * Filter query, different from the search query since new filters
      * don't modify the main search query
      */
-    filterQuery: string
+    urlFilters: URLQueryFilter[]
 
     /**
      * Options to pass on to `streamSeach`.
@@ -63,7 +64,7 @@ interface CachedSearchResultsInput {
  * (updated as new streaming results come in).
  */
 export function useCachedSearchResults(props: CachedSearchResultsInput): AggregateStreamingSearchResults | undefined {
-    const { query, filterQuery, options, streamSearch, telemetryService } = props
+    const { query, urlFilters: selectedFilters, options, streamSearch, telemetryService } = props
     const cachedResults = useContext(SearchResultsCacheContext)
 
     const location = useLocation()
@@ -74,12 +75,19 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
         useMemo(() => {
             const isCachedQuery = query === cachedResults.current?.query
             const isCachedOptions = isEqual(options, cachedResults.current?.options)
+            const filterCacheKey = serializeURLQueryFilters(selectedFilters) ?? ''
 
             // If query and options have not changed, return cached value
-            if (isCachedQuery && isCachedOptions && cachedResults.current?.cache[filterQuery]) {
-                return of(cachedResults.current?.cache[filterQuery])
+            if (isCachedQuery && isCachedOptions && cachedResults.current?.cache[filterCacheKey]) {
+                const cacheHit = cachedResults.current?.cache[filterCacheKey]
+                return of(cacheHit)
+            }
+            const saveToCache = (results: AggregateStreamingSearchResults): void => {
+                const previousCache = isCachedQuery && isCachedOptions ? cachedResults.current?.cache ?? {} : {}
+                cachedResults.current = { query, options, cache: { ...previousCache, [filterCacheKey]: results } }
             }
 
+            const filterQuery = selectedFilters.map(f => f.value).join(' ')
             const stream = streamSearch(of(`${query} ${filterQuery}`.trim()), options).pipe(share())
 
             // If the throttleTime option `trailing` is set, we will return the
@@ -89,17 +97,13 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
             // and is discussed extensively in github issues. Instead, we just manually
             // merge throttleTime with only leading values and the final value.
             // See: https://github.com/ReactiveX/rxjs/issues/5732
-            return merge(stream.pipe(throttleTime(500)), stream.pipe(last())).pipe(
-                tap(results => {
-                    const previousCache = cachedResults.current?.cache ?? {}
-                    cachedResults.current = { query, options, cache: { ...previousCache, [filterQuery]: results } }
-                })
-            )
+            return merge(stream.pipe(throttleTime(500)), stream.pipe(last(), tap(saveToCache)))
+
             // We also need to pass `queryTimestamp` to the dependency array, because
             // it's used in the `useEffect` below to reset the cache if a new search
             // is made with the same query. Otherwise, the new search will not be executed.
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [query, filterQuery, options, streamSearch, cachedResults, queryTimestamp])
+        }, [query, selectedFilters, options, streamSearch, cachedResults, queryTimestamp])
     )
 
     // Reset cached results if a new search is made with the same query

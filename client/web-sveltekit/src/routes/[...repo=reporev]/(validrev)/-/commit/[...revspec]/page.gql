@@ -1,6 +1,3 @@
-#import '$lib/Commit.gql'
-#import './FileDiff.gql'
-
 query CommitQuery($repo: ID!, $revspec: String!) {
     node(id: $repo) {
         ... on Repository {

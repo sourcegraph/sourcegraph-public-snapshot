@@ -1,10 +1,13 @@
 import { dirname } from 'path'
 
 import { browser } from '$app/environment'
-import { fetchRepoCommits } from '$lib/repo/api/commits'
+import type { Scalars } from '$lib/graphql-types'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
 
 import type { LayoutLoad } from './$types'
+import { GitHistoryQuery, type GitHistory_HistoryConnection } from './layout.gql'
+
+const HISTORY_COMMITS_PER_PAGE = 20
 
 // Signifies the path of the repository root
 const REPO_ROOT = '.'
@@ -24,18 +27,52 @@ if (browser) {
     }
 }
 
+interface FetchCommitHistoryArgs {
+    repo: Scalars['ID']['input']
+    revspec: string
+    filePath: string
+    afterCursor: string | null
+}
+
 export const load: LayoutLoad = async ({ parent, params }) => {
-    const { resolvedRevision, repoName } = await parent()
+    const { resolvedRevision, repoName, graphqlClient } = await parent()
     const parentPath = getRootPath(repoName, params.path ? dirname(params.path) : REPO_ROOT)
+
+    function fetchCommitHistory({
+        repo,
+        revspec,
+        filePath,
+        afterCursor,
+    }: FetchCommitHistoryArgs): Promise<GitHistory_HistoryConnection | null> {
+        return graphqlClient
+            .query({
+                query: GitHistoryQuery,
+                variables: {
+                    repo,
+                    revspec,
+                    filePath,
+                    first: HISTORY_COMMITS_PER_PAGE,
+                    afterCursor,
+                },
+            })
+            .then(result => {
+                if (result.data.node?.__typename !== 'Repository') {
+                    throw new Error('Expected repository')
+                }
+                return result.data.node.commit?.ancestors ?? null
+            })
+    }
 
     return {
         parentPath,
+        fetchCommitHistory,
         deferred: {
             // Fetches the most recent commits for current blob, tree or repo root
-            codeCommits: fetchRepoCommits({
-                repoID: resolvedRevision.repo.id,
-                revision: resolvedRevision.commitID,
-                filePath: params.path,
+            commitHistory: fetchCommitHistory({
+                repo: resolvedRevision.repo.id,
+                revspec: resolvedRevision.commitID,
+                filePath: params.path ?? '',
+                afterCursor: null,
             }),
             fileTree: fetchSidebarFileTree({
                 repoID: resolvedRevision.repo.id,

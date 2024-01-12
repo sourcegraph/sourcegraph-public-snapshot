@@ -27,6 +27,7 @@ genrule(
         "operations.graphql",
         "//cmd/frontend/graphqlbackend:schema.graphql",
         "//cmd/frontend/graphqlbackend:dotcom.graphql",
+        "//cmd/frontend/graphqlbackend:guardrails.graphql",
     ],
     outs = ["_operations.go"],
     cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml) && mv cmd/cody-gateway/internal/dotcom/operations.go $@",

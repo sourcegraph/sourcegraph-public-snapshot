@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -316,13 +315,4 @@ func emptyTar(t *testing.T) io.ReadCloser {
 		t.Fatal(err)
 	}
 	return io.NopCloser(bytes.NewReader(buf.Bytes()))
-}
-
-func TestIsNetOpError(t *testing.T) {
-	if !isNetOpError(&net.OpError{}) {
-		t.Fatal("should be net.OpError")
-	}
-	if isNetOpError(errors.New("hi")) {
-		t.Fatal("should not be net.OpError")
-	}
 }

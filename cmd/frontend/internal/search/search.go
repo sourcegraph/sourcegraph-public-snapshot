@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
@@ -178,6 +179,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 
 		return h.searchClient.Execute(ctx, batchedStream, inputs)
 	}()
+
+	if err != nil && errors.HasType(err, &query.UnsupportedError{}) {
+		eventWriter.Alert(search.AlertForQuery(inputs.OriginalQuery, err))
+		err = nil
+	}
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
@@ -709,7 +715,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	// Instantly send results if we have not sent any yet.
 	if h.first && len(event.Results) > 0 {
 		h.first = false
-		h.eventWriter.Filters(h.filters.Compute())
+		h.eventWriter.Filters(h.filters.Compute(), false)
 		h.matchesBuf.Flush()
 		h.logLatency()
 	}
@@ -727,7 +733,11 @@ func (h *eventHandler) Done() {
 	h.progressTimer = nil
 
 	// Flush the final state
-	h.eventWriter.Filters(h.filters.Compute())
+	// TODO: make sure we actually respect timeouts
+	exhaustive := !h.progress.Stats.IsLimitHit &&
+		!h.progress.Stats.Status.Any(search.RepoStatusLimitHit) &&
+		!h.progress.Stats.Status.Any(search.RepoStatusTimedOut)
+	h.eventWriter.Filters(h.filters.Compute(), exhaustive)
 	h.matchesBuf.Flush()
 	h.eventWriter.Progress(h.progress.Final())
 }
@@ -751,7 +761,9 @@ func (h *eventHandler) flushTick() {
 
 	// a nil flushTimer indicates that Done() was called
 	if h.flushTimer != nil {
-		h.eventWriter.Filters(h.filters.Compute())
+		if h.filters.Dirty {
+			h.eventWriter.Filters(h.filters.Compute(), false)
+		}
 		h.matchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())

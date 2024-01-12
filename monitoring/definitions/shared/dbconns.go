@@ -63,12 +63,13 @@ func DatabaseConnectionsMonitoring(app string, owner monitoring.ObservableOwner)
 				Query: fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[5m])) / `+
 					`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[5m]))`, app, app),
 				Panel:    monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
-				Warning:  monitoring.Alert().GreaterOrEqual(0.05).For(10 * time.Minute),
-				Critical: monitoring.Alert().GreaterOrEqual(0.10).For(15 * time.Minute),
+				Warning:  monitoring.Alert().GreaterOrEqual(0.1).For(10 * time.Minute),
+				Critical: monitoring.Alert().GreaterOrEqual(0.5).For(10 * time.Minute),
 				Owner:    owner,
 				NextSteps: `
 					- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-					- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+					- Scale up Postgres memory/cpus - [see our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+					- If using GCP Cloud SQL, check for high lock waits or CPU usage in query insights
 				`,
 			},
 		},

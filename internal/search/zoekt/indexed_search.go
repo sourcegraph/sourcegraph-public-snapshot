@@ -350,7 +350,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 	}
 
 	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
+		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedOut)}})
 	}
 	return nil
 }

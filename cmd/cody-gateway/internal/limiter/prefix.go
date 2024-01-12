@@ -27,3 +27,7 @@ func (s *prefixRedisStore) TTL(key string) (int, error) {
 func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
 	return s.store.Expire(s.prefix+key, ttlSeconds)
 }
+
+func (s *prefixRedisStore) Del(key string) error {
+	return s.store.Del(s.prefix + key)
+}

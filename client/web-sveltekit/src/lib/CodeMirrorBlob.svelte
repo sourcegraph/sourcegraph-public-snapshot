@@ -1,12 +1,31 @@
 <script lang="ts" context="module">
-    import type { BlobFileFields } from '$lib/repo/api/blob'
     import { HovercardView } from '$lib/repo/HovercardView'
 
-    export interface BlobInfo extends BlobFileFields {
-        commitID: string
-        filePath: string
+    export interface BlobInfo {
+        /**
+         * Name of the repository this file belongs to.
+         */
         repoName: string
+        /**
+         * The commit OID of the currently viewed commit.
+         */
+        commitID: string
+        /**
+         * Human readable version of the current commit (e.g. branch name).
+         */
         revision: string
+        /**
+         * The path of the file relative to the repository root.
+         */
+        filePath: string
+        /**
+         * The content of the file.
+         */
+        content: string
+        /**
+         * The language of the file.
+         */
+        languages: string[]
     }
 
     const extensionsCompartment = new Compartment()

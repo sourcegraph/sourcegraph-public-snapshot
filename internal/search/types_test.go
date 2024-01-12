@@ -155,7 +155,7 @@ func TestZoektParameters(t *testing.T) {
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				PatternType:    query.SearchTypeKeyword,
+				PatternType:    query.SearchTypeCodyContext,
 			},
 			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  100000,
