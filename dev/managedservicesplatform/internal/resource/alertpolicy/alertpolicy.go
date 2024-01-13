@@ -192,10 +192,10 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 	// Set some defaults
 	switch config.ResourceKind {
 	case CloudRunService:
-		config.ThresholdAggregation.GroupByFields = append([]string{"resource.label.revision_name"}, config.ThresholdAggregation.GroupByFields...)
-	case CloudRunJob:
-		// No defaults
-	case CloudRedis:
+		config.ThresholdAggregation.GroupByFields = append(
+			[]string{"resource.label.revision_name"},
+			config.ThresholdAggregation.GroupByFields...)
+	case CloudRunJob, CloudRedis, URLUptime:
 		// No defaults
 	default:
 		return nil, errors.Newf("invalid service kind %q", config.ResourceKind)

@@ -386,7 +386,7 @@ func createServiceAlerts(
 			},
 			NotificationChannels: channels,
 		}); err != nil {
-			return err
+			return errors.Wrap(err, "instance_count")
 		}
 	}
 
@@ -394,7 +394,7 @@ func createServiceAlerts(
 	// from outside Cloud Run. The service must not use IAM auth.
 	if vars.ServiceAuthentication == nil && vars.ExternalDomain.GetDNSName() != "" {
 		if err := createExternalHealthcheckAlert(stack, id, vars, channels); err != nil {
-			return err
+			return errors.Wrap(err, "external_healthcheck")
 		}
 	}
 	return nil
