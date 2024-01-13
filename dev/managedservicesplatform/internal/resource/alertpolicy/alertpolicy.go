@@ -295,7 +295,7 @@ func buildFilter(config *Config) string {
 	case URLUptime:
 		filters = append(filters,
 			`resource.type = "uptime_url"`,
-			fmt.Sprintf(`resource.labels.check_id = "%s"`, config.ResourceName),
+			fmt.Sprintf(`metric.labels.check_id = "%s"`, config.ResourceName),
 		)
 	}
 
