@@ -258,7 +258,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 				},
 			},
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
-				AutoClose: pointers.Ptr("604800s"),
+				AutoClose: pointers.Ptr("86400s"), // 24 hours
 			},
 			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
 		})
