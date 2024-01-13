@@ -174,8 +174,8 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 							}},
 						},
 						InitialDelaySeconds: pointers.Float64(0),
-						TimeoutSeconds:      pointers.Float64(pointers.Deref(vars.Environment.HealthProbes.Timeout, 1)),
-						PeriodSeconds:       pointers.Float64(pointers.Deref(vars.Environment.HealthProbes.Interval, 1)),
+						TimeoutSeconds:      pointers.Float64(vars.Environment.HealthProbes.GetTimeout()),
+						PeriodSeconds:       pointers.Float64(vars.Environment.HealthProbes.GetInterval()),
 						FailureThreshold:    pointers.Float64(3),
 					}
 				}(),
@@ -192,8 +192,8 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", vars.DiagnosticsSecret.HexValue)),
 							}},
 						},
-						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.HealthProbes.Timeout, 1)),
-						PeriodSeconds:    pointers.Float64(pointers.Deref(vars.Environment.HealthProbes.Interval, 1)),
+						TimeoutSeconds:   pointers.Float64(vars.Environment.HealthProbes.GetTimeout()),
+						PeriodSeconds:    pointers.Float64(vars.Environment.HealthProbes.GetInterval()),
 						FailureThreshold: pointers.Float64(3),
 					}
 				}(),

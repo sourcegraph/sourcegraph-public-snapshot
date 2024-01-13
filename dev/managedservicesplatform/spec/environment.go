@@ -404,7 +404,7 @@ type EnvironmentServiceHealthProbesSpec struct {
 	// Timeout configures the period of time after which the probe times out,
 	// in seconds.
 	//
-	// Defaults to 1 second.
+	// Defaults to 3 seconds.
 	Timeout *int `yaml:"timeout,omitempty"`
 	// Interval configures the frequency, in seconds, at which to
 	// probe the deployed service. Must be greater than or equal to timeout.
@@ -432,7 +432,23 @@ func (s *EnvironmentServiceHealthProbesSpec) MaximumLatencySeconds() int {
 	}
 	// Maximum startup latency is retries x interval.
 	const maxRetries = 3
-	return maxRetries * pointers.Deref(s.Interval, 1)
+	return maxRetries * s.GetInterval()
+}
+
+// GetTimeout returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetTimeout() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.Timeout, 3)
+}
+
+// GetInterval returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetInterval() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.Interval, s.GetTimeout())
 }
 
 type EnvironmentJobSpec struct {
