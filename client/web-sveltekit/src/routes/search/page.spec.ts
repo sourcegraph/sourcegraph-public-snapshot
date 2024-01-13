@@ -8,31 +8,20 @@ test('shows suggestions', async ({ sg, page }) => {
     // Default suggestions
     await expect(page.getByLabel('Narrow your search')).toBeVisible()
 
-    sg.mock(
-        {
-            SearchResults: () => ({
-                repositories: [{ name: 'github.com/sourcegraph/sourcegraph' }],
-            }),
-        },
-        'SuggestionsRepo'
-    )
-
-    sg.mock(
-        {
-            SearchResults: () => ({
-                results: [
-                    {
-                        __typename: 'FileMatch',
-                        file: {
-                            path: 'sourcegraph.md',
-                            url: '',
-                        },
+    sg.mockTypes({
+        SearchResults: () => ({
+            repositories: [{ name: 'github.com/sourcegraph/sourcegraph' }],
+            results: [
+                {
+                    __typename: 'FileMatch',
+                    file: {
+                        path: 'sourcegraph.md',
+                        url: '',
                     },
-                ],
-            }),
-        },
-        'SuggestionsFile'
-    )
+                },
+            ],
+        }),
+    })
 
     // Repo suggestions
     await searchInput.fill('source')

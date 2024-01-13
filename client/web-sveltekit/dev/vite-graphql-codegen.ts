@@ -43,10 +43,16 @@ export default function graphqlCodegen(): Plugin {
                 plugins: ['typescript'],
             },
             'src/testing/graphql-type-mocks.ts': {
+                documents: [
+                    'src/{lib,routes}/**/*.(ts|gql)',
+                    '!src/lib/graphql-{operations,types,type-mocks}.ts',
+                    '!src/**/*.gql.ts',
+                ],
                 config: {
                     typesImport: '$lib/graphql-types',
+                    onlyOperationTypes: true,
                 },
-                plugins: [`${__dirname}/graphql-type-mocks.cjs`],
+                plugins: [`typescript`, `typescript-operations`, `${__dirname}/graphql-type-mocks.cjs`],
             },
             'src/': {
                 documents: ['src/**/*.gql', '!src/**/*.gql.ts'],

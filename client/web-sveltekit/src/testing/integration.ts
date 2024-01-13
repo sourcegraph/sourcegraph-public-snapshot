@@ -3,7 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
 import { buildSchema } from 'graphql'
-import type { TypeMocks, ObjectMock, UserMock } from './graphql-type-mocks'
+import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
 import glob from 'glob'
 import { faker } from '@faker-js/faker'
 import { GraphQLMockServer } from './graphql-mocking'
@@ -32,6 +32,9 @@ const defaultMocks: TypeMocks = {
         date: faker.date.past().toISOString(),
     }),
     GitObjectID: () => faker.git.commitSha(),
+    GitCommit: () => ({
+        abbreviatedOID: faker.git.commitSha({ length: 7 }),
+    }),
 }
 
 const SCHEMA_DIR = path.resolve(
@@ -49,10 +52,17 @@ class Sourcegraph {
     async setup(): Promise<void> {
         await this.page.route(/\.api\/graphql/, route => {
             const { query, variables, operationName } = JSON.parse(route.request().postData() ?? '')
-            const result = this.graphqlMock.query(query, variables, operationName)
-            if (this.debugMode) {
-                console.log('incoming graphql query', operationName, variables, result)
-            }
+            const result = this.graphqlMock.query(
+                query,
+                variables,
+                operationName,
+                this.debugMode
+                    ? {
+                          logGraphQLErrors: true,
+                          warnOnMissingOperationMocks: true,
+                      }
+                    : undefined
+            )
             route.fulfill({ json: result })
         })
     }
@@ -61,8 +71,12 @@ class Sourcegraph {
         this.debugMode = true
     }
 
-    public mock(mocks: TypeMocks, operationName?: string): void {
-        this.graphqlMock.addMocks(mocks, operationName)
+    public mockTypes(mocks: TypeMocks): void {
+        this.graphqlMock.addTypeMocks(mocks)
+    }
+
+    public mockOperations(mocks: OperationMocks): void {
+        this.graphqlMock.addOperationMocks(mocks)
     }
 
     public fixture(fixtures: (ObjectMock & { __typename: NonNullable<ObjectMock['__typename']> })[]): void {
@@ -70,28 +84,22 @@ class Sourcegraph {
     }
 
     public signIn(userMock: UserMock = {}): void {
-        this.mock(
-            {
-                Query: () => ({
-                    currentUser: {
-                        avatarURL: null,
-                        ...userMock,
-                    },
-                }),
-            },
-            'Init'
-        )
+        this.mockTypes({
+            Query: () => ({
+                currentUser: {
+                    avatarURL: null,
+                    ...userMock,
+                },
+            }),
+        })
     }
 
     public signOut(): void {
-        this.mock(
-            {
-                Query: () => ({
-                    currentUser: null,
-                }),
-            },
-            'Init'
-        )
+        this.mockTypes({
+            Query: () => ({
+                currentUser: null,
+            }),
+        })
     }
 
     public teardown(): void {

@@ -7,10 +7,30 @@ test.beforeEach(({ sg }) => {
         {
             __typename: 'Repository',
             id: '1',
-            name: 'github.com/sourcegraph/sourcegraph',
+            description: 'Example description',
             mirrorInfo: {
                 cloned: true,
                 cloneInProgress: false,
+            },
+            commit: {
+                id: '2',
+            },
+        },
+        {
+            __typename: 'GitCommit',
+            id: '2',
+            tree: {
+                isRoot: true,
+                canonicalURL: `/${repoName}/-/tree/`,
+                isDirectory: true,
+                entries: [
+                    {
+                        canonicalURL: `/${repoName}/-/blob/index.js`,
+                    },
+                    {
+                        canonicalURL: `/${repoName}/-/blob/README.md`,
+                    },
+                ],
             },
         },
         {
@@ -33,38 +53,32 @@ test.beforeEach(({ sg }) => {
         },
     ])
 
-    sg.mock({
-        Query: () => ({
+    sg.mockOperations({
+        ResolveRepoRevison: ({ repoName }) => ({
             repositoryRedirect: {
-                __typename: 'Repository',
                 id: '1',
+                name: repoName,
             },
         }),
-        GitCommit: info => ({
-            oid: 'test',
-            tree: {
-                isRoot: true,
-                canonicalURL: `/${repoName}/-/tree/`,
-                isDirectory: true,
-                entries: [
-                    {
-                        __typename: 'GitBlob',
-                        canonicalURL: `/${repoName}/-/blob/index.js`,
-                    },
-                    {
-                        __typename: 'GitBlob',
-                        canonicalURL: `/${repoName}/-/blob/README.md`,
-                    },
-                ],
+        TreeEntries: ({ repoID }) => ({
+            node: {
+                id: repoID,
             },
-            blob: {
-                canonicalURL: `/${repoName}/-/blob/README.md}`,
+        }),
+        RepoPageReadmeQuery: ({ repoID, path }) => ({
+            node: {
+                id: repoID,
+                commit: {
+                    blob: {
+                        canonicalURL: `/${repoName}/-/blob/${path}`,
+                    },
+                },
             },
         }),
     })
 })
 
-test('file sidebar', async ({ page, sg }) => {
+test('file sidebar', async ({ page }) => {
     const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
     await page.goto(`/${repoName}`)
@@ -77,27 +91,11 @@ test('file sidebar', async ({ page, sg }) => {
     // Open sidebar
     await page.getByRole('button', { name: 'Show sidebar' }).click()
 
-    sg.mock({
-        GitCommit: () => ({
-            blob: {
-                richHTML: 'Example readme content',
-            },
-        }),
-    })
-
     // Go to a file
     await readmeEntry.click()
     await expect(page).toHaveURL(`/${repoName}/-/blob/README.md`)
     // Verify that entry is selected
     await expect(page.getByRole('treeitem', { name: 'README.md', selected: true })).toBeVisible()
-
-    sg.mock({
-        GitCommit: () => ({
-            blob: {
-                richHTML: 'index.js',
-            },
-        }),
-    })
 
     // Go other file
     await page.getByRole('treeitem', { name: 'index.js' }).click()
@@ -115,14 +113,16 @@ test('repo readme', async ({ page }) => {
 
 test('repo description', async ({ page, sg }) => {
     // Shows the repo description if there is no readme file in the repo root
-    sg.mock({
-        Repository: () => ({
-            description: 'Example description',
-        }),
-        GitCommit: () => ({
-            tree: {
-                isRoot: true,
-                entries: [],
+    sg.mockOperations({
+        TreeEntries: () => ({
+            node: {
+                __typename: 'Repository',
+                commit: {
+                    tree: {
+                        isRoot: true,
+                        entries: [],
+                    },
+                },
             },
         }),
     })
@@ -133,20 +133,28 @@ test('repo description', async ({ page, sg }) => {
 })
 
 test('history panel', async ({ page, sg }) => {
-    sg.mock(
-        {
-            GitCommit: () => ({
-                subject: 'Test commit',
-            }),
-        },
-        'GitHistoryQuery'
-    )
+    sg.mockOperations({
+        GitHistoryQuery: () => ({
+            node: {
+                __typename: 'Repository',
+                id: '1',
+                commit: {
+                    ancestors: {
+                        nodes: [{ subject: 'Test commit' }, { subject: 'Test commit 2' }],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                    },
+                },
+            },
+        }),
+    })
 
     await page.goto(`/${repoName}`)
 
     // Open history panel
     await page.getByRole('tab', { name: 'History' }).click()
-    await expect(page.getByText('Test commit')).toBeVisible()
+    await expect(page.getByText('Test commit', { exact: true })).toBeVisible()
 
     // Close history panel
     await page.getByRole('tab', { name: 'History' }).click()

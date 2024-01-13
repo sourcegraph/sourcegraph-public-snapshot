@@ -7,7 +7,6 @@ test.beforeEach(({ sg }) => {
         {
             __typename: 'Repository',
             id: '1',
-            name: 'github.com/sourcegraph/sourcegraph',
             mirrorInfo: {
                 cloned: true,
                 cloneInProgress: false,
@@ -18,11 +17,12 @@ test.beforeEach(({ sg }) => {
 
 test.describe('cloned repository', () => {
     test.beforeEach(async ({ sg, page }) => {
-        sg.mock({
-            Query: () => ({
+        sg.mockOperations({
+            ResolveRepoRevison: ({}) => ({
                 repositoryRedirect: {
                     __typename: 'Repository',
                     id: '1',
+                    name: repoName,
                 },
             }),
         })
@@ -40,11 +40,12 @@ test.describe('cloned repository', () => {
 })
 
 test('clone in progress', async ({ sg, page }) => {
-    sg.mock({
-        Query: () => ({
+    sg.mockOperations({
+        ResolveRepoRevison: ({ repoName }) => ({
             repositoryRedirect: {
                 __typename: 'Repository',
                 id: '1',
+                name: repoName,
                 mirrorInfo: {
                     cloneInProgress: true,
                     cloneProgress: 'Test clone message',
@@ -62,11 +63,12 @@ test('clone in progress', async ({ sg, page }) => {
 })
 
 test('not cloned', async ({ sg, page }) => {
-    sg.mock({
-        Query: () => ({
+    sg.mockOperations({
+        ResolveRepoRevison: ({ repoName }) => ({
             repositoryRedirect: {
                 __typename: 'Repository',
                 id: '1',
+                name: repoName,
                 mirrorInfo: {
                     cloned: false,
                     cloneInProgress: false,

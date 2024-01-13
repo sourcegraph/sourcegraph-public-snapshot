@@ -12886,6 +12886,7 @@ packages:
 
   /chromatic@10.2.0:
     resolution: {integrity: sha512-UDVGWa2Fx9CLCpwnyfvFHGr0vGF0ooB1TugUdgOcjC9pJXiFa67i7oaXMyTfVRIFxlt/QkqOJwdqDqqlLFffCw==}
+    deprecated: Broken due to out-of-memory issue
     hasBin: true
     dev: true
 

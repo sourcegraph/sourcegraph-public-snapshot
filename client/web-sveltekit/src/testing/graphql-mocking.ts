@@ -36,11 +36,21 @@ interface Fixture extends ObjectMock {
     __typename: string
 }
 
-export interface Mocks {
-    [typeName: string]: (info: GraphQLResolveInfo) => any
+export interface TypeMocks {
+    [typeName: string]: ((info: GraphQLResolveInfo) => any) | undefined
 }
 
+interface OperationMocks {
+    [operationName: string]: ((variables: { [key: string]: any }) => any) | undefined
+}
+
+/**
+ * Type specific configuration.
+ */
 export interface TypePolicy {
+    /**
+     * The field which uniquely identifies the object.
+     */
     keyField?: string
 }
 
@@ -52,13 +62,15 @@ export interface GraphQLMockServerOptions {
     /**
      * A map of mock functions for each type in the schema.
      */
-    mocks?: Mocks
+    mocks?: TypeMocks
     /**
-     * A map of mock functions for each type in the schema.
+     * A list of mock fixtures. These can be used to describe a partial
+     * database state. Operation mocks only have to reference the key field
+     * of the fixture to includ it.
      */
     fixtures?: Fixture[]
     /**
-     * A seed for the random value generator.
+     * A seed for the random value generator. The seed will be reset for each query.
      */
     seed?: number
     /**
@@ -76,15 +88,26 @@ export interface GraphQLMockServerOptions {
      * @default 0.3
      */
     nullProbability?: number
+    /**
+     * Type specific configuration.
+     */
     typePolicies?: Record<string, TypePolicy>
 }
 
-interface OperationMock {
-    operationName?: string
-    mocks: Mocks
+interface GraphQLMockServerContext {
+    warnOnMissingOperationMocks?: boolean
 }
 
-interface GraphQLMockServerContext {}
+interface QueryOptions {
+    /**
+     *  Logs GraphQL errors to the console.
+     */
+    logGraphQLErrors?: boolean
+    /**
+     * Logs a warning if the query doesn't have any operation mocks.
+     */
+    warnOnMissingOperationMocks?: boolean
+}
 
 function isInlinedFragment(node: any): node is InlineFragmentNode {
     return !!node && node.kind === 'InlineFragment'
@@ -110,49 +133,112 @@ const defaultResolvers: Record<string, Record<string, GraphQLFieldResolver<any, 
     },
 }
 
+/**
+ * A mock GraphQL server that can be used to mock a GraphQL API.
+ *
+ * There are three ways to provide mock data (in order of precedence):
+ *
+ * 1. Provide a map of mock functions for each type in the schema. The mock functions will be called
+ *    when the corresponding type is encountered in the query. It's possible to provide multiple
+ *    mock functions for the same type, in which case they will be called in order of precedence and
+ *    the result is the union of all mock values.
+ *    This can be used to define sensible default values for certain types.
+ * 2. Provide a list of fixtures. These fixtures are partially mocked objects with a key (e.g. 'id') field.
+ *    Wherever a query returns an object with the same ID, the fixture will be used as the base object and
+ *    the type mock functions will be called to fill in the rest of the fields.
+ * 3. Provide a list of operation-specific mock functions. These mock functions will be called when the
+ *    corresponding operation is encountered in the query. Any field set in the operation mock will take
+ *    precedence over fixture values and type mock values.
+ */
 export class GraphQLMockServer {
-    private operationMocks: OperationMock[] = []
+    private typeMocks: TypeMocks[] = []
+    private operationMocks: OperationMocks = {}
     private objectStore: Map<string, ObjectMock> = new Map()
+    // List of known key fields. This is used to find fixtures by ID for query overrides that don't specify
+    // the type of the object.
+    private keyFields = new Set(['id'])
 
     constructor(private readonly options: GraphQLMockServerOptions) {
         if (options.fixtures) {
             this.addFixtures(options.fixtures)
         }
+
+        if (options.typePolicies) {
+            for (const policy of Object.values(options.typePolicies)) {
+                if (policy.keyField) {
+                    this.keyFields.add(policy.keyField)
+                }
+            }
+        }
     }
 
+    /**
+     * Add a list of fixtures to the mock server. This allows to provide mock data for multiple objects of
+     * the same type and reuse the same mock data in multiple queries.
+     */
     public addFixtures(fixtures: Fixture[]): void {
+        // While it's OK to overwrite fixtures for the same ID in separate calls, we want to
+        // ensure that we don't have objects with duplicate IDs in the same list.
+        const seenIDs = new Set<string>()
         for (const fixture of fixtures) {
             const type = this.options.schema.getType(fixture.__typename)
             if (!type) {
-                throw new Error(`Unknown type ${fixture.__typename}`)
+                throw new Error(`Unknown type '${fixture.__typename}'.`)
             }
             if (!isObjectType(type)) {
-                throw new Error(`Type ${fixture.__typename} is not an object type`)
+                throw new Error(`Type '${fixture.__typename}' is not an object type.`)
             }
             const keyFieldName = this.options.typePolicies?.[type.name]?.keyField ?? 'id'
             const keyField = type.getFields()[keyFieldName]
             if (!keyField) {
-                throw new Error(`Type ${fixture.__typename} does not have a key field`)
+                throw new Error(`Type ${fixture.__typename} does not have a key field.`)
             }
             if (!(keyFieldName in fixture)) {
-                throw new Error(`Fixture for type ${fixture.__typename} requires a value for key field ${keyFieldName}`)
+                throw new Error(
+                    `Fixture for type '${fixture.__typename}' requires a value for key field '${keyFieldName}'.`
+                )
             }
-            this.objectStore.set(`${type.name}:${fixture[keyFieldName]}`, fixture)
+            const id = String(fixture[keyFieldName])
+            if (seenIDs.has(id)) {
+                throw new Error(`Fixture for type '${fixture.__typename}' has duplicate ID '${id}'.`)
+            }
+            this.objectStore.set(this.getCacheKey(type, id), fixture)
         }
     }
 
-    public addMocks(mocks: Mocks, operationName?: string): void {
-        this.operationMocks.push({
-            operationName,
-            mocks,
-        })
+    /**
+     * Additional default mocks for all types in the schema.
+     */
+    public addTypeMocks(mocks: TypeMocks): void {
+        this.typeMocks.push(mocks)
     }
 
+    /**
+     * Mocks for specific operations. These mocks take precedence over type mocks and fixtures.
+     */
+    public addOperationMocks(operationMocks: OperationMocks): void {
+        Object.assign(this.operationMocks, operationMocks)
+    }
+
+    /**
+     * Remove all mocks added via `addTypeMocks` and `addOperationMocks`.
+     */
     public reset(): void {
-        this.operationMocks.length = 0
+        this.typeMocks.length = 0
+        this.operationMocks = {}
     }
 
-    public query(query: string, variables?: Record<string, unknown>, operationName?: string): ExecutionResult {
+    /**
+     * Execute a GraphQL query and return the result.
+     *
+     * If `error` is set to `true`, the query will
+     */
+    public query(
+        query: string,
+        variables?: Record<string, unknown>,
+        operationName?: string,
+        options?: QueryOptions
+    ): ExecutionResult {
         faker.seed(this.options.seed ?? 1)
 
         const result = graphqlSync({
@@ -161,10 +247,13 @@ export class GraphQLMockServer {
             variableValues: variables,
             operationName,
             contextValue: {
-                getMockValue: this.getMockValue.bind(this),
+                warnOnMissingOperationMocks: options?.warnOnMissingOperationMocks,
             },
             fieldResolver: this.fieldResolver,
         })
+        if (options?.logGraphQLErrors && result.errors) {
+            console.error(result.errors)
+        }
         return result
     }
 
@@ -172,87 +261,43 @@ export class GraphQLMockServer {
     // extend the provided schema, which can be expensive for large schemas.
     private fieldResolver: GraphQLFieldResolver<any, GraphQLMockServerContext> = (
         obj,
-        variables,
+        args,
         context,
         info
     ): unknown => {
-        if (!obj) {
-            // Must be a root query. We resolve the query here to make sure we
-            // resolve operation-specific overrides correctly.
-            obj = this.getMockValue(info.parentType, info)
-        }
-        if (isObjectType(info.parentType)) {
-            // Restore any previously resolved object with the same ID
-            //obj = this.resolveObject(info.parentType, obj, info)
+        // Must be a root query. We resolve the query here to make sure we
+        // resolve operation-specific overrides correctly.
+        if (info.parentType.name === 'Query') {
+            if (info.operation.name) {
+                const operationMock = this.operationMocks[info.operation.name.value]
+                if (operationMock) {
+                    obj = operationMock(info.variableValues ?? {})
+                } else if (context.warnOnMissingOperationMocks) {
+                    console.warn(`No mock found for operation '${info.operation.name.value}'.`)
+                }
+            }
+            obj = this.getMockValue(info.parentType, info, obj)
         }
 
         // If the object already has a value for this field, return it.
         // This will be the case for fields that are explicitly mocked.
         if (obj && info.fieldName in obj) {
+            // Partial mock data is available and should take precedence over any other mock data
             return this.getMockValue(info.returnType, info, obj[info.fieldName])
         }
 
         if (defaultResolvers[info.parentType.name]?.[info.fieldName]) {
-            return defaultResolvers[info.parentType.name][info.fieldName](obj, variables, context, info)
+            return defaultResolvers[info.parentType.name][info.fieldName](obj, args, context, info)
         }
 
         return this.getMockValue(info.returnType, info)
-    }
-
-    private resolveObject(
-        type: GraphQLObjectType,
-        value: ObjectMock | undefined,
-        info: GraphQLResolveInfo
-    ): ObjectMock {
-        if (!value) {
-            value = {}
-        }
-
-        const keyField = this.options.typePolicies?.[type.name]?.keyField ?? 'id'
-        let idFieldType = type.getFields()[keyField]?.type
-        if (isNonNullType(idFieldType)) {
-            idFieldType = idFieldType.ofType
-        }
-        if (!idFieldType || !isScalarType(idFieldType)) {
-            return value
-        }
-        const id = value[keyField] ?? this.getScalarMockValue(idFieldType, info)
-        const cacheKey = `${type.name}:${id}`
-
-        const obj = this.objectStore.get(cacheKey)
-        return obj ? { ...obj, ...value } : { ...value }
-    }
-
-    /**
-     * Yields mock backends in order of precedence (low to high).
-     * Default mocks have the lowest precedence, then unamed dynamic mocks, then operation-specific mocks.
-     */
-    private *backends(
-        type: Exclude<GraphQLNullableType, GraphQLList<any>>,
-        info: GraphQLResolveInfo
-    ): Generator<Mocks> {
-        if (this.options.mocks && this.options.mocks[type.name]) {
-            yield this.options.mocks
-        }
-
-        for (const { operationName, mocks } of this.operationMocks) {
-            if (!operationName && mocks[type.name]) {
-                yield mocks
-            }
-        }
-
-        for (const { operationName, mocks } of this.operationMocks) {
-            if (operationName && operationName === info.operation.name?.value && mocks[type.name]) {
-                yield mocks
-            }
-        }
     }
 
     private getMockValue(type: GraphQLType, info: GraphQLResolveInfo, override?: unknown): unknown {
         if (isNonNullType(type)) {
             type = type.ofType
         } else {
-            // Return null in ~30% of cases
+            // Return null in ~30% of cases by default
             if (
                 override === null ||
                 (override === undefined && faker.number.float() < (this.options.nullProbability ?? 0.3))
@@ -277,9 +322,8 @@ export class GraphQLMockServer {
         }
 
         if (isInterfaceType(type)) {
-            const objType = isObjectWithTypename(override)
-                ? info.schema.getType(override.__typename)
-                : faker.helpers.arrayElement(info.schema.getImplementations(type).objects)
+            const implementations = info.schema.getImplementations(type).objects
+            const objType = this.getObjectType(override, implementations) ?? faker.helpers.arrayElement(implementations)
             if (!isObjectType(objType)) {
                 throw new Error(`Unable to determine object type for interface ${type.name}`)
             }
@@ -290,9 +334,8 @@ export class GraphQLMockServer {
         }
 
         if (isUnionType(type)) {
-            const objType = isObjectWithTypename(override)
-                ? info.schema.getType(override.__typename)
-                : faker.helpers.arrayElement(type.getTypes())
+            const types = type.getTypes()
+            const objType = this.getObjectType(override, types) ?? faker.helpers.arrayElement(types)
             if (!isObjectType(objType)) {
                 throw new Error(`Unable to determine object type for union ${type.name}`)
             }
@@ -322,23 +365,32 @@ export class GraphQLMockServer {
     }
 
     private getObjectMockValue(type: GraphQLObjectType, info: GraphQLResolveInfo, override?: ObjectMock): ObjectMock {
-        let mockValue: ObjectMock = this.resolveObject(type, override, info)
+        let mockValue: ObjectMock = this.resolveObject(type, override)
         const interfaces = type.getInterfaces()
         for (const interfaceType of interfaces) {
-            for (const backend of this.backends(interfaceType, info)) {
-                Object.assign(mockValue, backend[interfaceType.name](info))
+            for (const backend of this.backends(interfaceType)) {
+                const mockFunction = backend[interfaceType.name]
+                if (mockFunction) {
+                    Object.assign(mockValue, mockFunction(info))
+                }
             }
         }
-        for (const backend of this.backends(type, info)) {
-            Object.assign(mockValue, backend[type.name](info))
+        for (const backend of this.backends(type)) {
+            const mockFunction = backend[type.name]
+            if (mockFunction) {
+                Object.assign(mockValue, mockFunction(info))
+            }
         }
         return { ...mockValue, ...override }
     }
 
     private getScalarMockValue(type: GraphQLScalarType, info: GraphQLResolveInfo): unknown {
         let mockValue: unknown = null
-        for (const mocks of this.backends(type, info)) {
-            mockValue = mocks[type.name](info)
+        for (const mocks of this.backends(type)) {
+            const mockFunction = mocks[type.name]
+            if (mockFunction) {
+                mockValue = mockFunction(info)
+            }
         }
         if (mockValue !== null) {
             return mockValue
@@ -359,5 +411,76 @@ export class GraphQLMockServer {
             default:
                 throw new Error(`Unknown scalar type ${type.name}`)
         }
+    }
+
+    private getCacheKey(type: GraphQLObjectType, keyValue: string): string {
+        return `${type.name}:${keyValue}`
+    }
+
+    private resolveObject(type: GraphQLObjectType, value: ObjectMock = {}): ObjectMock {
+        const keyFieldName = this.options.typePolicies?.[type.name]?.keyField ?? 'id'
+        let keyFieldType = type.getFields()[keyFieldName]?.type
+        if (isNonNullType(keyFieldType)) {
+            keyFieldType = keyFieldType.ofType
+        }
+        if (!keyFieldType || !isScalarType(keyFieldType)) {
+            return value
+        }
+        const key = value[keyFieldName]
+        const cacheKey = this.getCacheKey(type, String(key))
+
+        const obj = this.objectStore.get(cacheKey)
+        return obj ? { ...obj, ...value } : { ...value }
+    }
+
+    /**
+     * Yields mock backends in order of precedence (low to high).
+     * Default mocks have the lowest precedence, then unamed dynamic mocks, then operation-specific mocks.
+     */
+    private *backends(type: Exclude<GraphQLNullableType, GraphQLList<any>>): Generator<TypeMocks> {
+        if (this.options.mocks && this.options.mocks[type.name]) {
+            yield this.options.mocks
+        }
+
+        for (const mocks of this.typeMocks) {
+            if (mocks[type.name]) {
+                yield mocks
+            }
+        }
+    }
+
+    /**
+     * Helper function to determine the type of a partially mocked object. Either the type is
+     * explicitly set via the __typename field, or we determine the type type from a list of possible
+     * types by checking if a fixture exists for the object.
+     */
+    private getObjectType(value: unknown, possibleTypes: readonly GraphQLObjectType[]): GraphQLObjectType | null {
+        if (isObjectWithTypename(value)) {
+            const type = this.options.schema.getType(value.__typename)
+            if (!type) {
+                throw new Error(`Unknown type '${value.__typename}'.`)
+            }
+            if (!isObjectType(type)) {
+                throw new Error(`Type '${value.__typename}' is not an object type.`)
+            }
+            return type
+        } else if (isObject(value)) {
+            for (const type of possibleTypes) {
+                const keyFieldName = this.options.typePolicies?.[type.name]?.keyField ?? 'id'
+                const keyField = type.getFields()[keyFieldName]
+                if (!keyField) {
+                    continue
+                }
+                if (keyFieldName in value) {
+                    const id = String(value[keyFieldName])
+                    const cacheKey = this.getCacheKey(type, id)
+                    if (this.objectStore.has(cacheKey)) {
+                        return type
+                    }
+                }
+            }
+        }
+
+        return null
     }
 }

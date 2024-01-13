@@ -252,8 +252,8 @@ describe('custom mocks', () => {
                 }),
             },
         })
-        server.addMocks({ User: () => ({ name: 'custom' }) }, 'customOperation')
-        server.addMocks({ User: () => ({ name: 'user2' }) })
+        server.addOperationMocks({ customOperation: () => ({ currentUser: { name: 'custom' } }) })
+        server.addTypeMocks({ User: () => ({ name: 'user2' }) })
 
         expect(server.query(`query {currentUser {name age}}`)).toMatchObject({
             data: { currentUser: { name: 'user2', age: 42 } },
@@ -263,7 +263,7 @@ describe('custom mocks', () => {
             data: { currentUser: { name: 'custom', age: 42 } },
         })
 
-        server.addMocks({ User: () => ({ friends: [{ name: 'friend1' }] }) })
+        server.addTypeMocks({ User: () => ({ friends: [{ name: 'friend1' }] }) })
 
         expect(server.query(`query {currentUser { friends {name age}}}`)).toMatchObject({
             data: { currentUser: { friends: [{ name: 'friend1', age: 42 }] } },
@@ -284,6 +284,11 @@ describe('fixtures', () => {
                 __typename: 'Action',
                 key: '5',
                 name: 'action',
+            },
+            {
+                __typename: 'Organization',
+                id: '2',
+                name: 'organization',
             },
         ],
         mocks: {
@@ -316,25 +321,45 @@ describe('fixtures', () => {
     })
 
     test('override specific fields per operation', () => {
-        server.addMocks({
-            Query: () => ({
-                currentUser: { id: '1', name: 'default' },
+        server.addTypeMocks({
+            User: () => ({
+                id: '1',
+                name: 'default',
             }),
         })
-        server.addMocks(
-            {
-                Query: () => ({
-                    currentUser: { id: '1', name: 'custom' },
-                }),
-            },
-            'customQuery'
-        )
+        server.addOperationMocks({
+            customQuery: () => ({
+                currentUser: { name: 'custom' },
+            }),
+        })
 
         expect(server.query(`query {currentUser {id name}}`)).toMatchObject({
             data: { currentUser: { id: '1', name: 'default' } },
         })
         expect(server.query(`query customQuery {currentUser {id name}}`)).toMatchObject({
             data: { currentUser: { id: '1', name: 'custom' } },
+        })
+    })
+
+    test('load correct fixture without typename', () => {
+        server.addOperationMocks({
+            customQuery: () => ({
+                viewer: { id: '1' },
+            }),
+        })
+
+        expect(server.query(`query customQuery {viewer {id name __typename}}`)).toMatchObject({
+            data: { viewer: { id: '1', name: 'user1', __typename: 'User' } },
+        })
+
+        server.addOperationMocks({
+            customQuery: () => ({
+                viewer: { id: '2' },
+            }),
+        })
+
+        expect(server.query(`query customQuery {viewer {id name __typename}}`)).toMatchObject({
+            data: { viewer: { id: '2', name: 'organization', __typename: 'Organization' } },
         })
     })
 })
@@ -392,14 +417,11 @@ describe('operation overrides', () => {
                 }),
             },
         })
-        server.addMocks(
-            {
-                Query: () => ({
-                    currentUser: { name: 'customUser' },
-                }),
-            },
-            'customOperation'
-        )
+        server.addOperationMocks({
+            customOperation: () => ({
+                currentUser: { name: 'customUser' },
+            }),
+        })
 
         expect(server.query(`query {currentUser {name}}`)).toMatchObject({
             data: { currentUser: { name: 'defaultUser' } },
