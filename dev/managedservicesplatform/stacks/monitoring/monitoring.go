@@ -467,14 +467,13 @@ func createExternalHealthcheckAlert(
 				"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
 			},
 			Aligner: alertpolicy.MonitoringAlignFractionTrue,
-			Reducer: alertpolicy.MonitoringReduceMean,
 			// Checks occur every 60s, in a 300s window if 2/5 fail we are in trouble
 			Period:     "300s",
 			Duration:   "0s",
 			Comparison: alertpolicy.ComparisonLT,
 			Threshold:  0.4,
 			// Alert when all locations go down
-			Trigger: alertpolicy.TriggerKindAnyViolation,
+			Trigger: alertpolicy.TriggerKindAllInViolation,
 		},
 		NotificationChannels: channels,
 	}); err != nil {

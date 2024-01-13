@@ -230,8 +230,8 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 						Aggregations: []monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdAggregations{
 							{
 								AlignmentPeriod:    pointers.Ptr(config.ThresholdAggregation.Period),
-								PerSeriesAligner:   pointers.Ptr(string(config.ThresholdAggregation.Aligner)),
-								CrossSeriesReducer: pointers.Ptr(string(config.ThresholdAggregation.Reducer)),
+								PerSeriesAligner:   pointers.NonZeroPtr(string(config.ThresholdAggregation.Aligner)),
+								CrossSeriesReducer: pointers.NonZeroPtr(string(config.ThresholdAggregation.Reducer)),
 								GroupByFields:      pointers.Ptr(pointers.Slice(config.ThresholdAggregation.GroupByFields)),
 							},
 						},
