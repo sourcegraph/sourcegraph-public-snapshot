@@ -12,7 +12,7 @@ export function createAccessToken(
     user: Scalars['ID'],
     scopes: string[],
     note: string,
-    expiresAt: Date | null
+    expiresAt: string | null
 ): Observable<CreateAccessTokenResult['createAccessToken']> {
     return requestGraphQL<CreateAccessTokenResult, CreateAccessTokenVariables>(
         gql`
