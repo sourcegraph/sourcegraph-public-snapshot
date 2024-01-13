@@ -43,7 +43,7 @@ func bazelGoModTidy() func(*bk.Pipeline) {
 func addSgLints(targets []string, opts CoreTestOperationsOptions) func(*bk.Pipeline) {
 	cmd := "./sg"
 	if opts.AspectWorkflows {
-		cmd = "go run ./dev/sg"
+		cmd = "go run ./dev/sg "
 	}
 
 	if retryCount := os.Getenv("BUILDKITE_RETRY_COUNT"); retryCount != "" && retryCount != "0" {
