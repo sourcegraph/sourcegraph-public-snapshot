@@ -46,7 +46,7 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	ops.Append(BazelOperations(buildOpts, opts)...)
 	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
-		linterOps.Append(addSgLints(targets))
+		linterOps.Append(addSgLints(targets, opts))
 	}
 	ops.Merge(linterOps)
 

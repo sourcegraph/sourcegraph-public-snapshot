@@ -40,8 +40,11 @@ func bazelGoModTidy() func(*bk.Pipeline) {
 }
 
 // addSgLints runs linters for the given targets.
-func addSgLints(targets []string) func(*bk.Pipeline) {
-	cmd := "./sg "
+func addSgLints(targets []string, opts CoreTestOperationsOptions) func(*bk.Pipeline) {
+	cmd := "./sg"
+	if opts.AspectWorkflows {
+		cmd = "go run ./dev/sg"
+	}
 
 	if retryCount := os.Getenv("BUILDKITE_RETRY_COUNT"); retryCount != "" && retryCount != "0" {
 		cmd = cmd + "-v "
@@ -67,16 +70,22 @@ func addSgLints(targets []string) func(*bk.Pipeline) {
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
+		steps := []bk.StepOpt{
 			withPnpmCache(),
-			bk.DependsOn("bazel-prechecks"),
-			bk.Cmd("buildkite-agent artifact download sg . --step bazel-prechecks"),
-			bk.Cmd("chmod +x ./sg"),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					IncludeNames: true,
 					Type:         bk.AnnotationTypeAuto,
 				},
-			}))
+			}),
+		}
+
+		if !opts.AspectWorkflows {
+			steps = append(steps, bk.DependsOn("bazel-prechecks"),
+				bk.Cmd("buildkite-agent artifact download sg . --step bazel-prechecks"),
+				bk.Cmd("chmod +x ./sg"))
+		}
+
+		pipeline.AddStep(":pineapple::lint-roller: Run sg lint", steps...)
 	}
 }
