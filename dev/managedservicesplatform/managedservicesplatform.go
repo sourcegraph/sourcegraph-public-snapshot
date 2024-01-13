@@ -88,6 +88,7 @@ func (r *Renderer) RenderEnvironment(
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
+			"category":    string(env.Category),
 			"msp":         "true",
 		},
 		Services: func() []string {

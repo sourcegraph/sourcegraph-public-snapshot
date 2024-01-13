@@ -18,6 +18,8 @@ type ServiceSpec struct {
 	// service. Each owner MUST be a valid Opsgenie team name - this is validated
 	// in each environment's monitoring stack.
 	Owners []string `yaml:"owners"`
+	// Description briefly summarizing what the service does.
+	Description *string `yaml"description,omitempty"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
