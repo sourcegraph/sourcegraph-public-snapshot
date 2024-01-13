@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Spec is a Managed Services Platform (MSP) service.
@@ -144,6 +145,7 @@ func (s Spec) Validate() []error {
 		}
 	}
 
+	configuredDomains := map[string]struct{}{}
 	for _, env := range s.Environments {
 		projectDisplayName := fmt.Sprintf("%s - %s", s.Service.GetName(), env.ID)
 		if len(projectDisplayName) > 30 {
@@ -156,6 +158,16 @@ func (s Spec) Validate() []error {
 		if !strings.HasPrefix(env.ProjectID, fmt.Sprintf("%s-", s.Service.ID)) {
 			errs = append(errs, errors.Newf("environment %q projectID %q must contain service ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 				env.ID, env.ProjectID))
+		}
+
+		if domain := pointers.DerefZero(env.EnvironmentServiceSpec).Domain.GetDNSName(); domain != "" {
+			_, exists := configuredDomains[domain]
+			if exists {
+				errs = append(errs, errors.Newf("domain %q is configured more than once across environments",
+					domain))
+			} else {
+				configuredDomains[domain] = struct{}{}
+			}
 		}
 	}
 
