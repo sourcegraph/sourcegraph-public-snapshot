@@ -49,6 +49,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	}
 
 	const uid1GQLID = "VXNlcjox"
+	defaultExpiration := time.Now().Add(1 * time.Hour).Format(time.RFC3339)
 
 	t.Run("authenticated as user", func(t *testing.T) {
 		accessTokens := newMockAccessTokens(t, 1, []string{authz.ScopeUserAll})
@@ -65,7 +66,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
-					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n", expiresAt: "` + defaultExpiration + `") {
 						id
 						token
 					}
@@ -86,7 +87,66 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	t.Run("authenticated as user, using invalid scopes", func(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		db := dbmocks.NewMockDB()
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n", ExpiresAt: &defaultExpiration})
+		if err == nil {
+			t.Error("err == nil")
+		}
+		if result != nil {
+			t.Errorf("got result %v, want nil", result)
+		}
+	})
+
+	t.Run("authenticated as user, expiration required not sent", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		db := dbmocks.NewMockDB()
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Scopes: []string{"user:all"}, Note: "n"})
+		if err == nil {
+			t.Error("err == nil")
+		}
+		if result != nil {
+			t.Errorf("got result %v, want nil", result)
+		}
+	})
+
+	t.Run("authenticated as user, expiration in past", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		db := dbmocks.NewMockDB()
+		pastExpiration := time.Now().Add(-1 * time.Hour).Format(time.RFC3339)
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Scopes: []string{"user:all"}, Note: "n", ExpiresAt: &pastExpiration})
+		if err == nil {
+			t.Error("err == nil")
+		}
+		if result != nil {
+			t.Errorf("got result %v, want nil", result)
+		}
+	})
+
+	t.Run("authenticated as user, allow no expiration", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		accessTokens := newMockAccessTokens(t, 1, []string{authz.ScopeUserAll})
+		users := dbmocks.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+		db := dbmocks.NewMockDB()
+		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
+		db.UsersFunc.SetDefaultReturn(users)
+		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAll), AllowNoExpiration: true}
+		defer func() { conf.Get().AuthAccessTokens = nil }()
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Scopes: []string{"user:all"}, Note: "n"})
+		if err != nil {
+			t.Errorf("got err %v, want nil", err)
+		}
+		if result == nil {
+			t.Error("result == nil")
+		}
+
+	})
+
+	t.Run("authenticated as user, expiration to far in future", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		db := dbmocks.NewMockDB()
+		durationTooLongExpiration := time.Now().Add(maxTokenDuration + time.Hour).Format(time.RFC3339)
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n", ExpiresAt: &durationTooLongExpiration})
 		if err == nil {
 			t.Error("err == nil")
 		}
@@ -104,9 +164,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{
-			User:   uid1GQLID,
-			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
-			Note:   "n",
+			User:      uid1GQLID,
+			Scopes:    []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
+			Note:      "n",
+			ExpiresAt: &defaultExpiration,
 		})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("got err %v, want %v", err, want)
@@ -131,7 +192,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
-					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all", "site-admin:sudo"], note: "n") {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all", "site-admin:sudo"], note: "n", expiresAt: "` + defaultExpiration + `") {
 						id
 						token
 					}
@@ -166,7 +227,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
-					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n", expiresAt: "` + defaultExpiration + `") {
 						id
 						token
 					}
@@ -204,7 +265,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
-					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n", expiresAt: "` + defaultExpiration + `") {
 						id
 						token
 					}
@@ -231,7 +292,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n", ExpiresAt: &defaultExpiration})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -250,7 +311,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n", ExpiresAt: &defaultExpiration})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -273,8 +334,9 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx,
 			&createAccessTokenInput{
-				User:   MarshalUserID(1),
-				Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
+				User:      MarshalUserID(1),
+				Scopes:    []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
+				ExpiresAt: &defaultExpiration,
 			},
 		)
 		got := fmt.Sprintf("%v", err)
@@ -295,8 +357,9 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx,
 			&createAccessTokenInput{
-				User:   MarshalUserID(1),
-				Scopes: []string{authz.ScopeUserAll},
+				User:      MarshalUserID(1),
+				Scopes:    []string{authz.ScopeUserAll},
+				ExpiresAt: &defaultExpiration,
 			},
 		)
 		got := fmt.Sprintf("%v", err)

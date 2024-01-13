@@ -21,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const maxTokenDuration = 24 * 365 * time.Hour
+
 type createAccessTokenInput struct {
 	User      graphql.ID
 	Scopes    []string
@@ -61,6 +63,24 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
 	}
 
+	var expiresAt time.Time
+	if args.ExpiresAt != nil {
+		expiresAt, err = time.Parse(time.RFC3339, *args.ExpiresAt)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse expires at as time")
+		}
+		switch duration := time.Until(expiresAt); {
+		case duration < 0:
+			return nil, errors.New("expiry must be in the future")
+		case duration > maxTokenDuration:
+			return nil, errors.New("expiry exceeds maximum allowed")
+		}
+	}
+
+	if expiresAt.IsZero() && !conf.AccessTokensAllowNoExpiration() {
+		return nil, errors.New("Access token creation requires a valid expiration.")
+	}
+
 	// Validate scopes.
 	var hasUserAllScope bool
 	seenScope := map[string]struct{}{}
@@ -87,18 +107,6 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	}
 	if !hasUserAllScope {
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
-	}
-
-	var expiresAt time.Time
-	if args.ExpiresAt != nil {
-		expiresAt, err = time.Parse(time.RFC3339, *args.ExpiresAt)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse expires at as time")
-		}
-		dur := time.Until(expiresAt)
-		if dur < 0 {
-			return nil, errors.New("expiry must be in the future")
-		}
 	}
 
 	uid := actor.FromContext(ctx).UID

@@ -1139,3 +1139,47 @@ func TestEmailSenderName(t *testing.T) {
 		})
 	}
 }
+
+func TestAccessTokenAllowNoExpiration(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig schema.SiteConfiguration
+		want       bool
+	}{
+		{
+			name:       "no accesstoken config set",
+			siteConfig: schema.SiteConfiguration{},
+			want:       false,
+		},
+		{
+			name: "default value",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow: string(AccessTokensAll),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "allow no expiration",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow:             string(AccessTokensAll),
+					AllowNoExpiration: true,
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
+
+			if got, want := AccessTokensAllowNoExpiration(), tc.want; got != want {
+				t.Fatalf("AccessTokensAllowNoExpiration() = %v, want %v", got, want)
+			}
+		})
+	}
+}

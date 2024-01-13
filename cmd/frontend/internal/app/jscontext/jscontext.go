@@ -155,6 +155,8 @@ type JSContext struct {
 
 	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
 
+	AccessTokensAllowNoExpiration bool `json:"accessTokensAllowNoExpiration"`
+
 	AllowSignup bool `json:"allowSignup"`
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
@@ -347,6 +349,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
 		AccessTokensAllow: conf.AccessTokensAllow(),
+
+		AccessTokensAllowNoExpiration: conf.AccessTokensAllowNoExpiration(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 

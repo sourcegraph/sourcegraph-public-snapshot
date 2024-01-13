@@ -70,6 +70,15 @@ func AccessTokensAllow() AccessTokenAllow {
 	}
 }
 
+// AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
+func AccessTokensAllowNoExpiration() bool {
+	cfg := Get().AuthAccessTokens
+	if cfg == nil {
+		return false
+	}
+	return cfg.AllowNoExpiration
+}
+
 // EmailVerificationRequired returns whether users must verify an email address before they
 // can perform most actions on this site.
 //
