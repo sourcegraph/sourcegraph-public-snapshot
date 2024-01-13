@@ -42,7 +42,7 @@ interface CachedSearchResultsInput {
      * Filter query, different from the search query since new filters
      * don't modify the main search query
      */
-    filterQuery: URLQueryFilter[]
+    urlFilters: URLQueryFilter[]
 
     /**
      * Options to pass on to `streamSeach`.
@@ -64,7 +64,7 @@ interface CachedSearchResultsInput {
  * (updated as new streaming results come in).
  */
 export function useCachedSearchResults(props: CachedSearchResultsInput): AggregateStreamingSearchResults | undefined {
-    const { query, filterQuery: selectedFilters, options, streamSearch, telemetryService } = props
+    const { query, urlFilters: selectedFilters, options, streamSearch, telemetryService } = props
     const cachedResults = useContext(SearchResultsCacheContext)
 
     const location = useLocation()

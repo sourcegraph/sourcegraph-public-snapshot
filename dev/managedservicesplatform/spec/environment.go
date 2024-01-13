@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alecthomas/units"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -283,6 +285,7 @@ func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
 }
 
 type EnvironmentInstancesSpec struct {
+	// Resources specifies the resources available to each service instance.
 	Resources EnvironmentInstancesResourcesSpec `yaml:"resources"`
 	// Scaling specifies the scaling behavior of the service.
 	//
@@ -290,9 +293,77 @@ type EnvironmentInstancesSpec struct {
 	Scaling *EnvironmentInstancesScalingSpec `yaml:"scaling,omitempty"`
 }
 
+func (s EnvironmentInstancesSpec) Validate() []error {
+	var errs []error
+	errs = append(errs, s.Resources.Validate()...)
+	return errs
+}
+
 type EnvironmentInstancesResourcesSpec struct {
-	CPU    int    `yaml:"cpu"`
+	// CPU specifies the CPU available to each instance. Must be a value
+	// bewteen 1 to 8.
+	CPU int `yaml:"cpu"`
+	// Memory specifies the memory available to each instance. Must be between
+	// 512MiB and 32GiB.
 	Memory string `yaml:"memory"`
+}
+
+func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+
+	// https://cloud.google.com/run/docs/configuring/services/cpu
+	if s.CPU < 1 {
+		errs = append(errs, errors.New("resources.cpu must be >= 1"))
+	} else if s.CPU > 8 {
+		errs = append(errs,
+			errors.New("resources.cpu > 8 not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+	}
+
+	// https://cloud.google.com/run/docs/configuring/services/memory-limits
+	// NOTE: Cloud Run documentation uses 'MiB' as the unit but the configuration
+	// only accepts 'Mi', 'Gi', etc. Make sure our errors are in terms of the
+	// format the configuration accepts to avoid confusion.
+	bytes, err := units.ParseUnit(s.Memory, units.MakeUnitMap("i", "B", 1024))
+	if err != nil {
+		errs = append(errs, errors.Wrap(err, "resources.memory is invalid"))
+
+		// Exit early - all following checks rely on knowing the memory that
+		// was configured, so there's not point continuing validation if we
+		// couldn't parse the memory field.
+		return errs
+	}
+	if units.Base2Bytes(bytes)/units.MiB < 512 {
+		errs = append(errs, errors.New("resources.memory must be >= 512Mi"))
+	}
+	gib := units.Base2Bytes(bytes) / units.GiB
+	if gib > 32 {
+		errs = append(errs,
+			errors.New("resources.memory > 32Gi not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+	}
+
+	// Enforce min CPUs: https://cloud.google.com/run/docs/configuring/services/memory-limits#cpu-minimum
+	if gib > 24 && s.CPU < 8 {
+		errs = append(errs, errors.New("resources.memory > 24Gi requires resources.cpu >= 8"))
+	} else if gib > 16 && s.CPU < 6 {
+		errs = append(errs, errors.New("resources.memory > 16Gi requires resources.cpu >= 6"))
+	} else if gib > 8 && s.CPU < 4 {
+		errs = append(errs, errors.New("resources.memory > 8Gi requires resources.cpu >= 4"))
+	} else if gib > 4 && s.CPU < 2 {
+		errs = append(errs, errors.New("resources.memory > 4Gi requires resources.cpu >= 2"))
+	}
+
+	// Enforce min memory: https://cloud.google.com/run/docs/configuring/services/cpu#cpu-memory
+	if s.CPU > 6 && gib < 4 {
+		errs = append(errs, errors.New("resources.cpu > 6 requires resources.memory >= 4Gi"))
+	} else if s.CPU > 4 && gib < 2 {
+		errs = append(errs, errors.New("resources.cpu > 4 requires resources.memory >= 2Gi"))
+	}
+
+	return errs
 }
 
 type EnvironmentInstancesScalingSpec struct {

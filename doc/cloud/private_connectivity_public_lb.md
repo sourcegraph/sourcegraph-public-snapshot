@@ -47,6 +47,11 @@ curl --connect-to github.internal.company.net:443:github-public-nlb.company.net:
 
 Yes, customer can expose their private registry with internal DNS name. Sourcegraph will provision dns-proxy, which translates customer private domain to public customer load balancer domain. No changes in customer configuration are required.
 
+### How secure is the connection?
+
+This connection depends on IP allowlisting to ensure private resources are only accessible by Sourcegraph Cloud. Sourcegraph will provide 2 static IPs for customer to allowlist ingress traffic for load balancer.
+In transit, these resources are encrypted via the TLS certificate.
+
 ### What are the next steps when code host connectivity is working?
 
 Once the connection is established, the customer can create the [code host connection](../../admin/external_service/index.md) on their Sourcegraph Cloud instance using private dns name.
