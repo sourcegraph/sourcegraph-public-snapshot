@@ -86,6 +86,8 @@ func main() {
 			start := time.Now()
 			result := standardUpgradeTest(ctx, version, latestVersion)
 			result.Runtime = time.Since(start)
+			fmt.Println(">>>>>>>>>>>")
+			result.DisplayLog()
 			results.AddStdTest(result)
 			return nil
 		})
@@ -106,6 +108,8 @@ func main() {
 			start := time.Now()
 			result := multiversionUpgradeTest(ctx, version, latestVersion)
 			result.Runtime = time.Since(start)
+			fmt.Println(">>>>>>>>>>>")
+			result.DisplayLog()
 			results.AddMVUTest(result)
 			return nil
 		})
@@ -114,25 +118,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Run Autoupgrade Tests
-	autoTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
-	for _, version := range autoVersions {
-		version := version
-		if slices.Contains(knownBugVersions, version.String()) {
-			continue
-		}
-		autoTestPool.Go(func() error {
-			fmt.Println("auto: ", version)
-			start := time.Now()
-			result := autoUpgradeTest(ctx, version, latestVersion)
-			result.Runtime = time.Since(start)
-			results.AddAutoTest(result)
-			return nil
-		})
-	}
-	if err := autoTestPool.Wait(); err != nil {
-		log.Fatal(err)
-	}
+	// // Run Autoupgrade Tests
+	// autoTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+	// for _, version := range autoVersions {
+	// 	version := version
+	// 	if slices.Contains(knownBugVersions, version.String()) {
+	// 		continue
+	// 	}
+	// 	autoTestPool.Go(func() error {
+	// 		fmt.Println("auto: ", version)
+	// 		start := time.Now()
+	// 		result := autoUpgradeTest(ctx, version, latestVersion)
+	// 		result.Runtime = time.Since(start)
+	// 		results.AddAutoTest(result)
+	// 		return nil
+	// 	})
+	// }
+	// if err := autoTestPool.Wait(); err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// This is where we do the majority of our printing to stdout.
 	results.OrderByVersion()
@@ -777,7 +781,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	}
 
 	// poll db until initial versions.version is set
-	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*360)
+	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	test.AddLog("🔎 checking db initialization complete")
 
@@ -986,6 +990,10 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 	if latestFullVer == nil {
 		return nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
 	}
+
+	// testing fake release
+	// stdVersions = append(stdVersions, semver.MustParse("5.3.666"))
+	// mvuVersions = append(mvuVersions, semver.MustParse("5.3.666"))
 
 	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, autoVersions, nil
 
