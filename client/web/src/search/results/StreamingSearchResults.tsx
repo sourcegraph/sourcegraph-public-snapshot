@@ -11,7 +11,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -28,7 +28,6 @@ import { useRecentSearches } from '../input/useRecentSearches'
 
 import { useAggregationUIMode } from './components/aggregation'
 import { NewSearchContent } from './components/new-search-content/NewSearchContent'
-import { SearchContent } from './components/search-content/SearchContent'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { useStreamingSearchPings } from './useStreamingSearchPings'
 
@@ -67,7 +66,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Feature flags
     const featureOverrides = useFeatureFlagOverrides()
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-    const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -218,39 +216,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
-    return !newSearchResultsUI ? (
-        <SearchContent
-            submittedURLQuery={submittedURLQuery}
-            queryState={queryState}
-            liveQuery={liveQuery}
-            allExpanded={allExpanded}
-            searchMode={searchMode}
-            trace={!!trace}
-            searchContextsEnabled={props.searchContextsEnabled}
-            patternType={patternType}
-            results={results}
-            showAggregationPanel={showAggregationPanel}
-            selectedSearchContextSpec={props.selectedSearchContextSpec}
-            aggregationUIMode={aggregationUIMode}
-            caseSensitive={caseSensitive}
-            authenticatedUser={authenticatedUser}
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            enableRepositoryMetadata={enableRepositoryMetadata}
-            options={options}
-            codeMonitoringEnabled={codeMonitoringEnabled}
-            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-            onNavbarQueryChange={setQueryState}
-            onSearchSubmit={handleSidebarSearchSubmit}
-            onQuerySubmit={handleSearchAggregationBarClick}
-            onExpandAllResultsToggle={onExpandAllResultsToggle}
-            onSearchAgain={onSearchAgain}
-            onDisableSmartSearch={onDisableSmartSearch}
-            onLogSearchResultClick={logSearchResultClicked}
-            settingsCascade={props.settingsCascade}
-            telemetryService={telemetryService}
-            platformContext={platformContext}
-        />
-    ) : (
+    return (
         <NewSearchContent
             submittedURLQuery={submittedURLQuery}
             queryState={queryState}
