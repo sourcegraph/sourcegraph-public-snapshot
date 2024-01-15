@@ -237,10 +237,10 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	// CodyUsage is deprecated, but here so we can receive pings from older instances
-	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
-	CodyUsage2                    json.RawMessage `json:"codyUsage2,omitempty"`
-	CodyProviders                 json.RawMessage `json:"codyProviders,omitempty"`
-	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
+	CodyUsage         json.RawMessage `json:"codyUsage,omitempty"`
+	CodyUsage2        json.RawMessage `json:"codyUsage2,omitempty"`
+	CodyProviders     json.RawMessage `json:"codyProviders,omitempty"`
+	RepoMetadataUsage json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
 type dependencyVersions struct {

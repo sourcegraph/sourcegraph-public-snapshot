@@ -26,12 +26,12 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 	stats.Daily[0].TotalCodyUsers.EventsCount = &events.TotalDay
 	stats.Daily[0].TotalCodyUsers.UserCount = &events.UniquesDay
 	stats.Daily[0].TotalProductUsers.UserCount = &events.ProductUsersDay
-	
+
 	stats.Weekly[0].StartTime = events.Week
 	stats.Weekly[0].TotalCodyUsers.EventsCount = &events.TotalWeek
 	stats.Weekly[0].TotalCodyUsers.UserCount = &events.UniquesWeek
 	stats.Weekly[0].TotalProductUsers.UserCount = &events.ProductUsersWeek
-	
+
 	stats.Monthly[0].StartTime = events.Month
 	stats.Monthly[0].TotalCodyUsers.EventsCount = &events.TotalMonth
 	stats.Monthly[0].TotalCodyUsers.UserCount = &events.UniquesMonth
