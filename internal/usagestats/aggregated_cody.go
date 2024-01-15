@@ -17,30 +17,30 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 	}
 
 	stats := &types.CodyUsageStatistics{
-		Daily:   []*types.CodyUsagePeriod{newCodyEventPeriod()},
-		Weekly:  []*types.CodyUsagePeriod{newCodyEventPeriod()},
-		Monthly: []*types.CodyUsagePeriod{newCodyEventPeriod()},
+		Daily:   *types.CodyUsagePeriod{newCodyEventPeriod()},
+		Weekly:  *types.CodyUsagePeriod{newCodyEventPeriod()},
+		Monthly: *types.CodyUsagePeriod{newCodyEventPeriod()},
 	}
 
-	stats.Daily[0].StartTime = events.Day
-	stats.Daily[0].TotalCodyUsers.EventsCount = &events.TotalDay
-	stats.Daily[0].TotalCodyUsers.UserCount = &events.UniquesDay
-	stats.Daily[0].TotalProductUsers.UserCount = &events.ProductUsersDay
+	stats.Daily.StartTime = events.Day
+	stats.Daily.TotalCodyUsers.EventsCount = &events.TotalDay
+	stats.Daily.TotalCodyUsers.UserCount = &events.UniquesDay
+	stats.Daily.TotalProductUsers.UserCount = &events.ProductUsersDay
 
-	stats.Weekly[0].StartTime = events.Week
-	stats.Weekly[0].TotalCodyUsers.EventsCount = &events.TotalWeek
-	stats.Weekly[0].TotalCodyUsers.UserCount = &events.UniquesWeek
-	stats.Weekly[0].TotalProductUsers.UserCount = &events.ProductUsersWeek
+	stats.Weekly.StartTime = events.Week
+	stats.Weekly.TotalCodyUsers.EventsCount = &events.TotalWeek
+	stats.Weekly.TotalCodyUsers.UserCount = &events.UniquesWeek
+	stats.Weekly.TotalProductUsers.UserCount = &events.ProductUsersWeek
 
-	stats.Monthly[0].StartTime = events.Month
-	stats.Monthly[0].TotalCodyUsers.EventsCount = &events.TotalMonth
-	stats.Monthly[0].TotalCodyUsers.UserCount = &events.UniquesMonth
-	stats.Monthly[0].TotalProductUsers.UserCount = &events.ProductUsersMonth
-	stats.Monthly[0].TotalVSCodeProductUsers.UserCount = &events.VSCodeProductUsersMonth
-	stats.Monthly[0].TotalJetBrainsProductUsers.UserCount = &events.JetBrainsProductUsersMonth
-	stats.Monthly[0].TotalNeovimProductUsers.UserCount = &events.NeovimProductUsersMonth
-	stats.Monthly[0].TotalEmacsProductUsers.UserCount = &events.EmacsProductUsersMonth
-	stats.Monthly[0].TotalWebProductUsers.UserCount = &events.WebProductUsersMonth
+	stats.Monthly.StartTime = events.Month
+	stats.Monthly.TotalCodyUsers.EventsCount = &events.TotalMonth
+	stats.Monthly.TotalCodyUsers.UserCount = &events.UniquesMonth
+	stats.Monthly.TotalProductUsers.UserCount = &events.ProductUsersMonth
+	stats.Monthly.TotalVSCodeProductUsers.UserCount = &events.VSCodeProductUsersMonth
+	stats.Monthly.TotalJetBrainsProductUsers.UserCount = &events.JetBrainsProductUsersMonth
+	stats.Monthly.TotalNeovimProductUsers.UserCount = &events.NeovimProductUsersMonth
+	stats.Monthly.TotalEmacsProductUsers.UserCount = &events.EmacsProductUsersMonth
+	stats.Monthly.TotalWebProductUsers.UserCount = &events.WebProductUsersMonth
 
 	return stats, nil
 }

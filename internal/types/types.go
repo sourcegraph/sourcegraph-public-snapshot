@@ -1003,9 +1003,9 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsageStatistics struct {
-	Daily   []*CodyUsagePeriod
-	Weekly  []*CodyUsagePeriod
-	Monthly []*CodyUsagePeriod
+	Daily   *CodyUsagePeriod
+	Weekly  *CodyUsagePeriod
+	Monthly *CodyUsagePeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
