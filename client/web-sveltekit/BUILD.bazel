@@ -33,9 +33,14 @@ SRCS = [
     [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
+        "src/lib/graphql-type-mocks.ts",
+        "src/**/*.gql.ts",
         "src/**/*.gql.d.ts",
     ],
-) + glob(["dev/**/*.cjs"])
+) + glob([
+        "dev/**/*.cjs",
+        "dev/**/*.ts"
+    ])
 
 BUILD_DEPS = [
     ":node_modules/@faker-js/faker",
