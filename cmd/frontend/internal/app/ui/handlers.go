@@ -349,10 +349,9 @@ func serveHome(db database.DB) handlerFunc {
 			return nil
 		}
 
-		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
-		r.URL.Path = "/search"
-		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-		return nil
+		// On non-dotcom instances, we opt for client-side redirect because the URL to redirect to differs
+		// based on the license features available on the instance.
+		return renderTemplate(w, "app.html", common)
 	}
 }
 

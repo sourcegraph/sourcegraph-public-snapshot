@@ -70,6 +70,8 @@ const CodySubscriptionPage = lazyComponent(
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
+const Index = lazyComponent(() => import('./Index'), 'IndexPage')
+
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
     useEffect(() => {
@@ -202,7 +204,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Index,
-        element: <Navigate replace={true} to={PageRoutes.Search} />,
+        element: <Index />,
     },
     {
         path: PageRoutes.Search,
