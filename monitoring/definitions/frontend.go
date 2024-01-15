@@ -639,7 +639,6 @@ func Frontend() *monitoring.Dashboard {
 					Query:          `sum by (route, code)(irate(src_http_request_duration_seconds_count{route=~"^completions.*"}[5m]))`,
 					NoAlert:        true,
 					Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-					Owner:          monitoring.ObservableOwnerCody,
 					Interpretation: `Rate (QPS) of requests to cody related endpoints. completions.stream is for the conversational endpoints. completions.code is for the code auto-complete endpoints.`,
 				}}},
 			},
