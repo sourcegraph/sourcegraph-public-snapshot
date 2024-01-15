@@ -17,6 +17,7 @@ go_library(
         "//dev/managedservicesplatform/internal/imageupdater",
         "//lib/errors",
         "//lib/pointers",
+        "@com_github_alecthomas_units//:units",
         "@com_github_grafana_regexp//:regexp",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],

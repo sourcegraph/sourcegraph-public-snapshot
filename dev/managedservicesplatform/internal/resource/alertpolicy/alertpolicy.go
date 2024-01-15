@@ -109,6 +109,10 @@ const (
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
+	// ServiceEnvironmentSlug is $SERVICE_ID#$ENV_ID, and is used for generating
+	// docs links in alert descriptions.
+	ServiceEnvironmentSlug string
+
 	// ID is unique identifier
 	ID          string
 	Name        string
@@ -137,6 +141,21 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		return nil, errors.New("Must provide either SingleMetric or ResponseCodeMetric config, not both")
 	}
 
+	// Universal alert description addendum
+	if config.ServiceEnvironmentSlug == "" {
+		return nil, errors.New("ServiceEnvironmentSlug is required")
+	}
+	if pointers.DerefZero(config.Description) == "" {
+		return nil, errors.New("Description is required")
+	} else {
+		config.Description = pointers.Stringf(`%s
+
+See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s for service and infrastructure access details.
+If you need additional assistance, reach out to #discuss-core-services.`,
+			*config.Description,
+			config.ServiceEnvironmentSlug)
+	}
+
 	if config.ThresholdAggregation != nil {
 		if len(config.ThresholdAggregation.Filters) == 0 {
 			return nil, errors.New("must specify at least one filter for threshold aggregation")
@@ -162,16 +181,6 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 		// No defaults
 	default:
 		return nil, errors.Newf("invalid service kind %q", config.ServiceKind)
-	}
-
-	if pointers.DerefZero(config.Description) == "" {
-		return nil, errors.New("description is required")
-	} else {
-		config.Description = pointers.Stringf(`%s
-
-See https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#operating-services for service and infrastructure access details.
-If you have any questions, reach out to #discuss-core-services.`,
-			*config.Description)
 	}
 
 	if config.ThresholdAggregation.Comparison == "" {

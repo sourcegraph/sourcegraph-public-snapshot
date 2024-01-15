@@ -12,7 +12,6 @@ import (
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
@@ -20,15 +19,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
-	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -77,12 +76,12 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithChainStreamInterceptor(
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
 			propagator.StreamClientPropagator(requestinteraction.Propagator{}),
-			otelgrpc.StreamClientInterceptor(),
 			retry.StreamClientInterceptor(logger),
 			metrics.StreamClientInterceptor(),
 			messagesize.StreamClientInterceptor,
@@ -95,7 +94,6 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
 			propagator.UnaryClientPropagator(requestinteraction.Propagator{}),
-			otelgrpc.UnaryClientInterceptor(),
 			retry.UnaryClientInterceptor(logger),
 			metrics.UnaryClientInterceptor(),
 			messagesize.UnaryClientInterceptor,
@@ -172,6 +170,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 	}
 
 	out := []grpc.ServerOption{
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)),
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			internalerrs.LoggingStreamServerInterceptor(logger),
@@ -181,7 +180,6 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			propagator.StreamServerPropagator(requestinteraction.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
-			otelgrpc.StreamServerInterceptor(otelOpts...),
 			contextconv.StreamServerInterceptor,
 		),
 		grpc.ChainUnaryInterceptor(
@@ -193,7 +191,6 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			propagator.UnaryServerPropagator(requestinteraction.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
-			otelgrpc.UnaryServerInterceptor(otelOpts...),
 			contextconv.UnaryServerInterceptor,
 		),
 		grpc.MaxRecvMsgSize(defaultGRPCMessageReceiveSizeBytes),

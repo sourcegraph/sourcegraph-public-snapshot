@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -321,7 +322,11 @@ func generateAll(
 			{path: filepath.Join(opts.DocsDir, alertsDocsFile), data: docs.alertDocs.Bytes()},
 			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
 		} {
-			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)
+			// By default, due to how we assemble content, we might end up with two \n chars at the end,
+			// which will yield linter errors. So instead, drop spaces at the end of the file and manually
+			// add the last \n.
+			b := append(bytes.TrimSpace(docOut.data), byte('\n'))
+			err = os.WriteFile(docOut.path, b, os.ModePerm)
 			if err != nil {
 				return generatedAssets, errors.Wrapf(err, "Could not write docs to path %q", docOut.path)
 			}

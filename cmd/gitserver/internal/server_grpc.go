@@ -214,11 +214,15 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		}
 
 		gRPCStatus := codes.Unknown
-		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
+		if execStatus.Err != nil && strings.Contains(execStatus.Err.Error(), "signal: killed") {
 			gRPCStatus = codes.Aborted
 		}
 
-		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+		var errString string
+		if execStatus.Err != nil {
+			errString = execStatus.Err.Error()
+		}
+		s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
 			StatusCode: int32(execStatus.ExitStatus),
 			Stderr:     execStatus.Stderr,
 		})
@@ -228,6 +232,7 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		}
 		return s.Err()
 	}
+
 	return nil
 
 }

@@ -381,11 +381,11 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.commit.repoResolver.getRepo(ctx)
+	linker, err := r.commit.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, r.gitserverClient, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return linker.FileOrDir(r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir()), nil
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
