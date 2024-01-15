@@ -66,25 +66,8 @@ import (
 type CrossStackOutput struct{}
 
 type Variables struct {
-	ProjectID  string
-	Service    spec.ServiceSpec
-	Monitoring spec.MonitoringSpec
-
-	// MaxInstanceCount informs service scaling alerts.
-	MaxInstanceCount *int
-	// ExternalDomain informs external health checks on the service domain.
-	ExternalDomain *spec.EnvironmentServiceDomainSpec
-	// ServiceAuthentication informs external health checks on the service
-	// domain. Currently, any configuration will disable external health checks.
-	ServiceAuthentication *spec.EnvironmentServiceAuthenticationSpec
-	// DiagnosticsSecret is used to configure external health checks.
-	DiagnosticsSecret *random.Output
-	// If Redis is enabled we configure alerts for it
-	RedisInstanceID *string
-	// ServiceHealthProbes is used to determine the threshold for service
-	// startup latency alerts.
-	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
-
+	ProjectID string
+	Service   spec.ServiceSpec
 	// EnvironmentCategory dictates what kind of notifications are set up:
 	//
 	// 1. 'test' services only generate Slack notifications.
@@ -99,9 +82,22 @@ type Variables struct {
 	EnvironmentCategory spec.EnvironmentCategory
 	// EnvironmentID is the name of the service environment.
 	EnvironmentID string
-	// Owners is a list of team names. Each owner MUST correspond to the name
-	// of a team in Opsgenie.
-	Owners []string
+
+	Monitoring spec.MonitoringSpec
+	// MaxInstanceCount informs service scaling alerts.
+	MaxInstanceCount *int
+	// ExternalDomain informs external health checks on the service domain.
+	ExternalDomain *spec.EnvironmentServiceDomainSpec
+	// ServiceAuthentication informs external health checks on the service
+	// domain. Currently, any configuration will disable external health checks.
+	ServiceAuthentication *spec.EnvironmentServiceAuthenticationSpec
+	// DiagnosticsSecret is used to configure external health checks.
+	DiagnosticsSecret *random.Output
+	// If Redis is enabled we configure alerts for it
+	RedisInstanceID *string
+	// ServiceHealthProbes is used to determine the threshold for service
+	// startup latency alerts.
+	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
 }
 
 const StackName = "monitoring"
@@ -136,7 +132,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	// case spec.EnvironmentCategoryInternal, spec.EnvironmentCategoryExternal:
 	// 	opsgenieAlerts = true
 	// }
-	for i, owner := range vars.Owners {
+	for i, owner := range vars.Service.Owners {
 		// Use index because Opsgenie team names has lax character requirements
 		id := id.Group("opsgenie_owner_%d", i)
 		// Opsgenie team corresponding to owner must exist
@@ -260,7 +256,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		return nil, errors.Wrap(err, "failed to create common alerts")
 	}
 
-	switch pointers.Deref(vars.Service.Kind, spec.ServiceKindService) {
+	switch vars.Service.GetKind() {
 	case spec.ServiceKindService:
 		if err = createServiceAlerts(stack, id.Group("service"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create service alerts")
@@ -296,16 +292,23 @@ func createCommonAlerts(
 ) error {
 	// Convert a spec.ServiceKind into a alertpolicy.ServiceKind
 	serviceKind := alertpolicy.CloudRunService
-	kind := pointers.Deref(vars.Service.Kind, spec.ServiceKindService)
+	kind := vars.Service.GetKind()
 	if kind == spec.ServiceKindJob {
 		serviceKind = alertpolicy.CloudRunJob
 	}
 
-	for _, config := range []alertpolicy.Config{
+	// Iterate over a list of Redis alert configurations. Custom struct defines
+	// the field we expect to vary between each.
+	for _, config := range []struct {
+		ID                   string
+		Name                 string
+		Description          string
+		ThresholdAggregation *alertpolicy.ThresholdAggregation
+	}{
 		{
 			ID:          "cpu",
 			Name:        "High Container CPU Utilization",
-			Description: pointers.Ptr("High CPU Usage - it may be neccessary to reduce load or increase CPU allocation"),
+			Description: "High CPU Usage - it may be neccessary to reduce load or increase CPU allocation",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
 				Aligner:   alertpolicy.MonitoringAlignPercentile99,
@@ -317,7 +320,7 @@ func createCommonAlerts(
 		{
 			ID:          "memory",
 			Name:        "High Container Memory Utilization",
-			Description: pointers.Ptr("High Memory Usage - it may be neccessary to reduce load or increase memory allocation"),
+			Description: "High Memory Usage - it may be neccessary to reduce load or increase memory allocation",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/memory/utilizations"},
 				Aligner:   alertpolicy.MonitoringAlignPercentile99,
@@ -329,7 +332,7 @@ func createCommonAlerts(
 		{
 			ID:          "startup",
 			Name:        "Container Startup Latency",
-			Description: pointers.Ptr("Service containers are taking too long to start up - something may be blocking startup"),
+			Description: "Service containers are taking too long to start up - something may be blocking startup",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
 				Aligner: alertpolicy.MonitoringAlignPercentile99,
@@ -348,12 +351,23 @@ func createCommonAlerts(
 			},
 		},
 	} {
-		config.ServiceEnvironmentSlug = fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID)
-		config.ProjectID = vars.ProjectID
-		config.ResourceName = vars.Service.ID
-		config.ResourceKind = serviceKind
-		config.NotificationChannels = channels
-		if _, err := alertpolicy.New(stack, id, &config); err != nil {
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+			// Resource we are targetting in this helper
+			ResourceKind: serviceKind,
+			ResourceName: vars.Service.ID,
+
+			// Alert policy
+			ID:                   config.ID,
+			Name:                 config.Name,
+			Description:          config.Description,
+			ThresholdAggregation: config.ThresholdAggregation,
+
+			// Shared configuration
+			Service:              vars.Service,
+			EnvironmentID:        vars.EnvironmentID,
+			ProjectID:            vars.ProjectID,
+			NotificationChannels: channels,
+		}); err != nil {
 			return err
 		}
 	}
@@ -370,11 +384,12 @@ func createServiceAlerts(
 	// Only provision if MaxCount is specified above 5
 	if pointers.Deref(vars.MaxInstanceCount, 0) > 5 {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+			Service:       vars.Service,
+			EnvironmentID: vars.EnvironmentID,
 
 			ID:           "instance_count",
 			Name:         "Container Instance Count",
-			Description:  pointers.Ptr("There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count"),
+			Description:  "There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count",
 			ProjectID:    vars.ProjectID,
 			ResourceName: vars.Service.ID,
 			ResourceKind: alertpolicy.CloudRunService,
@@ -452,11 +467,12 @@ func createExternalHealthcheckAlert(
 	})
 
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-		ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+		Service:       vars.Service,
+		EnvironmentID: vars.EnvironmentID,
 
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
-		Description: pointers.Stringf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
+		Description: fmt.Sprintf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
 		ProjectID:   vars.ProjectID,
 
 		ResourceKind: alertpolicy.URLUptime,
@@ -490,11 +506,12 @@ func createJobAlerts(
 ) error {
 	// Alert whenever a Cloud Run Job fails
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-		ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+		Service:       vars.Service,
+		EnvironmentID: vars.EnvironmentID,
 
 		ID:           "job_failures",
 		Name:         "Cloud Run Job Failures",
-		Description:  pointers.Ptr("Failed executions of Cloud Run Job"),
+		Description:  "Cloud Run Job executions failed",
 		ProjectID:    vars.ProjectID,
 		ResourceName: vars.Service.ID,
 		ResourceKind: alertpolicy.CloudRunJob,
@@ -525,7 +542,8 @@ func createResponseCodeMetrics(
 ) error {
 	for _, config := range vars.Monitoring.Alerts.ResponseCodeRatios {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			ServiceEnvironmentSlug: fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID),
+			Service:       vars.Service,
+			EnvironmentID: vars.EnvironmentID,
 
 			ID:           config.ID,
 			ProjectID:    vars.ProjectID,
@@ -554,11 +572,18 @@ func createRedisAlerts(
 	vars Variables,
 	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
 ) error {
-	for _, config := range []alertpolicy.Config{
+	// Iterate over a list of Redis alert configurations. Custom struct defines
+	// the field we expect to vary between each.
+	for _, config := range []struct {
+		ID                   string
+		Name                 string
+		Description          string
+		ThresholdAggregation *alertpolicy.ThresholdAggregation
+	}{
 		{
 			ID:          "memory",
 			Name:        "Cloud Redis - System Memory Utilization",
-			Description: pointers.Ptr("This alert fires if the system memory utilization is above the set threshold. The utilization is measured on a scale of 0 to 1."),
+			Description: "Redis System memory utilization is above the set threshold. The utilization is measured on a scale of 0 to 1.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "redis.googleapis.com/stats/memory/system_memory_usage_ratio"},
 				Aligner:   alertpolicy.MonitoringAlignMean,
@@ -570,7 +595,7 @@ func createRedisAlerts(
 		{
 			ID:          "cpu",
 			Name:        "Cloud Redis - System CPU Utilization",
-			Description: pointers.Ptr("This alert fires if the Redis Engine CPU Utilization goes above the set threshold. The utilization is measured on a scale of 0 to 1."),
+			Description: "Redis Engine CPU Utilization goes above the set threshold. The utilization is measured on a scale of 0 to 1.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:       map[string]string{"metric.type": "redis.googleapis.com/stats/cpu_utilization_main_thread"},
 				GroupByFields: []string{"resource.label.instance_id", "resource.label.node_id"},
@@ -583,7 +608,7 @@ func createRedisAlerts(
 		{
 			ID:          "failover",
 			Name:        "Cloud Redis - Standard Instance Failover",
-			Description: pointers.Ptr("This alert fires if failover occurs for a standard tier instance."),
+			Description: "Instance failover occured for a standard tier Redis instance.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters:   map[string]string{"metric.type": "redis.googleapis.com/replication/role"},
 				Aligner:   alertpolicy.MonitoringAlignStddev,
@@ -592,12 +617,23 @@ func createRedisAlerts(
 			},
 		},
 	} {
-		config.ServiceEnvironmentSlug = fmt.Sprintf("%s#%s", vars.Service.ID, vars.EnvironmentID)
-		config.ProjectID = vars.ProjectID
-		config.ResourceName = *vars.RedisInstanceID
-		config.ResourceKind = alertpolicy.CloudRedis
-		config.NotificationChannels = channels
-		if _, err := alertpolicy.New(stack, id, &config); err != nil {
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+			// Resource we are targetting in this helper
+			ResourceKind: alertpolicy.CloudRedis,
+			ResourceName: *vars.RedisInstanceID,
+
+			// Alert policy
+			ID:                   config.ID,
+			Name:                 config.Name,
+			Description:          config.Description,
+			ThresholdAggregation: config.ThresholdAggregation,
+
+			// Shared configuration
+			Service:              vars.Service,
+			EnvironmentID:        vars.EnvironmentID,
+			ProjectID:            vars.ProjectID,
+			NotificationChannels: channels,
+		}); err != nil {
 			return err
 		}
 	}

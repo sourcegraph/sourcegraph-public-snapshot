@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -102,13 +103,13 @@ type ResponseCodeMetric struct {
 	Duration     *string
 }
 
-type ResourceKind int
+type ResourceKind string
 
 const (
-	CloudRunService ResourceKind = iota + 1
-	CloudRunJob
-	CloudRedis
-	URLUptime
+	CloudRunService ResourceKind = "cloud-run-service"
+	CloudRunJob     ResourceKind = "cloud-run-job"
+	CloudRedis      ResourceKind = "cloud-redis"
+	URLUptime       ResourceKind = "url-uptime"
 )
 
 type TriggerKind int
@@ -125,15 +126,18 @@ const (
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
-	// ServiceEnvironmentSlug is $SERVICE_ID#$ENV_ID, and is used for generating
-	// docs links in alert descriptions.
-	ServiceEnvironmentSlug string
+	Service       spec.ServiceSpec
+	EnvironmentID string
+	ProjectID     string
 
-	// ID is unique identifier
-	ID          string
-	Name        string
-	Description *string
-	ProjectID   string
+	// ID is unique identifier of the alert policy
+	ID string
+	// Name is a human-readable name for the alert policy
+	Name string
+	// Description is a Markdown-format description for the alert policy. Some
+	// unified context will be included as well, including links to the service
+	// handbook page and so on.
+	Description string
 
 	// ResourceKind identifies what is being monitored.
 	ResourceKind ResourceKind
@@ -147,8 +151,11 @@ type Config struct {
 	ResponseCodeMetric   *ResponseCodeMetric
 }
 
-type Output struct {
+func (c Config) getDocsSlug() string {
+	return fmt.Sprintf("%s#%s", c.Service.ID, c.EnvironmentID)
 }
+
+type Output struct{}
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	if config.ThresholdAggregation == nil && config.ResponseCodeMetric == nil {
@@ -160,18 +167,18 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	}
 
 	// Universal alert description addendum
-	if config.ServiceEnvironmentSlug == "" {
-		return nil, errors.New("ServiceEnvironmentSlug is required")
+	if config.Service.ID == "" {
+		return nil, errors.New("Service is required")
 	}
-	if pointers.DerefZero(config.Description) == "" {
+	if config.Description == "" {
 		return nil, errors.New("Description is required")
 	} else {
-		config.Description = pointers.Stringf(`%s
+		config.Description = fmt.Sprintf(`%s
 
 See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s for service and infrastructure access details.
 If you need additional assistance, reach out to #discuss-core-services.`,
-			*config.Description,
-			config.ServiceEnvironmentSlug)
+			config.Description,
+			config.getDocsSlug())
 	}
 
 	if config.ThresholdAggregation != nil {
@@ -214,14 +221,32 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Content:  config.Description,
+				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
+				Subject: pointers.Stringf("%s %s: %s",
+					config.Service.GetName(), config.EnvironmentID, config.Name),
 			},
 			UserLabels: &map[string]*string{
-				"source":          pointers.Ptr("managed-services-platform"),
-				"msp_alert_id":    pointers.Ptr(config.ID),
-				"msp_gcp_project": pointers.Ptr(config.ProjectID),
+				"source":        pointers.Ptr("managed-services-platform"),
+				"resource_kind": pointers.Ptr(string(config.ResourceKind)),
+
+				"msp_alert_id":       pointers.Ptr(config.ID),
+				"msp_service_id":     pointers.Ptr(config.Service.ID),
+				"msp_environment_id": pointers.Ptr(config.EnvironmentID),
 			},
+
+			// Notification strategy
+			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
+				AutoClose: pointers.Ptr("86400s"), // 24 hours
+			},
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
+			// For now, set all MSP alerts as WARNING. In the future, we should
+			// have different severity levels.
+			// https://github.com/sourcegraph/managed-services/issues/385
+			// Possible values: ["CRITICAL", "ERROR", "WARNING"]
+			Severity: pointers.Ptr("WARNING"),
+
+			// Conditions
 			Combiner: pointers.Ptr("OR"),
 			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
 				{
@@ -257,10 +282,6 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 					},
 				},
 			},
-			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
-				AutoClose: pointers.Ptr("86400s"), // 24 hours
-			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
 		})
 	return &Output{}, nil
 }
@@ -317,7 +338,7 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(fmt.Sprintf("High Ratio of %s Responses", config.Name)),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Content:  config.Description,
+				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
 			Combiner: pointers.Ptr("OR"),
