@@ -113,6 +113,7 @@ func (s EnvironmentSpec) Validate() []error {
 
 	errs = append(errs, s.Deploy.Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
+	errs = append(errs, s.Instances.Validate()...)
 	return errs
 }
 
