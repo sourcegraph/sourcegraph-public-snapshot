@@ -33,6 +33,8 @@ func NewFireworksHandler(
 	allowedModels []string,
 	logSelfServeCodeCompletionRequests bool,
 	disableSingleTenant bool,
+	starcoderCommunitySingleTenantPercent int,
+	starcoderEnterpriseSingleTenantPercent int,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[fireworksRequest](
@@ -50,7 +52,15 @@ func NewFireworksHandler(
 			}
 		},
 		allowedModels,
-		&FireworksHandlerMethods{accessToken: accessToken, baseLogger: baseLogger, eventLogger: eventLogger, logSelfServeCodeCompletionRequests: logSelfServeCodeCompletionRequests, disableSingleTenant: disableSingleTenant},
+		&FireworksHandlerMethods{
+			accessToken:                            accessToken,
+			baseLogger:                             baseLogger,
+			eventLogger:                            eventLogger,
+			logSelfServeCodeCompletionRequests:     logSelfServeCodeCompletionRequests,
+			disableSingleTenant:                    disableSingleTenant,
+			starcoderCommunitySingleTenantPercent:  starcoderCommunitySingleTenantPercent,
+			starcoderEnterpriseSingleTenantPercent: starcoderEnterpriseSingleTenantPercent
+		},
 
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
@@ -101,11 +111,13 @@ type fireworksResponse struct {
 }
 
 type FireworksHandlerMethods struct {
-	accessToken                        string
-	logSelfServeCodeCompletionRequests bool
-	disableSingleTenant                bool
-	baseLogger                         log.Logger
-	eventLogger                        events.Logger
+	accessToken                            string
+	logSelfServeCodeCompletionRequests     bool
+	disableSingleTenant                    bool
+	starcoderCommunitySingleTenantPercent  int
+	starcoderEnterpriseSingleTenantPercent int
+	baseLogger                             log.Logger
+	eventLogger                            events.Logger
 }
 
 func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) (int, *flaggingResult, error) {
@@ -136,16 +148,27 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
-		body.Model = fireworks.Starcoder16b
-	}
-	// PLG virtual model strings
-	if body.Model == "starcoder-16b" {
-		body.Model = fireworks.Starcoder16b
-	}
-	if body.Model == "starcoder-7b" {
-		body.Model = fireworks.Starcoder7b
+		d100Roll := rand.Intn(99)
+		if (d100Roll < f.starcoderEnterpriseSingleTenantPercent) {
+			body.Model = fireworks.Starcoder16bSingleTenant
+		} else {
+			body.Model = fireworks.Starcoder16b
+		}
 	}
 
+	// PLG virtual model strings
+	if (body.Model == "starcoder-16b" || body.Model == "starcoder-7b" ) {
+		d100Roll := rand.Intn(99)
+     		if (d100Roll < f.starcoderCommunitySingleTenantPercent) {
+			body.Model = fireworks.Starcoder16bSingleTenant
+		} else {
+			if body.Model == "starcoder-7b" {
+				body.Model = fireworks.Starcoder7b
+			} else {
+				body.Model = fireworks.Starcoder16b
+			}
+		}
+	}
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	// Check that this is a code completion request and that the actor is a PLG user
