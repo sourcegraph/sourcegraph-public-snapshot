@@ -5110,7 +5110,7 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 <p class="subtitle">P95 time to handle incoming webhooks</p>
 
-							p95 response time to incoming webhook requests from code hosts.
+p95 response time to incoming webhook requests from code hosts.
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
@@ -24347,7 +24347,7 @@ To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeinte
 
 ### Code Intelligence > Autoindexing: Codeintel: Autoindexing > Summary
 
-#### codeintel-autoindexing:
+####codeintel-autoindexing:
 
 <p class="subtitle">Auto-index jobs inserted over 5m</p>
 
