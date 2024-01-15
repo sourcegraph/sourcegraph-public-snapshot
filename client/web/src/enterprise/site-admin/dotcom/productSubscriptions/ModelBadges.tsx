@@ -50,7 +50,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             // Virtual models that are translated by Cody Gateway and allows access to all StarCoder
             // models hosted for us by Fireworks.
             case 'fireworks/starcoder':
-            // Bespoken alternative models hosted for us by Fireworks. These are also allowed on the
+            // Bespoke alternative models hosted for us by Fireworks. These are also allowed on the
             // Cody Gateway side
             case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
