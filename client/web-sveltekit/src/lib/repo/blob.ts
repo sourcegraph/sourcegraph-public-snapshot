@@ -16,7 +16,7 @@ import {
     type DocumentInfo,
 } from '$lib/web'
 
-import type { BlobFileFields } from './api/blob'
+import type { BlobPage_Blob } from '../../routes/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]/page.gql'
 
 /**
  * The minimum number of milliseconds that must elapse before we handle a "Go to
@@ -140,12 +140,12 @@ export function openImplementations(
 }
 
 interface CombinedBlobData {
-    blob: BlobFileFields | null
+    blob: BlobPage_Blob | null
     highlights: string | undefined
 }
 
 interface BlobDataHandler {
-    set(blob: Promise<BlobFileFields | null>, highlight: Promise<string | undefined>): void
+    set(blob: Promise<BlobPage_Blob | null>, highlight: Promise<string | undefined>): void
     combinedBlobData: Readable<CombinedBlobData>
     loading: Readable<boolean>
 }
@@ -160,7 +160,7 @@ export function createBlobDataHandler(): BlobDataHandler {
     let subscription: Subscription | undefined
 
     return {
-        set(blob: Promise<BlobFileFields | null>, highlight: Promise<string | undefined>): void {
+        set(blob: Promise<BlobPage_Blob | null>, highlight: Promise<string | undefined>): void {
             subscription?.unsubscribe()
             loading.set(true)
             subscription = from(blob)

@@ -1,13 +1,12 @@
 import { get } from 'svelte/store'
 import { expect, describe, it, vi, beforeAll, afterAll } from 'vitest'
 
-import type { HistoryResult } from '$lib/graphql-operations'
-import { createHistoryResults } from '$testdata'
+import { createHistoryResults } from '$testing/testdata'
 
 import { createHistoryPanelStore } from './stores'
 
 describe('createHistoryPanelStore', () => {
-    const historyResults: HistoryResult[] = createHistoryResults(2, 2)
+    const historyResults = createHistoryResults(2, 2)
 
     beforeAll(() => {
         vi.useFakeTimers()

@@ -30,7 +30,6 @@ func Embeddings() *monitoring.Dashboard {
 				InstanceFilterRegex: `${instance:regex}`,
 			}, monitoring.ObservableOwnerInfraOrg),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerCody),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),

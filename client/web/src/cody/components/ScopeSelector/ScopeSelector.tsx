@@ -64,10 +64,9 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         }
 
         loadReposStatus({
-            variables: { repoNames, first: repoNames.length, includeJobs: !!authenticatedUser?.siteAdmin },
-            pollInterval: 2000,
+            variables: { repoNames, first: repoNames.length },
         }).catch(() => null)
-    }, [activeEditor, scope.repositories, loadReposStatus, authenticatedUser?.siteAdmin])
+    }, [activeEditor, scope.repositories, loadReposStatus])
 
     const allRepositories = useMemo(() => reposStatusData?.repositories.nodes || [], [reposStatusData])
 

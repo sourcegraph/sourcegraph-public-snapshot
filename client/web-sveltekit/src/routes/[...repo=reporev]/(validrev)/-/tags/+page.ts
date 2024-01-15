@@ -1,18 +1,26 @@
-import { GitRefType } from '$lib/graphql-operations'
-import { queryGitReferences } from '$lib/repo/api/refs'
-
 import type { PageLoad } from './$types'
+import { GitTagsQuery } from './page.gql'
 
 export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision } = await parent()
+    const { resolvedRevision, graphqlClient } = await parent()
 
     return {
         deferred: {
-            tags: queryGitReferences({
-                repo: resolvedRevision.repo.id,
-                type: GitRefType.GIT_TAG,
-                first: 20,
-            }),
+            tags: graphqlClient
+                .query({
+                    query: GitTagsQuery,
+                    variables: {
+                        repo: resolvedRevision.repo.id,
+                        first: 20,
+                        withBehindAhead: false,
+                    },
+                })
+                .then(result => {
+                    if (result.data.node?.__typename !== 'Repository') {
+                        throw new Error('Expected Repository')
+                    }
+                    return result.data.node.gitRefs
+                }),
         },
     }
 }

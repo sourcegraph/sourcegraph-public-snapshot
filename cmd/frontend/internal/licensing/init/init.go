@@ -109,6 +109,8 @@ func Init(
 			}
 		}
 
+		licenseInfo.Features.CodeSearch = licensing.Check(licensing.FeatureCodeSearch) == nil
+
 		return licenseInfo
 	}
 

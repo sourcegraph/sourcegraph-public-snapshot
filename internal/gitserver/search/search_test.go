@@ -306,7 +306,7 @@ func TestCommitScanner(t *testing.T) {
 		cmd := exec.Command("git", (&CommitSearcher{IncludeModifiedFiles: includeModifiedFiles}).gitArgs()...)
 		cmd.Dir = dir
 		cmd.Stdout = &buf
-		cmd.Run()
+		require.NoError(t, cmd.Run())
 		return buf.Bytes()
 	}
 

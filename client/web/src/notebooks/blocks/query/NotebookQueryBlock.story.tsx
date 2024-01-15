@@ -63,7 +63,7 @@ export const Default: StoryFn = () => (
                 searchContextsEnabled={true}
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
@@ -87,7 +87,7 @@ export const Selected: StoryFn = () => (
                 searchContextsEnabled={true}
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
@@ -112,7 +112,7 @@ export const ReadOnlySelected: StoryFn = () => (
                 searchContextsEnabled={true}
                 ownEnabled={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
+                fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}

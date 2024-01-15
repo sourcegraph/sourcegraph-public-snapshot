@@ -528,14 +528,6 @@ type MinimalRepo struct {
 	Stars int
 }
 
-func (r *MinimalRepo) ToRepo() *Repo {
-	return &Repo{
-		ID:    r.ID,
-		Name:  r.Name,
-		Stars: r.Stars,
-	}
-}
-
 // MinimalRepos is an utility type with convenience methods for operating on lists of repo names
 type MinimalRepos []MinimalRepo
 
@@ -2108,6 +2100,7 @@ const (
 	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+	AccessRequestStatusCanceled AccessRequestStatus = "CANCELED"
 )
 
 type PerforceChangelist struct {

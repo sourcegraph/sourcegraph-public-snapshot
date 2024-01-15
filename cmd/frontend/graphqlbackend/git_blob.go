@@ -2,18 +2,21 @@ package graphqlbackend
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *GitTreeEntryResolver) Blame(ctx context.Context,
-	args *struct {
-		StartLine        int32
-		EndLine          int32
-		IgnoreWhitespace bool
-	}) ([]*hunkResolver, error) {
-	hunks, err := r.gitserverClient.BlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
+type GitTreeEntryBlameArgs struct {
+	StartLine        int32
+	EndLine          int32
+	IgnoreWhitespace bool
+}
+
+func (r *GitTreeEntryResolver) Blame(ctx context.Context, args *GitTreeEntryBlameArgs) ([]*hunkResolver, error) {
+	hr, err := r.gitserverClient.StreamBlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
 		NewestCommit:     api.CommitID(r.commit.OID()),
 		StartLine:        int(args.StartLine),
 		EndLine:          int(args.EndLine),
@@ -22,15 +25,21 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+	defer hr.Close()
 
-	hunkResolvers := make([]*hunkResolver, 0, len(hunks))
-	for _, hunk := range hunks {
+	hunkResolvers := []*hunkResolver{}
+	for {
+		hunk, err := hr.Read()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return hunkResolvers, nil
+			}
+			return nil, err
+		}
 		hunkResolvers = append(hunkResolvers, &hunkResolver{
 			db:   r.db,
 			repo: r.commit.repoResolver,
 			hunk: hunk,
 		})
 	}
-
-	return hunkResolvers, nil
 }

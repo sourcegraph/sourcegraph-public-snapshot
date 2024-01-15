@@ -5,16 +5,14 @@
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import { createPromiseStore } from '$lib/utils'
+    import Readme from '$lib/repo/Readme.svelte'
+    import type { RepoPage_Readme } from './page.gql'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    const {
-        value: readme,
-        set: setReadme,
-        pending: readmePending,
-    } = createPromiseStore<PageData['deferred']['readme']>()
+    const { value: readme, set: setReadme, pending: readmePending } = createPromiseStore<RepoPage_Readme | null>()
     $: setReadme(data.deferred.readme)
 </script>
 
@@ -31,10 +29,8 @@
     {/if}
 </h3>
 <div class="content">
-    {#if $readme?.richHTML}
-        {@html $readme.richHTML}
-    {:else if $readme?.content}
-        <pre>{$readme.content}</pre>
+    {#if $readme}
+        <Readme file={$readme} />
     {:else if !$readmePending}
         {data.resolvedRevision.repo.description}
     {/if}
@@ -72,13 +68,5 @@
         padding: 1rem;
         overflow: auto;
         flex: 1;
-
-        :global(img) {
-            max-width: 100%;
-        }
-
-        pre {
-            white-space: pre-wrap;
-        }
     }
 </style>

@@ -2,7 +2,7 @@ import { writable, type Readable } from 'svelte/store'
 
 import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
-import { buildSearchURLQuery, type SettingsCascade } from '$lib/shared'
+import { buildSearchURLQuery, type Settings } from '$lib/shared'
 import { defaultSearchModeFromSettings } from '$lib/web'
 
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
@@ -23,7 +23,7 @@ interface Options {
 }
 
 type QuerySettings = Pick<
-    SettingsCascade['final'],
+    Settings,
     'search.defaultCaseSensitive' | 'search.defaultPatternType' | 'search.defaultMode'
 > | null
 export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'searchMode' | 'searchContext'>

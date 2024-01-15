@@ -1,7 +1,7 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
-    import type { AuthenticatedUser } from '$lib/shared'
+    import Avatar from '$lib/Avatar.svelte'
+    import type { UserMenu_User } from './UserMenu.gql'
     import { humanTheme } from '$lib/theme'
     import { DropdownMenu, MenuLink, MenuRadioGroup, MenuSeparator, Submenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
@@ -10,10 +10,10 @@
 
     const MAX_VISIBLE_ORGS = 5
 
-    export let authenticatedUser: AuthenticatedUser
+    export let user: UserMenu_User
 
     const open = writable(false)
-    $: organizations = authenticatedUser.organizations.nodes
+    $: organizations = user.organizations.nodes
 </script>
 
 <DropdownMenu
@@ -22,13 +22,13 @@
     aria-label="{$open ? 'Close' : 'Open'} user profile menu"
 >
     <svelte:fragment slot="trigger">
-        <UserAvatar user={authenticatedUser} />
+        <Avatar avatar={user} />
         <Icon svgPath={$open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} inline />
     </svelte:fragment>
-    <h6>Signed in as <strong>@{authenticatedUser.username}</strong></h6>
+    <h6>Signed in as <strong>@{user.username}</strong></h6>
     <MenuSeparator />
-    <MenuLink href={authenticatedUser.settingsURL} data-sveltekit-reload>Settings</MenuLink>
-    <MenuLink href="/users/{authenticatedUser.username}/searches" data-sveltekit-reload>Saved searches</MenuLink>
+    <MenuLink href={user.settingsURL} data-sveltekit-reload>Settings</MenuLink>
+    <MenuLink href="/users/{user.username}/searches" data-sveltekit-reload>Saved searches</MenuLink>
     <MenuLink href="/teams" data-sveltekit-reload>Teams</MenuLink>
     <MenuSeparator />
     <Submenu>
@@ -44,11 +44,11 @@
             </MenuLink>
         {/each}
         {#if organizations.length > MAX_VISIBLE_ORGS}
-            <MenuLink href={authenticatedUser.settingsURL}>Show all organizations</MenuLink>
+            <MenuLink href={user.settingsURL}>Show all organizations</MenuLink>
         {/if}
     {/if}
     <MenuSeparator />
-    {#if authenticatedUser.siteAdmin}
+    {#if user.siteAdmin}
         <MenuLink href="/site-admin" data-sveltekit-reload>Site admin</MenuLink>
     {/if}
     <MenuLink href="/help" target="_blank" rel="noopener">

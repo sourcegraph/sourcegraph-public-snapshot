@@ -42,7 +42,7 @@ func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map
 	if err != nil {
 		return repoID, "", err
 	}
-	commitID, err := backend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo, repoRev.Rev)
+	commitID, err := backend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo.Name, repoRev.Rev)
 	if err != nil {
 		return repoID, "", err
 	}

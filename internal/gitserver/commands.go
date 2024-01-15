@@ -5,11 +5,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
-	"net/http"
 	"net/mail"
 	"os"
 	stdlibpath "path"
@@ -32,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -875,153 +872,6 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 	}
 
 	return newBlameHunkReader(rc), nil
-}
-
-// BlameFile returns Git blame information about a file.
-func (c *clientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
-	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: append([]attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("path", path),
-		}, opt.Attrs()...),
-	})
-	defer endObservation(1, observation.Args{})
-
-	return blameFileCmd(ctx, c.subRepoPermsChecker, c.gitserverGitCommandFunc(repo), path, opt, repo)
-}
-
-func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName) ([]*Hunk, error) {
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
-		return nil, err
-	}
-	if opt == nil {
-		opt = &BlameOptions{}
-	}
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
-		return nil, err
-	}
-
-	args := []string{"blame", "--porcelain"}
-	if opt.IgnoreWhitespace {
-		args = append(args, "-w")
-	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
-	}
-	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
-
-	out, err := command(args).Output(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
-	}
-	if len(out) == 0 {
-		return nil, nil
-	}
-
-	return parseGitBlameOutput(string(out))
-}
-
-// parseGitBlameOutput parses the output of `git blame -w --porcelain`
-func parseGitBlameOutput(out string) ([]*Hunk, error) {
-	commits := make(map[string]gitdomain.Commit)
-	filenames := make(map[string]string)
-	hunks := make([]*Hunk, 0)
-	remainingLines := strings.Split(out[:len(out)-1], "\n")
-	byteOffset := 0
-	for len(remainingLines) > 0 {
-		// Consume hunk
-		hunkHeader := strings.Split(remainingLines[0], " ")
-		if len(hunkHeader) != 4 {
-			return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s'", hunkHeader)
-		}
-		commitID := hunkHeader[0]
-		lineNoCur, _ := strconv.Atoi(hunkHeader[2])
-		nLines, _ := strconv.Atoi(hunkHeader[3])
-		hunk := &Hunk{
-			CommitID:  api.CommitID(commitID),
-			StartLine: lineNoCur,
-			EndLine:   lineNoCur + nLines,
-			StartByte: byteOffset,
-		}
-
-		if _, in := commits[commitID]; in {
-			// Already seen commit
-			byteOffset += len(remainingLines[1])
-			remainingLines = remainingLines[2:]
-		} else {
-			// New commit
-			author := strings.Join(strings.Split(remainingLines[1], " ")[1:], " ")
-			email := strings.Join(strings.Split(remainingLines[2], " ")[1:], " ")
-			if len(email) >= 2 && email[0] == '<' && email[len(email)-1] == '>' {
-				email = email[1 : len(email)-1]
-			}
-			authorTime, err := strconv.ParseInt(strings.Join(strings.Split(remainingLines[3], " ")[1:], " "), 10, 64)
-			if err != nil {
-				return nil, errors.Errorf("Failed to parse author-time %q", remainingLines[3])
-			}
-			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := gitdomain.Commit{
-				ID:      api.CommitID(commitID),
-				Message: gitdomain.Message(summary),
-				Author: gitdomain.Signature{
-					Name:  author,
-					Email: email,
-					Date:  time.Unix(authorTime, 0).UTC(),
-				},
-			}
-
-			for i := 10; i < 13 && i < len(remainingLines); i++ {
-				if strings.HasPrefix(remainingLines[i], "filename ") {
-					filenames[commitID] = strings.SplitN(remainingLines[i], " ", 2)[1]
-					break
-				}
-			}
-
-			if len(remainingLines) >= 13 && strings.HasPrefix(remainingLines[10], "previous ") {
-				byteOffset += len(remainingLines[12])
-				remainingLines = remainingLines[13:]
-			} else if len(remainingLines) >= 13 && remainingLines[10] == "boundary" {
-				byteOffset += len(remainingLines[12])
-				remainingLines = remainingLines[13:]
-			} else if len(remainingLines) >= 12 {
-				byteOffset += len(remainingLines[11])
-				remainingLines = remainingLines[12:]
-			} else if len(remainingLines) == 11 {
-				// Empty file
-				remainingLines = remainingLines[11:]
-			} else {
-				return nil, errors.Errorf("Unexpected number of remaining lines (%d):\n%s", len(remainingLines), "  "+strings.Join(remainingLines, "\n  "))
-			}
-
-			commits[commitID] = commit
-		}
-
-		if commit, present := commits[commitID]; present {
-			// Should always be present, but check just to avoid
-			// panicking in case of a (somewhat likely) bug in our
-			// git-blame parser above.
-			hunk.CommitID = commit.ID
-			hunk.Author = commit.Author
-			hunk.Message = string(commit.Message)
-		}
-
-		if filename, present := filenames[commitID]; present {
-			hunk.Filename = filename
-		}
-
-		// Consume remaining lines in hunk
-		for i := 1; i < nLines; i++ {
-			byteOffset += len(remainingLines[1])
-			remainingLines = remainingLines[2:]
-		}
-
-		hunk.EndByte = byteOffset
-		hunks = append(hunks, hunk)
-	}
-
-	return hunks, nil
 }
 
 func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
@@ -2061,6 +1911,9 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 
 func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 	commitScanner := bufio.NewScanner(r)
+	// We use an increased buffer size since sub-repo permissions
+	// can result in very lengthy output.
+	commitScanner.Buffer(make([]byte, 0, 65536), 4294967296)
 	commitScanner.Split(commitSplitFunc)
 
 	var commits []*wrappedCommit
@@ -2492,7 +2345,7 @@ func (c *clientImplementor) RefDescriptions(ctx context.Context, repo api.RepoNa
 			derefField("objectname"),
 			"%(refname)",
 			"%(HEAD)",
-			derefField("creatordate:iso8601-strict"),
+			derefField("creatordate:unix"),
 		}, "%00")
 
 		args := make([]string, 0, len(gitObjs)+3)
@@ -2562,7 +2415,7 @@ var refPrefixes = map[string]gitdomain.RefType{
 // - %(objectname) is the 40-character revhash
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the ISO-formatted date the object was created
+// - %(creatordate) is the unix timestamp the object was created
 func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
 	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
 
@@ -2603,10 +2456,11 @@ lineLoop:
 		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
 		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
 		if createdDatePart != "" {
-			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+			parsedSeconds, err := strconv.Atoi(createdDatePart)
 			if err != nil {
 				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 			}
+			createdDate := time.Unix(int64(parsedSeconds), 0)
 			createdDatePtr = &createdDate
 		}
 
@@ -2725,120 +2579,81 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
-		if err != nil {
-			return nil, err
-		}
+	client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
 
-		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+	req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
 
-		ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 
-		stream, err := client.Archive(ctx, req)
-		if err != nil {
-			cancel()
-			return nil, err
-		}
+	stream, err := client.Archive(ctx, req)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 
-		// first message from the gRPC stream needs to be read to check for errors before continuing
-		// to read the rest of the stream. If the first message is an error, we cancel the stream
-		// and return the error.
+	// first message from the gRPC stream needs to be read to check for errors before continuing
+	// to read the rest of the stream. If the first message is an error, we cancel the stream
+	// and return the error.
+	//
+	// This is necessary to provide parity between the REST and gRPC implementations of
+	// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
+	// as is the case with the HTTP implementation where errors are returned as soon as the
+	// function returns. gRPC is asynchronous, so we have to start consuming messages from
+	// the stream to see any errors from the server. Reading the first message ensures we
+	// handle any errors synchronously, similar to the HTTP implementation.
+
+	firstMessage, firstError := stream.Recv()
+	if firstError != nil {
+		// Hack: The ArchiveReader.Read() implementation handles surfacing the
+		// any "revision not found" errors returned from the invoked git binary.
 		//
-		// This is necessary to provide parity between the REST and gRPC implementations of
-		// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
-		// as is the case with the HTTP implementation where errors are returned as soon as the
-		// function returns. gRPC is asynchronous, so we have to start consuming messages from
-		// the stream to see any errors from the server. Reading the first message ensures we
-		// handle any errors synchronously, similar to the HTTP implementation.
+		// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
+		// instead of returning it immediately.
 
-		firstMessage, firstError := stream.Recv()
-		if firstError != nil {
-			// Hack: The ArchiveReader.Read() implementation handles surfacing the
-			// any "revision not found" errors returned from the invoked git binary.
-			//
-			// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-			// instead of returning it immediately.
+		// We return early only if this isn't a revision not found error.
 
-			// We return early only if this isn't a revision not found error.
+		err := convertGRPCErrorToGitDomainError(firstError)
 
-			err := convertGRPCErrorToGitDomainError(firstError)
-
-			var cse *CommandStatusError
-			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
-				cancel()
-				return nil, convertGRPCErrorToGitDomainError(err)
-			}
-		}
-
-		firstMessageRead := false
-
-		// Create a reader to read from the gRPC stream.
-		r := streamio.NewReader(func() ([]byte, error) {
-			// Check if we've read the first message yet. If not, read it and return.
-			if !firstMessageRead {
-				firstMessageRead = true
-
-				if firstError != nil {
-					return nil, firstError
-				}
-
-				return firstMessage.GetData(), nil
-			}
-
-			// Receive the next message from the stream.
-			msg, err := stream.Recv()
-			if err != nil {
-				return nil, convertGRPCErrorToGitDomainError(err)
-			}
-
-			// Return the data from the received message.
-			return msg.GetData(), nil
-		})
-
-		return &archiveReader{
-			base: &readCloseWrapper{r: r, closeFn: cancel},
-			repo: repo,
-			spec: options.Treeish,
-		}, nil
-
-	} else {
-		// Fall back to http request
-		u := c.archiveURL(ctx, repo, options)
-		resp, err := c.do(ctx, repo, u.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-
-		switch resp.StatusCode {
-		case http.StatusOK:
-			return &archiveReader{
-				base: &cmdReader{
-					rc:      resp.Body,
-					trailer: resp.Trailer,
-				},
-				repo: repo,
-				spec: options.Treeish,
-			}, nil
-		case http.StatusNotFound:
-			var payload protocol.NotFoundPayload
-			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-				resp.Body.Close()
-				return nil, err
-			}
-			resp.Body.Close()
-			return nil, &badRequestError{
-				error: &gitdomain.RepoNotExistError{
-					Repo:            repo,
-					CloneInProgress: payload.CloneInProgress,
-					CloneProgress:   payload.CloneProgress,
-				},
-			}
-		default:
-			resp.Body.Close()
-			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		var cse *CommandStatusError
+		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
+			cancel()
+			return nil, convertGRPCErrorToGitDomainError(err)
 		}
 	}
+
+	firstMessageRead := false
+
+	// Create a reader to read from the gRPC stream.
+	r := streamio.NewReader(func() ([]byte, error) {
+		// Check if we've read the first message yet. If not, read it and return.
+		if !firstMessageRead {
+			firstMessageRead = true
+
+			if firstError != nil {
+				return nil, firstError
+			}
+
+			return firstMessage.GetData(), nil
+		}
+
+		// Receive the next message from the stream.
+		msg, err := stream.Recv()
+		if err != nil {
+			return nil, convertGRPCErrorToGitDomainError(err)
+		}
+
+		// Return the data from the received message.
+		return msg.GetData(), nil
+	})
+
+	return &archiveReader{
+		base: &readCloseWrapper{r: r, closeFn: cancel},
+		repo: repo,
+		spec: options.Treeish,
+	}, nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {

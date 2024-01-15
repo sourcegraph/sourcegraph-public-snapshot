@@ -69,6 +69,15 @@
         })
     }
 
+    function fetchCommitHistory(afterCursor: string | null) {
+        return data.fetchCommitHistory({
+            repo: data.resolvedRevision.repo.id,
+            revspec: data.resolvedRevision.commitID,
+            filePath: $page.params.path ?? '',
+            afterCursor,
+        })
+    }
+
     $: ({ revision, parentPath, resolvedRevision } = data)
     $: commitID = resolvedRevision.commitID
     $: repoID = resolvedRevision.repo.id
@@ -107,7 +116,7 @@
     {/if}
     <div class="main">
         <slot />
-        <BottomPanel bind:this={bottomPanel} history={data.deferred.codeCommits} />
+        <BottomPanel bind:this={bottomPanel} history={data.deferred.commitHistory} {fetchCommitHistory} />
     </div>
 </section>
 

@@ -7,8 +7,8 @@
     import Timestamp from '$lib/Timestamp.svelte'
     import type { TreeEntryFields } from './api/tree'
 
-    export let entries: TreeEntryFields[]
-    export let commitInfo: TreeEntryWithCommitInfo[]
+    export let entries: readonly TreeEntryFields[]
+    export let commitInfo: readonly TreeEntryWithCommitInfo[]
     export let revision: string
 
     $: commitInfoByPath = new Map(commitInfo.map(entry => [entry.canonicalURL, entry]))
