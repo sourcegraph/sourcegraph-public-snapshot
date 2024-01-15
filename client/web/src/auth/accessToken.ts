@@ -17,8 +17,8 @@ export enum AccessTokenScopes {
  */
 export function getExpirationOptions(expirationOptions: number[]): Record<string, number> {
     const opts: Record<string, number> = {}
-    expirationOptions.forEach(option => {
+    for (const option of expirationOptions) {
         opts[`${option} ${pluralize('day', option)}`] = option * 86400 // convert to seconds
-    })
+    }
     return opts
 }

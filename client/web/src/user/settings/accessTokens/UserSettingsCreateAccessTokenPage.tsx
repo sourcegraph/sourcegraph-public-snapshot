@@ -51,7 +51,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     const [expiryOptions, defaultExpiry] = useMemo(() => {
         const options = getExpirationOptions(window.context.accessTokensExpirationDaysOptions)
         return [options, window.context.accessTokensExpirationDaysDefault * 86400]
-    }, [window.context.accessTokensExpirationDaysDefault, window.context.accessTokensExpirationDaysOptions])
+    }, [])
 
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
@@ -80,7 +80,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
             setExpiry(undefined)
             return
         }
-        setExpiry(parseInt(event.currentTarget.value))
+        setExpiry(parseInt(event.currentTarget.value, 10))
     }, [])
 
     const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
