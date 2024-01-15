@@ -12,6 +12,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const Starcoder16bMultiTenant = "accounts/fireworks/models/starcoder-16b-w8a16"
+const Starcoder7bMultiTenant = "accounts/fireworks/models/starcoder-7b-w8a16"
+const Starcoder16bSingleTenant = "accounts/sourcegraph/models/starcoder-16b"
+
+const Llama27bCodeMultiTenant = "accounts/fireworks/models/llama-v2-7b-code"
+const Llama213bCodeMultiTenant = "accounts/fireworks/models/llama-v2-13b-code"
+const Llama213bCodeInstructMultiTenant = "accounts/fireworks/models/llama-v2-13b-code-instruct"
+const Llama234bCodeInstructMultiTenant = "accounts/fireworks/models/llama-v2-34b-code-instruct"
+const Mistral7bInstructMultiTenant = "accounts/fireworks/models/mistral-7b-instruct-4k"
+const Mixtral8x7bInstructMultiTenant = "accounts/fireworks/models/mixtral-8x7b-instruct"
+
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{
 		cli:         cli,

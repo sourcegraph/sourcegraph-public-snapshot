@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -144,16 +145,18 @@ func (c *Config) Load() {
 			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
 			// Fireworks multi-tenant models:
-			"accounts/fireworks/models/starcoder-16b-w8a16",
-			"accounts/fireworks/models/starcoder-7b-w8a16",
-			"accounts/fireworks/models/starcoder-3b-w8a16",
-			"accounts/fireworks/models/starcoder-1b-w8a16",
+			fireworks.Starcoder16bMultiTenant,
+			fireworks.Starcoder7bMultiTenant,
+			fireworks.Starcoder16bSingleTenant,
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
+			// Deprecated model strings
+			"accounts/fireworks/models/starcoder-3b-w8a16",
+			"accounts/fireworks/models/starcoder-1b-w8a16",
 		}, ","),
 		"Fireworks models that can be used."))
 	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")

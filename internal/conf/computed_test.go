@@ -517,7 +517,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModelMaxTokens:       3000,
 				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
 				FastChatModelMaxTokens:   3000,
-				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModel:          "starcoder",
 				CompletionModelMaxTokens: 6000,
 				AccessToken:              "asdf",
 				Provider:                 "fireworks",

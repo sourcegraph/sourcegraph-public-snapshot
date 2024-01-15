@@ -723,7 +723,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
+			// Use the virtual fireworks/starcoder model name as the default
+			completionsConfig.CompletionModel = "starcoder"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
 		// If no endpoint is configured, no default available.

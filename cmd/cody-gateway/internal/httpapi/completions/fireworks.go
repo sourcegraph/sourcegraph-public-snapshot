@@ -136,14 +136,14 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
-		body.Model = "accounts/fireworks/models/starcoder-16b-w8a16"
+		body.Model = fireworks.Starcoder16bMultiTenant
 	}
 	// PLG virtual model strings
 	if body.Model == "starcoder-16b" {
-		body.Model = "accounts/fireworks/models/starcoder-16b-w8a16"
+		body.Model = fireworks.Starcoder16bMultiTenant
 	}
 	if body.Model == "starcoder-7b" {
-		body.Model = "accounts/fireworks/models/starcoder-7b-w8a16"
+		body.Model = fireworks.Starcoder7bMultiTenant
 	}
 
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -44,25 +45,26 @@ func allowedCustomModel(model string) string {
 	// These virtual model strings allow the server to choose the model.
 	// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
 	case "fireworks/starcoder-16b":
-		return "fireworks/accounts/fireworks/models/starcoder-16b-w8a16"
+		return "fireworks/" + fireworks.Starcoder16bMultiTenant
 	case "fireworks/starcoder-7b":
-		return "fireworks/accounts/fireworks/models/starcoder-7b-w8a16"
+		return "fireworks/" + fireworks.Starcoder7bMultiTenant
 	case "fireworks/starcoder",
-		"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
-		"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
-		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
-		"fireworks/accounts/fireworks/models/starcoder-1b-w8a16",
-		"fireworks/accounts/sourcegraph/models/starcoder-7b",
-		"fireworks/accounts/sourcegraph/models/starcoder-16b",
-		"fireworks/accounts/fireworks/models/llama-v2-7b-code",
-		"fireworks/accounts/fireworks/models/llama-v2-13b-code",
-		"fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct",
-		"fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct",
-		"fireworks/accounts/fireworks/models/mistral-7b-instruct-4k",
+		"fireworks/" + fireworks.Starcoder16bMultiTenant,
+		"fireworks/" + fireworks.Starcoder7bMultiTenant,
+		"fireworks/" + fireworks.Llama27bCodeMultiTenant,
+		"fireworks/" + fireworks.Llama213bCodeMultiTenant,
+		"fireworks/" + fireworks.Llama213bCodeInstructMultiTenant,
+		"fireworks/" + fireworks.Llama234bCodeInstructMultiTenant,
+		"fireworks/" + fireworks.Mistral7bInstructMultiTenant,
 		"anthropic/claude-instant-1.2-cyan",
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-instant-v1",
-		"anthropic/claude-instant-1":
+		"anthropic/claude-instant-1",
+		// Deprecated model identifiers
+		"fireworks/accounts/sourcegraph/models/starcoder-7b",
+		"fireworks/accounts/sourcegraph/models/starcoder-16b",
+		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
+		"fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
 		return model
 	}
 

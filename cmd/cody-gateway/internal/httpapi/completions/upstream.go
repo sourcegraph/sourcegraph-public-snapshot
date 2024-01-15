@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -419,7 +420,7 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 
 		// Expand virtual model names
-		if m == "fireworks/starcoder" && (model == "fireworks/accounts/fireworks/models/starcoder-7b-w8a16" || model == "fireworks/accounts/fireworks/models/starcoder-16b-w8a16") {
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7bMultiTenant || model == "fireworks/"+fireworks.Starcoder16bMultiTenant) {
 			return true
 		}
 	}
