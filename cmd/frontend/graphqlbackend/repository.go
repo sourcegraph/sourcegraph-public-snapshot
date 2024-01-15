@@ -52,6 +52,10 @@ type RepositoryResolver struct {
 	defaultBranchOnce sync.Once
 	defaultBranch     *GitRefResolver
 	defaultBranchErr  error
+
+	linkerOnce sync.Once
+	linker     externallink.RepositoryLinker
+	linkerErr  error
 }
 
 // NewMinimalRepositoryResolver creates a new lazy resolver from the minimum necessary information: repo name and repo ID.
@@ -462,11 +466,11 @@ func (r *RepositoryResolver) url() *url.URL {
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.getRepo(ctx)
+	linker, err := r.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return externallink.Repository(ctx, r.db, repo)
+	return linker.Repository(), nil
 }
 
 func (r *RepositoryResolver) Label() (Markdown, error) {
@@ -761,4 +765,27 @@ func (r *RepositoryResolver) isPerforceDepot(ctx context.Context) bool {
 	}
 
 	return s == &PerforceDepotSourceType
+}
+
+func (r *RepositoryResolver) getLinker(ctx context.Context) (externallink.RepositoryLinker, error) {
+	r.linkerOnce.Do(func() {
+		defaultBranchResolver, err := r.DefaultBranch(ctx)
+		if err != nil {
+			r.linkerErr = err
+			return
+		}
+
+		defaultBranch := ""
+		if defaultBranchResolver != nil {
+			defaultBranch = defaultBranchResolver.name
+		}
+
+		repo, err := r.getRepo(ctx)
+		if err != nil {
+			r.linkerErr = err
+			return
+		}
+		r.linker = externallink.NewRepositoryLinker(ctx, r.db, repo, defaultBranch)
+	})
+	return r.linker, r.linkerErr
 }

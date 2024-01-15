@@ -18,7 +18,7 @@ export function deserializeURLQueryFilters(serialized: string | null): URLQueryF
     return parsed.map(([kind, label, value]) => ({ kind, label, value }))
 }
 
-export function useFilterQuery(): [URLQueryFilter[], (newFilters: URLQueryFilter[]) => void] {
+export function useUrlFilters(): [URLQueryFilter[], (newFilters: URLQueryFilter[]) => void] {
     const [filterQuery, setFilterQuery] = useSyncedWithURLState<URLQueryFilter[], string>({
         urlKey: 'filters',
         serializer: serializeURLQueryFilters,

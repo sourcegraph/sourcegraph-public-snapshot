@@ -39,7 +39,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
-	SearchTypeKeyword
+	SearchTypeCodyContext
 	SearchTypeNewStandardRC1
 )
 
@@ -55,8 +55,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
-	case SearchTypeKeyword:
-		return "keyword"
+	case SearchTypeCodyContext:
+		return "codyContext"
 	case SearchTypeNewStandardRC1:
 		return "newStandardRC1"
 	default:
