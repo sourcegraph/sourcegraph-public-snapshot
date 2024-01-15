@@ -1,0 +1,16 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "qa_test",
+    timeout = "short",
+    srcs = ["e2e_test.go"],
+    tags = [
+        "external",
+        "requires-network",
+    ],
+    deps = [
+        "//internal/codygateway",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

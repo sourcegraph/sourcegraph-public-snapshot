@@ -2,7 +2,6 @@ package qa
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,9 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_Completions(t *testing.T) {
@@ -22,8 +22,11 @@ func Test_Completions(t *testing.T) {
 		for name, p := range map[string]GatewayFeatureClient{"anthropic": AnthropicGatewayFeatureClient{}, "fireworks": FireworksGatewayFeatureClient{}, "openai": OpenAIGatewayFeatureClient{}} {
 			for _, stream := range []bool{false, true} {
 				t.Run(string(f)+" "+name+" stream "+strconv.FormatBool(stream), func(t *testing.T) {
+					stream := stream
+					// avoid mutating the same URL
+					url := *gatewayURL
 					t.Parallel()
-					req := &http.Request{URL: gatewayURL, Header: make(http.Header)}
+					req := &http.Request{URL: &url, Header: make(http.Header)}
 					req.Header.Set("X-Sourcegraph-Feature", string(f))
 					req.Header.Set("Authorization", "Bearer "+gatewayToken)
 					req, err := p.GetRequest(f, req, stream)
@@ -46,13 +49,18 @@ func Test_Completions(t *testing.T) {
 }
 
 func parseBackendData(t *testing.T) (*url.URL, string) {
+	if _, ok := os.LookupEnv("E2E_GATEWAY_ENDPOINT"); !ok {
+		t.Fatal("E2E_GATEWAY_ENDPOINT must be set")
+	}
 	gatewayEndpoint := os.Getenv("E2E_GATEWAY_ENDPOINT")
 	gatewayURL, err := url.Parse(gatewayEndpoint)
 	if err != nil {
-		t.Fail()
+		t.Fatal(err)
 	}
-	gatewayToken := os.Getenv("E2E_GATEWAY_TOKEN")
-	return gatewayURL, gatewayToken
+	if _, ok := os.LookupEnv("E2E_GATEWAY_TOKEN"); !ok {
+		t.Fatal("E2E_GATEWAY_TOKEN must be set")
+	}
+	return gatewayURL, os.Getenv("E2E_GATEWAY_TOKEN")
 }
 
 func Test_Embeddings(t *testing.T) {
@@ -70,7 +78,6 @@ func Test_Embeddings(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
-	fmt.Println(string(body))
 	var response struct {
 		Embeddings []struct {
 			Data []float32 `json:"data"`
