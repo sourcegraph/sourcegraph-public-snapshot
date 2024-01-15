@@ -1408,7 +1408,7 @@ func TestEventLogs_AggregatedCodyUsage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectedUsage := types.CodyAggregatedUsage{
+	expectedUsage := &types.CodyAggregatedUsage{
 		Month:                      time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 		Week:                       now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
 		Day:                        now.Truncate(time.Hour * 24),
