@@ -148,26 +148,16 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
-		roll := rand.Intn(100)
-		if (roll < f.starcoderEnterpriseSingleTenantPercent) {
-			body.Model = fireworks.Starcoder16bSingleTenant
-		} else {
-			body.Model = fireworks.Starcoder16b
-		}
+		body.Model = pickModelBasedOnTrafficSplit(f.starcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
 	}
 
 	// PLG virtual model strings
 	if (body.Model == "starcoder-16b" || body.Model == "starcoder-7b" ) {
-		roll := rand.Intn(100)
-     		if (roll < f.starcoderCommunitySingleTenantPercent) {
-			body.Model = fireworks.Starcoder16bSingleTenant
-		} else {
-			if body.Model == "starcoder-7b" {
-				body.Model = fireworks.Starcoder7b
-			} else {
-				body.Model = fireworks.Starcoder16b
-			}
+		multiTenantModel = fireworks.Starcoder16b
+		if body.Model == "starcoder-7b" {
+			multiTenantModel = fireworks.Starcoder7b
 		}
+		body.Model = pickModelBasedOnTrafficSplit(f.starcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
 	}
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
@@ -269,4 +259,23 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	}
 
 	return promptUsage, completionUsage
+}
+
+// Picks a model based on a specific percentage split. If the percent value is 0, the
+// zeroPercentModel is always picked. If the value is 100, the hundredPercentModel is always picked.
+func pickModelBasedOnTrafficSplit(percentage int, hundredPercentModel string, zeroPercentModel string) string {
+	// Create a value inside the range of [0, 100). This means you are doing a 1 out of 100 roll.
+	roll := rand.Intn(100)
+
+	// Check if the roll is within the target percentage:
+	//
+	// - If the percentage is `0`, the roll will always be smaller than 0 (since it's at least 0)
+	// - If the percentage is `100`, the roll will always be greater than 100 (since it's at most 99)
+	// - Otherwise, e.g. for a percentage of `30`, the roll will have exactly 30 out of 100 possible
+    //   draws (since it will be < only if it is within the range [0, 30))
+	if (roll < percentage) {
+		return zeroPercentModel
+	} else {
+		return hundredPercentModel
+	}
 }
