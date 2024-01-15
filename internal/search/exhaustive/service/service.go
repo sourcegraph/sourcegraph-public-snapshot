@@ -383,21 +383,6 @@ func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *ty
 	return &stats, nil
 }
 
-// discards output from br up until delim is read. If an error is encountered
-// it is returned. Note: often the error is io.EOF
-func discardUntil(br *bufio.Reader, delim byte) error {
-	// This function just wraps ReadSlice which will read until delim. If we
-	// get the error ErrBufferFull we didn't find delim since we need to read
-	// more, so we just try again. For every other error (or nil) we can
-	// return it.
-	for {
-		_, err := br.ReadSlice(delim)
-		if err != bufio.ErrBufferFull {
-			return err
-		}
-	}
-}
-
 func writeSearchJobJSON(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) (int64, error) {
 	// keep a single bufio.Reader so we can reuse its buffer.
 	var br bufio.Reader
@@ -422,49 +407,6 @@ func writeSearchJobJSON(ctx context.Context, iter *iterator.Iterator[string], up
 		if err != nil {
 			return n, errors.Wrapf(err, "writing JSON for key %q", key)
 		}
-	}
-
-	return n, iter.Err()
-}
-
-func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) (int64, error) {
-	// keep a single bufio.Reader so we can reuse its buffer.
-	var br bufio.Reader
-	writeKey := func(key string, skipHeader bool) (int64, error) {
-		rc, err := uploadStore.Get(ctx, key)
-		if err != nil {
-			return 0, err
-		}
-		defer rc.Close()
-
-		br.Reset(rc)
-
-		// skip header line
-		if skipHeader {
-			err := discardUntil(&br, '\n')
-			if err == io.EOF {
-				// reached end of file before finding the newline. Write
-				// nothing
-				return 0, nil
-			} else if err != nil {
-				return 0, err
-			}
-		}
-
-		return br.WriteTo(w)
-	}
-
-	// For the first blob we want the header, for the rest we don't
-	skipHeader := false
-	var n int64
-	for iter.Next() {
-		key := iter.Current()
-		m, err := writeKey(key, skipHeader)
-		n += m
-		if err != nil {
-			return n, errors.Wrapf(err, "writing csv for key %q", key)
-		}
-		skipHeader = true
 	}
 
 	return n, iter.Err()
