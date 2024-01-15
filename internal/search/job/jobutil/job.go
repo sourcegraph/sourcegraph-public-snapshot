@@ -274,6 +274,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 }
 
 func NewTextSearchJob(b query.Basic, inputs *search.Inputs, types result.Types, options search.RepoOptions) job.Job {
+	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := b.GetTimeout() != nil || b.Count() != nil || inputs.Protocol != search.Batch
 	patternInfo := toTextPatternInfo(b, types, inputs.DefaultLimit())
 

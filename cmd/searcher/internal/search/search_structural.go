@@ -226,7 +226,7 @@ func extractQueryAtom(p *protocol.PatternInfo) (*protocol.PatternNode, error) {
 	if a, ok := p.Query.(*protocol.PatternNode); ok {
 		return a, nil
 	} else {
-		return nil, errors.New("Searcher only supports leaf regex patterns")
+		return nil, errors.New("structural search only supports leaf regex patterns")
 	}
 }
 
