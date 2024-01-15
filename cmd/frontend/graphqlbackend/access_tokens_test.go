@@ -146,7 +146,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		db := dbmocks.NewMockDB()
 		durationTooLongExpiration := time.Now().Add(maxTokenDuration + time.Hour).Format(time.RFC3339)
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n", ExpiresAt: &durationTooLongExpiration})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Scopes: []string{"user:all"}, Note: "n", ExpiresAt: &durationTooLongExpiration})
 		if err == nil {
 			t.Error("err == nil")
 		}
