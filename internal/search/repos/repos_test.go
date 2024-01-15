@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -147,7 +148,7 @@ func TestRevisionValidation(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
-			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
+			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 			if !errors.Is(err, tt.wantErr) {
@@ -298,7 +299,7 @@ func TestResolverIterator(t *testing.T) {
 		return "", nil
 	})
 
-	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 	all, _, err := resolver.resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -402,7 +403,7 @@ func TestResolverIterator(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+			r := NewResolver(logtest.Scoped(t), db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			it := r.Iterator(ctx, tc.opts)
 
 			var pages []Resolved
@@ -521,7 +522,7 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logger, db, gsClient, nil, nil)
+			r := NewResolver(logger, db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			got, err := iterator.Collect(r.IterateRepoRevs(ctx, tc.opts))
 
 			var gotErr string
@@ -592,7 +593,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "searchcontext",
 	}
-	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 	resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -652,13 +653,13 @@ func TestRepoHasFileContent(t *testing.T) {
 			},
 		},
 	}
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
 				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
 					for line := range lines {
 						if p.Pattern == line || p.Pattern == "" {
-							onMatches([]*protocol.FileMatch{{}})
+							onMatch(&protocol.FileMatch{})
 						}
 					}
 				}
@@ -764,7 +765,7 @@ func TestRepoHasFileContent(t *testing.T) {
 				ReposMap: tc.matchingRepos,
 			}, nil)
 
-			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
+			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), defaults.NewConnectionCache(logtest.Scoped(t)), mockZoekt)
 			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
@@ -867,7 +868,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
+			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), defaults.NewConnectionCache(logtest.Scoped(t)), nil)
 			res.gitserver = mockGitserver
 			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters: toParsedRepoFilters(tc.nameFilter),

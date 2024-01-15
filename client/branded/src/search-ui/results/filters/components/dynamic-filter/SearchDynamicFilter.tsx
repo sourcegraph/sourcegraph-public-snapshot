@@ -198,12 +198,12 @@ export const languageFilter = (filter: Filter): ReactNode => (
 )
 
 export const repoFilter = (filter: Filter): ReactNode => {
-    const { svgPath, color } = codeHostIcon(filter.label)
+    const { svgPath } = codeHostIcon(filter.label)
+
     return (
         <Tooltip content={filter.label}>
-            <span ref={null}>
-                <Icon aria-hidden={true} svgPath={svgPath ?? mdiSourceRepository} color={color} />{' '}
-                {displayRepoName(filter.label)}
+            <span>
+                <Icon aria-hidden={true} svgPath={svgPath ?? mdiSourceRepository} /> {displayRepoName(filter.label)}
             </span>
         </Tooltip>
     )

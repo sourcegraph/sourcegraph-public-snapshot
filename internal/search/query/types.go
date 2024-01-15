@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 )
 
+// ExpectedOperand is a 'marker' error type that the frontend logic
+// knows how to convert into a user-facing alert.
 type ExpectedOperand struct {
 	Msg string
 }
@@ -19,6 +21,8 @@ func (e *ExpectedOperand) Error() string {
 	return e.Msg
 }
 
+// UnsupportedError is a 'marker' error type that the frontend logic
+// knows how to convert into a user-facing alert.
 type UnsupportedError struct {
 	Msg string
 }
@@ -35,7 +39,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
-	SearchTypeKeyword
+	SearchTypeCodyContext
 	SearchTypeNewStandardRC1
 )
 
@@ -51,8 +55,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
-	case SearchTypeKeyword:
-		return "keyword"
+	case SearchTypeCodyContext:
+		return "codyContext"
 	case SearchTypeNewStandardRC1:
 		return "newStandardRC1"
 	default:

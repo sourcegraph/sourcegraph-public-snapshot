@@ -41,4 +41,4 @@ license_finder dependencies list
 
 # run license check
 echo "Running license_finder - if this fails, refer to our handbook: https://docs.sourcegraph.com/dev/background-information/ci#third-party-licenses"
-license_finder ${COMMAND} --columns=package_manager name version licenses homepage approved
+license_finder "${COMMAND}" --columns=package_manager name version licenses homepage approved

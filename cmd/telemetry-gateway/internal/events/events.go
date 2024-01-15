@@ -3,7 +3,6 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -73,13 +72,9 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			}
 
 			// Publish a single message in each callback to manage concurrency
-			// ourselves, and
-			if err := p.topic.PublishMessage(ctx, payload, map[string]string{
-				"event.feature": event.Feature,
-				"event.action":  event.Action,
-				"event.hasPrivateMetadata": strconv.FormatBool(
-					event.GetParameters().GetPrivateMetadata() != nil),
-			}); err != nil {
+			// ourselves, and attach attributes for ease of routing the pub/sub
+			// message.
+			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(event)); err != nil {
 				// Try to record the cancel cause in case one is recorded.
 				if cancelCause := context.Cause(ctx); cancelCause != nil {
 					return errors.Wrap(err, "interrupted event publish")

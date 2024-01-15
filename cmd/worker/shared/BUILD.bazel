@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//cmd/worker/internal/auth",
+        "//cmd/worker/internal/authz",
         "//cmd/worker/internal/batches",
         "//cmd/worker/internal/codeintel",
         "//cmd/worker/internal/codemonitors",

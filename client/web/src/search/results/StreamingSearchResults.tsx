@@ -3,7 +3,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
-import { limitHit, useFilterQuery } from '@sourcegraph/branded'
+import { limitHit, useUrlFilters } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -76,7 +76,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
     const queryState = useNavbarQueryState(state => state.queryState)
-    const [filterQuery] = useFilterQuery()
+    const [urlFilters] = useUrlFilters()
 
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
     const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
@@ -101,7 +101,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     )
     const results = useCachedSearchResults({
         query: submittedURLQuery,
-        filterQuery,
+        urlFilters,
         options,
         streamSearch,
         telemetryService,
