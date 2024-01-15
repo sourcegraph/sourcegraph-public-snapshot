@@ -169,8 +169,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the batch changes feature is enabled on the site. */
     batchChangesEnabled: boolean
 
-    /** Whether the warning about unconfigured webhooks is disabled within Batch
-     * Changes. */
+    /**
+     * Whether the warning about unconfigured webhooks is disabled within Batch Changes.
+     */
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
@@ -262,6 +263,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleExceededLimit?: boolean
         batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
+
+        features: LicenseFeatures
     }
 
     /** sha256 hashed license key */
@@ -281,4 +284,11 @@ export interface BrandAssets {
     logo?: string
     /** The URL to the symbol used as the search icon */
     symbol?: string
+}
+
+/**
+ * Defines the license features available.
+ */
+export interface LicenseFeatures {
+    codeSearch: boolean
 }

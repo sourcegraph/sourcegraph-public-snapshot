@@ -381,11 +381,11 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
+	linker, err := r.commit.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, r.gitserverClient, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return linker.FileOrDir(r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir()), nil
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -439,7 +439,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		toolName = *args.ToolName
 	}
 
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -454,7 +454,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 }
 
 func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +481,7 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		return nil, errors.New("expected arguments to symbolInfo")
 	}
 
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}

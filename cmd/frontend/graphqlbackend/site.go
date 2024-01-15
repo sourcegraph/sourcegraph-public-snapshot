@@ -300,10 +300,23 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	}
 
 	prev := conf.Raw()
+
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so take the redacted version for logging purposes.
+	prevSCredacted, _ := conf.RedactSecrets(prev)
+	arg := struct {
+		PrevConfig string `json:"prev_config"`
+		NewConfig  string `json:"new_config"`
+	}{
+		PrevConfig: prevSCredacted.Site,
+		NewConfig:  args.Input,
+	}
+
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
+
 	prev.Site = unredacted
 
 	server := globals.ConfigurationServerFrontendOnly
@@ -314,7 +327,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
 
 		// Log an event when site config is updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", nil); err != nil {
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameSiteConfigUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
@@ -627,7 +640,7 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 }
 
 func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.CompletionModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.config.CompletionModelMaxTokens != 0 {
 		max := int32(c.config.CompletionModelMaxTokens)

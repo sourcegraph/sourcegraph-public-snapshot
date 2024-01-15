@@ -61,9 +61,9 @@ function generate_unique_container_name() {
   local ident
 
   # try generate a unique identifier with openssl otherwise fallback to dd and hexdump
-  if command -v openssl &> /dev/null; then
+  if command -v openssl &>/dev/null; then
     ident="$(openssl rand -hex 12)"
-  elif command -v hexdump &> /dev/null; then
+  elif command -v hexdump &>/dev/null; then
     ident="$(dd if=/dev/urandom bs=12 count=1 2>/dev/null | hexdump -e '24/1 "%02x"')"
   else
     echo "⚠️ Missing openssl or hexdump. Unable to generate unique id"
@@ -110,7 +110,6 @@ function _run_server_image() {
   echo "License key present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
 
   echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
-  echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
 
   # shellcheck disable=SC2086
   docker run $docker_args \
@@ -121,7 +120,6 @@ function _run_server_image() {
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
-    -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
     -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
     "$image_name"
 
@@ -145,7 +143,7 @@ function wait_until_container_ready() {
   # shellcheck disable=SC2181
   while [ ! $? -eq 0 ]; do
     sleep 5
-    t=$(( t + 5 ))
+    t=$((t + 5))
     if [ "$t" -gt "$timeout" ]; then
       echo "$url was not accessible within $timeout."
       docker inspect "$name"

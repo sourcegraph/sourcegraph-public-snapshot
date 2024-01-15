@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ownsearch "github.com/sourcegraph/sourcegraph/internal/own/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -45,12 +45,12 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
 
-	if inputs.PatternType == query.SearchTypeKeyword {
+	if inputs.PatternType == query.SearchTypeCodyContext {
 		if inputs.SearchMode == search.SmartSearch {
 			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
 		}
 
-		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
+		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +323,6 @@ func orderRacingJobs(j job.Job) job.Job {
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
 	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
-	patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.DefaultLimit())
 
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol != search.Batch
@@ -348,6 +347,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
+				patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.DefaultLimit())
 				searcherJob := &searcher.TextSearchJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
@@ -369,11 +369,15 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				symbolSearchJob := &searcher.SymbolSearchJob{
-					PatternInfo: patternInfo,
-					Limit:       maxResults,
+				request, err := toSymbolSearchRequest(f)
+				if err != nil {
+					return nil, err
 				}
 
+				symbolSearchJob := &searcher.SymbolSearchJob{
+					Request: request,
+					Limit:   maxResults,
+				}
 				addJob(&repoPagerJob{
 					child:            &reposPartialJob{symbolSearchJob},
 					repoOpts:         repoOptions,
@@ -383,6 +387,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
+			patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.DefaultLimit())
 			searcherArgs := &search.SearcherParameters{
 				PatternInfo:     patternInfo,
 				UseFullDeadline: useFullDeadline,
@@ -622,6 +627,31 @@ func mapSlice(values []string, f func(string) string) []string {
 		res[i] = f(v)
 	}
 	return res
+}
+
+func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) {
+	if f.Pattern.Negated {
+		return nil, &query.UnsupportedError{
+			Msg: "symbol search does not support negation.",
+		}
+	}
+
+	// We convert literal searches to regexes, since the symbol search logic
+	// assumes that a literal pattern is an escaped regular expression.
+	regexpPattern := f.ToBasic().PatternString()
+
+	filesInclude, filesExclude := f.IncludeExcludeValues(query.FieldFile)
+	langInclude, langExclude := f.IncludeExcludeValues(query.FieldLang)
+
+	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+
+	return &searcher.SymbolSearchRequest{
+		RegexpPattern:   regexpPattern,
+		IsCaseSensitive: f.IsCaseSensitive(),
+		IncludePatterns: filesInclude,
+		ExcludePattern:  query.UnionRegExps(filesExclude),
+	}, nil
 }
 
 // toTextPatternInfo converts an atomic query to internal values that drive

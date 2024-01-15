@@ -3,17 +3,19 @@ import { FC, ReactNode, useMemo, useState } from 'react'
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
+import { codeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
 
 import styles from './SearchDynamicFilter.module.scss'
 
-const MAX_FILTERS_NUMBER = 7
+const MAX_FILTERS_NUMBER = 5
 
 interface SearchDynamicFilterProps {
     /** Name title of the filter section */
@@ -58,8 +60,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     renderItem,
     onSelectedFilterChange,
 }) => {
-    const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
+    const [visibleFilters, setVisibleFilters] = useState<number>(MAX_FILTERS_NUMBER)
 
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
@@ -89,7 +91,27 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     const lowerSearchTerm = searchTerm.toLowerCase()
     const filteredFilters = mergedFilters.filter(filter => filter.label.toLowerCase().includes(lowerSearchTerm))
-    const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUMBER)
+    const filtersToShow =
+        filteredFilters.length <= visibleFilters ? filteredFilters : filteredFilters.slice(0, visibleFilters)
+    const allFiltersDisplayed = visibleFilters >= filteredFilters.length
+
+    const moreOrLessFilters = (): void => {
+        const filtersDisplayed = visibleFilters + MAX_FILTERS_NUMBER
+
+        if (allFiltersDisplayed) {
+            // setAllFiltersDisplayed(false)
+            setVisibleFilters(MAX_FILTERS_NUMBER)
+            return
+        }
+
+        if (filteredFilters.length <= filtersDisplayed) {
+            setVisibleFilters(filtersDisplayed)
+            // setAllFiltersDisplayed(true)
+            return
+        }
+
+        setVisibleFilters(filtersDisplayed)
+    }
 
     return (
         <div className={styles.root}>
@@ -116,8 +138,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                 ))}
             </ul>
             {filteredFilters.length > MAX_FILTERS_NUMBER && (
-                <Button variant="link" size="sm" onClick={() => setShowAllFilters(!showAllFilters)}>
-                    {showAllFilters ? `Show less ${filterKind} filters` : `Show all ${filterKind} filters`}
+                <Button variant="link" size="sm" onClick={() => moreOrLessFilters()}>
+                    {allFiltersDisplayed ? `Show less ${filterKind}s` : `Show more ${filterKind}s`}
                 </Button>
             )}
         </div>
@@ -175,12 +197,17 @@ export const languageFilter = (filter: Filter): ReactNode => (
     </>
 )
 
-export const repoFilter = (filter: Filter): ReactNode => (
-    <>
-        <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
-        {filter.label}
-    </>
-)
+export const repoFilter = (filter: Filter): ReactNode => {
+    const { svgPath } = codeHostIcon(filter.label)
+
+    return (
+        <Tooltip content={filter.label}>
+            <span>
+                <Icon aria-hidden={true} svgPath={svgPath ?? mdiSourceRepository} /> {displayRepoName(filter.label)}
+            </span>
+        </Tooltip>
+    )
+}
 
 export const commitDateFilter = (filter: Filter): ReactNode => (
     <span className={styles.commitDate}>

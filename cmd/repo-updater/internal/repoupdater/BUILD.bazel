@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "repoupdater",
     srcs = [
-        "grpc_server.go",
         "observability.go",
         "server.go",
     ],
@@ -15,9 +14,7 @@ go_library(
         "//internal/batches/syncer",
         "//internal/database",
         "//internal/errcode",
-        "//internal/instrumentation",
         "//internal/metrics",
-        "//internal/observation",
         "//internal/repos",
         "//internal/repoupdater/protocol",
         "//internal/repoupdater/v1:repoupdater",
@@ -26,7 +23,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
-        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
     ],
@@ -45,6 +41,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/repo-updater/internal/scheduler",
         "//internal/api",
         "//internal/conf/reposource",
         "//internal/database",
@@ -59,7 +56,6 @@ go_test(
         "//internal/grpc/defaults",
         "//internal/observation",
         "//internal/repos",
-        "//internal/repos/scheduler",
         "//internal/repoupdater",
         "//internal/repoupdater/protocol",
         "//internal/repoupdater/v1:repoupdater",
@@ -71,7 +67,6 @@ go_test(
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_log//logtest",
-        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )

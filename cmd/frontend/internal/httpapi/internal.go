@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// TODO: Can be removed after 5.3 is cut.
 func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 	raw := conf.Raw()
 	err := json.NewEncoder(w).Encode(raw)
