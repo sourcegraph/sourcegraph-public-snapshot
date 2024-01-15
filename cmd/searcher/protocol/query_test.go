@@ -98,3 +98,23 @@ func TestFromJobNode(t *testing.T) {
 		})
 	}
 }
+
+func TestString(t *testing.T) {
+	q := &protocol.OrNode{
+		Children: []protocol.QueryNode{
+			&protocol.AndNode{
+				Children: []protocol.QueryNode{
+					&protocol.PatternNode{Value: "foo"},
+					&protocol.PatternNode{Value: "bar", IsNegated: true},
+				},
+			},
+			&protocol.PatternNode{Value: "baz", IsNegated: true},
+			&protocol.PatternNode{Value: "buzz", IsRegExp: true},
+		},
+	}
+
+	want := `(("foo" AND NOT "bar") OR NOT "baz" OR /buzz/)`
+	if diff := cmp.Diff(want, q.String()); diff != "" {
+		t.Fatalf("expected string output to be equal. diff: %s", diff)
+	}
+}

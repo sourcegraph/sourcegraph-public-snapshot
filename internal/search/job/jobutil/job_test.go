@@ -777,7 +777,7 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           REPOSCOMPUTEEXCLUDED
           (STRUCTURALSEARCH
-            (patternInfo.query . PatternNode{"(:[_])"})
+            (patternInfo.query . "(:[_])")
             (patternInfo.isStructural . true)
             (patternInfo.fileMatchLimit . 1000)))))))`),
 		},

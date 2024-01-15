@@ -55,7 +55,11 @@ type AndNode struct {
 }
 
 func (an *AndNode) String() string {
-	return fmt.Sprintf("AND (%d children)", len(an.Children))
+	cs := make([]string, 0, len(an.Children))
+	for _, child := range an.Children {
+		cs = append(cs, child.String())
+	}
+	return "(" + strings.Join(cs, " AND ") + ")"
 }
 
 func (an *AndNode) ToProto() *proto.QueryNode {
@@ -74,8 +78,12 @@ type OrNode struct {
 	Children []QueryNode
 }
 
-func (an *OrNode) String() string {
-	return fmt.Sprintf("OR (%d children)", len(an.Children))
+func (on *OrNode) String() string {
+	cs := make([]string, 0, len(on.Children))
+	for _, child := range on.Children {
+		cs = append(cs, child.String())
+	}
+	return "(" + strings.Join(cs, " OR ") + ")"
 }
 
 func (an *OrNode) ToProto() *proto.QueryNode {
@@ -104,18 +112,16 @@ type PatternNode struct {
 }
 
 func (rn *PatternNode) String() string {
-	args := []string{}
+	var prefix string
 	if rn.IsNegated {
-		args = append(args, fmt.Sprintf("-%q", rn.Value))
-	} else {
-		args = append(args, fmt.Sprintf("%q", rn.Value))
+		prefix = "NOT "
 	}
 
 	if rn.IsRegExp {
-		args = append(args, "re")
+		return fmt.Sprintf(`%s/%s/`, prefix, rn.Value)
+	} else {
+		return fmt.Sprintf(`%s"%s"`, prefix, rn.Value)
 	}
-
-	return fmt.Sprintf("PatternNode{%s}", strings.Join(args, ","))
 }
 
 func (rn *PatternNode) ToProto() *proto.QueryNode {

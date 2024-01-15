@@ -46,7 +46,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{PatternNode{"content"},nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -54,7 +54,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{PatternNode{"content"},nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -70,7 +70,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{PatternNode{"content"},nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -78,7 +78,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{PatternNode{"content"},nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"content",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -94,7 +94,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{PatternNode{"foo.*bar"},nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -102,7 +102,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{PatternNode{"foo.*bar"},nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"foo.*bar",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -119,7 +119,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{PatternNode{"foo"},nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -127,7 +127,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{PatternNode{"foo"},nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
@@ -144,7 +144,7 @@ func TestNewExhaustive(t *testing.T) {
   (PARTIALREPOS
     (SEARCHERTEXTSEARCH
       (useFullDeadline . true)
-      (patternInfo . TextPatternInfo{PatternNode{"foo"},nopath,filematchlimit:1000000})
+      (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
       (numRepos . 0)
       (pathRegexps . [])
       (indexed . false))))
@@ -152,7 +152,7 @@ func TestNewExhaustive(t *testing.T) {
 			WantJob: autogold.Expect(`
 (SEARCHERTEXTSEARCH
   (useFullDeadline . true)
-  (patternInfo . TextPatternInfo{PatternNode{"foo"},nopath,filematchlimit:1000000})
+  (patternInfo . TextPatternInfo{"foo",nopath,filematchlimit:1000000})
   (numRepos . 1)
   (pathRegexps . [])
   (indexed . false))
