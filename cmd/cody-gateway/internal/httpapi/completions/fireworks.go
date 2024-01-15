@@ -148,8 +148,8 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
-		d100Roll := rand.Intn(99)
-		if (d100Roll < f.starcoderEnterpriseSingleTenantPercent) {
+		roll := rand.Intn(100)
+		if (roll < f.starcoderEnterpriseSingleTenantPercent) {
 			body.Model = fireworks.Starcoder16bSingleTenant
 		} else {
 			body.Model = fireworks.Starcoder16b
@@ -158,8 +158,8 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// PLG virtual model strings
 	if (body.Model == "starcoder-16b" || body.Model == "starcoder-7b" ) {
-		d100Roll := rand.Intn(99)
-     		if (d100Roll < f.starcoderCommunitySingleTenantPercent) {
+		roll := rand.Intn(100)
+     		if (roll < f.starcoderCommunitySingleTenantPercent) {
 			body.Model = fireworks.Starcoder16bSingleTenant
 		} else {
 			if body.Model == "starcoder-7b" {
