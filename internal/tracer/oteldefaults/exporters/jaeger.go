@@ -6,8 +6,7 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 
-	//lint:ignore SA1019 - we continue supporting jaeger for now, since our
-	// jaeger is not frequently updated.
+	//lint:ignore SA1019 we continue supporting jaeger for now, since our jaeger is not frequently updated.
 	oteljaeger "go.opentelemetry.io/otel/exporters/jaeger"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
