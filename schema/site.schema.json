@@ -1147,20 +1147,34 @@
           "description": "Allows new tokens to be created without specifying an expiration.",
           "type": "boolean",
           "default": "false"
+        },
+        "expirationOptionDays": {
+          "description": "Options for the number of days for token expiration.  The first item in the list will be used as the default for new tokens.",
+          "type": "array",
+          "default": [60, 7, 30, 90],
+          "items": {
+            "type": "integer",
+            "maximum": 365,
+            "minimum": 1
+          },
+          "examples": [[60, 7, 30, 90]]
         }
       },
       "default": {
         "allow": "all-users-create",
-        "allowNoExpiration": false
+        "allowNoExpiration": false,
+        "expirationOptionDays": [60, 7, 30, 90]
       },
       "examples": [
         {
           "allow": "site-admin-create",
-          "allowNoExpiration": true
+          "allowNoExpiration": true,
+          "expirationOptionDays": [60, 7, 30, 90]
         },
         {
           "allow": "none",
-          "allowNoExpiration": false
+          "allowNoExpiration": false,
+          "expirationOptionDays": [60, 7, 30, 90]
         }
       ],
       "group": "Security"

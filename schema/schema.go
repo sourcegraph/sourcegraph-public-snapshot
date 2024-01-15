@@ -90,6 +90,8 @@ type AuthAccessTokens struct {
 	Allow string `json:"allow,omitempty"`
 	// AllowNoExpiration description: Allows new tokens to be created without specifying an expiration.
 	AllowNoExpiration bool `json:"allowNoExpiration,omitempty"`
+	// ExpirationOptionDays description: Options for the number of days for token expiration.  The first item in the list will be used as the default for new tokens.
+	ExpirationOptionDays []int `json:"expirationOptionDays,omitempty"`
 }
 
 // AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.

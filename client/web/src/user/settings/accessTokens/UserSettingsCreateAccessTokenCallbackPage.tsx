@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { addSeconds } from 'date-fns'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, isErrorLike, isMobile } from '@sourcegraph/common'
+import { asError, isErrorLike, isMobile, pluralize } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
@@ -19,6 +20,8 @@ import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
+
+const DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS = window.context.accessTokensExpirationDaysDefault
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
@@ -197,7 +200,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             (click: Observable<React.MouseEvent>) =>
                 click.pipe(
                     switchMap(() =>
-                        (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
+                        (requester
+                            ? createAccessToken(
+                                  user.id,
+                                  [AccessTokenScopes.UserAll],
+                                  note,
+                                  addSeconds(new Date(), DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS * 86400).toISOString() // days to seconds
+                              )
+                            : NEVER
+                        ).pipe(
                             tap(result => {
                                 // SECURITY: If the request was from a valid requester and from a non-mobile device,
                                 // redirect to the allowlisted redirect URL. (https://github.com/sourcegraph/security-issues/issues/361)
@@ -286,8 +297,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 <Text>{requester.name} access token successfully generated.</Text>
                                 <CopyableText className="test-access-token" text={newToken} />
                                 <Text className="form-help text-muted" size="small">
-                                    This is a one-time access token to connect your account to {requester.name}. You
-                                    will not be able to see this token again once the window is closed.
+                                    This is a one-time access token to connect your account to {requester.name}. This
+                                    token will expire in {DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS}{' '}
+                                    {pluralize('day', DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS)}. You will not be able to see
+                                    this token again once the window is closed.
                                 </Text>
                             </div>
                         </details>

@@ -25,22 +25,12 @@ import {
     Select,
 } from '@sourcegraph/wildcard'
 
-import { AccessTokenScopes } from '../../../auth/accessToken'
+import { AccessTokenScopes, getExpirationOptions } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'
 import type { CreateAccessTokenResult } from '../../../graphql-operations'
 import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
-
-/* Valid options for the dropdown. Values are in seconds. */
-
-const EXPIRY_OPTIONS: Record<string, number> = {
-    '7 days': 7 * 60 * 60 * 24,
-    '30 days': 30 * 60 * 60 * 24,
-    '60 days': 60 * 60 * 60 * 24,
-    '90 days': 90 * 60 * 60 * 24,
-}
-const EXPIRY_DEFAULT = '60 days'
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {
     /**
@@ -58,6 +48,10 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     user,
 }) => {
     const navigate = useNavigate()
+    const [expiryOptions, defaultExpiry] = useMemo(() => {
+        const options = getExpirationOptions(window.context.accessTokensExpirationDaysOptions)
+        return [options, window.context.accessTokensExpirationDaysDefault * 86400]
+    }, [window.context.accessTokensExpirationDaysDefault, window.context.accessTokensExpirationDaysOptions])
 
     useMemo(() => {
         telemetryService.logViewEvent('NewAccessToken')
@@ -68,7 +62,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     const [note, setNote] = useState<string>(defaultNoteValue ?? '')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
-    const [expiry, setExpiry] = useState<number | undefined>(EXPIRY_OPTIONS[EXPIRY_DEFAULT])
+    const [expiry, setExpiry] = useState<number | undefined>(defaultExpiry)
     const allowNoExpiration = window.context.accessTokensAllowNoExpiration
 
     const onNoteChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -104,7 +98,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                                 user.id,
                                 scopes,
                                 note,
-                                expiry !== undefined ? addSeconds(new Date(), expiry) : null
+                                expiry !== undefined ? addSeconds(new Date(), expiry).toISOString() : null
                             ).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
@@ -197,7 +191,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                             </>
                         }
                     >
-                        {Object.entries(EXPIRY_OPTIONS).map(([label, expiryInSeconds]) => (
+                        {Object.entries(expiryOptions).map(([label, expiryInSeconds]) => (
                             <option key={expiryInSeconds} value={expiryInSeconds}>
                                 {label}
                             </option>

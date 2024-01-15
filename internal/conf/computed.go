@@ -79,6 +79,30 @@ func AccessTokensAllowNoExpiration() bool {
 	return cfg.AllowNoExpiration
 }
 
+// AccessTokensExpirationOptions returns the default expiration in days and approved options.
+// The default is the first item listed in Accestokens.expirationOptionDays
+// It will remove any value that is > 365 days and return defaults of 90, [7,14,30,60,90] if none are specified.
+func AccessTokensExpirationOptions() (defaultDays int, options []int) {
+	cfg := Get().AuthAccessTokens
+	if cfg == nil {
+		return 90, []int{7, 14, 30, 60, 90}
+	}
+
+	expirationOptionDays := cfg.ExpirationOptionDays
+	filtered := make([]int, 0, len(expirationOptionDays))
+	for _, days := range expirationOptionDays {
+		if days > 0 && days <= 365 {
+			filtered = append(filtered, days)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return 90, []int{7, 14, 30, 60, 90}
+	}
+
+	return filtered[0], filtered
+}
+
 // EmailVerificationRequired returns whether users must verify an email address before they
 // can perform most actions on this site.
 //

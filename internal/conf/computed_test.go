@@ -1183,3 +1183,61 @@ func TestAccessTokenAllowNoExpiration(t *testing.T) {
 		})
 	}
 }
+
+func TestAccessTokensExpirationOptions(t *testing.T) {
+	testCases := []struct {
+		name        string
+		siteConfig  schema.SiteConfiguration
+		wantDefault int
+		wantOptions []int
+	}{
+		{
+			name:        "nil config",
+			siteConfig:  schema.SiteConfiguration{},
+			wantDefault: 90,
+			wantOptions: []int{7, 14, 30, 60, 90},
+		},
+		{
+			name: "empty config",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{},
+			},
+			wantDefault: 90,
+			wantOptions: []int{7, 14, 30, 60, 90},
+		},
+		{
+			name: "custom options",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays: []int{10, 20},
+				},
+			},
+			wantDefault: 10,
+			wantOptions: []int{10, 20},
+		},
+		{
+			name: "invalid options",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays: []int{-1, 10, 20, 999},
+				},
+			},
+			wantDefault: 10,
+			wantOptions: []int{10, 20},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{
+				SiteConfiguration: tc.siteConfig,
+			})
+			defer Mock(nil)
+
+			defaultDays, options := AccessTokensExpirationOptions()
+
+			assert.Equal(t, tc.wantDefault, defaultDays)
+			assert.Equal(t, tc.wantOptions, options)
+		})
+	}
+}
