@@ -158,7 +158,9 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
     const fileHistoryByPath = useMemo(() => {
         const fileHistoryByPath: Record<string, TreeHistoryFields['history']['nodes'][number]['commit']> = {}
         for (const entry of historyEntries || []) {
-            fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
+            if (entry.history.nodes.length > 0) {
+                fileHistoryByPath[entry.path] = entry.history.nodes[0].commit
+            }
         }
         return fileHistoryByPath
     }, [historyEntries])
