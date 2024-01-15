@@ -63,8 +63,8 @@ type operations struct {
 	cancelSearchJob          *observation.Operation
 	getAggregateRepoRevState *observation.Operation
 
-	getSearchJobCSVWriterTo  operationWithWriterTo
-	getSearchJobLogsWriterTo operationWithWriterTo
+	getSearchJobResultsWriterTo operationWithWriterTo
+	getSearchJobLogsWriterTo    operationWithWriterTo
 }
 
 // operationWithWriterTo encodes our pattern around our CSV WriterTo were we
@@ -109,9 +109,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 			cancelSearchJob:          op("CancelSearchJob"),
 			getAggregateRepoRevState: op("GetAggregateRepoRevState"),
 
-			getSearchJobCSVWriterTo: operationWithWriterTo{
-				get:      op("GetSearchJobCSVWriterTo"),
-				writerTo: op("GetSearchJobCSVWriterTo.WriteTo"),
+			getSearchJobResultsWriterTo: operationWithWriterTo{
+				get:      op("GetSearchJobResultsWriterTo"),
+				writerTo: op("GetSearchJobResultsWriterTo.WriteTo"),
 			},
 			getSearchJobLogsWriterTo: operationWithWriterTo{
 				get:      op("GetSearchJobLogsWriterTo"),
@@ -317,18 +317,15 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 	return s.store.DeleteExhaustiveSearchJob(ctx, id)
 }
 
-// WriteSearchJobCSV copies all CSVs associated with a search job to the given
-// writer. It returns the number of bytes written and any error encountered.
-
-// GetSearchJobCSVWriterTo returns a WriterTo which can be called once to
+// GetSearchJobResultsWriterTo returns a WriterTo which can be called once to
 // write all CSVs associated with a search job to the given writer for job id.
 // Note: ctx is used by WriterTo.
 //
 // io.WriterTo is a specialization of an io.Reader. We expect callers of this
-// function to want to write an http response, so we avoid an io.Pipe and
+// function to want to write a http response, so we avoid an io.Pipe and
 // instead pass a more direct use.
-func (s *Service) GetSearchJobCSVWriterTo(parentCtx context.Context, id int64) (_ io.WriterTo, err error) {
-	ctx, _, endObservation := s.operations.getSearchJobCSVWriterTo.get.With(parentCtx, &err, opAttrs(
+func (s *Service) GetSearchJobResultsWriterTo(parentCtx context.Context, id int64) (_ io.WriterTo, err error) {
+	ctx, _, endObservation := s.operations.getSearchJobResultsWriterTo.get.With(parentCtx, &err, opAttrs(
 		attribute.Int64("id", id)))
 	defer endObservation(1, observation.Args{})
 
@@ -343,13 +340,13 @@ func (s *Service) GetSearchJobCSVWriterTo(parentCtx context.Context, id int64) (
 	}
 
 	return writerToFunc(func(w io.Writer) (n int64, err error) {
-		ctx, _, endObservation := s.operations.getSearchJobCSVWriterTo.writerTo.With(parentCtx, &err, opAttrs(
+		ctx, _, endObservation := s.operations.getSearchJobResultsWriterTo.writerTo.With(parentCtx, &err, opAttrs(
 			attribute.Int64("id", id)))
 		defer func() {
 			endObservation(1, opAttrs(attribute.Int64("bytesWritten", n)))
 		}()
 
-		return writeSearchJobCSV(ctx, iter, s.uploadStore, w)
+		return writeSearchJobJSON(ctx, iter, s.uploadStore, w)
 	}), nil
 }
 
@@ -399,6 +396,35 @@ func discardUntil(br *bufio.Reader, delim byte) error {
 			return err
 		}
 	}
+}
+
+func writeSearchJobJSON(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) (int64, error) {
+	// keep a single bufio.Reader so we can reuse its buffer.
+	var br bufio.Reader
+
+	writeKey := func(key string) (int64, error) {
+		rc, err := uploadStore.Get(ctx, key)
+		if err != nil {
+			return 0, err
+		}
+		defer rc.Close()
+
+		br.Reset(rc)
+
+		return br.WriteTo(w)
+	}
+
+	var n int64
+	for iter.Next() {
+		key := iter.Current()
+		m, err := writeKey(key)
+		n += m
+		if err != nil {
+			return n, errors.Wrapf(err, "writing JSON for key %q", key)
+		}
+	}
+
+	return n, iter.Err()
 }
 
 func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) (int64, error) {

@@ -117,11 +117,10 @@ func TestExhaustiveSearch(t *testing.T) {
 			vals = append(vals, v)
 		}
 		sort.Strings(vals)
-		require.Equal([]string{
-			"repository,revision,file_path,match_count,first_match_url\n1,rev1,path/to/file.go,0,/1@rev1/-/blob/path/to/file.go\n",
-			"repository,revision,file_path,match_count,first_match_url\n1,rev2,path/to/file.go,0,/1@rev2/-/blob/path/to/file.go\n",
-			"repository,revision,file_path,match_count,first_match_url\n2,rev3,path/to/file.go,0,/2@rev3/-/blob/path/to/file.go\n",
-		}, vals)
+		require.Equal([]string{`{"type":"path","path":"path/to/file.go","repositoryID":0,"repository":"1","commit":"rev1"}
+`, `{"type":"path","path":"path/to/file.go","repositoryID":0,"repository":"1","commit":"rev2"}
+`, `{"type":"path","path":"path/to/file.go","repositoryID":0,"repository":"2","commit":"rev3"}
+`}, vals)
 	}
 
 	// Minor assertion that the job is regarded as finished.
