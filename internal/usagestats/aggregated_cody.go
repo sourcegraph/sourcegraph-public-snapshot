@@ -17,9 +17,9 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 	}
 
 	stats := &types.CodyUsageStatistics{
-		Daily:   &types.CodyUsagePeriod{newCodyEventPeriod()},
-		Weekly:  &types.CodyUsagePeriod{newCodyEventPeriod()},
-		Monthly: &types.CodyUsagePeriod{newCodyEventPeriod()},
+		Daily:   newCodyEventPeriod(),
+		Weekly:  newCodyEventPeriod(),
+		Monthly: newCodyEventPeriod(),
 	}
 
 	stats.Daily.StartTime = events.Day
