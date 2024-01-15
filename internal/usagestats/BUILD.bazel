@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "aggregated.go",
         "aggregated_codeintel.go",
+        "aggregated_cody.go",
         "aggregated_repo_metadata.go",
         "aggregated_search.go",
         "all_time_stats.go",
