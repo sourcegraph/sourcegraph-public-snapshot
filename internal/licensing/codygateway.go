@@ -1,6 +1,10 @@
 package licensing
 
-import "golang.org/x/exp/slices"
+import (
+	"golang.org/x/exp/slices"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+)
 
 // CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
 //
@@ -31,6 +35,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2",
+		"fireworks/" + fireworks.Mixtral8x7bInstruct,
 	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
@@ -69,6 +74,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2",
+		"fireworks/starcoder",
 	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
