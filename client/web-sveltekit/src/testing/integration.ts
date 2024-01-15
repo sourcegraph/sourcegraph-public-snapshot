@@ -25,6 +25,7 @@ const defaultMocks: TypeMocks = {
     }),
     GitBlob: () => ({
         highlight: {
+            // Ensure this is valid JSON
             lsif: '{}',
         },
     }),
@@ -35,6 +36,7 @@ const defaultMocks: TypeMocks = {
     GitCommit: () => ({
         abbreviatedOID: faker.git.commitSha({ length: 7 }),
     }),
+    JSONCString: () => '{}',
 }
 
 const SCHEMA_DIR = path.resolve(

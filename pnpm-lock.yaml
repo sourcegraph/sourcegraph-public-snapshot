@@ -1436,12 +1436,6 @@ importers:
       '@graphql-codegen/typescript-operations':
         specifier: ^4.0.1
         version: 4.0.1(graphql@15.4.0)
-      '@graphql-tools/mock':
-        specifier: ^9.0.0
-        version: 9.0.0(graphql@15.4.0)
-      '@graphql-tools/schema':
-        specifier: ^10.0.2
-        version: 10.0.2(graphql@15.4.0)
       '@graphql-tools/utils':
         specifier: ^10.0.11
         version: 10.0.11(graphql@15.4.0)
@@ -4722,19 +4716,6 @@ packages:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
     dependencies:
       '@graphql-tools/utils': 10.0.11(graphql@15.4.0)
-      graphql: 15.4.0
-      tslib: 2.1.0
-    dev: true
-
-  /@graphql-tools/mock@9.0.0(graphql@15.4.0):
-    resolution: {integrity: sha512-Vbb4RNTT9T3fXjmzACcflOh79vKBaC/J21eCJ0eug1ZdaM2QXVHQ3lxE6HNOlAENHXjwJINz1AnKsvF3bpeSKA==}
-    engines: {node: '>=16.0.0'}
-    peerDependencies:
-      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-    dependencies:
-      '@graphql-tools/schema': 10.0.2(graphql@15.4.0)
-      '@graphql-tools/utils': 10.0.11(graphql@15.4.0)
-      fast-json-stable-stringify: 2.1.0
       graphql: 15.4.0
       tslib: 2.1.0
     dev: true

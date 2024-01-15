@@ -25,8 +25,8 @@ export function groupFilters(filters: Filter[] | null | undefined): FilterGroups
         lang: [],
         utility: [],
         author: [],
-        "commit date": [],
-        "symbol type": [],
+        'commit date': [],
+        'symbol type': [],
     }
     if (filters) {
         for (const filter of filters) {

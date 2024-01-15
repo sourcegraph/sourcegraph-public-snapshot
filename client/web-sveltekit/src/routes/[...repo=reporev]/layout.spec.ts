@@ -18,9 +18,8 @@ test.beforeEach(({ sg }) => {
 test.describe('cloned repository', () => {
     test.beforeEach(async ({ sg, page }) => {
         sg.mockOperations({
-            ResolveRepoRevison: ({}) => ({
+            ResolveRepoRevison: ({ repoName }) => ({
                 repositoryRedirect: {
-                    __typename: 'Repository',
                     id: '1',
                     name: repoName,
                 },
@@ -43,7 +42,6 @@ test('clone in progress', async ({ sg, page }) => {
     sg.mockOperations({
         ResolveRepoRevison: ({ repoName }) => ({
             repositoryRedirect: {
-                __typename: 'Repository',
                 id: '1',
                 name: repoName,
                 mirrorInfo: {
@@ -66,7 +64,6 @@ test('not cloned', async ({ sg, page }) => {
     sg.mockOperations({
         ResolveRepoRevison: ({ repoName }) => ({
             repositoryRedirect: {
-                __typename: 'Repository',
                 id: '1',
                 name: repoName,
                 mirrorInfo: {
