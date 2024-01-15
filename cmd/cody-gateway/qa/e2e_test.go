@@ -30,7 +30,7 @@ func Test_Completions(t *testing.T) {
 					req.Header.Set("X-Sourcegraph-Feature", string(f))
 					req.Header.Set("Authorization", "Bearer "+gatewayToken)
 					req, err := p.GetRequest(f, req, stream)
-					if err != nil && errors.Is(err, errNotImplemented) {
+					if errors.Is(err, errNotImplemented) {
 						t.Skip(string(f), err)
 					}
 					assert.NoError(t, err)
