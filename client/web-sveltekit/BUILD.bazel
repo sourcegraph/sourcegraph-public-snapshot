@@ -38,7 +38,7 @@ SRCS = [
         "src/**/*.gql.d.ts",
     ],
 ) + glob([
-        "dev/**/*.cjs"
+        "dev/**/*.cjs",
         "dev/**/*.ts"
     ])
 
