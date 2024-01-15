@@ -2,13 +2,18 @@ package bigquerywriter
 
 import (
 	"context"
+	"io"
 
 	"cloud.google.com/go/bigquery"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Writer adds helpers for best practices around using a bigquery.Inserter.
+//
+// On service shutdown, (*Writer).Close() must be called.
 type Writer struct {
+	client io.Closer
 	// Inserter is the underlying bigquery.Inserter that can be used if you
 	// know what you are doing. Use with care!
 	Inserter *bigquery.Inserter
@@ -37,4 +42,9 @@ func (w *Writer) Write(ctx context.Context, values ...bigquery.ValueSaver) error
 	}
 	// Otherwise, insert all values.
 	return w.Inserter.Put(ctx, values)
+}
+
+// Close closes any underlying resources.
+func (w *Writer) Close() error {
+	return w.client.Close()
 }
