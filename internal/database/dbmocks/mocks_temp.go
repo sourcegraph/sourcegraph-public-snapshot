@@ -75799,7 +75799,7 @@ func NewMockTelemetryEventsExportQueueStore() *MockTelemetryEventsExportQueueSto
 			},
 		},
 		CountUnexportedFunc: &TelemetryEventsExportQueueStoreCountUnexportedFunc{
-			defaultHook: func(context.Context) (r0 int64, r1 error) {
+			defaultHook: func(context.Context) (r0 int64, r1 time.Time, r2 error) {
 				return
 			},
 		},
@@ -75847,7 +75847,7 @@ func NewStrictMockTelemetryEventsExportQueueStore() *MockTelemetryEventsExportQu
 			},
 		},
 		CountUnexportedFunc: &TelemetryEventsExportQueueStoreCountUnexportedFunc{
-			defaultHook: func(context.Context) (int64, error) {
+			defaultHook: func(context.Context) (int64, time.Time, error) {
 				panic("unexpected invocation of MockTelemetryEventsExportQueueStore.CountUnexported")
 			},
 		},
@@ -76030,24 +76030,24 @@ func (c TelemetryEventsExportQueueStoreCountRecentlyExportedFuncCall) Results() 
 // when the CountUnexported method of the parent
 // MockTelemetryEventsExportQueueStore instance is invoked.
 type TelemetryEventsExportQueueStoreCountUnexportedFunc struct {
-	defaultHook func(context.Context) (int64, error)
-	hooks       []func(context.Context) (int64, error)
+	defaultHook func(context.Context) (int64, time.Time, error)
+	hooks       []func(context.Context) (int64, time.Time, error)
 	history     []TelemetryEventsExportQueueStoreCountUnexportedFuncCall
 	mutex       sync.Mutex
 }
 
 // CountUnexported delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockTelemetryEventsExportQueueStore) CountUnexported(v0 context.Context) (int64, error) {
-	r0, r1 := m.CountUnexportedFunc.nextHook()(v0)
-	m.CountUnexportedFunc.appendCall(TelemetryEventsExportQueueStoreCountUnexportedFuncCall{v0, r0, r1})
-	return r0, r1
+func (m *MockTelemetryEventsExportQueueStore) CountUnexported(v0 context.Context) (int64, time.Time, error) {
+	r0, r1, r2 := m.CountUnexportedFunc.nextHook()(v0)
+	m.CountUnexportedFunc.appendCall(TelemetryEventsExportQueueStoreCountUnexportedFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the CountUnexported
 // method of the parent MockTelemetryEventsExportQueueStore instance is
 // invoked and the hook queue is empty.
-func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultHook(hook func(context.Context) (int64, error)) {
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultHook(hook func(context.Context) (int64, time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -76056,7 +76056,7 @@ func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultHook(hook
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushHook(hook func(context.Context) (int64, error)) {
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushHook(hook func(context.Context) (int64, time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -76064,20 +76064,20 @@ func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushHook(hook func(
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultReturn(r0 int64, r1 error) {
-	f.SetDefaultHook(func(context.Context) (int64, error) {
-		return r0, r1
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) SetDefaultReturn(r0 int64, r1 time.Time, r2 error) {
+	f.SetDefaultHook(func(context.Context) (int64, time.Time, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushReturn(r0 int64, r1 error) {
-	f.PushHook(func(context.Context) (int64, error) {
-		return r0, r1
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) PushReturn(r0 int64, r1 time.Time, r2 error) {
+	f.PushHook(func(context.Context) (int64, time.Time, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) nextHook() func(context.Context) (int64, error) {
+func (f *TelemetryEventsExportQueueStoreCountUnexportedFunc) nextHook() func(context.Context) (int64, time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -76120,7 +76120,10 @@ type TelemetryEventsExportQueueStoreCountUnexportedFuncCall struct {
 	Result0 int64
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 time.Time
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -76132,7 +76135,7 @@ func (c TelemetryEventsExportQueueStoreCountUnexportedFuncCall) Args() []interfa
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c TelemetryEventsExportQueueStoreCountUnexportedFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // TelemetryEventsExportQueueStoreDeletedExportedFunc describes the behavior

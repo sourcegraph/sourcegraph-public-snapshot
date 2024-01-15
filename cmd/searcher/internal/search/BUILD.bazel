@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "search",
     srcs = [
+        "chunk.go",
         "filter.go",
         "hybrid.go",
         "matchtree.go",
@@ -38,8 +39,6 @@ go_library(
         "//internal/search",
         "//internal/search/backend",
         "//internal/search/casetransform",
-        "//internal/search/searcher",
-        "//internal/search/streaming/http",
         "//internal/search/zoekt",
         "//internal/searcher/v1:searcher",
         "//internal/trace",
@@ -112,6 +111,7 @@ go_test(
     name = "search_test",
     timeout = "short",
     srcs = [
+        "chunk_test.go",
         "filter_test.go",
         "github_archive_test.go",
         "hybrid_test.go",
@@ -135,6 +135,7 @@ go_test(
         "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/comby",
+        "//internal/conf",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/grpc",
@@ -142,7 +143,6 @@ go_test(
         "//internal/observation",
         "//internal/search",
         "//internal/search/backend",
-        "//internal/search/searcher",
         "//internal/searcher/v1:searcher",
         "//lib/errors",
         "//schema",
