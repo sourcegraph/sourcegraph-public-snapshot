@@ -150,11 +150,16 @@ type EnvironmentDeploySpec struct {
 func (s EnvironmentDeploySpec) Validate() []error {
 	var errs []error
 	if s.Type == EnvironmentDeployTypeSubscription {
-		if s.Subscription == nil {
+		if s.Manual != nil {
+			errs = append(errs, errors.New("manual deploy spec provided when type is subscription"))
+		} else if s.Subscription == nil {
 			errs = append(errs, errors.New("no subscription specified when deploy type is subscription"))
-		}
-		if s.Subscription.Tag == "" {
+		} else if s.Subscription.Tag == "" {
 			errs = append(errs, errors.New("no tag in image subscription specified"))
+		}
+	} else if s.Type == EnvironmentDeployTypeManual {
+		if s.Subscription != nil {
+			errs = append(errs, errors.New("subscription deploy spec provided when type is manual"))
 		}
 	}
 	return errs
