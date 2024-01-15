@@ -1,4 +1,4 @@
-package internal
+package cli
 
 import (
 	"fmt"
@@ -37,14 +37,14 @@ func TestIsAllowedGitCmd(t *testing.T) {
 	logger := logtest.Scoped(t)
 	for _, args := range isAllowed {
 		t.Run("", func(t *testing.T) {
-			if !isAllowedGitCmd(logger, args, "/fake/path") {
+			if !IsAllowedGitCmd(logger, args, "/fake/path") {
 				t.Fatalf("expected args to be allowed: %q", args)
 			}
 		})
 	}
 	for _, args := range notAllowed {
 		t.Run("", func(t *testing.T) {
-			if isAllowedGitCmd(logger, args, "/fake/path") {
+			if IsAllowedGitCmd(logger, args, "/fake/path") {
 				t.Fatalf("expected args to NOT be allowed: %q", args)
 			}
 		})
@@ -79,7 +79,7 @@ func TestIsAllowedDiffGitCmd(t *testing.T) {
 	logger := logtest.Scoped(t)
 	for _, cmd := range allowed {
 		t.Run(fmt.Sprintf("%s returns %t", strings.Join(cmd.args, " "), cmd.pass), func(t *testing.T) {
-			assert.Equal(t, cmd.pass, isAllowedGitCmd(logger, cmd.args, "/foo/baz"))
+			assert.Equal(t, cmd.pass, IsAllowedGitCmd(logger, cmd.args, "/foo/baz"))
 		})
 	}
 }

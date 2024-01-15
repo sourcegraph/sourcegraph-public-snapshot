@@ -79,10 +79,10 @@ func (g *gitCLIBackend) gitCommand(ctx context.Context, args ...string) (wrexec.
 		ctx, cancel = context.WithTimeout(ctx, gitCommandTimeout)
 	}
 
-	// if !isAllowedGitCmd(g.logger, args, g.dir) {
-	// 	blockedCommandExecutedCounter.Inc()
-	// 	return nil, cancel, ErrBadGitCommand
-	// }
+	if !IsAllowedGitCmd(g.logger, args, g.dir) {
+		blockedCommandExecutedCounter.Inc()
+		return nil, cancel, ErrBadGitCommand
+	}
 
 	cmd := exec.Command("git", args...)
 	g.dir.Set(cmd)
