@@ -70,7 +70,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/claude-instant-1",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
-			"fireworks/" + fireworks.Mixtral8x7bInstructMultiTenant:
+			"fireworks/" + fireworks.Mixtral8x7bInstruct:
 			return true
 		}
 	} else {

@@ -45,17 +45,17 @@ func allowedCustomModel(model string) string {
 	// These virtual model strings allow the server to choose the model.
 	// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
 	case "fireworks/starcoder-16b":
-		return "fireworks/" + fireworks.Starcoder16bMultiTenant
+		return "fireworks/" + fireworks.Starcoder16b
 	case "fireworks/starcoder-7b":
-		return "fireworks/" + fireworks.Starcoder7bMultiTenant
+		return "fireworks/" + fireworks.Starcoder7b
 	case "fireworks/starcoder",
-		"fireworks/" + fireworks.Starcoder16bMultiTenant,
-		"fireworks/" + fireworks.Starcoder7bMultiTenant,
-		"fireworks/" + fireworks.Llama27bCodeMultiTenant,
-		"fireworks/" + fireworks.Llama213bCodeMultiTenant,
-		"fireworks/" + fireworks.Llama213bCodeInstructMultiTenant,
-		"fireworks/" + fireworks.Llama234bCodeInstructMultiTenant,
-		"fireworks/" + fireworks.Mistral7bInstructMultiTenant,
+		"fireworks/" + fireworks.Starcoder16b,
+		"fireworks/" + fireworks.Starcoder7b,
+		"fireworks/" + fireworks.Llama27bCode,
+		"fireworks/" + fireworks.Llama213bCode,
+		"fireworks/" + fireworks.Llama213bCodeInstruct,
+		"fireworks/" + fireworks.Llama234bCodeInstruct,
+		"fireworks/" + fireworks.Mistral7bInstruct,
 		"anthropic/claude-instant-1.2-cyan",
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-instant-v1",
