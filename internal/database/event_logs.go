@@ -1433,7 +1433,7 @@ func (l *eventLogStore) aggregatedCodyUsage(ctx context.Context, queryString str
 		&usage.UniquesDay,
 		&usage.ProductUsersDay,
 		&usage.ProductUsersWeek,
-		&usage.ProductUsersDay,
+		&usage.ProductUsersMonth,
 		&usage.VSCodeProductUsersMonth,
 		&usage.JetBrainsProductUsersMonth,
 		&usage.NeovimProductUsersMonth,
