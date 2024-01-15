@@ -21,7 +21,7 @@ func Test_Completions(t *testing.T) {
 	for _, f := range []codygateway.Feature{codygateway.FeatureCodeCompletions, codygateway.FeatureChatCompletions} {
 		for name, p := range map[string]GatewayFeatureClient{"anthropic": AnthropicGatewayFeatureClient{}, "fireworks": FireworksGatewayFeatureClient{}, "openai": OpenAIGatewayFeatureClient{}} {
 			for _, stream := range []bool{false, true} {
-				t.Run(string(f)+" "+name+" stream "+strconv.FormatBool(stream), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%s %v stream %v", f, name, stream), func(t *testing.T) {
 					stream := stream
 					// avoid mutating the same URL
 					u := *gatewayURL
