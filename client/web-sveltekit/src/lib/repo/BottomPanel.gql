@@ -1,0 +1,3 @@
+fragment BottomPanel_HistoryConnection on GitCommitConnection {
+    ...HistoryPanel_HistoryConnection
+}

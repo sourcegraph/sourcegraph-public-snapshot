@@ -36,6 +36,15 @@ fi
 
 # If this is a tagged release, we want to create a directory for it.
 if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
+  # This is a failsafe, to avoid dropping the entire folder whenever we
+  # run this code without a proper tag, typically when testing releases.
+  #
+  # Without it, the tag will be empty and the gsutil rm -rf below will
+  # drop the entire folder.
+  if [ -z "$BUILDKITE_TAG" ] || [ "$BUILDKITE_TAG" = "" ]; then
+    exit 1
+  fi
+
   echo "Uploading binaries for the ${BUILDKITE_TAG} tag"
   # Drop the tag if existing, allowing for rebuilds.
   "$gsutil" rm -rf "gs://sourcegraph-artifacts/executor/${BUILDKITE_TAG}" || true

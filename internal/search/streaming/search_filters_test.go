@@ -206,19 +206,19 @@ func TestSymbolCounts(t *testing.T) {
 			wantFilters: map[string]*Filter{
 				"select:symbol.class": &Filter{
 					Value: "select:symbol.class",
-					Label: "class",
+					Label: "Class",
 					Count: 1,
 					Kind:  "symbol type",
 				},
 				"select:symbol.variable": &Filter{
 					Value: "select:symbol.variable",
-					Label: "variable",
+					Label: "Variable",
 					Count: 2,
 					Kind:  "symbol type",
 				},
 				"select:symbol.constant": &Filter{
 					Value: "select:symbol.constant",
-					Label: "constant",
+					Label: "Constant",
 					Count: 4,
 					Kind:  "symbol type",
 				},

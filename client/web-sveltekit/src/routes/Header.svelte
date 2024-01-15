@@ -2,7 +2,6 @@
     import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
     import { mark, svelteLogoEnabled } from '$lib/images'
-    import type { AuthenticatedUser } from '$lib/shared'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
     import { Button } from '$lib/wildcard'
@@ -12,8 +11,9 @@
     import CodyIcon from '$lib/icons/Cody.svelte'
     import CodeMonitoringIcon from '$lib/icons/CodeMonitoring.svelte'
     import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
+    import type { Header_User } from './Header.gql'
 
-    export let authenticatedUser: AuthenticatedUser | null | undefined
+    export let authenticatedUser: Header_User | null | undefined
 
     $: reactURL = (function (url) {
         const urlCopy = new URL(url)
@@ -58,7 +58,7 @@
     </Tooltip>
     <div>
         {#if authenticatedUser}
-            <UserMenu {authenticatedUser} />
+            <UserMenu user={authenticatedUser} />
         {:else}
             <Button variant="secondary" outline>
                 <svelte:fragment slot="custom" let:buttonClass>

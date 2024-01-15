@@ -414,7 +414,7 @@ func setupRepoMocks(t *testing.T) {
 		return &types.Repo{ID: repoID}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		if rev != "deadbeef" {
 			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
 		}

@@ -176,7 +176,7 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		byRev[r] = struct{}{}
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ api.RepoName, rev string) (api.CommitID, error) {
 		if _, ok := byRev[api.CommitID(rev)]; !ok {
 			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
 		}

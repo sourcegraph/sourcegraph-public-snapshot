@@ -10,8 +10,6 @@ load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//dev:esbuild.bzl", "esbuild_web_app")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# gazelle:js_custom_files stories **/*.story.{ts,tsx}
-
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -1393,6 +1391,7 @@ ts_project(
         "src/search/results/components/aggregation/index.ts",
         "src/search/results/components/aggregation/pings.ts",
         "src/search/results/components/aggregation/types.ts",
+        "src/search/results/components/filters-panel/SearchFiltersPanel.tsx",
         "src/search/results/components/new-search-content/NewSearchContent.tsx",
         "src/search/results/components/search-content/SearchContent.tsx",
         "src/search/results/components/search-results-info-bar/SearchResultsInfoBar.tsx",

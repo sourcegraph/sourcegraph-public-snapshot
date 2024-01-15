@@ -118,9 +118,9 @@ func TestExhaustiveSearch(t *testing.T) {
 		}
 		sort.Strings(vals)
 		require.Equal([]string{
-			"repo,revspec,revision\n1,spec,rev1\n",
-			"repo,revspec,revision\n1,spec,rev2\n",
-			"repo,revspec,revision\n2,spec,rev3\n",
+			"repository,revision,file_path,match_count,first_match_url\n1,rev1,path/to/file.go,0,/1@rev1/-/blob/path/to/file.go\n",
+			"repository,revision,file_path,match_count,first_match_url\n1,rev2,path/to/file.go,0,/1@rev2/-/blob/path/to/file.go\n",
+			"repository,revision,file_path,match_count,first_match_url\n2,rev3,path/to/file.go,0,/2@rev3/-/blob/path/to/file.go\n",
 		}, vals)
 	}
 

@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-    import { createHistoryResults } from '$testdata'
+    import { createHistoryResults } from '$testing/testdata'
     import { Story } from '@storybook/addon-svelte-csf'
     import HistoryPanel from './HistoryPanel.svelte'
     export const meta = {
