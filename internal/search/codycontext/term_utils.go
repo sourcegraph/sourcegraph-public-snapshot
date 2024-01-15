@@ -1,4 +1,4 @@
-package keyword
+package codycontext
 
 import (
 	"strings"
