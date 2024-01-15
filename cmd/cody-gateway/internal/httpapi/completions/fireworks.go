@@ -274,8 +274,8 @@ func pickModelBasedOnTrafficSplit(percentage int, hundredPercentModel string, ze
 	// - Otherwise, e.g. for a percentage of `30`, the roll will have exactly 30 out of 100 possible
     //   draws (since it will be < only if it is within the range [0, 30))
 	if (roll < percentage) {
-		return zeroPercentModel
-	} else {
 		return hundredPercentModel
+	} else {
+		return zeroPercentModel
 	}
 }
