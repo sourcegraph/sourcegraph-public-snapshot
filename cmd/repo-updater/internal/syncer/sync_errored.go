@@ -51,7 +51,7 @@ func (s *Syncer) newSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) error {
 	erroredRepoGauge.Set(0)
 	s.setTotalErroredRepos(ctx)
-	repoNames, err := s.db.GitserverRepos().ListReposWithLastError(ctx)
+	repoNames, err := s.DB.GitserverRepos().ListReposWithLastError(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list gitserver_repos with last_error not null")
 	}
@@ -72,7 +72,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratel
 }
 
 func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
-	totalErrored, err := s.db.GitserverRepos().TotalErroredCloudDefaultRepos(ctx)
+	totalErrored, err := s.DB.GitserverRepos().TotalErroredCloudDefaultRepos(ctx)
 	if err != nil {
 		s.ObsvCtx.Logger.Error("error fetching count of total errored repos", log.Error(err))
 		return
