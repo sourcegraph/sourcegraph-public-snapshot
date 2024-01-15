@@ -146,10 +146,7 @@ func (c *client) Attribution(ctx context.Context, snippet string, limit int) (At
 	u.Path = "v1/attribution"
 	body := new(bytes.Buffer)
 	// TODO: Use the same struct as gateway
-	if err := json.NewEncoder(body).Encode(struct {
-		Snippet string `json:"snippet"`
-		Limit   int    `json:"limit"`
-	}{
+	if err := json.NewEncoder(body).Encode(AttributionRequest{
 		Snippet: snippet,
 		Limit:   limit,
 	}); err != nil {
@@ -168,14 +165,7 @@ func (c *client) Attribution(ctx context.Context, snippet string, limit int) (At
 	if resp.StatusCode != http.StatusOK {
 		return Attribution{}, errors.Newf("request failed with status: %d", errors.Safe(resp.StatusCode))
 	}
-	// TODO: Use the same struct as gateway
-	var gatewayResponse struct {
-		Repositories []struct {
-			Name string `json:"name"`
-		} `json:"repositories"`
-		TotalCount int  `json:"totalCount,omitempty"`
-		LimitHit   bool `json:"limitHit,omitempty"`
-	}
+	var gatewayResponse AttributionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&gatewayResponse); err != nil {
 		return Attribution{}, errors.Wrap(err, "cannot interpret gateway response")
 	}
