@@ -121,9 +121,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, _ authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{1, 2, 3, 4}
@@ -131,7 +128,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -198,16 +195,13 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{1, 2, 3, 4, 5}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
 		_, _, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
@@ -281,9 +275,6 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobs)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		return &database.SetPermissionsResult{
@@ -303,7 +294,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		return nil, errors.New("should never call fetchUserPerms for github")
 	}
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	tests := []struct {
 		name                string
@@ -453,16 +444,13 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		// DeadlineExceeded implements the Temporary interface
@@ -535,9 +523,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), user.UserID)
@@ -545,7 +530,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	tests := []struct {
 		name     string
@@ -626,10 +611,8 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
-	reposStore := repos.NewMockStore()
-
 	perms := dbmocks.NewMockPermsStore()
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	t.Run("invalid token", func(t *testing.T) {
 		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -729,15 +712,11 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
-
 	perms := dbmocks.NewMockPermsStore()
 
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -809,10 +788,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.PushHook(func(ctx context.Context, ids authz.UserIDWithExternalAccountID, i []int32, ps authz.PermsSource) (*database.SetPermissionsResult, error) {
 		if ids.ExternalAccountID == 0 {
@@ -821,7 +796,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		return &database.SetPermissionsResult{}, nil
 	})
 
-	s := newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	s := newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -856,21 +831,16 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
-	mockRepos := dbmocks.NewMockRepoStore()
 	mockFeatureFlags := dbmocks.NewMockFeatureFlagStore()
 	mockSyncJobs := dbmocks.NewMockPermissionSyncJobStore()
 	mockSyncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: timeutil.Now()}, nil)
 
-	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(mockRepos)
-	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
-	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
-
-	newPermsSyncer := func(reposStore repos.Store, perms database.PermsStore) *permsSyncerImpl {
-		return newPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
+	newPermsSyncer := func(db database.DB, perms database.PermsStore) *permsSyncerImpl {
+		return newPermsSyncer(logtest.Scoped(t), db, perms, timeutil.Now)
 	}
 
 	t.Run("Err is nil when no authz provider", func(t *testing.T) {
+		mockRepos := dbmocks.NewMockRepoStore()
 		mockRepos.GetFunc.SetDefaultReturn(
 			&types.Repo{
 				ID:      1,
@@ -884,12 +854,13 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			},
 			nil,
 		)
-
-		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+		db := dbmocks.NewMockDB()
+		db.ReposFunc.SetDefaultReturn(mockRepos)
+		db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
 
 		perms := dbmocks.NewMockPermsStore()
-		s := newPermsSyncer(reposStore, perms)
+		s := newPermsSyncer(db, perms)
 
 		// error should be nil in this case
 		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
@@ -1075,9 +1046,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		nil,
 	)
 
-	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
-	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
-
 	perms := dbmocks.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
 	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
@@ -1097,7 +1065,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return nil
 	})
 
-	s := newPermsSyncer(reposStore, perms)
+	s := newPermsSyncer(db, perms)
 
 	tests := []struct {
 		name     string

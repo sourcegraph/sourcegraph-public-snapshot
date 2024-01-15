@@ -218,7 +218,7 @@ func TestSyncerSync(t *testing.T) {
 				// returned as it indicates that the source no longer has access to its repos
 				name: string(tc.repo.Name) + "/unauthorized",
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrUnauthorized{}),
+					repos.NewFakeSource(tc.svc.Clone(), &syncer.ErrUnauthorized{}),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -235,7 +235,7 @@ func TestSyncerSync(t *testing.T) {
 				// corresponding repos will be deleted as it's seen as permissions changes.
 				name: string(tc.repo.Name) + "/unauthorized-with-warning",
 				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrUnauthorized{})),
+					repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&syncer.ErrUnauthorized{})),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -642,7 +642,7 @@ func TestSyncerSync(t *testing.T) {
 			syncer := &syncer.Syncer{
 				ObsvCtx: observation.TestContextTB(t),
 				Sourcer: tc.sourcer,
-				Store:   st,
+				DB:      st,
 				Now:     now,
 			}
 
@@ -862,7 +862,7 @@ func TestSyncRepo(t *testing.T) {
 			syncer := &syncer.Syncer{
 				ObsvCtx: observation.TestContextTB(t),
 				Now:     time.Now,
-				Store:   store,
+				DB:      store,
 				Synced:  make(chan types.RepoSyncDiff, 1),
 				Sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
@@ -1235,8 +1235,8 @@ func TestOrphanedRepo(t *testing.T) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
 		},
-		Store: store,
-		Now:   time.Now,
+		DB:  store,
+		Now: time.Now,
 	}
 	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
 		t.Fatal(err)
@@ -1387,8 +1387,8 @@ func TestDotComPrivateReposDontSync(t *testing.T) {
 			s := repos.NewFakeSource(svc1, nil, privateRepo)
 			return s, nil
 		},
-		Store: store,
-		Now:   time.Now,
+		DB:  store,
+		Now: time.Now,
 	}
 
 	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
@@ -1707,8 +1707,8 @@ func TestNameOnConflictOnRename(t *testing.T) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo1)
 			return s, nil
 		},
-		Store: store,
-		Now:   time.Now,
+		DB:  db,
+		Now: time.Now,
 	}
 	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
 		t.Fatal(err)
@@ -2034,7 +2034,7 @@ func setupSyncErroredTest(ctx context.Context, s syncer.Store, t *testing.T,
 	syncer := &syncer.Syncer{
 		ObsvCtx: observation.TestContextTB(t),
 		Now:     time.Now,
-		Store:   s,
+		DB:      s,
 		Synced:  make(chan types.RepoSyncDiff, 1),
 		Sourcer: repos.NewFakeSourcer(
 			nil,
@@ -2055,8 +2055,6 @@ func TestCreateRepoLicenseHook(t *testing.T) {
 
 	// Set up mock repo count
 	mockRepoStore := dbmocks.NewMockRepoStore()
-	mockStore := syncer.NewMockStore()
-	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
 
 	tests := map[string]struct {
 		maxPrivateRepos int
@@ -2108,7 +2106,7 @@ func TestCreateRepoLicenseHook(t *testing.T) {
 				licensing.MockCheckFeature = defaultMock
 			}()
 
-			err := syncer.CreateRepoLicenseHook(ctx, mockStore, test.newRepo)
+			err := syncer.CreateRepoLicenseHook(ctx, mockRepoStore, test.newRepo)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Fatalf("got err: %t, want err: %t, err: %q", gotErr, test.wantErr, err)
 			}
@@ -2121,8 +2119,6 @@ func TestUpdateRepoLicenseHook(t *testing.T) {
 
 	// Set up mock repo count
 	mockRepoStore := dbmocks.NewMockRepoStore()
-	mockStore := syncer.NewMockStore()
-	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
 
 	tests := map[string]struct {
 		maxPrivateRepos int
@@ -2193,10 +2189,107 @@ func TestUpdateRepoLicenseHook(t *testing.T) {
 				licensing.MockCheckFeature = defaultMock
 			}()
 
-			err := syncer.UpdateRepoLicenseHook(ctx, mockStore, test.existingRepo, test.newRepo)
+			err := syncer.UpdateRepoLicenseHook(ctx, mockRepoStore, test.existingRepo, test.newRepo)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Fatalf("got err: %t, want err: %t, err: %q", gotErr, test.wantErr, err)
 			}
 		})
+	}
+}
+
+func createExternalServices(t *testing.T, store database.ExternalServiceStore, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	svcs := mkExternalServices(now)
+	for _, svc := range svcs {
+		for _, opt := range opts {
+			opt(svc)
+		}
+	}
+
+	// create a few external services
+	if err := store.Upsert(context.Background(), svcs...); err != nil {
+		t.Fatalf("failed to insert external services: %v", err)
+	}
+
+	services, err := store.List(context.Background(), database.ExternalServicesListOptions{})
+	if err != nil {
+		t.Fatal("failed to list external services")
+	}
+
+	servicesPerKind := make(map[string]*types.ExternalService)
+	for _, svc := range services {
+		servicesPerKind[svc.Kind] = svc
+	}
+
+	return servicesPerKind
+}
+
+func mkExternalServices(now time.Time) types.ExternalServices {
+	githubSvc := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	gitlabSvc := types.ExternalService{
+		Kind:        extsvc.KindGitLab,
+		DisplayName: "GitLab - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["none"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	bitbucketServerSvc := types.ExternalService{
+		Kind:        extsvc.KindBitbucketServer,
+		DisplayName: "Bitbucket Server - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "token": "abc", "username": "user", "repos": ["owner/name"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	bitbucketCloudSvc := types.ExternalService{
+		Kind:        extsvc.KindBitbucketCloud,
+		DisplayName: "Bitbucket Cloud - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "user", "appPassword": "password"}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	awsSvc := types.ExternalService{
+		Kind:        extsvc.KindAWSCodeCommit,
+		DisplayName: "AWS Code - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"region": "us-east-1", "accessKeyID": "abc", "secretAccessKey": "abc", "gitCredentials": {"username": "user", "password": "pass"}}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	otherSvc := types.ExternalService{
+		Kind:        extsvc.KindOther,
+		DisplayName: "Other - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://other.com", "repos": ["repo"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	gitoliteSvc := types.ExternalService{
+		Kind:        extsvc.KindGitolite,
+		DisplayName: "Gitolite - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"prefix": "pre", "host": "host.com"}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	return []*types.ExternalService{
+		&githubSvc,
+		&gitlabSvc,
+		&bitbucketServerSvc,
+		&bitbucketCloudSvc,
+		&awsSvc,
+		&otherSvc,
+		&gitoliteSvc,
 	}
 }
