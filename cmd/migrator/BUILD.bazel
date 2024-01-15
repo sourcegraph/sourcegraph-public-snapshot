@@ -60,7 +60,7 @@ genrule(
     ],
     outs = ["current_schema_description.tar"],
     cmd = """\
-    if [ -f bazel-out/stable-status ]; then
+    if [ -f bazel-out/stable-status.txt ]; then
         # When we're stamping, we can find the current version in the stable-status.
         version="v$$(cat bazel-out/stable-status.txt | grep STABLE_VERSION | cut -d' ' -f2)"
     else
