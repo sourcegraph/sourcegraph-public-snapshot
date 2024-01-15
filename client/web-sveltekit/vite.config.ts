@@ -3,6 +3,7 @@ import { join } from 'path'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
+
 import graphqlCodegen from './dev/vite-graphql-codegen'
 
 export default defineConfig(({ mode }) => {

@@ -1,12 +1,14 @@
-import { test as base, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
-import { buildSchema } from 'graphql'
-import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
-import glob from 'glob'
+
 import { faker } from '@faker-js/faker'
+import { test as base, type Page } from '@playwright/test'
+import glob from 'glob'
+import { buildSchema } from 'graphql'
+
 import { GraphQLMockServer } from './graphql-mocking'
+import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
 
 export { expect, defineConfig } from '@playwright/test'
 

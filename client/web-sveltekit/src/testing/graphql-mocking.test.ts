@@ -1,5 +1,6 @@
 import { buildSchema } from 'graphql'
 import { describe, test, expect, beforeEach } from 'vitest'
+
 import { GraphQLMockServer } from './graphql-mocking'
 
 const schema = buildSchema(`

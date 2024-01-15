@@ -1,6 +1,7 @@
-import { generate, type CodegenConfig } from '@graphql-codegen/cli'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { generate, type CodegenConfig } from '@graphql-codegen/cli'
 import type { Plugin } from 'vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
