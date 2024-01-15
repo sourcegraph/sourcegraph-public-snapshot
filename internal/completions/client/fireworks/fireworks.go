@@ -12,10 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const Starcoder16bMultiTenant = "accounts/fireworks/models/starcoder-16b-w8a16"
-const Starcoder7bMultiTenant = "accounts/fireworks/models/starcoder-7b-w8a16"
+// Single-tenant model identifiers
 const Starcoder16bSingleTenant = "accounts/sourcegraph/models/starcoder-16b"
 
+// Multi-tenant model identifiers
+const Starcoder16bMultiTenant = "accounts/fireworks/models/starcoder-16b-w8a16"
+const Starcoder7bMultiTenant = "accounts/fireworks/models/starcoder-7b-w8a16"
 const Llama27bCodeMultiTenant = "accounts/fireworks/models/llama-v2-7b-code"
 const Llama213bCodeMultiTenant = "accounts/fireworks/models/llama-v2-13b-code"
 const Llama213bCodeInstructMultiTenant = "accounts/fireworks/models/llama-v2-13b-code-instruct"
