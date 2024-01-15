@@ -1368,7 +1368,7 @@ func TestEventLogs_AggregatedCodyUsage(t *testing.T) {
 					Name:   name,
 					URL:    "http://sourcegraph.com",
 					Source: "test",
-					Client: clients[0],
+					Client: &clients[0],
 					// Jitter current time +/- 30 minutes
 					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 				}
@@ -1386,7 +1386,7 @@ func TestEventLogs_AggregatedCodyUsage(t *testing.T) {
 					Name:   name,
 					URL:    "http://sourcegraph.com",
 					Source: "test",
-					Client: clients[1],
+					Client: &clients[1],
 					// Jitter current time +/- 30 minutes
 					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 				}
