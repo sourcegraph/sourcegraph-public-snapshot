@@ -145,7 +145,6 @@ func (c *client) Attribution(ctx context.Context, snippet string, limit int) (At
 	}
 	u.Path = "v1/attribution"
 	body := new(bytes.Buffer)
-	// TODO: Use the same struct as gateway
 	if err := json.NewEncoder(body).Encode(AttributionRequest{
 		Snippet: snippet,
 		Limit:   limit,
