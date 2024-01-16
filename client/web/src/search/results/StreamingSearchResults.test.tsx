@@ -40,7 +40,7 @@ describe('StreamingSearchResults', () => {
 
         settingsCascade: {
             subjects: null,
-            final: null,
+            final: { experimentalFeatures: { newSearchResultFiltersPanel: false } },
         },
         platformContext: {
             settings: NEVER,
