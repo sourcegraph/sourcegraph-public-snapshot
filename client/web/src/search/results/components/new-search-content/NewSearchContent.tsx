@@ -30,7 +30,7 @@ import {
     PathMatch,
     StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
