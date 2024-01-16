@@ -208,7 +208,7 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 				return err
 			}
 			return s.Err()
-		} else if errors.Is(err, ErrInvalidCommand) {
+		} else if errors.Is(err, cli.ErrBadGitCommand) {
 			return status.New(codes.InvalidArgument, "invalid command").Err()
 		} else if ctxErr := ctx.Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()

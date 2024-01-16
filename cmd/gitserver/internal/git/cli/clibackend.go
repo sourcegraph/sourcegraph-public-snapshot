@@ -137,7 +137,7 @@ func (rc *cmdReader) Read(p []byte) (n int, err error) {
 
 		if err := rc.cmd.Wait(); err != nil {
 			if checkMaybeCorruptRepo(rc.ctx, rc.logger, rc.git, rc.repoName, rc.stderr.String()) {
-				return n, ErrRepoCorrupted{Stderr: rc.stderr.String()}
+				return n, common.ErrRepoCorrupted{Reason: rc.stderr.String()}
 			}
 			return n, commandFailedError(err, rc.cmd, rc.stderr.Bytes())
 		}
@@ -175,12 +175,6 @@ func (l *limitWriter) Write(p []byte) (int, error) {
 // gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 // corrupt on disk.
 const gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
-
-type ErrRepoCorrupted struct{ Stderr string }
-
-func (e ErrRepoCorrupted) Error() string {
-	return "repository is corrupted: " + e.Stderr
-}
 
 func checkMaybeCorruptRepo(ctx context.Context, logger log.Logger, git git.GitBackend, repo api.RepoName, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {

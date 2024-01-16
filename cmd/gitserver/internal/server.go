@@ -642,8 +642,6 @@ func (s *Server) ensureOperations() *operations {
 	return s.operations
 }
 
-var ErrInvalidCommand = errors.New("invalid command")
-
 type NotFoundError struct {
 	Payload *protocol.NotFoundPayload
 }
@@ -852,9 +850,9 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 }
 
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, err error) {
-	var corruptErr cli.ErrRepoCorrupted
+	var corruptErr common.ErrRepoCorrupted
 	if errors.As(err, &corruptErr) {
-		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Stderr, s.Hostname); err != nil {
+		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
 		}
 	}
@@ -1383,10 +1381,10 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				}
 
 				// The repo update might have failed due to the repo being corrupt
-				// var gitErr *common.GitCommandError
-				// if errors.As(err, &gitErr) {
-				// 	s.logIfCorrupt(ctx, repo, gitserverfs.RepoDirFromName(s.ReposDir, repo), gitErr.Output)
-				// }
+				var corruptErr common.ErrRepoCorrupted
+				if errors.As(err, &corruptErr) {
+					s.logIfCorrupt(ctx, repo, gitserverfs.RepoDirFromName(s.ReposDir, repo), corruptErr)
+				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})

@@ -1094,7 +1094,9 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), common.ErrRepoCorrupted{
+			Reason: stdErr,
+		})
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
@@ -1118,44 +1120,12 @@ func TestLogIfCorrupt(t *testing.T) {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		stdErr := "Brought to you by Horsegraph"
-
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), errors.New("Brought to you by Horsegraph"))
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
 		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
-}
-
-func TestStdErrIndicatesCorruption(t *testing.T) {
-	bad := []string{
-		"error: packfile .git/objects/pack/pack-a.pack does not match index",
-		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
-		`error: short SHA1 1325 is ambiguous
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		`unrelated
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
-		"fatal: commit-graph requires overflow generation data but has none\n",
-		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
-	}
-	good := []string{
-		"",
-		"error: short SHA1 1325 is ambiguous",
-		"error: object 156639577dd2ea91cdd53b25352648387d985743 is a blob, not a commit",
-		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
-	}
-	for _, stderr := range bad {
-		if !stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should contain corrupt line:\n%s", stderr)
-		}
-	}
-	for _, stderr := range good {
-		if stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should not contain corrupt line:\n%s", stderr)
-		}
-	}
 }
 
 func TestLinebasedBufferedWriter(t *testing.T) {
