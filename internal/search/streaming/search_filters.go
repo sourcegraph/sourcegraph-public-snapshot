@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -13,9 +12,9 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 
 // SearchFilters computes the filters to show a user based on results.
@@ -148,16 +147,22 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addLangFilter := func(fileMatchPath string, lineMatchCount int32) {
-		if ext := path.Ext(fileMatchPath); ext != "" {
-			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
-			language := strings.ToLower(rawLanguage)
-			if language != "" {
-				if strings.Contains(language, " ") {
-					language = strconv.Quote(language)
-				}
-				value := fmt.Sprintf(`lang:%s`, language)
-				s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
+		// NOTE: this does not provide file contents to determine the language,
+		// so accuracy may be limited. Ideally, we would stream the language
+		// on results from our search backends, where the file contents are
+		// readily available.
+		languages, _ := languages.GetLanguages(fileMatchPath, nil)
+		if len(languages) == 0 {
+			return
+		}
+		rawLanguage := languages[0]
+		language := strings.ToLower(rawLanguage)
+		if language != "" {
+			if strings.Contains(language, " ") {
+				language = strconv.Quote(language)
 			}
+			value := fmt.Sprintf(`lang:%s`, language)
+			s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
 		}
 	}
 
