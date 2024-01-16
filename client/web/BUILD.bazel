@@ -141,6 +141,7 @@ filegroup(
 ts_project(
     name = "web_lib",
     srcs = [
+        "src/Index.tsx",
         "src/LegacyLayout.tsx",
         "src/LegacyRouteContext.tsx",
         "src/LegacySourcegraphWebApp.tsx",
