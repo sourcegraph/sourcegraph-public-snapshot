@@ -155,10 +155,6 @@ const codeSearchRoutes: readonly RouteObject[] = [
         element: <OwnPage />,
     },
     {
-        path: PageRoutes.Search,
-        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
-    },
-    {
         path: PageRoutes.SearchConsole,
         element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
     },
@@ -302,6 +298,11 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.ApiConsole,
         element: <ApiConsole />,
+    },
+    // TODO(BolajiOlajide): render landing page instead of SearchPageWrapper when on Cody-only license
+    {
+        path: PageRoutes.Search,
+        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
     },
     {
         path: PageRoutes.UserArea,
