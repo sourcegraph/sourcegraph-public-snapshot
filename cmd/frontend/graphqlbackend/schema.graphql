@@ -6207,6 +6207,10 @@ type FileMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
+    """
+    The most likely language for the file, or unset if the language cannot be determined.
+    """
+    limitHit: String
 }
 
 """

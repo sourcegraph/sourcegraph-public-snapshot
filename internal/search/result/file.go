@@ -32,11 +32,13 @@ type File struct {
 // Language returns the most likely language for the file.
 // In the case that the file has PreciseLanguage set, it uses that.
 // Otherwise, it falls back to language matching on the path.
+// It will return an empty string in the case language matching fails.
 func (f *File) Language() string {
 	if f.PreciseLanguage != "" {
 		return f.PreciseLanguage
 	}
 
+	// cannot error because it's given a nil content fetcher
 	candidates, _ := languages.GetLanguages(f.Path, nil)
 	if len(candidates) > 0 {
 		return candidates[0]
