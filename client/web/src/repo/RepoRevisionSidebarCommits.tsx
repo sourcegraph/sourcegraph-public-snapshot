@@ -117,22 +117,20 @@ export const RepoRevisionSidebarCommits: FC<Props> = props => {
             } else {
                 ls.setItem('commit-history', '[]')
             }
-        } else {
-            if (connection) {
-                let cachedNodes = ls.getItem('commit-history')
-                let deserializedNodes = JSON.stringify(connection.nodes)
+        } else if (connection) {
+            const cachedNodes = ls.getItem('commit-history')
+            const deserializedNodes = JSON.stringify(connection.nodes)
 
-                if (deserializedNodes !== cachedNodes) {
-                    ls.setItem('commit-history', deserializedNodes)
-                }
+            if (deserializedNodes !== cachedNodes) {
+                ls.setItem('commit-history', deserializedNodes)
             }
         }
 
-        let cachedValue = ls.getItem('commit-history')
-        if (cachedValue !== null) {
-            setCommitHistory(JSON.parse(cachedValue))
+        const cachedNodes = ls.getItem('commit-history')
+        if (cachedNodes !== null) {
+            setCommitHistory(JSON.parse(cachedNodes))
         }
-    }, [connection])
+    }, [connection, props.filePath])
 
     return (
         <ConnectionContainer>
