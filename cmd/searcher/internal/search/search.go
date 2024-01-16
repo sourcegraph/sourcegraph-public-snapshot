@@ -199,16 +199,19 @@ func (s *Service) getZipFile(ctx context.Context, tr trace.Trace, p *protocol.Re
 	return zipPath, zf, err
 }
 
-func validateParams(p *protocol.Request) error {
-	if p.Repo == "" {
+func validateParams(r *protocol.Request) error {
+	if r.Repo == "" {
 		return errors.New("Repo must be non-empty")
 	}
 	// Surprisingly this is the same sanity check used in the git source.
-	if len(p.Commit) != 40 {
-		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
+	if len(r.Commit) != 40 {
+		return errors.Errorf("Commit must be resolved (Commit=%q)", r.Commit)
 	}
-	if p.Query == nil && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
-		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
+
+	if p, ok := r.Query.(*protocol.PatternNode); ok {
+		if p.Value == "" && r.ExcludePattern == "" && len(r.IncludePatterns) == 0 {
+			return errors.New("At least one of pattern and include/exclude patterns must be non-empty")
+		}
 	}
 	return nil
 }

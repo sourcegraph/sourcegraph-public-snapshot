@@ -433,6 +433,17 @@ func maybeSkipComby(t *testing.T) {
 
 func TestSearch_badrequest(t *testing.T) {
 	cases := []protocol.Request{
+		// Empty pattern and no file filters
+		{
+			Repo:   "foo",
+			URL:    "u",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			PatternInfo: protocol.PatternInfo{
+				Query: &protocol.PatternNode{
+					Value: "",
+				},
+			},
+		},
 		// Bad regexp
 		{
 			Repo:   "foo",
