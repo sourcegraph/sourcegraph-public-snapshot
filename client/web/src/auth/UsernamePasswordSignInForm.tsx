@@ -34,6 +34,8 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
     telemetryRecorder,
 }) => {
     const location = useLocation()
+
+    // To populate the username/email text-box with the user's email value on sign-in screen after successful password change request
     const [usernameOrEmail, setUsernameOrEmail] = useState(email || '')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
