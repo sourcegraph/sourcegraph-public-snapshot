@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math/rand"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -33,6 +34,8 @@ func NewFireworksHandler(
 	allowedModels []string,
 	logSelfServeCodeCompletionRequests bool,
 	disableSingleTenant bool,
+	starcoderCommunitySingleTenantPercent int,
+	starcoderEnterpriseSingleTenantPercent int,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[fireworksRequest](
@@ -50,7 +53,15 @@ func NewFireworksHandler(
 			}
 		},
 		allowedModels,
-		&FireworksHandlerMethods{accessToken: accessToken, baseLogger: baseLogger, eventLogger: eventLogger, logSelfServeCodeCompletionRequests: logSelfServeCodeCompletionRequests, disableSingleTenant: disableSingleTenant},
+		&FireworksHandlerMethods{
+			accessToken:                            accessToken,
+			baseLogger:                             baseLogger,
+			eventLogger:                            eventLogger,
+			logSelfServeCodeCompletionRequests:     logSelfServeCodeCompletionRequests,
+			disableSingleTenant:                    disableSingleTenant,
+			starcoderCommunitySingleTenantPercent:  starcoderCommunitySingleTenantPercent,
+			starcoderEnterpriseSingleTenantPercent: starcoderEnterpriseSingleTenantPercent,
+		},
 
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
@@ -101,11 +112,13 @@ type fireworksResponse struct {
 }
 
 type FireworksHandlerMethods struct {
-	accessToken                        string
-	logSelfServeCodeCompletionRequests bool
-	disableSingleTenant                bool
-	baseLogger                         log.Logger
-	eventLogger                        events.Logger
+	accessToken                            string
+	logSelfServeCodeCompletionRequests     bool
+	disableSingleTenant                    bool
+	starcoderCommunitySingleTenantPercent  int
+	starcoderEnterpriseSingleTenantPercent int
+	baseLogger                             log.Logger
+	eventLogger                            events.Logger
 }
 
 func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) (int, *flaggingResult, error) {
@@ -136,16 +149,20 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
-		body.Model = fireworks.Starcoder16b
-	}
-	// PLG virtual model strings
-	if body.Model == "starcoder-16b" {
-		body.Model = fireworks.Starcoder16b
-	}
-	if body.Model == "starcoder-7b" {
-		body.Model = fireworks.Starcoder7b
+		body.Model = pickModelBasedOnTrafficSplit(f.starcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
 	}
 
+	// PLG virtual model strings
+	//
+	// TODO: Remove the support for the full 7b MT model names here as soon as we can remove the
+	//       virtual model resolution on the SG instance in codecompletion.go
+	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b || body.Model == fireworks.Starcoder16b {
+		multiTenantModel := fireworks.Starcoder16b
+		if body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b {
+			multiTenantModel = fireworks.Starcoder7b
+		}
+		body.Model = pickModelBasedOnTrafficSplit(f.starcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
+	}
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	// Check that this is a code completion request and that the actor is a PLG user
@@ -246,4 +263,23 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 	}
 
 	return promptUsage, completionUsage
+}
+
+// Picks a model based on a specific percentage split. If the percent value is 0, the
+// zeroPercentModel is always picked. If the value is 100, the hundredPercentModel is always picked.
+func pickModelBasedOnTrafficSplit(percentage int, hundredPercentModel string, zeroPercentModel string) string {
+	// Create a value inside the range of [0, 100).
+	roll := rand.Intn(100)
+
+	// Check if the roll is within the target percentage:
+	//
+	// - If the percentage is `0`, the roll will never be smaller than percentage
+	// - If the percentage is `100`, the roll will always be smaller than percentage
+	// - Otherwise, e.g. for a percentage of `30`, the roll will have exactly 30 out of 100 possible
+	//   draws (since it will be < only if it is within the range [0, 30))
+	if roll < percentage {
+		return hundredPercentModel
+	} else {
+		return zeroPercentModel
+	}
 }
