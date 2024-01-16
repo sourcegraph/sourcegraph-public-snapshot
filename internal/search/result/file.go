@@ -29,7 +29,7 @@ type File struct {
 	PreciseLanguage string
 }
 
-// Language returns the most likely language for the file.
+// Languages returns the most likely language for the file.
 // In the case that the file has PreciseLanguage set, it uses that.
 // Otherwise, it falls back to language matching on the path.
 // It will return an empty string in the case language matching fails.
