@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -97,6 +98,27 @@ func TestRedirects(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
 			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
+		})
+	})
+
+	t.Run("non-Sourcegraph.com(Cody-only license)", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(false)
+		hooks.GetLicenseInfo = func() *hooks.LicenseInfo {
+			return &hooks.LicenseInfo{
+				Features: hooks.LicenseFeatures{
+					CodeSearch: false,
+					Cody:       true,
+				},
+			}
+		}
+		defer func() {
+			// reset
+			envvar.MockSourcegraphDotComMode(orig)
+			hooks.GetLicenseInfo = func() *hooks.LicenseInfo { return nil }
+		}()
+		t.Run("root", func(t *testing.T) {
+			check(t, "/", http.StatusTemporaryRedirect, "/cody", "Mozilla/5.0")
 		})
 	})
 }

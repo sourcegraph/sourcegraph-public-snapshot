@@ -349,9 +349,19 @@ func serveHome(db database.DB) handlerFunc {
 			return nil
 		}
 
-		// On non-dotcom instances, we opt for client-side redirect because the URL to redirect to differs
-		// based on the license features available on the instance.
-		return renderTemplate(w, "app.html", common)
+		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
+		// except if the instance is on a Cody-Only license.
+		redirectURL := "/search"
+		if common.Context.LicenseInfo != nil {
+			features := common.Context.LicenseInfo.Features
+			if !features.CodeSearch && features.Cody {
+				redirectURL = "/cody"
+			}
+		}
+
+		r.URL.Path = redirectURL
+		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+		return nil
 	}
 }
 
