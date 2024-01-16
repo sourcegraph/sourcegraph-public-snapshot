@@ -153,9 +153,12 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	}
 
 	// PLG virtual model strings
-	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" {
+	//
+	// TODO: Remove the support for the full 7b MT model names here as soon as we can remove the
+	//       virtual model resolution on the SG instance in codecompletion.go
+	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b || body.Model == fireworks.Starcoder16b {
 		multiTenantModel := fireworks.Starcoder16b
-		if body.Model == "starcoder-7b" {
+		if body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b {
 			multiTenantModel = fireworks.Starcoder7b
 		}
 		body.Model = pickModelBasedOnTrafficSplit(f.starcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)

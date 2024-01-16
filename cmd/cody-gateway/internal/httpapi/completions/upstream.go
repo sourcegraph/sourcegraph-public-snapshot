@@ -356,9 +356,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				}
 			}
 
-			// Add metadata headers for tracking in the downstream request
-			w.Header().Add("x-resolved-model", model)
-
 			// Record upstream's status code and decide what we want to send to
 			// the client. By default, we just send upstream's status code.
 			upstreamStatusCode = resp.StatusCode
@@ -441,7 +438,7 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 
 		// Expand virtual model names
-		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b) {
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b || model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
 			return true
 		}
 	}
