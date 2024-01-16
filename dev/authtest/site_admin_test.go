@@ -186,7 +186,7 @@ mutation {
 				name: "createAccessToken.ScopeSiteAdminSudo",
 				query: `
 mutation CreateAccessToken($userID: ID!) {
-	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "", expiresAt: ` + expiresAt.Format(time.RFC3339) + `) {
+	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "", expiresAt: "` + expiresAt.Format(time.RFC3339) + `") {
 		id
 	}
 }`,
