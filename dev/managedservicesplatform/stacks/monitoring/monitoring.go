@@ -684,15 +684,17 @@ func createSentryAlerts(
 		{
 			SentryProject: vars.SentryProject,
 			AlertConfig: sentryalert.AlertConfig{
-				Id:          "first-seen-issue",
-				Name:        "First Seen Issue",
-				Frequency:   30,
-				ActionMatch: sentryalert.ActionMatchAny,
+				Id:        "all-issues",
+				Name:      "Notify in Slack",
+				Frequency: 15, // Notify for an issue at most once every 15 minutes
 				Conditions: []sentryalert.Condition{
 					{
-						Id: sentryalert.FirstSeenEventCondition,
+						Id:       sentryalert.EventFrequencyCondition,
+						Value:    pointers.Ptr(0), // Always (seen more than 0 times) during interval
+						Interval: pointers.Ptr("15m"),
 					},
 				},
+				ActionMatch: sentryalert.ActionMatchAny,
 				Actions: []sentryalert.Action{
 					{
 						Id: sentryalert.SlackNotifyServiceAction,

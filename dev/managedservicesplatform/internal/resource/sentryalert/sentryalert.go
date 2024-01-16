@@ -50,7 +50,8 @@ type AlertConfig struct {
 	// FilterMatch (optional) determines which filters need to be true before actions are executed.
 	// Required when a value is provided for `Filters`
 	FilterMatch FilterMatch
-	Filters     []Filter
+	// Filters determines if a rule fires after the necessary conditions have been met
+	Filters []Filter
 }
 
 func (a AlertConfig) Validate() error {
@@ -62,6 +63,8 @@ func (a AlertConfig) Validate() error {
 		return errors.New("ActionMatch is required")
 	}
 
+	// TODO(jac): allow Conditions to be nil after provider issue is fixed
+	// https://github.com/jianyuan/terraform-provider-sentry/issues/366
 	if a.Conditions == nil || len(a.Conditions) == 0 {
 		return errors.New("Conditions is required with at least one condition specified")
 	}
@@ -191,8 +194,6 @@ func (f Filter) MarshalJSON() ([]byte, error) {
 	// Marshal the flattened map to JSON
 	return json.Marshal(flattened)
 }
-
-type ActionID string
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	if err := config.AlertConfig.Validate(); err != nil {
