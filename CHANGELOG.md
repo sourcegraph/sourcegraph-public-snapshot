@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
   - For `size` and `stars` the supported operators are `<`, `>`, `<=`, `>=`.
   - For `size` the supported units are `B`, `b`, `kB`, `KB`, `kiB`, `KiB`, `MiB`, `MB`, `GiB`, `GB`. No decimals points are supported.
 - Structural Search is now disabled by default. To enable it, set `experimentalFeatures.structuralSearch: "enabled"` in the site configuration. [#57584](https://github.com/sourcegraph/sourcegraph/pull/57584)
+- Search Jobs switches the format of downloaded results from CSV to JSON. [#59619](https://github.com/sourcegraph/sourcegraph/pull/59619)
 
 ### Fixed
 
