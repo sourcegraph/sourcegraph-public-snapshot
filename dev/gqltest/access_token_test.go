@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestAccessToken(t *testing.T) {
 	t.Run("create a token and test it", func(t *testing.T) {
-		token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all"})
+		token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all"}, time.Now().Add(time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
