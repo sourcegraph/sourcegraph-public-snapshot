@@ -171,7 +171,6 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 	}
 
 	out := []grpc.ServerOption{
-		grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)),
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			internalerrs.LoggingStreamServerInterceptor(logger),

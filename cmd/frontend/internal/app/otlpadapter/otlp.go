@@ -55,6 +55,10 @@ func newReceiver(receiverURL *url.URL) (receiver.Factory, component.Config) {
 		HTTPServerSettings: &confighttp.HTTPServerSettings{
 			Endpoint: receiverURL.Host,
 		},
+		// Set explicit defaults based on docstrings of each field.
+		TracesURLPath:  "/v1/traces",
+		MetricsURLPath: "/v1/metrics",
+		LogsURLPath:    "/v1/logs",
 	}
 
 	return receiverFactory, signalReceiverConfig
