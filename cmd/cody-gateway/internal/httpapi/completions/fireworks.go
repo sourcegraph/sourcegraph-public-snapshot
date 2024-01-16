@@ -154,7 +154,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// PLG virtual model strings
 	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" {
-		multiTenantModel = fireworks.Starcoder16b
+		multiTenantModel := fireworks.Starcoder16b
 		if body.Model == "starcoder-7b" {
 			multiTenantModel = fireworks.Starcoder7b
 		}
