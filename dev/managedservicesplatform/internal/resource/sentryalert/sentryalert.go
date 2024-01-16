@@ -24,6 +24,8 @@ type Output struct{}
 // [Sentry]: https://docs.sentry.io/api/alerts/create-an-issue-alert-rule-for-a-project/
 // [Terraform]: https://registry.terraform.io/providers/jianyuan/sentry/latest/docs/resources/issue_alert
 type Config struct {
+	// Id of the issue alert. Must be unique
+	Id string
 	// SentryProject is the project to set the alert on
 	SentryProject sentryproject.Project
 	// AlertConfig is the configuration for the Sentry issue alert rule
@@ -32,8 +34,6 @@ type Config struct {
 
 // AlertConfig is the configuration for the Sentry issue alert rule
 type AlertConfig struct {
-	// Id of the issue alert. Must be unique
-	Id string
 	// Name the name of the alert
 	Name string
 	// Frequency determines how often to perform the actions for an issue, in minutes. (valid range 5-43200)
@@ -219,7 +219,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		}
 	}
 
-	_ = issuealert.NewIssueAlert(scope, id.TerraformID(config.AlertConfig.Id), &issuealert.IssueAlertConfig{
+	_ = issuealert.NewIssueAlert(scope, id.TerraformID("alert"), &issuealert.IssueAlertConfig{
 		Organization: config.SentryProject.Organization(),
 		Project:      config.SentryProject.Slug(),
 		Name:         pointers.Ptr(config.AlertConfig.Name),

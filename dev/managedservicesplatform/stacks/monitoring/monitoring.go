@@ -682,9 +682,9 @@ func createSentryAlerts(
 ) error {
 	for _, config := range []sentryalert.Config{
 		{
+			Id:            "all-issues",
 			SentryProject: vars.SentryProject,
 			AlertConfig: sentryalert.AlertConfig{
-				Id:        "all-issues",
 				Name:      "Notify in Slack",
 				Frequency: 15, // Notify for an issue at most once every 15 minutes
 				Conditions: []sentryalert.Condition{
@@ -709,7 +709,7 @@ func createSentryAlerts(
 			},
 		},
 	} {
-		if _, err := sentryalert.New(stack, id, config); err != nil {
+		if _, err := sentryalert.New(stack, id.Group(config.Id), config); err != nil {
 			return err
 		}
 	}
