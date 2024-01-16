@@ -73,7 +73,9 @@ func isExistingAppTokenPresent(ctx context.Context, db database.DB, appTokenFile
 	}
 
 	// Validate the token to confirm that it will be accepted by the API.
-	subjectUserId, err := db.AccessTokens().Lookup(ctx, payload.Token, appTokenScope)
+	subjectUserId, err := db.AccessTokens().Lookup(ctx, payload.Token, database.TokenLookupOpts{
+		RequiredScope: appTokenScope,
+	})
 	if err != nil {
 		return false
 	}
