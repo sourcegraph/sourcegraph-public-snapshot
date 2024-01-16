@@ -70,6 +70,8 @@ const CodySubscriptionPage = lazyComponent(
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
+const Index = lazyComponent(() => import('./Index'), 'IndexPage')
+
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
     useEffect(() => {
@@ -167,7 +169,7 @@ export const routes: RouteObject[] = [
     },
     // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
     {
-        path: '/cody/*',
+        path: `${PageRoutes.Cody}/*`,
         element: (
             <LegacyRoute
                 render={() => {
@@ -185,7 +187,7 @@ export const routes: RouteObject[] = [
         ),
     },
     {
-        path: PageRoutes.Cody + '/*',
+        path: PageRoutes.CodyChat + '/*',
         element: <LegacyRoute render={props => <CodyChatPage {...props} context={window.context} />} />,
     },
     {
@@ -202,7 +204,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Index,
-        element: <Navigate replace={true} to={PageRoutes.Search} />,
+        element: <Index />,
     },
     {
         path: PageRoutes.Search,
