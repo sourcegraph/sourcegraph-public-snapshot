@@ -158,23 +158,6 @@ const codeSearchRoutes: readonly RouteObject[] = [
         path: PageRoutes.SearchConsole,
         element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
     },
-    {
-        path: PageRoutes.RepoContainer,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
-                        <RepoContainer {...props} />
-                    </CodySidebarStoreProvider>
-                )}
-            />
-        ),
-        // In RR6, the useMatches hook will only give you the location that is matched
-        // by the path rule and not the path rule instead. Since we need to be able to
-        // detect if we're inside the repo container reliably inside the Layout, we
-        // expose this information in the handle object instead.
-        handle: { isRepoContainer: true },
-    },
 ]
 
 const codyRoutes: readonly RouteObject[] = [
@@ -323,6 +306,30 @@ export const routes: RouteObject[] = [
     ...communitySearchContextsRoutes,
     ...(isCodeSearchOnlyLicense() ? [] : codyRoutes),
     ...(isCodyOnlyLicense() ? [] : codeSearchRoutes),
+
+    // this should be the last route to be regustered because it's a catch all route
+    // when the instance has the code search feature.
+    ...(isCodyOnlyLicense()
+        ? []
+        : [
+              {
+                  path: PageRoutes.RepoContainer,
+                  element: (
+                      <LegacyRoute
+                          render={props => (
+                              <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                                  <RepoContainer {...props} />
+                              </CodySidebarStoreProvider>
+                          )}
+                      />
+                  ),
+                  // In RR6, the useMatches hook will only give you the location that is matched
+                  // by the path rule and not the path rule instead. Since we need to be able to
+                  // detect if we're inside the repo container reliably inside the Layout, we
+                  // expose this information in the handle object instead.
+                  handle: { isRepoContainer: true },
+              },
+          ]),
 ]
 
 function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
