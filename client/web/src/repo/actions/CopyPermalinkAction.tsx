@@ -49,7 +49,7 @@ interface CopyPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
 export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionProps> = props => {
     const { revision, commitID, actionType, repoName, telemetryService } = props
 
-    const rootUrl = window.location.host
+    const rootUrl = window.context.externalURL
     const navigate = useNavigate()
     const location = useLocation()
     const fullURL = location.pathname + location.search + location.hash
@@ -93,7 +93,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyPermalink = (): void => {
         telemetryService.log('CopyPermalink')
-        copy(`https://${rootUrl}${permalinkURL}`)
+        copy(`${rootUrl}${permalinkURL}`)
         setCopiedPermalink(true)
         screenReaderAnnounce('Permalink copied to clipboard')
 
@@ -102,7 +102,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyLink = (): void => {
         telemetryService.log('CopyLink')
-        copy(`https://${rootUrl}${linkURL}`)
+        copy(`${rootUrl}${linkURL}`)
         setCopiedLink(true)
         screenReaderAnnounce('Link copied to clipboard')
 
