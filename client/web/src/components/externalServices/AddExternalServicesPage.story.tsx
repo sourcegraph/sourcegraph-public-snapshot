@@ -39,7 +39,7 @@ export const Overview: StoryFn = () => (
 )
 
 export const OverviewWithBusinessLicense: StoryFn = () => {
-    window.context.licenseInfo = { currentPlan: 'business-0', features: { codeSearch: true } }
+    window.context.licenseInfo = { currentPlan: 'business-0', features: { codeSearch: true, cody: true } }
     return (
         <WebStory>
             {webProps => (
