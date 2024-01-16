@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { useEffect, type FC, useState } from 'react'
 
 import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
@@ -60,6 +60,8 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 }
 
 export const RepoRevisionSidebarCommits: FC<Props> = props => {
+    const [commitHistory, setCommitHistory] = useState<GitCommitFields[] | undefined>(undefined)
+
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         FetchCommitsResult,
         FetchCommitsVariables,
@@ -99,10 +101,43 @@ export const RepoRevisionSidebarCommits: FC<Props> = props => {
         },
     })
 
+    useEffect(() => {
+        const ls = window.localStorage
+
+        // reset cache based on filePath
+        if (ls.getItem('current-file-path') !== props.filePath) {
+            ls.setItem('current-file-path', props.filePath)
+            ls.setItem('commit-history', '[]')
+        }
+
+        // cache history info so it doesn't refetch we switch to a new tab.
+        if (!ls.getItem('commit-history')) {
+            if (connection) {
+                ls.setItem('commit-history', JSON.stringify(connection.nodes))
+            } else {
+                ls.setItem('commit-history', '[]')
+            }
+        } else {
+            if (connection) {
+                let cachedNodes = ls.getItem('commit-history')
+                let deserializedNodes = JSON.stringify(connection.nodes)
+
+                if (deserializedNodes !== cachedNodes) {
+                    ls.setItem('commit-history', deserializedNodes)
+                }
+            }
+        }
+
+        let cachedValue = ls.getItem('commit-history')
+        if (cachedValue !== null) {
+            setCommitHistory(JSON.parse(cachedValue))
+        }
+    }, [connection])
+
     return (
         <ConnectionContainer>
             {error && <ErrorAlert error={error} />}
-            {connection?.nodes.map(node => (
+            {commitHistory?.map(node => (
                 <CommitNode key={node.id} node={node} preferAbsoluteTimestamps={props.preferAbsoluteTimestamps} />
             ))}
             {loading && <ConnectionLoading />}
