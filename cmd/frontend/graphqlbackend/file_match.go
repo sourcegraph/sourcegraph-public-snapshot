@@ -77,12 +77,8 @@ func (fm *FileMatchResolver) ChunkMatches() []chunkMatchResolver {
 	return r
 }
 
-func (fm *FileMatchResolver) Language() *string {
-	l := fm.FileMatch.Language()
-	if l != "" {
-		return &l
-	}
-	return nil
+func (fm *FileMatchResolver) Languages() []string {
+	return fm.FileMatch.Languages()
 }
 
 func (fm *FileMatchResolver) LimitHit() bool {

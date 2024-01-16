@@ -36,7 +36,19 @@ type File struct {
 //
 // TODO(camdencheek): this lazy detection can be removed once
 // we add language detection in searcher.
-func (f *File) Language() string {
+func (f *File) Languages() []string {
+	if f.PreciseLanguage != "" {
+		return []string{f.PreciseLanguage}
+	}
+
+	// cannot error because it's given a nil content fetcher
+	candidates, _ := languages.GetLanguages(f.Path, nil)
+	return candidates
+}
+
+// TODO(camdencheek): this lazy detection can be removed once
+// we add language detection in searcher.
+func (f *File) MostLikelyLanguage() string {
 	if f.PreciseLanguage != "" {
 		return f.PreciseLanguage
 	}

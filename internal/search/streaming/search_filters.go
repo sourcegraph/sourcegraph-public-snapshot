@@ -209,7 +209,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			lines := int32(v.ResultCount())
 
 			addRepoFilter(v.Repo.Name, rev, lines)
-			addLangFilter(v.Language(), lines)
+			addLangFilter(v.MostLikelyLanguage(), lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
 			s.Dirty = true

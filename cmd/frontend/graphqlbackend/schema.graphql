@@ -6210,7 +6210,7 @@ type FileMatch {
     """
     The most likely language for the file, or unset if the language cannot be determined.
     """
-    language: String
+    languages: [String!]!
 }
 
 """
