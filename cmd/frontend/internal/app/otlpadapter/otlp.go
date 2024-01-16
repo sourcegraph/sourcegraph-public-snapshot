@@ -51,10 +51,8 @@ func newReceiver(receiverURL *url.URL) (receiver.Factory, component.Config) {
 	receiverFactory := otlpreceiver.NewFactory()
 	signalReceiverConfig := receiverFactory.CreateDefaultConfig().(*otlpreceiver.Config)
 	signalReceiverConfig.GRPC = nil // disable gRPC receiver, we don't need it
-	signalReceiverConfig.HTTP = &otlpreceiver.HTTPConfig{
-		HTTPServerSettings: &confighttp.HTTPServerSettings{
-			Endpoint: receiverURL.Host,
-		},
+	signalReceiverConfig.HTTP = &confighttp.HTTPServerSettings{
+		Endpoint: receiverURL.Host,
 	}
 
 	return receiverFactory, signalReceiverConfig
