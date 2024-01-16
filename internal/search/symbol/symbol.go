@@ -93,10 +93,11 @@ func (s *ZoektSymbolsClient) Compute(ctx context.Context, repoName types.Minimal
 
 	fileWithPath := func(path string) *result.File {
 		return &result.File{
-			Path:     path,
-			Repo:     repoName,
-			InputRev: inputRev,
-			CommitID: commitID,
+			Path:            path,
+			Repo:            repoName,
+			InputRev:        inputRev,
+			CommitID:        commitID,
+			PreciseLanguage: "", // we do not get a precise language from symbols
 		}
 	}
 
@@ -248,10 +249,11 @@ func searchZoekt(
 
 	for _, file := range resp.Files {
 		newFile := &result.File{
-			Repo:     repoName,
-			CommitID: commitID,
-			InputRev: inputRev,
-			Path:     file.FileName,
+			Repo:            repoName,
+			CommitID:        commitID,
+			InputRev:        inputRev,
+			Path:            file.FileName,
+			PreciseLanguage: file.Language,
 		}
 
 		for _, l := range file.LineMatches {

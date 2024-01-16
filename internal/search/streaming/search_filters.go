@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 
 // SearchFilters computes the filters to show a user based on results.
@@ -146,24 +145,16 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
-	addLangFilter := func(fileMatchPath string, lineMatchCount int32) {
-		// NOTE: this does not provide file contents to determine the language,
-		// so accuracy may be limited. Ideally, we would stream the language
-		// on results from our search backends, where the file contents are
-		// readily available.
-		languages, _ := languages.GetLanguages(fileMatchPath, nil)
-		if len(languages) == 0 {
+	addLangFilter := func(rawLanguage string, lineMatchCount int32) {
+		if rawLanguage == "" {
 			return
 		}
-		rawLanguage := languages[0]
 		language := strings.ToLower(rawLanguage)
-		if language != "" {
-			if strings.Contains(language, " ") {
-				language = strconv.Quote(language)
-			}
-			value := fmt.Sprintf(`lang:%s`, language)
-			s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
+		if strings.Contains(language, " ") {
+			language = strconv.Quote(language)
 		}
+		value := fmt.Sprintf(`lang:%s`, language)
+		s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
 	}
 
 	addSymbolFilter := func(symbols []*result.SymbolMatch) {
@@ -218,7 +209,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			lines := int32(v.ResultCount())
 
 			addRepoFilter(v.Repo.Name, rev, lines)
-			addLangFilter(v.Path, lines)
+			addLangFilter(v.Language(), lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
 			s.Dirty = true
