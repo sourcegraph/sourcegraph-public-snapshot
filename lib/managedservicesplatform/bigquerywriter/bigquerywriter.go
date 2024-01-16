@@ -19,6 +19,13 @@ type Writer struct {
 	Inserter *bigquery.Inserter
 }
 
+func New(client *bigquery.Client, dataset, table string) *Writer {
+	return &Writer{
+		client:   client,
+		Inserter: client.Dataset(dataset).Table(table).Inserter(),
+	}
+}
+
 // Write will insert all events into the underlying table inserter using the
 // bigquery.ValueSaver pattern, where inserted values must implement
 // bigquery.ValueSaver to match their configured schema.

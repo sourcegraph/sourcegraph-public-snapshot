@@ -74,12 +74,13 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    let document = match scip_syntax::get_symbols(parser, q.content.as_bytes()) {
-        Ok(vals) => vals,
-        Err(err) => {
-            return jsonify_err(err);
-        }
+    let (mut scope, hint) = match scip_syntax::get_globals(parser, q.content.as_bytes()) {
+        Some(Ok(vals)) => vals,
+        Some(Err(err)) => return jsonify_err(err),
+        None => return json!({"error": "Failed to get globals"}),
     };
+
+    let document = scope.into_document(hint, vec![]);
 
     let encoded = match document.write_to_bytes() {
         Ok(vals) => vals,
@@ -87,7 +88,6 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
             return jsonify_err(err);
         }
     };
-
     json!({"scip": base64::encode(encoded), "plaintext": false})
 }
 

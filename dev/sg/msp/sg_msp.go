@@ -212,8 +212,8 @@ sg msp generate -all <service>
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
-					Usage: "Disable updating of any values that are evaluated at generation time",
-					Value: false,
+					Usage: "Configure updating of any values that are evaluated at generation time",
+					Value: true,
 				},
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
