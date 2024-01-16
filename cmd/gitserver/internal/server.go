@@ -642,11 +642,6 @@ func (s *Server) ensureOperations() *operations {
 	return s.operations
 }
 
-var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_exec_blocked_command_received",
-	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
-})
-
 var ErrInvalidCommand = errors.New("invalid command")
 
 type NotFoundError struct {
