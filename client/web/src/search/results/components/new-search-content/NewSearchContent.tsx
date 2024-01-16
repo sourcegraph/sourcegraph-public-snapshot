@@ -229,7 +229,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             isSearchJobsEnabled={isSearchJobsEnabled()}
                             telemetryService={props.telemetryService}
                         />
-                        <SearchFiltersTabletButton />
+                        {newFiltersEnabled && <SearchFiltersTabletButton />}
                     </>
                 }
             />
