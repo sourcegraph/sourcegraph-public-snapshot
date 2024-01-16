@@ -119,7 +119,6 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
             {mergedFilters.length > MAX_FILTERS_NUMBER && (
                 <Input
-                    variant="small"
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}
