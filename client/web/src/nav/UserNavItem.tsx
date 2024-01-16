@@ -86,9 +86,12 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const [newNavigationEnabled, setNewNavigationEnabled] = useNewSearchNavigation()
     const developerMode = useDeveloperSettings(settings => settings.enabled)
 
-    const onNewSearchNavigationChange = useCallback((enabled: boolean) => {
-        setNewNavigationEnabled(enabled)
-    }, [])
+    const onNewSearchNavigationChange = useCallback(
+        (enabled: boolean) => {
+            setNewNavigationEnabled(enabled)
+        },
+        [setNewNavigationEnabled]
+    )
 
     return (
         <>
