@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -147,18 +145,16 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
-	addLangFilter := func(fileMatchPath string, lineMatchCount int32) {
-		if ext := path.Ext(fileMatchPath); ext != "" {
-			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
-			language := strings.ToLower(rawLanguage)
-			if language != "" {
-				if strings.Contains(language, " ") {
-					language = strconv.Quote(language)
-				}
-				value := fmt.Sprintf(`lang:%s`, language)
-				s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
-			}
+	addLangFilter := func(rawLanguage string, lineMatchCount int32) {
+		if rawLanguage == "" {
+			return
 		}
+		language := strings.ToLower(rawLanguage)
+		if strings.Contains(language, " ") {
+			language = strconv.Quote(language)
+		}
+		value := fmt.Sprintf(`lang:%s`, language)
+		s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
 	}
 
 	addSymbolFilter := func(symbols []*result.SymbolMatch) {
@@ -213,7 +209,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			lines := int32(v.ResultCount())
 
 			addRepoFilter(v.Repo.Name, rev, lines)
-			addLangFilter(v.Path, lines)
+			addLangFilter(v.MostLikelyLanguage(), lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
 			s.Dirty = true

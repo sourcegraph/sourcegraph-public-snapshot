@@ -42,6 +42,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
+		Language:     fm.MostLikelyLanguage(),
 	}
 
 	if r, ok := repoCache[fm.Repo.ID]; ok {
@@ -125,6 +126,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		Commit:       string(fm.CommitID),
 		LineMatches:  eventLineMatches,
 		ChunkMatches: eventChunkMatches,
+		Language:     fm.MostLikelyLanguage(),
 	}
 
 	if fm.InputRev != nil {
@@ -167,6 +169,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
+		Language:     fm.MostLikelyLanguage(),
 		Symbols:      symbols,
 	}
 

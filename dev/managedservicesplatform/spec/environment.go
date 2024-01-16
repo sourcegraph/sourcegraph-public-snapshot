@@ -94,6 +94,7 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 
+	// Validate basic configuration
 	if s.ID == "" {
 		errs = append(errs, errors.New("id is required"))
 	}
@@ -111,9 +112,14 @@ func (s EnvironmentSpec) Validate() []error {
 		return append(errs, errors.Wrap(err, "category"))
 	}
 
+	// Validate other shared sub-specs
 	errs = append(errs, s.Deploy.Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
 	errs = append(errs, s.Instances.Validate()...)
+
+	// Validate service-specific specs
+	errs = append(errs, s.EnvironmentServiceSpec.Validate()...)
+
 	return errs
 }
 
@@ -215,17 +221,12 @@ type EnvironmentServiceSpec struct {
 	//
 	// Only supported for services of 'kind: service'.
 	Domain *EnvironmentServiceDomainSpec `yaml:"domain,omitempty"`
-	// StatupProbe is provisioned by default. It can be disabled with the
-	// 'disabled' field. Probes are made to the MSP-standard '/-/healthz'
-	// endpoint.
+	// HealthProbes configures both startup and continuous liveness probes.
+	// If nil or explicitly disabled, no MSP-standard '/-/healthz' probes will
+	// be configured.
 	//
 	// Only supported for services of 'kind: service'.
-	StatupProbe *EnvironmentServiceStartupProbeSpec `yaml:"startupProbe,omitempty"`
-	// LivenessProbe is only provisioned if this field is set. Probes are made
-	// to the MSP-standard '/-/healthz' endpoint.
-	//
-	// Only supported for services of 'kind: service'.
-	LivenessProbe *EnvironmentServiceLivenessProbeSpec `yaml:"livenessProbe,omitempty"`
+	HealthProbes *EnvironmentServiceHealthProbesSpec `yaml:"healthProbes,omitempty"`
 	// Authentication configures access to the service. By default, the service
 	// is publically available, and the service should handle any required
 	// authentication by itself. Set this field to an empty value to not
@@ -240,6 +241,15 @@ type EnvironmentServiceSpec struct {
 	//
 	// Only supported for services of 'kind: service'.
 	Authentication *EnvironmentServiceAuthenticationSpec `yaml:"authentication,omitempty"`
+}
+
+func (s *EnvironmentServiceSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	errs = append(errs, s.HealthProbes.Validate()...)
+	return errs
 }
 
 type EnvironmentServiceDomainSpec struct {
@@ -389,61 +399,119 @@ type EnvironmentInstancesScalingSpec struct {
 	MaxCount *int `yaml:"maxCount,omitempty"`
 }
 
-type EnvironmentServiceLivenessProbeSpec struct {
-	// Timeout configures the period of time after which the probe times out,
-	// in seconds.
-	//
-	// Defaults to 1 second.
-	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
-	// probe the deployed service.
-	//
-	// Defaults to 1 second.
-	Interval *int `yaml:"interval,omitempty"`
-}
-
 type EnvironmentServiceAuthenticationSpec struct {
 	// Sourcegraph enables access to everyone in the sourcegraph.com GSuite
 	// domain.
 	Sourcegraph *bool `yaml:"sourcegraph,omitempty"`
 }
 
-type EnvironmentServiceStartupProbeSpec struct {
-	// Disabled configures whether the MSP startup probe should be disabled.
-	// We recommend disabling it when creating a service, and re-enabling it
-	// once the service is healthy.
+type EnvironmentServiceHealthProbesSpec struct {
+	// HealthzProbes configures whether the MSP-standard '/-/healthz' service
+	// probes should be disabled. We recommend disabling it when creating a
+	// service, and re-enabling it once the service is confirmed to be deployed
+	// and healthy. When disabling, you should explicitly set
+	// 'healthzProbes: false'.
 	//
 	// - When disabled, the default probe is a very generous one that waits 240s
 	//   for your service to respond with anything at all on '/'
 	// - When enabled, the MSP-standard '/-/healthz' diagnostic check is used
-	//   with a generated diagnostics secret.
+	//   with a generated diagnostics secret enforcing Timeout and Interval.
 	//
-	// This prevents the first Terraform apply from failing if your healthcheck
-	// is comprehensive.
-	Disabled *bool `yaml:"disabled,omitempty"`
+	// Disabling the probe on first startup prevents the first Terraform apply
+	// from failing if your healthcheck is comprehensive, or if you haven't
+	// implemented '/-/healthz' yet.
+	HealthzProbes *bool `yaml:"healthzProbes,omitempty"`
 
-	// Timeout configures the period of time after which the probe times out,
-	// in seconds.
+	// Timeout configures the period of time after which a health probe times
+	// out, in seconds.
 	//
-	// Defaults to 1 second.
+	// Defaults to 3 seconds.
 	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the frequency, in seconds, at which to
-	// probe the deployed service. Must be greater than or equal to timeout.
+
+	// StartupInterval configures the frequency, in seconds, at which to
+	// probe the deployed service on startup. Must be greater than or equal to
+	// timeout.
 	//
 	// Defaults to timeout.
-	Interval *int `yaml:"interval,omitempty"`
+	StartupInterval *int `yaml:"startupInterval,omitempty"`
+
+	// StartupInterval configures the frequency, in seconds, at which to
+	// probe the deployed service after startup to continuously check its health.
+	// Must be greater than or equal to timeout.
+	//
+	// Defaults to timeout * 10.
+	LivenessInterval *int `yaml:"livenessInterval,omitempty"`
 }
 
-func (s *EnvironmentServiceStartupProbeSpec) MaximumLatencySeconds() int {
+func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
 	if s == nil {
-		s = &EnvironmentServiceStartupProbeSpec{}
+		return nil
 	}
-	if pointers.DerefZero(s.Disabled) {
+	var errs []error
+	if !s.UseHealthzProbes() {
+		if s.Timeout != nil || s.StartupInterval != nil || s.LivenessInterval != nil {
+			errs = append(errs,
+				errors.New("timeout, startupInterval and livenessInterval can only be configured when healthzProbes is enabled"))
+		}
+
+		// Nothing else to check
+		return errs
+	}
+
+	if s.GetTimeoutSeconds() > s.GetStartupIntervalSeconds() {
+		errs = append(errs, errors.New("startupInterval must be greater than or equal to timeout"))
+	}
+	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
+		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
+	}
+
+	return errs
+}
+
+// UseHealthzProbes indicates whether the MSP-standard '/-/healthz' probes
+// with diagnostics secrets should be used.
+func (s *EnvironmentServiceHealthProbesSpec) UseHealthzProbes() bool {
+	// No config == disabled
+	if s == nil {
+		return false
+	}
+	// If config is provided, must be explicitly disabled with 'enabled: false'
+	return pointers.Deref(s.HealthzProbes, true)
+}
+
+// MaximumStartupLatencySeconds infers the overal maximum latency for a
+// healthcheck to return healthy when the service is starting up.
+func (s *EnvironmentServiceHealthProbesSpec) MaximumStartupLatencySeconds() int {
+	if !s.UseHealthzProbes() {
 		return 240 // maximum Cloud Run timeout
 	}
 	// Maximum startup latency is retries x interval.
 	const maxRetries = 3
-	return maxRetries * pointers.Deref(s.Interval, 1)
+	return maxRetries * s.GetStartupIntervalSeconds()
+}
+
+// GetStartupIntervalSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetStartupIntervalSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.StartupInterval, s.GetTimeoutSeconds())
+}
+
+// GetLivenessIntervalSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetLivenessIntervalSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.LivenessInterval, s.GetTimeoutSeconds()*10) // 10x timeout default
+}
+
+// GetTimeoutSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetTimeoutSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.Timeout, 3)
 }
 
 type EnvironmentJobSpec struct {

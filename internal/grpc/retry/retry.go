@@ -7,10 +7,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
@@ -33,6 +37,15 @@ const (
 	requestTraceRetryAttemptsAttributeName = "x-sourcegraph-grpc-retry-attempts-number"
 )
 
+var metricRetryAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_grpc_client_retry_attempts_total",
+	Help: "Total number of gRPC client retries",
+}, []string{
+	"grpc_service", // e.g. "gitserver.v1.GitserverService"
+	"grpc_method",  // e.g. "Exec"
+	"is_retried",   // e.g. "true"
+})
+
 // UnaryClientInterceptor returns a new retrying unary client interceptor.
 //
 // The default configuration of the interceptor is to not retry *at all*. This behaviour can be
@@ -43,15 +56,19 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 		tr := trace.FromContext(parentCtx)
 		tr.SetAttributes(attribute.Bool(retriedTraceAttributeKey, false))
 
-		service, method := grpcutil.SplitMethodName(fullMethod)
-
 		grpcOpts, retryOpts := filterCallOptions(opts)
 		callOpts := newWithCallOptions(intOpts, retryOpts)
 
-		doTrace := makeTracingCallback(parentCtx, logger, service, method)
+		service, method := grpcutil.SplitMethodName(fullMethod)
+
+		observer := newRetryObserver(parentCtx, logger, service, method)
+		defer func() {
+			defer observer.FinishRPC()
+		}()
+
 		originalCallback := callOpts.onRetryCallback
 		callOpts.onRetryCallback = func(ctx context.Context, attempt uint, err error) {
-			doTrace(attempt, err)
+			observer.OnRetry(attempt, err)
 
 			if originalCallback != nil {
 				originalCallback(ctx, attempt, err)
@@ -106,71 +123,100 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.StreamClientInterceptor {
 	intOpts := newWithCallOptions(defaultOptions, optFuncs)
 	return func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		tr := trace.FromContext(parentCtx)
-		tr.SetAttributes(attribute.Bool(retriedTraceAttributeKey, false))
-
 		service, method := grpcutil.SplitMethodName(fullMethod)
+		observer := newRetryObserver(parentCtx, logger, service, method)
 
-		grpcOpts, retryOpts := filterCallOptions(opts)
-		callOpts := newWithCallOptions(intOpts, retryOpts)
-		// short circuit for simplicity, and avoiding allocations.
+		wrappedStreamer := func(parentCtx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+			tr := trace.FromContext(parentCtx)
+			tr.SetAttributes(attribute.Bool(retriedTraceAttributeKey, false))
 
-		doTrace := makeTracingCallback(parentCtx, logger, service, method)
-		originalCallback := callOpts.onRetryCallback
+			grpcOpts, retryOpts := filterCallOptions(opts)
+			callOpts := newWithCallOptions(intOpts, retryOpts)
+			// short circuit for simplicity, and avoiding allocations.
 
-		callOpts.onRetryCallback = func(ctx context.Context, attempt uint, err error) {
-			doTrace(attempt, err)
+			originalCallback := callOpts.onRetryCallback
+			callOpts.onRetryCallback = func(ctx context.Context, attempt uint, err error) {
+				observer.OnRetry(attempt, err)
 
-			if originalCallback != nil {
-				originalCallback(ctx, attempt, err)
-			}
-		}
-
-		if callOpts.max == 0 {
-			return streamer(parentCtx, desc, cc, fullMethod, grpcOpts...)
-		}
-		if desc.ClientStreams {
-			return nil, status.Error(codes.Unimplemented, "grpc_retry: cannot retry on ClientStreams, set grpc_retry.Disable()")
-		}
-
-		var lastErr error
-		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
-				return nil, err
-			}
-			var newStreamer grpc.ClientStream
-			newStreamer, lastErr = streamer(parentCtx, desc, cc, fullMethod, grpcOpts...)
-			if lastErr == nil {
-				retryingStreamer := &serverStreamingRetryingStream{
-					ClientStream: newStreamer,
-					callOpts:     callOpts,
-					parentCtx:    parentCtx,
-					streamerCall: func(ctx context.Context) (grpc.ClientStream, error) {
-						return streamer(ctx, desc, cc, fullMethod, grpcOpts...)
-					},
+				if originalCallback != nil {
+					originalCallback(ctx, attempt, err)
 				}
-				return retryingStreamer, nil
 			}
-			callOpts.onRetryCallback(parentCtx, attempt, lastErr)
-			if isContextError(lastErr) {
-				if parentCtx.Err() != nil {
-					logTrace(parentCtx, "grpc_retry parent context error",
-						attribute.Int("attempt", int(attempt)), attribute.String("error", parentCtx.Err().Error()))
-					// its the parent context deadline or cancellation.
+
+			if callOpts.max == 0 {
+				return streamer(parentCtx, desc, cc, fullMethod, grpcOpts...)
+			}
+			if desc.ClientStreams {
+				return nil, status.Error(codes.Unimplemented, "grpc_retry: cannot retry on ClientStreams, set grpc_retry.Disable()")
+			}
+
+			var lastErr error
+			for attempt := uint(0); attempt < callOpts.max; attempt++ {
+				if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
+					return nil, err
+				}
+				var newStreamer grpc.ClientStream
+				newStreamer, lastErr = streamer(parentCtx, desc, cc, fullMethod, grpcOpts...)
+				if lastErr == nil {
+
+					retryingStreamer := &serverStreamingRetryingStream{
+						ClientStream: newStreamer,
+						callOpts:     callOpts,
+						parentCtx:    parentCtx,
+
+						streamerCall: func(ctx context.Context) (grpc.ClientStream, error) {
+							return streamer(ctx, desc, cc, fullMethod, grpcOpts...)
+						},
+					}
+
+					return newRetryingStreamerWithMetrics(retryingStreamer, observer), nil
+				}
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+				if isContextError(lastErr) {
+					if parentCtx.Err() != nil {
+						logTrace(parentCtx, "grpc_retry parent context error",
+							attribute.Int("attempt", int(attempt)), attribute.String("error", parentCtx.Err().Error()))
+						// its the parent context deadline or cancellation.
+						return nil, lastErr
+					} else if callOpts.perCallTimeout != 0 {
+						// We have set a perCallTimeout in the retry middleware, which would result in a context error if
+						// the deadline was exceeded, in which case try again.
+						logTrace(parentCtx, "grpc_retry context error from retry call", attribute.Int("attempt", int(attempt)))
+						continue
+					}
+				}
+				if !isRetriable(lastErr, callOpts) {
 					return nil, lastErr
-				} else if callOpts.perCallTimeout != 0 {
-					// We have set a perCallTimeout in the retry middleware, which would result in a context error if
-					// the deadline was exceeded, in which case try again.
-					logTrace(parentCtx, "grpc_retry context error from retry call", attribute.Int("attempt", int(attempt)))
-					continue
 				}
 			}
-			if !isRetriable(lastErr, callOpts) {
-				return nil, lastErr
-			}
+			return nil, lastErr
 		}
-		return nil, lastErr
+
+		ss, err := wrappedStreamer(parentCtx, desc, cc, fullMethod, opts...)
+		if err != nil {
+			observer.FinishRPC() // We never established the stream, so we can finish the observation since we won't be sending any messages.
+			return nil, err
+		}
+
+		return ss, nil
+
 	}
+}
+
+func newRetryingStreamerWithMetrics(s *serverStreamingRetryingStream, observer *retryObserver) grpc.ClientStream {
+	postMessageSend := func(message any, err error) {
+		if err != nil {
+			observer.FinishRPC() // We received an error, so we won't be sending any more messages.
+		}
+	}
+
+	postMessageReceive := func(message any, err error) {
+		if err != nil {
+			observer.FinishRPC() // We received an error, so we won't be receiving any more messages.
+		}
+	}
+
+	return grpcutil.NewCallBackClientStream(s, postMessageSend, postMessageReceive)
 }
 
 // type serverStreamingRetryingStream is the implementation of grpc.ClientStream that acts as a
@@ -377,13 +423,13 @@ func logTrace(ctx context.Context, message string, attrs ...attribute.KeyValue) 
 	trace.FromContext(ctx).AddEvent(message, attrs...)
 }
 
-func makeTracingCallback(parentCtx context.Context, logger log.Logger, serviceName, methodName string) func(attempt uint, lastErr error) {
-	return func(attempt uint, lastErr error) {
+func newRetryObserver(ctx context.Context, logger log.Logger, serviceName, methodName string) *retryObserver {
+	tracingCallback := func(attempt uint, lastErr error) {
 		if attempt == 0 {
 			return
 		}
 
-		tr := trace.FromContext(parentCtx)
+		tr := trace.FromContext(ctx)
 
 		if !tr.IsRecording() {
 			return
@@ -422,8 +468,44 @@ func makeTracingCallback(parentCtx context.Context, logger log.Logger, serviceNa
 		}
 
 		logger := logger.Scoped("grpcRetryInterceptor")
-		trace.Logger(parentCtx, logger).Debug("request",
+		trace.Logger(ctx, logger).Debug("request",
 			log.Object("retry", logFields...),
 		)
 	}
+
+	return &retryObserver{
+		onRetryFunc: func(attempt uint, err error) {
+			tracingCallback(attempt, err)
+		},
+
+		onFinishFunc: func(hasRetried bool) {
+			metricRetryAttempts.WithLabelValues(serviceName, methodName, strconv.FormatBool(hasRetried)).Inc()
+		},
+	}
+}
+
+// retryObserver is a simple abstraction that emits traces and Prometheus metrics whenever
+// an RPC is retried. It is passed to retry middleware.
+type retryObserver struct {
+	hasRetried  atomic.Bool
+	onRetryFunc func(attempt uint, err error)
+
+	finishOnce   sync.Once
+	onFinishFunc func(hasRetried bool)
+}
+
+func (r *retryObserver) OnRetry(attempt uint, err error) {
+	r.hasRetried.Store(true)
+
+	if r.onRetryFunc != nil {
+		r.onRetryFunc(attempt, err)
+	}
+}
+
+func (r *retryObserver) FinishRPC() {
+	r.finishOnce.Do(func() {
+		if r.onFinishFunc != nil {
+			r.onFinishFunc(r.hasRetried.Load())
+		}
+	})
 }
