@@ -77,10 +77,16 @@ var Targets = []Target{
 		Description: "Check client code for linting errors, forbidden imports, etc",
 		Checks: []*linter{
 			timeCheck(inlineTemplates),
-			timeCheck(runScriptSerialized("pnpm dedupe", "dev/check/pnpm-deduplicate.sh")),
 			// we only run this linter locally, since on CI it has it's own job
 			onlyLocal(runScriptSerialized("pnpm lint:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
 			timeCheck(checkUnversionedDocsLinks()),
+		},
+	},
+	{
+		Name:        "pnpm",
+		Description: "Check pnpm lockfiles for optimality",
+		Checks: []*linter{
+			timeCheck(runScriptSerialized("pnpm dedupe", "dev/check/pnpm-deduplicate.sh")),
 		},
 	},
 	{

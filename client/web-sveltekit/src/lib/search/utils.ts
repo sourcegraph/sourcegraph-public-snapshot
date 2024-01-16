@@ -25,18 +25,16 @@ export function groupFilters(filters: Filter[] | null | undefined): FilterGroups
         lang: [],
         utility: [],
         author: [],
-        select: [],
-        after: [],
-        before: [],
+        'commit date': [],
+        'symbol type': [],
     }
     if (filters) {
         for (const filter of filters) {
             switch (filter.kind) {
-                case 'after':
-                case 'before':
+                case 'commit date':
+                case 'symbol type':
                 case 'author':
                 case 'utility':
-                case 'select':
                 case 'repo':
                 case 'file':
                 case 'lang': {

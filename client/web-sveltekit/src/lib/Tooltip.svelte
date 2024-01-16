@@ -53,8 +53,8 @@
         ],
     }
     $: target = container?.firstElementChild
-    $: if (target) {
-        target.setAttribute('aria-labeledby', id)
+    $: if (target && tooltip) {
+        target.setAttribute('aria-label', tooltip)
     }
 </script>
 

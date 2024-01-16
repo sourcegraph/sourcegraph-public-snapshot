@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -350,7 +351,7 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 				"anthropic/claude-instant-1.2",
 				"anthropic/claude-instant-1",
 				"openai/gpt-4-1106-preview",
-				"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+				"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			}
 		}
 
@@ -375,7 +376,7 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct",
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 		}
 	case types.CompletionsFeatureCode:
 		return []string{
@@ -383,10 +384,10 @@ func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser b
 			"anthropic/claude-instant-1",
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
-			"fireworks/accounts/fireworks/models/starcoder-7b-w8a16",
-			"fireworks/accounts/sourcegraph/models/starcoder-7b",
-			"fireworks/accounts/fireworks/models/starcoder-16b-w8a16",
-			"fireworks/accounts/sourcegraph/models/starcoder-16b",
+			"fireworks/starcoder",
+			// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
+			"fireworks/" + fireworks.Starcoder16b,
+			"fireworks/" + fireworks.Starcoder7b,
 		}
 	default:
 		return []string{}

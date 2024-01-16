@@ -127,8 +127,11 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}
 	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
-		ProjectID:  *projectOutput.Project.ProjectId(),
-		Service:    svc,
+		ProjectID:           *projectOutput.Project.ProjectId(),
+		Service:             svc,
+		EnvironmentCategory: env.Category,
+		EnvironmentID:       env.ID,
+
 		Monitoring: monitoringSpec,
 		MaxInstanceCount: func() *int {
 			if env.Instances.Scaling != nil {
@@ -136,13 +139,11 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
-		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
-		ServiceStartupProbe: pointers.DerefZero(env.EnvironmentServiceSpec).StatupProbe,
-
-		// Notification configuration
-		EnvironmentCategory: env.Category,
-		EnvironmentID:       env.ID,
-		Owners:              svc.Owners,
+		ExternalDomain:        pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
+		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,
+		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
+		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
+		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}
