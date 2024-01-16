@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math/rand"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -59,7 +60,7 @@ func NewFireworksHandler(
 			logSelfServeCodeCompletionRequests:     logSelfServeCodeCompletionRequests,
 			disableSingleTenant:                    disableSingleTenant,
 			starcoderCommunitySingleTenantPercent:  starcoderCommunitySingleTenantPercent,
-			starcoderEnterpriseSingleTenantPercent: starcoderEnterpriseSingleTenantPercent
+			starcoderEnterpriseSingleTenantPercent: starcoderEnterpriseSingleTenantPercent,
 		},
 
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
@@ -152,7 +153,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	}
 
 	// PLG virtual model strings
-	if (body.Model == "starcoder-16b" || body.Model == "starcoder-7b" ) {
+	if body.Model == "starcoder-16b" || body.Model == "starcoder-7b" {
 		multiTenantModel = fireworks.Starcoder16b
 		if body.Model == "starcoder-7b" {
 			multiTenantModel = fireworks.Starcoder7b
@@ -272,8 +273,8 @@ func pickModelBasedOnTrafficSplit(percentage int, hundredPercentModel string, ze
 	// - If the percentage is `0`, the roll will never be smaller than percentage
 	// - If the percentage is `100`, the roll will always be smaller than percentage
 	// - Otherwise, e.g. for a percentage of `30`, the roll will have exactly 30 out of 100 possible
-    //   draws (since it will be < only if it is within the range [0, 30))
-	if (roll < percentage) {
+	//   draws (since it will be < only if it is within the range [0, 30))
+	if roll < percentage {
 		return hundredPercentModel
 	} else {
 		return zeroPercentModel
