@@ -94,6 +94,7 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 
+	// Validate basic configuration
 	if s.ID == "" {
 		errs = append(errs, errors.New("id is required"))
 	}
@@ -111,9 +112,14 @@ func (s EnvironmentSpec) Validate() []error {
 		return append(errs, errors.Wrap(err, "category"))
 	}
 
+	// Validate other shared sub-specs
 	errs = append(errs, s.Deploy.Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
 	errs = append(errs, s.Instances.Validate()...)
+
+	// Validate service-specific specs
+	errs = append(errs, s.EnvironmentServiceSpec.Validate()...)
+
 	return errs
 }
 
@@ -235,6 +241,15 @@ type EnvironmentServiceSpec struct {
 	//
 	// Only supported for services of 'kind: service'.
 	Authentication *EnvironmentServiceAuthenticationSpec `yaml:"authentication,omitempty"`
+}
+
+func (s *EnvironmentServiceSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	errs = append(errs, s.HealthProbes.Validate()...)
+	return errs
 }
 
 type EnvironmentServiceDomainSpec struct {
@@ -426,6 +441,31 @@ type EnvironmentServiceHealthProbesSpec struct {
 	//
 	// Defaults to timeout * 10.
 	LivenessInterval *int `yaml:"livenessInterval,omitempty"`
+}
+
+func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if !s.UseHealthzProbes() {
+		if s.Timeout != nil || s.StartupInterval != nil || s.LivenessInterval != nil {
+			errs = append(errs,
+				errors.New("timeout, startupInterval and livenessInterval can only be configured when healthzProbes is enabled"))
+		}
+
+		// Nothing else to check
+		return errs
+	}
+
+	if s.GetTimeoutSeconds() > s.GetStartupIntervalSeconds() {
+		errs = append(errs, errors.New("startupInterval must be greater than or equal to timeout"))
+	}
+	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
+		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
+	}
+
+	return errs
 }
 
 // UseHealthzProbes indicates whether the MSP-standard '/-/healthz' probes
