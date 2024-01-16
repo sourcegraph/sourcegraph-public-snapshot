@@ -24,6 +24,7 @@ go_library(
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",
         "//internal/codygateway",
+        "//internal/completions/client/fireworks",
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",

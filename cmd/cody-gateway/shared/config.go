@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -140,18 +141,22 @@ func (c *Config) Load() {
 	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
-			"accounts/fireworks/models/starcoder-16b-w8a16",
-			"accounts/fireworks/models/starcoder-7b-w8a16",
-			"accounts/fireworks/models/starcoder-3b-w8a16",
-			"accounts/fireworks/models/starcoder-1b-w8a16",
-			"accounts/sourcegraph/models/starcoder-7b",
-			"accounts/sourcegraph/models/starcoder-16b",
+			// Virtual model strings. Setting these will allow one or more of the specific models
+			// and allows Cody Gateway to decide which specific model to route the request to.
+			"starcoder",
+			// Fireworks multi-tenant models:
+			fireworks.Starcoder16b,
+			fireworks.Starcoder7b,
+			fireworks.Starcoder16bSingleTenant,
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
+			// Deprecated model strings
+			"accounts/fireworks/models/starcoder-3b-w8a16",
+			"accounts/fireworks/models/starcoder-1b-w8a16",
 		}, ","),
 		"Fireworks models that can be used."))
 	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")

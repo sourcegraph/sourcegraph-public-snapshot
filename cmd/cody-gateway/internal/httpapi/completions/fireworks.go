@@ -117,17 +117,35 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	if body.N > 1 {
 		body.N = 1
 	}
+
+	// This code rewrites an older model identifier that we've used when testing a single-tenant
+	// deployment and that is no longer live. Since the clients used to hard code these, some
+	// outdated clients might still be sending these requests and we want to make sure they are
+	// compatible with the new virtual model strings.
 	if f.disableSingleTenant {
 		oldModel := body.Model
 		if body.Model == "accounts/sourcegraph/models/starcoder-16b" {
-			body.Model = "accounts/fireworks/models/starcoder-16b-w8a16"
+			body.Model = "starcoder-16b"
 		} else if body.Model == "accounts/sourcegraph/models/starcoder-7b" {
-			body.Model = "accounts/fireworks/models/starcoder-7b-w8a16"
+			body.Model = "starcoder-7b"
 		}
 		if oldModel != body.Model {
 			f.baseLogger.Debug("rewriting model", log.String("old-model", oldModel), log.String("new-model", body.Model))
 		}
 	}
+
+	// Enterprise virtual model string
+	if body.Model == "starcoder" {
+		body.Model = fireworks.Starcoder16b
+	}
+	// PLG virtual model strings
+	if body.Model == "starcoder-16b" {
+		body.Model = fireworks.Starcoder16b
+	}
+	if body.Model == "starcoder-7b" {
+		body.Model = fireworks.Starcoder7b
+	}
+
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	// Check that this is a code completion request and that the actor is a PLG user
