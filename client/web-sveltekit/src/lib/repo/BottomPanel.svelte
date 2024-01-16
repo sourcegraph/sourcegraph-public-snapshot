@@ -17,8 +17,8 @@
     import HistoryPanel, { type Capture as HistoryPanelCapture } from './HistoryPanel.svelte'
     import type { BottomPanel_HistoryConnection } from './BottomPanel.gql'
 
-    export let history: Promise<BottomPanel_HistoryConnection | null>
-    export let fetchCommitHistory: (afterCursor: string | null) => Promise<BottomPanel_HistoryConnection | null>
+    export let history: BottomPanel_HistoryConnection | null
+    export let fetchCommitHistory: (afterCursor: string | null) => void
 
     export function capture(): Capture {
         return {
@@ -64,7 +64,12 @@
     <Tabs selected={selectedTab} toggable on:select={selectTab}>
         <TabPanel title="History">
             {#key $page.params.path}
-                <HistoryPanel bind:this={historyPanel} {history} fetchMoreHandler={fetchCommitHistory} />
+                <HistoryPanel
+                    bind:this={historyPanel}
+                    {history}
+                    fetchMore={fetchCommitHistory}
+                    enableInlineDiffs={$page.route.id?.includes('/blob/') ?? false}
+                />
             {/key}
         </TabPanel>
     </Tabs>

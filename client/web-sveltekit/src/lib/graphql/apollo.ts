@@ -11,6 +11,7 @@ import {
     type DocumentNode,
     type MutationOptions,
     type FetchPolicy,
+    type FieldPolicy,
 } from '@apollo/client/core/index'
 import { trimEnd, once } from 'lodash'
 
@@ -52,9 +53,51 @@ const customFetch: HttpOptions['fetch'] = (uri, options) => fetch(uri, options).
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
+function listBasedForwardConnection({
+    keyArgs,
+    cursorName,
+}: {
+    keyArgs: string[] | false
+    cursorName: string
+}): FieldPolicy {
+    return {
+        keyArgs,
+
+        merge(existing, incoming, { args }) {
+            // args.after and pageInfo.endCursor seem to refer to the index of the
+            // last item in the list.
+            if (!existing || !args) {
+                return incoming
+            }
+            const nodes = [...existing.nodes]
+            const offset = args[cursorName] ? +args[cursorName] : 0
+            for (let i = 0; i < incoming.nodes.length; ++i) {
+                nodes[offset + i] = incoming.nodes[i]
+            }
+
+            return {
+                ...incoming,
+                nodes,
+                pageInfo: {
+                    endCursor: String(nodes.length),
+                    hasNextPage: incoming.pageInfo.hasNextPage,
+                },
+            }
+        },
+    }
+}
+
 export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
     const cache = new InMemoryCache({
         typePolicies: {
+            GitCommit: {
+                fields: {
+                    ancestors: listBasedForwardConnection({
+                        keyArgs: ['query', 'path', 'follow', 'after'],
+                        cursorName: 'afterCursor',
+                    }),
+                },
+            },
             GitTree: {
                 // GitTree object's don't have an ID, but canonicalURL is unique
                 keyFields: ['canonicalURL'],
@@ -73,30 +116,10 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
             },
             RepositoryComparison: {
                 fields: {
-                    fileDiffs: {
+                    fileDiffs: listBasedForwardConnection({
                         keyArgs: ['paths'],
-                        merge(existing, incoming, { args }) {
-                            // args.after and pageInfo.endCursor seem to refer to the index of the
-                            // last item in the list.
-                            if (!existing || !args) {
-                                return incoming
-                            }
-                            const nodes = [...existing.nodes]
-                            const offset = args.after ? +args.after : 0
-                            for (let i = 0; i < incoming.nodes.length; ++i) {
-                                nodes[offset + i] = incoming.nodes[i]
-                            }
-
-                            return {
-                                ...incoming,
-                                nodes,
-                                pageInfo: {
-                                    endCursor: String(nodes.length),
-                                    hasNextPage: incoming.pageInfo.hasNextPage,
-                                },
-                            }
-                        },
-                    },
+                        cursorName: 'after',
+                    }),
                 },
             },
         },

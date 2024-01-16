@@ -14,6 +14,7 @@
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import type { Scalars } from '$lib/graphql-operations'
+    import type { GitHistory_HistoryConnection } from './layout.gql'
 
     export let data: LayoutData
 
@@ -70,11 +71,10 @@
     }
 
     function fetchCommitHistory(afterCursor: string | null) {
-        return data.fetchCommitHistory({
-            repo: data.resolvedRevision.repo.id,
-            revspec: data.resolvedRevision.commitID,
-            filePath: $page.params.path ?? '',
-            afterCursor,
+        data.commitHistory.fetchMore({
+            variables: {
+                afterCursor: afterCursor,
+            },
         })
     }
 
@@ -84,6 +84,18 @@
     // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
     // update
     $: updateFileTreeProvider(repoID, commitID, parentPath)
+    $: commitHistoryQuery = data.commitHistory
+    let commitHistory: GitHistory_HistoryConnection | null
+    $: if (commitHistoryQuery) {
+        // Reset commit history when the query observable changes. Without
+        // this we are showing the commit history of the previously selected
+        // file/folder until the new commit history is loaded.
+        commitHistory = null
+    }
+    $: commitHistory =
+        $commitHistoryQuery?.data.node?.__typename === 'Repository'
+            ? $commitHistoryQuery.data.node.commit?.ancestors ?? null
+            : null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -116,7 +128,7 @@
     {/if}
     <div class="main">
         <slot />
-        <BottomPanel bind:this={bottomPanel} history={data.deferred.commitHistory} {fetchCommitHistory} />
+        <BottomPanel bind:this={bottomPanel} history={commitHistory} {fetchCommitHistory} />
     </div>
 </section>
 
