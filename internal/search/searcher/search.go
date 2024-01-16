@@ -264,11 +264,16 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 
 		matches = append(matches, &result.FileMatch{
 			File: result.File{
-				Path:            fm.Path,
-				Repo:            repo,
-				CommitID:        commit,
-				InputRev:        rev,
-				PreciseLanguage: "", // we do not have a precise language from searcher yet
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: rev,
+
+				// We do not have a precise language from searcher yet.
+				// TODO(camdencheek): return the language from searcher,
+				// where we have access to the file contents for more
+				// precise detection.
+				PreciseLanguage: "",
 			},
 			ChunkMatches: chunkMatches,
 			PathMatches:  pathMatches,
