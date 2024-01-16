@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -433,6 +434,11 @@ func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[s
 func isAllowedModel(allowedModels []string, model string) bool {
 	for _, m := range allowedModels {
 		if strings.EqualFold(m, model) {
+			return true
+		}
+
+		// Expand virtual model names
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b) {
 			return true
 		}
 	}
