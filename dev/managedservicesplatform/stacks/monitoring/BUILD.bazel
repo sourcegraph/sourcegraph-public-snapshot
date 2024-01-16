@@ -13,6 +13,7 @@ go_library(
         "//dev/managedservicesplatform/internal/resource/alertpolicy",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
         "//dev/managedservicesplatform/internal/resource/random",
+        "//dev/managedservicesplatform/internal/resource/sentryalert",
         "//dev/managedservicesplatform/internal/resourceid",
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/options/googleprovider",

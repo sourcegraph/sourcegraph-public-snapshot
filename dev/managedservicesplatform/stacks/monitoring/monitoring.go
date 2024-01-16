@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/sentryalert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
@@ -253,6 +254,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				TargetIdentifier: slackChannel.Id(),
 				TriggerType:      pointers.Ptr("spike-protection"),
 			})
+
+			if err = createSentryAlerts(stack, id.Group("sentry_alerts"), vars, slackChannel, dataSentryOrganizationIntegration); err != nil {
+				return nil, errors.Wrap(err, "failed to create Sentry alerts")
+			}
 		}
 
 		channels = append(channels,
@@ -665,5 +670,46 @@ func createRedisAlerts(
 		}
 	}
 
+	return nil
+}
+
+func createSentryAlerts(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channel slackconversation.Conversation,
+	slackIntegration datasentryorganizationintegration.DataSentryOrganizationIntegration,
+) error {
+	for _, config := range []sentryalert.Config{
+		{
+			SentryProject: vars.SentryProject,
+			AlertConfig: sentryalert.AlertConfig{
+				Id:          "first-seen-issue",
+				Name:        "First Seen Issue",
+				Frequency:   30,
+				ActionMatch: sentryalert.ActionMatchAny,
+				Conditions: []sentryalert.Condition{
+					{
+						Id: sentryalert.FirstSeenEventCondition,
+					},
+				},
+				Actions: []sentryalert.Action{
+					{
+						Id: sentryalert.SlackNotifyServiceAction,
+						ActionParameters: map[string]any{
+							"workspace":  slackIntegration.Id(),
+							"channel":    channel.Name(),
+							"channel_id": channel.Id(),
+							"tags":       fmt.Sprintf("%s", vars.Service.ID),
+						},
+					},
+				},
+			},
+		},
+	} {
+		if _, err := sentryalert.New(stack, id, config); err != nil {
+			return err
+		}
+	}
 	return nil
 }
