@@ -37,6 +37,20 @@ type usageStats struct {
 	tokens int
 }
 
+// Hop-by-Hop headers that should not be copied when proxying upstream requests
+// List from https://cs.opensource.google/go/go/+/master:src/net/http/httputil/reverseproxy.go;l=294;drc=7abeefd2b1a03932891e581f1f90656ffebebce4
+var hopHeaders = map[string]struct{}{
+	"Connection":          {},
+	"Proxy-Connection":    {}, // non-standard but still sent by libcurl and rejected by e.g. google
+	"Keep-Alive":          {},
+	"Proxy-Authenticate":  {},
+	"Proxy-Authorization": {},
+	"Te":                  {}, // canonicalized version of "TE"
+	"Trailer":             {}, // not Trailers per URL above; https://www.rfc-editor.org/errata_search.php?eid=4522
+	"Transfer-Encoding":   {},
+	"Upgrade":             {},
+}
+
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
 // in the order they are defined here.
@@ -332,6 +346,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			defer func() { _ = resp.Body.Close() }()
 			// Forward upstream http headers.
 			for k, vv := range resp.Header {
+				if _, ok := hopHeaders[http.CanonicalHeaderKey(k)]; ok {
+					// do not forward
+					continue
+				}
 				for _, v := range vv {
 					w.Header().Add(k, v)
 				}

@@ -50,7 +50,14 @@ func fprintSubtitle(w io.Writer, text string) {
 // See `observableAnchor`.
 func fprintObservableHeader(w io.Writer, c *Dashboard, o *Observable, headerLevel int) {
 	fmt.Fprint(w, strings.Repeat("#", headerLevel))
-	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
+	if o.Name == "" {
+		// TODO: It seems that we have an issue here, it generates the following:
+		// see https://gist.github.com/jhchabran/9ceaed75abe1a78136c200b6bc98c584
+		// to help you understand where it's possibly broken.
+		fmt.Fprintf(w, "%s:\n\n", strings.TrimSpace(c.Name))
+	} else {
+		fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
+	}
 }
 
 // fprintOwnedBy prints information about who owns a particular monitoring definition.
@@ -196,7 +203,7 @@ func (d *documentation) renderDashboardPanelEntry(c *Dashboard, o Observable, pa
 	// render interpretation reference if available
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		interpretation, _ := toMarkdown(o.Interpretation, false)
-		fmt.Fprintf(&d.dashboards, "%s\n\n", interpretation)
+		fmt.Fprintf(&d.dashboards, "%s\n\n", strings.TrimSpace(interpretation))
 	}
 
 	// add link to alerts reference IF there is an alert attached

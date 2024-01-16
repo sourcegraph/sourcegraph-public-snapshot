@@ -6,20 +6,7 @@ pub mod ctags;
 pub mod globals;
 pub mod languages;
 pub mod locals;
-pub mod symbols;
 pub mod ts_scip;
-
-pub fn get_symbols(parser: BundledParser, source_bytes: &[u8]) -> Result<scip::types::Document> {
-    let config = match crate::languages::get_tag_configuration(parser) {
-        Some(config) => config,
-        None => return Err(anyhow::anyhow!("Missing config for language")),
-    };
-    let mut parser = config.get_parser();
-    let tree = parser.parse(source_bytes, None).expect("to parse tree");
-    let (mut symbol_scope, hint) = symbols::parse_tree(config, &tree, source_bytes)?;
-    let document = symbol_scope.into_document(hint, vec![]);
-    Ok(document)
-}
 
 pub fn get_globals(
     parser: BundledParser,
