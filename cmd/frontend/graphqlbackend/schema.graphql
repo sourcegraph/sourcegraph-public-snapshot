@@ -6208,7 +6208,7 @@ type FileMatch {
     """
     limitHit: Boolean!
     """
-    The most likely language for the file, or unset if the language cannot be determined.
+    The detected languages for the file, empty if the language cannot be determined.
     """
     languages: [String!]!
 }
