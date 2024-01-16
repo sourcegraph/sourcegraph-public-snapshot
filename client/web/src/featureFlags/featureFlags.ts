@@ -38,6 +38,7 @@ export const FEATURE_FLAGS = [
     'cody-pro',
     'opencodegraph',
     'auditlog-expansion',
+    'search.newFilters',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

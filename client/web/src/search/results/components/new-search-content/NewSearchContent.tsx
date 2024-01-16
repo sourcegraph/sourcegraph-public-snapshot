@@ -53,6 +53,8 @@ import { SearchAlert } from '../SearchAlert'
 import { UnownedResultsAlert } from '../UnownedResultsAlert'
 import { isSmartSearchAlert } from '../utils'
 
+import { useIsNewSearchFiltersEnabled } from './use-new-search-filters'
+
 import styles from './NewSearchContent.module.scss'
 
 const LazySideBlob = lazyComponent(() => import('../../../../codeintel/SideBlob'), 'SideBlob')
@@ -134,7 +136,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
 
-    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
+    const newFiltersEnabled = useIsNewSearchFiltersEnabled()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
     useScrollManager('SearchResultsContainer', containerRef)
