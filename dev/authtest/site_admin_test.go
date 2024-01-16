@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -84,6 +85,7 @@ func TestSiteAdminEndpoints(t *testing.T) {
 			query     string
 			variables map[string]any
 		}
+		expiresAt := time.Now().Add(1 * time.Hour)
 		tests := []gqlTest{
 			{
 				name: "resetTriggerQueryTimestamps",
@@ -184,7 +186,7 @@ mutation {
 				name: "createAccessToken.ScopeSiteAdminSudo",
 				query: `
 mutation CreateAccessToken($userID: ID!) {
-	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "") {
+	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "", expiresAt: ` + expiresAt.Format(time.RFC3339) + `) {
 		id
 	}
 }`,
