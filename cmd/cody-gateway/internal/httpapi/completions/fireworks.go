@@ -264,13 +264,13 @@ func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 // Picks a model based on a specific percentage split. If the percent value is 0, the
 // zeroPercentModel is always picked. If the value is 100, the hundredPercentModel is always picked.
 func pickModelBasedOnTrafficSplit(percentage int, hundredPercentModel string, zeroPercentModel string) string {
-	// Create a value inside the range of [0, 100). This means you are doing a 1 out of 100 roll.
+	// Create a value inside the range of [0, 100).
 	roll := rand.Intn(100)
 
 	// Check if the roll is within the target percentage:
 	//
-	// - If the percentage is `0`, the roll will always be smaller than 0 (since it's at least 0)
-	// - If the percentage is `100`, the roll will always be greater than 100 (since it's at most 99)
+	// - If the percentage is `0`, the roll will never be smaller than percentage
+	// - If the percentage is `100`, the roll will always be smaller than percentage
 	// - Otherwise, e.g. for a percentage of `30`, the roll will have exactly 30 out of 100 possible
     //   draws (since it will be < only if it is within the range [0, 30))
 	if (roll < percentage) {
