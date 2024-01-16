@@ -607,11 +607,10 @@ func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeatur
 	return &codyConfigFeaturesResolver{config: c}
 }
 
-func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
-
+func (c *codyConfigFeaturesResolver) Chat() bool         { return c.config.Chat }
 func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
-
-func (c *codyConfigFeaturesResolver) Commands() bool { return c.config.Commands }
+func (c *codyConfigFeaturesResolver) Commands() bool     { return c.config.Commands }
+func (c *codyConfigFeaturesResolver) Attribution() bool  { return c.config.Attribution }
 
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig

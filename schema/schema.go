@@ -650,6 +650,8 @@ type ConfigFeatures struct {
 	Chat bool `json:"chat,omitempty"`
 	// Commands description: Enable/Disable special commands for the clients
 	Commands bool `json:"commands,omitempty"`
+	// Attribution description: Enable/Disable attribution search for Cody-generated snippets.
+	Attribution bool `json:"attribution,omitempty"`
 }
 
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.

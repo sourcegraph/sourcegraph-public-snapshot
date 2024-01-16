@@ -808,6 +808,7 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 			Chat:         true,
 			AutoComplete: true,
 			Commands:     true,
+			Attribution:  false,
 		}
 	}
 
@@ -815,6 +816,7 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 		Chat:         configFeatures.Chat,
 		AutoComplete: configFeatures.AutoComplete,
 		Commands:     configFeatures.Commands,
+		Attribution:  configFeatures.Attribution,
 	}
 	return computedConfig
 }
