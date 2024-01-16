@@ -22,12 +22,6 @@ patterntype:regexp repo:^github\.com/sgtest/flutter_inappwebview$ count:800 add\
 # regex_file_scope
 patterntype:regexp repo:^github\.com/sgtest/kubernetes$ file:^cluster/gce/gci Installing
 
-# structural_repo_scope_small
-patterntype:structural repo:^github\.com/sgtest/fastapi-crud-async$ file:^src/app async def :[1](...)
-
-# structural_multi_repo_small
-patterntype:structural repo:^github\.com/sourcegraph/ strings.ToUpper(...)
-
 # literal_small
 patterntype:literal --exclude-task=test
 
@@ -79,13 +73,6 @@ repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt
 
 # mono_rev_regex_small
 repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt index:no
-
-# mono_structural_small
-repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...)
-
-## we have disabled this test because it was just too slow.
-## mono_rev_structural_small
-## repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) index:no
 
 # mono_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
