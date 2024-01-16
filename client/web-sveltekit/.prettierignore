@@ -17,5 +17,6 @@ yarn.lock
 *.gql.ts
 graphql-operations.ts
 graphql-types.ts
+graphql-type-mocks.ts
 
 tsconfig.json

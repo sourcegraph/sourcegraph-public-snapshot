@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // spanCategoryKey denotes the type of a span, e.g. "root" or "action"
@@ -72,6 +73,6 @@ func (s *Span) Skipped(reason ...string) {
 
 // NoOpSpan is a safe-to-use, no-op span.
 func NoOpSpan() *Span {
-	_, s := trace.NewNoopTracerProvider().Tracer("").Start(context.Background(), "")
+	_, s := noop.NewTracerProvider().Tracer("").Start(context.Background(), "")
 	return &Span{s}
 }

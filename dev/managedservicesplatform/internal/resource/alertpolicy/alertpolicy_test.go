@@ -17,8 +17,8 @@ func TestBuildFilter(t *testing.T) {
 		{
 			name: "Service Metric",
 			config: Config{
-				ServiceName: "my-service-name",
-				ServiceKind: CloudRunService,
+				ResourceName: "my-service-name",
+				ResourceKind: CloudRunService,
 				ThresholdAggregation: &ThresholdAggregation{
 					Filters: map[string]string{
 						"metric.type": "run.googleapis.com/container/startup_latencies",
@@ -30,8 +30,8 @@ func TestBuildFilter(t *testing.T) {
 		{
 			name: "Job Metric",
 			config: Config{
-				ServiceName: "my-job-name",
-				ServiceKind: CloudRunJob,
+				ResourceName: "my-job-name",
+				ResourceKind: CloudRunJob,
 				ThresholdAggregation: &ThresholdAggregation{
 					Filters: map[string]string{
 						"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
@@ -127,7 +127,7 @@ func TestResponseCodeBuilder(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := responseCodeBuilder(&Config{
-				ServiceName:        "test-service",
+				ResourceName:       "test-service",
 				ResponseCodeMetric: &tc.ResponseCodeMetric,
 			})
 			tc.want.Equal(t, got)

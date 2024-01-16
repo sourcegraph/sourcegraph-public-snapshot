@@ -37,6 +37,11 @@ func (s ServiceSpec) GetName() string {
 	return pointers.Deref(s.Name, s.ID)
 }
 
+// GetKind returns Kind if configured, otherwise the default (ServiceKindService).
+func (s ServiceSpec) GetKind() ServiceKind {
+	return pointers.Deref(s.Kind, ServiceKindService)
+}
+
 func (s ServiceSpec) Validate() []error {
 	var errs []error
 

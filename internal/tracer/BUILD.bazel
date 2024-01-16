@@ -33,6 +33,7 @@ go_library(
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk//trace/tracetest",
         "@io_opentelemetry_go_otel_trace//:trace",
+        "@io_opentelemetry_go_otel_trace//embedded",
         "@org_uber_go_automaxprocs//maxprocs",
     ],
 )
