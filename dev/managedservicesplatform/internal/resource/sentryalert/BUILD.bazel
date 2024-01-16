@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -13,4 +14,11 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//issuealert",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//project",
     ],
+)
+
+go_test(
+    name = "sentryalert_test",
+    srcs = ["sentryalert_test.go"],
+    embed = [":sentryalert"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )
