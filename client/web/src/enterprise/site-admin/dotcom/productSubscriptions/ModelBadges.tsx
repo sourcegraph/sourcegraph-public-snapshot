@@ -47,7 +47,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
             case 'openai/gpt-4-1106-preview':
-            // Virtual models that are translated by Cody Gateway and allows access to all StarCoder
+            // Virtual models that are translated by Cody Gateway and allow access to all StarCoder
             // models hosted for us by Fireworks.
             case 'fireworks/starcoder':
             // Bespoke alternative models hosted for us by Fireworks. These are also allowed on the
