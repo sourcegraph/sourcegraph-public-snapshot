@@ -24,8 +24,8 @@ type Output struct{}
 // [Sentry]: https://docs.sentry.io/api/alerts/create-an-issue-alert-rule-for-a-project/
 // [Terraform]: https://registry.terraform.io/providers/jianyuan/sentry/latest/docs/resources/issue_alert
 type Config struct {
-	// Id of the issue alert. Must be unique
-	Id string
+	// ID of the issue alert. Must be unique
+	ID string
 	// SentryProject is the project to set the alert on
 	SentryProject sentryproject.Project
 	// AlertConfig is the configuration for the Sentry issue alert rule
@@ -65,11 +65,11 @@ func (a AlertConfig) Validate() error {
 
 	// TODO(jac): allow Conditions to be nil after provider issue is fixed
 	// https://github.com/jianyuan/terraform-provider-sentry/issues/366
-	if a.Conditions == nil || len(a.Conditions) == 0 {
+	if len(a.Conditions) == 0 {
 		return errors.New("Conditions is required with at least one condition specified")
 	}
 
-	if a.Actions == nil || len(a.Actions) == 0 {
+	if len(a.Actions) == 0 {
 		return errors.New("Actions is required with at least one action specified")
 	}
 
@@ -95,27 +95,27 @@ const (
 	ActionMatchAny ActionMatch = "any"
 )
 
-type ConditionId string
+type ConditionID string
 
 const (
 	// FirstSeenEventCondition A new issue is created
-	FirstSeenEventCondition ConditionId = "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
+	FirstSeenEventCondition ConditionID = "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"
 	// RegressionEventCondition The issue changes state from resolved to unresolved
-	RegressionEventCondition ConditionId = "sentry.rules.conditions.regression_event.RegressionEventCondition"
+	RegressionEventCondition ConditionID = "sentry.rules.conditions.regression_event.RegressionEventCondition"
 	// EventFrequencyCondition The issue is seen more than `value` times in `interval` (valid values are 1m, 5m, 15m, 1h, 1d, 1w and 30d)
-	EventFrequencyCondition ConditionId = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
+	EventFrequencyCondition ConditionID = "sentry.rules.conditions.event_frequency.EventFrequencyCondition"
 	// EventUniqueUserFrequencyCondition The issue is seen by more than `value` users in `interval` (valid values are 1m, 5m, 15m, 1h, 1d, 1w and 30d)
-	EventUniqueUserFrequencyCondition ConditionId = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
+	EventUniqueUserFrequencyCondition ConditionID = "sentry.rules.conditions.event_frequency.EventUniqueUserFrequencyCondition"
 	// EventFrequencyPercentCondition The issue affects more than `value` percent (integer 0 to 100) of sessions in `interval` (valid values are 5m, 10m, 30m, and 1h)
-	EventFrequencyPercentCondition ConditionId = "sentry.rules.conditions.event_frequency.EventFrequencyPercentCondition"
+	EventFrequencyPercentCondition ConditionID = "sentry.rules.conditions.event_frequency.EventFrequencyPercentCondition"
 )
 
 // Condition checked `WHEN` an event is captured by Sentry.
 //
 // Multiple Conditions can be composed together in an alert requiring `all` or `any` to pass
 type Condition struct {
-	// Id represents the type of condition
-	Id ConditionId `json:"id"`
+	// ID represents the type of condition
+	ID ConditionID `json:"id"`
 	// Value is an integer threshold used by certain conditions
 	Value *int `json:"value,omitempty"`
 	// Interval is a threshold used by certain conditions.
@@ -132,12 +132,12 @@ const (
 )
 
 type Action struct {
-	// Id represents the type of action
-	Id ActionId `json:"id"`
+	// ID represents the type of action
+	ID ActionId
 	// ActionParameters define parameters unique to specific actions documented here [body parameters > actions]
 	//
 	// [body parameters > actions]: https://docs.sentry.io/api/alerts/create-an-issue-alert-rule-for-a-project/
-	ActionParameters map[string]any `json:"-,"`
+	ActionParameters map[string]any
 }
 
 // Custom marshalling to flatten Action struct
@@ -146,7 +146,7 @@ func (a Action) MarshalJSON() ([]byte, error) {
 	flattened := make(map[string]interface{})
 
 	// Copy the fields from the Action struct to the flattened map
-	flattened["id"] = a.Id
+	flattened["id"] = a.ID
 	for key, value := range a.ActionParameters {
 		flattened[key] = value
 	}
@@ -163,21 +163,21 @@ const (
 	FilterMatchNone FilterMatch = "none"
 )
 
-type FilterId string
+type FilterID string
 
 const (
 	// AgeComparisonFilter the issue `comparison_type` (older, newer) than `value` of `time`
-	AgeComparisonFilter FilterId = "sentry.rules.filters.age_comparison.AgeComparisonFilter"
+	AgeComparisonFilter FilterID = "sentry.rules.filters.age_comparison.AgeComparisonFilter"
 )
 
 type Filter struct {
-	// Id represents the type of filter
-	Id FilterId `json:"id"`
+	// ID represents the type of filter
+	ID FilterID
 
 	// FilterParameters define parameters unique to specific filters documented here [body parameters > filters]
 	//
 	// [body parameters > filters]: https://docs.sentry.io/api/alerts/create-an-issue-alert-rule-for-a-project/
-	FilterParameters map[string]any `json:"-,"`
+	FilterParameters map[string]any
 }
 
 // Custom marshalling to flatten Filter struct
@@ -185,8 +185,8 @@ func (f Filter) MarshalJSON() ([]byte, error) {
 	// Create a new map to hold the flattened JSON representation
 	flattened := make(map[string]interface{})
 
-	// Copy the fields from the Action struct to the flattened map
-	flattened["id"] = f.Id
+	// Copy the fields from the Filter struct to the flattened map
+	flattened["id"] = f.ID
 	for key, value := range f.FilterParameters {
 		flattened[key] = value
 	}

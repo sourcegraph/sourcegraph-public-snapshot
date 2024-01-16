@@ -16,7 +16,7 @@ func TestActionMarshal(t *testing.T) {
 		{
 			name: "Slack Action",
 			config: Action{
-				Id: SlackNotifyServiceAction,
+				ID: SlackNotifyServiceAction,
 				ActionParameters: map[string]any{
 					"workspace":  12345,
 					"channel":    "test-channel",
@@ -43,7 +43,7 @@ func TestFilterMarshal(t *testing.T) {
 		{
 			name: "Age Filter",
 			config: Filter{
-				Id: AgeComparisonFilter,
+				ID: AgeComparisonFilter,
 				FilterParameters: map[string]any{
 					"comparison_type": "older",
 					"value":           3,

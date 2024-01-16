@@ -682,14 +682,14 @@ func createSentryAlerts(
 ) error {
 	for _, config := range []sentryalert.Config{
 		{
-			Id:            "all-issues",
+			ID:            "all-issues",
 			SentryProject: vars.SentryProject,
 			AlertConfig: sentryalert.AlertConfig{
 				Name:      "Notify in Slack",
 				Frequency: 15, // Notify for an issue at most once every 15 minutes
 				Conditions: []sentryalert.Condition{
 					{
-						Id:       sentryalert.EventFrequencyCondition,
+						ID:       sentryalert.EventFrequencyCondition,
 						Value:    pointers.Ptr(0), // Always (seen more than 0 times) during interval
 						Interval: pointers.Ptr("15m"),
 					},
@@ -697,7 +697,7 @@ func createSentryAlerts(
 				ActionMatch: sentryalert.ActionMatchAny,
 				Actions: []sentryalert.Action{
 					{
-						Id: sentryalert.SlackNotifyServiceAction,
+						ID: sentryalert.SlackNotifyServiceAction,
 						ActionParameters: map[string]any{
 							"workspace":  slackIntegration.Id(),
 							"channel":    channel.Name(),
@@ -709,7 +709,7 @@ func createSentryAlerts(
 			},
 		},
 	} {
-		if _, err := sentryalert.New(stack, id.Group(config.Id), config); err != nil {
+		if _, err := sentryalert.New(stack, id.Group(config.ID), config); err != nil {
 			return err
 		}
 	}
