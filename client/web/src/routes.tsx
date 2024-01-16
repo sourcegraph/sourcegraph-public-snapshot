@@ -200,10 +200,10 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Own,
         element: <OwnPage />,
     },
-    // {
-    //     path: PageRoutes.Index,
-    //     element: <Navigate replace={true} to={PageRoutes.Search} />,
-    // },
+    {
+        path: PageRoutes.Index,
+        element: <Navigate replace={true} to={PageRoutes.Search} />,
+    },
     {
         path: PageRoutes.Search,
         element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
