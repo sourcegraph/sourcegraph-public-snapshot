@@ -32,7 +32,7 @@ export const load: PageLoad = async ({ parent, params }) => {
               })
             : null
 
-    if (!graphqlClient.readQuery({ query: CommitPage_DiffQuery, variables: diff.variables })) {
+    if (diff && !graphqlClient.readQuery({ query: CommitPage_DiffQuery, variables: diff.variables })) {
         // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
         // as soon as possible, not only after the layout subscribes to the query.
         diff.refetch()

@@ -64,25 +64,67 @@ function listBasedForwardConnection({
         keyArgs,
 
         merge(existing, incoming, { args }) {
-            // args.after and pageInfo.endCursor seem to refer to the index of the
-            // last item in the list.
-            if (!existing || !args) {
+            if (!args) {
                 return incoming
             }
-            const nodes = [...existing.nodes]
+
+            // args.after and pageInfo.endCursor seem to refer to the index of the
+            // last item in the list.
+            const nodes = existing ? [...existing.nodes] : []
             const offset = args[cursorName] ? +args[cursorName] : 0
             for (let i = 0; i < incoming.nodes.length; ++i) {
                 nodes[offset + i] = incoming.nodes[i]
             }
 
+            let pageInfo = existing?.pageInfo
+            if (!pageInfo) {
+                pageInfo = incoming.pageInfo
+            } else if (pageInfo.endCursor) {
+                if (incoming.pageInfo.endCursor && +incoming.pageInfo.endCursor > +pageInfo.endCursor) {
+                    pageInfo = incoming.pageInfo
+                }
+            }
+
             return {
                 ...incoming,
                 nodes,
-                pageInfo: {
-                    endCursor: String(nodes.length),
-                    hasNextPage: incoming.pageInfo.hasNextPage,
-                },
+                pageInfo,
             }
+        },
+        read(existing, options) {
+            if (!existing) {
+                return existing
+            }
+            // This is a hack to allow processing `ancestor` in a paginated way as well
+            // as in an infinity-scroll kind of way. For infinity scroll we want the
+            // whole list to be returned whenever this field is requested (e.g. history panel).
+            // For a paginated version we only want to return the n items following the current
+            // cursor.
+            // Queries who want the pagninated version simply alias the field to `<field>_paginated`
+            if (options.field?.alias && /_paginated$/.test(options.field.alias.value)) {
+                const from = options.args?.afterCursor ? +options.args.afterCursor : 0
+                const to = from + options.args?.first
+                const nodes = existing.nodes.slice(from, to)
+                // If any of the nodes are missing it means we fetched previous data out-of-band.
+                // Return undefined to force Apollo to fetch the requested data
+                // [...nodes] is necessary because `.some` skips holes in arrays. [...nodes] makes
+                // it so that those holes become `undefined` values instead.
+                if (nodes.length === 0 || [...nodes].some(node => !node)) {
+                    return undefined
+                }
+                return {
+                    ...existing,
+                    nodes,
+                    pageInfo: existing.nodes[to]
+                        ? {
+                              ...existing.pageInfo,
+                              endCursor: String(to),
+                              hasNextPage: true,
+                          }
+                        : existing.pageInfo,
+                }
+            }
+            return existing
         },
     }
 }

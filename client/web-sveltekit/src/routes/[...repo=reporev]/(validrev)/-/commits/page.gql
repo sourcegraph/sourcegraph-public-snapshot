@@ -15,7 +15,7 @@ query CommitsQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: Str
             id
             commit(rev: $revspec) {
                 id
-                ancestors(first: $first, afterCursor: $afterCursor) {
+                ancestors_paginated: ancestors(first: $first, afterCursor: $afterCursor) {
                     ...Commits
                 }
             }

@@ -12,13 +12,9 @@
     const { pending, latestValue: commits, set } = createPromiseStore<Promise<Commits>>()
     $: set(data.deferred.commits)
 
-    // This is a hack to make backword pagination work. It looks like the cursor
-    // for the commits connection is simply a counter. So if it's > 0 we know that
-    // there are are previous pages. We just need to take the page size into account.
-    const PAGE_SIZE = 20
-    $: cursor = $commits?.pageInfo.endCursor ? +$commits.pageInfo.endCursor : null
-    $: hasPreviousPage = cursor !== null && cursor > PAGE_SIZE
-    $: previousEndCursor = String(cursor === null ? 0 : cursor - PAGE_SIZE - PAGE_SIZE)
+    // This is a hack to make backward pagination work.
+    $: hasPreviousPage = data.afterCursor && +data.afterCursor > 0
+    $: previousEndCursor = data.afterCursor ? String(+data.afterCursor - data.pageSize) : null
 </script>
 
 <svelte:head>

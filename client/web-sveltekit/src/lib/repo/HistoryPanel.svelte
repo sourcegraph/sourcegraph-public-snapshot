@@ -110,7 +110,6 @@
     table {
         width: 100%;
         max-width: 100%;
-        overflow-y: auto;
     }
 
     td {

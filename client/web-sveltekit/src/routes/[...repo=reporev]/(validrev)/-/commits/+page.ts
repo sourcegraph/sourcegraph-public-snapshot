@@ -10,6 +10,8 @@ export const load: PageLoad = async ({ parent, url }) => {
     const { first, after } = getPaginationParams(url.searchParams, pageSize)
 
     return {
+        pageSize,
+        afterCursor: after,
         deferred: {
             commits: graphqlClient
                 .query({
@@ -28,7 +30,7 @@ export const load: PageLoad = async ({ parent, url }) => {
                     if (!result.data.node.commit) {
                         throw new Error('Unable to find commit')
                     }
-                    return result.data.node.commit.ancestors
+                    return result.data.node.commit.ancestors_paginated
                 }),
         },
     }
