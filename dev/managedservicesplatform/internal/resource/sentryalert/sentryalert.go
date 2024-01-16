@@ -122,18 +122,18 @@ type Condition struct {
 	Interval *string `json:"interval,omitempty"`
 }
 
-type ActionId string
+type ActionID string
 
 const (
 	// Send a Slack notification
-	SlackNotifyServiceAction ActionId = "sentry.integrations.slack.notify_action.SlackNotifyServiceAction"
+	SlackNotifyServiceAction ActionID = "sentry.integrations.slack.notify_action.SlackNotifyServiceAction"
 	// Send an Opsgenie notification
-	OpsgenieNotifyTeamAction ActionId = "sentry.integrations.opsgenie.notify_action.OpsgenieNotifyTeamAction"
+	OpsgenieNotifyTeamAction ActionID = "sentry.integrations.opsgenie.notify_action.OpsgenieNotifyTeamAction"
 )
 
 type Action struct {
 	// ID represents the type of action
-	ID ActionId
+	ID ActionID
 	// ActionParameters define parameters unique to specific actions documented here [body parameters > actions]
 	//
 	// [body parameters > actions]: https://docs.sentry.io/api/alerts/create-an-issue-alert-rule-for-a-project/
