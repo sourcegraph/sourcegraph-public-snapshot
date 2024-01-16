@@ -14,7 +14,18 @@
     }
 
     export function restore(data: Capture) {
-        scroller.scrollTop = data.scroll
+        // The actual content of the scroller might not be available yet when `restore` is called,
+        // e.g. when the data is fetched asynchronously. In that case, we retry a few times.
+        let maxTries = 10
+        window.requestAnimationFrame(function syncScroll() {
+            if (scroller && scroller.scrollTop !== data.scroll) {
+                scroller.scrollTop = data.scroll
+                if (maxTries > 0) {
+                    maxTries -= 1
+                    window.requestAnimationFrame(syncScroll)
+                }
+            }
+        })
     }
 
     const dispatch = createEventDispatcher<{ more: void }>()

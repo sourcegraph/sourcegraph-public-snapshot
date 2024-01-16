@@ -71,6 +71,34 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
             GitBlobLSIFData: {
                 merge: true,
             },
+            RepositoryComparison: {
+                fields: {
+                    fileDiffs: {
+                        keyArgs: ['paths'],
+                        merge(existing, incoming, { args }) {
+                            // args.after and pageInfo.endCursor seem to refer to the index of the
+                            // last item in the list.
+                            if (!existing || !args) {
+                                return incoming
+                            }
+                            const nodes = [...existing.nodes]
+                            const offset = args.after ? +args.after : 0
+                            for (let i = 0; i < incoming.nodes.length; ++i) {
+                                nodes[offset + i] = incoming.nodes[i]
+                            }
+
+                            return {
+                                ...incoming,
+                                nodes,
+                                pageInfo: {
+                                    endCursor: String(nodes.length),
+                                    hasNextPage: incoming.pageInfo.hasNextPage,
+                                },
+                            }
+                        },
+                    },
+                },
+            },
         },
         possibleTypes: {
             TreeEntry: ['GitTree', 'GitBlob'],

@@ -1,13 +1,16 @@
 import type { PageLoad } from './$types'
-import { CommitQuery, DiffQuery } from './page.gql'
+import { CommitPage_CommitQuery, CommitPage_DiffQuery } from './page.gql'
+
+const PAGE_SIZE = 20
 
 export const load: PageLoad = async ({ parent, params }) => {
     const {
         resolvedRevision: { repo },
         graphqlClient,
     } = await parent()
-    const commit = graphqlClient
-        .query({ query: CommitQuery, variables: { repo: repo.id, revspec: params.revspec } })
+
+    const commit = await graphqlClient
+        .query({ query: CommitPage_CommitQuery, variables: { repo: repo.id, revspec: params.revspec } })
         .then(result => {
             if (result.data.node?.__typename === 'Repository') {
                 return result.data.node.commit
@@ -15,33 +18,22 @@ export const load: PageLoad = async ({ parent, params }) => {
             return null
         })
 
+    const diff =
+        commit?.oid && commit?.parents[0]?.oid
+            ? graphqlClient.watchQuery({
+                  query: CommitPage_DiffQuery,
+                  variables: {
+                      repo: repo.id,
+                      base: commit.parents[0].oid,
+                      head: commit.oid,
+                      first: PAGE_SIZE,
+                      after: null,
+                  },
+              })
+            : null
+
     return {
-        deferred: {
-            commit,
-            // TODO: Support pagination
-            diff: commit
-                .then(commit => {
-                    if (!commit?.oid || !commit.parents[0]?.oid) {
-                        return null
-                    }
-                    return graphqlClient.query({
-                        query: DiffQuery,
-                        variables: {
-                            repo: repo.id,
-                            base: commit.parents[0].oid,
-                            head: commit.oid,
-                            paths: [],
-                            first: null,
-                            after: null,
-                        },
-                    })
-                })
-                .then(result => {
-                    if (result?.data.node?.__typename === 'Repository') {
-                        return result.data.node.comparison.fileDiffs
-                    }
-                    return null
-                }),
-        },
+        commit,
+        diff,
     }
 }
