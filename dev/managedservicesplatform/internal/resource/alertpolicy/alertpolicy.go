@@ -221,10 +221,11 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
+				Subject: pointers.Stringf("%s (%s): %s",
+					config.Service.GetName(), config.EnvironmentID, config.Name),
+
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
-				Subject: pointers.Stringf("%s %s: %s",
-					config.Service.GetName(), config.EnvironmentID, config.Name),
 			},
 			UserLabels: &map[string]*string{
 				"source":        pointers.Ptr("managed-services-platform"),
