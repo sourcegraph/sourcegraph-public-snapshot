@@ -1153,7 +1153,7 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 		return 3_000
 	}
 
-	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
+	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") || strings.HasPrefix(model, "starcoder") {
 		// StarCoder has a context window of 8192 tokens
 		return 6_000
 	}
