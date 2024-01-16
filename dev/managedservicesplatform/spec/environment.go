@@ -407,16 +407,25 @@ type EnvironmentServiceHealthProbesSpec struct {
 	// implemented '/-/healthz' yet.
 	HealthzProbes *bool `yaml:"healthzProbes,omitempty"`
 
-	// Timeout configures the period of time after which the probe times out,
-	// in seconds.
+	// Timeout configures the period of time after which a health probe times
+	// out, in seconds.
 	//
 	// Defaults to 3 seconds.
 	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the frequency, in seconds, at which to
-	// probe the deployed service. Must be greater than or equal to timeout.
+
+	// StartupInterval configures the frequency, in seconds, at which to
+	// probe the deployed service on startup. Must be greater than or equal to
+	// timeout.
 	//
 	// Defaults to timeout.
-	Interval *int `yaml:"interval,omitempty"`
+	StartupInterval *int `yaml:"startupInterval,omitempty"`
+
+	// StartupInterval configures the frequency, in seconds, at which to
+	// probe the deployed service after startup to continuously check its health.
+	// Must be greater than or equal to timeout.
+	//
+	// Defaults to timeout * 10.
+	LivenessInterval *int `yaml:"livenessInterval,omitempty"`
 }
 
 // UseHealthzProbes indicates whether the MSP-standard '/-/healthz' probes
@@ -430,31 +439,39 @@ func (s *EnvironmentServiceHealthProbesSpec) UseHealthzProbes() bool {
 	return pointers.Deref(s.HealthzProbes, true)
 }
 
-// MaximumLatencySeconds infers the overal maximum latency for a healthcheck
-// to return healthy.
-func (s *EnvironmentServiceHealthProbesSpec) MaximumLatencySeconds() int {
+// MaximumStartupLatencySeconds infers the overal maximum latency for a
+// healthcheck to return healthy when the service is starting up.
+func (s *EnvironmentServiceHealthProbesSpec) MaximumStartupLatencySeconds() int {
 	if !s.UseHealthzProbes() {
 		return 240 // maximum Cloud Run timeout
 	}
 	// Maximum startup latency is retries x interval.
 	const maxRetries = 3
-	return maxRetries * s.GetInterval()
+	return maxRetries * s.GetStartupIntervalSeconds()
 }
 
-// GetTimeout returns the configured value, the default, or 0 if the spec is nil.
-func (s *EnvironmentServiceHealthProbesSpec) GetTimeout() int {
+// GetStartupIntervalSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetStartupIntervalSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.StartupInterval, s.GetTimeoutSeconds())
+}
+
+// GetLivenessIntervalSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetLivenessIntervalSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.LivenessInterval, s.GetTimeoutSeconds()*10) // 10x timeout default
+}
+
+// GetTimeoutSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetTimeoutSeconds() int {
 	if s == nil {
 		return 0
 	}
 	return pointers.Deref(s.Timeout, 3)
-}
-
-// GetInterval returns the configured value, the default, or 0 if the spec is nil.
-func (s *EnvironmentServiceHealthProbesSpec) GetInterval() int {
-	if s == nil {
-		return 0
-	}
-	return pointers.Deref(s.Interval, s.GetTimeout())
 }
 
 type EnvironmentJobSpec struct {

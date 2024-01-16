@@ -332,7 +332,7 @@ func createCommonAlerts(
 		{
 			ID:          "startup",
 			Name:        "Container Startup Latency",
-			Description: "Service containers are taking too long to start up - something may be blocking startup",
+			Description: "Service containers are taking longer than configured timeouts to start up.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{"metric.type": "run.googleapis.com/container/startup_latencies"},
 				Aligner: alertpolicy.MonitoringAlignPercentile99,
@@ -346,7 +346,7 @@ func createCommonAlerts(
 					}
 					// otherwise, use the startup probe configuration to
 					// determine the threshold for how long we should be waiting
-					return float64(vars.ServiceHealthProbes.MaximumLatencySeconds()) * 1000 // ms
+					return float64(vars.ServiceHealthProbes.MaximumStartupLatencySeconds()) * 1000 // ms
 				}(),
 			},
 		},
@@ -448,7 +448,7 @@ func createExternalHealthcheckAlert(
 		},
 
 		// 1 to 60 seconds.
-		Timeout: pointers.Stringf("%ds", vars.ServiceHealthProbes.MaximumLatencySeconds()),
+		Timeout: pointers.Stringf("%ds", vars.ServiceHealthProbes.GetTimeoutSeconds()),
 		// Only supported values are 60s (1 minute), 300s (5 minutes),
 		// 600s (10 minutes), and 900s (15 minutes)
 		Period: pointers.Ptr("60s"),
