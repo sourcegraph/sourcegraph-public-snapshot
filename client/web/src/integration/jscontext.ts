@@ -46,6 +46,10 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             maxNumChangesets: -1,
             unrestricted: true,
         },
+        features: {
+            codeSearch: true,
+            cody: true,
+        },
     },
     needServerRestart: false,
     needsSiteInit: false,

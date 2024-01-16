@@ -43,7 +43,6 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
-  SRC_GRPC_ENABLE_CONF: 'true'
   SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
@@ -1086,7 +1085,8 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1110,7 +1110,8 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1

@@ -327,15 +327,29 @@ func (om *orMatchTree) String() string {
 	return fmt.Sprintf("OR (%d children)", len(om.children))
 }
 
-// mergeMatches sorts the matched ranges and truncates the list
-// to obey limit. Consistent with behavior for diff/ commit search,
-// it does not merge or remove overlapping ranges.
+// mergeMatches sorts the matched ranges, removes overlaps, and truncates the list
+// to obey limit. This is consistent with the chunk match behavior in Zoekt, which
+// also removes overlapping ranges.
 func mergeMatches(matches [][]int, limit int) [][]int {
-	sort.Sort(matchSlice(matches))
-	if len(matches) > limit {
-		return matches[:limit]
+	if len(matches) == 0 {
+		return matches
 	}
-	return matches
+
+	sort.Sort(matchSlice(matches))
+	newMatches := matches[:0]
+
+	prev := matches[0]
+	for i, m := range matches {
+		if i == 0 || m[0] >= prev[1] {
+			newMatches = append(newMatches, m)
+			prev = m
+		}
+	}
+
+	if len(newMatches) > limit {
+		newMatches = newMatches[:limit]
+	}
+	return newMatches
 }
 
 type matchSlice [][]int

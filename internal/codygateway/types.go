@@ -80,3 +80,29 @@ type ActorRateLimitNotifyConfig struct {
 	// SlackWebhookURL is the URL of the Slack webhook to send the alerts to.
 	SlackWebhookURL string
 }
+
+// AttributionRequest is request for attribution search.
+// Expected in JSON form as the body of POST request.
+type AttributionRequest struct {
+	// Snippet is the text to search attribution of.
+	Snippet string `json:"snippet"`
+	// Limit is the upper bound of number of responses we want to get.
+	Limit int `json:"limit"`
+}
+
+// AttributionResponse is response of attribution search.
+// Contains some repositories to which the snippet can be attributed to.
+type AttributionResponse struct {
+	// Repositories which contain code matching search snippet.
+	Repositories []AttributionRepository
+	// TotalCount denotes how many total matches there were (including listed repositories).
+	TotalCount int `json:"totalCount,omitempty"`
+	// LimitHit is true if the number of search hits goes beyond limit specified in request.
+	LimitHit bool `json:"limitHit,omitempty"`
+}
+
+// AttributionRepository represents matching of search content against a repository.
+type AttributionRepository struct {
+	// Name of the repo on dotcom. Like github.com/sourcegraph/sourcegraph.
+	Name string `json:"name"`
+}

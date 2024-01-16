@@ -37,7 +37,8 @@ import (
 )
 
 type CrossStackOutput struct {
-	RedisInstanceID *string
+	DiagnosticsSecret *random.Output
+	RedisInstanceID   *string
 }
 
 type Variables struct {
@@ -291,7 +292,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	locals.Add("image_tag", *imageTag.StringValue,
 		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
-		RedisInstanceID: redisInstanceID,
+		DiagnosticsSecret: diagnosticsSecret,
+		RedisInstanceID:   redisInstanceID,
 	}, nil
 }
 
