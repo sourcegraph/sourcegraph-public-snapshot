@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type ServiceMetadata interface {
@@ -77,7 +78,8 @@ func Start[
 			return log.SinksConfig{
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
-						Dsn: *contract.internal.sentryDSN,
+						Dsn:         *contract.internal.sentryDSN,
+						Environment: pointers.Deref(contract.internal.environmentID, "unspecified"),
 					},
 				},
 			}
