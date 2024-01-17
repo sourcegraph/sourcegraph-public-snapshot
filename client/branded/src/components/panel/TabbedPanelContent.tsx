@@ -118,13 +118,15 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         [currentTabLabel, navigate, panels, pathname, search]
     )
 
-    const tabIndex = useMemo<number>(() => {
-        return panels
-            ? panels.findIndex(({ id, matchesTabID }) =>
-                  matchesTabID ? matchesTabID(currentTabID) : id === currentTabID
-              )
-            : 0
-    }, [panels, currentTabID])
+    const tabIndex = useMemo(
+        (): number =>
+            panels
+                ? panels.findIndex(({ id, matchesTabID }) =>
+                      matchesTabID ? matchesTabID(currentTabID) : id === currentTabID
+                  )
+                : 0,
+        [panels, currentTabID]
+    )
 
     if (!panels) {
         return <EmptyPanelView className={styles.panel} />
