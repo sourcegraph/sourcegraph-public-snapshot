@@ -151,7 +151,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			&opsgenieservice.ServiceConfig{
 				Name:        pointers.Stringf("%s - %s", vars.Service.GetName(), vars.EnvironmentID),
 				TeamId:      team.Id(),
-				Description: vars.Service.Description,
+				Description: &vars.Service.Description,
 				Tags: &[]*string{
 					pointers.Ptr("msp"),
 					pointers.Ptr(string(vars.EnvironmentCategory)),

@@ -19,16 +19,16 @@ Services are defined in [`sourcegraph/managed-services`](https://github.com/sour
 
 Managed Services Platform services owned by `team-a`:
 
-- [Service 1](./service-1.md)
-- [Service 2](./service-2.md)
-- [Service 4](./service-4.md)
+- [Service 1 - Test service for MSP](./service-1.md)
+- [Service 2 - Another test service for MSP](./service-2.md)
+- [Service 4 - ALSO a test service for MSP](./service-4.md)
 
 ## team-b
 
 Managed Services Platform services owned by `team-b`:
 
-- [Service 3](./service-3.md)
-- [Service 4](./service-4.md)
+- [Service 3 - Yet another test service for MSP](./service-3.md)
+- [Service 4 - ALSO a test service for MSP](./service-4.md)
 
 ## General guidance
 

@@ -84,6 +84,7 @@ This service is operated on the %s.`,
 		[]string{"Property", "Details"},
 		[][]string{
 			{"Service ID", markdown.Link(markdown.Code(s.Service.ID), serviceConfigURL)},
+			{"Description", s.Service.Description},
 			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
 			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
 			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {

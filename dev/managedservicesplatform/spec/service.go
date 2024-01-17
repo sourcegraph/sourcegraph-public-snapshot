@@ -18,8 +18,8 @@ type ServiceSpec struct {
 	// service. Each owner MUST be a valid Opsgenie team name - this is validated
 	// in each environment's monitoring stack.
 	Owners []string `yaml:"owners"`
-	// Description briefly summarizing what the service does.
-	Description *string `yaml"description,omitempty"`
+	// Description briefly summarizing what the service does. Required.
+	Description string `yaml:"description,omitempty"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
@@ -63,6 +63,9 @@ func (s ServiceSpec) Validate() []error {
 		if o == "" {
 			errs = append(errs, errors.Newf("owners[%d] is invalid", i))
 		}
+	}
+	if len(s.Description) == 0 || s.Description == "TODO" {
+		errs = append(errs, errors.New("description is required"))
 	}
 
 	if s.IAM != nil {

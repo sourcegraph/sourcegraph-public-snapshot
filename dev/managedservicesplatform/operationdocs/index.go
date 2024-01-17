@@ -1,6 +1,7 @@
 package operationdocs
 
 import (
+	"fmt"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -67,7 +68,8 @@ In addition to service-specific guidance, %s is also available.`,
 		md.Headingf(2, o)
 		md.Paragraphf("Managed Services Platform services owned by %s:", markdown.Code(o))
 		md.List(mapTo(byOwner[o], func(s *spec.Spec) string {
-			return markdown.Linkf(s.Service.GetName(), "./%s.md", s.Service.ID)
+			title := fmt.Sprintf("%s - %s", s.Service.GetName(), s.Service.Description)
+			return markdown.Linkf(title, "./%s.md", s.Service.ID)
 		}))
 	}
 
