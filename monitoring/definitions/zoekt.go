@@ -1089,6 +1089,15 @@ func Zoekt() *monitoring.Dashboard {
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
+					HumanServiceName:   "zoekt-webserver",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
 					DiskTitle: "data",

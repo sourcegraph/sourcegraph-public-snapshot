@@ -420,6 +420,15 @@ func RepoUpdater() *monitoring.Dashboard {
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSource),
 
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
+					HumanServiceName:   "repo_updater",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSource),
+
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "repo_updater",
 				InstanceFilterRegex: `${instance:regex}`,

@@ -95,6 +95,24 @@ func TestSearchFiltersUpdate(t *testing.T) {
 			wantFilterCount: 2,
 		},
 		{
+			name: "FileMatch, lang: filter",
+			events: []SearchEvent{
+				{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: "testing.yaml",
+							},
+							ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 2)}},
+						},
+					},
+				},
+			},
+			wantFilterValue: "lang:yaml",
+			wantFilterKind:  "lang",
+			wantFilterCount: 2,
+		},
+		{
 			name: "SymbolMatch",
 			events: []SearchEvent{
 				{

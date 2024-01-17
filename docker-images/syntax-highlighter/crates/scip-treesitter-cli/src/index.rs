@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
-use scip_syntax::{get_locals, get_symbols};
+use scip_syntax::{get_globals, get_locals};
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::DirEntry;
 
@@ -180,7 +180,8 @@ fn index_content(
     let mut document: Document;
 
     if options.analysis_mode.globals() {
-        document = get_symbols(parser, &contents).unwrap();
+        let (mut scope, hint) = get_globals(parser, &contents).unwrap().unwrap();
+        document = scope.into_document(hint, vec![]);
     } else {
         document = Document::new();
     }

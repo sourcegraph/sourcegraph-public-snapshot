@@ -78,7 +78,8 @@ local handle_one_pkg_info = function(libraries, filepath, content)
   })
 end
 
-local increase_node_mem_step = 'if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi'
+local increase_node_mem_step =
+  'if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi'
 
 local make_job = function(root, name, version, additional_args)
   return {
@@ -90,7 +91,7 @@ local make_job = function(root, name, version, additional_args)
         commands = { "pip install . || true" },
       },
     },
-    local_steps = {increase_node_mem_step},
+    local_steps = { increase_node_mem_step },
     root = root,
     indexer = indexer,
     indexer_args = {
@@ -112,7 +113,7 @@ return recognizer.new_path_recognizer {
     pattern.new_path_basename "PKG-INFO",
     pattern.new_path_basename "requirements.txt",
     pattern.new_path_basename "pyproject.toml",
-    pattern.new_path_basename "setup.py"
+    pattern.new_path_basename "setup.py",
   },
 
   patterns_for_content = {
@@ -180,10 +181,10 @@ return recognizer.new_path_recognizer {
       for root in pairs(roots) do
         table.insert(jobs, {
           steps = {},
-          local_steps = {"pip install . || true", increase_node_mem_step},
+          local_steps = { "pip install . || true", increase_node_mem_step },
           root = root,
           indexer = indexer,
-          indexer_args = {"scip-python", "index"},
+          indexer_args = { "scip-python", "index" },
           outfile = outfile,
         })
       end

@@ -1226,7 +1226,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		req := req
 		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
 			return client.RepoCloneProgress(ctx, req)
-
 		})
 	}
 
@@ -1239,13 +1238,11 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 	}
 	for _, r := range res {
-
 		for repo, info := range r.Results {
 			var rp protocol.RepoCloneProgress
 			rp.FromProto(info)
 			result.Results[api.RepoName(repo)] = &rp
 		}
-
 	}
 
 	return result, nil
@@ -1595,7 +1592,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 	grpcResp, err := client.GetObject(ctx, req.ToProto())
 	if err != nil {
-
 		return nil, err
 	}
 

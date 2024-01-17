@@ -723,7 +723,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
+			// Use the virtual fireworks/starcoder model name as the default
+			completionsConfig.CompletionModel = "starcoder"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
 		// If no endpoint is configured, no default available.
@@ -1152,7 +1153,7 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 		return 3_000
 	}
 
-	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
+	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") || strings.HasPrefix(model, "starcoder") {
 		// StarCoder has a context window of 8192 tokens
 		return 6_000
 	}
