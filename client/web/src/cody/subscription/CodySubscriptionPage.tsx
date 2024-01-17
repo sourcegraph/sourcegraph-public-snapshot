@@ -22,7 +22,6 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -54,7 +53,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
-    const [isEnabled] = useFeatureFlag('cody-pro', false)
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
 
@@ -66,7 +64,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         }
     }, [data, navigate])
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser || !authenticatedUser) {
+    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
         return null
     }
 

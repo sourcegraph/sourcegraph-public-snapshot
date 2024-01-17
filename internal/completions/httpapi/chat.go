@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/log"
 
@@ -40,9 +39,8 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 				if err != nil {
 					return "", err
 				}
-				isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 				isProUser := user.CodyProEnabledAt != nil
-				if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
+				if isAllowedCustomChatModel(requestParams.Model, isProUser) {
 					return requestParams.Model, nil
 				}
 			}
