@@ -17,6 +17,8 @@ func Frontend() *monitoring.Dashboard {
 
 		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
 		grpcInternalAPIServiceName        = "api.internalapi.v1.ConfigService"
+
+		scrapeJobRegex = `(sourcegraph-)?frontend`
 	)
 
 	var sentinelSamplingIntervals []string
@@ -340,6 +342,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "frontend",
 				InstanceFilterRegex: `${internalInstance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewResolversGroup(containerName),
@@ -493,7 +496,7 @@ func Frontend() *monitoring.Dashboard {
 						{
 							Name:        "99th_percentile_gitserver_duration",
 							Description: "99th percentile successful gitserver query duration over 5m",
-							Query:       `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
+							Query:       fmt.Sprintf(`histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~%q}[5m])))`, scrapeJobRegex),
 							Warning:     monitoring.Alert().GreaterOrEqual(20),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSource,
@@ -502,7 +505,7 @@ func Frontend() *monitoring.Dashboard {
 						{
 							Name:        "gitserver_error_responses",
 							Description: "gitserver error responses every 5m",
-							Query:       `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`,
+							Query:       fmt.Sprintf(`sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~%q,code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~%q}[5m])) * 100`, scrapeJobRegex, scrapeJobRegex),
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
 							Owner:       monitoring.ObservableOwnerSource,

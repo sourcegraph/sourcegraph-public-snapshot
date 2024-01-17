@@ -17,6 +17,8 @@ func RepoUpdater() *monitoring.Dashboard {
 		syncDurationThreshold = 9 * time.Hour
 	)
 
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
+
 	containerMonitoringOptions := &shared.ContainerMonitoringGroupOptions{
 		MemoryUsage: func(observable shared.Observable) shared.Observable {
 			return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90).For(10 * time.Minute))
@@ -432,6 +434,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "repo_updater",
 				InstanceFilterRegex: `${instance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
