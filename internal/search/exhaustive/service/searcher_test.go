@@ -40,9 +40,9 @@ func TestBackendFake(t *testing.T) {
 		Query:        "1@rev1 1@rev2 2@rev3",
 		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
 		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
-		WantResults: autogold.Expect(`{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev1"}
-{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev2"}
-{"type":"path","path":"path/to/file.go","repositoryID":2,"repository":"repo2","commit":"rev3"}
+		WantResults: autogold.Expect(`{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev1","language":"Go"}
+{"type":"path","path":"path/to/file.go","repositoryID":1,"repository":"repo1","commit":"rev2","language":"Go"}
+{"type":"path","path":"path/to/file.go","repositoryID":2,"repository":"repo2","commit":"rev3","language":"Go"}
 `),
 	})
 }

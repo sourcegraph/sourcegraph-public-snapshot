@@ -49,8 +49,8 @@ func TestMatchJsonWriter(t *testing.T) {
 	blobBytes, err := io.ReadAll(blob)
 	require.NoError(t, err)
 
-	autogold.Expect(`{"type":"content","path":"internal/search.go","repositoryID":1,"repository":"repo","hunks":null,"chunkMatches":[{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":18,"column":0},"end":{"offset":0,"line":18,"column":0}}]},{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":27,"column":0},"end":{"offset":0,"line":27,"column":0}}]}]}
-{"type":"content","path":"internal/service.go","repositoryID":1,"repository":"repo","hunks":null,"chunkMatches":[{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":3,"column":0},"end":{"offset":0,"line":3,"column":0}}]},{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":7,"column":0},"end":{"offset":0,"line":7,"column":0}}]}]}
+	autogold.Expect(`{"type":"content","path":"internal/search.go","repositoryID":1,"repository":"repo","hunks":null,"chunkMatches":[{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":18,"column":0},"end":{"offset":0,"line":18,"column":0}}]},{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":27,"column":0},"end":{"offset":0,"line":27,"column":0}}]}],"language":"Go"}
+{"type":"content","path":"internal/service.go","repositoryID":1,"repository":"repo","hunks":null,"chunkMatches":[{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":3,"column":0},"end":{"offset":0,"line":3,"column":0}}]},{"content":"","contentStart":{"offset":0,"line":0,"column":0},"ranges":[{"start":{"offset":0,"line":7,"column":0},"end":{"offset":0,"line":7,"column":0}}]}],"language":"Go"}
 `).Equal(t, string(blobBytes))
 }
 
