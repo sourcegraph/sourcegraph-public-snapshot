@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -161,8 +160,7 @@ func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 }
 
 func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	fmt.Println("es creator:", r.externalService.CreatorID)
-	if *r.externalService.CreatorID <= 0 {
+	if r.externalService.CreatorID == nil {
 		return nil, nil
 	}
 
