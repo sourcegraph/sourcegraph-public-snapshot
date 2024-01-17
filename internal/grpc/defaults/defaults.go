@@ -76,12 +76,12 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
-		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithChainStreamInterceptor(
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
 			propagator.StreamClientPropagator(requestinteraction.Propagator{}),
+			otelgrpc.StreamClientInterceptor(), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
 			retry.StreamClientInterceptor(logger),
 			metrics.StreamClientInterceptor(),
 			messagesize.StreamClientInterceptor,
@@ -94,6 +94,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
 			propagator.UnaryClientPropagator(requestinteraction.Propagator{}),
+			otelgrpc.UnaryClientInterceptor(), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
 			retry.UnaryClientInterceptor(logger),
 			metrics.UnaryClientInterceptor(),
 			messagesize.UnaryClientInterceptor,
@@ -170,7 +171,6 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 	}
 
 	out := []grpc.ServerOption{
-		grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)),
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			internalerrs.LoggingStreamServerInterceptor(logger),
@@ -180,6 +180,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			propagator.StreamServerPropagator(requestinteraction.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
+			otelgrpc.StreamServerInterceptor(otelOpts...), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
 			contextconv.StreamServerInterceptor,
 		),
 		grpc.ChainUnaryInterceptor(
@@ -191,6 +192,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			propagator.UnaryServerPropagator(requestinteraction.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
+			otelgrpc.UnaryServerInterceptor(otelOpts...), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
 			contextconv.UnaryServerInterceptor,
 		),
 		grpc.MaxRecvMsgSize(defaultGRPCMessageReceiveSizeBytes),

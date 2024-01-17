@@ -48,6 +48,7 @@ export interface PathMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    language?: string
     debug?: string
 }
 
@@ -63,6 +64,7 @@ export interface ContentMatch {
     lineMatches?: LineMatch[]
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    language?: string
     debug?: string
 }
 
@@ -110,6 +112,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    language?: string
     debug?: string
 }
 
