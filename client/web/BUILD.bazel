@@ -1689,6 +1689,7 @@ ts_project(
         "src/util/dom.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
+        "src/util/license.ts",
         "src/util/permission.ts",
         "src/util/prettyBytesBigint.ts",
         "src/util/rbac.ts",
@@ -1837,7 +1838,6 @@ ts_project(
     testonly = True,
     srcs = [
         "__mocks__/zustand.ts",
-        "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
         "src/auth/SignUpPage.test.tsx",
@@ -1966,6 +1966,7 @@ ts_project(
         "src/util/checkRequestAccessAllowed.test.ts",
         "src/util/codeStatsUtils.test.ts",
         "src/util/getReactElements.test.tsx",
+        "src/util/license.test.ts",
         "src/util/prettyBytesBigint.test.ts",
         "src/util/size.test.ts",
         "src/util/time.test.ts",
@@ -2147,7 +2148,6 @@ ts_project(
     srcs = [
         "src/auth/CloudSignUpPage.story.tsx",
         "src/auth/OrDivider.story.tsx",
-        "src/auth/PostSignUpPage.story.tsx",
         "src/auth/RequestAccessPage.story.tsx",
         "src/auth/ResetPasswordPage.story.tsx",
         "src/auth/SignInPage.story.tsx",

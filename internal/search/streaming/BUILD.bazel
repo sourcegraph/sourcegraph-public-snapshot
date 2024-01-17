@@ -14,7 +14,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/gitserver/gitdomain",
-        "//internal/inventory",
         "//internal/lazyregexp",
         "//internal/search",
         "//internal/search/result",

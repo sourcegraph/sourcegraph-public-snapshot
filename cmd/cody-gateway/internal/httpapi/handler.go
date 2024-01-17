@@ -27,22 +27,24 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier                           notify.RateLimitNotifier
-	AnthropicAccessToken                        string
-	AnthropicAllowedModels                      []string
-	AnthropicAllowedPromptPatterns              []string
-	AnthropicRequestBlockingEnabled             bool
-	AnthropicMaxTokensToSample                  int
-	OpenAIAccessToken                           string
-	OpenAIOrgID                                 string
-	OpenAIAllowedModels                         []string
-	FireworksAccessToken                        string
-	FireworksDisableSingleTenant                bool
-	FireworksAllowedModels                      []string
-	FireworksLogSelfServeCodeCompletionRequests bool
-	EmbeddingsAllowedModels                     []string
-	AutoFlushStreamingResponses                 bool
-	EnableAttributionSearch                     bool
+	RateLimitNotifier                               notify.RateLimitNotifier
+	AnthropicAccessToken                            string
+	AnthropicAllowedModels                          []string
+	AnthropicAllowedPromptPatterns                  []string
+	AnthropicRequestBlockingEnabled                 bool
+	AnthropicMaxTokensToSample                      int
+	OpenAIAccessToken                               string
+	OpenAIOrgID                                     string
+	OpenAIAllowedModels                             []string
+	FireworksAccessToken                            string
+	FireworksDisableSingleTenant                    bool
+	FireworksAllowedModels                          []string
+	FireworksLogSelfServeCodeCompletionRequests     bool
+	FireworksStarcoderCommunitySingleTenantPercent  int
+	FireworksStarcoderEnterpriseSingleTenantPercent int
+	EmbeddingsAllowedModels                         []string
+	AutoFlushStreamingResponses                     bool
+	EnableAttributionSearch                         bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -197,6 +199,8 @@ func NewHandler(
 								config.FireworksAllowedModels,
 								config.FireworksLogSelfServeCodeCompletionRequests,
 								config.FireworksDisableSingleTenant,
+								config.FireworksStarcoderCommunitySingleTenantPercent,
+								config.FireworksStarcoderEnterpriseSingleTenantPercent,
 								config.AutoFlushStreamingResponses,
 							),
 						),

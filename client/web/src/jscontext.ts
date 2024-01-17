@@ -291,4 +291,5 @@ export interface BrandAssets {
  */
 export interface LicenseFeatures {
     codeSearch: boolean
+    cody: boolean
 }

@@ -196,6 +196,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
                         structuralSearchDisabled={props.structuralSearchDisabled}
+                        showExtendedPicker={props.showExtendedPicker}
                     />
                 </div>
             </div>

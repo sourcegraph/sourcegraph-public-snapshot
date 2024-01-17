@@ -87,7 +87,11 @@ func ZoektDial(endpoint string) zoekt.Streamer {
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxRecvMsgSize)),
 	)
 
-	client := &automaticRetryClient{base: proto.NewWebserverServiceClient(conn)}
+	// Frontend usually adds a wrapper called automaticRetryClient that will automatically retry requests according
+	// to the default.RetryPolicy. For Zoekt, we *do not* use automatic retries, as we want direct control over the
+	// error-handling. For example, during search we try to identify if a replica is unreachable, and skip over it
+	// and return partial results.
+	client := proto.NewWebserverServiceClient(conn)
 	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
 		client:   client,

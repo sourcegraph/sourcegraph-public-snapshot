@@ -151,14 +151,14 @@ pub fn parse_tree<'a>(
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
-    let capture_names = config.tag_query.capture_names();
+    let capture_names = config.query.capture_names();
 
     let mut scopes = vec![];
     let mut globals = vec![];
 
     let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
 
-    let matches = cursor.matches(&config.tag_query, root_node, source_bytes);
+    let matches = cursor.matches(&config.query, root_node, source_bytes);
     for m in matches {
         if config.is_filtered(&m) {
             continue;

@@ -2,6 +2,7 @@
 node_modules
 /build
 /.svelte-kit
+/test-results
 /package
 !.env
 .env.*.local
@@ -13,3 +14,4 @@ vite.config.ts.timestamp-*
 *.gql.ts
 src/lib/graphql-types.ts
 src/lib/graphql-operations.ts
+src/testing/graphql-type-mocks.ts

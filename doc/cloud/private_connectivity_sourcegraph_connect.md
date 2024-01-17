@@ -37,7 +37,11 @@ Finally, Sourcegraph will provide the following:
 
 ### Create the connection
 
-Customer can follow the provided instruction and install the tunnel agent in the private network.
+Customer can follow the provided instruction and install the tunnel agent in the private network. At a high level:
+
+- Permit egress to the internet to a set of static IP addresses and corresponding ports to be provided by Sourcegraph.
+- Permit egress to the private resources at the given port.
+- Run the tunnel agent binary with provided config files and credentials.
 
 ### Create the code host connection
 
@@ -93,6 +97,14 @@ What if the attacker gains access to the frontend?
 In the event of an attacker gaining access to the sourcegraph containers, we consider this to be a security breach and we have Incident response processes in place that we will follow. However, we have many controls in place to prevent this from happening where Cloud infrastructure access always requires approval and the Security team is on-call for unexpected usage patterns. You may learn more from our [Security Portal].
 
 Please reach out to us if you have any specific questions regarding our Cloud security posture, and we are happy to provide more detail to address your concerns.
+
+### How to harden the tunnel agent deployment?
+
+We recommend using an allowlist to limit the egress traffic of the agent to IP addresses provided by Sourcegraph and specific private resources you would like to permit access. This will prevent the agent to talk to arbitrary services, and reduce the blast radius in the event of a security event.
+
+### How can I audit the data Sourcegraph has access to in my environment?
+
+The tunnel is secured and authenticated by mTLS over gRPC, and everything is encrypted over transit. If customer is looking to perform audit, such as, TLS inspection, on the connection between the private resources and Sourcegraph Cloud. We recommend to only intercept and inspect traffic between the tunnel agent and private resources. The connection between the tunnel agent and Sourcegraph Cloud is using a custom protocol, and the decrypted payload has very little value.
 
 ### Can I use self-signed TLS certificate for my private resources?
 
