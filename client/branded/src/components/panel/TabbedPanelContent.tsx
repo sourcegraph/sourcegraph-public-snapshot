@@ -136,7 +136,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const activeTab: Panel | undefined = panels[tabIndex]
 
     return (
-        <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
+        <Tabs lazy={true} behavior="memoize" className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
             <TabList
                 wrapperClassName={classNames(styles.panelHeader, 'sticky-top')}
                 actions={
@@ -185,7 +185,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                             className={styles.tabsContent}
                             data-testid="panel-tabs-content"
                         >
-                            {id === activeTab.id ? element : null}
+                            {({ shouldRender }) => shouldRender && element}
                         </TabPanel>
                     ))
                 ) : (
