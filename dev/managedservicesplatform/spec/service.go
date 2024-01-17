@@ -70,7 +70,7 @@ func (s ServiceSpec) Validate() []error {
 			errs = append(errs, errors.Newf("owners[%d] is invalid", i))
 		}
 	}
-	if len(s.Description) == 0 || s.Description == "TODO" {
+	if len(s.Description) == 0 {
 		errs = append(errs, errors.New("description is required"))
 	}
 
