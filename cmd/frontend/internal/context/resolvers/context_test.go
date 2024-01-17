@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -61,8 +62,41 @@ func TestContextResolver(t *testing.T) {
 		return errors.New("error")
 	}
 
+	// Create a normal user role with Cody access permission
+	normalUserRole, err := db.Roles().Create(ctx, "normal user role", false)
+	require.NoError(t, err)
+	codyAccessPermission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: rtypes.CodyNamespace,
+		Action:    rtypes.CodyAccessAction,
+	})
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		PermissionID: codyAccessPermission.ID,
+		RoleID:       normalUserRole.ID,
+	})
+	require.NoError(t, err)
+
+	// Create an admin user, give them the normal user role, and authenticate our actor.
+	newAdminUser, err := db.Users().Create(ctx, database.NewUser{
+		Email:                 "test@example.com",
+		Username:              "test",
+		DisplayName:           "Test User",
+		Password:              "hunter123",
+		EmailIsVerified:       true,
+		FailIfNotInitialUser:  true, // initial site admin account
+		EnforcePasswordLength: false,
+		TosAccepted:           true,
+	})
+	require.NoError(t, err)
+	db.UserRoles().SetRolesForUser(ctx, database.SetRolesForUserOpts{
+		UserID: newAdminUser.ID,
+		Roles:  []int32{normalUserRole.ID},
+	})
+	require.NoError(t, err)
+	ctx = actor.WithActor(ctx, actor.FromMockUser(newAdminUser.ID))
+
 	// Create populates the IDs in the passed in types.Repo
-	err := db.Repos().Create(ctx, &repo1, &repo2)
+	err = db.Repos().Create(ctx, &repo1, &repo2)
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx, "INSERT INTO repo_embedding_jobs (state, repo_id, revision) VALUES ('completed', $1, 'HEAD');", int32(repo1.ID))
@@ -162,8 +196,6 @@ func TestContextResolver(t *testing.T) {
 		mockGitserver,
 		contextClient,
 	)
-
-	ctx = actor.WithActor(ctx, actor.FromMockUser(1))
 
 	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
 		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
