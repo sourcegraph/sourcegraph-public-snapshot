@@ -1,9 +1,9 @@
 package qa
 
 import (
+	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -19,7 +19,15 @@ func (o OpenAIGatewayFeatureClient) GetRequest(f codygateway.Feature, req *http.
 		return nil, errNotImplemented
 	}
 	if f == codygateway.FeatureChatCompletions {
-		body := `{"model":"gpt-4-1106-preview","messages":[{"role":"user","content":"You are Cody"},{"role":"assistant","content":"Ok, I am Cody"},{"role":"user","content":"What is your real name name though?"}],"n":1,"max_tokens":30,"temperature":0.2,"top_p":0.95, "stream":` + strconv.FormatBool(stream) + `}`
+		body := fmt.Sprintf(`{
+			"model":"gpt-4-1106-preview",
+			"messages":[{"role":"user","content":"You are Cody"},{"role":"assistant","content":"Ok, I am Cody"},{"role":"user","content":"What is your real name name though?"}],
+			"n":1,
+			"max_tokens":30,
+			"temperature":0.2,
+			"top_p":0.95,
+			"stream":%t
+			}`, stream)
 		req.Method = "POST"
 		req.URL.Path = "/v1/completions/openai"
 		req.Body = io.NopCloser(strings.NewReader(body))
