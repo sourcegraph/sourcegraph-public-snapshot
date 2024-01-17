@@ -827,9 +827,7 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 		}
 
 		tr.MaxIdleConnsPerHost = max
-		tr.ForceAttemptHTTP2 = false
-		tr.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
-		tr.TLSClientConfig = &tls.Config{}
+
 		return nil
 	}
 }
