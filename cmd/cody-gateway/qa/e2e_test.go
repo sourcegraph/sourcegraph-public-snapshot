@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -20,32 +19,40 @@ import (
 func Test_Completions(t *testing.T) {
 	gatewayURL, gatewayToken := parseBackendData(t)
 	for _, f := range []codygateway.Feature{codygateway.FeatureCodeCompletions, codygateway.FeatureChatCompletions} {
-		for name, p := range map[string]GatewayFeatureClient{"anthropic": AnthropicGatewayFeatureClient{}, "fireworks": FireworksGatewayFeatureClient{}, "openai": OpenAIGatewayFeatureClient{}} {
-			for _, stream := range []bool{false, true} {
-				t.Run(fmt.Sprintf("%s %v stream %v", f, name, stream), func(t *testing.T) {
-					stream := stream
-					// avoid mutating the same URL
-					u := *gatewayURL
-					t.Parallel()
-					req := &http.Request{URL: &u, Header: make(http.Header)}
-					req.Header.Set("X-Sourcegraph-Feature", string(f))
-					req.Header.Set("Authorization", "Bearer "+gatewayToken)
-					req, err := p.GetRequest(f, req, stream)
-					if errors.Is(err, errNotImplemented) {
-						t.Skip(string(f), err)
-					}
-					assert.NoError(t, err)
-					resp, err := http.DefaultClient.Do(req)
-					assert.NoError(t, err)
-					body, err := io.ReadAll(resp.Body)
-					assert.NoError(t, err)
-					assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
-					if stream {
-						assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
+		t.Run(string(f), func(t *testing.T) {
+			for name, p := range map[string]GatewayFeatureClient{
+				"anthropic": AnthropicGatewayFeatureClient{},
+				"fireworks": FireworksGatewayFeatureClient{},
+				"openai":    OpenAIGatewayFeatureClient{},
+			} {
+				t.Run(name, func(t *testing.T) {
+					for _, stream := range []bool{false, true} {
+						t.Run(fmt.Sprintf("stream %v", stream), func(t *testing.T) {
+							stream := stream
+							// avoid mutating the same URL
+							u := *gatewayURL
+							t.Parallel()
+							req := &http.Request{URL: &u, Header: make(http.Header)}
+							req.Header.Set("X-Sourcegraph-Feature", string(f))
+							req.Header.Set("Authorization", "Bearer "+gatewayToken)
+							req, err := p.GetRequest(f, req, stream)
+							if errors.Is(err, errNotImplemented) {
+								t.Skip(string(f), err)
+							}
+							assert.NoError(t, err)
+							resp, err := http.DefaultClient.Do(req)
+							assert.NoError(t, err)
+							body, err := io.ReadAll(resp.Body)
+							assert.NoError(t, err)
+							assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
+							if stream {
+								assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
+							}
+						})
 					}
 				})
 			}
-		}
+		})
 	}
 }
 
@@ -77,71 +84,6 @@ func Test_Embeddings(t *testing.T) {
 
 type GatewayFeatureClient interface {
 	GetRequest(codygateway.Feature, *http.Request, bool) (*http.Request, error)
-}
-
-type AnthropicGatewayFeatureClient struct {
-}
-
-type FireworksGatewayFeatureClient struct {
-}
-
-type OpenAIGatewayFeatureClient struct {
-}
-
-var errNotImplemented = errors.New("not implemented")
-
-var _ GatewayFeatureClient = AnthropicGatewayFeatureClient{}
-var _ GatewayFeatureClient = FireworksGatewayFeatureClient{}
-var _ GatewayFeatureClient = OpenAIGatewayFeatureClient{}
-
-func (a AnthropicGatewayFeatureClient) GetRequest(f codygateway.Feature, req *http.Request, stream bool) (*http.Request, error) {
-	if f == codygateway.FeatureCodeCompletions {
-		body := `{"model":"claude-instant-1","prompt":"Human: def bubble_sort(arr):\nAssistant: ","n":1,"max_tokens_to_sample":30,"temperature":0.2,"top_p":0.95, "stream":` + strconv.FormatBool(stream) + `}`
-		req.Method = "POST"
-		req.URL.Path = "/v1/completions/anthropic"
-		req.Body = io.NopCloser(strings.NewReader(body))
-		return req, nil
-	}
-	if f == codygateway.FeatureChatCompletions {
-		body := `{"model":"claude-2.1","prompt":"Human: Your are Cody?:\nAssistant: I am Cody\nHuman: What is your real name?\nAssistant:","n":1,"max_tokens_to_sample":30,"temperature":0.2,"top_p":0.95, "stream":` + strconv.FormatBool(stream) + `}`
-
-		req.Method = "POST"
-		req.URL.Path = "/v1/completions/anthropic"
-		req.Body = io.NopCloser(strings.NewReader(body))
-		return req, nil
-	}
-	return nil, errors.New("unknown feature: " + string(f))
-}
-
-func (fc FireworksGatewayFeatureClient) GetRequest(f codygateway.Feature, req *http.Request, stream bool) (*http.Request, error) {
-	if f == codygateway.FeatureCodeCompletions {
-		body := `{"prompt":"def bubble_sort(arr):\n>","maxTokensToSample":30,"model":"accounts/fireworks/models/starcoder-16b-w8a16","temperature":0.2,"topP":0.95, "stream":` + strconv.FormatBool(stream) + `}`
-		req.Method = "POST"
-		req.URL.Path = "/v1/completions/fireworks"
-		req.Body = io.NopCloser(strings.NewReader(body))
-		return req, nil
-	}
-	if f == codygateway.FeatureChatCompletions {
-		body := `{"model":"accounts/fireworks/models/mixtral-8x7b-instruct","messages":[{"role":"user","content":"You are Cody"},{"role":"assistant","content":"Ok, I am Cody"},{"role":"user","content":"What is your real name name though?"}],"n":1,"max_tokens":30,"temperature":0.2,"top_p":0.95, "stream":` + strconv.FormatBool(stream) + `}`
-		req.Method = "POST"
-		req.URL.Path = "/v1/completions/fireworks"
-		req.Body = io.NopCloser(strings.NewReader(body))
-		return req, nil
-	}
-	return nil, errors.New("unknown feature: " + string(f))
-}
-func (o OpenAIGatewayFeatureClient) GetRequest(f codygateway.Feature, req *http.Request, stream bool) (*http.Request, error) {
-	if f == codygateway.FeatureCodeCompletions {
-		return nil, errNotImplemented
-	}
-	if f == codygateway.FeatureChatCompletions {
-		body := `{"model":"gpt-4-1106-preview","messages":[{"role":"user","content":"You are Cody"},{"role":"assistant","content":"Ok, I am Cody"},{"role":"user","content":"What is your real name name though?"}],"n":1,"max_tokens":30,"temperature":0.2,"top_p":0.95, "stream":` + strconv.FormatBool(stream) + `}`
-		req.Method = "POST"
-		req.URL.Path = "/v1/completions/openai"
-		req.Body = io.NopCloser(strings.NewReader(body))
-		return req, nil
-	}
-	return nil, errors.New("unknown feature: " + string(f))
 }
 
 func parseBackendData(t *testing.T) (*url.URL, string) {
