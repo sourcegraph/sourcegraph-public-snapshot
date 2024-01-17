@@ -7,5 +7,5 @@ bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspe
 echo "--- :bazel: Build sg cli"
 bazel "${bazelrc[@]}" build //dev/sg:sg
 
-sg_cli="$(bazel cquery "${bazelrc[@]}" //dev/sg:sg --output files)"
+sg_cli="$(bazel "${bazelrc[@]}" cquery //dev/sg:sg --output files)"
 cp "$sg_cli" ./sg
