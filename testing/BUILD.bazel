@@ -41,6 +41,11 @@ server_integration_test(
     runner_src = ":e2e_test.sh",
 )
 
+# Warning, this targets explicitly exclude p4 subrepo perms tests as they're very heavy and time
+# consuming, due to having to add a repo, index it, etc ...
+#
+# See :backend_integration_test_p4 for then one, as opposed to this target, runs those tests
+# exclusively.
 server_integration_test(
     name = "backend_integration_test",
     timeout = "long",
@@ -74,6 +79,13 @@ server_integration_test(
     runner_src = ":backend_integration_test.sh",
 )
 
+# The perforce subrepo permission testing is really heayv, as it requires to add a new repo,
+# clone it, index it, etc... Therefore a crude yet effective optimization here is to separate
+# those tests from the rest of the backeng integration tests, and instead run them in isolation,
+# with the same exact runner and setup.
+#
+# But because Bazel tests targets are executed concurrently, even if the duration is ultimately the# same, if not even more due to the additional overhead of spawning a Sourcegraph server, the wall
+# clock time is ultimately much better, because they're executed concurrently.
 server_integration_test(
     name = "backend_integration_test_p4",
     timeout = "long",
