@@ -818,9 +818,9 @@ func TestParseStandard(t *testing.T) {
 	})
 }
 
-func TestParseNewStandard(t *testing.T) {
+func TestParseKeywordPattern(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeNewStandardRC1)
+		result, err := Parse(input, SearchTypeKeyword)
 		if err != nil {
 			return err.Error()
 		}
