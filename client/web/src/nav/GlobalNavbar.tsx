@@ -47,6 +47,7 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
 import { SvelteKitNavItem } from '../sveltekit/SvelteKitNavItem'
+import { isCodyOnlyLicense } from '../util/license'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -140,14 +141,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const routeMatch = useRoutesMatch(props.routes)
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const isLicensed = !!window.context?.licenseInfo
+    const disableCodeSearchFeatures = isCodyOnlyLicense()
     // Search context management is still enabled on .com
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
-    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom
-    const isLicensed = !!window.context?.licenseInfo
-    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom
+    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
+    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
+    const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
+    const showOwn = ownEnabled && !disableCodeSearchFeatures
+    const showSearchJobs = isSearchJobsEnabled() && !disableCodeSearchFeatures
+    const showBatchChanges =
+        props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom && !disableCodeSearchFeatures
+
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
     const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
 
@@ -161,7 +167,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         }
     }, [showSearchBox, onNavbarQueryChange])
 
-    const codeInsights = (codeInsightsEnabled && !isSourcegraphDotCom) ?? false
+    const codeInsights = (codeInsightsEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures) ?? false
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -183,10 +189,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             >
                 <InlineNavigationPanel
                     showSearchContext={showSearchContext}
-                    showOwn={ownEnabled}
+                    showOwn={showOwn}
                     showCodySearch={codySearchEnabled}
                     showCodyDropdown={isSourcegraphDotCom && !!props.authenticatedUser}
-                    showSearchJobs={isSearchJobsEnabled()}
+                    showSearchJobs={showSearchJobs}
                     showSearchNotebook={showSearchNotebook}
                     showCodeMonitoring={showCodeMonitoring}
                     showBatchChanges={showBatchChanges}
