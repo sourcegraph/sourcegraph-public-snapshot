@@ -239,10 +239,10 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     collapsedState: State['collapsedState']
 }
 
-function oneBasedPositionToZeroBased(p: OneBasedPosition): ZeroBasedPosition {
+function oneBasedPositionToZeroBased(pos: OneBasedPosition): ZeroBasedPosition {
     return {
-        line: p.line - 1,
-        character: p.character - 1,
+        line: pos.line - 1,
+        character: pos.character - 1,
     }
 }
 
