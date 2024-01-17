@@ -38,8 +38,6 @@ type Config struct {
 	EnableAttributionSearch     bool
 }
 
-// NewHandler returns a new http.Handler that serves the Sourcegraph API.
-
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
 
 var (
