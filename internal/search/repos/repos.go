@@ -841,9 +841,11 @@ func (r *Resolver) filterRepoHasFileContent(
 
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, searcherGRPCConnectionCache *defaults.ConnectionCache, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
 	patternInfo := search.TextPatternInfo{
-		Pattern:               args.Content,
-		IsNegated:             args.Negated,
-		IsRegExp:              true,
+		Query: &protocol.PatternNode{
+			Value:     args.Content,
+			IsNegated: args.Negated,
+			IsRegExp:  true,
+		},
 		IsCaseSensitive:       false,
 		FileMatchLimit:        1,
 		PatternMatchesContent: true,

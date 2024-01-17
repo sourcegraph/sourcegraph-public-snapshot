@@ -101,3 +101,9 @@ repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ cou
 
 # mono_rev_literal_large
 repo:^github\.com/sgtest/megarepo$ patterntype:literal lang:go -file:vendor/ count:1000 TempDir index:no
+
+# mono_boolean_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal test AND server
+
+# mono_rev_boolean_large
+repo:^github\.com/sgtest/megarepo$ patterntype:literal test AND server index:no

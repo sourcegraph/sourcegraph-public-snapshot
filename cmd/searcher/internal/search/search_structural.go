@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -211,32 +210,24 @@ func lookupMatcher(language string) string {
 }
 
 func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
-	patternInfo := &search.TextPatternInfo{
-		Pattern:                      p.Pattern,
-		IsNegated:                    p.IsNegated,
-		IsRegExp:                     p.IsRegExp,
-		IsStructuralPat:              p.IsStructuralPat,
-		CombyRule:                    p.CombyRule,
-		IsCaseSensitive:              p.IsCaseSensitive,
-		FileMatchLimit:               int32(p.Limit),
-		IncludePatterns:              p.IncludePatterns,
-		ExcludePattern:               p.ExcludePattern,
-		PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-		PatternMatchesContent:        p.PatternMatchesContent,
-		PatternMatchesPath:           p.PatternMatchesPath,
-		Languages:                    p.Languages,
-	}
-
 	if p.Branch == "" {
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, logger, indexed, patternInfo, branchRepos, p.NumContextLines, time.Since, p.Repo, sender)
+	err = zoektSearch(ctx, logger, indexed, &p.PatternInfo, branchRepos, p.NumContextLines, time.Since, p.Repo, sender)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func extractQueryAtom(p *protocol.PatternInfo) (*protocol.PatternNode, error) {
+	if a, ok := p.Query.(*protocol.PatternNode); ok {
+		return a, nil
+	} else {
+		return nil, errors.New("structural search only supports leaf regex patterns")
+	}
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
@@ -250,17 +241,26 @@ func filteredStructuralSearch(
 	sender matchSender,
 	contextLines int32,
 ) error {
-	// Make a copy of the pattern info to modify it to work for a regex search
-	rp := *p
-	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
-	rp.IsStructuralPat = false
-	rp.IsRegExp = true
-	m, err := compilePattern(&rp)
+	a, err := extractQueryAtom(p)
 	if err != nil {
 		return err
 	}
 
-	pm, err := compilePathPatterns(&rp)
+	// Make a copy of the pattern info to modify it to work for a regex search
+	rp := *p
+	rp.IsStructuralPat = false
+
+	ra := *a
+	ra.Value = comby.StructuralPatToRegexpQuery(a.Value, false)
+	ra.IsRegExp = true
+	rp.Query = &ra
+
+	m, err := toMatchTree(rp.Query, rp.IsCaseSensitive)
+	if err != nil {
+		return err
+	}
+
+	pm, err := toPathMatcher(&rp)
 	if err != nil {
 		return err
 	}
@@ -283,7 +283,7 @@ func filteredStructuralSearch(
 		extensionHint = filepath.Ext(matchedPaths[0])
 	}
 
-	return structuralSearch(ctx, logger, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, contextLines, sender)
+	return structuralSearch(ctx, logger, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, a.Value, p.CombyRule, p.Languages, repo, contextLines, sender)
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
