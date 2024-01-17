@@ -8,7 +8,7 @@ import { useTemporarySetting, type UseTemporarySettingsReturnType } from '@sourc
  */
 export function useNewSearchNavigation(): [boolean, UseTemporarySettingsReturnType<'search.navigation'>[1]] {
     const newSearchNavigationUI = useExperimentalFeatures(features => features.newSearchNavigationUI ?? false)
-    const [userSettingEnabled, setUserSetting] = useTemporarySetting('search.navigation', true)
+    const [userSettingEnabled, setUserSetting] = useTemporarySetting('search.navigation', false)
 
     if (newSearchNavigationUI) {
         return [true, setUserSetting]
