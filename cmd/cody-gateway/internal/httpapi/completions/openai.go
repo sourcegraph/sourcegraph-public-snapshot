@@ -42,7 +42,7 @@ func NewOpenAIHandler(
 		string(conftypes.CompletionsProviderNameOpenAI),
 		func(_ codygateway.Feature) string { return openAIURL },
 		config.AllowedModels,
-		&OpenAIHandlerMethods{accessToken: config.AccessToken, orgID: config.OrgID},
+		&OpenAIHandlerMethods{config: config},
 
 		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
 		// in requests, so set a very high retry-after to discourage Sourcegraph
@@ -107,8 +107,7 @@ type openaiResponse struct {
 }
 
 type OpenAIHandlerMethods struct {
-	accessToken string
-	orgID       string
+	config config.OpenAIConfig
 }
 
 func (_ *OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
@@ -134,9 +133,9 @@ func (_ *OpenAIHandlerMethods) getRequestMetadata(_ context.Context, _ log.Logge
 
 func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+o.accessToken)
-	if o.orgID != "" {
-		r.Header.Set("OpenAI-Organization", o.orgID)
+	r.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
+	if o.config.OrgID != "" {
+		r.Header.Set("OpenAI-Organization", o.config.OrgID)
 	}
 }
 
