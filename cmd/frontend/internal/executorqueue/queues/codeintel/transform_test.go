@@ -217,7 +217,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					strings.Join(
 						[]string{
 							"src",
-							"lsif", "upload",
+							"code-intel", "upload",
 							"-no-progress",
 							"-repo", "linux",
 							"-commit", "deadbeef",
@@ -346,7 +346,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 							strings.Join(
 								[]string{
 									"src",
-									"lsif", "upload",
+									"code-intel", "upload",
 									"-no-progress",
 									"-repo", "linux",
 									"-commit", "deadbeef",
