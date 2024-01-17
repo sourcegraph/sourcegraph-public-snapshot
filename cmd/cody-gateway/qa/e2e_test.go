@@ -88,7 +88,7 @@ type GatewayFeatureClient interface {
 
 func parseBackendData(t *testing.T) (*url.URL, string) {
 	if _, ok := os.LookupEnv("E2E_GATEWAY_ENDPOINT"); !ok {
-		t.Fatal("E2E_GATEWAY_ENDPOINT must be set")
+		t.Skip("E2E_GATEWAY_ENDPOINT must be set, skipping")
 	}
 	gatewayEndpoint := os.Getenv("E2E_GATEWAY_ENDPOINT")
 	gatewayURL, err := url.Parse(gatewayEndpoint)
@@ -96,7 +96,7 @@ func parseBackendData(t *testing.T) (*url.URL, string) {
 		t.Fatal(err)
 	}
 	if _, ok := os.LookupEnv("E2E_GATEWAY_TOKEN"); !ok {
-		t.Fatal("E2E_GATEWAY_TOKEN must be set")
+		t.Skip("E2E_GATEWAY_TOKEN must be set, skipping")
 	}
 	return gatewayURL, os.Getenv("E2E_GATEWAY_TOKEN")
 }
