@@ -128,20 +128,25 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 }
 
 func symbolsToMatches(symbols []result.Symbol, repo types.MinimalRepo, commitID api.CommitID, inputRev string) result.Matches {
-	symbolsByPath := make(map[string][]result.Symbol)
+	type pathAndLanguage struct {
+		path     string
+		language string
+	}
+	symbolsByPath := make(map[pathAndLanguage][]result.Symbol)
 	for _, symbol := range symbols {
-		cur := symbolsByPath[symbol.Path]
-		symbolsByPath[symbol.Path] = append(cur, symbol)
+		cur := symbolsByPath[pathAndLanguage{symbol.Path, symbol.Language}]
+		symbolsByPath[pathAndLanguage{symbol.Path, symbol.Language}] = append(cur, symbol)
 	}
 
 	// Create file matches from partitioned symbols
 	matches := make(result.Matches, 0, len(symbolsByPath))
-	for path, symbols := range symbolsByPath {
+	for pl, symbols := range symbolsByPath {
 		file := result.File{
-			Path:     path,
-			Repo:     repo,
-			CommitID: commitID,
-			InputRev: &inputRev,
+			Path:            pl.path,
+			Repo:            repo,
+			CommitID:        commitID,
+			InputRev:        &inputRev,
+			PreciseLanguage: pl.language,
 		}
 
 		symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))

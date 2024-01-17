@@ -19,7 +19,7 @@
 <DropdownMenu
     {open}
     triggerButtonClass={getButtonClassName({ variant: 'icon' })}
-    aria-label="{$open ? 'Close' : 'Open'} user profile menu"
+    aria-label="{$open ? 'Close' : 'Open'} user menu"
 >
     <svelte:fragment slot="trigger">
         <Avatar avatar={user} />

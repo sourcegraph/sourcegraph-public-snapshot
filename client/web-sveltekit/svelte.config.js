@@ -69,7 +69,7 @@ const config = {
     typescript: {
       config: config => {
         config.extends = '../../../tsconfig.base.json'
-        config.include = [...(config.include ?? []), '../src/**/*.tsx', '../.storybook/*.ts']
+        config.include = [...(config.include ?? []), '../src/**/*.tsx', '../.storybook/*.ts', '../dev/**/*.ts']
       },
     },
     paths: {

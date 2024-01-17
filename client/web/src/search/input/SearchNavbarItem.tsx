@@ -147,6 +147,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 hideHelpButton={false}
                 showSearchHistory={true}
                 recentSearches={recentSearches}
+                showExtendedPicker={showExtendedPicker}
             />
         </Form>
     )

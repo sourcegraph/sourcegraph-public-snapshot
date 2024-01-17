@@ -150,18 +150,18 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
-			searchResults: []result.Match{fileMatch("/testFile.ts")},
+			searchResults: []result.Match{fileMatch("/testFile.yml")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
+				`lang:yaml`:       1,
 			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
-			searchResults: []result.Match{fileMatch("/testFile.tsx")},
+			searchResults: []result.Match{fileMatch("/testFile.yaml")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
+				`lang:yaml`:       1,
 			},
 		},
 		{
