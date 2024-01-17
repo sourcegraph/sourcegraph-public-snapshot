@@ -18,11 +18,11 @@ type svc struct{}
 func (svc) Name() string { return "cody-gateway" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	c := &config.GatewayConfig{}
+	c := &config.Config{}
 	c.Load()
 	return c, []debugserver.Endpoint{}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, envCfg env.Config) error {
-	return Main(ctx, observationCtx, ready, envCfg.(*config.GatewayConfig))
+	return Main(ctx, observationCtx, ready, envCfg.(*config.Config))
 }

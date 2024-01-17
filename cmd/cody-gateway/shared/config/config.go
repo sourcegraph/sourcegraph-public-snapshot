@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GatewayConfig struct {
+type Config struct {
 	env.BaseConfig
 
 	InsecureDev bool
@@ -88,7 +88,7 @@ type OpenAIConfig struct {
 	OrgID         string
 }
 
-func (c *GatewayConfig) Load() {
+func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
 	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
 	// TODO: Eventually migrate to MSP standard (no prefix)

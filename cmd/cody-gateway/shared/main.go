@@ -49,7 +49,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi"
 )
 
-func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, cfg *config.GatewayConfig) error {
+func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, cfg *config.Config) error {
 	shutdownOtel, err := initOpenTelemetry(ctx, obctx.Logger, cfg.OpenTelemetry)
 	if err != nil {
 		return errors.Wrap(err, "initOpenTelemetry")
