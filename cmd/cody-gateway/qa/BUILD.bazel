@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "qa_test",
+    timeout = "short",
+    srcs = ["e2e_test.go"],
+    embed = [":qa"],
+    tags = [
+        "external",
+        "requires-network",
+    ],
+    deps = [
+        "//internal/codygateway",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)
+
+go_library(
+    name = "qa",
+    srcs = [
+        "anthropic.go",
+        "fireworks.go",
+        "openai.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/qa",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/codygateway",
+        "//lib/errors",
+    ],
+)
