@@ -33,14 +33,14 @@ func ServeSearchJobDownload(logger log.Logger, svc *service.Service) http.Handle
 			return
 		}
 
-		csvWriterTo, err := svc.GetSearchJobCSVWriterTo(r.Context(), int64(jobID))
+		writerTo, err := svc.GetSearchJobResultsWriterTo(r.Context(), int64(jobID))
 		if err != nil {
 			httpError(w, err)
 			return
 		}
 
-		filename := filenamePrefix(jobID) + ".csv"
-		writeCSV(logger.With(log.Int("jobID", jobID)), w, filename, csvWriterTo)
+		filename := filenamePrefix(jobID) + ".json"
+		writeJSON(logger.With(log.Int("jobID", jobID)), w, filename, writerTo)
 	}
 }
 
@@ -73,6 +73,16 @@ func writeCSV(logger log.Logger, w http.ResponseWriter, filenameNoQuotes string,
 	n, err := writerTo.WriteTo(w)
 	if err != nil {
 		logger.Warn("failed while writing search job csv response", log.String("filename", filenameNoQuotes), log.Int64("bytesWritten", n), log.Error(err))
+	}
+}
+
+func writeJSON(logger log.Logger, w http.ResponseWriter, filenameNoQuotes string, writerTo io.WriterTo) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filenameNoQuotes))
+	w.WriteHeader(200)
+	n, err := writerTo.WriteTo(w)
+	if err != nil {
+		logger.Warn("failed while writing search job response", log.String("filename", filenameNoQuotes), log.Int64("bytesWritten", n), log.Error(err))
 	}
 }
 
