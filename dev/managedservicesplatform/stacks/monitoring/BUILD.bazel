@@ -28,6 +28,7 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringuptimecheckconfig",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//apiintegration",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//dataopsgenieteam",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie//service",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//datasentryorganizationintegration",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//notificationaction",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//project",

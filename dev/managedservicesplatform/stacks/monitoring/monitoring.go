@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
+	opsgenieservice "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganizationintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/notificationaction"
 	sentryproject "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/project"
@@ -150,6 +151,22 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			id.TerraformID("opsgenie_team"),
 			&dataopsgenieteam.DataOpsgenieTeamConfig{
 				Name: &owner,
+			})
+		// Create a "Opsgenie service" representing this service. We can't
+		// attach alerts to this so opsgenie-wise it's not very useful, but
+		// it syncs to Incident.io, which could be useful. Either way, it seems
+		// harmless to add, so let's add it and see what comes of it.
+		_ = opsgenieservice.NewService(stack,
+			id.TerraformID("opsgenie_service"),
+			&opsgenieservice.ServiceConfig{
+				Name:        pointers.Stringf("%s - %s", vars.Service.GetName(), vars.EnvironmentID),
+				TeamId:      team.Id(),
+				Description: &vars.Service.Description,
+				Tags: &[]*string{
+					pointers.Ptr("msp"),
+					pointers.Ptr(vars.Service.ID),
+					pointers.Ptr(string(vars.EnvironmentCategory)),
+				},
 			})
 		// Set up integration for us to post to
 		integration := opsgenieintegration.NewApiIntegration(stack,

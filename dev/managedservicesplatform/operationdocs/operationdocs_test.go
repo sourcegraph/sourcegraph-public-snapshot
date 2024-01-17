@@ -18,7 +18,8 @@ func TestRender(t *testing.T) {
 		name: "basic",
 		spec: spec.Spec{
 			Service: spec.ServiceSpec{
-				ID: "msp-testbed",
+				ID:          "msp-testbed",
+				Description: "Test service for MSP",
 			},
 			Build: spec.BuildSpec{
 				Image: "us.gcr.io/sourcegraph-dev/msp-example",
@@ -37,7 +38,8 @@ func TestRender(t *testing.T) {
 		name: "resources",
 		spec: spec.Spec{
 			Service: spec.ServiceSpec{
-				ID: "msp-testbed",
+				ID:          "msp-testbed",
+				Description: "Test service for MSP",
 			},
 			Build: spec.BuildSpec{
 				Image: "us.gcr.io/sourcegraph-dev/msp-example",
