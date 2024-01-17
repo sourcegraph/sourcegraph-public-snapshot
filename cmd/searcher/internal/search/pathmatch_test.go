@@ -7,7 +7,7 @@ import (
 )
 
 func TestCompilePathPatterns(t *testing.T) {
-	match, err := compilePathPatterns(&protocol.PatternInfo{
+	match, err := toPathMatcher(&protocol.PatternInfo{
 		IncludePatterns: []string{`main\.go`, `m`},
 		ExcludePattern:  `README\.md`,
 		IsCaseSensitive: false,

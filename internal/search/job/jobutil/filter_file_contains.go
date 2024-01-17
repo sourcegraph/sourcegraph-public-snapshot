@@ -173,15 +173,18 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 	// For each pattern specified by file:contains.content(), run a search at
 	// the commit to ensure that the file does, in fact, contain that content.
-	// We cannot do this all at once because searcher does not support complex patterns.
-	// Additionally, we cannot do this in advance because we don't know which commit
-	// we are searching at until we get a result.
+	// We cannot do this in advance because we don't know which commit we are
+	// searching at until we get a result.
+	//
+	// Note: now that searcher supports 'or' patterns, we could combine this into a single query.
 	matchedFileCounts := make(map[string]int)
 	for _, includePattern := range j.includePatterns {
 		patternInfo := search.TextPatternInfo{
-			Pattern:               includePattern,
+			Query: &protocol.PatternNode{
+				Value:    includePattern,
+				IsRegExp: true,
+			},
 			IsCaseSensitive:       j.caseSensitive,
-			IsRegExp:              true,
 			FileMatchLimit:        99999999,
 			Index:                 query.No,
 			IncludePatterns:       []string{query.UnionRegExps(fileNames)},

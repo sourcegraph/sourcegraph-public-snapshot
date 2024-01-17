@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -53,7 +53,7 @@ func Test_zoektSearch(t *testing.T) {
 		ctx,
 		logtest.Scoped(t),
 		client,
-		&search.TextPatternInfo{},
+		&protocol.PatternInfo{},
 		[]query.BranchRepos{{Branch: "test", Repos: roaring.BitmapOf(1, 2, 3)}},
 		0,
 		time.Since,
