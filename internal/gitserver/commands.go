@@ -1911,6 +1911,9 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 
 func parseCommitLogOutput(r io.Reader) ([]*wrappedCommit, error) {
 	commitScanner := bufio.NewScanner(r)
+	// We use an increased buffer size since sub-repo permissions
+	// can result in very lengthy output.
+	commitScanner.Buffer(make([]byte, 0, 65536), 4294967296)
 	commitScanner.Split(commitSplitFunc)
 
 	var commits []*wrappedCommit

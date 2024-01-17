@@ -215,12 +215,11 @@ func (r *GitCommitResolver) CanonicalURL() string {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.repoResolver.getRepo(ctx)
+	linker, err := r.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
+	return linker.Commit(api.CommitID(r.oid)), nil
 }
 
 type TreeArgs struct {

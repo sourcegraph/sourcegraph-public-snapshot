@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
 
@@ -73,7 +72,7 @@ func runFakeGraphQL(t *testing.T) *fakeGraphQL {
 
 // request creates an attribution search request to the gateway.
 func request(t *testing.T) *http.Request {
-	requestBody, err := json.Marshal(&attribution.Request{
+	requestBody, err := json.Marshal(&codygateway.AttributionRequest{
 		Snippet: strings.Join([]string{
 			"for n != 1 {",
 			"  if n % 2 == 0 {",
@@ -127,10 +126,10 @@ func TestSuccess(t *testing.T) {
 		t.Error(w.Body.String())
 		t.Fatalf("expected OK, got %d", got)
 	}
-	var gotResponseBody attribution.Response
+	var gotResponseBody codygateway.AttributionResponse
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&gotResponseBody))
-	wantResponseBody := &attribution.Response{
-		Repositories: []attribution.Repository{
+	wantResponseBody := &codygateway.AttributionResponse{
+		Repositories: []codygateway.AttributionRepository{
 			{Name: "github.com/sourcegraph/sourcegraph"},
 			{Name: "github.com/sourcegraph/cody"},
 		},

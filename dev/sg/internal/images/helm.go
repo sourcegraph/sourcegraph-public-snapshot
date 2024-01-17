@@ -83,7 +83,7 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 		if err != nil {
 			if errors.Is(err, ErrNoUpdateNeeded) {
 				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", r.Ref())))
-				return nil
+				continue
 			} else {
 				return errors.Wrapf(err, "couldn't update image %s", img)
 			}

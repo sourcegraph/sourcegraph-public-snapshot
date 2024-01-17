@@ -12,6 +12,7 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -107,7 +108,7 @@ type SymbolsParameters struct {
 	// Query is the search query.
 	Query string
 
-	// IsRegExp if true will treat the Pattern as a regular expression.
+	// IsRegExp if true will treat the Query as a regular expression.
 	IsRegExp bool
 
 	// IsCaseSensitive if false will ignore the case of query and file pattern
@@ -219,7 +220,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
+		UseKeywordScoring: o.PatternType == query.SearchTypeCodyContext,
 		NumContextLines:   o.NumContextLines,
 	}
 
@@ -297,12 +298,10 @@ type SearcherParameters struct {
 // TextPatternInfo defines the search request for unindexed and structural search
 // (the 'searcher' service). Keep it in sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
-	// Values dependent on pattern atom.
-	Pattern   string
-	IsNegated bool
-	IsRegExp  bool
+	// Query defines the search query
+	Query protocol.QueryNode
 
-	// Values dependent on parameters.
+	// Parameters for the search
 	IsStructuralPat bool
 	CombyRule       string
 	IsCaseSensitive bool
@@ -327,14 +326,8 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 		res = append(res, fs...)
 	}
 
-	add(attribute.String("pattern", p.Pattern))
+	add(attribute.Stringer("query", p.Query))
 
-	if p.IsNegated {
-		add(attribute.Bool("isNegated", p.IsNegated))
-	}
-	if p.IsRegExp {
-		add(attribute.Bool("isRegexp", p.IsRegExp))
-	}
 	if p.IsStructuralPat {
 		add(attribute.Bool("isStructural", p.IsStructuralPat))
 	}
@@ -371,10 +364,8 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 }
 
 func (p *TextPatternInfo) String() string {
-	args := []string{fmt.Sprintf("%q", p.Pattern)}
-	if p.IsRegExp {
-		args = append(args, "re")
-	}
+	args := []string{p.Query.String()}
+
 	if p.IsStructuralPat {
 		if p.CombyRule != "" {
 			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))

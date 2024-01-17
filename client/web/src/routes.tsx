@@ -91,7 +91,7 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.PostSignUp,
-        element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
+        element: <LegacyRoute render={() => <PostSignUpPage />} />,
     },
     {
         path: PageRoutes.BatchChanges,

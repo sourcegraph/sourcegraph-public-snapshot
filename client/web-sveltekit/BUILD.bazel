@@ -1,6 +1,4 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
-load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 
@@ -33,9 +31,14 @@ SRCS = [
     [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
+        "src/lib/graphql-type-mocks.ts",
+        "src/**/*.gql.ts",
         "src/**/*.gql.d.ts",
     ],
-) + glob(["dev/**/*.cjs"])
+) + glob([
+    "dev/**/*.cjs",
+    "dev/**/*.ts",
+])
 
 BUILD_DEPS = [
     ":node_modules/@faker-js/faker",

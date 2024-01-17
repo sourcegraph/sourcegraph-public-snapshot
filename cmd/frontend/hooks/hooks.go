@@ -19,6 +19,13 @@ type FeatureBatchChanges struct {
 	MaxNumChangesets int `json:"maxNumChangesets"`
 }
 
+// LicenseFeatures contains information about licensed features that are
+// enabled/disabled on the current license.
+type LicenseFeatures struct {
+	CodeSearch bool `json:"codeSearch"`
+	Cody       bool `json:"cody"`
+}
+
 // LicenseInfo contains non-sensitive information about the legitimate usage of the
 // current license on the instance. It is technically accessible to all users, so only
 // include information that is safe to be seen by others.
@@ -30,6 +37,8 @@ type LicenseInfo struct {
 	CodeScaleExceededLimit bool                 `json:"codeScaleExceededLimit"`
 	KnownLicenseTags       []string             `json:"knownLicenseTags"`
 	BatchChanges           *FeatureBatchChanges `json:"batchChanges"`
+
+	Features LicenseFeatures `json:"features"`
 }
 
 var GetLicenseInfo = func() *LicenseInfo { return nil }

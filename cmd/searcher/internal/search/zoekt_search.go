@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -21,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
+func handleFilePathPatterns(query *protocol.PatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	// Zoekt uses regular expressions for file paths.
@@ -44,8 +45,8 @@ func handleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 	return zoektquery.NewAnd(and...), nil
 }
 
-func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
-	regexString := comby.StructuralPatToRegexpQuery(args.Pattern, shortcircuit)
+func buildQuery(pattern string, branchRepos []zoektquery.BranchRepos, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+	regexString := comby.StructuralPatToRegexpQuery(pattern, shortcircuit)
 	if len(regexString) == 0 {
 		return &zoektquery.Const{Value: true}, nil
 	}
@@ -70,13 +71,18 @@ func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRep
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, contextLines int32, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
+func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *protocol.PatternInfo, branchRepos []zoektquery.BranchRepos, contextLines int32, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
 	if len(branchRepos) == 0 {
 		return nil
 	}
 
+	atom, err := extractQueryAtom(args)
+	if err != nil {
+		return err
+	}
+
 	searchOpts := (&search.ZoektParameters{
-		FileMatchLimit:  args.FileMatchLimit,
+		FileMatchLimit:  int32(args.Limit),
 		NumContextLines: int(contextLines),
 	}).ToSearchOptions(ctx)
 	searchOpts.Whole = true
@@ -87,7 +93,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(args, branchRepos, filePathPatterns, false)
+	q, err := buildQuery(atom.Value, branchRepos, filePathPatterns, false)
 	if err != nil {
 		return err
 	}
@@ -107,7 +113,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 		// Cancel the context on completion so that the writer doesn't
 		// block indefinitely if this stops reading.
 		defer cancel()
-		return structuralSearch(ctx, logger, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, int32(searchOpts.NumContextLines), sender)
+		return structuralSearch(ctx, logger, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, atom.Value, args.CombyRule, args.Languages, repo, int32(searchOpts.NumContextLines), sender)
 	})
 
 	pool.Go(func() error {
