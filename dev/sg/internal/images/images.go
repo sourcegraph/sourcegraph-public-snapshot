@@ -14,6 +14,7 @@ const (
 	DeploymentTypeK8S     DeploymentType = "k8s"
 	DeploymentTypeHelm    DeploymentType = "helm"
 	DeploymentTypeCompose DeploymentType = "compose"
+	DeploymentTypeShell   DeploymentType = "shell"
 )
 
 var ErrNoUpdateNeeded = errors.New("no update needed")

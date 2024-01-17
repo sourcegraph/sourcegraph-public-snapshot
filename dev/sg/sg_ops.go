@@ -254,6 +254,10 @@ func opsUpdateImages(
 			if err := images.UpdateComposeManifests(ctx, registry, path, op); err != nil {
 				return err
 			}
+		case images.DeploymentTypeShell:
+			if err := images.UpdateShellManifests(ctx, registry, path, op); err != nil {
+				return err
+			}
 		}
 
 		// Ensure the updates were correct.
