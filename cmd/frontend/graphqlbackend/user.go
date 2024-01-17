@@ -185,10 +185,6 @@ func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
 		return nil
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		return nil
-	}
-
 	if r.user.CodyProEnabledAt == nil {
 		return nil
 	}
@@ -534,10 +530,6 @@ type changeCodyPlanArgs struct {
 func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPlanArgs) (*UserResolver, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
-		return nil, errors.New("this feature is not enabled")
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {

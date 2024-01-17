@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func TestMatcherLookupByLanguage(t *testing.T) {
@@ -66,15 +65,12 @@ func foo(go string) {}
 			t.Run(tt.Name, func(t *testing.T) {
 				t.Parallel()
 
-				p := &protocol.PatternInfo{
-					Pattern:         "foo(:[args])",
-					IncludePatterns: []string{"file_without_extension"},
-					Languages:       tt.Languages,
-				}
+				pattern := "foo(:[args])"
+				includePatterns := []string{"file_without_extension"}
 
 				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
 				defer cancel()
-				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
+				err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, "", tt.Languages, "repo_foo", 0, sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -210,8 +206,10 @@ func foo(real string) {}
 	}
 
 	p := &protocol.PatternInfo{
-		Pattern: pattern,
-		Limit:   30,
+		Query: &protocol.PatternNode{
+			Value: pattern,
+		},
+		Limit: 30,
 	}
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
@@ -301,21 +299,18 @@ func TestIncludePatterns(t *testing.T) {
 		"x/y/z/bar.go",
 	}
 
-	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
-
 	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zf := tempZipFileOnDisk(t, zipData)
 
-	p := &protocol.PatternInfo{
-		Pattern:         "",
-		IncludePatterns: includePatterns,
-	}
+	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
+	pattern := ""
+
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", 0, sender)
+	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, "", nil, "foo", 0, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -344,15 +339,13 @@ func TestRule(t *testing.T) {
 	}
 	zf := tempZipFileOnDisk(t, zipData)
 
-	p := &protocol.PatternInfo{
-		Pattern:         "func :[[fn]](:[args])",
-		IncludePatterns: []string{".go"},
-		CombyRule:       `where :[args] == "success"`,
-	}
+	pattern := "func :[[fn]](:[args])"
+	includePatterns := []string{".go"}
+	combyRule := `where :[args] == "success"`
 
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", 0, sender)
+	err = structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(includePatterns), "", pattern, combyRule, nil, "repo", 0, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -413,21 +406,21 @@ func bar() {
 		return c
 	}
 
-	test := func(limit, wantCount int, p *protocol.PatternInfo) func(t *testing.T) {
+	test := func(limit, wantCount int, pattern string) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
 			defer cancel()
-			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
+			err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 			require.NoError(t, err)
 
 			require.Equal(t, wantCount, count(sender.collected))
 		}
 	}
 
-	t.Run("unlimited", test(10000, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("exact limit", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") })     // test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
+	t.Run("unlimited", test(10000, 4, "{:[body]}"))
+	t.Run("exact limit", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(4, 4, &protocol.PatternInfo{Value: "{:[body]}"}))
+	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") })     // test(2, 2, &protocol.PatternInfo{Value: "{:[body]}"}))
+	t.Run("many", test(12, 8, "(:[_])"))
 }
 
 func TestMatchCountForMultilineMatches(t *testing.T) {
@@ -447,8 +440,6 @@ func bar() {
 
 	wantMatchCount := 2
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
-
 	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
@@ -458,7 +449,9 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
+
+		pattern := "{:[body]}"
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -488,8 +481,6 @@ func bar() {
 `,
 	}
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
-
 	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
@@ -499,7 +490,9 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
+
+		pattern := "{:[body]}"
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.ZipPath(zf), nil, "", pattern, "", nil, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -530,7 +523,7 @@ func TestBuildQuery(t *testing.T) {
 	pattern := ":[x~*]"
 	want := "error parsing regexp: missing argument to repetition operator: `*`"
 	t.Run("build query", func(t *testing.T) {
-		_, err := buildQuery(&search.TextPatternInfo{Pattern: pattern}, nil, nil, false)
+		_, err := buildQuery(pattern, nil, nil, false)
 		if diff := cmp.Diff(err.Error(), want); diff != "" {
 			t.Error(diff)
 		}
@@ -552,8 +545,6 @@ func bar() {
 `,
 	}
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
-
 	tarInputEventC := make(chan comby.TarInputEvent, 1)
 	hdr := tar.Header{
 		Name: "main.go",
@@ -569,7 +560,9 @@ func bar() {
 	t.Run("Structural search tar input to comby", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, logtest.Scoped(t), comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", 0, sender)
+
+		pattern := "{:[body]}"
+		err := structuralSearch(ctx, logtest.Scoped(t), comby.Tar{TarInputEventC: tarInputEventC}, all, "", pattern, "", nil, "repo_foo", 0, sender)
 		if err != nil {
 			t.Fatal(err)
 		}

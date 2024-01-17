@@ -13,6 +13,8 @@ func Symbols() *monitoring.Dashboard {
 		grpcServiceName = "symbols.v1.SymbolsService"
 	)
 
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
+
 	grpcMethodVariable := shared.GRPCMethodVariable("symbols", grpcServiceName)
 
 	return &monitoring.Dashboard{
@@ -70,6 +72,7 @@ func Symbols() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "symbols",
 				InstanceFilterRegex: `${instance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

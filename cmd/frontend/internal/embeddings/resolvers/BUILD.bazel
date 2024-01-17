@@ -52,6 +52,7 @@ go_test(
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/licensing",
+        "//internal/rbac/types",
         "//internal/types",
         "//lib/pointers",
         "//schema",

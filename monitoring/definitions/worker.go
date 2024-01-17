@@ -11,6 +11,8 @@ import (
 func Worker() *monitoring.Dashboard {
 	const containerName = "worker"
 
+	scrapeJobRegex := fmt.Sprintf("^%s.*", containerName)
+
 	workerJobs := []struct {
 		Name  string
 		Owner monitoring.ObservableOwner
@@ -25,7 +27,7 @@ func Worker() *monitoring.Dashboard {
 		activeJobObservables = append(activeJobObservables, monitoring.Observable{
 			Name:          fmt.Sprintf("worker_job_%s_count", job.Name),
 			Description:   fmt.Sprintf("number of worker instances running the %s job", job.Name),
-			Query:         fmt.Sprintf(`sum (src_worker_jobs{job="worker", job_name="%s"})`, job.Name),
+			Query:         fmt.Sprintf(`sum (src_worker_jobs{job=~%q, job_name="%s"})`, scrapeJobRegex, job.Name),
 			Panel:         monitoring.Panel().LegendFormat(fmt.Sprintf("instances running %s", job.Name)),
 			DataMustExist: true,
 			Warning:       monitoring.Alert().Less(1).For(1 * time.Minute),
@@ -66,7 +68,7 @@ func Worker() *monitoring.Dashboard {
 					{
 						Name:        "worker_job_count",
 						Description: "number of worker instances running each job",
-						Query:       `sum by (job_name) (src_worker_jobs{job="worker"})`,
+						Query:       fmt.Sprintf(`sum by (job_name) (src_worker_jobs{job=~%q})`, scrapeJobRegex),
 						Panel:       monitoring.Panel().LegendFormat("instances running {{job_name}}"),
 						NoAlert:     true,
 						Interpretation: `
@@ -245,7 +247,7 @@ func Worker() *monitoring.Dashboard {
 					Name:           "insights_queue_unutilized_size",
 					Description:    "insights queue size that is not utilized (not processing)",
 					Owner:          monitoring.ObservableOwnerCodeInsights,
-					Query:          "max(src_query_runner_worker_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					Query:          fmt.Sprintf("max(src_query_runner_worker_total{job=~%q}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~%q,op=\"Dequeue\"}[5m])) < 1", scrapeJobRegex, scrapeJobRegex),
 					DataMustExist:  false,
 					Warning:        monitoring.Alert().Greater(0.0).For(time.Minute * 30),
 					NextSteps:      "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
@@ -270,6 +272,7 @@ func Worker() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "worker",
 				InstanceFilterRegex: `${instance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 		},
 	}

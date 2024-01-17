@@ -253,11 +253,8 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	oneDayInSeconds := int32(60 * 60 * 24)
 
 	// Create feature flags
-	codyPro := "cody-pro"
 	limitsExceeded := "rate-limits-exceeded-for-testing"
-	_, err := db.FeatureFlags().CreateBool(ctx, codyPro, false)
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateBool(ctx, limitsExceeded, false)
+	_, err := db.FeatureFlags().CreateBool(ctx, limitsExceeded, false)
 	require.NoError(t, err)
 
 	tru := true
@@ -278,11 +275,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		conf.Mock(nil)
 	}()
 
-	// Non-SSC user
-	nonSscUser, err := db.Users().Create(ctx, database.NewUser{Username: "non-ssc", EmailIsVerified: true, Email: "non-ssc@test.com"})
-	require.NoError(t, err)
-
-	// Non-SSC user with an override
+	// User with an override
 	userWithOverrides, err := db.Users().Create(ctx, database.NewUser{Username: "override", EmailIsVerified: true, Email: "override@test.com"})
 	require.NoError(t, err)
 	err = db.Users().SetChatCompletionsQuota(context.Background(), userWithOverrides.ID, pointers.Ptr(override))
@@ -291,13 +284,9 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	// Cody SSC - Free user
 	sscFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "ssc-free", EmailIsVerified: true, Email: "ssc-free@test.com"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &sscFreeUser.ID})
-	require.NoError(t, err)
 
 	// Cody SSC - Pro user
 	sscProUser, err := db.Users().Create(ctx, database.NewUser{Username: "ssc-pro", EmailIsVerified: true, Email: "ssc-pro@test.com"})
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &sscProUser.ID})
 	require.NoError(t, err)
 	err = db.Users().ChangeCodyPlan(ctx, sscProUser.ID, true)
 	require.NoError(t, err)
@@ -305,15 +294,11 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 	// Rate limited Cody SSC - Free user
 	rateLimitsExceededFreeUser, err := db.Users().Create(ctx, database.NewUser{Username: "free-limited", EmailIsVerified: true, Email: "free-limited@test.com"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
-	require.NoError(t, err)
 	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededFreeUser.ID})
 	require.NoError(t, err)
 
 	// Rate limited Cody SSC - Pro user
 	rateLimitsExceededProUser, err := db.Users().Create(ctx, database.NewUser{Username: "pro-limited", EmailIsVerified: true, Email: "pro-limited@test.com"})
-	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: codyPro, Value: true, UserID: &rateLimitsExceededProUser.ID})
 	require.NoError(t, err)
 	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{FlagName: limitsExceeded, Value: true, UserID: &rateLimitsExceededProUser.ID})
 	require.NoError(t, err)
@@ -326,14 +311,6 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		wantCodeCompletionLimit         graphqlbackend.BigInt
 		wantCodeCompletionLimitInterval int32
 	}{
-		{
-			name:                            "non-ssc",
-			user:                            nonSscUser,
-			wantChatLimit:                   graphqlbackend.BigInt(perUserDailyLimit),
-			wantChatLimitInterval:           oneDayInSeconds,
-			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
-			wantCodeCompletionLimitInterval: oneDayInSeconds,
-		},
 		{
 			name:                            "override",
 			user:                            userWithOverrides,

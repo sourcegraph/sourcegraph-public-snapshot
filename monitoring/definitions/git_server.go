@@ -14,6 +14,8 @@ func GitServer() *monitoring.Dashboard {
 		grpcServiceName = "gitserver.v1.GitserverService"
 	)
 
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
+
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
 		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
 	}
@@ -568,6 +570,7 @@ func GitServer() *monitoring.Dashboard {
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "gitserver",
 				InstanceFilterRegex: `${shard:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),

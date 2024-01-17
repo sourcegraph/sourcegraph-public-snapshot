@@ -106,27 +106,3 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 		}
 	}
 }
-
-func codeIntelQA(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":bazel::docker::brain: Code Intel QA",
-			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
-				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
-				ChannelName: "code-intel-buildkite",
-				Conditions: bk.SlackStepNotifyPayloadConditions{
-					Failed: true,
-				},
-			}),
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Agent("queue", "bazel"),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"),
-			bk.SoftFail(1))
-	}
-}
