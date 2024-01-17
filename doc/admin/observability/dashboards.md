@@ -3413,7 +3413,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102402`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -3941,7 +3941,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102702`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -7314,7 +7314,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10100
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -15833,7 +15833,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -17419,7 +17419,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100602`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -19198,7 +19198,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100702` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -21979,7 +21979,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101002` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
