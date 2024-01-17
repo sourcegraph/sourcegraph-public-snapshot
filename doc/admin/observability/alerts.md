@@ -639,7 +639,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~"(sourcegraph-)?frontend"}[1m]))) >= 300)`
 
 </details>
 
@@ -1567,7 +1567,7 @@ Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 2
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*gitserver"}[1m]))) >= 300)`
 
 </details>
 
@@ -3144,9 +3144,9 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*redis-store"}
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) == 1)`
 
 </details>
 
@@ -3182,9 +3182,9 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) == 1)`
 
 </details>
 
@@ -3220,9 +3220,9 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) == 1)`
 
 </details>
 
@@ -3765,7 +3765,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~"^worker.*"}[1m]))) >= 300)`
 
 </details>
 
@@ -4497,7 +4497,7 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*repo-updater"}[1m]))) >= 300)`
 
 </details>
 
@@ -4942,7 +4942,7 @@ Generated query for warning alert: `max((sum by (code) (increase(searcher_servic
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*searcher"}[1m]))) >= 300)`
 
 </details>
 
@@ -5327,7 +5327,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) /
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*symbols"}[1m]))) >= 300)`
 
 </details>
 
@@ -7710,7 +7710,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*embeddings"}[1m]))) >= 300)`
 
 </details>
 
