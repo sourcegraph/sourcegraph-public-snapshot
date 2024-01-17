@@ -10,16 +10,21 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganizationintegration"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/notificationaction"
+	sentryproject "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/project"
 	slackconversation "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack/conversation"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/sentryalert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/opsgenieprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/sentryprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/slackprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -82,8 +87,7 @@ type Variables struct {
 	EnvironmentCategory spec.EnvironmentCategory
 	// EnvironmentID is the name of the service environment.
 	EnvironmentID string
-
-	Monitoring spec.MonitoringSpec
+	Monitoring    spec.MonitoringSpec
 	// MaxInstanceCount informs service scaling alerts.
 	MaxInstanceCount *int
 	// ExternalDomain informs external health checks on the service domain.
@@ -98,6 +102,8 @@ type Variables struct {
 	// ServiceHealthProbes is used to determine the threshold for service
 	// startup latency alerts.
 	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
+	// SentryProject is the project in Sentry for the service environment
+	SentryProject sentryproject.Project
 }
 
 const StackName = "monitoring"
@@ -113,6 +119,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}),
 		slackprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretSlackOperatorOAuthToken,
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+		}),
+		sentryprovider.With(gsmsecret.DataConfig{
+			Secret:    googlesecretsmanager.SecretSentryAuthToken,
 			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 		}))
 	if err != nil {
@@ -226,6 +236,28 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				// In case it already exists
 				AdoptExistingChannel: pointers.Ptr(true),
 			})
+
+			// Sentry Slack integration
+			dataSentryOrganizationIntegration := datasentryorganizationintegration.NewDataSentryOrganizationIntegration(stack, id.TerraformID("sentry_integration"), &datasentryorganizationintegration.DataSentryOrganizationIntegrationConfig{
+				Organization: vars.SentryProject.Organization(),
+				ProviderKey:  pointers.Ptr("slack"),
+				Name:         pointers.Ptr("Sourcegraph"),
+			})
+
+			// Provision Sentry Slack notification
+			_ = notificationaction.NewNotificationAction(stack, id.TerraformID("sentry_notification_channel"), &notificationaction.NotificationActionConfig{
+				Organization:     vars.SentryProject.Organization(),
+				Projects:         &[]*string{vars.SentryProject.Slug()},
+				ServiceType:      pointers.Ptr("slack"),
+				IntegrationId:    dataSentryOrganizationIntegration.Id(),
+				TargetDisplay:    slackChannel.Name(),
+				TargetIdentifier: slackChannel.Id(),
+				TriggerType:      pointers.Ptr("spike-protection"),
+			})
+
+			if err = createSentryAlerts(stack, id.Group("sentry_alerts"), vars, slackChannel, dataSentryOrganizationIntegration); err != nil {
+				return nil, errors.Wrap(err, "failed to create Sentry alerts")
+			}
 		}
 
 		channels = append(channels,
@@ -638,5 +670,49 @@ func createRedisAlerts(
 		}
 	}
 
+	return nil
+}
+
+func createSentryAlerts(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channel slackconversation.Conversation,
+	slackIntegration datasentryorganizationintegration.DataSentryOrganizationIntegration,
+) error {
+	for _, config := range []sentryalert.Config{
+		{
+			ID:            "all-issues",
+			SentryProject: vars.SentryProject,
+			AlertConfig: sentryalert.AlertConfig{
+				Name:      "Notify in Slack",
+				Frequency: 15, // Notify for an issue at most once every 15 minutes
+				Conditions: []sentryalert.Condition{
+					{
+						ID:       sentryalert.EventFrequencyCondition,
+						Value:    pointers.Ptr(0), // Always (seen more than 0 times) during interval
+						Interval: pointers.Ptr("15m"),
+					},
+				},
+				ActionMatch: sentryalert.ActionMatchAny,
+				Actions: []sentryalert.Action{
+					{
+						ID: sentryalert.SlackNotifyServiceAction,
+						ActionParameters: map[string]any{
+							"workspace":  slackIntegration.Id(),
+							"channel":    channel.Name(),
+							"channel_id": channel.Id(),
+							"tags": pointers.Stringf("msp-%s-%s",
+								vars.Service.ID, vars.EnvironmentID),
+						},
+					},
+				},
+			},
+		},
+	} {
+		if _, err := sentryalert.New(stack, id.Group(config.ID), config); err != nil {
+			return err
+		}
+	}
 	return nil
 }

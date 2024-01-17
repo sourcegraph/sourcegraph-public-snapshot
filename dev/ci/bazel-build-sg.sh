@@ -2,13 +2,10 @@
 
 set -o errexit -o nounset -o pipefail
 
-echo "--- :bazel: Build sg cli"
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  build \
-  //dev/sg:sg
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
-sg_cli="$(bazel cquery //dev/sg:sg --output files)"
+echo "--- :bazel: Build sg cli"
+bazel "${bazelrc[@]}" build //dev/sg:sg
+
+sg_cli="$(bazel "${bazelrc[@]}" cquery //dev/sg:sg --output files)"
 cp "$sg_cli" ./sg

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -83,7 +83,6 @@ export function useBuiltinTabbedPanelViews(panels: Panel[]): void {
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
 export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
-    const [tabIndex, setTabIndex] = useState(0)
     const { hash, pathname, search } = useLocation()
     const navigate = useNavigate()
 
@@ -119,15 +118,15 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         [currentTabLabel, navigate, panels, pathname, search]
     )
 
-    useEffect(() => {
-        setTabIndex(
+    const tabIndex = useMemo(
+        (): number =>
             panels
                 ? panels.findIndex(({ id, matchesTabID }) =>
                       matchesTabID ? matchesTabID(currentTabID) : id === currentTabID
                   )
-                : 0
-        )
-    }, [panels, hash, currentTabID])
+                : 0,
+        [panels, currentTabID]
+    )
 
     if (!panels) {
         return <EmptyPanelView className={styles.panel} />
@@ -136,7 +135,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const activeTab: Panel | undefined = panels[tabIndex]
 
     return (
-        <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
+        <Tabs lazy={true} behavior="memoize" className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
             <TabList
                 wrapperClassName={classNames(styles.panelHeader, 'sticky-top')}
                 actions={
@@ -185,7 +184,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                             className={styles.tabsContent}
                             data-testid="panel-tabs-content"
                         >
-                            {id === activeTab.id ? element : null}
+                            {({ shouldRender }) => shouldRender && element}
                         </TabPanel>
                     ))
                 ) : (

@@ -144,6 +144,7 @@ func (r *Renderer) RenderEnvironment(
 		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
 		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
 		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
+		SentryProject:         cloudrunOutput.SentryProject,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}
