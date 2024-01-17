@@ -21,6 +21,6 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
 echo "--- integration test ./dev/gqltest -long P4 stuff only"
-"$gqltest" -run TestSubRepoPermissions -long -base-url "$url"
+"$gqltest" -test.run TestSubRepoPermissions -long -base-url "$url"
 
 echo "--- done"
