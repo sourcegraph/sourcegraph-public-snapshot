@@ -183,10 +183,6 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	}, nil
 }
 
-func (l StaticLimiter) ResetUsage() error {
-	return l.Redis.Del(l.Identifier)
-}
-
 func (l StaticLimiter) Usage(ctx context.Context) (_ int, _ time.Time, err error) {
 	if l.LimiterName == "" {
 		l.LimiterName = "StaticLimiter"

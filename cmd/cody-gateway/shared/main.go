@@ -138,7 +138,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 				dotcomClient,
 				config.ActorConcurrencyLimit,
 				rs,
-				rateLimitNotifier,
 			),
 		)
 	} else {
