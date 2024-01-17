@@ -8,7 +8,11 @@ runGoModTidy() {
   dir=$1
   cd "$dir"
   echo "--- :bazel: Running go mod tidy in $dir"
-  bazel run @go_sdk//:bin/go -- mod tidy
+  bazel \
+    --bazelrc=.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+    run @go_sdk//:bin/go -- mod tidy
   cd -
 }
 
