@@ -11,7 +11,6 @@ import { ExternalsAuth } from '../auth/components/ExternalsAuth'
 import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
@@ -52,19 +51,18 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
     const navigate = useNavigate()
     const location = useLocation()
     const [search] = useState(location.search)
-    const [isCodyProEnabled, ffStatus] = useFeatureFlag('cody-pro', false)
 
     useEffect(() => {
-        if (authenticatedUser && isCodyProEnabled) {
+        if (authenticatedUser) {
             navigate(`/cody/manage${search || ''}`)
         }
-    }, [authenticatedUser, navigate, search, isCodyProEnabled])
+    }, [authenticatedUser, navigate, search])
 
     useEffect(() => {
         logPageView(EventName.VIEW_GET_CODY)
     }, [])
 
-    if (authenticatedUser && (ffStatus !== 'loaded' || isCodyProEnabled)) {
+    if (authenticatedUser) {
         return null
     }
 

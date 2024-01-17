@@ -9,5 +9,8 @@ namespaces:
   - name: REPO_METADATA
     actions:
       - WRITE
+  - name: CODY
+    actions:
+      - ACCESS
 excludeFromUserRole:
   - OWNERSHIP

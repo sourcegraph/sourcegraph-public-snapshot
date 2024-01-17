@@ -125,19 +125,38 @@ message Location {
   int32 column = 3;
 }
 
-message PatternInfo {
-  reserved 5;
+message QueryNode {
+  oneof value {
+    PatternNode pattern = 1;
+    AndNode and = 2;
+    OrNode or = 3;
+  }
+}
 
-  // pattern is the search query. It is a regular expression if IsRegExp
-  // is true, otherwise a fixed string. eg "route variable"
-  string pattern = 1;
+// PatternNode represents a leaf query against a specific pattern
+message PatternNode {
+  // value is the search query. It is a regular expression if IsRegExp
+  // is true, otherwise a fixed string.
+  string value = 1;
 
   // is_negated if true will invert the matching logic for regexp searches.
-  // IsNegated=true is not supported for structural searches.
+  // Structural searches do not support negation.
   bool is_negated = 2;
 
   // is_regexp if true will treat the pattern as a regular expression.
   bool is_regexp = 3;
+}
+
+message AndNode {
+  repeated QueryNode children = 1;
+}
+
+message OrNode {
+  repeated QueryNode children = 1;
+}
+
+message PatternInfo {
+  reserved 1, 2, 3, 5;
 
   // is_structural if true will treat the pattern as a Comby structural search
   // pattern.
@@ -193,4 +212,8 @@ message PatternInfo {
   // necessary to use it since selection is done after the query completes, but
   // exposing it can enable optimizations.
   string select = 15;
+
+  // query defines the query to match files against. It supports regexp
+  // patterns optionally combined through boolean operators.
+  QueryNode query = 16;
 }
