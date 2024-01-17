@@ -172,6 +172,8 @@ var allowedBazelFlags = map[string]struct{}{
 	"--test_tag_filters":     {},
 	"--test_timeout":         {},
 	"--config":               {},
+	"--test_output":          {},
+	"--verbose_failures":     {},
 }
 
 var bazelFlagsRe = regexp.MustCompile(`--\w+`)
