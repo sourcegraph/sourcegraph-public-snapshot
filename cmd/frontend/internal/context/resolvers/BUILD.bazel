@@ -38,6 +38,7 @@ go_test(
         "//internal/gitserver",
         "//internal/licensing",
         "//internal/observation",
+        "//internal/rbac/types",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/result",
