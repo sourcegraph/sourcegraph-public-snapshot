@@ -21,8 +21,6 @@ import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
 
-const DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS = window.context.accessTokensExpirationDaysDefault
-
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
@@ -119,10 +117,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const isLightTheme = useIsLightTheme()
     const navigate = useNavigate()
     const location = useLocation()
+    const defaultAccessTokenExpiryDays = window.context.accessTokensExpirationDaysDefault
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
-
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
@@ -205,7 +203,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                   user.id,
                                   [AccessTokenScopes.UserAll],
                                   note,
-                                  addSeconds(new Date(), DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS * 86400).toISOString() // days to seconds
+                                  addSeconds(new Date(), defaultAccessTokenExpiryDays * 86400).toISOString() // days to seconds
                               )
                             : NEVER
                         ).pipe(
@@ -239,7 +237,16 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isRequestFromMobileDevice]
+            [
+                requester,
+                user.id,
+                note,
+                defaultAccessTokenExpiryDays,
+                isRequestFromMobileDevice,
+                onDidCreateAccessToken,
+                requestFrom,
+                port,
+            ]
         )
     )
 
@@ -298,9 +305,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 <CopyableText className="test-access-token" text={newToken} />
                                 <Text className="form-help text-muted" size="small">
                                     This is a one-time access token to connect your account to {requester.name}. This
-                                    token will expire in {DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS}{' '}
-                                    {pluralize('day', DEFAULT_ACCESS_TOKEN_EXPIRY_DAYS)}. You will not be able to see
-                                    this token again once the window is closed.
+                                    token will expire in {defaultAccessTokenExpiryDays}{' '}
+                                    {pluralize('day', defaultAccessTokenExpiryDays)}. You will not be able to see this
+                                    token again once the window is closed.
                                 </Text>
                             </div>
                         </details>
