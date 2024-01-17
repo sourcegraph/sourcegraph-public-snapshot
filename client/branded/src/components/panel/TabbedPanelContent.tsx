@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
@@ -83,7 +83,6 @@ export function useBuiltinTabbedPanelViews(panels: Panel[]): void {
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
 export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
-    const [tabIndex, setTabIndex] = useState(0)
     const { hash, pathname, search } = useLocation()
     const navigate = useNavigate()
 
@@ -119,15 +118,13 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         [currentTabLabel, navigate, panels, pathname, search]
     )
 
-    useEffect(() => {
-        setTabIndex(
-            panels
-                ? panels.findIndex(({ id, matchesTabID }) =>
-                      matchesTabID ? matchesTabID(currentTabID) : id === currentTabID
-                  )
-                : 0
-        )
-    }, [panels, hash, currentTabID])
+    const tabIndex = useMemo<number>(() => {
+        return panels
+            ? panels.findIndex(({ id, matchesTabID }) =>
+                  matchesTabID ? matchesTabID(currentTabID) : id === currentTabID
+              )
+            : 0
+    }, [panels, currentTabID])
 
     if (!panels) {
         return <EmptyPanelView className={styles.panel} />
