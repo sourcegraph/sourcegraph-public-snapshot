@@ -2,7 +2,7 @@ import React from 'react'
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER, of } from 'rxjs'
@@ -84,6 +84,7 @@ describe('StreamingSearchResults', () => {
     } as AuthenticatedUser
 
     beforeEach(() => {
+        cleanup()
         useNavbarQueryState.setState({
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
@@ -135,7 +136,6 @@ describe('StreamingSearchResults', () => {
 
         userEvent.click(await screen.findByLabelText(/Open search actions menu/))
         simulateMenuItemClick(await screen.findByText(/Expand all/, { selector: '[role=menuitem]' }))
-
         screen
             .getAllByTestId('file-search-result')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'true'))
@@ -198,20 +198,23 @@ describe('StreamingSearchResults', () => {
 
         renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
-        userEvent.click(screen.getAllByTestId('result-container')[0])
-        assert.calledWith(logSpy, 'SearchResultClicked')
-        assert.calledWith(logSpy, 'search.ranking.result-clicked', {
-            index: 0,
-            type: 'fileMatch',
-            resultsLength: 3,
-        })
+        act(async () => {
+            await userEvent.click(screen.getAllByTestId('result-container')[0])
 
-        userEvent.click(screen.getAllByTestId('result-container')[2])
-        assert.calledWith(logSpy, 'SearchResultClicked')
-        assert.calledWith(logSpy, 'search.ranking.result-clicked', {
-            index: 2,
-            type: 'fileMatch',
-            resultsLength: 3,
+            assert.calledWith(logSpy, 'SearchResultClicked')
+            assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+                index: 0,
+                type: 'fileMatch',
+                resultsLength: 3,
+            })
+
+            await userEvent.click(screen.getAllByTestId('result-container')[2])
+            assert.calledWith(logSpy, 'SearchResultClicked')
+            assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+                index: 2,
+                type: 'fileMatch',
+                resultsLength: 3,
+            })
         })
     })
 
@@ -222,17 +225,20 @@ describe('StreamingSearchResults', () => {
 
     it('should open and close saved search modal if events trigger', async () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} authenticatedUser={mockUser} />)
-        userEvent.click(await screen.findByLabelText(/Open search actions menu/))
-        simulateMenuItemClick(await screen.findByText(/Save search/, { selector: '[role=menuitem]' }))
 
-        fireEvent.keyDown(await screen.findByText(/Save search query to:/), {
-            key: 'Escape',
-            code: 'Escape',
-            keyCode: 27,
-            charCode: 27,
+        act(async () => {
+            userEvent.click(await screen.findByLabelText(/Open search actions menu/))
+            simulateMenuItemClick(await screen.findByText(/Save search/, { selector: '[role=menuitem]' }))
+
+            fireEvent.keyDown(await screen.findByText(/Save search query to:/), {
+                key: 'Escape',
+                code: 'Escape',
+                keyCode: 27,
+                charCode: 27,
+            })
+
+            expect(screen.queryByText(/Save search query to:/)).not.toBeInTheDocument()
         })
-
-        expect(screen.queryByText(/Save search query to:/)).not.toBeInTheDocument()
     })
 
     it('should start a new search with added params when onSearchAgain event is triggered', async () => {
@@ -282,20 +288,24 @@ describe('StreamingSearchResults', () => {
 
             renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
 
-            userEvent.click((await screen.findAllByText(/results in/i))[0])
-            const allChecks = await screen.findAllByTestId(/^streaming-progress-skipped-suggest-check/)
+            act(async () => {
+                await userEvent.click((await screen.findAllByText(/results in/i))[0])
 
-            for (const check of allChecks) {
-                userEvent.click(check, undefined, { skipPointerEventsCheck: true })
-            }
+                const allChecks = await screen.findAllByTestId(/^streaming-progress-skipped-suggest-check/)
 
-            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }), undefined, {
-                skipPointerEventsCheck: true,
+                for (const check of allChecks) {
+                    userEvent.click(check, undefined)
+                }
+
+                await userEvent.click(
+                    await screen.findByText(/search again/i, { selector: 'button[type=submit]' }),
+                    undefined
+                )
+
+                expect(helpers.submitSearch).toBeCalledTimes(index + 1)
+                const args = submitSearchMock.mock.calls[index][0]
+                expect(args.query).toBe(test.want)
             })
-
-            expect(helpers.submitSearch).toBeCalledTimes(index + 1)
-            const args = submitSearchMock.mock.calls[index][0]
-            expect(args.query).toBe(test.want)
         }
     })
 })
