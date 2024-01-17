@@ -7,7 +7,6 @@ tarball="$1"
 image_name="$2"
 
 gqltest="$3"
-authtest="$4"
 
 url="http://localhost:$PORT"
 
@@ -21,13 +20,7 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
 run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
-echo "--- integration test ./dev/gqltest -long"
-"$gqltest" -skip TestSubRepoPermissions -long -base-url "$url"
-
-echo "--- sleep 5s to wait for site configuration to be restored from gqltest"
-sleep 5
-
-echo "--- integration test ./dev/authtest -long"
-"$authtest" -long -base-url "$url" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
+echo "--- integration test ./dev/gqltest -long P4 stuff only"
+"$gqltest" -run TestSubRepoPermissions -long -base-url "$url"
 
 echo "--- done"
