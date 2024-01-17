@@ -1838,7 +1838,6 @@ ts_project(
     testonly = True,
     srcs = [
         "__mocks__/zustand.ts",
-        "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
         "src/auth/SignUpPage.test.tsx",
@@ -2149,7 +2148,6 @@ ts_project(
     srcs = [
         "src/auth/CloudSignUpPage.story.tsx",
         "src/auth/OrDivider.story.tsx",
-        "src/auth/PostSignUpPage.story.tsx",
         "src/auth/RequestAccessPage.story.tsx",
         "src/auth/ResetPasswordPage.story.tsx",
         "src/auth/SignInPage.story.tsx",

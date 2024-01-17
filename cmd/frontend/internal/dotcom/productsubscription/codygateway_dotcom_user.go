@@ -198,7 +198,7 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 
 	// Apply self-serve limits if available
 	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
-	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
+	if cfg != nil {
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, err
@@ -233,13 +233,11 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	var limit *int
 	var err error
 
-	isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
-
 	// Apply override for testing if set.
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		return licensing.CodyGatewayRateLimit{
 			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true, true),
+			AllowedModels:   allowedModels(scope, true),
 			Limit:           1,
 			IntervalSeconds: math.MaxInt32,
 		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
@@ -268,8 +266,8 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 	}
 	isProUser := user.CodyProEnabledAt != nil
-	models := allowedModels(scope, isCodyProEnabled, isProUser)
-	if limit == nil && cfg != nil && isCodyProEnabled {
+	models := allowedModels(scope, isProUser)
+	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
@@ -277,7 +275,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		}
 		isProUser := user.CodyProEnabledAt != nil
 		// Update the allowed models based on the user's plan.
-		models = allowedModels(scope, isCodyProEnabled, isProUser)
+		models = allowedModels(scope, isProUser)
 		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
@@ -338,23 +336,9 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
-func allowedModels(scope types.CompletionsFeature, isCodyProEnabled, isProUser bool) []string {
+func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		if !isCodyProEnabled {
-			return []string{
-				"anthropic/claude-v1",
-				"anthropic/claude-2",
-				"anthropic/claude-2.0",
-				"anthropic/claude-2.1",
-				"anthropic/claude-instant-v1",
-				"anthropic/claude-instant-1.2",
-				"anthropic/claude-instant-1",
-				"openai/gpt-4-1106-preview",
-				"fireworks/" + fireworks.Mixtral8x7bInstruct,
-			}
-		}
-
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
 
 		if !isProUser {
