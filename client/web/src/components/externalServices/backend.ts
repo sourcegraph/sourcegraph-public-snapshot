@@ -71,6 +71,10 @@ export const externalServiceFragment = gql`
             username
             url
         }
+        lastUpdater {
+            username
+            url
+        }
         webhookURL
         hasConnectionCheck
         unrestricted
@@ -224,6 +228,10 @@ export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         updatedAt
         createdAt
         creator {
+            username
+            url
+        }
+        lastUpdater {
             username
             url
         }
