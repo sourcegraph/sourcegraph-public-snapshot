@@ -573,7 +573,7 @@ func NewGRPCRetryMetricsGroup(opts GRPCRetryMetricsOptions, owner monitoring.Obs
 				monitoring.Observable{
 					Name:           fmt.Sprintf("%s_grpc_clients_retry_count_per_method", opts.HumanServiceName),
 					Description:    "client retry count per-method over 2m",
-					Query:          sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method"),
+					Query:          sum(metric("grpc_client_retry_attempts_total", serviceLabelFilter, methodLabelFilter, isRetriedLabelFilter), "2m", "grpc_method"),
 					Owner:          owner,
 					NoAlert:        true,
 					Interpretation: fmt.Sprintf("The count of gRPC requests that were retried aggregated across all %q clients, broken out per method", opts.HumanServiceName),
