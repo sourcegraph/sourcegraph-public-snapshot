@@ -13,7 +13,8 @@
         return { scroll: scroller.scrollTop }
     }
 
-    export function restore(data: Capture) {
+    export function restore(data?: Capture) {
+        if (!data) return
         // The actual content of the scroller might not be available yet when `restore` is called,
         // e.g. when the data is fetched asynchronously. In that case, we retry a few times.
         let maxTries = 10

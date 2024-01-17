@@ -40,6 +40,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
             first: HISTORY_COMMITS_PER_PAGE,
             afterCursor: null,
         },
+        notifyOnNetworkStatusChange: true,
     })
     if (!graphqlClient.readQuery({ query: GitHistoryQuery, variables: commitHistory.variables })) {
         // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched

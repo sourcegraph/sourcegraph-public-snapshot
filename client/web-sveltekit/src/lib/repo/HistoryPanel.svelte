@@ -20,6 +20,7 @@
 
     export let history: HistoryPanel_HistoryConnection | null
     export let fetchMore: (afterCursor: string | null) => void
+    export let loading: boolean = false
     export let enableInlineDiffs: boolean
 
     export function capture(): Capture {
@@ -46,13 +47,11 @@
 
     function loadMore() {
         if (history?.pageInfo.hasNextPage) {
-            loading = true
             fetchMore(history.pageInfo.endCursor)
         }
     }
 
     let scroller: Scroller
-    let loading = true
 
     // If the selected revision is not in the set of currently loaded commits, load more
     $: if (
@@ -62,9 +61,6 @@
         !history.nodes.some(commit => commit.abbreviatedOID === selectedRev)
     ) {
         loadMore()
-    }
-    $: if (history) {
-        loading = false
     }
 
     $: selectedRev = $page.url?.searchParams.get('rev')

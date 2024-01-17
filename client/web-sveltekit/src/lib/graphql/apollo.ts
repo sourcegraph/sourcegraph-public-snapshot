@@ -1,3 +1,4 @@
+import type { KeyArgsFunction, KeySpecifier } from '@apollo/client/cache/inmemory/policies'
 import {
     gql,
     ApolloClient,
@@ -9,7 +10,6 @@ import {
     type OperationVariables,
     type QueryOptions,
     type DocumentNode,
-    type MutationOptions,
     type FetchPolicy,
     type FieldPolicy,
 } from '@apollo/client/core/index'
@@ -53,78 +53,32 @@ const customFetch: HttpOptions['fetch'] = (uri, options) => fetch(uri, options).
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
-function listBasedForwardConnection({
-    keyArgs,
-    cursorName,
-}: {
-    keyArgs: string[] | false
-    cursorName: string
-}): FieldPolicy {
+/**
+ * Creates a field policy for a list-like forward connections. It concatenates the
+ * incoming nodes with the existing nodes, and updates the pageInfo.
+ */
+function listLikeForwardConnection({ keyArgs }: { keyArgs: KeySpecifier | KeyArgsFunction | false }): FieldPolicy {
     return {
         keyArgs,
 
-        merge(existing, incoming, { args }) {
-            if (!args) {
+        merge(existing, incoming) {
+            if (!existing) {
                 return incoming
             }
 
-            // args.after and pageInfo.endCursor seem to refer to the index of the
-            // last item in the list.
-            const nodes = existing ? [...existing.nodes] : []
-            const offset = args[cursorName] ? +args[cursorName] : 0
-            for (let i = 0; i < incoming.nodes.length; ++i) {
-                nodes[offset + i] = incoming.nodes[i]
-            }
-
-            let pageInfo = existing?.pageInfo
-            if (!pageInfo) {
-                pageInfo = incoming.pageInfo
-            } else if (pageInfo.endCursor) {
-                if (incoming.pageInfo.endCursor && +incoming.pageInfo.endCursor > +pageInfo.endCursor) {
-                    pageInfo = incoming.pageInfo
-                }
+            if (existing.pageInfo.endCursor === incoming.pageInfo.endCursor) {
+                // If the endCursor is the same, we assume that the incoming
+                // nodes are the same as the existing nodes. This can happen
+                // when the same query is executed multiple times in a row.
+                // In this case, we return the existing nodes to prevent
+                // incorrect cache updates.
+                return existing
             }
 
             return {
                 ...incoming,
-                nodes,
-                pageInfo,
+                nodes: [...existing.nodes, ...incoming.nodes],
             }
-        },
-        read(existing, options) {
-            if (!existing) {
-                return existing
-            }
-            // This is a hack to allow processing `ancestor` in a paginated way as well
-            // as in an infinity-scroll kind of way. For infinity scroll we want the
-            // whole list to be returned whenever this field is requested (e.g. history panel).
-            // For a paginated version we only want to return the n items following the current
-            // cursor.
-            // Queries who want the pagninated version simply alias the field to `<field>_paginated`
-            if (options.field?.alias && /_paginated$/.test(options.field.alias.value)) {
-                const from = options.args?.afterCursor ? +options.args.afterCursor : 0
-                const to = from + options.args?.first
-                const nodes = existing.nodes.slice(from, to)
-                // If any of the nodes are missing it means we fetched previous data out-of-band.
-                // Return undefined to force Apollo to fetch the requested data
-                // [...nodes] is necessary because `.some` skips holes in arrays. [...nodes] makes
-                // it so that those holes become `undefined` values instead.
-                if (nodes.length === 0 || [...nodes].some(node => !node)) {
-                    return undefined
-                }
-                return {
-                    ...existing,
-                    nodes,
-                    pageInfo: existing.nodes[to]
-                        ? {
-                              ...existing.pageInfo,
-                              endCursor: String(to),
-                              hasNextPage: true,
-                          }
-                        : existing.pageInfo,
-                }
-            }
-            return existing
         },
     }
 }
@@ -134,9 +88,21 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
         typePolicies: {
             GitCommit: {
                 fields: {
-                    ancestors: listBasedForwardConnection({
-                        keyArgs: ['query', 'path', 'follow', 'after'],
-                        cursorName: 'afterCursor',
+                    ancestors: listLikeForwardConnection({
+                        keyArgs: args => {
+                            // This key function treats an empty path the same as an
+                            // omitted path.
+                            // keyArgs: ['query', 'path', 'follow', 'after'],
+                            const keyArgs: Record<string, any> = {}
+                            if (args) {
+                                for (const key of ['query', 'path', 'follow', 'after']) {
+                                    if (key in args && (key !== 'path' || args[key] !== '')) {
+                                        keyArgs[key] = args[key]
+                                    }
+                                }
+                            }
+                            return JSON.stringify(keyArgs)
+                        },
                     }),
                 },
             },
@@ -156,11 +122,20 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
             GitBlobLSIFData: {
                 merge: true,
             },
+            // Signature is not normalized. Data from multiple requests needs
+            // to be merged, not replaced, in order to not lose data.
+            Signature: {
+                merge: true,
+            },
+            // Person is not normalized. Data from multiple requests needs
+            // to be merged, not replaced, in order to not lose data.
+            Person: {
+                merge: true,
+            },
             RepositoryComparison: {
                 fields: {
-                    fileDiffs: listBasedForwardConnection({
+                    fileDiffs: listLikeForwardConnection({
                         keyArgs: ['paths'],
-                        cursorName: 'after',
                     }),
                 },
             },
@@ -194,27 +169,6 @@ export async function query<T, V extends OperationVariables = OperationVariables
 ): Promise<T> {
     return (await getGraphQLClient()).query<T, V>({ query, variables, ...options }).then(result => {
         if (result.errors && result.errors.length > 0) {
-            throw createAggregateError(result.errors)
-        }
-        return result.data
-    })
-}
-
-export async function fromCache<T, V extends OperationVariables = OperationVariables>(
-    query: DocumentNode,
-    variables?: V,
-    options?: Omit<QueryOptions<T, V>, 'query' | 'variables'>
-): Promise<T | null> {
-    return (await getGraphQLClient()).readQuery<T, V>({ query, variables, ...options })
-}
-
-export async function mutation<T, V extends OperationVariables = OperationVariables>(
-    mutation: DocumentNode,
-    variables?: V,
-    options?: Omit<MutationOptions<T, V>, 'query' | 'variables'>
-): Promise<T | null | undefined> {
-    return (await getGraphQLClient()).mutate<T, V>({ mutation, variables, ...options }).then(result => {
-        if (result.errors?.length ?? 0 > 0) {
             throw createAggregateError(result.errors)
         }
         return result.data

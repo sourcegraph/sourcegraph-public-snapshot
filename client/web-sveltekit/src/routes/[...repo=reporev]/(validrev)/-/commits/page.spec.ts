@@ -15,7 +15,7 @@ test.beforeEach(async ({ sg }) => {
                 },
             },
         }),
-        CommitsQuery: ({ first, afterCursor }) => {
+        CommitsPage_CommitsQuery: ({ first, afterCursor }) => {
             const from = afterCursor ? +afterCursor : 0
             const to = from ? (first ?? 20) - 5 : first ?? 20
             return {
@@ -24,7 +24,7 @@ test.beforeEach(async ({ sg }) => {
                     id: '1',
                     commit: {
                         id: '1',
-                        ancestors_paginated: {
+                        ancestors: {
                             nodes: Array.from(
                                 { length: to },
                                 (_, index): GitCommitMock => ({
@@ -45,27 +45,23 @@ test.beforeEach(async ({ sg }) => {
     })
 })
 
-test('forward pagination', async ({ page }) => {
+test('infinity scroll', async ({ page }) => {
     await page.goto(`/${repoName}/-/commits`)
     // First page of commits is loaded
-    await expect(page.getByRole('link', { name: 'Commit 0' })).toBeVisible()
+    const firstCommit = page.getByRole('link', { name: 'Commit 0' })
+    await expect(firstCommit).toBeVisible()
     await expect(page.getByRole('link', { name: 'Commit 19' })).toBeVisible()
 
-    // Next page of commits is loaded
-    await page.getByRole('link', { name: 'Next' }).click()
+    // Position mouse over list of commits so that whell events will scroll
+    // the list
+    const { x, y } = (await firstCommit.boundingBox()) ?? { x: 0, y: 0 }
+    await page.mouse.move(x, y)
 
-    await expect(page.getByRole('link', { name: 'Commit 20' })).toBeVisible()
-})
-
-test('backward pagination', async ({ page }) => {
-    await page.goto(`/${repoName}/-/commits?$after=20`)
-
-    // Second page of commits is loaded
+    // Scroll list, which should load next page
+    await page.mouse.wheel(0, 1000)
     await expect(page.getByRole('link', { name: 'Commit 20' })).toBeVisible()
 
-    // First page of commits is loaded
-    await page.getByRole('link', { name: 'Previous' }).click()
-
-    await expect(page.getByRole('link', { name: 'Commit 0' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Commit 19' })).toBeVisible()
+    // Refreshing should restore commit list and scroll position
+    await page.reload()
+    await expect(page.getByRole('link', { name: 'Commit 20' })).toBeInViewport()
 })
