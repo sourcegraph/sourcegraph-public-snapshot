@@ -19,7 +19,13 @@ type ServiceSpec struct {
 	// in each environment's monitoring stack.
 	Owners []string `yaml:"owners"`
 	// Description briefly summarizing what the service does. Required.
-	Description string `yaml:"description,omitempty"`
+	//
+	// ❗ We do NOT include this description in generated docs today - while it
+	// might be helpful to include service descriptions, some services have
+	// sensitive details or descriptions that are difficult to put into words
+	// in a public-facing document. For now, this is used for reference in the
+	// private service spec and for internal integrations like Opsgenie.
+	Description string `yaml:"description"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
