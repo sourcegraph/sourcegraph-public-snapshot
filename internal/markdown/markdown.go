@@ -1,14 +1,12 @@
 package markdown
 
 import (
-	"fmt"
-	"regexp" //nolint:depguard // bluemonday requires this pkg
-	"strings"
+	"bytes"
+	"fmt" //nolint:depguard // bluemonday requires this pkg
 	"sync"
 
 	"github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
@@ -17,32 +15,18 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
+
+	"github.com/sourcegraph/sourcegraph/internal/htmlutil"
 )
 
 var (
 	once     sync.Once
-	policy   *bluemonday.Policy
 	renderer goldmark.Markdown
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
 func Render(content string) (string, error) {
 	once.Do(func() {
-		policy = bluemonday.UGCPolicy()
-		policy.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
-		policy.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
-		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
-		policy.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
-		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
-		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma$`)).OnElements("pre", "code", "span")
-		policy.AllowAttrs("align").OnElements("img", "p")
-		policy.AllowElements("picture", "video", "track", "source")
-		policy.AllowAttrs("srcset", "src", "type", "media", "width", "height", "sizes").OnElements("source")
-		policy.AllowAttrs("playsinline", "muted", "autoplay", "loop", "controls", "width", "height", "poster", "src").OnElements("video")
-		policy.AllowAttrs("src", "kind", "srclang", "default", "label").OnElements("track")
-		policy.AddTargetBlankToFullyQualifiedLinks(true)
-
 		html.LinkAttributeFilter.Add([]byte("aria-hidden"))
 		html.LinkAttributeFilter.Add([]byte("name"))
 
@@ -72,17 +56,17 @@ func Render(content string) (string, error) {
 				parser.WithASTTransformers(util.Prioritized(mdTransformFunc(mdLinkHeaders), 1)),
 			),
 			goldmark.WithRendererOptions(
-				// HTML sanitization is handled by bluemonday
+				// HTML sanitization is handled by htmlutil
 				html.WithUnsafe(),
 			),
 		)
 	})
 
-	var buf strings.Builder
+	var buf bytes.Buffer
 	if err := renderer.Convert([]byte(content), &buf); err != nil {
-		return "", err
+		return "", fmt.Errorf("markdown.Render: %w", err)
 	}
-	return policy.Sanitize(buf.String()), nil
+	return htmlutil.SanitizeReader(&buf).String(), nil
 }
 
 type mdTransformFunc func(*ast.Document, text.Reader, parser.Context)
