@@ -275,11 +275,7 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		conf.Mock(nil)
 	}()
 
-	// Non-SSC user
-	nonSscUser, err := db.Users().Create(ctx, database.NewUser{Username: "non-ssc", EmailIsVerified: true, Email: "non-ssc@test.com"})
-	require.NoError(t, err)
-
-	// Non-SSC user with an override
+	// User with an override
 	userWithOverrides, err := db.Users().Create(ctx, database.NewUser{Username: "override", EmailIsVerified: true, Email: "override@test.com"})
 	require.NoError(t, err)
 	err = db.Users().SetChatCompletionsQuota(context.Background(), userWithOverrides.ID, pointers.Ptr(override))
@@ -315,14 +311,6 @@ func TestCodyGatewayCompletionsRateLimit(t *testing.T) {
 		wantCodeCompletionLimit         graphqlbackend.BigInt
 		wantCodeCompletionLimitInterval int32
 	}{
-		{
-			name:                            "non-ssc",
-			user:                            nonSscUser,
-			wantChatLimit:                   graphqlbackend.BigInt(perUserDailyLimit),
-			wantChatLimitInterval:           oneDayInSeconds,
-			wantCodeCompletionLimit:         graphqlbackend.BigInt(0),
-			wantCodeCompletionLimitInterval: oneDayInSeconds,
-		},
 		{
 			name:                            "override",
 			user:                            userWithOverrides,
