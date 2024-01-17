@@ -90,7 +90,7 @@ server_integration_test(
     name = "backend_integration_test_p4",
     timeout = "long",
     args = [
-        "$(location //dev/gqltest:gqltest_test) -run TestSubRepoPermissions",  # actual test
+        "$(location //dev/gqltest:gqltest_test)",  # actual test
     ],
     data = [
         "//cmd/server:image_tarball",
