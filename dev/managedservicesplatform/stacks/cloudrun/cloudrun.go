@@ -302,6 +302,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Name:         pointers.Stringf("%s - %s", vars.Service.GetName(), vars.Environment.ID),
 			Slug:         pointers.Stringf("%s-%s", vars.Service.ID, vars.Environment.ID),
 			Teams:        &[]*string{sentryTeam.Slug()},
+			DefaultRules: pointers.Ptr(false),
 		})
 
 		// Create a DSN
