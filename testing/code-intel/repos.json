@@ -1,0 +1,17 @@
+[
+  {
+    "Kind": "GITHUB",
+    "DisplayName": "code-intel-repos",
+    "Config": {
+      "url": "https://github.com",
+      "repos": [
+        "go-nacelle/config",
+        "go-nacelle/log",
+        "go-nacelle/nacelle",
+        "go-nacelle/process",
+        "go-nacelle/service",
+        "sourcegraph-testing/nav-test"
+      ]
+    }
+  }
+]
