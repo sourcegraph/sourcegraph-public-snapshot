@@ -74,10 +74,12 @@ type AnthropicConfig struct {
 }
 
 type FireworksConfig struct {
-	AllowedModels                      []string
-	AccessToken                        string
-	LogSelfServeCodeCompletionRequests bool
-	DisableSingleTenant                bool
+	AllowedModels                          []string
+	AccessToken                            string
+	LogSelfServeCodeCompletionRequests     bool
+	DisableSingleTenant                    bool
+	StarcoderCommunitySingleTenantPercent  int
+	StarcoderEnterpriseSingleTenantPercent int
 }
 
 type OpenAIConfig struct {
@@ -165,6 +167,8 @@ func (c *GatewayConfig) Load() {
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}
+	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
+	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 
 	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
