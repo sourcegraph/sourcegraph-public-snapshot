@@ -100,7 +100,7 @@ Please reach out to us if you have any specific questions regarding our Cloud se
 
 ### How to harden the tunnel agent deployment?
 
-We recommend to use an allowlist to limit egress traffic of the agent to IP addresses provided by Sourcegraph and specific private resources you would like to permit access to.
+We recommend using an allowlist to limit the egress traffic of the agent to IP addresses provided by Sourcegraph and specific private resources you would like to permit access. This will prevent the agent to talk to arbitrary services, and reduce the blast radius in the event of a security event.
 
 ### How can I audit the data Sourcegraph has access to in my environment?
 
