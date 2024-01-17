@@ -32,7 +32,7 @@ function create_push_command() {
   done
 
   cmd="bazel \
-    ${bazelrc[@]} \
+    ${bazelrc[*]} \
     run \
     $target \
     --stamp \
