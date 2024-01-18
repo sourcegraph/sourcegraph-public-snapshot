@@ -190,7 +190,7 @@ func TestActorCacheExpiration(t *testing.T) {
 	fakeSource := &Source{
 		dotcom:     dotcomMock,
 		cache:      httpcache.NewMemoryCache(),
-		redisStore: fakeRedisStore,
+		usageStore: fakeRedisStore,
 	}
 
 	dotcomMock.MakeRequestFunc.SetDefaultReturn(errors.New("no response configured for mock"))
