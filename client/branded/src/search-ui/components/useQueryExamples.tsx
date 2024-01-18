@@ -151,5 +151,5 @@ export function useQueryExamples(
         const fileName = quoteIfNeeded(filePathParts.at(-1)!)
 
         return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample, keywordSearch)
-    }, [queryExamplesContent, isSourcegraphDotCom])
+    }, [queryExamplesContent, isSourcegraphDotCom, keywordSearch])
 }
