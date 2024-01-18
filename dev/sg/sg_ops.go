@@ -35,7 +35,7 @@ var OpsUpdateImagesCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:    "kind",
 			Aliases: []string{"k"},
-			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
+			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose', 'shell')",
 			Value:   string(images.DeploymentTypeK8S),
 		},
 		&cli.StringFlag{

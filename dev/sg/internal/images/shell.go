@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,6 +20,9 @@ var imageRegex = regexp.MustCompile(`[\w-]+\.[\w]+\.[\w]+/[[:print:]]+/.+:.+@sha
 func UpdateShellManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	var checked int
 	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if d.IsDir() {
 			return nil
 		}
@@ -30,17 +34,18 @@ func UpdateShellManifests(ctx context.Context, registry Registry, path string, o
 
 		shellFile, innerErr := os.ReadFile(path)
 		if innerErr != nil {
-			return errors.Wrapf(err, "couldn't read %s", path)
+			return errors.Wrapf(innerErr, "couldn't read %s", path)
 		}
 
 		checked++
 		newShellFile, innerErr := updateShellFile(registry, op, shellFile)
 		if innerErr != nil {
-			return err
-		}
-		if newShellFile == nil {
-			std.Out.WriteSkippedf("No updates to make to %s", d.Name())
-			return nil
+			if errors.Is(innerErr, ErrNoUpdateNeeded) {
+				std.Out.WriteSkippedf("No updates to make to %s", d.Name())
+				return nil
+			} else {
+				return innerErr
+			}
 		}
 
 		if err := os.WriteFile(path, newShellFile, 0644); err != nil {
@@ -64,11 +69,19 @@ func updateShellFile(registry Registry, op UpdateOperation, fileContent []byte) 
 	replaced := imageRegex.ReplaceAllFunc(fileContent, func(repl []byte) []byte {
 		repo, err := ParseRepository(string(repl))
 		if err != nil {
+			if errors.Is(err, ErrNoUpdateNeeded) {
+				outerErr = err
+				return repl
+			}
 			outerErr = errors.Append(outerErr, errors.Wrapf(err, "couldn't parse %q", repl))
 		}
 
 		resultRepo, err := op(registry, repo)
 		if err != nil {
+			if errors.Is(err, ErrNoUpdateNeeded) {
+				outerErr = err
+				return repl
+			}
 			outerErr = errors.Append(outerErr, errors.Wrapf(err, "couldn't update %q", repl))
 		}
 
