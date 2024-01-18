@@ -115,7 +115,7 @@ func TestTransformRecord(t *testing.T) {
 							strings.Join(
 								[]string{
 									"src",
-									"lsif", "upload",
+									"code-intel", "upload",
 									"-no-progress",
 									"-repo", "linux",
 									"-commit", "deadbeef",
