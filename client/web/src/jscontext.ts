@@ -146,6 +146,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
 
+    /** Whether access tokens with not expiration are enabled. */
+    accessTokensAllowNoExpiration: boolean
+
+    /** Available options for number of days until access token expiration. */
+    accessTokensExpirationDaysOptions: number[]
+
+    /** Default value for number of days to access token expiration. */
+    accessTokensExpirationDaysDefault: number
+
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
 
