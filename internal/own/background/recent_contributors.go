@@ -2,8 +2,6 @@ package background
 
 import (
 	"context"
-	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -49,7 +47,7 @@ var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
 
 func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, checker authz.SubRepoPermissionChecker) error {
 	// If the repo has sub-repo perms enabled, skip indexing.
-	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
+	isSubRepoPermsRepo, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoId)
 	if err != nil {
 		return errcode.MakeNonRetryable(err)
 	} else if isSubRepoPermsRepo {
@@ -89,27 +87,4 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	r.logger.Info("commits inserted", logger.Int("count", len(commitLog)), logger.Int("repo_id", int(repoId)))
 	commitCounter.Add(float64(len(commitLog)))
 	return nil
-}
-
-func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache rcache.Cache, checker authz.SubRepoPermissionChecker) (bool, error) {
-	cacheKey := strconv.Itoa(int(repoID))
-	// Look for the repo in cache to see if we have seen it before instead of hitting the DB.
-	val, ok := cache.Get(cacheKey)
-	if ok {
-		var isSubRepoPermsRepo bool
-		err := json.Unmarshal(val, &isSubRepoPermsRepo)
-		return isSubRepoPermsRepo, err
-	}
-
-	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
-	isSubRepoPermsRepo, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-	if err != nil {
-		return false, err
-	}
-	b, err := json.Marshal(isSubRepoPermsRepo)
-	if err != nil {
-		return false, err
-	}
-	cache.Set(cacheKey, b)
-	return isSubRepoPermsRepo, nil
 }

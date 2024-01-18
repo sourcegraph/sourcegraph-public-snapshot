@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/gobwas/glob"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,14 +41,16 @@ type SubRepoPermsClient struct {
 	clock             func() time.Time
 	since             func(time.Time) time.Duration
 
-	group   *singleflight.Group
-	cache   *lru.Cache[int32, cachedRules]
-	enabled *atomic.Bool
+	group            *singleflight.Group
+	cache            *lru.Cache[int32, cachedRules]
+	enabled          *atomic.Bool
+	repoEnabledCache repoEnabledCache
 }
 
 const (
-	defaultCacheSize = 1000
-	defaultCacheTTL  = 10 * time.Second
+	defaultCacheSize           = 1000
+	defaultCacheTTL            = 10 * time.Second
+	defaultRepoEnabledCacheTTL = time.Hour
 )
 
 // cachedRules caches the perms rules known for a particular user by repo.
@@ -128,6 +132,7 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *SubRepoP
 		group:             &singleflight.Group{},
 		cache:             cache,
 		enabled:           enabled,
+		repoEnabledCache:  newRepoEnabledCache(defaultRepoEnabledCacheTTL),
 	}
 }
 
@@ -344,7 +349,18 @@ func (s *SubRepoPermsClient) Enabled() bool {
 }
 
 func (s *SubRepoPermsClient) EnabledForRepoID(ctx context.Context, id api.RepoID) (bool, error) {
-	return s.permissionsGetter.RepoIDSupported(ctx, id)
+	enabled, hit := s.repoEnabledCache.RepoIsEnabled(id)
+	if hit {
+		return enabled, nil
+	}
+
+	enabled, err := s.permissionsGetter.RepoIDSupported(ctx, id)
+	if err != nil {
+		return false, err
+	}
+	s.repoEnabledCache.SetRepoIsEnabled(id, enabled)
+
+	return enabled, nil
 }
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
@@ -400,4 +416,50 @@ func NewSimpleChecker(repo api.RepoName, paths []string) authz.SubRepoPermission
 	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
 	getter.RepoIDSupportedFunc.SetDefaultReturn(true, nil)
 	return NewSubRepoPermsClient(getter)
+}
+
+type repoEnabledCache struct {
+	mu        sync.Mutex
+	ttl       time.Duration
+	createdAt time.Time
+	enabled   *roaring.Bitmap
+	valid     *roaring.Bitmap
+}
+
+func newRepoEnabledCache(ttl time.Duration) repoEnabledCache {
+	return repoEnabledCache{
+		ttl:       ttl,
+		createdAt: time.Now(),
+		enabled:   roaring.NewBitmap(),
+		valid:     roaring.NewBitmap(),
+	}
+}
+
+func (r *repoEnabledCache) RepoIsEnabled(repoID api.RepoID) (enabled bool, hit bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.resetIfExpired()
+
+	return r.enabled.Contains(uint32(repoID)), r.valid.Contains(uint32(repoID))
+}
+
+func (r *repoEnabledCache) SetRepoIsEnabled(repoID api.RepoID, enabled bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.resetIfExpired()
+
+	r.valid.Add(uint32(repoID))
+	if enabled {
+		r.enabled.Add(uint32(repoID))
+	}
+}
+
+// r.mu must be held to safely call this method
+func (r *repoEnabledCache) resetIfExpired() {
+	if time.Since(r.createdAt) >= r.ttl {
+		r.valid.Clear()
+		r.enabled.Clear()
+	}
 }
