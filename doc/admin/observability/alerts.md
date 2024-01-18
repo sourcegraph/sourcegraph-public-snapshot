@@ -229,40 +229,6 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 
 <br />
 
-## frontend: blob_load_latency
-
-<p class="subtitle">90th percentile blob load latency over 10m</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m for 10m0s
-
-**Next steps**
-
-- When this alert fires, calls to the blob route are slow to return a response. The UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
-- Confirm that the Sourcegraph gitserver and frontend services have enough CPU/memory using the provisioning panels.
-- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Check that gitserver containers have enough CPU/memory and are not getting throttled.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_frontend_blob_load_latency"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))) >= 5)`
-
-</details>
-
-<br />
-
 ## frontend: 99th_percentile_search_codeintel_request_duration
 
 <p class="subtitle">99th percentile code-intel successful search request duration over 5m</p>
