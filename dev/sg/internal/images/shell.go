@@ -15,7 +15,7 @@ import (
 // imageRegex will match a Docker image reference in a shell script of the following format:
 //
 // abc.domain.tld/something/else/imageName:tag@sha256:1234567890abcdef
-var imageRegex = regexp.MustCompile(`[\w-]+\.[\w]+\.[\w]+/[[:print:]]+/.+:.+@sha256:[[:alnum:]]+`)
+var imageRegex = regexp.MustCompile(`[\w-]+\.\w+\.\w+/[:print:]+/.+:.+@sha256:[a-fA-F0-9]+`)
 
 func UpdateShellManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	var checked int
