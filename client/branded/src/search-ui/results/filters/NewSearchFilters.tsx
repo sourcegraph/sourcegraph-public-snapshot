@@ -72,7 +72,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
     }
 
     return (
-        <aside className={styles.scrollWrapper}>
+        <div className={styles.scrollWrapper}>
             <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
             {type === SearchFilterType.Symbols && (
@@ -144,6 +144,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
             />
 
             <FiltersDocFooter className={styles.footer} />
-        </aside>
+        </div>
     )
 }

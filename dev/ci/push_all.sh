@@ -2,6 +2,8 @@
 
 set -eu
 
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
   IFS=' ' read -r -a tags <<<"$2"
@@ -30,9 +32,7 @@ function create_push_command() {
   done
 
   cmd="bazel \
-    --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+    ${bazelrc[*]} \
     run \
     $target \
     --stamp \
@@ -114,7 +114,7 @@ if $push_prod; then
   done
 fi
 
-images=$(bazel query 'kind("oci_push rule", //...)')
+images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
 job_file=$(mktemp)
 # shellcheck disable=SC2064

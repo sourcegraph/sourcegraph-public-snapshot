@@ -30,7 +30,7 @@ import {
     PathMatch,
     StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
@@ -52,6 +52,8 @@ import { SearchResultsInfoBar } from '../search-results-info-bar/SearchResultsIn
 import { SearchAlert } from '../SearchAlert'
 import { UnownedResultsAlert } from '../UnownedResultsAlert'
 import { isSmartSearchAlert } from '../utils'
+
+import { useIsNewSearchFiltersEnabled } from './use-new-search-filters'
 
 import styles from './NewSearchContent.module.scss'
 
@@ -134,7 +136,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
 
-    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
+    const newFiltersEnabled = useIsNewSearchFiltersEnabled()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
     useScrollManager('SearchResultsContainer', containerRef)
@@ -227,7 +229,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             isSearchJobsEnabled={isSearchJobsEnabled()}
                             telemetryService={props.telemetryService}
                         />
-                        <SearchFiltersTabletButton />
+                        {newFiltersEnabled && <SearchFiltersTabletButton />}
                     </>
                 }
             />
@@ -338,7 +340,11 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     const { children, className, onClose, ...attributes } = props
 
     return (
-        <aside {...attributes} className={classNames(styles.filters, className)}>
+        <div
+            {...attributes}
+            aria-label="Search dynamic filters panel"
+            className={classNames(styles.filters, className)}
+        >
             <header className={styles.filtersHeader}>
                 <H4 as={H2} className="mb-0">
                     Filters
@@ -348,7 +354,7 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
                 </Button>
             </header>
             <div className={styles.filtersContent}>{children}</div>
-        </aside>
+        </div>
     )
 }
 

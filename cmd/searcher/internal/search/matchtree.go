@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type matchTree interface {
@@ -31,36 +32,64 @@ type matchTree interface {
 	String() string
 }
 
-// compilePattern returns a matchTree for matching the pattern info
-func compilePattern(p *protocol.PatternInfo) (matchTree, error) {
+func toMatchTree(node protocol.QueryNode, isCaseSensitive bool) (matchTree, error) {
+	switch n := node.(type) {
+	case *protocol.PatternNode:
+		return toRegexpTree(n, isCaseSensitive)
+	case *protocol.AndNode:
+		children := make([]matchTree, 0, len(n.Children))
+		for _, child := range n.Children {
+			tree, err := toMatchTree(child, isCaseSensitive)
+			if err != nil {
+				return nil, err
+			}
+			children = append(children, tree)
+		}
+		return &andMatchTree{children: children}, nil
+	case *protocol.OrNode:
+		children := make([]matchTree, 0, len(n.Children))
+		for _, child := range n.Children {
+			tree, err := toMatchTree(child, isCaseSensitive)
+			if err != nil {
+				return nil, err
+			}
+			children = append(children, tree)
+		}
+		return &orMatchTree{children: children}, nil
+	default:
+		return nil, errors.Errorf("unknown query node type %T", n)
+	}
+}
+
+func toRegexpTree(node *protocol.PatternNode, isCaseSensitive bool) (matchTree, error) {
 	var (
 		re               *regexp.Regexp
 		literalSubstring []byte
 	)
 
-	if p.Pattern == "" {
+	pattern := node.Value
+	if pattern == "" {
 		return &allMatchTree{}, nil
 	}
 
-	expr := p.Pattern
-	if !p.IsRegExp {
-		expr = regexp.QuoteMeta(expr)
+	if !node.IsRegExp {
+		pattern = regexp.QuoteMeta(pattern)
 	}
 
-	if p.IsRegExp {
+	if node.IsRegExp {
 		// We don't do the search line by line, therefore we want the
 		// regex engine to consider newlines for anchors (^$).
-		expr = "(?m:" + expr + ")"
+		pattern = "(?m:" + pattern + ")"
 	}
 
 	// Transforms on the parsed regex
 	{
-		re, err := syntax.Parse(expr, syntax.Perl)
+		re, err := syntax.Parse(pattern, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
 
-		if !p.IsCaseSensitive {
+		if !isCaseSensitive {
 			// We don't just use (?i) because regexp library doesn't seem
 			// to contain good optimizations for case insensitive
 			// search. Instead we lowercase the input and pattern.
@@ -71,11 +100,11 @@ func compilePattern(p *protocol.PatternInfo) (matchTree, error) {
 		// non-capture groups (faster for stdlib regexp to execute).
 		re = query.OptimizeRegexp(re, syntax.Perl)
 
-		expr = re.String()
+		pattern = re.String()
 	}
 
 	var err error
-	re, err = regexp.Compile(expr)
+	re, err = regexp.Compile(pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +112,7 @@ func compilePattern(p *protocol.PatternInfo) (matchTree, error) {
 	// Only use literalSubstring optimization if the regex engine doesn't
 	// have a prefix to use.
 	if pre, _ := re.LiteralPrefix(); pre == "" {
-		ast, err := syntax.Parse(expr, syntax.Perl)
+		ast, err := syntax.Parse(pattern, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
@@ -93,8 +122,8 @@ func compilePattern(p *protocol.PatternInfo) (matchTree, error) {
 
 	return &regexMatchTree{
 		re:               re,
-		ignoreCase:       !p.IsCaseSensitive,
-		isNegated:        p.IsNegated,
+		ignoreCase:       !isCaseSensitive,
+		isNegated:        node.IsNegated,
 		literalSubstring: literalSubstring,
 	}, nil
 }

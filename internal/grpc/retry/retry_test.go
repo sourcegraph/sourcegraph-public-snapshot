@@ -613,3 +613,55 @@ func TestJitterUp(t *testing.T) {
 	assert.True(t, highCount != 0, "at least one sample should reach to >%s", high)
 	assert.True(t, lowCount != 0, "at least one sample should to <%s", low)
 }
+
+func TestRetryObserver(t *testing.T) {
+
+	t.Run("OnRetry", func(t *testing.T) {
+		observer := &retryObserver{}
+
+		// ensure that hasRetried is always updated
+		observer.OnRetry(1, nil)
+		assert.True(t, observer.hasRetried.Load())
+
+		var retryInvoked bool
+		observer.onRetryFunc = func(_ uint, _ error) {
+			retryInvoked = true
+		}
+
+		observer.OnRetry(2, nil)
+		assert.True(t, retryInvoked)
+
+		// ensure that onFinishFunc is called with the correct value
+
+		var finishInvoked bool
+		observer.onFinishFunc = func(hasRetried bool) {
+			finishInvoked = true
+			assert.True(t, hasRetried)
+		}
+
+		observer.FinishRPC()
+
+		assert.True(t, finishInvoked)
+	})
+
+	t.Run("only FinishRPC", func(t *testing.T) {
+		observer := &retryObserver{}
+
+		var invoked bool
+		observer.onFinishFunc = func(_ bool) {
+			invoked = true
+		}
+
+		// ensure that hasRetried is reset after FinishRPC
+		assert.False(t, observer.hasRetried.Load())
+
+		// ensure that onFinishFunc is called when FinishRPC is invoked
+		observer.FinishRPC()
+		assert.True(t, invoked)
+
+		// assert that FinishRPC only calls onFinishFunc once
+		invoked = false
+		observer.FinishRPC()
+		assert.False(t, invoked)
+	})
+}

@@ -407,19 +407,21 @@ type EnvironmentServiceAuthenticationSpec struct {
 
 type EnvironmentServiceHealthProbesSpec struct {
 	// HealthzProbes configures whether the MSP-standard '/-/healthz' service
-	// probes should be disabled. We recommend disabling it when creating a
-	// service, and re-enabling it once the service is confirmed to be deployed
-	// and healthy. When disabling, you should explicitly set
+	// probes should be disabled. When disabling, you should explicitly set
 	// 'healthzProbes: false'.
 	//
 	// - When disabled, the default probe is a very generous one that waits 240s
-	//   for your service to respond with anything at all on '/'
+	//   for your service to respond with anything at all on '/'. If your service
+	//   is externally available, it MUST respond with status 200 on HTTP requests
+	//   to '/'.
 	// - When enabled, the MSP-standard '/-/healthz' diagnostic check is used
 	//   with a generated diagnostics secret enforcing Timeout and Interval.
 	//
-	// Disabling the probe on first startup prevents the first Terraform apply
-	// from failing if your healthcheck is comprehensive, or if you haven't
-	// implemented '/-/healthz' yet.
+	// We recommend disabling it when creating a service, and re-enabling it
+	// once the service is confirmed to be deployed and healthy. Disabling the
+	// probe on first startup prevents the first Terraform apply from failing if
+	// your healthcheck is comprehensive, or if you haven't implemented
+	// '/-/healthz' yet.
 	HealthzProbes *bool `yaml:"healthzProbes,omitempty"`
 
 	// Timeout configures the period of time after which a health probe times
