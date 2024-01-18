@@ -6,7 +6,19 @@ import classNames from 'classnames'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, ButtonLink } from '@sourcegraph/wildcard'
+import {
+    H2,
+    Link,
+    Icon,
+    Tabs,
+    TabList,
+    TabPanels,
+    TabPanel,
+    Tab,
+    ButtonLink,
+    ProductStatusBadge,
+    ProductStatusType,
+} from '@sourcegraph/wildcard'
 
 import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
@@ -17,14 +29,20 @@ import styles from './QueryExamples.module.scss'
 export interface QueryExamplesProps extends TelemetryProps {
     selectedSearchContextSpec?: string
     isSourcegraphDotCom?: boolean
+    keywordSearch?: boolean
 }
 
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
     isSourcegraphDotCom = false,
+    keywordSearch = false,
 }) => {
-    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    const exampleSyntaxColumns = useQueryExamples(
+        selectedSearchContextSpec ?? 'global',
+        isSourcegraphDotCom,
+        keywordSearch
+    )
 
     const onQueryExampleClick = useCallback(
         (query: string) => {
@@ -97,8 +115,14 @@ const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({ title, quer
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
-                .map(({ query, helperText }) => (
-                    <QueryExampleChip key={query} query={query} helperText={helperText} onClick={onQueryExampleClick} />
+                .map(({ query, helperText, productStatus }) => (
+                    <QueryExampleChip
+                        key={query}
+                        query={query}
+                        helperText={helperText}
+                        onClick={onQueryExampleClick}
+                        productStatus={productStatus}
+                    />
                 ))}
         </ul>
     </div>
@@ -107,6 +131,7 @@ const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({ title, quer
 interface QueryExample {
     query: string
     helperText?: string
+    productStatus?: ProductStatusType
 }
 
 interface QueryExampleChipProps extends QueryExample {
@@ -119,6 +144,7 @@ const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
     helperText,
     className,
     onClick,
+    productStatus,
 }) => (
     <li className={classNames('d-flex align-items-center', className)}>
         <ButtonLink
@@ -133,5 +159,6 @@ const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
                 <small>{helperText}</small>
             </span>
         )}
+        {productStatus && <ProductStatusBadge status={productStatus} className="ml-2" />}
     </li>
 )

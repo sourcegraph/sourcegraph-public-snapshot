@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -14,6 +15,7 @@ import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useV2QueryInput } from '../../../search/useV2QueryInput'
+import { useNavbarQueryState } from '../../../stores'
 import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
 
@@ -68,6 +70,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
     const showCodyCTA = !showOnboardingTour
+
+    const keywordSearch = useNavbarQueryState.getState().searchPatternType === SearchPatternType.newStandardRC1
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -148,6 +152,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            keywordSearch={keywordSearch}
                         />
                     )}
                 </div>
