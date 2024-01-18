@@ -424,12 +424,73 @@ func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
 		WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			retryCallbackCount++
+
+			code := status.Code(err)
+			for _, c := range retriableErrors {
+				if code == c {
+					return
+				}
+			}
+
+			require.Fail(s.T(), "OnRetryCallback called with non-retriable error", "error code: %s, err: %v", code, err)
 		}),
 	)
 
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 2, retryCallbackCount, "two retry callbacks should be called")
+}
+
+func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled_Only_On_RetriableCodes() {
+	s.Run("stream establishment", func() {
+		var lastRetriedErr error
+		retryCallbackCount := 0
+
+		ctx, cancel := context.WithCancel(s.SimpleCtx())
+		cancel() // cancel the context to force a DeadlineExceeded error
+
+		s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(3), codes.Unavailable, noSleep) // see retriable_errors
+		_, err := s.Client.PingList(ctx, testpb.GoodPingList,
+			WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				retryCallbackCount++
+				lastRetriedErr = err
+			}),
+		)
+
+		require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the parent context is already cancelled, lastRetriedErr: %v", lastRetriedErr)
+		require.Error(s.T(), err, "establishing the connection should not succeed")
+	})
+
+	s.Run("stream consumption", func() {
+		var lastRetriedErr error
+		retryCallbackCount := 0
+
+		s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(alwaysSucceed, codes.OK, noSleep) // see retriable_errors
+		ctx, cancel := context.WithCancel(s.SimpleCtx())
+
+		stream, err := s.Client.PingList(ctx, testpb.GoodPingList,
+			WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				retryCallbackCount++
+				lastRetriedErr = err
+			}),
+		)
+
+		require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the stream has not been consumed yet")
+		require.NoError(s.T(), err, "establishing the connection must always succeed")
+		cancel() // cancel the context to force a DeadlineExceeded error
+
+		var lastErr error
+
+		for {
+			_, lastErr = stream.Recv()
+			if lastErr != nil {
+				break
+			}
+		}
+
+		require.Error(s.T(), lastErr, "we should have received an error since the context was cancelled during stream consumption")
+		require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the parent context is already cancelled, lastRetriedErr: %v", lastRetriedErr)
+	})
 }
 
 func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {

@@ -81,6 +81,9 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+			}
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
@@ -91,7 +94,6 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 			if lastErr == nil {
 				return nil
 			}
-			callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
 					logTrace(parentCtx, "grpc_retry parent context error", attribute.Int("attempt", int(attempt)), attribute.String("error", parentCtx.Err().Error()))
@@ -152,6 +154,10 @@ func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Str
 
 			var lastErr error
 			for attempt := uint(0); attempt < callOpts.max; attempt++ {
+				//if attempt > 0 {
+				//	callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+				//}
+
 				if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 					return nil, err
 				}
@@ -256,6 +262,7 @@ func (s *serverStreamingRetryingStream) SendMsg(m any) error {
 }
 
 func (s *serverStreamingRetryingStream) CloseSend() error {
+
 	s.mu.Lock()
 	s.wasClosedSend = true
 	s.mu.Unlock()
@@ -277,10 +284,13 @@ func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 	}
 	// We start off from attempt 1, because zeroth was already made on normal SendMsg().
 	for attempt := uint(1); attempt < s.callOpts.max; attempt++ {
+		if attemptRetry {
+			s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
+		}
+
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
-		s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
 		newStream, err := s.reestablishStreamAndResendBuffer(s.parentCtx)
 		if err != nil {
 			// Retry dial and transport errors of establishing stream as grpc doesn't retry.
