@@ -174,6 +174,7 @@ var allowedBazelFlags = map[string]struct{}{
 	"--config":               {},
 	"--test_output":          {},
 	"--verbose_failures":     {},
+	"-s":                     {},
 }
 
 var bazelFlagsRe = regexp.MustCompile(`--\w+`)
