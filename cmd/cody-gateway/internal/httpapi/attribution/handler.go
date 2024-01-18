@@ -46,7 +46,7 @@ func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 		}
 		searchResponse, err := dotcom.SnippetAttribution(ctx, client, request.Snippet, limit)
 		if err != nil {
-			response.JSONError(logger, w, http.StatusServiceUnavailable, err)
+			response.JSONError(logger, w, http.StatusBadGateway, errors.Wrap(err, "fetching SnippetAttribution from sourcegraph.com"))
 			return
 		}
 		var rs []codygateway.AttributionRepository
