@@ -302,7 +302,11 @@ func getMaxExpiryDuration(allowedOptionsInDays []int) (int32, error) {
 	if len(allowedOptionsInDays) == 0 {
 		return 0, errors.New("no expiry options available")
 	}
-
-	maxDaysAllowed := allowedOptionsInDays[len(allowedOptionsInDays)-1]
-	return int32(maxDaysAllowed * 86400), nil
+	var maxDays int = 0
+	for _, v := range allowedOptionsInDays {
+		if v > maxDays {
+			maxDays = v
+		}
+	}
+	return int32(maxDays * 86400), nil
 }
