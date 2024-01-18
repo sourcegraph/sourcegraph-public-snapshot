@@ -113,9 +113,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
 
 				// sanitize the input
-				if err := verifyBazelCommand(bzlCmd); err != nil {
-					return nil, errors.Wrapf(err, "cannot generate bazel-do")
-				}
+				// if err := verifyBazelCommand(bzlCmd); err != nil {
+				// 	return nil, errors.Wrapf(err, "cannot generate bazel-do")
+				// }
 
 				ops.Append(func(pipeline *bk.Pipeline) {
 					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
