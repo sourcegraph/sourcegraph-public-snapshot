@@ -6,17 +6,17 @@ import classNames from 'classnames'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     type CaseSensitivityProps,
-    type SearchPatternTypeMutationProps,
-    type SubmitSearchProps,
     SearchMode,
     type SearchModeProps,
+    type SearchPatternTypeMutationProps,
     type SearchPatternTypeProps,
+    type SubmitSearchProps,
 } from '@sourcegraph/shared/src/search'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 
 import { QueryInputToggle } from './QueryInputToggle'
 import { SmartSearchToggle } from './SmartSearchToggle'
-import { SmartSearchToggleExtended, SearchModes } from './SmartSearchToggleExtended'
+import { SearchModes, SmartSearchToggleExtended } from './SmartSearchToggleExtended'
 
 import styles from './Toggles.module.scss'
 
@@ -147,6 +147,8 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         [onSelectSmartSearch, toggleNewStandard]
     )
 
+    const keywordSearchEnabled = patternType === SearchPatternType.newStandardRC1
+
     return (
         <div className={classNames(className, styles.toggleContainer)}>
             <>
@@ -173,21 +175,24 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         },
                     ]}
                 />
-                <QueryInputToggle
-                    title="Regular expression"
-                    isActive={patternType === SearchPatternType.regexp}
-                    onToggle={toggleRegexp}
-                    iconSvgPath={mdiRegex}
-                    interactive={props.interactive}
-                    className={`test-regexp-toggle ${styles.regularExpressionToggle}`}
-                    disableOn={[
-                        {
-                            condition:
-                                findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
-                            reason: 'Query already contains one or more patterntype subexpressions',
-                        },
-                    ]}
-                />
+                {!keywordSearchEnabled && (
+                    <QueryInputToggle
+                        title="Regular expression"
+                        isActive={patternType === SearchPatternType.regexp}
+                        onToggle={toggleRegexp}
+                        iconSvgPath={mdiRegex}
+                        interactive={props.interactive}
+                        className={`test-regexp-toggle ${styles.regularExpressionToggle}`}
+                        disableOn={[
+                            {
+                                condition:
+                                    findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
+                                    undefined,
+                                reason: 'Query already contains one or more patterntype subexpressions',
+                            },
+                        ]}
+                    />
+                )}
                 <>
                     {!structuralSearchDisabled && (
                         <QueryInputToggle
@@ -214,7 +219,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         <SmartSearchToggleExtended
                             className="test-smart-search-toggle"
                             mode={
-                                patternType === SearchPatternType.newStandardRC1
+                                keywordSearchEnabled
                                     ? SearchModes.PreciseNew
                                     : searchMode === SearchMode.SmartSearch
                                     ? SearchModes.Smart
