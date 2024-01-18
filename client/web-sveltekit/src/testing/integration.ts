@@ -17,6 +17,12 @@ const defaultMocks: TypeMocks = {
         // null means not signed in
         currentUser: null,
     }),
+    Person: () => ({
+        avatarURL: null,
+    }),
+    User: () => ({
+        avatarURL: null,
+    }),
     SettingsCascade: () => ({
         // Ensure this is valid JSON
         final: '{}',

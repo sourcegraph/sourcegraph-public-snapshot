@@ -1,4 +1,4 @@
-query CommitQuery($repo: ID!, $revspec: String!) {
+query CommitPage_CommitQuery($repo: ID!, $revspec: String!) {
     node(id: $repo) {
         ... on Repository {
             id
@@ -18,16 +18,15 @@ query CommitQuery($repo: ID!, $revspec: String!) {
     }
 }
 
-query DiffQuery($repo: ID!, $base: String, $head: String, $first: Int, $after: String, $paths: [String!]) {
+query CommitPage_DiffQuery($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
     node(id: $repo) {
         ... on Repository {
             id
             comparison(base: $base, head: $head) {
-                fileDiffs(first: $first, after: $after, paths: $paths) {
+                fileDiffs(first: $first, after: $after) {
                     nodes {
                         ...FileDiff_Diff
                     }
-                    totalCount
                     pageInfo {
                         endCursor
                         hasNextPage
