@@ -340,7 +340,11 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     const { children, className, onClose, ...attributes } = props
 
     return (
-        <aside {...attributes} className={classNames(styles.filters, className)}>
+        <div
+            {...attributes}
+            aria-label="Search dynamic filters panel"
+            className={classNames(styles.filters, className)}
+        >
             <header className={styles.filtersHeader}>
                 <H4 as={H2} className="mb-0">
                     Filters
@@ -350,7 +354,7 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
                 </Button>
             </header>
             <div className={styles.filtersContent}>{children}</div>
-        </aside>
+        </div>
     )
 }
 
