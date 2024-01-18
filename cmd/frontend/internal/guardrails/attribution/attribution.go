@@ -20,7 +20,6 @@ import (
 // Service is for the attribution service which searches for matches on
 // snippets of code.
 //
-// Use NewService to construct this value.
 type Service interface {
 	SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error)
 }
