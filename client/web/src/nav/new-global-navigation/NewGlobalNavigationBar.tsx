@@ -360,7 +360,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         </ul>
                     </li>
 
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
+                    <NavItemLink url={PageRoutes.CodyChat} icon={CodyLogo} onClick={handleNavigationClick}>
                         Cody
                     </NavItemLink>
 

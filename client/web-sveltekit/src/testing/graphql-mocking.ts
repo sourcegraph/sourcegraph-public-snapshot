@@ -265,6 +265,10 @@ export class GraphQLMockServer {
         context,
         info
     ): unknown => {
+        // Operation mocks might use field aliases, in which case we also need to
+        // use the alias to look up the appropriat mock value
+        const fieldName = info.fieldNodes[0].alias?.value ?? info.fieldName
+
         // Must be a root query. We resolve the query here to make sure we
         // resolve operation-specific overrides correctly.
         if (info.parentType.name === 'Query') {
@@ -281,13 +285,13 @@ export class GraphQLMockServer {
 
         // If the object already has a value for this field, return it.
         // This will be the case for fields that are explicitly mocked.
-        if (obj && info.fieldName in obj) {
+        if (obj && fieldName in obj) {
             // Partial mock data is available and should take precedence over any other mock data
-            return this.getMockValue(info.returnType, info, obj[info.fieldName])
+            return this.getMockValue(info.returnType, info, obj[fieldName])
         }
 
-        if (defaultResolvers[info.parentType.name]?.[info.fieldName]) {
-            return defaultResolvers[info.parentType.name][info.fieldName](obj, args, context, info)
+        if (defaultResolvers[info.parentType.name]?.[fieldName]) {
+            return defaultResolvers[info.parentType.name][fieldName](obj, args, context, info)
         }
 
         return this.getMockValue(info.returnType, info)

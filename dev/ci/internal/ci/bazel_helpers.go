@@ -106,28 +106,6 @@ func bazelStampedCmd(args ...string) string {
 	return strings.Join(cmd, " ")
 }
 
-// bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
-// are correct, but do not actually build anything.
-func bazelAnalysisPhase() func(*bk.Pipeline) {
-	cmd := bazelCmd(
-		"build",
-		"--nobuild", // this is the key flag to enable this.
-		"//...",
-	)
-
-	cmds := []bk.StepOpt{
-		bk.Key("bazel-analysis"),
-		bk.Agent("queue", "bazel"),
-		bk.Cmd(cmd),
-	}
-
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Analysis phase",
-			cmds...,
-		)
-	}
-}
-
 func bazelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-prechecks"),

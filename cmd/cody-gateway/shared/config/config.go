@@ -1,4 +1,4 @@
-package shared
+package config
 
 import (
 	"net/url"
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,28 +27,11 @@ type Config struct {
 		InternalMode bool
 	}
 
-	Anthropic struct {
-		AllowedModels          []string
-		AccessToken            string
-		MaxTokensToSample      int
-		AllowedPromptPatterns  []string
-		RequestBlockingEnabled bool
-	}
+	Anthropic AnthropicConfig
 
-	OpenAI struct {
-		AllowedModels []string
-		AccessToken   string
-		OrgID         string
-	}
+	OpenAI OpenAIConfig
 
-	Fireworks struct {
-		AllowedModels                          []string
-		AccessToken                            string
-		LogSelfServeCodeCompletionRequests     bool
-		DisableSingleTenant                    bool
-		StarcoderCommunitySingleTenantPercent  int
-		StarcoderEnterpriseSingleTenantPercent int
-	}
+	Fireworks FireworksConfig
 
 	AllowedEmbeddingsModels []string
 
@@ -81,6 +63,29 @@ type Config struct {
 type OpenTelemetryConfig struct {
 	TracePolicy  policy.TracePolicy
 	GCPProjectID string
+}
+
+type AnthropicConfig struct {
+	AllowedModels          []string
+	AccessToken            string
+	MaxTokensToSample      int
+	AllowedPromptPatterns  []string
+	RequestBlockingEnabled bool
+}
+
+type FireworksConfig struct {
+	AllowedModels                          []string
+	AccessToken                            string
+	LogSelfServeCodeCompletionRequests     bool
+	DisableSingleTenant                    bool
+	StarcoderCommunitySingleTenantPercent  int
+	StarcoderEnterpriseSingleTenantPercent int
+}
+
+type OpenAIConfig struct {
+	AllowedModels []string
+	AccessToken   string
+	OrgID         string
 }
 
 func (c *Config) Load() {
@@ -143,31 +148,27 @@ func (c *Config) Load() {
 	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
-			// Virtual model strings. Setting these will allow one or more of the specific models
-			// and allows Cody Gateway to decide which specific model to route the request to.
-			"starcoder",
-			// Fireworks multi-tenant models:
-			fireworks.Starcoder16b,
-			fireworks.Starcoder7b,
-			fireworks.Starcoder16bSingleTenant,
+			"accounts/fireworks/models/starcoder-16b-w8a16",
+			"accounts/fireworks/models/starcoder-7b-w8a16",
+			"accounts/fireworks/models/starcoder-3b-w8a16",
+			"accounts/fireworks/models/starcoder-1b-w8a16",
+			"accounts/sourcegraph/models/starcoder-7b",
+			"accounts/sourcegraph/models/starcoder-16b",
 			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/llama-v2-34b-code-instruct",
 			"accounts/fireworks/models/mistral-7b-instruct-4k",
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
-			// Deprecated model strings
-			"accounts/fireworks/models/starcoder-3b-w8a16",
-			"accounts/fireworks/models/starcoder-1b-w8a16",
 		}, ","),
 		"Fireworks models that can be used."))
 	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
 	c.Fireworks.DisableSingleTenant = c.GetBool("CODY_GATEWAY_FIREWORKS_DISABLE_SINGLE_TENANT", "false", "Whether we should disable single tenant models for Fireworks.")
-	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
-	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}
+	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
+	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 
 	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {

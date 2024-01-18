@@ -15,6 +15,8 @@ func Searcher() *monitoring.Dashboard {
 		grpcServiceName = "searcher.v1.SearcherService"
 	)
 
+	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
+
 	grpcMethodVariable := shared.GRPCMethodVariable("searcher", grpcServiceName)
 
 	// instanceSelector is a helper for inserting the instance selector.
@@ -253,6 +255,7 @@ regularly above 0 it is a sign for further investigation.`,
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
 				HumanServiceName:    "searcher",
 				InstanceFilterRegex: `${instance:regex}`,
+				JobFilterRegex:      scrapeJobRegex,
 			}, monitoring.ObservableOwnerInfraOrg),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerInfraOrg),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),

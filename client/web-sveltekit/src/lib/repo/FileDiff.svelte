@@ -9,9 +9,12 @@
     import DiffSquares from './DiffSquares.svelte'
     import FileDiffHunks from './FileDiffHunks.svelte'
     import type { FileDiff_Diff } from './FileDiff.gql'
+    import { createEventDispatcher } from 'svelte'
 
     export let fileDiff: FileDiff_Diff
     export let expanded = !!fileDiff.newPath
+
+    const dispatch = createEventDispatcher<{ toggle: { expanded: boolean } }>()
 
     $: isBinary = fileDiff.newFile?.binary
     $: isNew = !fileDiff.oldPath
@@ -29,10 +32,15 @@
         : ''
     $: stat = fileDiff.stat
     $: linkFile = fileDiff.mostRelevantFile.__typename === 'GitBlob'
+
+    function toggle() {
+        expanded = !expanded
+        dispatch('toggle', { expanded })
+    }
 </script>
 
 <div class="header">
-    <button type="button" on:click={() => (expanded = !expanded)}>
+    <button type="button" on:click={toggle}>
         <Icon inline svgPath={expanded ? mdiChevronDown : mdiChevronRight} />
     </button>
     <div class="headerPathStart">
