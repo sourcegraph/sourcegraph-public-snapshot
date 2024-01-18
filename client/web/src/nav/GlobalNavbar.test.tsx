@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi, afterAll, beforeAll } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -41,7 +41,73 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
+    const origContext = window.context
+    beforeAll(() => {
+        window.context = {
+            ...origContext,
+            licenseInfo: {
+                currentPlan: 'enterprise-0',
+                features: {
+                    cody: true,
+                    codeSearch: true,
+                },
+            },
+        } as any
+    })
+    afterAll(() => {
+        window.context = origContext
+    })
+
     test('default', () => {
+        window.context = {
+            ...origContext,
+            licenseInfo: {
+                currentPlan: 'enterprise-0',
+                features: {
+                    cody: true,
+                    codeSearch: true,
+                },
+            },
+        } as any
+
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
+
+    test('cody only license', () => {
+        window.context = {
+            ...origContext,
+            licenseInfo: {
+                features: {
+                    cody: true,
+                    codeSearch: false,
+                },
+            },
+        } as any
+
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
+
+    test('code search only license', () => {
+        window.context = {
+            ...origContext,
+            licenseInfo: {
+                features: {
+                    cody: false,
+                    codeSearch: true,
+                },
+            },
+        } as any
+
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
