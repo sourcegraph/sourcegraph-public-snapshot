@@ -161,7 +161,7 @@ describe('Search aggregation', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     describe('with aggregation feature flag on', () => {
-        beforeEach(async () => {
+        beforeEach(() => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 ViewerSettings: () => ({
