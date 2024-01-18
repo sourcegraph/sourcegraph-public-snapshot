@@ -1,10 +1,9 @@
 [
   {
-    "value": "foo \"bar\"",
+    "value": "\\\"veneto\\\"",
     "negated": false,
     "labels": [
-      "Literal",
-      "Quoted"
+      "Literal"
     ],
     "range": {
       "start": {
@@ -13,7 +12,7 @@
       },
       "end": {
         "line": 0,
-        "column": 13
+        "column": 10
       }
     }
   }
