@@ -7,37 +7,34 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api.RepoID, db database.DB, subRepoPermsCache *rcache.Cache) error {
+func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api.RepoID, db database.DB) error {
 	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user, and needs
 	// to see all repos and files
 	internalCtx := actor.WithInternalActor(ctx)
 
-	indexer := newRecentContributorsIndexer(gitserver.NewClient("own.recentcontributors"), db, lgr, subRepoPermsCache)
+	indexer := newRecentContributorsIndexer(gitserver.NewClient("own.recentcontributors"), db, lgr)
 	return indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 }
 
 type recentContributorsIndexer struct {
-	client            gitserver.Client
-	db                database.DB
-	logger            logger.Logger
-	subRepoPermsCache rcache.Cache
+	client gitserver.Client
+	db     database.DB
+	logger logger.Logger
 }
 
-func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger, subRepoPermsCache *rcache.Cache) *recentContributorsIndexer {
-	return &recentContributorsIndexer{client: client, db: db, logger: lgr, subRepoPermsCache: *subRepoPermsCache}
+func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger) *recentContributorsIndexer {
+	return &recentContributorsIndexer{client: client, db: db, logger: lgr}
 }
 
 var commitCounter = promauto.NewCounter(prometheus.CounterOpts{

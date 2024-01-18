@@ -8,11 +8,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -21,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleAnalytics(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB, subRepoPermsCache *rcache.Cache) error {
+func handleAnalytics(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error {
 	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user,
 	// and needs to see all repos and files.
 	internalCtx := actor.WithInternalActor(ctx)
-	indexer := newAnalyticsIndexer(gitserver.NewClient("own.analyticsindexer"), db, subRepoPermsCache, lgr)
+	indexer := newAnalyticsIndexer(gitserver.NewClient("own.analyticsindexer"), db, lgr)
 	err := indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		lgr.Error("own analytics indexing failure", log.String("msg", err.Error()))
@@ -39,7 +37,7 @@ type analyticsIndexer struct {
 	logger log.Logger
 }
 
-func newAnalyticsIndexer(client gitserver.Client, db database.DB, subRepoPermsCache *rcache.Cache, lgr log.Logger) *analyticsIndexer {
+func newAnalyticsIndexer(client gitserver.Client, db database.DB, lgr log.Logger) *analyticsIndexer {
 	return &analyticsIndexer{client: client, db: db, logger: lgr}
 }
 
