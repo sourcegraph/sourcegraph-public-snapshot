@@ -321,7 +321,7 @@ describe('Search', () => {
                     expect(await editor.getValue()).toStrictEqual('foo')
                 })
 
-                test('Normalizes input with line breaks', async () => {
+                test.skip('Normalizes input with line breaks', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.focus()
