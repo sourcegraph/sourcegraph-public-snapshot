@@ -8,7 +8,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Badge, Button, Icon, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { codeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
@@ -115,11 +115,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     return (
         <div className={styles.root}>
-            <H4 className={styles.heading}>{title}</H4>
+            <H4 as={H2} className={styles.heading}>
+                {title}
+            </H4>
 
             {mergedFilters.length > MAX_FILTERS_NUMBER && (
                 <Input
-                    variant="small"
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}

@@ -108,7 +108,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return rankPassthrough
     }, [settings])
 
-    const newSearchUIEnabled = useMemo(() => settings?.experimentalFeatures?.newSearchResultsUI ?? false, [settings])
     const contextLines = useMemo(() => settings?.['search.contextLines'] ?? 1, [settings])
 
     const unhighlightedGroups: MatchGroup[] = useMemo(
@@ -234,7 +233,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
-            actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
+            actions={<SearchResultPreviewButton result={result} />}
         >
             <VisibilitySensor
                 onChange={(visible: boolean) => visible && onVisible()}

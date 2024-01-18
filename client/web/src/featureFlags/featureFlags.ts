@@ -37,6 +37,7 @@ export const FEATURE_FLAGS = [
     'signup-survey-enabled',
     'opencodegraph',
     'auditlog-expansion',
+    'search.newFilters',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
