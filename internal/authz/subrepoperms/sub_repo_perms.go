@@ -421,7 +421,7 @@ func NewSimpleChecker(repo api.RepoName, paths []string) authz.SubRepoPermission
 type repoEnabledCache struct {
 	mu        sync.Mutex
 	ttl       time.Duration
-	createdAt time.Time
+	lastReset time.Time
 	enabled   *roaring.Bitmap
 	valid     *roaring.Bitmap
 }
@@ -429,7 +429,7 @@ type repoEnabledCache struct {
 func newRepoEnabledCache(ttl time.Duration) repoEnabledCache {
 	return repoEnabledCache{
 		ttl:       ttl,
-		createdAt: time.Now(),
+		lastReset: time.Now(),
 		enabled:   roaring.NewBitmap(),
 		valid:     roaring.NewBitmap(),
 	}
@@ -458,8 +458,9 @@ func (r *repoEnabledCache) SetRepoIsEnabled(repoID api.RepoID, enabled bool) {
 
 // r.mu must be held to safely call this method
 func (r *repoEnabledCache) resetIfExpired() {
-	if time.Since(r.createdAt) >= r.ttl {
+	if time.Since(r.lastReset) >= r.ttl {
 		r.valid.Clear()
 		r.enabled.Clear()
 	}
+	r.lastReset = time.Now()
 }

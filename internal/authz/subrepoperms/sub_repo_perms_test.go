@@ -435,7 +435,7 @@ func Test_repoEnabledCache(t *testing.T) {
 	require.True(t, cacheHit)
 	require.False(t, enabled)
 
-	cache.createdAt = time.Now().Add(-10 * time.Hour)
+	cache.lastReset = time.Now().Add(-10 * time.Hour)
 
 	_, cacheHit = cache.RepoIsEnabled(api.RepoID(42))
 	require.False(t, cacheHit)
