@@ -3237,7 +3237,10 @@
     },
     "attribution.enabled": {
       "description": "Enable/Disable attribution search for Cody-generated snippets",
-      "type": "boolean"
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {

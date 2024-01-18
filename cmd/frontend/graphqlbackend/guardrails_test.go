@@ -31,10 +31,8 @@ func TestGuardrailsFeatureEnabled(t *testing.T) {
 	ctx := context.Background()
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			CodyEnabled: pointers.Ptr(true),
-			ConfigFeatures: &schema.ConfigFeatures{
-				Attribution: true,
-			},
+			CodyEnabled:        pointers.Ptr(true),
+			AttributionEnabled: pointers.Ptr(true),
 		},
 	})
 	t.Cleanup(func() { conf.Mock(nil) })
@@ -93,10 +91,8 @@ func TestGuardrailsFeatureDisabled(t *testing.T) {
 	t.Run("explicitly disabled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				ConfigFeatures: &schema.ConfigFeatures{
-					Attribution: false,
-				},
+				CodyEnabled:        pointers.Ptr(true),
+				AttributionEnabled: pointers.Ptr(false),
 			},
 		})
 		t.Cleanup(func() { conf.Mock(nil) })
