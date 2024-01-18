@@ -6,11 +6,15 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var imageRegex = regexp.MustCompile(``)
+// imageRegex will match a Docker image reference in a shell script of the following format:
+//
+// abc.domain.tld/something/else/imageName:tag@sha256:1234567890abcdef
+var imageRegex = regexp.MustCompile(`[\w-]+\.[\w]+\.[\w]+/[[:print:]]+/.+:.+@sha256:[[:alnum:]]+`)
 
 func UpdateShellManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	var checked int
@@ -56,4 +60,19 @@ func UpdateShellManifests(ctx context.Context, registry Registry, path string, o
 }
 
 func updateShellFile(registry Registry, op UpdateOperation, fileContent []byte) ([]byte, error) {
+	var outerErr error
+	replaced := imageRegex.ReplaceAllFunc(fileContent, func(repl []byte) []byte {
+		repo, err := ParseRepository(string(repl))
+		if err != nil {
+			outerErr = errors.Append(outerErr, errors.Wrapf(err, "couldn't parse %q", repl))
+		}
+
+		resultRepo, err := op(registry, repo)
+		if err != nil {
+			outerErr = errors.Append(outerErr, errors.Wrapf(err, "couldn't update %q", repl))
+		}
+
+		return []byte(resultRepo.Ref())
+	})
+	return replaced, outerErr
 }
