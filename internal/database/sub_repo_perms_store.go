@@ -23,7 +23,6 @@ var (
 	supportedTypesQuery           = make([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
 )
 
-// TODO: just make this a called function at init time
 func init() {
 	// Build this up at startup, so we don't need to rebuild it every time
 	// RepoSupported is called
