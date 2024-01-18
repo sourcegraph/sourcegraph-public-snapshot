@@ -183,7 +183,7 @@ func (a *Actor) baseLimiterAndLimit(
 	baseLimiter := limiter.StaticLimiter{
 		LimiterName: "actor.Limiter",
 		Identifier:  a.ID,
-		Redis:       limiter.NewFeatureUsageStore(feature, redis),
+		Redis:       limiter.NewFeatureUsageStore(redis, feature),
 		Limit:       limit.Limit,
 		Interval:    limit.Interval,
 		// Only update rate limit TTL if the actor has been updated recently.

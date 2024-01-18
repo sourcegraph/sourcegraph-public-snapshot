@@ -18,7 +18,7 @@ func featurePrefix(feature codygateway.Feature) string {
 	return fmt.Sprintf("%s:", feature)
 }
 
-func NewFeatureUsageStore(feature codygateway.Feature, store RedisStore) RedisStore {
+func NewFeatureUsageStore(store RedisStore, feature codygateway.Feature) RedisStore {
 	return &prefixRedisStore{
 		prefix: featurePrefix(feature),
 		store:  store,

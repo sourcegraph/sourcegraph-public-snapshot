@@ -137,7 +137,7 @@ func (s *Source) maybeResetUsageData(current actor.Actor, oldAct *actor.Actor) e
 		// the case where the new intervalSeconds in shorter than the present TTL.
 		isTTLGreaterThanInterval := false
 
-		featureUsageStore := limiter.NewFeatureUsageStore(feature, s.usageStore)
+		featureUsageStore := limiter.NewFeatureUsageStore(s.usageStore, feature)
 
 		if ttl, err := featureUsageStore.TTL(current.ID); err == nil {
 			if ttl > int(rl.Interval.Seconds()) {
