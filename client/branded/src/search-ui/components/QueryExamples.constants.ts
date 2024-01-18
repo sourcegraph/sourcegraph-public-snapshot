@@ -42,7 +42,7 @@ export const basicSyntaxColumns = (
                       queryExamples: [
                           { query: 'test server', helperText: '(both terms anywhere)', productStatus: 'new' },
                           { query: '"test server"', helperText: '(a specific string)', productStatus: 'new' },
-                          { query: '\\"Error 1001\\""', helperText: '(a string in quotations)', productStatus: 'new' },
+                          { query: '"\\"Error 1001\\""', helperText: '(a string in quotations)', productStatus: 'new' },
                           { query: 'foo OR bar' },
                           { query: '/open(File|Dir)/', helperText: '(regular expression)' },
                       ],
