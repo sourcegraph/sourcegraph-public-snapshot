@@ -139,7 +139,7 @@ export function useQueryExamples(
     return useMemo(() => {
         // Static examples for Sourcegraph.com.
         if (isSourcegraphDotCom) {
-            return basicSyntaxColumns(keywordSearch, 'test', 'facebook/react', 'kubernetes/')
+            return basicSyntaxColumns('test', 'facebook/react', 'kubernetes/', keywordSearch)
         }
         if (!queryExamplesContent) {
             return []
@@ -150,6 +150,6 @@ export function useQueryExamples(
         const filePathParts = filePath.split('/')
         const fileName = quoteIfNeeded(filePathParts.at(-1)!)
 
-        return basicSyntaxColumns(keywordSearch, fileName, singleRepoExample, orgReposExample)
+        return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample, keywordSearch)
     }, [queryExamplesContent, isSourcegraphDotCom])
 }

@@ -29,10 +29,10 @@ export const exampleQueryColumns = [
 ]
 
 export const basicSyntaxColumns = (
-    keywordSearch: boolean,
     fileName: string,
     singleRepoExample: string,
-    orgReposExample: string | undefined
+    orgReposExample: string | undefined,
+    keywordSearch: boolean
 ): QueryExamplesSection[][] =>
     keywordSearch
         ? [
