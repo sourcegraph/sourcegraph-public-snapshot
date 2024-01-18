@@ -17,7 +17,7 @@ import (
 // abc.domain.tld/something/else/imageName:tag@sha256:1234567890abcdef
 var imageRegex = regexp.MustCompile(`[\w-]+\.\w+\.\w+/[:print:]+/.+:.+@sha256:[a-fA-F0-9]+`)
 
-func UpdateShellManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
+func UpdatePureDockerManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	var checked int
 	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -38,7 +38,7 @@ func UpdateShellManifests(ctx context.Context, registry Registry, path string, o
 		}
 
 		checked++
-		newShellFile, innerErr := updateShellFile(registry, op, shellFile)
+		newShellFile, innerErr := updatePureDockerFile(registry, op, shellFile)
 		if innerErr != nil {
 			if errors.Is(innerErr, ErrNoUpdateNeeded) {
 				std.Out.WriteSkippedf("No updates to make to %s", d.Name())
@@ -64,7 +64,7 @@ func UpdateShellManifests(ctx context.Context, registry Registry, path string, o
 	return nil
 }
 
-func updateShellFile(registry Registry, op UpdateOperation, fileContent []byte) ([]byte, error) {
+func updatePureDockerFile(registry Registry, op UpdateOperation, fileContent []byte) ([]byte, error) {
 	var outerErr error
 	replaced := imageRegex.ReplaceAllFunc(fileContent, func(repl []byte) []byte {
 		repo, err := ParseRepository(string(repl))

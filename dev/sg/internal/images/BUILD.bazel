@@ -10,8 +10,8 @@ go_library(
         "helm.go",
         "images.go",
         "k8s.go",
+        "pure_docker.go",
         "registry.go",
-        "shell.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/images",
     visibility = ["//dev/sg:__subpackages__"],
@@ -38,7 +38,7 @@ go_test(
     timeout = "short",
     srcs = [
         "images_test.go",
-        "shell_test.go",
+        "pure_docker_test.go",
     ],
     embed = [":images"],
     deps = [

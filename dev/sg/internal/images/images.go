@@ -11,10 +11,10 @@ import (
 type DeploymentType string
 
 const (
-	DeploymentTypeK8S     DeploymentType = "k8s"
-	DeploymentTypeHelm    DeploymentType = "helm"
-	DeploymentTypeCompose DeploymentType = "compose"
-	DeploymentTypeShell   DeploymentType = "shell"
+	DeploymentTypeK8S        DeploymentType = "k8s"
+	DeploymentTypeHelm       DeploymentType = "helm"
+	DeploymentTypeCompose    DeploymentType = "compose"
+	DeploymentTypePureDocker DeploymentType = "pure-docker"
 )
 
 var ErrNoUpdateNeeded = errors.New("no update needed")

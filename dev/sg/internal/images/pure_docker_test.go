@@ -144,7 +144,7 @@ docker run --detach \
 				return newR, nil
 			}
 
-			changed, err := updateShellFile(registry, op, []byte(tc.shellContent))
+			changed, err := updatePureDockerFile(registry, op, []byte(tc.shellContent))
 			if err != nil {
 				t.Fatalf("shell image updated failed: %s", err)
 			}
