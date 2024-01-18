@@ -1,3 +1,5 @@
+# Removing something? Considering putting it in the DELETED section below
+
 node_modules
 schema/node_modules
 
@@ -22,9 +24,7 @@ client/testing/node_modules
 client/web/node_modules
 client/web-sveltekit/node_modules
 client/wildcard/node_modules
-client/vscode/node_modules
 dev/release/node_modules
-client/plugin-backstage/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark
 
@@ -41,3 +41,16 @@ cmd/sitemap
 internal/cmd/progress-bot
 
 client/storybook/storybook-static
+
+# DELETED but keeping to avoid errors due to lingering node_modules folders
+client/plugin-backstage/node_modules
+client/app-shell/node_modules
+client/backstage-backend/node_modules
+client/cody/node_modules
+client/cody-agent/node_modules
+client/cody-cli/node_modules
+client/cody-shared/node_modules
+client/cody-slack/node_modules
+client/cody-ui/node_modules
+client/cody-web/node_modules
+client/vscode/node_modules

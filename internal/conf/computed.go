@@ -166,6 +166,19 @@ func CodyRestrictUsersFeatureFlag() bool {
 	return false
 }
 
+func CodyPermissionsEnabled() bool {
+	// CodyPermissions is never used if the deprecated CodyRestrictUsersFeatureFlag is set,
+	// as that implies the site admin has not upgraded to the new RBAC model yet.
+	if CodyRestrictUsersFeatureFlag() {
+		return false
+	}
+
+	if enabled := Get().CodyPermissions; enabled != nil {
+		return *enabled
+	}
+	return true // default to enabled
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }

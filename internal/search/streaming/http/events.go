@@ -30,6 +30,7 @@ type EventContentMatch struct {
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
 	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Language        string           `json:"language,omitempty"`
 	Debug           string           `json:"debug,omitempty"`
 }
 
@@ -51,6 +52,7 @@ type EventPathMatch struct {
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Language        string     `json:"language,omitempty"`
 	Debug           string     `json:"debug,omitempty"`
 }
 
@@ -126,6 +128,7 @@ type EventSymbolMatch struct {
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Language        string     `json:"language,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }

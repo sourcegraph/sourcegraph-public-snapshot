@@ -4,7 +4,6 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "service",
     srcs = [
-        "matchcsv.go",
         "matchjson.go",
         "search.go",
         "searcher.go",
@@ -31,7 +30,6 @@ go_library(
         "//internal/search/repos",
         "//internal/search/result",
         "//internal/search/streaming",
-        "//internal/search/streaming/http",
         "//internal/types",
         "//internal/uploadstore",
         "//lib/errors",

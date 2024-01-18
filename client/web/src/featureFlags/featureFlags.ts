@@ -35,7 +35,6 @@ export const FEATURE_FLAGS = [
     'search-simple',
     'cody-chat-mock-test',
     'signup-survey-enabled',
-    'cody-pro',
     'opencodegraph',
     'auditlog-expansion',
 ] as const
