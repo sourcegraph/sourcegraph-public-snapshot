@@ -117,8 +117,8 @@ module.exports = { buildCodeIntelExtensions, fetchAndBuildCodeIntelExtensions }
 
 // Use this script in Bazel. Remove `module.exports` once the Bazel migration is completed.
 function main(args) {
-  if (args.length !== 3) {
-    throw new Error('Usage: <revision> <inputPath> <outputPath>')
+  if (args.length !== 2) {
+    throw new Error('Usage: <inputPath> <outputPath>')
   }
 
   const [inputPath, outputPath] = args
