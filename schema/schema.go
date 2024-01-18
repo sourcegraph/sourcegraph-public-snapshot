@@ -90,7 +90,9 @@ type AuthAccessTokens struct {
 	Allow string `json:"allow,omitempty"`
 	// AllowNoExpiration description: Allows new tokens to be created without specifying an expiration.
 	AllowNoExpiration bool `json:"allowNoExpiration,omitempty"`
-	// ExpirationOptionDays description: Options for the number of days for token expiration.  The first item in the list will be used as the default for new tokens.
+	// DefaultExpirationDays description: The default number of days until expiration for new tokens. This value will be added to the expirationOptionDays if it is not already present
+	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
+	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
 	ExpirationOptionDays []int `json:"expirationOptionDays,omitempty"`
 }
 

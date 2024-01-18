@@ -21,13 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const maxTokenDuration = 24 * 365 * time.Hour
-
 type createAccessTokenInput struct {
-	User      graphql.ID
-	Scopes    []string
-	Note      string
-	ExpiresAt *string
+	User            graphql.ID
+	Scopes          []string
+	Note            string
+	DurationSeconds *int32
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
@@ -64,16 +62,20 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	}
 
 	var expiresAt time.Time
-	if args.ExpiresAt != nil {
-		expiresAt, err = time.Parse(time.RFC3339, *args.ExpiresAt)
+	if args.DurationSeconds != nil {
+		_, allowedOptions := conf.AccessTokensExpirationOptions()
+		maxDuration, err := getMaxExpiryDuration(allowedOptions)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse expires at as time")
+			return nil, err
 		}
-		switch duration := time.Until(expiresAt); {
-		case duration < 0:
+
+		switch duration := *args.DurationSeconds; {
+		case duration <= 0:
 			return nil, errors.New("expiry must be in the future")
-		case duration > maxTokenDuration:
+		case duration > maxDuration:
 			return nil, errors.New("expiry exceeds maximum allowed")
+		default:
+			expiresAt = time.Now().Add(time.Duration(duration) * time.Second)
 		}
 	}
 
@@ -294,4 +296,13 @@ func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 		return nil, err
 	}
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit), nil
+}
+
+func getMaxExpiryDuration(allowedOptionsInDays []int) (int32, error) {
+	if len(allowedOptionsInDays) == 0 {
+		return 0, errors.New("no expiry options available")
+	}
+
+	maxDaysAllowed := allowedOptionsInDays[len(allowedOptionsInDays)-1]
+	return int32(maxDaysAllowed * 86400), nil
 }

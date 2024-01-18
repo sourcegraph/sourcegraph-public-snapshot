@@ -203,7 +203,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                   user.id,
                                   [AccessTokenScopes.UserAll],
                                   note,
-                                  addSeconds(new Date(), defaultAccessTokenExpiryDays * 86400).toISOString() // days to seconds
+                                  defaultAccessTokenExpiryDays * 86400 // days to seconds
                               )
                             : NEVER
                         ).pipe(
@@ -304,8 +304,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 <Text>{requester.name} access token successfully generated.</Text>
                                 <CopyableText className="test-access-token" text={newToken} />
                                 <Text className="form-help text-muted" size="small">
-                                    This is a one-time access token to connect your account to {requester.name}. This
-                                    token will expire in {defaultAccessTokenExpiryDays}{' '}
+                                    This is an access token to connect your account to {requester.name}. This token will
+                                    expire in {defaultAccessTokenExpiryDays}{' '}
                                     {pluralize('day', defaultAccessTokenExpiryDays)}. You will not be able to see this
                                     token again once the window is closed.
                                 </Text>

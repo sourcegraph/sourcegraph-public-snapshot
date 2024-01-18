@@ -1149,32 +1149,45 @@
           "default": "false"
         },
         "expirationOptionDays": {
-          "description": "Options for the number of days for token expiration.  The first item in the list will be used as the default for new tokens.",
+          "description": "Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.",
           "type": "array",
-          "default": [60, 7, 30, 90],
+          "default": [7, 14, 30, 60, 90],
           "items": {
             "type": "integer",
             "maximum": 365,
             "minimum": 1
           },
-          "examples": [[60, 7, 30, 90]]
+          "examples": [[7, 14, 30, 60, 90]]
+        },
+        "defaultExpirationDays": {
+          "description": "The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": 90,
+          "maximum": 365,
+          "minimum": 1
         }
       },
       "default": {
         "allow": "all-users-create",
         "allowNoExpiration": false,
-        "expirationOptionDays": [60, 7, 30, 90]
+        "expirationOptionDays": [7, 14, 30, 60, 90],
+        "defaultExpirationDays": 90
       },
       "examples": [
         {
           "allow": "site-admin-create",
           "allowNoExpiration": true,
-          "expirationOptionDays": [60, 7, 30, 90]
+          "expirationOptionDays": [7, 14, 30, 60, 90],
+          "defaultExpirationDays": 90
         },
         {
           "allow": "none",
           "allowNoExpiration": false,
-          "expirationOptionDays": [60, 7, 30, 90]
+          "expirationOptionDays": [7, 14, 30, 60, 90],
+          "defaultExpirationDays": 45
         }
       ],
       "group": "Security"

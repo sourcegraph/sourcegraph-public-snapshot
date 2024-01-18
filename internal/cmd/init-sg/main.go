@@ -89,7 +89,8 @@ func initSourcegraph() {
 		log.Println("Site admin authenticated:", *username)
 	}
 
-	token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all", "site-admin:sudo"}, time.Now().AddDate(0, 6, 0)) // default to a 6 month token
+	Days60 := int(86400 * 60)
+	token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all", "site-admin:sudo"}, &Days60) // default to a 60 day token
 	if err != nil {
 		log.Fatal("Failed to create token: ", err)
 	}

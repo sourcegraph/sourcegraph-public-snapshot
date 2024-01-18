@@ -94,12 +94,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                     concatMap(() =>
                         concat(
                             ['loading'],
-                            createAccessToken(
-                                user.id,
-                                scopes,
-                                note,
-                                expiry !== undefined ? addSeconds(new Date(), expiry).toISOString() : null
-                            ).pipe(
+                            createAccessToken(user.id, scopes, note, expiry !== undefined ? expiry : null).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
                                     navigate('..', { relative: 'path' })

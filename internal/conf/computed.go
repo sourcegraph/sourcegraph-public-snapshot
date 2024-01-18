@@ -3,6 +3,7 @@ package conf
 import (
 	"encoding/hex"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
+	"slices"
 	"strings"
 	"time"
 
@@ -79,28 +80,41 @@ func AccessTokensAllowNoExpiration() bool {
 	return cfg.AllowNoExpiration
 }
 
-// AccessTokensExpirationOptions returns the default expiration in days and approved options.
-// The default is the first item listed in Accestokens.expirationOptionDays
-// It will remove any value that is > 365 days and return defaults of 90, [7,14,30,60,90] if none are specified.
+// AccessTokensExpirationOptions returns the default access token expiration days
+// and the available expiration options (in days). It first checks if any defaults
+// or options are configured, and falls back to the hardcoded defaults if not.
+// Options will be in ascending order.
 func AccessTokensExpirationOptions() (defaultDays int, options []int) {
+	defaultOptions := []int{7, 14, 30, 60, 90}
+	defaultExpiryDays := 90
 	cfg := Get().AuthAccessTokens
 	if cfg == nil {
-		return 90, []int{7, 14, 30, 60, 90}
+		return defaultExpiryDays, defaultOptions
 	}
 
-	expirationOptionDays := cfg.ExpirationOptionDays
-	filtered := make([]int, 0, len(expirationOptionDays))
-	for _, days := range expirationOptionDays {
-		if days > 0 && days <= 365 {
-			filtered = append(filtered, days)
-		}
+	// If there is a default specified, use that.
+	if cfg.DefaultExpirationDays != nil {
+		defaultExpiryDays = *cfg.DefaultExpirationDays
 	}
 
-	if len(filtered) == 0 {
-		return 90, []int{7, 14, 30, 60, 90}
+	// use the default options if there are none specified
+	expiryOptions := cfg.ExpirationOptionDays
+	if len(expiryOptions) == 0 {
+		expiryOptions = defaultOptions
 	}
 
-	return filtered[0], filtered
+	// add the default option if it wasn't in the list already
+	foundDefault := false
+	for _, days := range expiryOptions {
+		foundDefault = foundDefault || days == defaultExpiryDays
+	}
+	if !foundDefault {
+		expiryOptions = append(expiryOptions, defaultExpiryDays)
+	}
+
+	slices.Sort(expiryOptions)
+
+	return defaultExpiryDays, expiryOptions
 }
 
 // EmailVerificationRequired returns whether users must verify an email address before they

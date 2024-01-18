@@ -1206,24 +1206,36 @@ func TestAccessTokensExpirationOptions(t *testing.T) {
 			wantOptions: []int{7, 14, 30, 60, 90},
 		},
 		{
-			name: "custom options",
+			name: "custom options no default",
 			siteConfig: schema.SiteConfiguration{
 				AuthAccessTokens: &schema.AuthAccessTokens{
 					ExpirationOptionDays: []int{10, 20},
 				},
 			},
-			wantDefault: 10,
+			wantDefault: 90,
+			wantOptions: []int{10, 20, 90},
+		},
+		{
+			name: "custom options including default",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays:  []int{10, 20},
+					DefaultExpirationDays: pointers.Ptr(20),
+				},
+			},
+			wantDefault: 20,
 			wantOptions: []int{10, 20},
 		},
 		{
-			name: "invalid options",
+			name: "ensure options are properly sorted",
 			siteConfig: schema.SiteConfiguration{
 				AuthAccessTokens: &schema.AuthAccessTokens{
-					ExpirationOptionDays: []int{-1, 10, 20, 999},
+					ExpirationOptionDays:  []int{30, 20, 10},
+					DefaultExpirationDays: pointers.Ptr(15),
 				},
 			},
-			wantDefault: 10,
-			wantOptions: []int{10, 20},
+			wantDefault: 15,
+			wantOptions: []int{10, 15, 20, 30},
 		},
 	}
 
