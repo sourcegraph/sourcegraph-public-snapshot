@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeregionnetworkendpointgroup"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpproxy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
 
@@ -93,8 +94,20 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			}},
 		})
 
-	// Enable routing requests to the backend service working serving traffic
-	// for load balancing
+	// Set up an external address to receive traffic
+	externalAddress := computeglobaladdress.NewComputeGlobalAddress(
+		scope,
+		id.TerraformID("external-address"),
+		&computeglobaladdress.ComputeGlobalAddressConfig{
+			Name:        pointers.Ptr(id.DisplayName()),
+			Project:     pointers.Ptr(config.ProjectID),
+			AddressType: pointers.Ptr("EXTERNAL"),
+			IpVersion:   pointers.Ptr("IPV4"),
+		},
+	)
+
+	// Set up our main routing rules for HTTPS requests to the backend
+	// service serving traffic for load balancing
 	urlMap := computeurlmap.NewComputeUrlMap(scope,
 		id.TerraformID("url_map"),
 		&computeurlmap.ComputeUrlMapConfig{
@@ -128,21 +141,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				},
 			).Id(),
 		})
-
-	// Set up an external address to receive traffic
-	externalAddress := computeglobaladdress.NewComputeGlobalAddress(
-		scope,
-		id.TerraformID("external-address"),
-		&computeglobaladdress.ComputeGlobalAddressConfig{
-			Name:        pointers.Ptr(id.DisplayName()),
-			Project:     pointers.Ptr(config.ProjectID),
-			AddressType: pointers.Ptr("EXTERNAL"),
-			IpVersion:   pointers.Ptr("IPV4"),
-		},
-	)
-
-	// Forward traffic from the external address to the HTTPS proxy that then
-	// routes request to our target
+	// Forward HTTPS traffic from the external address to the HTTPS proxy that
+	// then routes request to our target
 	_ = computeglobalforwardingrule.NewComputeGlobalForwardingRule(scope,
 		id.TerraformID("forwarding-rule"),
 		&computeglobalforwardingrule.ComputeGlobalForwardingRuleConfig{
@@ -155,6 +155,44 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Target:              httpsProxy.Id(),
 			LoadBalancingScheme: pointers.Ptr("EXTERNAL"),
 		})
+
+	{
+		// Set up a redirect proxy for HTTP to HTTPS
+		// Make sure to use this ID group instead of the root one for resources
+		// in this block.
+		httpToHttpsID := id.Group("http_to_https")
+		httpToHttpsURLMap := computeurlmap.NewComputeUrlMap(scope,
+			httpToHttpsID.TerraformID("url_map"),
+			&computeurlmap.ComputeUrlMapConfig{
+				Name:    pointers.Ptr(httpToHttpsID.DisplayName()),
+				Project: pointers.Ptr(config.ProjectID),
+				DefaultUrlRedirect: &computeurlmap.ComputeUrlMapDefaultUrlRedirect{
+					RedirectResponseCode: pointers.Ptr("MOVED_PERMANENTLY_DEFAULT"),
+					StripQuery:           pointers.Ptr(false),
+					HttpsRedirect:        pointers.Ptr(true),
+				},
+			})
+		httpToHttpsProxy := computetargethttpproxy.NewComputeTargetHttpProxy(scope,
+			httpToHttpsID.Group("http_to_https").TerraformID("url_map"),
+			&computetargethttpproxy.ComputeTargetHttpProxyConfig{
+				Name:    pointers.Ptr(httpToHttpsID.DisplayName()),
+				Project: pointers.Ptr(config.ProjectID),
+				UrlMap:  httpToHttpsURLMap.SelfLink(),
+			})
+		// Forward HTTP traffic to our HTTP-to-HTTPS proxy
+		_ = computeglobalforwardingrule.NewComputeGlobalForwardingRule(scope,
+			httpToHttpsID.TerraformID("forwarding-rule"),
+			&computeglobalforwardingrule.ComputeGlobalForwardingRuleConfig{
+				Name:    pointers.Ptr(httpToHttpsID.DisplayName()),
+				Project: pointers.Ptr(config.ProjectID),
+
+				IpAddress: externalAddress.Address(),
+				PortRange: pointers.Ptr("80"),
+
+				Target:              httpToHttpsProxy.Id(),
+				LoadBalancingScheme: pointers.Ptr("EXTERNAL"),
+			})
+	}
 
 	return &Output{
 		ExternalAddress: externalAddress,

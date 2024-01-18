@@ -18,6 +18,7 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeregionnetworkendpointgroup",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesslcertificate",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesslpolicy",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computetargethttpproxy",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computetargethttpsproxy",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeurlmap",
     ],
