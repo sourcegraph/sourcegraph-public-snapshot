@@ -189,7 +189,10 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'SearchResultsFetched')
     })
 
-    it('should log events when clicking on search result', () => {
+    // This test passes but it throws some internal happy-dom errors while
+    // running. See thread  https://sourcegraph.slack.com/archives/C04MYFW01NV/p1705436143793999
+    // you can find original problem issue https://github.com/sourcegraph/sourcegraph/issues/59700
+    it.skip('should log events when clicking on search result', () => {
         const logSpy = spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
