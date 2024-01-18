@@ -97,9 +97,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
     const toggleKeyword = useCallback((): void => {
         const newPatternType =
-            patternType !== SearchPatternType.keyword
-                ? SearchPatternType.keyword
-                : SearchPatternType.standard
+            patternType !== SearchPatternType.keyword ? SearchPatternType.keyword : SearchPatternType.standard
 
         setPatternType(newPatternType)
 
