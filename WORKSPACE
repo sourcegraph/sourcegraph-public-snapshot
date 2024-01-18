@@ -427,6 +427,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
+# keep revision up-to-date with client/browser/scripts/build-inline-extensions.js
 http_archive(
     name = "sourcegraph_extensions_bundle",
     add_prefix = "bundle",
