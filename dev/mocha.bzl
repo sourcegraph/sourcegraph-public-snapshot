@@ -65,7 +65,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
     ]
 
     env = dict(env, **{
-        "HEADLESS": "$$E2E_HEADLESS",
+        "HEADLESS": "$E2E_HEADLESS",
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
         "MOCHA_FILE": "$$XML_OUTPUT_FILE",
@@ -73,8 +73,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         # TODO(bazel): e2e test environment
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
-        "SOURCEGRAPH_BASE_URL": "$$E2E_SOURCEGRAPH_BASE_URL",
-        "GH_TOKEN": "$$GH_TOKEN",
+        "SOURCEGRAPH_BASE_URL": "$E2E_SOURCEGRAPH_BASE_URL",
+        "GH_TOKEN": "$GH_TOKEN",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
         "KEEP_BROWSER": "false",
@@ -88,7 +88,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         "INTEGRATION_TESTS": "true",
 
         # Puppeteer config
-        "DISPLAY": "$$DISPLAY",
+        "DISPLAY": "$DISPLAY",
     })
 
     if is_percy_enabled:
@@ -107,7 +107,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             args = args,
             env = dict(env, **{
                 "PERCY_ON": "true",
-                "PERCY_TOKEN": "$$PERCY_TOKEN",
+                "PERCY_TOKEN": "$PERCY_TOKEN",
             }),
             use_default_shell_env = True,
             srcs = data,
