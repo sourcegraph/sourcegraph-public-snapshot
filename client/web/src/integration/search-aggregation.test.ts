@@ -160,7 +160,7 @@ describe('Search aggregation', () => {
     afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    describe.only('with aggregation feature flag on', () => {
+    describe('with aggregation feature flag on', () => {
         beforeEach(async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
