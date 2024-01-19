@@ -27,14 +27,13 @@ export function staticHighlights(ranges: Range[], scrollIntoView?: boolean): Ext
             Decoration.set(
                 ranges.map(range =>
                     staticHighlightDecoration.range(
+                        // Codemirror expects 1-based line numbers
                         state.doc.line(range.start.line + 1).from + range.start.column,
                         state.doc.line(range.end.line + 1).from + range.end.column
                     )
                 )
             )
         ),
-        // TODO: how to apply an effect in an extension?
-        EditorView.scrollIntoView()
         EditorView.theme({
             '.cm-sg-staticSelection': {
                 backgroundColor: 'var(--mark-bg)',
