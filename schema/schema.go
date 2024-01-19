@@ -88,6 +88,12 @@ type AuthAccessRequest struct {
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
 	Allow string `json:"allow,omitempty"`
+	// AllowNoExpiration description: Allows new tokens to be created without specifying an expiration.
+	AllowNoExpiration bool `json:"allowNoExpiration,omitempty"`
+	// DefaultExpirationDays description: The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present
+	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
+	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
+	ExpirationOptionDays []int `json:"expirationOptionDays,omitempty"`
 }
 
 // AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
@@ -903,8 +909,6 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// EnableGRPC description: Enables gRPC for communication between internal services
-	EnableGRPC *bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
@@ -998,7 +1002,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.enablePerforce")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
-	delete(m, "enableGRPC")
 	delete(m, "enableGithubInternalRepoVisibility")
 	delete(m, "enablePermissionsWebhooks")
 	delete(m, "enableStorm")
@@ -2709,7 +2712,9 @@ type SiteConfiguration struct {
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://docs.sourcegraph.com/admin/access_control
+	CodyPermissions *bool `json:"cody.permissions,omitempty"`
+	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
@@ -2971,6 +2976,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
 	delete(m, "cody.enabled")
+	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
 	delete(m, "completions")
 	delete(m, "configFeatures")

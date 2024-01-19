@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -83,6 +84,10 @@ type ThresholdAggregation struct {
 	Period        string
 	Threshold     float64
 	Duration      string
+
+	// Trigger is the strategy for determining if an alert should fire based
+	// on the thresholds.
+	Trigger TriggerKind
 }
 
 // ResponseCodeMetric for alerting when the number of a certain response code exceeds a threshold
@@ -98,26 +103,47 @@ type ResponseCodeMetric struct {
 	Duration     *string
 }
 
-type CloudService int
+type ResourceKind string
 
 const (
-	CloudRunService CloudService = iota
-	CloudRunJob
-	CloudRedis
+	CloudRunService ResourceKind = "cloud-run-service"
+	CloudRunJob     ResourceKind = "cloud-run-job"
+	CloudRedis      ResourceKind = "cloud-redis"
+	URLUptime       ResourceKind = "url-uptime"
+)
+
+type TriggerKind int
+
+const (
+	// TriggerKindAnyViolation is trigger { count: 1 } - any violation will
+	// cause an alert to fire. This is the default.
+	TriggerKindAnyViolation TriggerKind = iota
+	// TriggerKindAllInViolation is trigger { percent: 100 } - all time series
+	// must be in violation for alert to fire.
+	TriggerKindAllInViolation
 )
 
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
-	// ID is unique identifier
-	ID          string
-	Name        string
-	Description *string
-	ProjectID   string
-	// Name of the service/job/redis to filter the alert on
-	ServiceName string
-	// Type of the service/job/redis
-	ServiceKind CloudService
+	Service       spec.ServiceSpec
+	EnvironmentID string
+	ProjectID     string
+
+	// ID is unique identifier of the alert policy
+	ID string
+	// Name is a human-readable name for the alert policy
+	Name string
+	// Description is a Markdown-format description for the alert policy. Some
+	// unified context will be included as well, including links to the service
+	// handbook page and so on.
+	Description string
+
+	// ResourceKind identifies what is being monitored.
+	ResourceKind ResourceKind
+	// ResourceName is the identifier for the monitored resource of ResourceKind.
+	ResourceName string
+
 	// NotificationChannels to subscribe on this alert
 	NotificationChannels []monitoringnotificationchannel.MonitoringNotificationChannel
 
@@ -125,8 +151,11 @@ type Config struct {
 	ResponseCodeMetric   *ResponseCodeMetric
 }
 
-type Output struct {
+func (c Config) getDocsSlug() string {
+	return fmt.Sprintf("%s#%s", c.Service.ID, c.EnvironmentID)
 }
+
+type Output struct{}
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	if config.ThresholdAggregation == nil && config.ResponseCodeMetric == nil {
@@ -135,6 +164,21 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 
 	if config.ThresholdAggregation != nil && config.ResponseCodeMetric != nil {
 		return nil, errors.New("Must provide either SingleMetric or ResponseCodeMetric config, not both")
+	}
+
+	// Universal alert description addendum
+	if config.Service.ID == "" {
+		return nil, errors.New("Service is required")
+	}
+	if config.Description == "" {
+		return nil, errors.New("Description is required")
+	} else {
+		config.Description = fmt.Sprintf(`%s
+
+See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s for service and infrastructure access details.
+If you need additional assistance, reach out to #discuss-core-services.`,
+			config.Description,
+			config.getDocsSlug())
 	}
 
 	if config.ThresholdAggregation != nil {
@@ -153,25 +197,15 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 // threshholdAggregation defines a monitoring alert policy based on a single metric threshold
 func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
 	// Set some defaults
-	switch config.ServiceKind {
+	switch config.ResourceKind {
 	case CloudRunService:
-		config.ThresholdAggregation.GroupByFields = append([]string{"resource.label.revision_name"}, config.ThresholdAggregation.GroupByFields...)
-	case CloudRunJob:
-		// No defaults
-	case CloudRedis:
+		config.ThresholdAggregation.GroupByFields = append(
+			[]string{"resource.label.revision_name"},
+			config.ThresholdAggregation.GroupByFields...)
+	case CloudRunJob, CloudRedis, URLUptime:
 		// No defaults
 	default:
-		return nil, errors.Newf("invalid service kind %q", config.ServiceKind)
-	}
-
-	if pointers.DerefZero(config.Description) == "" {
-		return nil, errors.New("description is required")
-	} else {
-		config.Description = pointers.Stringf(`%s
-
-See https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/#operating-services for service and infrastructure access details.
-If you have any questions, reach out to #discuss-core-services.`,
-			*config.Description)
+		return nil, errors.Newf("invalid service kind %q", config.ResourceKind)
 	}
 
 	if config.ThresholdAggregation.Comparison == "" {
@@ -187,14 +221,33 @@ If you have any questions, reach out to #discuss-core-services.`,
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Content:  config.Description,
+				Subject: pointers.Stringf("%s (%s): %s",
+					config.Service.GetName(), config.EnvironmentID, config.Name),
+
+				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
 			UserLabels: &map[string]*string{
-				"source":          pointers.Ptr("managed-services-platform"),
-				"msp_alert_id":    pointers.Ptr(config.ID),
-				"msp_gcp_project": pointers.Ptr(config.ProjectID),
+				"source":        pointers.Ptr("managed-services-platform"),
+				"resource_kind": pointers.Ptr(string(config.ResourceKind)),
+
+				"msp_alert_id":       pointers.Ptr(config.ID),
+				"msp_service_id":     pointers.Ptr(config.Service.ID),
+				"msp_environment_id": pointers.Ptr(config.EnvironmentID),
 			},
+
+			// Notification strategy
+			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
+				AutoClose: pointers.Ptr("86400s"), // 24 hours
+			},
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
+			// For now, set all MSP alerts as WARNING. In the future, we should
+			// have different severity levels.
+			// https://github.com/sourcegraph/managed-services/issues/385
+			// Possible values: ["CRITICAL", "ERROR", "WARNING"]
+			Severity: pointers.Ptr("WARNING"),
+
+			// Conditions
 			Combiner: pointers.Ptr("OR"),
 			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
 				{
@@ -203,8 +256,8 @@ If you have any questions, reach out to #discuss-core-services.`,
 						Aggregations: []monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdAggregations{
 							{
 								AlignmentPeriod:    pointers.Ptr(config.ThresholdAggregation.Period),
-								PerSeriesAligner:   pointers.Ptr(string(config.ThresholdAggregation.Aligner)),
-								CrossSeriesReducer: pointers.Ptr(string(config.ThresholdAggregation.Reducer)),
+								PerSeriesAligner:   pointers.NonZeroPtr(string(config.ThresholdAggregation.Aligner)),
+								CrossSeriesReducer: pointers.NonZeroPtr(string(config.ThresholdAggregation.Reducer)),
 								GroupByFields:      pointers.Ptr(pointers.Slice(config.ThresholdAggregation.GroupByFields)),
 							},
 						},
@@ -212,16 +265,24 @@ If you have any questions, reach out to #discuss-core-services.`,
 						Duration:       pointers.Ptr(config.ThresholdAggregation.Duration),
 						Filter:         pointers.Ptr(buildFilter(config)),
 						ThresholdValue: pointers.Float64(config.ThresholdAggregation.Threshold),
-						Trigger: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
-							Count: pointers.Float64(1),
-						},
+						Trigger: func() *monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger {
+							switch config.ThresholdAggregation.Trigger {
+							case TriggerKindAllInViolation:
+								return &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
+									Percent: pointers.Float64(100),
+								}
+
+							case TriggerKindAnyViolation:
+								fallthrough
+							default:
+								return &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
+									Count: pointers.Float64(1),
+								}
+							}
+						}(),
 					},
 				},
 			},
-			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
-				AutoClose: pointers.Ptr("604800s"),
-			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
 		})
 	return &Output{}, nil
 }
@@ -237,21 +298,26 @@ func buildFilter(config *Config) string {
 	// config.ThresholdAggregation.Filters is a map.
 	sort.Strings(filters)
 
-	switch config.ServiceKind {
+	switch config.ResourceKind {
 	case CloudRunService:
 		filters = append(filters,
 			`resource.type = "cloud_run_revision"`,
-			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ResourceName),
 		)
 	case CloudRunJob:
 		filters = append(filters,
 			`resource.type = "cloud_run_job"`,
-			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ResourceName),
 		)
 	case CloudRedis:
 		filters = append(filters,
 			`resource.type = "redis_instance"`,
-			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ServiceName),
+			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ResourceName),
+		)
+	case URLUptime:
+		filters = append(filters,
+			`resource.type = "uptime_url"`,
+			fmt.Sprintf(`metric.labels.check_id = "%s"`, config.ResourceName),
 		)
 	}
 
@@ -273,7 +339,7 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(fmt.Sprintf("High Ratio of %s Responses", config.Name)),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Content:  config.Description,
+				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
 			Combiner: pointers.Ptr("OR"),

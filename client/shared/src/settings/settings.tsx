@@ -314,6 +314,7 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     codeInsightsRepoUI: 'search-query-or-strict-list',
     isInitialized: true,
     searchQueryInput: 'v2',
+    newSearchResultFiltersPanel: true,
 }
 
 /**

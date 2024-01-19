@@ -161,15 +161,8 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 
 				// Do healthchecks with authorization based on MSP convention.
 				StartupProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe {
-					// Default: enabled
-					if vars.Environment.StatupProbe != nil &&
-						pointers.Deref(vars.Environment.StatupProbe.Disabled, false) {
+					if !vars.Environment.HealthProbes.UseHealthzProbes() {
 						return nil
-					}
-
-					// Set zero value for ease of reference
-					if vars.Environment.StatupProbe == nil {
-						vars.Environment.StatupProbe = &spec.EnvironmentServiceStartupProbeSpec{}
 					}
 
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
@@ -181,16 +174,16 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 							}},
 						},
 						InitialDelaySeconds: pointers.Float64(0),
-						TimeoutSeconds:      pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Timeout, 1)),
-						PeriodSeconds:       pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Interval, 1)),
+						TimeoutSeconds:      pointers.Float64(vars.Environment.HealthProbes.GetTimeoutSeconds()),
+						PeriodSeconds:       pointers.Float64(vars.Environment.HealthProbes.GetStartupIntervalSeconds()),
 						FailureThreshold:    pointers.Float64(3),
 					}
 				}(),
 				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
-					// Default: disabled
-					if vars.Environment.LivenessProbe == nil {
+					if !vars.Environment.HealthProbes.UseHealthzProbes() {
 						return nil
 					}
+
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGet{
 							Path: pointers.Ptr(builder.HealthCheckEndpoint),
@@ -199,9 +192,9 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", vars.DiagnosticsSecret.HexValue)),
 							}},
 						},
-						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),
-						PeriodSeconds:    pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Interval, 1)),
-						FailureThreshold: pointers.Float64(2),
+						TimeoutSeconds:   pointers.Float64(vars.Environment.HealthProbes.GetTimeoutSeconds()),
+						PeriodSeconds:    pointers.Float64(vars.Environment.HealthProbes.GetLivenessIntervalSeconds()),
+						FailureThreshold: pointers.Float64(3),
 					}
 				}(),
 
@@ -250,7 +243,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 
 		// Provision SSL cert
 		var sslCertificate loadbalancer.SSLCertificate
-		if domain.Cloudflare.Proxied {
+		if domain.Cloudflare.ShouldProxy() {
 			sslCertificate = cloudflareorigincert.New(stack,
 				resourceid.New("cf-origin-cert"),
 				cloudflareorigincert.Config{

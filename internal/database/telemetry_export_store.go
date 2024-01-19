@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 	"time"
@@ -74,8 +75,10 @@ type TelemetryEventsExportQueueStore interface {
 // TelemetryEventsExportQueueDiagnosticsStore is a read-only subset of
 // TelemetryEventsExportQueueStore for diagnostics endpoints and helpers.
 type TelemetryEventsExportQueueDiagnosticsStore interface {
-	// CountUnexported returns the number of events not yet exported.
-	CountUnexported(ctx context.Context) (int64, error)
+	// CountUnexported returns the number of events not yet exported. The time
+	// returned indicates the timestamp of the oldest event - it may be a zero
+	// value if there are no events awaiting export.
+	CountUnexported(ctx context.Context) (int64, time.Time, error)
 
 	// CountRecentlyExported returns the number of events recently exported.
 	// Data retention depends on TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION.
@@ -304,13 +307,15 @@ func (s *telemetryEventsExportQueueStore) DeletedExported(ctx context.Context, b
 	return result.RowsAffected()
 }
 
-func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, error) {
+func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, time.Time, error) {
 	var count int64
-	return count, s.Store.Handle().QueryRowContext(ctx, `
-	SELECT COUNT(*)
+	var oldest sql.NullTime
+	err := s.Store.Handle().QueryRowContext(ctx, `
+	SELECT COUNT(*), MIN(timestamp)
 	FROM telemetry_events_export_queue
-	WHERE exported_at IS NULL
-	`).Scan(&count)
+	WHERE exported_at IS NULL;
+	`).Scan(&count, &oldest)
+	return count, oldest.Time, err
 }
 
 func (s *telemetryEventsExportQueueStore) CountRecentlyExported(ctx context.Context) (int64, error) {

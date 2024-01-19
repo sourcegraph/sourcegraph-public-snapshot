@@ -1,4 +1,4 @@
-fragment Commits on GitCommitConnection {
+fragment CommitsPage_GitCommitConnection on GitCommitConnection {
     nodes {
         ...Commit
     }
@@ -8,7 +8,7 @@ fragment Commits on GitCommitConnection {
     }
 }
 
-query CommitsQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String) {
+query CommitsPage_CommitsQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String) {
     node(id: $repo) {
         __typename
         ... on Repository {
@@ -16,7 +16,13 @@ query CommitsQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: Str
             commit(rev: $revspec) {
                 id
                 ancestors(first: $first, afterCursor: $afterCursor) {
-                    ...Commits
+                    # This is a bit hacky, but by fetching all the data needed by both
+                    # the history panel and the commits page we ensure that our custom
+                    # Apollo infinitiy scroll cache handling for this field works
+                    # correctly. Eventually we should revisit the use of infinity scroll
+                    # on the commits page.
+                    ...HistoryPanel_HistoryConnection
+                    ...CommitsPage_GitCommitConnection
                 }
             }
         }

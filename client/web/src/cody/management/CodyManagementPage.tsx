@@ -24,7 +24,6 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
     ChangeCodyPlanResult,
     ChangeCodyPlanVariables,
@@ -71,8 +70,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
-    const [isEnabled] = useFeatureFlag('cody-pro', false)
-
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<number | null>(null)
 
@@ -92,7 +89,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser) {
+    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser) {
         return null
     }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Story, Template } from '@storybook/addon-svelte-csf'
+    import { Story } from '@storybook/addon-svelte-csf'
     import SearchResults from './SearchResults.svelte'
     import {
         createCommitMatch,

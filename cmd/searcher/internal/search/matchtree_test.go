@@ -333,7 +333,7 @@ func TestMergeMatches(t *testing.T) {
 				},
 			},
 			limit:       100, // random high limit
-			wantMatches: [][]int{{17, 24}, {20, 26}},
+			wantMatches: [][]int{{17, 24}},
 		},
 		{
 			name: "'and' matchTree with adjacent ranges",
@@ -369,7 +369,7 @@ func TestMergeMatches(t *testing.T) {
 				},
 			},
 			limit:       2,
-			wantMatches: [][]int{{0, 5}, {3, 7}},
+			wantMatches: [][]int{{0, 5}, {17, 24}},
 		},
 	}
 

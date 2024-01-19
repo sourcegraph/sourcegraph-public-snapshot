@@ -19,6 +19,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     temporarySettings: null,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
+    accessTokensAllowNoExpiration: false,
+    accessTokensExpirationDaysDefault: 60,
+    accessTokensExpirationDaysOptions: [7, 30, 60, 90],
     allowSignup: false,
     batchChangesEnabled: true,
     batchChangesDisableWebhooksWarning: false,
@@ -45,6 +48,10 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         batchChanges: {
             maxNumChangesets: -1,
             unrestricted: true,
+        },
+        features: {
+            codeSearch: true,
+            cody: true,
         },
     },
     needServerRestart: false,

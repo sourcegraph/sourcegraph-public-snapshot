@@ -1,7 +1,7 @@
-local path = require("path")
-local pattern = require("sg.autoindex.patterns")
+local path = require "path"
+local pattern = require "sg.autoindex.patterns"
 
-local recognizer = require("sg.autoindex.recognizer")
+local recognizer = require "sg.autoindex.recognizer"
 
 local java_indexer = require("sg.autoindex.indexes").get "java"
 
@@ -22,18 +22,18 @@ end
 return recognizer.new_path_recognizer {
   patterns = {
     -- Gradle
-    pattern.new_path_basename("build.gradle"),
-    pattern.new_path_basename("build.gradle.kts"),
-    pattern.new_path_basename("gradlew"),
-    pattern.new_path_basename("settings.gradle"),
+    pattern.new_path_basename "build.gradle",
+    pattern.new_path_basename "build.gradle.kts",
+    pattern.new_path_basename "gradlew",
+    pattern.new_path_basename "settings.gradle",
     -- Maven
-    pattern.new_path_basename("pom.xml"),
+    pattern.new_path_basename "pom.xml",
     -- SBT
-    pattern.new_path_basename("build.sbt"),
+    pattern.new_path_basename "build.sbt",
     -- Mill
-    pattern.new_path_basename("build.sc"),
+    pattern.new_path_basename "build.sc",
     -- SCIP build tool
-    pattern.new_path_basename("lsif-java.json")
+    pattern.new_path_basename "lsif-java.json",
   },
   generate = function(api, paths)
     local unique_paths = {}
@@ -48,7 +48,9 @@ return recognizer.new_path_recognizer {
       table.insert(unique_paths_array, path)
     end
 
-    table.sort(unique_paths_array, function(l, r) return string.len(l) < string.len(r) end)
+    table.sort(unique_paths_array, function(l, r)
+      return string.len(l) < string.len(r)
+    end)
 
     local roots = {}
 
@@ -62,10 +64,9 @@ return recognizer.new_path_recognizer {
         },
 
         generate = function(_, _)
-          local is_nested_root = project_root ~= ''
-          local is_toplevel_root = project_root == ''
-          local top_level_root_is_already_registerd =
-              roots[''] ~= nil
+          local is_nested_root = project_root ~= ""
+          local is_toplevel_root = project_root == ""
+          local top_level_root_is_already_registerd = roots[""] ~= nil
 
           local this_root_already_registered = roots[project_root] ~= nil
 
@@ -77,20 +78,20 @@ return recognizer.new_path_recognizer {
             indexer_args = { "scip-java", "index", "--build-tool=auto" },
           }
           -- top level root should be registered anyways if it has build files and source files
-          if is_toplevel_root and (not this_root_already_registered) then
+          if is_toplevel_root and not this_root_already_registered then
             roots[project_root] = true
             return job
             -- nested roots are only registered if the top level root WASN'T
             -- this is to account for multi-module builds like ones present in Maven, where
             -- nested roots might have build files but cannot be built independently
             -- in the future these situations should be handled with the auto-indexer itself
-          elseif is_nested_root and (not this_root_already_registered) and (not top_level_root_is_already_registerd) then
+          elseif is_nested_root and not this_root_already_registered and not top_level_root_is_already_registerd then
             roots[project_root] = true
             return job
           else
             return {}
           end
-        end
+        end,
       })
     end
 

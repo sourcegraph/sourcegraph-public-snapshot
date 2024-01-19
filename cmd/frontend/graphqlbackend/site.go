@@ -588,7 +588,7 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	return !isAdmin
 }
 
-func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx, r.db) }
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
 	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
@@ -640,7 +640,7 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 }
 
 func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.CompletionModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.config.CompletionModelMaxTokens != 0 {
 		max := int32(c.config.CompletionModelMaxTokens)

@@ -11,6 +11,9 @@ bazel:
     # TODO(gregmagolan): can be moved to .aspect/workflows/bazelrc in the future
     - --remote_download_minimal
     - --nobuild_runfile_links
+    # As per recommendation from https://analyzer.engflow.com/suggestions/829decb5-e3f4-4930-b60c-0494d154f8c1
+    - --experimental_profile_include_target_label
+    - --noslim_profile
 env:
     REDIS_CACHE_ENDPOINT: ":6379"
     GIT_PAGER: ''
@@ -28,7 +31,6 @@ tasks:
       include_eternal_tests: true
       targets:
           - //...
-          - //testing:grpc_backend_integration_test
           # This target should only really run when on main which we aren't handling. For the time being while we
           # evaluate Aspect Workflows it is ok
           # TODO(burmudar): Let this only run on main branch

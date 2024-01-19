@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,6 +25,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 
 	return newCompletionsHandler(
 		logger,
+		db,
 		db.Users(),
 		db.AccessTokens(),
 		telemetryrecorder.New(db),
@@ -39,9 +40,8 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 				if err != nil {
 					return "", err
 				}
-				isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 				isProUser := user.CodyProEnabledAt != nil
-				if isAllowedCustomChatModel(requestParams.Model, isProUser || !isCodyProEnabled) {
+				if isAllowedCustomChatModel(requestParams.Model, isProUser) {
 					return requestParams.Model, nil
 				}
 			}
@@ -69,7 +69,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"anthropic/claude-instant-1",
 			"openai/gpt-3.5-turbo",
 			"openai/gpt-4-1106-preview",
-			"fireworks/accounts/fireworks/models/mixtral-8x7b-instruct":
+			"fireworks/" + fireworks.Mixtral8x7bInstruct:
 			return true
 		}
 	} else {

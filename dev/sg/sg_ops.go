@@ -54,8 +54,12 @@ var OpsUpdateImagesCommand = &cli.Command{
 			Usage:   "dockerhub password",
 		},
 		&cli.StringFlag{
-			Name:  "registry",
-			Usage: "Sets the registry we want images to update to, public or internal.",
+			Name: "registry",
+			Usage: `Sets the registry we want images to update to. If you specify "public" or "internal" as a value it will use:
+	- docker.io (public)
+	- us.gcr.io (internal)
+	Alternatively, you can provide a custom registry of the format '<host>/<org>'.
+	`,
 			Value: "public",
 		},
 		&cli.StringFlag{
@@ -173,7 +177,19 @@ func opsUpdateImages(
 		case "public":
 			registry = images.NewDockerHub("sourcegraph", dockerUsername, dockerPassword)
 		default:
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "Registry is either 'internal' or 'public'"))
+			parts := strings.SplitN(registryType, "/", 2)
+			if len(parts) < 2 {
+				std.Out.WriteLine(output.Styled(output.StyleWarning, "custom registry is not in the format <host>/<org>"))
+				return errors.Errorf("invalid custom registry %q", registryType)
+			}
+
+			// custom regisry is in the format <host>/<org>, so host = parts[0], org = parts[1]
+			gcr := images.NewGCR(parts[0], parts[1])
+			if err := gcr.LoadToken(); err != nil {
+				return err
+			}
+			registry = gcr
+			std.Out.WriteNoticef("using custom gcr registry %s/%s", registry.Host(), registry.Org())
 		}
 
 		// Select the type of operation we're performing.

@@ -367,7 +367,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                             content: 'Dashboard',
                         },
                         {
-                            path: PageRoutes.Cody,
+                            path: PageRoutes.CodyChat,
                             content: 'Web Chat',
                         },
                     ]}
@@ -375,7 +375,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                 />
             ) : (
                 <NavItem icon={CodyLogo}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.Cody}>
+                    <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
                         Cody
                     </NavLink>
                 </NavItem>

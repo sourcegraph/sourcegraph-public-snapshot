@@ -1,50 +1,82 @@
 <script lang="ts">
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { createPromiseStore } from '$lib/utils'
 
-    import type { PageData } from './$types'
+    import type { PageData, Snapshot } from './$types'
     import FileDiff from '$lib/repo/FileDiff.svelte'
-
-    type Deferred = PageData['deferred']
+    import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
 
     export let data: PageData
 
-    const { pending: commitPending, value: commit, set: setCommit } = createPromiseStore<Deferred['commit']>()
-    $: setCommit(data.deferred.commit)
-    const { pending: diffPending, value: diff, set: setDiff } = createPromiseStore<Deferred['diff']>()
-    $: setDiff(data.deferred.diff)
-    $: pending = $diffPending || $commitPending
+    export const snapshot: Snapshot<{ scroll: ScrollerCapture; expandedDiffs: Array<[number, boolean]> }> = {
+        capture: () => ({
+            scroll: scroller.capture(),
+            expandedDiffs: Array.from(expandedDiffs.entries()),
+        }),
+        restore: capture => {
+            scroller.restore(capture.scroll)
+            expandedDiffs = new Map(capture.expandedDiffs)
+        },
+    }
+
+    const diff = data.diff
+    let scroller: Scroller
+    let loading = true
+    let expandedDiffs = new Map<number, boolean>()
+
+    $: fileDiffConnection = $diff?.data.node?.__typename === 'Repository' ? $diff.data.node.comparison.fileDiffs : null
+    $: if ($diff?.data.node) {
+        loading = false
+    }
+
+    function fetchMore() {
+        if (fileDiffConnection?.pageInfo.hasNextPage) {
+            loading = true
+            diff?.fetchMore({
+                variables: {
+                    after: fileDiffConnection.pageInfo.endCursor,
+                },
+            })
+        }
+    }
 </script>
 
 <svelte:head>
-    <title>Commit: {$commit?.subject ?? ''} - {data.displayRepoName} - Sourcegraph</title>
+    <title>Commit: {data.commit?.subject ?? ''} - {data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
 <section>
-    {#if $commit}
-        <div class="header">
-            <div class="info"><Commit commit={$commit} alwaysExpanded /></div>
-            <div>
-                <span>Commit:&nbsp;{$commit.abbreviatedOID}</span>
-                <span class="parents">
-                    {$commit.parents.length} parents:
-                    {#each $commit.parents as parent}
-                        <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>{' '}
-                    {/each}
-                </span>
+    {#if data.commit}
+        <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
+            <div class="header">
+                <div class="info"><Commit commit={data.commit} alwaysExpanded /></div>
+                <div>
+                    <span>Commit:&nbsp;{data.commit.abbreviatedOID}</span>
+                    <span class="parents">
+                        {data.commit.parents.length} parents:
+                        {#each data.commit.parents as parent}
+                            <a href={parent.canonicalURL}>{parent.abbreviatedOID}</a>{' '}
+                        {/each}
+                    </span>
+                </div>
             </div>
-        </div>
-        {#if $diff}
-            <ul>
-                {#each $diff.nodes as node}
-                    <li><FileDiff fileDiff={node} /></li>
-                {/each}
-            </ul>
-        {/if}
-    {/if}
-    {#if pending}
-        <LoadingSpinner />
+            {#if fileDiffConnection}
+                <ul>
+                    {#each fileDiffConnection.nodes as node, index}
+                        <li>
+                            <FileDiff
+                                fileDiff={node}
+                                expanded={expandedDiffs.get(index)}
+                                on:toggle={event => expandedDiffs.set(index, event.detail.expanded)}
+                            />
+                        </li>
+                    {/each}
+                </ul>
+            {/if}
+            {#if loading}
+                <LoadingSpinner />
+            {/if}
+        </Scroller>
     {/if}
 </section>
 

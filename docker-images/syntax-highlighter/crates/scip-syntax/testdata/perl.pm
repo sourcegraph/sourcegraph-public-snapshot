@@ -1,3 +1,8 @@
+package my_package;
+
+our $non_local_var = 5;
+my $local_var = 10;
+
 sub add {
     if (@_ == 2) {
         my $self = shift;

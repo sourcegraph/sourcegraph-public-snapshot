@@ -517,7 +517,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModelMaxTokens:       3000,
 				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
 				FastChatModelMaxTokens:   3000,
-				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModel:          "starcoder",
 				CompletionModelMaxTokens: 6000,
 				AccessToken:              "asdf",
 				Provider:                 "fireworks",
@@ -1136,6 +1136,120 @@ func TestEmailSenderName(t *testing.T) {
 			if got, want := EmailSenderName(), tc.want; got != want {
 				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
 			}
+		})
+	}
+}
+
+func TestAccessTokenAllowNoExpiration(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig schema.SiteConfiguration
+		want       bool
+	}{
+		{
+			name:       "no accesstoken config set",
+			siteConfig: schema.SiteConfiguration{},
+			want:       false,
+		},
+		{
+			name: "default value",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow: string(AccessTokensAll),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "allow no expiration",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow:             string(AccessTokensAll),
+					AllowNoExpiration: true,
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
+
+			if got, want := AccessTokensAllowNoExpiration(), tc.want; got != want {
+				t.Fatalf("AccessTokensAllowNoExpiration() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestAccessTokensExpirationOptions(t *testing.T) {
+	testCases := []struct {
+		name        string
+		siteConfig  schema.SiteConfiguration
+		wantDefault int
+		wantOptions []int
+	}{
+		{
+			name:        "nil config",
+			siteConfig:  schema.SiteConfiguration{},
+			wantDefault: 90,
+			wantOptions: []int{7, 14, 30, 60, 90},
+		},
+		{
+			name: "empty config",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{},
+			},
+			wantDefault: 90,
+			wantOptions: []int{7, 14, 30, 60, 90},
+		},
+		{
+			name: "custom options no default",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays: []int{10, 20},
+				},
+			},
+			wantDefault: 90,
+			wantOptions: []int{10, 20, 90},
+		},
+		{
+			name: "custom options including default",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays:  []int{10, 20},
+					DefaultExpirationDays: pointers.Ptr(20),
+				},
+			},
+			wantDefault: 20,
+			wantOptions: []int{10, 20},
+		},
+		{
+			name: "ensure options are properly sorted",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					ExpirationOptionDays:  []int{30, 20, 10},
+					DefaultExpirationDays: pointers.Ptr(15),
+				},
+			},
+			wantDefault: 15,
+			wantOptions: []int{10, 15, 20, 30},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{
+				SiteConfiguration: tc.siteConfig,
+			})
+			defer Mock(nil)
+
+			defaultDays, options := AccessTokensExpirationOptions()
+
+			assert.Equal(t, tc.wantDefault, defaultDays)
+			assert.Equal(t, tc.wantOptions, options)
 		})
 	}
 }

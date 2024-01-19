@@ -47,6 +47,12 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 
 		MeterProvider: metric.NewMeterProvider(),
 		MetricsLevel:  configtelemetry.LevelBasic,
+
+		ReportStatus: func(event *component.StatusEvent) {
+			if err := event.Err(); err != nil {
+				logger.Warn(event.Status().String(), log.Error(err))
+			}
+		},
 	}
 	componentName := "otlpadapter"
 

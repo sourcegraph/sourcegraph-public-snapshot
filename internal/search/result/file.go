@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 
 // File represents all the information we need to identify a file in a repository
@@ -20,6 +21,44 @@ type File struct {
 	Repo     types.MinimalRepo `json:"-"`
 	CommitID api.CommitID      `json:"-"`
 	Path     string
+
+	// A language, as determined by lib/codeintel/languages.
+	// May be empty, indicating a precise language is not known
+	// for this file, in which case we should fall back to
+	// language detection on the file name.
+	PreciseLanguage string
+}
+
+// Languages returns the most likely language for the file.
+// In the case that the file has PreciseLanguage set, it uses that.
+// Otherwise, it falls back to language matching on the path.
+// It will return an empty string in the case language matching fails.
+//
+// TODO(camdencheek): this lazy detection can be removed once
+// we add language detection in searcher.
+func (f *File) Languages() []string {
+	if f.PreciseLanguage != "" {
+		return []string{f.PreciseLanguage}
+	}
+
+	// cannot error because it's given a nil content fetcher
+	candidates, _ := languages.GetLanguages(f.Path, nil)
+	return candidates
+}
+
+// TODO(camdencheek): this lazy detection can be removed once
+// we add language detection in searcher.
+func (f *File) MostLikelyLanguage() string {
+	if f.PreciseLanguage != "" {
+		return f.PreciseLanguage
+	}
+
+	// cannot error because it's given a nil content fetcher
+	candidates, _ := languages.GetLanguages(f.Path, nil)
+	if len(candidates) > 0 {
+		return candidates[0]
+	}
+	return ""
 }
 
 func (f *File) URL() *url.URL {

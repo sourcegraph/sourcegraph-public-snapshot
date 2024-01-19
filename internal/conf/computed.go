@@ -3,6 +3,7 @@ package conf
 import (
 	"encoding/hex"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
+	"slices"
 	"strings"
 	"time"
 
@@ -68,6 +69,52 @@ func AccessTokensAllow() AccessTokenAllow {
 	default:
 		return AccessTokensNone
 	}
+}
+
+// AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
+func AccessTokensAllowNoExpiration() bool {
+	cfg := Get().AuthAccessTokens
+	if cfg == nil {
+		return false
+	}
+	return cfg.AllowNoExpiration
+}
+
+// AccessTokensExpirationOptions returns the default access token expiration days
+// and the available expiration options (in days). It first checks if any defaults
+// or options are configured, and falls back to the hardcoded defaults if not.
+// Options will be in ascending order.
+func AccessTokensExpirationOptions() (defaultDays int, options []int) {
+	defaultOptions := []int{7, 14, 30, 60, 90}
+	defaultExpiryDays := 90
+	cfg := Get().AuthAccessTokens
+	if cfg == nil {
+		return defaultExpiryDays, defaultOptions
+	}
+
+	// If there is a default specified, use that.
+	if cfg.DefaultExpirationDays != nil {
+		defaultExpiryDays = *cfg.DefaultExpirationDays
+	}
+
+	// use the default options if there are none specified
+	expiryOptions := cfg.ExpirationOptionDays
+	if len(expiryOptions) == 0 {
+		expiryOptions = defaultOptions
+	}
+
+	// add the default option if it wasn't in the list already
+	foundDefault := false
+	for _, days := range expiryOptions {
+		foundDefault = foundDefault || days == defaultExpiryDays
+	}
+	if !foundDefault {
+		expiryOptions = append(expiryOptions, defaultExpiryDays)
+	}
+
+	slices.Sort(expiryOptions)
+
+	return defaultExpiryDays, expiryOptions
 }
 
 // EmailVerificationRequired returns whether users must verify an email address before they
@@ -164,6 +211,19 @@ func CodyRestrictUsersFeatureFlag() bool {
 		return *restrict
 	}
 	return false
+}
+
+func CodyPermissionsEnabled() bool {
+	// CodyPermissions is never used if the deprecated CodyRestrictUsersFeatureFlag is set,
+	// as that implies the site admin has not upgraded to the new RBAC model yet.
+	if CodyRestrictUsersFeatureFlag() {
+		return false
+	}
+
+	if enabled := Get().CodyPermissions; enabled != nil {
+		return *enabled
+	}
+	return true // default to enabled
 }
 
 func ExecutorsEnabled() bool {
@@ -723,7 +783,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
+			// Use the virtual fireworks/starcoder model name as the default
+			completionsConfig.CompletionModel = "starcoder"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
 		// If no endpoint is configured, no default available.
@@ -1152,7 +1213,7 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 		return 3_000
 	}
 
-	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
+	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") || strings.HasPrefix(model, "starcoder") {
 		// StarCoder has a context window of 8192 tokens
 		return 6_000
 	}
