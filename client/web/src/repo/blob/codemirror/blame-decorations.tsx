@@ -139,7 +139,6 @@ const blameDecorationTheme = EditorView.theme({
         left: '0',
         height: '100%',
         display: 'inline-block',
-        background: 'var(--body-bg)',
         verticalAlign: 'bottom',
         width: 'var(--blame-decoration-width)',
 
@@ -156,6 +155,15 @@ const blameDecorationTheme = EditorView.theme({
     },
     '.no-line-break-msg': {
         marginLeft: 'var(--blame-decoration-width)',
+    },
+
+    // This ensures that line numbers and folding controls are reasonably aligned
+    // with the top of the line, even if line wrapping is enabled.
+    '.cm-lineNumbers .cm-gutterElement': {
+        lineHeight: '1.5rem',
+    },
+    '.cm-foldGutter .cm-gutterElement': {
+        lineHeight: '1.5rem',
     },
 })
 
