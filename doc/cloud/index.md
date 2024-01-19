@@ -287,7 +287,7 @@ Customer source code is stored in an isolated GCP project dedicated to the custo
 
 ### How to protect access to Sourcegraph Cloud instances?
 
-Sourcegraph supports most well-known [identity providers](..//admin/auth/index.md) and integrates with customers’ existing Single Sign-On (SSO) solutions. Experimental support for [SCIM](../admin/scim.md) is also available for Azure AD and Okta.
+Sourcegraph supports most well-known [identity providers](../admin/auth/index.md) and integrates with customers’ existing Single Sign-On (SSO) solutions. Experimental support for [SCIM](../admin/scim.md) is also available for Azure AD and Okta.
 
 Optionally, access to Cloud instances can be restricted to a list of IP addresses and ranges customers provide.
 
