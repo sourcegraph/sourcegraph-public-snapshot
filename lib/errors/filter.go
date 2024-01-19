@@ -12,6 +12,7 @@ func Ignore(err error, pred ErrorPredicate) error {
 	// If the error (or any wrapped error) is a multierror,
 	// filter its children.
 	var multi *multiError
+	println("CHANGE")
 	if As(err, &multi) {
 		filtered := multi.errs[:0]
 		for _, childErr := range multi.errs {

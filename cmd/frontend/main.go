@@ -16,6 +16,8 @@ import (
 
 func main() {
 	sanitycheck.Pass()
+	println("SUP")
+	// os.Exit(10)
 	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
