@@ -261,7 +261,6 @@ func (s *serverStreamingRetryingStream) SendMsg(m any) error {
 }
 
 func (s *serverStreamingRetryingStream) CloseSend() error {
-
 	s.mu.Lock()
 	s.wasClosedSend = true
 	s.mu.Unlock()
@@ -286,9 +285,7 @@ func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
-
 		s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
-		// here
 		newStream, err := s.reestablishStreamAndResendBuffer(s.parentCtx)
 		if err != nil {
 			// Retry dial and transport errors of establishing stream as grpc doesn't retry.
