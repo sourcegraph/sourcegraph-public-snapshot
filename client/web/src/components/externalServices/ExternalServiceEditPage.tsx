@@ -103,6 +103,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
 
     const renderService = (externalService: ExternalServiceFieldsWithConfig): JSX.Element => {
         const externalServiceCategory = resolveExternalServiceCategory(externalService, ghApp)
+        const noAuthor: boolean | undefined = externalService.creator === null ? true : undefined;
         return (
             <Container className="mb-3">
                 <PageHeader
@@ -111,7 +112,10 @@ export const ExternalServiceEditPage: FC<Props> = ({
                         <CreatedByAndUpdatedByInfoByline
                             createdAt={externalService.createdAt}
                             updatedAt={externalService.updatedAt}
-                            noAuthor={true}
+                            createdBy={externalService.creator}
+                            updatedBy={externalService.lastUpdater}
+                            noAuthor={noAuthor}
+                            type="External service"
                         />
                     }
                     className="mb-3"
