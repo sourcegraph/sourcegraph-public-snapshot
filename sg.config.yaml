@@ -1075,7 +1075,7 @@ commandsets:
       - ibazel
     bazelCommands:
       # - blobstore
-      - docsite
+      # - docsite
       - frontend
       - worker
       - repo-updater

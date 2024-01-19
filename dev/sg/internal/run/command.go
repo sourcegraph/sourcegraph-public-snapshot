@@ -224,7 +224,8 @@ type startedCmd struct {
 	outEg  *pool.ErrorPool
 	result chan error
 
-	opts commandOptions
+	opts        commandOptions
+	startOutput chan struct{}
 }
 
 func (sc *startedCmd) ErrorChannel() <-chan error {
@@ -273,6 +274,17 @@ func (sc *startedCmd) CapturedStderr() string {
 	}
 
 	return string(sc.stderrBuf.Bytes())
+}
+
+// Begins writing output to StdOut and StdErr if it was previously buffered
+// Errors if command was unbuffered
+func (sc *startedCmd) StartOutput() error {
+	if sc.opts.bufferOutput {
+		close(sc.startOutput)
+		return nil
+	}
+
+	return errors.Newf("cannot start output on unbuffered command: %s", sc.opts.name)
 }
 
 func getSecrets(ctx context.Context, name string, extSecrets map[string]secrets.ExternalSecret) (map[string]string, error) {
@@ -348,9 +360,10 @@ type commandOptions struct {
 
 func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 	sc := &startedCmd{
-		opts:      opts,
-		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
-		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
+		opts:        opts,
+		stdoutBuf:   &prefixSuffixSaver{N: 32 << 10},
+		stderrBuf:   &prefixSuffixSaver{N: 32 << 10},
+		startOutput: make(chan struct{}),
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -363,13 +376,20 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 	sc.Cmd.Dir = opts.dir
 	sc.Cmd.Env = opts.env
 
-	if !opts.bufferOutput {
-		if err := sc.connectOutput(ctx); err != nil {
-			return nil, err
-		}
+	if err := sc.connectOutput(ctx); err != nil {
+		sc.cancel()
+		return nil, err
 	}
 
-	return sc, sc.Start()
+	if !sc.opts.bufferOutput {
+		close(sc.startOutput)
+	}
+
+	if err := sc.Start(); err != nil {
+		sc.cancel()
+		return nil, err
+	}
+	return sc, nil
 }
 
 func (sc *startedCmd) connectOutput(ctx context.Context) error {
@@ -398,7 +418,14 @@ func (sc *startedCmd) connectOutput(ctx context.Context) error {
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf, sgConnLog)
 	}
 
-	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
+	// Blocks output until startOutput is signaled
+	pipe := func(writer io.Writer, reader io.Reader) error {
+		<-sc.startOutput
+		return process.DefaultPipe(writer, reader)
+
+	}
+
+	eg, err := process.PipeProcessOutput(ctx, sc.Cmd, stdoutWriter, stderrWriter, pipe)
 	if err != nil {
 		return err
 	}
