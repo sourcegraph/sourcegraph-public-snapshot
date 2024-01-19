@@ -1,9 +1,8 @@
 /**
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
-import { EditorState, type Extension } from '@codemirror/state'
-import { Decoration, EditorView, EditorViewConfig } from '@codemirror/view'
-import { sortBy } from 'lodash'
+import { type Extension } from '@codemirror/state'
+import { Decoration, EditorView } from '@codemirror/view'
 
 export interface Range {
     start: Location
@@ -19,9 +18,7 @@ export interface Location {
 
 const staticHighlightDecoration = Decoration.mark({ class: 'cm-sg-staticSelection' })
 
-export function staticHighlights(ranges: Range[], scrollIntoView?: boolean): Extension {
-    sortBy(ranges, [range => [range.start.line, range.start.column, range.end.line, range.end.column]])
-
+export function staticHighlights(ranges: Range[]): Extension {
     return [
         EditorView.decorations.compute(['doc'], state =>
             Decoration.set(
@@ -31,7 +28,8 @@ export function staticHighlights(ranges: Range[], scrollIntoView?: boolean): Ext
                         state.doc.line(range.start.line + 1).from + range.start.column,
                         state.doc.line(range.end.line + 1).from + range.end.column
                     )
-                )
+                ),
+                true
             )
         ),
         EditorView.theme({
