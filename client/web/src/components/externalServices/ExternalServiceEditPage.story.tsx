@@ -66,13 +66,15 @@ const externalService = {
         limit: 5,
     },
     creator: {
+        __typename: 'User',
         username: 'alice',
         url: '/users/alice',
     },
     lastUpdater: {
+        __typename: 'User',
         username: 'alice',
         url: '/users/alice',
-    },
+    }
 } as ExternalServiceFields
 
 function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
