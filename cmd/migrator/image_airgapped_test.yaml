@@ -20,7 +20,7 @@ fileExistenceTests:
   # the correct schemas.
   # TODO https://github.com/sourcegraph/sourcegraph/issues/59721
 - name: '/schema-descriptions README'
-  path: '/schema-descriptions/README'
+  path: '/schema-descriptions/README.md'
   shouldExist: true
   uid: 0
   gid: 0
