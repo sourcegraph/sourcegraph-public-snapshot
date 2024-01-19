@@ -342,6 +342,15 @@ func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 		WithMax(10),
 		WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			retryCallbackCount++
+
+			code := status.Code(err)
+			for _, c := range retriableErrors {
+				if code == c {
+					return
+				}
+			}
+
+			require.Fail(s.T(), "OnRetryCallback called with non-retriable error", "error code: %s, err: %v", code, err)
 		}),
 	)
 
