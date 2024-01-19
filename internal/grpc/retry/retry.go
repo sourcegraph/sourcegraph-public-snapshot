@@ -81,11 +81,11 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 		}
 		var lastErr error
 		for attempt := uint(0); attempt < callOpts.max; attempt++ {
-			if attempt > 0 {
-				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
-			}
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
+			}
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			}
 			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			defer cancel() // Clean up potential resources.
@@ -154,13 +154,13 @@ func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Str
 
 			var lastErr error
 			for attempt := uint(0); attempt < callOpts.max; attempt++ {
-				//if attempt > 0 {
-				//	callOpts.onRetryCallback(parentCtx, attempt, lastErr)
-				//}
-
 				if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 					return nil, err
 				}
+				if attempt > 0 {
+					callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+				}
+
 				var newStreamer grpc.ClientStream
 				newStreamer, lastErr = streamer(parentCtx, desc, cc, fullMethod, grpcOpts...)
 				if lastErr == nil {
@@ -177,7 +177,6 @@ func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Str
 
 					return newRetryingStreamerWithMetrics(retryingStreamer, observer), nil
 				}
-				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 				if isContextError(lastErr) {
 					if parentCtx.Err() != nil {
 						logTrace(parentCtx, "grpc_retry parent context error",
@@ -284,13 +283,12 @@ func (s *serverStreamingRetryingStream) RecvMsg(m any) error {
 	}
 	// We start off from attempt 1, because zeroth was already made on normal SendMsg().
 	for attempt := uint(1); attempt < s.callOpts.max; attempt++ {
-		if attemptRetry {
-			s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
-		}
-
 		if err := waitRetryBackoff(attempt, s.parentCtx, s.callOpts); err != nil {
 			return err
 		}
+
+		s.callOpts.onRetryCallback(s.parentCtx, attempt, lastErr)
+		// here
 		newStream, err := s.reestablishStreamAndResendBuffer(s.parentCtx)
 		if err != nil {
 			// Retry dial and transport errors of establishing stream as grpc doesn't retry.
