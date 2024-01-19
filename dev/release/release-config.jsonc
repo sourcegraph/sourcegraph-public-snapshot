@@ -22,6 +22,21 @@
       "current": "5.2.0",
       "captainGitHubUsername": "unknwon",
       "captainSlackUsername": "joe"
+    },
+    "5.3.0": {
+      "codeFreezeDate": "2024-02-09T10:00:00.000+02:00",
+      "securityApprovalDate": "2024-02-13T10:00:00.000+02:00",
+      "releaseDate": "2024-02-13T10:00:00.000+02:00",
+      "patches": [
+        "2024-02-27T10:00:00.000-08:00",
+        "2024-03-12T10:00:00.000-07:00",
+        "2024-03-26T10:00:00.000-07:00",
+        "2024-04-09T10:00:00.000-07:00",
+        "2024-04-23T10:00:00.000-07:00"
+      ],
+      "current": "5.3.0",
+      "captainGitHubUsername": "keegancsmith",
+      "captainSlackUsername": "keegan"
     }
   },
   "dryRun": {

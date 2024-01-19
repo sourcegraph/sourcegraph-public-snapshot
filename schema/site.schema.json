@@ -607,7 +607,6 @@
       ],
       "group": "Experimental"
     },
-
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
@@ -1143,17 +1142,52 @@
           "type": "string",
           "enum": ["all-users-create", "site-admin-create", "none"],
           "default": "all-users-create"
+        },
+        "allowNoExpiration": {
+          "description": "Allows new tokens to be created without specifying an expiration.",
+          "type": "boolean",
+          "default": "false"
+        },
+        "expirationOptionDays": {
+          "description": "Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.",
+          "type": "array",
+          "default": [7, 14, 30, 60, 90],
+          "items": {
+            "type": "integer",
+            "maximum": 365,
+            "minimum": 1
+          },
+          "examples": [[7, 14, 30, 60, 90]]
+        },
+        "defaultExpirationDays": {
+          "description": "The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": 90,
+          "maximum": 365,
+          "minimum": 1
         }
       },
       "default": {
-        "allow": "all-users-create"
+        "allow": "all-users-create",
+        "allowNoExpiration": false,
+        "expirationOptionDays": [7, 14, 30, 60, 90],
+        "defaultExpirationDays": 90
       },
       "examples": [
         {
-          "allow": "site-admin-create"
+          "allow": "site-admin-create",
+          "allowNoExpiration": true,
+          "expirationOptionDays": [7, 14, 30, 60, 90],
+          "defaultExpirationDays": 90
         },
         {
-          "allow": "none"
+          "allow": "none",
+          "allowNoExpiration": false,
+          "expirationOptionDays": [7, 14, 30, 60, 90],
+          "defaultExpirationDays": 45
         }
       ],
       "group": "Security"

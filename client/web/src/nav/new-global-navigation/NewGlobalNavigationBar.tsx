@@ -182,11 +182,11 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    // If the feature-flag "search-new-keyword" is set, we allow the user to
+    // If the feature-flag "search-keyword" is set, we allow the user to
     // choose between precise (legacy), precise (new), and smart search.  This
     // is only temporary for internal testing.  The goal is to make the new
     // precise search the default.
-    const [showExtendedPicker] = useFeatureFlag('search-new-keyword')
+    const [showExtendedPicker] = useFeatureFlag('search-keyword')
 
     const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
@@ -360,7 +360,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         </ul>
                     </li>
 
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
+                    <NavItemLink url={PageRoutes.CodyChat} icon={CodyLogo} onClick={handleNavigationClick}>
                         Cody
                     </NavItemLink>
 
