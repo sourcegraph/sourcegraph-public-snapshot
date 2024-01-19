@@ -50,14 +50,6 @@ const externalService = {
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
-    creator: {
-        username: 'alice',
-        url: '/users/alice',
-    },
-    lastUpdater: {
-        username: 'alice',
-        url: '/users/alice',
-    },
     hasConnectionCheck: false,
     namespace: {
         id: 'userid',
@@ -72,6 +64,14 @@ const externalService = {
         interval: 3600,
         lastReplenishment: new Date().toISOString(),
         limit: 5,
+    },
+    creator: {
+        username: 'alice',
+        url: '/users/alice',
+    },
+    lastUpdater: {
+        username: 'alice',
+        url: '/users/alice',
     },
 } as ExternalServiceFields
 
