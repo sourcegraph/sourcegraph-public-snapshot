@@ -138,7 +138,9 @@ func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state Service
 				diagnosticsLogger.Scoped("healthz"))
 
 			if err := state.Healthy(r.Context(), r.URL.Query()); err != nil {
-				logger.Error("service not healthy", log.Error(err))
+				logger.Warn("service reported not healthy",
+					log.String("query", r.URL.Query().Encode()),
+					log.Error(err))
 
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("healthz: " + err.Error()))
