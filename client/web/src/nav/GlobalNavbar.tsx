@@ -335,57 +335,69 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [showOwn, showSearchContext, showCodySearch, showSearchJobs])
 
+    const searchNavigation =
+        searchNavBarItems.length > 0 ? (
+            <NavDropdown
+                toggleItem={{
+                    path: PageRoutes.Search,
+                    altPath: PageRoutes.RepoContainer,
+                    icon: MagnifyIcon,
+                    content: 'Code Search',
+                    variant: navLinkVariant,
+                }}
+                routeMatch={routeMatch}
+                homeItem={{ content: 'Search home' }}
+                items={searchNavBarItems}
+                name="search"
+            />
+        ) : (
+            <NavItem icon={MagnifyIcon}>
+                <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                    Code Search
+                </NavLink>
+            </NavItem>
+        )
+
+    const codyNavigation = showCodyDropdown ? (
+        <NavDropdown
+            toggleItem={{
+                path: PageRoutes.CodyManagement,
+                icon: CodyLogo,
+                content: 'Cody',
+                variant: navLinkVariant,
+            }}
+            routeMatch={routeMatch}
+            items={[
+                {
+                    path: PageRoutes.CodyManagement,
+                    content: 'Dashboard',
+                },
+                {
+                    path: PageRoutes.CodyChat,
+                    content: 'Web Chat',
+                },
+            ]}
+            name="cody"
+        />
+    ) : (
+        <NavItem icon={CodyLogo}>
+            <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
+                Cody AI
+            </NavLink>
+        </NavItem>
+    )
+
+    let prioritizedLinks: JSX.Element[] = [searchNavigation, codyNavigation]
+
+    if (isCodyOnlyLicense()) {
+        // This should be cheap considering there will only be two items in the array.
+        prioritizedLinks = prioritizedLinks.reverse()
+    }
+
     return (
         <NavGroup ref={navbarReference} className={classNames(className, styles.list)}>
-            {searchNavBarItems.length > 0 ? (
-                <NavDropdown
-                    toggleItem={{
-                        path: PageRoutes.Search,
-                        altPath: PageRoutes.RepoContainer,
-                        icon: MagnifyIcon,
-                        content: 'Code Search',
-                        variant: navLinkVariant,
-                    }}
-                    routeMatch={routeMatch}
-                    homeItem={{ content: 'Search home' }}
-                    items={searchNavBarItems}
-                    name="search"
-                />
-            ) : (
-                <NavItem icon={MagnifyIcon}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
-                        Code Search
-                    </NavLink>
-                </NavItem>
-            )}
-            {showCodyDropdown ? (
-                <NavDropdown
-                    toggleItem={{
-                        path: PageRoutes.CodyManagement,
-                        icon: CodyLogo,
-                        content: 'Cody',
-                        variant: navLinkVariant,
-                    }}
-                    routeMatch={routeMatch}
-                    items={[
-                        {
-                            path: PageRoutes.CodyManagement,
-                            content: 'Dashboard',
-                        },
-                        {
-                            path: PageRoutes.CodyChat,
-                            content: 'Web Chat',
-                        },
-                    ]}
-                    name="cody"
-                />
-            ) : (
-                <NavItem icon={CodyLogo}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
-                        Cody
-                    </NavLink>
-                </NavItem>
-            )}
+            {prioritizedLinks}
+
             {showSearchNotebook && (
                 <NavItem icon={BookOutlineIcon}>
                     <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
@@ -400,9 +412,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                     </NavLink>
                 </NavItem>
             )}
-            {/* This is the only circumstance where we show something
-                batch-changes-related even if the instance does not have batch
-                changes enabled, for marketing purposes on sourcegraph.com */}
             {showBatchChanges && <BatchChangesNavItem variant={navLinkVariant} />}
             {showCodeInsights && (
                 <NavItem icon={BarChartIcon}>
