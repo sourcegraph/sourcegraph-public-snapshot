@@ -70,7 +70,7 @@ const externalService = {
         __typename: 'User',
         username: 'alice',
         url: '/users/alice',
-    }
+    },
 } as ExternalServiceFields
 
 const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>

@@ -74,7 +74,7 @@ const externalService = {
         __typename: 'User',
         username: 'alice',
         url: '/users/alice',
-    }
+    },
 } as ExternalServiceFields
 
 function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
