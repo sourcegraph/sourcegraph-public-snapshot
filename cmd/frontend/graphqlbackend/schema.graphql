@@ -7501,6 +7501,11 @@ type CodyConfigFeatures {
     Enable Cody special commands feature.
     """
     commands: Boolean!
+
+    """
+    Enable attribution search for Cody-generated snippets.
+    """
+    attribution: Boolean!
 }
 
 """

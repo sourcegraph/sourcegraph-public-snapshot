@@ -862,6 +862,10 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 		return nil
 	}
 	configFeatures := siteConfig.ConfigFeatures
+	var attributionEnabled bool
+	if enabled := siteConfig.AttributionEnabled; enabled != nil {
+		attributionEnabled = *enabled
+	}
 	// If no features configuration is set at all, but cody is enabled, assume a default configuration
 	// where all the features are enabled this is to handle edge cases where no config is set etc
 	if configFeatures == nil {
@@ -869,6 +873,7 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 			Chat:         true,
 			AutoComplete: true,
 			Commands:     true,
+			Attribution:  attributionEnabled,
 		}
 	}
 
@@ -876,6 +881,7 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 		Chat:         configFeatures.Chat,
 		AutoComplete: configFeatures.AutoComplete,
 		Commands:     configFeatures.Commands,
+		Attribution:  attributionEnabled,
 	}
 	return computedConfig
 }

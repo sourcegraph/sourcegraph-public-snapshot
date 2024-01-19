@@ -2959,6 +2959,13 @@
           "chat": true
         }
       ]
+    },
+    "attribution.enabled": {
+      "description": "Enable/Disable attribution search for Cody-generated snippets",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {
