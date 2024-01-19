@@ -97,7 +97,6 @@ func (bc BazelCommand) GetExec(ctx context.Context) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	println("Binary location: " + binLocation + "\n")
 
 	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, binLocation)), nil
 }

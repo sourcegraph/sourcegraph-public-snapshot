@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
-type ConfigCommand interface {
+type SGConfigCommand interface {
 	// Getters for common fields
 	GetName() string
 	GetContinueWatchOnExit() bool
@@ -77,4 +77,9 @@ func (e noBinaryError) Unwrap() error {
 func (e noBinaryError) Wrap(err error) error {
 	e.err = err
 	return e
+}
+
+func (e noBinaryError) Is(target error) bool {
+	_, ok := target.(noBinaryError)
+	return ok
 }

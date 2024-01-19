@@ -3,12 +3,18 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/download"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -19,7 +25,7 @@ type Installer interface {
 
 type InstallManager struct {
 	// Constructor commands
-	out     *std.Output
+	*std.Output
 	cmds    map[string]struct{}
 	env     map[string]string
 	verbose bool
@@ -49,7 +55,7 @@ func Install(ctx context.Context, parentEnv map[string]string, verbose bool, cmd
 func newInstallManager(cmds []Installer, out *std.Output, env map[string]string, verbose bool) *InstallManager {
 	total := len(cmds)
 	return &InstallManager{
-		out:     out,
+		Output:  out,
 		cmds:    SliceToHashSet(cmds, func(c Installer) string { return c.GetName() }),
 		verbose: verbose,
 		env:     env,
@@ -63,9 +69,9 @@ func newInstallManager(cmds []Installer, out *std.Output, env map[string]string,
 
 // starts all progress bars and counters but does not start installation
 func (installer *InstallManager) start(ctx context.Context) {
-	installer.out.Write("")
-	installer.out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", installer.total))
-	installer.out.Write("")
+	installer.Write("")
+	installer.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", installer.total))
+	installer.Write("")
 
 	installer.progress = std.Out.Progress([]output.ProgressBar{
 		{Label: fmt.Sprintf("Installing %d commands", installer.total), Max: float64(installer.total)},
@@ -140,19 +146,19 @@ func (installer *InstallManager) handleInstalled(name string) {
 func (installer *InstallManager) complete() {
 	installer.progress.Complete()
 
-	installer.out.Write("")
+	installer.Write("")
 	if installer.verbose {
-		installer.out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Took %s. Booting up the system!", installer.stats.duration()))
+		installer.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Took %s. Booting up the system!", installer.stats.duration()))
 	} else {
-		installer.out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
+		installer.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 	}
-	installer.out.Write("")
+	installer.Write("")
 }
 
 func (installer *InstallManager) handleFailure(name string, err error) {
 	installer.progress.Destroy()
 	installer.stats.handleFailure(name, err)
-	printCmdError(installer.out.Output, name, err)
+	printCmdError(installer.Output.Output, name, err)
 }
 
 func (installer *InstallManager) handleWaiting() {
@@ -230,6 +236,62 @@ func SliceToHashSet[R any, T comparable](slice []R, extract func(R) T) HashSet[T
 		set[extract(item)] = struct{}{}
 	}
 	return set
+}
+
+type installFunc func(context.Context, map[string]string) error
+
+var installFuncs = map[string]installFunc{
+	"installCaddy": func(ctx context.Context, env map[string]string) error {
+		version := env["CADDY_VERSION"]
+		if version == "" {
+			return errors.New("could not find CADDY_VERSION in env")
+		}
+
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		var os string
+		switch runtime.GOOS {
+		case "linux":
+			os = "linux"
+		case "darwin":
+			os = "mac"
+		}
+
+		archiveName := fmt.Sprintf("caddy_%s_%s_%s", version, os, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/caddyserver/caddy/releases/download/v%s/%s.tar.gz", version, archiveName)
+
+		target := filepath.Join(root, fmt.Sprintf(".bin/caddy_%s", version))
+
+		return download.ArchivedExecutable(ctx, url, target, "caddy")
+	},
+	"installJaeger": func(ctx context.Context, env map[string]string) error {
+		version := env["JAEGER_VERSION"]
+
+		// Make sure the data folder exists.
+		disk := env["JAEGER_DISK"]
+		if err := os.MkdirAll(disk, 0755); err != nil {
+			return err
+		}
+
+		if version == "" {
+			return errors.New("could not find JAEGER_VERSION in env")
+		}
+
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		archiveName := fmt.Sprintf("jaeger-%s-%s-%s", version, runtime.GOOS, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/jaegertracing/jaeger/releases/download/v%s/%s.tar.gz", version, archiveName)
+
+		target := filepath.Join(root, fmt.Sprintf(".bin/jaeger-all-in-one-%s", version))
+
+		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
+	},
 }
 
 var waitingMessages = []string{

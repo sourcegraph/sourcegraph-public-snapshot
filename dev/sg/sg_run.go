@@ -92,7 +92,7 @@ func runExec(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
-	cmds := make([]run.ConfigCommand, 0, len(args))
+	cmds := make([]run.SGConfigCommand, 0, len(args))
 	for _, arg := range args {
 		if bazelCmd, ok := config.BazelCommands[arg]; ok && !legacy {
 			cmds = append(cmds, bazelCmd)

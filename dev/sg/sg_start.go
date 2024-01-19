@@ -349,7 +349,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
-	configCmds := make([]run.ConfigCommand, 0, len(bcmds)+len(cmds))
+	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
 	for _, cmd := range bcmds {
 		configCmds = append(configCmds, cmd)
 	}
@@ -360,7 +360,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 	return run.Commands(ctx, env, verbose, configCmds...)
 }
 
-func getCommands[T run.ConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
+func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
 	exceptList := exceptServices.Value()
 	exceptSet := make(map[string]interface{}, len(exceptList))
 	for _, svc := range exceptList {
