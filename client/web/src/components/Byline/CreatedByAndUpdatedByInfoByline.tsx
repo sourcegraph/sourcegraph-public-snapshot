@@ -44,7 +44,6 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
                                 </>
                             )}
                             <>
-                                {' '}
                                 Last synced <Timestamp date={updatedAt} />
                             </>
                         </>
@@ -52,10 +51,7 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
                         <>
                             Updated <Timestamp date={updatedAt} />
                             {updatedBy?.username !== createdBy?.username && (
-                                <>
-                                    {' '}
-                                    by{' '}
-                                    {updatedBy ? (
+                                <> by {updatedBy ? (
                                         <Link to={updatedBy.url}>{updatedBy.username}</Link>
                                     ) : (
                                         'a deleted user'
