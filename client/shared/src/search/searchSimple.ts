@@ -17,7 +17,7 @@ import { scanSearchQuery } from './query/scanner'
 // hacky way to update all filters into our supported query language. We should use an
 // actual parser since this stomps all over whitespace.
 export function hacksGobQueriesToRegex(query: string): string {
-    const tokens = scanSearchQuery(query, undefined, SearchPatternType.newStandardRC1)
+    const tokens = scanSearchQuery(query, undefined, SearchPatternType.keyword)
     if (tokens.type === 'error') {
         return query
     }

@@ -2679,7 +2679,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
-    newStandardRC1
+    codycontext
 }
 
 """

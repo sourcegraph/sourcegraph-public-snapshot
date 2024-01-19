@@ -241,10 +241,10 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeStructural, nil
 	case "lucky":
 		return query.SearchTypeLucky, nil
-	case "codyContext":
+	case "codycontext":
 		return query.SearchTypeCodyContext, nil
-	case "newStandardRC1":
-		return query.SearchTypeNewStandardRC1, nil
+	case "keyword":
+		return query.SearchTypeKeyword, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -267,7 +267,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V3":
 			searchType = query.SearchTypeStandard
 		case "V4-rc1":
-			searchType = query.SearchTypeNewStandardRC1
+			searchType = query.SearchTypeKeyword
 		default:
 			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got %q", version)
 		}
@@ -295,10 +295,10 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
-		case "codyContext":
+		case "codycontext":
 			searchType = query.SearchTypeCodyContext
-		case "newStandardRC1":
-			searchType = query.SearchTypeNewStandardRC1
+		case "keyword":
+			searchType = query.SearchTypeKeyword
 		}
 	})
 	return searchType
