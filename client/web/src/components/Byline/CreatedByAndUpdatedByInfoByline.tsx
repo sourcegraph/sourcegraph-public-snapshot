@@ -25,7 +25,7 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
     updatedAt,
     updatedBy,
     noAuthor,
-    type
+    type,
 }) => {
     const createdByPart = noAuthor ?? (
         <> by {createdBy ? <Link to={createdBy.url}>{createdBy.username}</Link> : 'a deleted user'}</>
@@ -38,23 +38,36 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
                     {type === 'ExternalService' ? (
                         <>
                             {updatedBy?.username && (
-                                <>Updated by {<Link to={updatedBy.url}>{updatedBy.username}</Link>}
-                                <span className="mx-2">|</span></>
+                                <>
+                                    Updated by {<Link to={updatedBy.url}>{updatedBy.username}</Link>}
+                                    <span className="mx-2">|</span>
+                                </>
                             )}
-                            <> Last synced <Timestamp date={updatedAt} /></>
+                            <>
+                                {' '}
+                                Last synced <Timestamp date={updatedAt} />
+                            </>
                         </>
                     ) : (
                         <>
                             Updated <Timestamp date={updatedAt} />
                             {updatedBy?.username !== createdBy?.username && (
-                                <> by {updatedBy ? <Link to={updatedBy.url}>{updatedBy.username}</Link> : 'a deleted user'}</>
+                                <>
+                                    {' '}
+                                    by{' '}
+                                    {updatedBy ? (
+                                        <Link to={updatedBy.url}>{updatedBy.username}</Link>
+                                    ) : (
+                                        'a deleted user'
+                                    )}
+                                </>
                             )}
                         </>
                     )}
                 </>
             )}
         </>
-    );
+    )
     return (
         <>
             Created <Timestamp date={createdAt} /> {createdByPart} {updatedPart}

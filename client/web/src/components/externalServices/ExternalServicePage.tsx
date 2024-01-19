@@ -165,7 +165,7 @@ export const ExternalServicePage: FC<Props> = props => {
             )
         }
         const externalServiceCategory = resolveExternalServiceCategory(externalService)
-        const noAuthor: boolean | undefined = externalService.creator === null ? true : undefined;
+        const noAuthor: boolean | undefined = externalService.creator === null ? true : undefined
         return (
             <Container className="mb-3">
                 <PageHeader
