@@ -406,8 +406,6 @@ commands:
   web:
     description: Enterprise version of the web app
     cmd: pnpm --filter @sourcegraph/web dev
-    watch:
-      - client/web/dev
     install: |
       pnpm install
       pnpm run generate
@@ -974,8 +972,6 @@ bazelCommands:
     target: //cmd/blobstore:blobstore
   searcher:
     target: //cmd/searcher
-  docsite:
-    target: //doc:serve
   syntax-highlighter:
     target: //docker-images/syntax-highlighter:syntect_server
     ignoreStdout: true
@@ -991,7 +987,6 @@ bazelCommands:
       QUIET: 'true'
   frontend:
     description: Enterprise frontend
-    continueWatchOnExit: true
     target: //cmd/frontend
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)

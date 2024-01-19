@@ -306,7 +306,7 @@ func OpenUnixSocket() error {
 	return err
 }
 
-func startConfigCmd(ctx context.Context, cmd ConfigCommand, dir string, parentEnv map[string]string) (*startedCmd, error) {
+func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv map[string]string) (*startedCmd, error) {
 	exec, err := cmd.GetExec(ctx)
 	if err != nil {
 		return nil, err

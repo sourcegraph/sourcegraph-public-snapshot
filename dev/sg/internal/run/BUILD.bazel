@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "bazel_command.go",
         "command.go",
-        "config_command.go",
         "helpers.go",
         "ibazel.go",
         "installer.go",
@@ -14,6 +13,7 @@ go_library(
         "pid.go",
         "prefix_suffix_saver.go",
         "run.go",
+        "sgconfig_command.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/run",
     visibility = ["//dev/sg:__subpackages__"],
