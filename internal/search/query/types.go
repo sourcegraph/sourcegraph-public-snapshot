@@ -40,7 +40,7 @@ const (
 	SearchTypeLucky
 	SearchTypeStandard
 	SearchTypeCodyContext
-	SearchTypeNewStandardRC1
+	SearchTypeKeyword
 )
 
 func (s SearchType) String() string {
@@ -56,9 +56,9 @@ func (s SearchType) String() string {
 	case SearchTypeLucky:
 		return "lucky"
 	case SearchTypeCodyContext:
-		return "codyContext"
-	case SearchTypeNewStandardRC1:
-		return "newStandardRC1"
+		return "codycontext"
+	case SearchTypeKeyword:
+		return "keyword"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}

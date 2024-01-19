@@ -24,7 +24,7 @@ import { useHandleSubmitFeedback } from './hooks'
 import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { NewGlobalNavigationBar } from './nav/new-global-navigation/NewGlobalNavigationBar'
+import { NewGlobalNavigationBar, useNewSearchNavigation } from './nav/new-global-navigation'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
@@ -109,7 +109,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isGetCodyPage = location.pathname === PageRoutes.GetCody
     const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
 
-    const newSearchNavigation = useExperimentalFeatures<boolean>(features => features.newSearchNavigationUI ?? false)
+    const [newSearchNavigation] = useNewSearchNavigation()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const { theme } = useTheme()

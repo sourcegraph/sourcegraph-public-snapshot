@@ -30,6 +30,7 @@ If you need assistance with MSP infrastructure, reach out to the [Core Services]
 | Category   | **test**                                                                                            |
 | Resources  |                                                                                                     |
 | Alerts     | [GCP monitoring](https://console.cloud.google.com/monitoring/alerting?project=msp-testbed-dev-xxxx) |
+| Sentry     | [`msp-testbed-dev`](https://sourcegraph.sentry.io/projects/msp-testbed-dev/)                        |
 
 MSP infrastructure access needs to be requested using Entitle for time-bound privileges. Test environments may have less stringent requirements.
 
