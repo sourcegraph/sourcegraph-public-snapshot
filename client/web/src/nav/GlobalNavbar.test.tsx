@@ -46,10 +46,6 @@ describe('GlobalNavbar', () => {
     })
 
     test('default', () => {
-        // vi.spyOn(liceseUtils, 'isCodeSearchOnlyLicense').mockReturnValue(false)
-        // vi.spyOn(liceseUtils, 'isCodeSearchPlusCodyLicense').mockReturnValue(true)
-        // vi.spyOn(liceseUtils, 'isCodyOnlyLicense').mockReturnValue(false)
-
         vi.mock('../util/license', () => ({
             isCodeSearchOnlyLicense: () => false,
             isCodeSearchPlusCodyLicense: () => true,
