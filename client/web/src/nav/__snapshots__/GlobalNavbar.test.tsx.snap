@@ -117,7 +117,7 @@ exports[`GlobalNavbar > code search only license 1`] = `
               <span
                 class="text iconIncluded"
               >
-                Cody
+                Cody AI
               </span>
             </span>
           </a>
@@ -331,7 +331,7 @@ exports[`GlobalNavbar > cody only license 1`] = `
               <span
                 class="text iconIncluded"
               >
-                Cody
+                Cody AI
               </span>
             </span>
           </a>
@@ -545,7 +545,7 @@ exports[`GlobalNavbar > default 1`] = `
               <span
                 class="text iconIncluded"
               >
-                Cody
+                Cody AI
               </span>
             </span>
           </a>
