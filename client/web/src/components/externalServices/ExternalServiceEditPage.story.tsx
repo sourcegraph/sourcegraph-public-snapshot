@@ -50,6 +50,14 @@ const externalService = {
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
+    creator: {
+        username: 'alice',
+        url: '/users/alice',
+    },
+    lastUpdater: {
+        username: 'alice',
+        url: '/users/alice',
+    },
     hasConnectionCheck: false,
     namespace: {
         id: 'userid',
