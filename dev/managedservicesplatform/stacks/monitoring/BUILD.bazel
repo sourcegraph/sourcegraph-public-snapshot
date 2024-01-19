@@ -2,7 +2,15 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "monitoring",
-    srcs = ["monitoring.go"],
+    srcs = [
+        "common.go",
+        "job.go",
+        "monitoring.go",
+        "redis.go",
+        "response_codes.go",
+        "sentry.go",
+        "service.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/monitoring",
     visibility = [
         "//dev/managedservicesplatform:__subpackages__",
