@@ -15,6 +15,8 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+// adds a comment
+
 // InsertUpload inserts a new upload and returns its identifier.
 func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})

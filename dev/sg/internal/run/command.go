@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -36,6 +39,111 @@ type Command struct {
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
+}
+
+func (cmd Command) GetName() string {
+	return cmd.Name
+}
+
+func (cmd Command) GetContinueWatchOnExit() bool {
+	return cmd.ContinueWatchOnExit
+}
+
+func (cmd Command) GetBinaryLocation() (string, error) {
+	if cmd.CheckBinary != "" {
+		repoRoot, err := root.RepositoryRoot()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(repoRoot, cmd.CheckBinary), nil
+	}
+	return "", noBinaryError{name: cmd.Name}
+}
+
+func (cmd Command) GetExternalSecrets() map[string]secrets.ExternalSecret {
+	return cmd.ExternalSecrets
+}
+
+func (cmd Command) GetIgnoreStdout() bool {
+	return cmd.IgnoreStdout
+}
+
+func (cmd Command) GetIgnoreStderr() bool {
+	return cmd.IgnoreStderr
+}
+
+func (cmd Command) GetPreamble() string {
+	return cmd.Preamble
+}
+
+func (cmd Command) GetEnv() map[string]string {
+	return cmd.Env
+}
+
+func (cmd Command) GetExec(ctx context.Context) (*exec.Cmd, error) {
+	return exec.CommandContext(ctx, "bash", "-c", cmd.Cmd), nil
+}
+
+func (cmd Command) RunInstall(ctx context.Context, parentEnv map[string]string) error {
+	if cmd.requiresInstall() {
+		if cmd.hasBashInstaller() {
+			return cmd.bashInstall(ctx, parentEnv)
+		} else {
+			return cmd.functionInstall(ctx, parentEnv)
+		}
+	}
+
+	return nil
+}
+
+func (cmd Command) requiresInstall() bool {
+	return cmd.Install != "" || cmd.InstallFunc != ""
+}
+
+func (cmd Command) hasBashInstaller() bool {
+	return cmd.Install != "" || cmd.InstallFunc == ""
+}
+
+func (cmd Command) bashInstall(ctx context.Context, parentEnv map[string]string) error {
+	output, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
+	if err != nil {
+		return installErr{cmdName: cmd.Name, output: output, originalErr: err}
+	}
+	return nil
+}
+
+func (cmd Command) functionInstall(ctx context.Context, parentEnv map[string]string) error {
+	fn, ok := installFuncs[cmd.InstallFunc]
+	if !ok {
+		return installErr{cmdName: cmd.Name, originalErr: errors.Newf("no install func with name %q found", cmd.InstallFunc)}
+	}
+	if err := fn(ctx, makeEnvMap(parentEnv, cmd.Env)); err != nil {
+		return installErr{cmdName: cmd.Name, originalErr: err}
+	}
+
+	return nil
+}
+
+func (cmd Command) watchPaths() ([]string, error) {
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		return nil, err
+	}
+
+	fullPaths := make([]string, len(cmd.Watch))
+	for i, path := range cmd.Watch {
+		fullPaths[i] = filepath.Join(root, path)
+	}
+
+	return fullPaths, nil
+}
+
+func (cmd Command) StartWatch(ctx context.Context) (<-chan struct{}, error) {
+	if watchPaths, err := cmd.watchPaths(); err != nil {
+		return nil, err
+	} else {
+		return WatchPaths(ctx, watchPaths)
+	}
 }
 
 func (c Command) Merge(other Command) Command {
@@ -113,16 +221,44 @@ type startedCmd struct {
 	stdoutBuf *prefixSuffixSaver
 	stderrBuf *prefixSuffixSaver
 
-	outEg *pool.ErrorPool
+	outEg  *pool.ErrorPool
+	result chan error
+
+	opts commandOptions
+}
+
+func (sc *startedCmd) ErrorChannel() <-chan error {
+	if sc.result == nil {
+		sc.result = make(chan error)
+		go func() {
+			defer close(sc.result)
+			sc.result <- sc.Wait()
+		}()
+	}
+	return sc.result
 }
 
 func (sc *startedCmd) Wait() error {
+	err := sc.wait()
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		err = runErr{
+			cmdName:  sc.opts.name,
+			exitCode: e.ExitCode(),
+			stderr:   sc.CapturedStderr(),
+			stdout:   sc.CapturedStdout(),
+		}
+	}
+
+	return err
+}
+
+func (sc *startedCmd) wait() error {
 	if err := sc.outEg.Wait(); err != nil {
 		return err
 	}
 	return sc.Cmd.Wait()
 }
-
 func (sc *startedCmd) CapturedStdout() string {
 	if sc.stdoutBuf == nil {
 		return ""
@@ -170,76 +306,103 @@ func OpenUnixSocket() error {
 	return err
 }
 
-func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string]string) (*startedCmd, error) {
+func startConfigCmd(ctx context.Context, cmd ConfigCommand, dir string, parentEnv map[string]string) (*startedCmd, error) {
+	exec, err := cmd.GetExec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	secretsEnv, err := getSecrets(ctx, cmd.GetName(), cmd.GetExternalSecrets())
+	if err != nil {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
+			cmd.GetName(), output.EmojiFailure, err.Error()))
+	}
+
+	opts := commandOptions{
+		name:         cmd.GetName(),
+		exec:         exec,
+		env:          makeEnv(parentEnv, secretsEnv, cmd.GetEnv()),
+		dir:          dir,
+		ignoreStdOut: cmd.GetIgnoreStdout(),
+		ignoreStdErr: cmd.GetIgnoreStderr(),
+	}
+
+	if cmd.GetPreamble() != "" {
+		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", cmd.GetName(), output.EmojiInfo, cmd.GetPreamble()))
+	}
+
+	return startCmd(ctx, opts)
+}
+
+type commandOptions struct {
+	name         string
+	exec         *exec.Cmd
+	dir          string
+	env          []string
+	ignoreStdOut bool
+	ignoreStdErr bool
+	// when enabled, stdout/stderr will not be streamed to the loggers
+	// after the process is begun, only captured for later retrieval
+	bufferOutput bool
+}
+
+func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 	sc := &startedCmd{
+		opts:      opts,
 		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
 		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
 	}
 
-	commandCtx, cancel := context.WithCancel(ctx)
-	sc.cancel = cancel
-
-	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
-	sc.Cmd.Dir = dir
-
-	secretsEnv, err := getSecrets(ctx, cmd.Name, cmd.ExternalSecrets)
-	if err != nil {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
-			cmd.Name, output.EmojiFailure, err.Error()))
+	ctx, cancel := context.WithCancel(ctx)
+	sc.cancel = func() {
+		sc.Cmd.Process.Signal(os.Interrupt)
+		cancel()
 	}
 
-	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
+	sc.Cmd = opts.exec
+	sc.Cmd.Dir = opts.dir
+	sc.Cmd.Env = opts.env
+
+	if !opts.bufferOutput {
+		if err := sc.connectOutput(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	return sc, sc.Start()
+}
+
+func (sc *startedCmd) connectOutput(ctx context.Context) error {
 
 	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(commandCtx, cmd.Name, std.Out.Output)
+	logger := newCmdLogger(ctx, sc.opts.name, std.Out.Output)
 
-	// TODO(JH) sgtail experiment going on, this is a bit ugly, that will do it
-	// for the demo day.
+	var sgConnLog io.Writer = io.Discard
 	if sgConn != nil {
 		sink := func(data string) {
-			sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", cmd.Name, data)))
+			sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, data)))
 		}
-		sgConnLog := process.NewLogger(ctx, sink)
+		sgConnLog = process.NewLogger(ctx, sink)
+	}
 
-		if cmd.IgnoreStdout {
-			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-			stdoutWriter = sc.stdoutBuf
-		} else {
-			stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf, sgConnLog)
-		}
-		if cmd.IgnoreStderr {
-			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-			stderrWriter = sc.stderrBuf
-		} else {
-			stderrWriter = io.MultiWriter(logger, sc.stderrBuf, sgConnLog)
-		}
+	if sc.opts.ignoreStdOut {
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", sc.opts.name))
+		stdoutWriter = sc.stdoutBuf
 	} else {
-		if cmd.IgnoreStdout {
-			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-			stdoutWriter = sc.stdoutBuf
-		} else {
-			stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
-		}
-		if cmd.IgnoreStderr {
-			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-			stderrWriter = sc.stderrBuf
-		} else {
-			stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
-		}
+		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf, sgConnLog)
+	}
+	if sc.opts.ignoreStdErr {
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", sc.opts.name))
+		stderrWriter = sc.stderrBuf
+	} else {
+		stderrWriter = io.MultiWriter(logger, sc.stderrBuf, sgConnLog)
 	}
 
-	if cmd.Preamble != "" {
-		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
-	}
 	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	sc.outEg = eg
 
-	if err := sc.Start(); err != nil {
-		return sc, err
-	}
-
-	return sc, nil
+	return nil
 }

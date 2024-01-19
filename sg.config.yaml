@@ -407,6 +407,8 @@ commands:
   web:
     description: Enterprise version of the web app
     cmd: pnpm --filter @sourcegraph/web dev
+    watch:
+      - client/web/dev
     install: |
       pnpm install
       pnpm run generate
@@ -973,6 +975,8 @@ bazelCommands:
     target: //cmd/blobstore:blobstore
   searcher:
     target: //cmd/searcher
+  docsite:
+    target: //doc:serve
   syntax-highlighter:
     target: //docker-images/syntax-highlighter:syntect_server
     ignoreStdout: true
@@ -988,6 +992,7 @@ bazelCommands:
       QUIET: 'true'
   frontend:
     description: Enterprise frontend
+    continueWatchOnExit: true
     target: //cmd/frontend
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1018,7 +1023,7 @@ bazelCommands:
       USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
-    env: &gitserverenv
+    env:
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -1075,7 +1080,8 @@ commandsets:
       - bazelisk
       - ibazel
     bazelCommands:
-      - blobstore
+      # - blobstore
+      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1083,15 +1089,21 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
-      - syntax-highlighter
+        # - syntax-highlighter
     commands:
       - web
-      - docsite
+      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+  simple:
+    bazelCommands:
+      - worker
+    commands:
+      - web
+      - docsite
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
