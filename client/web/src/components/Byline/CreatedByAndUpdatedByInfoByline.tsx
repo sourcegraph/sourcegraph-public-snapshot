@@ -39,7 +39,7 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
                         <>
                             {updatedBy?.username && (
                                 <>
-                                    Updated by {<Link to={updatedBy.url}>{updatedBy.username}</Link>}
+                                    Updated by <Link to={updatedBy.url}>{updatedBy.username}</Link>
                                     <span className="mx-2">|</span>
                                 </>
                             )}
@@ -51,7 +51,9 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
                         <>
                             Updated <Timestamp date={updatedAt} />
                             {updatedBy?.username !== createdBy?.username && (
-                                <> by {updatedBy ? (
+                                <>
+                                    by{' '}
+                                    {updatedBy ? (
                                         <Link to={updatedBy.url}>{updatedBy.username}</Link>
                                     ) : (
                                         'a deleted user'
