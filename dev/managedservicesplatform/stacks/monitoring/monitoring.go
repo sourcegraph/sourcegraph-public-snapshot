@@ -97,6 +97,8 @@ type Variables struct {
 	DiagnosticsSecret *random.Output
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
+	// If CloudSQL is enabled we configure alerts for it
+	CloudSQLInstanceID *string
 	// ServiceHealthProbes is used to determine the threshold for service
 	// startup latency alerts.
 	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
@@ -324,6 +326,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	if vars.RedisInstanceID != nil {
 		if err = createRedisAlerts(stack, id.Group("redis"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create redis alerts")
+		}
+	}
+
+	if vars.CloudSQLInstanceID != nil {
+		if err := createCloudSQLAlerts(stack, id.Group("cloudsql"), vars, channels); err != nil {
+			return nil, errors.Wrap(err, "failed to create CloudSQL alerts")
 		}
 	}
 

@@ -144,6 +144,7 @@ func (r *Renderer) RenderEnvironment(
 		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,
 		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
 		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
+		CloudSQLInstanceID:    cloudrunOutput.CloudSQLInstanceID,
 		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
 		SentryProject:         cloudrunOutput.SentryProject,
 	}); err != nil {
