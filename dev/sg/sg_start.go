@@ -336,17 +336,21 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		installers = append(installers, cmd)
 	}
 
+	var ibazel *run.IBazel
 	if len(bcmds) > 0 {
-		ibazel, err := run.NewIBazel(bcmds, repoRoot)
+		ibazel, err = run.NewIBazel(bcmds, repoRoot)
 		if err != nil {
 			return err
 		}
 		defer ibazel.Stop()
 		installers = append(installers, ibazel)
 	}
-
 	if err := run.Install(ctx, env, verbose, installers...); err != nil {
 		return err
+	}
+
+	if ibazel != nil {
+		ibazel.StartOutput()
 	}
 
 	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))

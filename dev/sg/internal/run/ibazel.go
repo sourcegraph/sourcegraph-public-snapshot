@@ -129,7 +129,7 @@ func (ib *IBazel) WaitForInitialBuild(ctx context.Context) error {
 
 func (ib *IBazel) getCommandOptions(ctx context.Context) commandOptions {
 	return commandOptions{
-		name: ib.GetName(),
+		name: "iBazel",
 		exec: ib.GetExec(ctx),
 		dir:  ib.dir,
 		// Don't output iBazel logs until initial build is complete
@@ -143,6 +143,10 @@ func (ib *IBazel) getCommandOptions(ctx context.Context) commandOptions {
 func (ib *IBazel) Build(ctx context.Context) (err error) {
 	ib.proc, err = startCmd(ctx, ib.getCommandOptions(ctx))
 	return err
+}
+
+func (ib *IBazel) StartOutput() error {
+	return ib.proc.StartOutput()
 }
 
 func (ib *IBazel) Stop() {

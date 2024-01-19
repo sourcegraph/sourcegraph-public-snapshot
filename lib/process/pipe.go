@@ -21,6 +21,15 @@ const maxTokenSize = 100 * 1024 * 1024 // 100mb
 
 type pipe func(w io.Writer, r io.Reader) error
 
+func DefaultPipe(w io.Writer, r io.Reader) error {
+	_, err := io.Copy(w, r)
+	// We can ignore ErrClosed because we get that if a process crashes
+	if err != nil && !errors.Is(err, fs.ErrClosed) {
+		return err
+	}
+	return nil
+}
+
 type cmdPiper interface {
 	StdoutPipe() (io.ReadCloser, error)
 	StderrPipe() (io.ReadCloser, error)
@@ -64,16 +73,7 @@ func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.W
 // PipeOutputUnbuffered is the unbuffered version of PipeOutput and uses
 // io.Copy instead of piping output line-based to the output.
 func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*pool.ErrorPool, error) {
-	pipe := func(w io.Writer, r io.Reader) error {
-		_, err := io.Copy(w, r)
-		// We can ignore ErrClosed because we get that if a process crashes
-		if err != nil && !errors.Is(err, fs.ErrClosed) {
-			return err
-		}
-		return nil
-	}
-
-	return PipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
+	return PipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, DefaultPipe)
 }
 
 func PipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer, fn pipe) (*pool.ErrorPool, error) {
