@@ -93,7 +93,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyPermalink = (): void => {
         telemetryService.log('CopyPermalink')
-        copy(`${rootUrl}${permalinkURL}`)
+        copy(createUrl(rootUrl, permalinkURL))
         setCopiedPermalink(true)
         screenReaderAnnounce('Permalink copied to clipboard')
 
@@ -102,7 +102,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyLink = (): void => {
         telemetryService.log('CopyLink')
-        copy(`${rootUrl}${linkURL}`)
+        copy(createUrl(rootUrl, linkURL))
         setCopiedLink(true)
         screenReaderAnnounce('Link copied to clipboard')
 
@@ -169,3 +169,5 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
         </Menu>
     )
 }
+
+export const createUrl = (rooturl: string, path: string): string => `${rooturl}${path}`
