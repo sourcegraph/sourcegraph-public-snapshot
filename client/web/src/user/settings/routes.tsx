@@ -9,13 +9,14 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
-import type { AuthenticatedUser } from '../../auth'
+import { type AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges } from '../../batches/utils'
 import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
 import type { ExecutorsUserAreaProps } from '../../enterprise/executors/ExecutorsUserArea'
 import type { UserEventLogsPageProps } from '../../enterprise/user/settings/UserEventLogsPage'
 import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { isCodyOnlyLicense } from '../../util/license'
 
 import type { UserSettingsAreaRoute } from './UserSettingsArea'
 
@@ -90,7 +91,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: 'executors/*',
         render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
         condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+            !isCodyOnlyLicense() &&
+            batchChangesEnabled &&
+            viewerCanAdminister &&
+            canWriteBatchChanges(authenticatedUser),
     },
     {
         path: 'batch-changes',
@@ -99,7 +103,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             'BatchChangesSettingsArea'
         ),
         condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+            !isCodyOnlyLicense() &&
+            batchChangesEnabled &&
+            viewerCanAdminister &&
+            canWriteBatchChanges(authenticatedUser),
     },
     {
         path: 'subscriptions/:subscriptionUUID',

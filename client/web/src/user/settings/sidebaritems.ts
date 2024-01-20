@@ -1,7 +1,10 @@
 import { canWriteBatchChanges } from '../../batches/utils'
 import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
+import { isCodyOnlyLicense } from '../../util/license'
 
 import type { UserSettingsSidebarItems } from './UserSettingsSidebar'
+
+const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const userSettingsSideBarItems: UserSettingsSidebarItems = [
     {
@@ -23,13 +26,19 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         to: '/batch-changes',
         label: 'Batch Changes',
         condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+            !disableCodeSearchFeatures &&
+            batchChangesEnabled &&
+            viewerCanAdminister &&
+            canWriteBatchChanges(authenticatedUser),
     },
     {
         to: '/executors/secrets',
         label: 'Executor secrets',
         condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+            !disableCodeSearchFeatures &&
+            batchChangesEnabled &&
+            viewerCanAdminister &&
+            canWriteBatchChanges(authenticatedUser),
     },
     {
         label: 'Emails',

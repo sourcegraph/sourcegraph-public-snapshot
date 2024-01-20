@@ -8,6 +8,7 @@ import type { CreateBatchChangePageProps } from '../../enterprise/batches/create
 import type { NamespaceBatchChangesAreaProps } from '../../enterprise/batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
 import { namespaceAreaRoutes } from '../../namespaces/routes'
+import { isCodyOnlyLicense } from '../../util/license'
 
 import type { UserAreaRoute } from './UserArea'
 
@@ -33,6 +34,9 @@ const EditBatchSpecPage = lazyComponent<EditBatchSpecPageProps, 'EditBatchSpecPa
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 const UserProfile = lazyComponent(() => import('../profile/UserProfile'), 'UserProfile')
+
+// when the instance has a Cody-only license, we want to disable all code-search related features.
+const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
@@ -76,26 +80,26 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: 'batch-changes/create',
         render: props => <CreateBatchChangePage headingElement="h1" {...props} initialNamespaceID={props.user.id} />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled }) => !disableCodeSearchFeatures && batchChangesEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/:batchChangeName/edit',
         render: props => <EditBatchSpecPage {...props} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
-            batchChangesEnabled && batchChangesExecutionEnabled,
+            !disableCodeSearchFeatures && batchChangesEnabled && batchChangesExecutionEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/:batchChangeName/executions/:batchSpecID/*',
         render: props => <ExecuteBatchSpecPage {...props} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
-            batchChangesEnabled && batchChangesExecutionEnabled,
+            !disableCodeSearchFeatures && batchChangesEnabled && batchChangesExecutionEnabled,
         fullPage: true,
     },
     {
         path: 'batch-changes/*',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.user.id} />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled }) => !disableCodeSearchFeatures && batchChangesEnabled,
     },
 ]

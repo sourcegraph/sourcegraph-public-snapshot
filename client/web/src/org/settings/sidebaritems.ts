@@ -1,6 +1,9 @@
 import { canWriteBatchChanges } from '../../batches/utils'
+import { isCodyOnlyLicense } from '../../util/license'
 
 import type { OrgSettingsSidebarItems } from './OrgSettingsSidebar'
+
+const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const orgSettingsSideBarItems: OrgSettingsSidebarItems = [
     {
@@ -22,6 +25,9 @@ export const orgSettingsSideBarItems: OrgSettingsSidebarItems = [
         to: '/executors/secrets',
         label: 'Executor secrets',
         condition: ({ batchChangesEnabled, org: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+            !disableCodeSearchFeatures &&
+            batchChangesEnabled &&
+            viewerCanAdminister &&
+            canWriteBatchChanges(authenticatedUser),
     },
 ]
