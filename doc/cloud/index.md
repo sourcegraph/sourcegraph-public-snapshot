@@ -262,7 +262,13 @@ Sourcegraph Cloud is fully managed by a dedicated team of Sourcegraph experts wh
 
 Sourcegraph Cloud instances are single-tenant, limiting exposure to outages and security risks to individual instances. Each customer instance is isolated in a dedicated and fully segregated GCP project.
 
+[Diagram 1](https://link.excalidraw.com/readonly/YGpFIX7DcEBezf5iGXTP)
+
 <iframe src="https://link.excalidraw.com/readonly/YGpFIX7DcEBezf5iGXTP" width="100%" height="100%" style="border: none;"></iframe>
+
+[Diagram 2](https://link.excalidraw.com/readonly/Dbs30t8ahBZadGHZACoc)
+
+<iframe src="https://link.excalidraw.com/readonly/Dbs30t8ahBZadGHZACoc" width="100%" height="100%" style="border: none;"></iframe>
 
 ### Is data safe with Sourcegraph Cloud?
 
