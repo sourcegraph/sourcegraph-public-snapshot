@@ -47,6 +47,7 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
 import { SvelteKitNavItem } from '../sveltekit/SvelteKitNavItem'
+import { isCodyOnlyLicense } from '../util/license'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -140,14 +141,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const routeMatch = useRoutesMatch(props.routes)
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const isLicensed = !!window.context?.licenseInfo
+    const disableCodeSearchFeatures = isCodyOnlyLicense()
     // Search context management is still enabled on .com
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
-    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom
-    const isLicensed = !!window.context?.licenseInfo
-    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom
+    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
+    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
+    const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
+    const showOwn = ownEnabled && !disableCodeSearchFeatures
+    const showSearchJobs = isSearchJobsEnabled() && !disableCodeSearchFeatures
+    const showBatchChanges =
+        props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom && !disableCodeSearchFeatures
+
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
     const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
 
@@ -161,7 +167,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         }
     }, [showSearchBox, onNavbarQueryChange])
 
-    const codeInsights = (codeInsightsEnabled && !isSourcegraphDotCom) ?? false
+    const codeInsights = (codeInsightsEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures) ?? false
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -183,10 +189,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             >
                 <InlineNavigationPanel
                     showSearchContext={showSearchContext}
-                    showOwn={ownEnabled}
+                    showOwn={showOwn}
                     showCodySearch={codySearchEnabled}
                     showCodyDropdown={isSourcegraphDotCom && !!props.authenticatedUser}
-                    showSearchJobs={isSearchJobsEnabled()}
+                    showSearchJobs={showSearchJobs}
                     showSearchNotebook={showSearchNotebook}
                     showCodeMonitoring={showCodeMonitoring}
                     showBatchChanges={showBatchChanges}
@@ -329,57 +335,69 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [showOwn, showSearchContext, showCodySearch, showSearchJobs])
 
+    const searchNavigation =
+        searchNavBarItems.length > 0 ? (
+            <NavDropdown
+                toggleItem={{
+                    path: PageRoutes.Search,
+                    altPath: PageRoutes.RepoContainer,
+                    icon: MagnifyIcon,
+                    content: 'Code Search',
+                    variant: navLinkVariant,
+                }}
+                routeMatch={routeMatch}
+                homeItem={{ content: 'Search home' }}
+                items={searchNavBarItems}
+                name="search"
+            />
+        ) : (
+            <NavItem icon={MagnifyIcon}>
+                <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                    Code Search
+                </NavLink>
+            </NavItem>
+        )
+
+    const codyNavigation = showCodyDropdown ? (
+        <NavDropdown
+            toggleItem={{
+                path: PageRoutes.CodyManagement,
+                icon: CodyLogo,
+                content: 'Cody',
+                variant: navLinkVariant,
+            }}
+            routeMatch={routeMatch}
+            items={[
+                {
+                    path: PageRoutes.CodyManagement,
+                    content: 'Dashboard',
+                },
+                {
+                    path: PageRoutes.CodyChat,
+                    content: 'Web Chat',
+                },
+            ]}
+            name="cody"
+        />
+    ) : (
+        <NavItem icon={CodyLogo}>
+            <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
+                Cody AI
+            </NavLink>
+        </NavItem>
+    )
+
+    let prioritizedLinks: JSX.Element[] = [searchNavigation, codyNavigation]
+
+    if (isCodyOnlyLicense()) {
+        // This should be cheap considering there will only be two items in the array.
+        prioritizedLinks = prioritizedLinks.reverse()
+    }
+
     return (
         <NavGroup ref={navbarReference} className={classNames(className, styles.list)}>
-            {searchNavBarItems.length > 0 ? (
-                <NavDropdown
-                    toggleItem={{
-                        path: PageRoutes.Search,
-                        altPath: PageRoutes.RepoContainer,
-                        icon: MagnifyIcon,
-                        content: 'Code Search',
-                        variant: navLinkVariant,
-                    }}
-                    routeMatch={routeMatch}
-                    homeItem={{ content: 'Search home' }}
-                    items={searchNavBarItems}
-                    name="search"
-                />
-            ) : (
-                <NavItem icon={MagnifyIcon}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
-                        Code Search
-                    </NavLink>
-                </NavItem>
-            )}
-            {showCodyDropdown ? (
-                <NavDropdown
-                    toggleItem={{
-                        path: PageRoutes.CodyManagement,
-                        icon: CodyLogo,
-                        content: 'Cody',
-                        variant: navLinkVariant,
-                    }}
-                    routeMatch={routeMatch}
-                    items={[
-                        {
-                            path: PageRoutes.CodyManagement,
-                            content: 'Dashboard',
-                        },
-                        {
-                            path: PageRoutes.CodyChat,
-                            content: 'Web Chat',
-                        },
-                    ]}
-                    name="cody"
-                />
-            ) : (
-                <NavItem icon={CodyLogo}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
-                        Cody
-                    </NavLink>
-                </NavItem>
-            )}
+            {prioritizedLinks}
+
             {showSearchNotebook && (
                 <NavItem icon={BookOutlineIcon}>
                     <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
@@ -394,9 +412,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                     </NavLink>
                 </NavItem>
             )}
-            {/* This is the only circumstance where we show something
-                batch-changes-related even if the instance does not have batch
-                changes enabled, for marketing purposes on sourcegraph.com */}
             {showBatchChanges && <BatchChangesNavItem variant={navLinkVariant} />}
             {showCodeInsights && (
                 <NavItem icon={BarChartIcon}>
