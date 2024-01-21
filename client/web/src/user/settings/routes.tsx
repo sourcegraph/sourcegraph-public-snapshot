@@ -34,11 +34,12 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
-const shouldRenderBatchChangesPage = ({ batchChangesEnabled, user, authenticatedUser }: UserSettingsAreaRouteContext) =>
-    !disableCodeSearchFeatures &&
-    batchChangesEnabled &&
-    user.viewerCanAdminister &&
-    canWriteBatchChanges(authenticatedUser)
+const shouldRenderBatchChangesPage = ({
+    batchChangesEnabled,
+    user: { viewerCanAdminister },
+    authenticatedUser,
+}: UserSettingsAreaRouteContext): boolean =>
+    !disableCodeSearchFeatures && batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser)
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
