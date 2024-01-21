@@ -10,6 +10,7 @@ import { OwnAnalyticsPage } from '../enterprise/own/admin-ui/OwnAnalyticsPage'
 import type { SiteAdminRolesPageProps } from '../enterprise/rbac/SiteAdminRolesPage'
 import type { RoleAssignmentModalProps } from '../enterprise/site-admin/UserManagement/components/RoleAssignmentModal'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+import { isCodyOnlyLicense } from '../util/license'
 
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
@@ -193,6 +194,7 @@ const CodyConfigurationPage = lazyComponent(
 )
 
 const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
+const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -202,10 +204,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: () => <AnalyticsSearchPage />,
+        condition: () => !disableCodeSearchFeatures,
     },
     {
         path: '/analytics/code-intel',
         render: () => <AnalyticsCodeIntelPage />,
+        condition: () => !disableCodeSearchFeatures,
     },
     {
         path: '/analytics/extensions',
@@ -218,16 +222,17 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/code-insights',
         render: () => <AnalyticsCodeInsightsPage />,
-        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
+        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled && !disableCodeSearchFeatures,
     },
     {
         path: '/analytics/batch-changes',
         render: () => <AnalyticsBatchChangesPage />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
     },
     {
         path: '/analytics/notebooks',
         render: () => <AnalyticsNotebooksPage />,
+        condition: () => !disableCodeSearchFeatures,
     },
     {
         path: '/configuration',
@@ -404,12 +409,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/batch-changes',
         render: () => <BatchChangesSiteConfigSettingsPage />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
     },
     {
         path: '/batch-changes/github-apps/new',
         render: () => <BatchChangesCreateGitHubAppPage />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
     },
     {
         path: '/batch-changes/github-apps/:appID',
@@ -420,13 +425,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
                 telemetryService={props.telemetryService}
             />
         ),
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
     },
     {
         path: '/batch-changes/specs',
         render: () => <BatchSpecsPage />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
-            batchChangesEnabled && batchChangesExecutionEnabled,
+            batchChangesEnabled && batchChangesExecutionEnabled && !disableCodeSearchFeatures,
     },
     // Old batch changes webhooks logs page redirects to new incoming webhooks page.
     // The old page components and documentation are still available in the codebase
@@ -444,7 +449,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         path: '/code-insights-jobs',
         render: () => <CodeInsightsJobsPage />,
-        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
+        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled && !disableCodeSearchFeatures,
     },
     {
         exact: true,
@@ -456,11 +461,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
+        condition: () => !disableCodeSearchFeatures,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
+        condition: () => !disableCodeSearchFeatures,
     },
     {
         path: '/lsif-uploads/:id',
@@ -471,7 +478,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/executors/*',
         render: () => <ExecutorsSiteAdminArea />,
-        condition: () => Boolean(window.context?.executorsEnabled),
+        condition: () => Boolean(window.context?.executorsEnabled) && !disableCodeSearchFeatures,
     },
 
     // Cody configuration

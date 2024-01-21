@@ -12,9 +12,12 @@ import { BatchChangesIcon } from '../batches/icons'
 import { CodyPageIcon } from '../cody/chat/CodyPageIcon'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
+import { isCodyOnlyLicense } from '../util/license'
 
 import { isPackagesEnabled } from './flags'
 import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+
+const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 const analyticsGroup: SiteAdminSideBarGroup = {
     header: {
@@ -30,10 +33,12 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
+            condition: () => !disableCodeSearchFeatures,
         },
         {
             label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
+            condition: () => !disableCodeSearchFeatures,
         },
         {
             label: 'Users',
@@ -42,16 +47,17 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Insights',
             to: '/site-admin/analytics/code-insights',
-            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled && !disableCodeSearchFeatures,
         },
         {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
-            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
         },
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
+            condition: () => !disableCodeSearchFeatures,
         },
         {
             label: 'Extensions',
@@ -60,6 +66,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code ownership',
             to: '/site-admin/analytics/own',
+            condition: () => !disableCodeSearchFeatures,
         },
         {
             label: 'Feedback survey',
@@ -174,7 +181,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
-            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled && !disableCodeSearchFeatures,
         },
     ],
 }
@@ -184,7 +191,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         label: 'Executors',
         icon: PackageVariantIcon,
     },
-    condition: () => Boolean(window.context?.executorsEnabled),
+    condition: () => Boolean(window.context?.executorsEnabled) && !disableCodeSearchFeatures,
     items: [
         {
             to: '/site-admin/executors',
@@ -214,7 +221,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             condition: props => props.batchChangesExecutionEnabled,
         },
     ],
-    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+    condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -269,6 +276,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/own-signal-page',
         },
     ],
+    condition: () => !disableCodeSearchFeatures,
 }
 
 export const codyGroup: SiteAdminSideBarGroup = {
