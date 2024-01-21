@@ -9,7 +9,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
-import { type AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges } from '../../batches/utils'
 import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
 import type { ExecutorsUserAreaProps } from '../../enterprise/executors/ExecutorsUserArea'
@@ -18,7 +18,9 @@ import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { isCodyOnlyLicense } from '../../util/license'
 
-import type { UserSettingsAreaRoute } from './UserSettingsArea'
+import type { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
+
+const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
     () => import('../../enterprise/executors/ExecutorsUserArea'),
@@ -31,6 +33,12 @@ const UserSettingsSecurityPage = lazyComponent(
     () => import('./auth/UserSettingsSecurityPage'),
     'UserSettingsSecurityPage'
 )
+
+const shouldRenderBatchChangesPage = ({ batchChangesEnabled, user, authenticatedUser }: UserSettingsAreaRouteContext) =>
+    !disableCodeSearchFeatures &&
+    batchChangesEnabled &&
+    user.viewerCanAdminister &&
+    canWriteBatchChanges(authenticatedUser)
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
@@ -90,11 +98,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: 'executors/*',
         render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            !isCodyOnlyLicense() &&
-            batchChangesEnabled &&
-            viewerCanAdminister &&
-            canWriteBatchChanges(authenticatedUser),
+        condition: shouldRenderBatchChangesPage,
     },
     {
         path: 'batch-changes',
@@ -102,11 +106,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             () => import('../../enterprise/batches/settings/BatchChangesSettingsArea'),
             'BatchChangesSettingsArea'
         ),
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            !isCodyOnlyLicense() &&
-            batchChangesEnabled &&
-            viewerCanAdminister &&
-            canWriteBatchChanges(authenticatedUser),
+        condition: shouldRenderBatchChangesPage,
     },
     {
         path: 'subscriptions/:subscriptionUUID',

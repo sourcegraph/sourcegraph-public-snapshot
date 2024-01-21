@@ -7,6 +7,8 @@ import { isCodyOnlyLicense } from '../../util/license'
 
 import type { UserAreaHeaderNavItem } from './UserAreaHeader'
 
+const disableCodeSearchFeatures = isCodyOnlyLicense()
+
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
         to: '/profile',
@@ -23,7 +25,7 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister && !isCodyOnlyLicense(),
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister && !disableCodeSearchFeatures,
     },
     ...namespaceAreaHeaderNavItems,
 ]

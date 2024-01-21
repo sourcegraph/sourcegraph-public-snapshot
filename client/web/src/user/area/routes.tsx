@@ -35,7 +35,7 @@ const EditBatchSpecPage = lazyComponent<EditBatchSpecPageProps, 'EditBatchSpecPa
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 const UserProfile = lazyComponent(() => import('../profile/UserProfile'), 'UserProfile')
 
-// when the instance has a Cody-only license, we want to disable all code-search related features.
+// When the instance has a Cody-only license, we want to disable all code-search related features.
 const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const userAreaRoutes: readonly UserAreaRoute[] = [
