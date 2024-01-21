@@ -71,10 +71,10 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
     // Features enablement flags and conditions
     const isLicensed = !!window.context?.licenseInfo
     const disableCodeSearchFeatures = isCodyOnlyLicense()
-    const showOwn = ownEnabled
+    const showOwn = ownEnabled && !disableCodeSearchFeatures
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
     const [showCodySearch] = useFeatureFlag('cody-web-search')
-    const showSearchJobs = isSearchJobsEnabled()
+    const showSearchJobs = isSearchJobsEnabled() && !disableCodeSearchFeatures
     const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
     const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
     const showBatchChanges = batchChangesEnabled && isLicensed && !isSourcegraphDotCom && !disableCodeSearchFeatures
