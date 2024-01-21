@@ -15,20 +15,22 @@ const SavedSearchUpdateForm = lazyComponent(
     'SavedSearchUpdateForm'
 )
 
+const disableCodeSearchFeatures = isCodyOnlyLicense()
+
 export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
     {
         path: 'searches',
         render: props => <SavedSearchListPage {...props} />,
-        condition: () => !isCodyOnlyLicense(),
+        condition: () => !disableCodeSearchFeatures,
     },
     {
         path: 'searches/add',
         render: props => <SavedSearchCreateForm {...props} />,
-        condition: () => !isCodyOnlyLicense(),
+        condition: () => !disableCodeSearchFeatures,
     },
     {
         path: 'searches/:id',
         render: props => <SavedSearchUpdateForm {...props} />,
-        condition: () => !isCodyOnlyLicense(),
+        condition: () => !disableCodeSearchFeatures,
     },
 ]
