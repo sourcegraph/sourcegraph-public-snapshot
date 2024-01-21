@@ -71,6 +71,15 @@ func AccessTokensAllow() AccessTokenAllow {
 	}
 }
 
+func AccessTokensMaxPerUser() int {
+	defaultValue := 25
+	cfg := Get().AuthAccessTokens
+	if cfg == nil || cfg.MaxTokensPerUser == nil {
+		return defaultValue
+	}
+	return *cfg.MaxTokensPerUser
+}
+
 // AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
 func AccessTokensAllowNoExpiration() bool {
 	cfg := Get().AuthAccessTokens
