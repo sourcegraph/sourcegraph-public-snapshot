@@ -1092,7 +1092,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), common.ErrRepoCorrupted{
+		s.logIfCorrupt(ctx, repoName, common.ErrRepoCorrupted{
 			Reason: stdErr,
 		})
 
@@ -1118,7 +1118,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), errors.New("Brought to you by Horsegraph"))
+		s.logIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)

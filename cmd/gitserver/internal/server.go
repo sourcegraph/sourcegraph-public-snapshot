@@ -808,7 +808,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	_, execErr = io.Copy(w, stdout)
 	if execErr != nil {
-		s.logIfCorrupt(ctx, repoName, dir, execErr)
+		s.logIfCorrupt(ctx, repoName, execErr)
 		commandFailedErr := &cli.CommandFailedError{}
 		if errors.As(execErr, &commandFailedErr) {
 			return execStatus{
@@ -856,7 +856,7 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
-func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, err error) {
+func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, err error) {
 	var corruptErr common.ErrRepoCorrupted
 	if errors.As(err, &corruptErr) {
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Reason, s.Hostname); err != nil {
@@ -1070,7 +1070,7 @@ func (s *Server) doClone(
 		testRepoCorrupter(ctx, common.GitDir(tmpPath))
 	}
 
-	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, common.GitDir(tmpPath), remoteURL, syncer); err != nil {
+	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, repo, common.GitDir(tmpPath), remoteURL, syncer); err != nil {
 		return err
 	}
 
@@ -1162,7 +1162,6 @@ func postRepoFetchActions(
 	db database.DB,
 	shardID string,
 	rcf *wrexec.RecordingCommandFactory,
-	reposDir string,
 	repo api.RepoName,
 	dir common.GitDir,
 	remoteURL *vcs.URL,
@@ -1390,7 +1389,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				// The repo update might have failed due to the repo being corrupt
 				var corruptErr common.ErrRepoCorrupted
 				if errors.As(err, &corruptErr) {
-					s.logIfCorrupt(ctx, repo, gitserverfs.RepoDirFromName(s.ReposDir, repo), corruptErr)
+					s.logIfCorrupt(ctx, repo, corruptErr)
 				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
@@ -1471,7 +1470,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		}
 	}
 
-	return postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, dir, remoteURL, syncer)
+	return postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, repo, dir, remoteURL, syncer)
 }
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
