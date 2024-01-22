@@ -98,10 +98,6 @@ func (s *searchClient) Plan(
 	}
 	searchType = overrideSearchType(searchQuery, searchType)
 
-	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
-
 	settings, err := s.settingsService.UserFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to resolve user settings")
