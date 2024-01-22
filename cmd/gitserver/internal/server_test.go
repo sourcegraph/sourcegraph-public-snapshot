@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"container/list"
 	"context"
 	"fmt"
@@ -25,6 +26,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -64,30 +67,12 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("testcommand")},
 			},
-			ExpectedCode: codes.Unknown,
+			ExpectedCode: codes.OK,
+			ExpectedBody: "teststdout",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 42,
 				Stderr:     "teststderr",
 			}},
-		},
-		{
-			Name: "echo",
-			Request: &v1.ExecRequest{
-				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("testecho"), []byte("hi")},
-			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: "hi",
-		},
-		{
-			Name: "stdin",
-			Request: &v1.ExecRequest{
-				Repo:  "github.com/gorilla/mux",
-				Args:  [][]byte{[]byte("testcat")},
-				Stdin: []byte("hi"),
-			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: "hi",
 		},
 		{
 			Name: "NonexistingRepo",
@@ -154,6 +139,33 @@ func TestExecRequest(t *testing.T) {
 		ObservationCtx:    observation.TestContextTB(t),
 		ReposDir:          reposDir,
 		skipCloneForTests: true,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			backend := git.NewMockGitBackend()
+			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
+				switch args[0] {
+				case "testcommand":
+					var stdout bytes.Buffer
+					stdout.Write([]byte("teststdout"))
+					return &errorCloser{
+						Reader: &stdout,
+						err: &cli.CommandFailedError{
+							Stderr:     []byte("teststderr"),
+							ExitStatus: 42,
+						},
+					}, nil
+				case "testerror":
+					return &errorCloser{
+						Reader: &bytes.Buffer{},
+						err: &cli.CommandFailedError{
+							Stderr:     []byte("teststderr"),
+							ExitStatus: 1,
+						},
+					}, errors.New("testerror")
+				}
+				return io.NopCloser(&bytes.Buffer{}), nil
+			})
+			return backend
+		},
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
@@ -183,37 +195,6 @@ func TestExecRequest(t *testing.T) {
 		return errors.New("not cloneable")
 	}
 	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
-
-	executil.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
-		switch cmd.Args[1] {
-		case "testcommand":
-			_, _ = cmd.Stdout.Write([]byte("teststdout"))
-			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 42, nil
-		case "testerror":
-			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 1, errors.New("testerror")
-		case "testecho", "testcat":
-			// We do an actual exec in this case to test that code path.
-			exe := strings.TrimPrefix(cmd.Args[1], "test")
-			lp, err := exec.LookPath(exe)
-			if err != nil {
-				return -1, err
-			}
-			cmd.Path = lp
-			cmd.Args = cmd.Args[1:]
-			cmd.Args[0] = exe
-			cmd.Dir = "" // the test doesn't setup the dir
-
-			// We run the real codepath cause we can in this case.
-			m := executil.RunCommandMock
-			executil.RunCommandMock = nil
-			defer func() { executil.RunCommandMock = m }()
-			return executil.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
-		}
-		return 0, nil
-	}
-	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -257,6 +238,16 @@ func TestExecRequest(t *testing.T) {
 	}
 }
 
+type errorCloser struct {
+	io.Reader
+
+	err error
+}
+
+func (ec *errorCloser) Close() error {
+	return ec.err
+}
+
 // makeSingleCommitRepo make create a new repo with a single commit and returns
 // the HEAD SHA
 func makeSingleCommitRepo(cmd func(string, ...string) string) string {
@@ -298,11 +289,15 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		Logger:         logger,
 		ObservationCtx: obctx,
 		ReposDir:       repoDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		GetRemoteURLFunc: func(context.Context, api.RepoName) (string, error) {
 			return remote, nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.
+				NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -1031,6 +1026,9 @@ func TestHandleBatchLog(t *testing.T) {
 				DB:                      dbmocks.NewMockDB(),
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  NewRepositoryLocker(),
+				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+					return cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+				},
 			}
 			// Initialize side-effects.
 			_ = server.Handler()

@@ -51,6 +51,9 @@ var (
 		"cat-file":     {"-p"},
 		"lfs":          {},
 
+		// Commands used by GitConfigStore:
+		"config": {"--get", "--unset-all"},
+
 		// Commands used by Batch Changes when publishing changesets.
 		"init":       {},
 		"reset":      {"-q"},

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -253,7 +252,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 	// Log which actor is accessing the repo.
 	accesslog.Record(ctx, string(repoName), log.String("objectname", req.GetObjectName()))
 
-	backend := gs.backendForRepo(ctx, repoName, repoDir)
+	backend := gs.Server.GetBackendFunc(repoDir, repoName)
 
 	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
@@ -641,24 +640,24 @@ func byteSlicesToStrings(in [][]byte) []string {
 func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest) (*proto.MergeBaseResponse, error) {
 	accesslog.Record(
 		ctx,
-		req.GetRepo(),
-		log.String("base", req.GetBase()),
-		log.String("head", req.GetHead()),
+		req.GetRepoName(),
+		log.String("base", string(req.GetBase())),
+		log.String("head", string(req.GetHead())),
 	)
 
-	if req.GetRepo() == "" {
+	if req.GetRepoName() == "" {
 		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
-	if req.GetBase() == "" {
+	if len(req.GetBase()) == 0 {
 		return nil, status.New(codes.InvalidArgument, "base must be specified").Err()
 	}
 
-	if req.GetHead() == "" {
+	if len(req.GetHead()) == 0 {
 		return nil, status.New(codes.InvalidArgument, "head must be specified").Err()
 	}
 
-	repoName := api.RepoName(req.GetRepo())
+	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
 
 	// Ensure that the repo is cloned and if not start a background clone, then
@@ -667,7 +666,7 @@ func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.NotFoundPayload{
 			CloneInProgress: notFoundPayload.CloneInProgress,
 			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepo(),
+			Repo:            req.GetRepoName(),
 		})
 		if err != nil {
 			return nil, err
@@ -678,21 +677,15 @@ func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	// TODO: This should be included in requests where we do ensure the revision exists.
 	// gs.Server.ensureRevision(ctx, repoName, "THE REVISION", repoDir)
 
-	backend := gs.backendForRepo(ctx, repoName, repoDir)
+	backend := gs.Server.GetBackendFunc(repoDir, repoName)
 
-	sha, err := backend.MergeBase(ctx, req.GetBase(), req.GetHead())
+	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
 		// TODO: Better error checking.
-		return nil, status.New(codes.Internal, err.Error()).Err()
+		return nil, err
 	}
 
 	return &proto.MergeBaseResponse{
 		MergeBaseCommitSha: string(sha),
 	}, nil
-}
-
-func (gs *GRPCServer) backendForRepo(ctx context.Context, repoName api.RepoName, repoDir common.GitDir) git.GitBackend {
-	backend := cli.NewBackend(gs.Server.Logger, gs.Server.RecordingCommandFactory, repoDir, repoName)
-
-	return backend
 }

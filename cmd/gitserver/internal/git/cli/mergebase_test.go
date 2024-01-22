@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -59,9 +60,17 @@ func TestMergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		repoName, repoDir := gitserver.MakeGitRepositoryAndReturnDir(t, test.cmds...)
+		repoRoot := t.TempDir()
+		for _, cmd := range append([]string{"git init --initial-branch=master ."}, test.cmds...) {
+			out, err := gitserver.CreateGitCommand(repoRoot, "bash", "-c", cmd).CombinedOutput()
+			if err != nil {
+				t.Fatalf("Failed to run git command. Output was:\n\n%s", out)
+			}
+		}
 
-		backend := NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoDir), repoName)
+		repoName := api.RepoName(filepath.Base(repoRoot))
+
+		backend := NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(filepath.Join(repoRoot, ".git")), repoName)
 
 		mb, err := backend.MergeBase(ctx, test.a, test.b)
 		if err != nil {
@@ -71,7 +80,7 @@ func TestMergeBase(t *testing.T) {
 
 		var want []byte
 		if test.wantMergeBase != "" {
-			want, err = exec.CommandContext(ctx, "git", "-C", repoDir, "rev-parse", test.wantMergeBase).Output()
+			want, err = exec.CommandContext(ctx, "git", "-C", repoRoot, "rev-parse", test.wantMergeBase).Output()
 			require.NoError(t, err)
 		}
 

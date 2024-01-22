@@ -71,6 +71,11 @@ type GitserverServiceClient interface {
 	PerforceGroupMembers(ctx context.Context, in *PerforceGroupMembersRequest, opts ...grpc.CallOption) (*PerforceGroupMembersResponse, error)
 	IsPerforceSuperUser(ctx context.Context, in *IsPerforceSuperUserRequest, opts ...grpc.CallOption) (*IsPerforceSuperUserResponse, error)
 	PerforceGetChangelist(ctx context.Context, in *PerforceGetChangelistRequest, opts ...grpc.CallOption) (*PerforceGetChangelistResponse, error)
+	// MergeBase returns the merge base commit sha for the specified revspecs.
+	// If no common merge base exists, an empty string is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a NotFoundPayload in the details.
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
 }
 
@@ -434,6 +439,11 @@ type GitserverServiceServer interface {
 	PerforceGroupMembers(context.Context, *PerforceGroupMembersRequest) (*PerforceGroupMembersResponse, error)
 	IsPerforceSuperUser(context.Context, *IsPerforceSuperUserRequest) (*IsPerforceSuperUserResponse, error)
 	PerforceGetChangelist(context.Context, *PerforceGetChangelistRequest) (*PerforceGetChangelistResponse, error)
+	// MergeBase returns the merge base commit sha for the specified revspecs.
+	// If no common merge base exists, an empty string is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a NotFoundPayload in the details.
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }

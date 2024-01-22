@@ -114,6 +114,8 @@ func NewCloneQueue(obctx *observation.Context, jobs *list.List) *common.Queue[*c
 	return common.NewQueue[*cloneJob](obctx, "clone-queue", jobs)
 }
 
+type Backender func(common.GitDir, api.RepoName) git.GitBackend
+
 // Server is a gitserver server.
 type Server struct {
 	// Logger should be used for all logging and logger creation.
@@ -125,6 +127,10 @@ type Server struct {
 
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
+
+	// GetBackendFunc is a function which returns the git backend for a
+	// repository.
+	GetBackendFunc Backender
 
 	// GetRemoteURLFunc is a function which returns the remote URL for a
 	// repository. This is used when cloning or fetching a repository. In
@@ -661,7 +667,7 @@ type execStatus struct {
 func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
 	repoName := protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
-	backend := cli.NewBackend(s.Logger, s.RecordingCommandFactory, dir, repoName)
+	backend := s.GetBackendFunc(dir, repoName)
 
 	// if !req.NoTimeout {
 	// 	var cancel context.CancelFunc
@@ -799,18 +805,19 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		return execStatus{}, err
 	}
 	defer stdout.Close()
+
 	_, execErr = io.Copy(w, stdout)
-	if err != nil {
-		s.logIfCorrupt(ctx, repoName, dir, err)
-		var commandFailedErr cli.CommandFailedError
-		if errors.As(err, &commandFailedErr) {
+	if execErr != nil {
+		s.logIfCorrupt(ctx, repoName, dir, execErr)
+		commandFailedErr := &cli.CommandFailedError{}
+		if errors.As(execErr, &commandFailedErr) {
 			return execStatus{
 				ExitStatus: commandFailedErr.ExitStatus,
 				Stderr:     string(commandFailedErr.Stderr),
-				Err:        err,
+				Err:        execErr,
 			}, nil
 		}
-		return execStatus{}, err
+		return execStatus{}, execErr
 	}
 
 	exitStatus = 0

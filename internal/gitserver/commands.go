@@ -1244,9 +1244,9 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	}
 
 	res, err := client.MergeBase(ctx, &proto.MergeBaseRequest{
-		Repo: string(repo),
-		Base: base,
-		Head: head,
+		RepoName: string(repo),
+		Base:     []byte(base),
+		Head:     []byte(head),
 	})
 	if err != nil {
 		return "", err
