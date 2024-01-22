@@ -7,6 +7,7 @@ go_library(
         "cleanup.go",
         "git.go",
         "iface.go",
+        "mock.go",
         "type.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git",
