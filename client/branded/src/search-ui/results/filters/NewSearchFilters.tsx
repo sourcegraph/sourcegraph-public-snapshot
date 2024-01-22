@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, ReactNode, useMemo } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -31,9 +31,10 @@ interface NewSearchFiltersProps {
     query: string
     filters?: Filter[]
     onQueryChange: (nextQuery: string) => void
+    children?: ReactNode
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange }) => {
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange, children }) => {
     const [selectedFilters, setSelectedFilters] = useUrlFilters()
 
     const type = useMemo(() => {
@@ -144,6 +145,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
             />
 
             <FiltersDocFooter className={styles.footer} />
+
+            {children}
         </div>
     )
 }
