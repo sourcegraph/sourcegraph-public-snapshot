@@ -256,6 +256,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 
 	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
+		gs.Server.logIfCorrupt(ctx, repoName, err)
 		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
 	}
@@ -681,6 +682,7 @@ func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
+		gs.Server.logIfCorrupt(ctx, repoName, err)
 		// TODO: Better error checking.
 		return nil, err
 	}
