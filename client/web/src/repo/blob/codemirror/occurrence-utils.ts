@@ -23,6 +23,15 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.IdentifierMacroDefinition,
     SyntaxKind.IdentifierType,
     SyntaxKind.IdentifierAttribute,
+    // In #include "foo.h", "foo.h" gets marked as a string literal
+    SyntaxKind.StringLiteral,
+    // For C and C++, scip-clang emits an occurrence for the very
+    // first token in the source file to support 'Go to def' and
+    // 'Find refs' for header files. This first token is usually
+    // a comment or a keyword.
+    SyntaxKind.Keyword,
+    SyntaxKind.Comment,
+
 ])
 
 export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {

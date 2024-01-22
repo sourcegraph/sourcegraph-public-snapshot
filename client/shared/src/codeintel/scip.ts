@@ -244,7 +244,7 @@ export enum SyntaxKind {
     PunctuationBracket = 3,
 
     // `if`, `else`, `return`, `class`, etc.
-    IdentifierKeyword = 4,
+    Keyword = 4,
 
     // `+`, `*`, etc.
     IdentifierOperator = 5,
