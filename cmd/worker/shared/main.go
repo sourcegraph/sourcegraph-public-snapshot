@@ -116,6 +116,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 		"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
+		"codeintel-outline-indexing-scheduler":        codeintel.NewOutlineIndexingSchedulerJob(),
 
 		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
@@ -136,7 +137,9 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 	config.Jobs = map[string]workerjob.Job{}
 
 	for name, job := range builtins {
-		config.Jobs[name] = job
+		if name == "codeintel-outline-indexing-scheduler" {
+			config.Jobs[name] = job
+		}
 	}
 
 	// Setup environment variables

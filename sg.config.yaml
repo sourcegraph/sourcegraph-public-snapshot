@@ -59,6 +59,7 @@ env:
       { "Name": "embeddings", "Host": "127.0.0.1:6099" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
+      { "Name": "outline-scip-codeintel-worker", "Host": "127.0.0.1:6075" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
@@ -182,7 +183,7 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
-    env: &gitserverenv
+    env:
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
@@ -197,7 +198,6 @@ commands:
   gitserver-0:
     <<: *gitserver_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
@@ -206,7 +206,6 @@ commands:
   gitserver-1:
     <<: *gitserver_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
@@ -280,6 +279,7 @@ commands:
         -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
         --entrypoint /usr/local/bin/qdrant \
         sourcegraph/qdrant:insiders
+
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -562,6 +562,36 @@ commands:
       - internal
       - cmd/precise-code-intel-worker
       - lib/codeintel
+
+  codeintel-outline-scip-worker:
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/outline-scip-codeintel-worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      if [ ! -f $(./dev/scip-treesitter-install.sh which) ]; then
+        echo "Building scip-treesitter"
+        ./dev/scip-treesitter-install.sh
+      fi
+
+      echo "Building codeintel-outkline-scip-worker"
+      go build -gcflags="$GCFLAGS" -o .bin/outline-scip-codeintel-worker github.com/sourcegraph/sourcegraph/cmd/outline-scip-code-intel-worker
+
+
+
+    checkBinary: .bin/outline-scip-codeintel-worker
+    watch:
+      - lib
+      - internal
+      - cmd/outline-scip-code-intel-worker
+      - lib/codeintel
+      - docker-images/syntax-highlighter/crates/scip-treesitter-cli
+    env:
+      SCIP_TREESITTER_COMMAND: dev/scip-treesitter-dev
+
 
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
@@ -1017,7 +1047,7 @@ bazelCommands:
       USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
-    env: &gitserverenv
+    env:
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -1026,7 +1056,6 @@ bazelCommands:
   gitserver-0:
     <<: *gitserver_bazel_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
@@ -1034,7 +1063,6 @@ bazelCommands:
   gitserver-1:
     <<: *gitserver_bazel_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
@@ -1194,6 +1222,40 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
+
+  codeintel-outline-scip:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      # - repo-updater
+      # - gitserver-0
+      # - gitserver-1
+      # - searcher
+      # - symbols
+      # - caddy
+      # - docsite
+      # - syntax-highlighter
+      # - zoekt-index-0
+      # - zoekt-index-1
+      # - zoekt-web-0
+      # - zoekt-web-1
+      - blobstore
+      # - codeintel-worker
+      - codeintel-outline-scip-worker
+      # - codeintel-executor
+      # - otel-collector
+      # - jaeger
+      # - grafana
+      # - prometheus
+      # - web
+
+
 
   codeintel:
     requiresDevPrivate: true
