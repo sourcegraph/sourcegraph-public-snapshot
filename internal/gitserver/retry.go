@@ -146,4 +146,9 @@ func (r *automaticRetryClient) MergeBase(ctx context.Context, in *proto.MergeBas
 	return r.base.MergeBase(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadFileClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadFile(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

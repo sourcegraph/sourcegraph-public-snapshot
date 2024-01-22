@@ -989,11 +989,10 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 	file, err := io.ReadAll(r)
+	r.Close()
 	if err != nil {
-		r.Close()
 		return nil, err
 	}
-	r.Close()
 
 	// client-side normalizes the file to LF, so normalize CRLF files to that so the offsets are correct
 	file = bytes.ReplaceAll(file, []byte("\r\n"), []byte("\n"))
