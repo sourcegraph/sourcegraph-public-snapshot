@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ssc",
+    srcs = [
+        "ssc.go",
+        "types.go",
+        "utils.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/ssc",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/featureflag",
+        "//internal/httpcli",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)

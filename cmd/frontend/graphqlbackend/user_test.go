@@ -372,7 +372,7 @@ func TestUser_CodyCurrentPeriod(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				user := &types.User{ID: 1}
 				if test.pro {
-					user.CodyProEnabledAt = &test.createdAt
+					user.CodyProOptedAt = &test.createdAt
 				} else {
 					user.CreatedAt = test.createdAt
 				}

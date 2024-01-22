@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/ssc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
@@ -159,8 +160,14 @@ func newCompletionsHandler(
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
-					respondRateLimited(w, unwrap, isDotcom, isProUser)
+					subscription, err := ssc.CodySubscriptionForUser(ctx, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
+					respondRateLimited(w, unwrap, isDotcom, subscription.ApplyProRateLimits)
 					return
 				}
 				l.Warn("Rate limit error", log.Error(err))
@@ -250,10 +257,17 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
+
+					subscription, err := ssc.CodySubscriptionForUser(ctx, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
 					if isDotcom {
-						if isProUser {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")
@@ -310,10 +324,16 @@ func newNonStreamingResponseHandler(logger log.Logger, feature types.Completions
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
+					subscription, err := ssc.CodySubscriptionForUser(ctx, *user)
+					if err != nil {
+						logger.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
 					if isDotcom {
-						if isProUser {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")

@@ -49,6 +49,7 @@ go_library(
         "//internal/productsubscription",
         "//internal/redispool",
         "//internal/slack",
+        "//internal/ssc",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",

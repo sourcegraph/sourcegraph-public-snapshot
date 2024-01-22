@@ -38,6 +38,7 @@ export const FEATURE_FLAGS = [
     'opencodegraph',
     'auditlog-expansion',
     'search.newFilters',
+    'ssc-enabled',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

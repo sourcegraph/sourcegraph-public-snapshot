@@ -76,7 +76,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const enrollPro = parameters.get('pro') === 'true'
 
     useEffect(() => {
-        if (enrollPro && data?.currentUser && !data?.currentUser?.codyProEnabled) {
+        if (enrollPro && data?.currentUser && !data?.currentUser?.codySubscription?.isPro) {
             changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
     }, [data?.currentUser, changeCodyPlan, enrollPro])
@@ -93,12 +93,15 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         return null
     }
 
-    const { codyProEnabled } = data.currentUser
+    const subscription = data.currentUser.codySubscription
+    if (!subscription) {
+        return null
+    }
 
     const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
 
-    const showUpgradeBanner = !codyProEnabled && (codeLimitReached || chatLimitReached)
+    const showUpgradeBanner = !subscription.isPro && (codeLimitReached || chatLimitReached)
 
     return (
         <>
@@ -140,10 +143,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div>
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
-                                You are on the {codyProEnabled ? 'Pro' : 'Free'} tier.
+                                You are on the {subscription.isPro ? 'Pro' : 'Free'} tier.
                             </Text>
                         </div>
-                        {codyProEnabled ? (
+                        {subscription.isPro ? (
                             <div>
                                 <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
                                     Manage subscription
@@ -160,7 +163,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                            {codyProEnabled ? (
+                            {subscription.isPro ? (
                                 <ProTierIcon />
                             ) : (
                                 <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
@@ -172,7 +175,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left border-right">
                             <AutocompletesIcon />
                             <div className="mb-2 mt-3">
-                                {codyProEnabled ? (
+                                {subscription.isPro ? (
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
@@ -205,10 +208,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H4 className={classNames('mb-0', codeLimitReached ? 'text-danger' : 'text-muted')}>
                                 Autocomplete suggestions
                             </H4>
-                            {!codyProEnabled &&
-                                (codeLimitReached && usageData?.currentUser?.codyCurrentPeriodEndDate ? (
+                            {!subscription.isPro &&
+                                (codeLimitReached && subscription.currentPeriodEndAt ? (
                                     <Text className="text-danger mb-0" size="small">
-                                        Renews in <Timestamp date={usageData?.currentUser?.codyCurrentPeriodEndDate} />
+                                        Renews in <Timestamp date={subscription.currentPeriodEndAt} />
                                     </Text>
                                 ) : (
                                     <Text className="text-muted mb-0" size="small">
@@ -219,7 +222,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
                             <ChatMessagesIcon />
                             <div className="mb-2 mt-3">
-                                {codyProEnabled ? (
+                                {subscription.isPro ? (
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
@@ -252,10 +255,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H4 className={classNames('mb-0', chatLimitReached ? 'text-danger' : 'text-muted')}>
                                 Chat messages and commands
                             </H4>
-                            {!codyProEnabled &&
-                                (chatLimitReached && usageData?.currentUser?.codyCurrentPeriodEndDate ? (
+                            {!subscription.isPro &&
+                                (chatLimitReached && subscription.currentPeriodEndAt ? (
                                     <Text className="text-danger mb-0" size="small">
-                                        Renews <Timestamp date={usageData?.currentUser?.codyCurrentPeriodEndDate} />
+                                        Renews <Timestamp date={subscription.currentPeriodEndAt} />
                                     </Text>
                                 ) : (
                                     <Text className="text-muted mb-0" size="small">
@@ -263,7 +266,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ))}
                         </div>
-                        {codyProEnabled && (
+                        {subscription.isPro && (
                             <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
                                 <TrialPeriodIcon />
                                 <div className="mb-2 mt-4">

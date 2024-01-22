@@ -22,6 +22,7 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -47,6 +48,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
 
+    const [sscEnabled] = useFeatureFlag('ssc-enabled', false)
+
     useEffect(() => {
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
@@ -68,7 +71,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
-    const { codyProEnabled } = data.currentUser
+    const isPro = data.currentUser?.codySubscription?.isPro || false
 
     return (
         <>
@@ -191,7 +194,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text className="mb-3 text-muted" size="small">
                                     Free until Feb 2024, <strong>no credit card needed</strong>
                                 </Text>
-                                {codyProEnabled ? (
+                                {isPro ? (
                                     <div>
                                         <Text
                                             className="mb-0 text-muted d-inline cursor-pointer"
@@ -206,10 +209,17 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                         tier: 'free',
                                                     }
                                                 )
+                                                if (sscEnabled) {
+                                                    window.open(
+                                                        'https://accounts.sourcegraph.com/cody/subscription?pro=true',
+                                                        '_blank'
+                                                    )
+                                                    return
+                                                }
                                                 setShowCancelPro(true)
                                             }}
                                         >
-                                            Cancel
+                                            {sscEnabled ? 'Manage' : 'Cancel'} subscription
                                         </Text>
                                     </div>
                                 ) : (
@@ -222,11 +232,19 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' },
                                                 { tier: 'pro' }
                                             )
+                                            if (sscEnabled) {
+                                                window.open(
+                                                    'https://accounts.sourcegraph.com/cody/subscription',
+                                                    '_blank'
+                                                )
+                                                return
+                                            }
+
                                             setShowUpgradeToPro(true)
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        Get Pro trial
+                                        {sscEnabled ? 'Get Pro' : 'Get Pro trial'}
                                     </Button>
                                 )}
                             </div>

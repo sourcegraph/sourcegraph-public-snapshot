@@ -324,6 +324,7 @@ go_library(
         "//internal/siteid",
         "//internal/sourcegraphoperator",
         "//internal/src-prometheus",
+        "//internal/ssc",
         "//internal/suspiciousnames",
         "//internal/symbols",
         "//internal/temporarysettings",

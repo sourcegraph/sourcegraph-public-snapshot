@@ -21,7 +21,7 @@ export function CancelProModal({
 
     return (
         <Modal isOpen={true} aria-label="Update to Cody Pro" className={styles.cancelModal} position="center">
-            {data && !data.changeCodyPlan?.codyProEnabled ? (
+            {data && !data.changeCodyPlan?.codySubscription?.isPro ? (
                 <div className="d-flex flex-column py-2">
                     <H2>Sorry to see you go.</H2>
 

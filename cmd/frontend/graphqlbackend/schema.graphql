@@ -6361,6 +6361,24 @@ type NewUsersConnection implements Connection {
     pageInfo: ConnectionPageInfo!
 }
 
+enum CodySubscriptionStatus {
+    active
+    past_due
+    unpaid
+    canceled
+    trialing
+    pending
+    other
+}
+
+type CodySubscription {
+    status: CodySubscriptionStatus!
+    isPro: Boolean!
+    applyProRateLimits: Boolean!
+    currentPeriodStartAt: DateTime!
+    currentPeriodEndAt: DateTime!
+}
+
 """
 A user.
 """
@@ -6573,18 +6591,26 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codeCompletionsQuotaOverride: Int
     """
+    The Cody subscription details for the user.
+    """
+    codySubscription: CodySubscription
+    """
+    DEPRICATED
     Whether the user has enrolled for Cody Pro.
     """
     codyProEnabled: Boolean!
     """
+    DEPRICATED
     The date when the user enrolled for Cody Pro.
     """
     codyProEnabledAt: DateTime
     """
+    DEPRICATED
     The start date of current billing period of Cody.
     """
     codyCurrentPeriodStartDate: DateTime
     """
+    DEPRICATED
     The end date of current billing period of Cody.
     """
     codyCurrentPeriodEndDate: DateTime

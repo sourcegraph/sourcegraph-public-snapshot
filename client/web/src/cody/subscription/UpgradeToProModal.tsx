@@ -27,7 +27,7 @@ export function UpgradeToProModal({
 
     return (
         <Modal isOpen={true} aria-label="Update to Cody Pro" className={styles.upgradeModal} position="center">
-            {data?.changeCodyPlan?.codyProEnabled ? (
+            {data?.changeCodyPlan?.codySubscription?.isPro ? (
                 <div className="d-flex flex-column justify-content-between align-items-center mby-4 py-4">
                     <CodyColorIcon width={40} height={40} className="mb-4" />
                     <H2>Upgraded to Cody Pro 🎉</H2>
