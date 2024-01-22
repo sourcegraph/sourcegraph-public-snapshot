@@ -419,7 +419,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	}
 }
 
-func Test_repoEnabledCache(t *testing.T) {
+func TestRepoEnabledCache(t *testing.T) {
 	cache := newRepoEnabledCache(time.Hour)
 
 	_, cacheHit := cache.RepoIsEnabled(api.RepoID(42))
