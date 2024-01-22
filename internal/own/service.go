@@ -1,7 +1,6 @@
 package own
 
 import (
-	"bytes"
 	"context"
 	"os"
 	"strings"
@@ -109,23 +108,36 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 		rs = codeowners.NewRuleset(codeowners.IngestedRulesetSource{ID: int32(ingestedCodeowners.RepoID)}, ingestedCodeowners.Proto)
 	} else {
 		for _, path := range codeownersLocations {
-			content, err := s.gitserverClient.ReadFile(
+			r, err := s.gitserverClient.NewFileReader(
 				ctx,
 				repoName,
 				commitID,
 				path,
 			)
-			if content != nil && err == nil {
-				pbfile, err := codeowners.Parse(bytes.NewReader(content))
-				if err != nil {
-					return nil, err
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
 				}
-				rs = codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile)
-				break
-			} else if os.IsNotExist(err) {
-				continue
+				return nil, err
 			}
-			return nil, err
+
+			pbfile, err := codeowners.Parse(r)
+			r.Close()
+			if err != nil {
+				// TODO: Currently, it is required to start reading from the file
+				// reader to detect file not found errors.
+				// With the move to proper endpoints, we should be able to move
+				// this error check to before the stream is started, ie. when
+				// client.NewFileReader returns.
+				// Then, we should be able to remove this check here.
+				if os.IsNotExist(err) {
+					continue
+				}
+				return nil, err
+			}
+
+			rs = codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile)
+			break
 		}
 	}
 	if rs == nil {

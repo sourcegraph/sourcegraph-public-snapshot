@@ -3,6 +3,7 @@ package resolvers
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 
 	"github.com/graph-gophers/graphql-go"
@@ -219,7 +220,14 @@ func embeddingsSearchResultsToResolvers(
 		for i, result := range results {
 			i, result := i, result
 			p.Go(func() {
-				content, err := gs.ReadFile(ctx, result.RepoName, result.Revision, result.FileName)
+				r, err := gs.NewFileReader(ctx, result.RepoName, result.Revision, result.FileName)
+				if err != nil {
+					allContents[i] = nil
+					allErrors[i] = err
+					return
+				}
+				defer r.Close()
+				content, err := io.ReadAll(r)
 				allContents[i] = content
 				allErrors[i] = err
 			})

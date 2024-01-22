@@ -10989,9 +10989,6 @@ type MockGitserverClient struct {
 	// ReadDirFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadDir.
 	ReadDirFunc *GitserverClientReadDirFunc
-	// ReadFileFunc is an instance of a mock function object controlling the
-	// behavior of the method ReadFile.
-	ReadFileFunc *GitserverClientReadFileFunc
 	// RefDescriptionsFunc is an instance of a mock function object
 	// controlling the behavior of the method RefDescriptions.
 	RefDescriptionsFunc *GitserverClientRefDescriptionsFunc
@@ -11257,11 +11254,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		ReadDirFunc: &GitserverClientReadDirFunc{
 			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, bool) (r0 []fs.FileInfo, r1 error) {
-				return
-			},
-		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -11562,11 +11554,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.ReadDir")
 			},
 		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-				panic("unexpected invocation of MockGitserverClient.ReadFile")
-			},
-		},
 		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
 			defaultHook: func(context.Context, api.RepoName, ...string) (map[string][]gitdomain.RefDescription, error) {
 				panic("unexpected invocation of MockGitserverClient.RefDescriptions")
@@ -11776,9 +11763,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		ReadDirFunc: &GitserverClientReadDirFunc{
 			defaultHook: i.ReadDir,
-		},
-		ReadFileFunc: &GitserverClientReadFileFunc{
-			defaultHook: i.ReadFile,
 		},
 		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
 			defaultHook: i.RefDescriptions,
@@ -16777,120 +16761,6 @@ func (c GitserverClientReadDirFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientReadDirFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientReadFileFunc describes the behavior when the ReadFile
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientReadFileFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)
-	history     []GitserverClientReadFileFuncCall
-	mutex       sync.Mutex
-}
-
-// ReadFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) ReadFile(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string) ([]byte, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2, v3)
-	m.ReadFileFunc.appendCall(GitserverClientReadFileFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReadFile method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientReadFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadFile method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientReadFileFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientReadFileFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientReadFileFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientReadFileFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, string) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientReadFileFunc) appendCall(r0 GitserverClientReadFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientReadFileFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientReadFileFunc) History() []GitserverClientReadFileFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientReadFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientReadFileFuncCall is an object that describes an invocation
-// of method ReadFile on an instance of MockGitserverClient.
-type GitserverClientReadFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientReadFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientReadFileFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
