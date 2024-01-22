@@ -57,7 +57,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	}
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
+		return &types.User{ID: 1, SiteAdmin: true}, nil
 	})
 	mockDB.UsersFunc.SetDefaultReturn(users)
 	permissions := dbmocks.NewMockPermissionStore()
