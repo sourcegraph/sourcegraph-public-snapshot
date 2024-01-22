@@ -41,7 +41,7 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     const exampleSyntaxColumns = useQueryExamples(
         selectedSearchContextSpec ?? 'global',
         isSourcegraphDotCom,
-        patternType === SearchPatternType.newStandardRC1
+        patternType === SearchPatternType.keyword
     )
 
     const onQueryExampleClick = useCallback(
