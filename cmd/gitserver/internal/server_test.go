@@ -53,6 +53,7 @@ type Test struct {
 	Request         *v1.ExecRequest
 	ExpectedCode    codes.Code
 	ExpectedBody    string
+	ExpectedError   string
 	ExpectedDetails []any
 }
 
@@ -67,8 +68,9 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.Unknown,
-			ExpectedBody: "teststdout",
+			ExpectedCode:  codes.Unknown,
+			ExpectedBody:  "teststdout",
+			ExpectedError: "teststderr",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 42,
 				Stderr:     "teststderr",
@@ -80,8 +82,8 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/doesnotexist",
 				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.NotFound,
-			ExpectedBody: "repo not found",
+			ExpectedCode:  codes.NotFound,
+			ExpectedError: "repo not found",
 			ExpectedDetails: []any{&v1.NotFoundPayload{
 				Repo:            "github.com/gorilla/doesnotexist",
 				CloneInProgress: false,
@@ -93,8 +95,8 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/nicksnyder/go-i18n",
 				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.NotFound,
-			ExpectedBody: "repo not found",
+			ExpectedCode:  codes.NotFound,
+			ExpectedError: "repo not found",
 			ExpectedDetails: []any{&v1.NotFoundPayload{
 				Repo:            "github.com/nicksnyder/go-i18n",
 				CloneInProgress: true,
@@ -106,8 +108,8 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("merge-base")},
 			},
-			ExpectedCode: codes.Unknown,
-			ExpectedBody: "testerror",
+			ExpectedCode:  codes.Unknown,
+			ExpectedError: "testerror",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 1,
 				Stderr:     "teststderr",
@@ -118,8 +120,8 @@ func TestExecRequest(t *testing.T) {
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/mux",
 			},
-			ExpectedCode: codes.InvalidArgument,
-			ExpectedBody: "invalid command",
+			ExpectedCode:  codes.InvalidArgument,
+			ExpectedError: "invalid command",
 		},
 		{
 			Name: "BadCommand",
@@ -127,8 +129,8 @@ func TestExecRequest(t *testing.T) {
 				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("invalid-command")},
 			},
-			ExpectedCode: codes.InvalidArgument,
-			ExpectedBody: "invalid command",
+			ExpectedCode:  codes.InvalidArgument,
+			ExpectedError: "invalid command",
 		},
 	}
 
@@ -233,10 +235,9 @@ func TestExecRequest(t *testing.T) {
 					}
 				}
 
-				if strings.TrimSpace(s.Message()) != test.ExpectedBody {
-					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedBody, s.Message())
+				if strings.TrimSpace(s.Message()) != test.ExpectedError {
+					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedError, s.Message())
 				}
-				return
 			}
 
 			if strings.TrimSpace(string(receivedData)) != test.ExpectedBody {
