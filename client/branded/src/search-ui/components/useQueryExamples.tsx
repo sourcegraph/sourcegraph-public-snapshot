@@ -2,7 +2,6 @@ import { useMemo, useEffect, useState, useCallback } from 'react'
 
 import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ProductStatusType } from '@sourcegraph/wildcard'
