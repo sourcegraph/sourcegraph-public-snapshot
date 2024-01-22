@@ -40,7 +40,7 @@ interface SearchDynamicFilterProps {
     filters?: Filter[]
 
     /** Exposes render API to render some custom filter item in the list */
-    renderItem?: (filter: Filter) => ReactNode
+    renderItem?: (filter: Filter, selected: boolean) => ReactNode
 
     /**
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
@@ -147,7 +147,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 interface DynamicFilterItemProps {
     filter: Filter
     selected: boolean
-    renderItem?: (filter: Filter) => ReactNode
+    renderItem?: (filter: Filter, selected: boolean) => ReactNode
     onClick: (filter: URLQueryFilter, remove?: boolean) => void
 }
 
@@ -162,7 +162,7 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 className={classNames(styles.item, { [styles.itemSelected]: selected })}
                 onClick={() => onClick(filter, selected)}
             >
-                <span className={styles.itemText}>{renderItem ? renderItem(filter) : filter.label}</span>
+                <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
                 {filter.count !== 0 && (
                     <Badge variant="secondary" className="ml-2">
                         {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
@@ -207,10 +207,10 @@ export const repoFilter = (filter: Filter): ReactNode => {
     )
 }
 
-export const commitDateFilter = (filter: Filter): ReactNode => (
+export const commitDateFilter = (filter: Filter, selected: boolean): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
-        <Code>{filter.value}</Code>
+        <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
     </span>
 )
 
