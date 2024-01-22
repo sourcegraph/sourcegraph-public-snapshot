@@ -15,7 +15,8 @@ import { URLQueryFilter } from '../../hooks'
 
 import styles from './SearchDynamicFilter.module.scss'
 
-const MAX_FILTERS_NUMBER = 5
+const DEFAULT_FILTERS_NUMBER = 5
+const MAX_FILTERS_NUMBER = 10
 
 interface SearchDynamicFilterProps {
     /** Name title of the filter section */
@@ -61,7 +62,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     onSelectedFilterChange,
 }) => {
     const [searchTerm, setSearchTerm] = useState<string>('')
-    const [visibleFilters, setVisibleFilters] = useState<number>(MAX_FILTERS_NUMBER)
+    const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
@@ -91,27 +92,9 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     const lowerSearchTerm = searchTerm.toLowerCase()
     const filteredFilters = mergedFilters.filter(filter => filter.label.toLowerCase().includes(lowerSearchTerm))
-    const filtersToShow =
-        filteredFilters.length <= visibleFilters ? filteredFilters : filteredFilters.slice(0, visibleFilters)
-    const allFiltersDisplayed = visibleFilters >= filteredFilters.length
-
-    const moreOrLessFilters = (): void => {
-        const filtersDisplayed = visibleFilters + MAX_FILTERS_NUMBER
-
-        if (allFiltersDisplayed) {
-            // setAllFiltersDisplayed(false)
-            setVisibleFilters(MAX_FILTERS_NUMBER)
-            return
-        }
-
-        if (filteredFilters.length <= filtersDisplayed) {
-            setVisibleFilters(filtersDisplayed)
-            // setAllFiltersDisplayed(true)
-            return
-        }
-
-        setVisibleFilters(filtersDisplayed)
-    }
+    const filtersToShow = showMoreFilters
+        ? filteredFilters.slice(0, MAX_FILTERS_NUMBER)
+        : filteredFilters.slice(0, DEFAULT_FILTERS_NUMBER)
 
     return (
         <div className={styles.root}>
@@ -119,7 +102,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                 {title}
             </H4>
 
-            {mergedFilters.length > MAX_FILTERS_NUMBER && (
+            {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
@@ -138,10 +121,18 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                     />
                 ))}
             </ul>
-            {filteredFilters.length > MAX_FILTERS_NUMBER && (
-                <Button variant="link" size="sm" onClick={() => moreOrLessFilters()}>
-                    {allFiltersDisplayed ? `Show less ${filterKind}s` : `Show more ${filterKind}s`}
-                </Button>
+            {filteredFilters.length > DEFAULT_FILTERS_NUMBER && (
+                <>
+                    {showMoreFilters && filteredFilters.length > MAX_FILTERS_NUMBER && (
+                        <small className={styles.description}>
+                            There are {filteredFilters.length - MAX_FILTERS_NUMBER} other filters, use search to see
+                            more
+                        </small>
+                    )}
+                    <Button variant="link" size="sm" onClick={() => setShowMoreFilters(!showMoreFilters)}>
+                        {showMoreFilters ? `Show less ${filterKind}s` : `Show more ${filterKind}s`}
+                    </Button>
+                </>
             )}
         </div>
     )
