@@ -2,12 +2,13 @@ import { expect, describe, test } from 'vitest'
 
 import { createUrl } from './CopyPermalinkAction'
 
-describe('URL', () => {
-    test('should return the correct URL', () => {
-        let rooturl = 'http://localhost:3000'
-        let path = '/api/v1'
-        let combined = createUrl(rooturl, path)
+describe('createURL', () => {
+    test('should return the correct URL given the rooturl and path', () => {
+        const url = 'http://localhost:3080'
+        const path = '/api/v1?q=foo#bar'
+        const wantUrl = createUrl(url, path)
+        const gotUrl = 'http://localhost:3080/api/v1?q=foo#bar'
 
-        expect(combined).toBe('http://localhost:3000/api/v1')
+        expect(wantUrl).toBe(gotUrl)
     })
 })
