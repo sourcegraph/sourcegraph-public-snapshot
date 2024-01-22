@@ -120,6 +120,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                         onClick={handleFilterClick}
                     />
                 ))}
+
+                {filtersToShow.length === 0 && (
+                    <small className={styles.description}>
+                        There are no {filterKind}s to show, try to use different search value
+                    </small>
+                )}
             </ul>
             {filteredFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <>
