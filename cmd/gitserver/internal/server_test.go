@@ -65,9 +65,9 @@ func TestExecRequest(t *testing.T) {
 			Name: "Command",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("testcommand")},
+				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.OK,
+			ExpectedCode: codes.Unknown,
 			ExpectedBody: "teststdout",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 42,
@@ -78,7 +78,7 @@ func TestExecRequest(t *testing.T) {
 			Name: "NonexistingRepo",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/doesnotexist",
-				Args: [][]byte{[]byte("testcommand")},
+				Args: [][]byte{[]byte("diff")},
 			},
 			ExpectedCode: codes.NotFound,
 			ExpectedBody: "repo not found",
@@ -91,7 +91,7 @@ func TestExecRequest(t *testing.T) {
 			Name: "UnclonedRepo",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/nicksnyder/go-i18n",
-				Args: [][]byte{[]byte("testcommand")},
+				Args: [][]byte{[]byte("diff")},
 			},
 			ExpectedCode: codes.NotFound,
 			ExpectedBody: "repo not found",
@@ -104,7 +104,7 @@ func TestExecRequest(t *testing.T) {
 			Name: "Error",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("testerror")},
+				Args: [][]byte{[]byte("merge-base")},
 			},
 			ExpectedCode: codes.Unknown,
 			ExpectedBody: "testerror",
@@ -114,15 +114,17 @@ func TestExecRequest(t *testing.T) {
 			}},
 		},
 		{
-			Name:         "EmptyInput",
-			Request:      &v1.ExecRequest{},
+			Name: "EmptyInput",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/mux",
+			},
 			ExpectedCode: codes.InvalidArgument,
 			ExpectedBody: "invalid command",
 		},
 		{
 			Name: "BadCommand",
 			Request: &v1.ExecRequest{
-				Repo: "github.com/sourcegraph/sourcegraph",
+				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("invalid-command")},
 			},
 			ExpectedCode: codes.InvalidArgument,
@@ -142,25 +144,31 @@ func TestExecRequest(t *testing.T) {
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			backend := git.NewMockGitBackend()
 			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
+				if !cli.IsAllowedGitCmd(logtest.Scoped(t), args, gitserverfs.RepoDirFromName(reposDir, repoName)) {
+					return nil, cli.ErrBadGitCommand
+				}
+
 				switch args[0] {
-				case "testcommand":
+				case "diff":
 					var stdout bytes.Buffer
 					stdout.Write([]byte("teststdout"))
-					return &errorCloser{
-						Reader: &stdout,
+					return &errorReader{
+						ReadCloser: io.NopCloser(&stdout),
 						err: &cli.CommandFailedError{
 							Stderr:     []byte("teststderr"),
 							ExitStatus: 42,
+							Inner:      errors.New("teststderr"),
 						},
 					}, nil
-				case "testerror":
-					return &errorCloser{
-						Reader: &bytes.Buffer{},
+				case "merge-base":
+					return &errorReader{
+						ReadCloser: io.NopCloser(&bytes.Buffer{}),
 						err: &cli.CommandFailedError{
 							Stderr:     []byte("teststderr"),
 							ExitStatus: 1,
+							Inner:      errors.New("testerror"),
 						},
-					}, errors.New("testerror")
+					}, nil
 				}
 				return io.NopCloser(&bytes.Buffer{}), nil
 			})
@@ -217,7 +225,7 @@ func TestExecRequest(t *testing.T) {
 				}
 				s, ok := status.FromError(err)
 				require.True(t, ok)
-				require.Equal(t, test.ExpectedCode, s.Code())
+				require.Equal(t, test.ExpectedCode, s.Code(), "wrong error code: expected %v, got %v %v", test.ExpectedCode, s.Code(), err)
 
 				if len(test.ExpectedDetails) > 0 {
 					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.NotFoundPayload{})); diff != "" {
@@ -238,14 +246,21 @@ func TestExecRequest(t *testing.T) {
 	}
 }
 
-type errorCloser struct {
-	io.Reader
+type errorReader struct {
+	io.ReadCloser
 
 	err error
 }
 
-func (ec *errorCloser) Close() error {
-	return ec.err
+func (ec *errorReader) Read(p []byte) (int, error) {
+	n, err := ec.ReadCloser.Read(p)
+	if err == nil {
+		return n, nil
+	}
+	if err == io.EOF {
+		return n, ec.err
+	}
+	return n, err
 }
 
 // makeSingleCommitRepo make create a new repo with a single commit and returns

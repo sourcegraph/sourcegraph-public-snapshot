@@ -811,10 +811,12 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		s.logIfCorrupt(ctx, repoName, execErr)
 		commandFailedErr := &cli.CommandFailedError{}
 		if errors.As(execErr, &commandFailedErr) {
+			exitStatus = commandFailedErr.ExitStatus
+			status = strconv.Itoa(exitStatus)
 			return execStatus{
 				ExitStatus: commandFailedErr.ExitStatus,
 				Stderr:     string(commandFailedErr.Stderr),
-				Err:        execErr,
+				Err:        commandFailedErr.Unwrap(),
 			}, nil
 		}
 		return execStatus{}, execErr

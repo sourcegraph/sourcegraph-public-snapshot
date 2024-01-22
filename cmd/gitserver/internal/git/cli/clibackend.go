@@ -48,7 +48,7 @@ func commandFailedError(err error, cmd wrexec.Cmder, stderr []byte) error {
 	}
 
 	return &CommandFailedError{
-		inner:      err,
+		Inner:      err,
 		args:       cmd.Unwrap().Args,
 		Stderr:     stderr,
 		ExitStatus: exitStatus,
@@ -58,12 +58,12 @@ func commandFailedError(err error, cmd wrexec.Cmder, stderr []byte) error {
 type CommandFailedError struct {
 	Stderr     []byte
 	ExitStatus int
-	inner      error
+	Inner      error
 	args       []string
 }
 
 func (e *CommandFailedError) Unwrap() error {
-	return e.inner
+	return e.Inner
 }
 
 func (e *CommandFailedError) Error() string {
@@ -131,7 +131,7 @@ type cmdReader struct {
 
 func (rc *cmdReader) Read(p []byte) (n int, err error) {
 	n, err = rc.ReadCloser.Read(p)
-	_, writeErr := rc.buf.Write(p[:n])
+	writtenN, writeErr := rc.buf.Write(p[:n])
 	if err == io.EOF {
 		rc.ReadCloser.Close()
 
@@ -143,7 +143,7 @@ func (rc *cmdReader) Read(p []byte) (n int, err error) {
 		}
 	}
 	if err == nil && writeErr != nil {
-		return n, writeErr
+		return writtenN, writeErr
 	}
 	return n, err
 }
