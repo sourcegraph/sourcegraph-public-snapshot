@@ -11,6 +11,7 @@ import { type HighlightIndex, syntaxHighlight } from './highlight'
 const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.Identifier,
     SyntaxKind.IdentifierBuiltin,
+    SyntaxKind.IdentifierBuiltinType,
     SyntaxKind.IdentifierConstant,
     SyntaxKind.IdentifierMutableGlobal,
     SyntaxKind.IdentifierParameter,
