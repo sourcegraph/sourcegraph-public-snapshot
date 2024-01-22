@@ -4,7 +4,6 @@ import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -71,7 +70,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
     const showCodyCTA = !showOnboardingTour
 
-    const keywordSearch = useNavbarQueryState.getState().searchPatternType === SearchPatternType.newStandardRC1
+    const patternType = useNavbarQueryState.getState().searchPatternType
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -152,7 +151,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            keywordSearch={keywordSearch}
+                            patternType={patternType}
                         />
                     )}
                 </div>
