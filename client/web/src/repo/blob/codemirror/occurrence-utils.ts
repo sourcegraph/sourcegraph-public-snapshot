@@ -32,7 +32,6 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     // a comment or a keyword.
     SyntaxKind.Keyword,
     SyntaxKind.Comment,
-
 ])
 
 export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
