@@ -86,28 +86,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 />
             )}
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <>
-                    <SearchDynamicFilter
-                        title="By author"
-                        filterKind="author"
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={authorFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-
-                    <SearchDynamicFilter
-                        title="By commit date"
-                        filterKind="commit date"
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={commitDateFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-                </>
-            )}
-
             <SearchDynamicFilter
                 title="By language"
                 filterKind="lang"
@@ -117,6 +95,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <SearchDynamicFilter
+                    title="By author"
+                    filterKind="author"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={authorFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
+            )}
+
             <SearchDynamicFilter
                 title="By repositories"
                 filterKind="repo"
@@ -125,6 +114,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 renderItem={repoFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
+
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <SearchDynamicFilter
+                    title="By commit date"
+                    filterKind="commit date"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={commitDateFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
+            )}
 
             <SearchDynamicFilter
                 title="By file"
