@@ -4,12 +4,17 @@
     import type { SidebarFilter } from '$lib/search/utils'
     import { updateFilter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { Badge } from '$lib/wildcard'
+    import { Badge, Button } from '$lib/wildcard'
     import { mdiClose } from '@mdi/js'
+    import { pluralize } from '$lib/common'
 
     export let items: SidebarFilter[]
     export let title: string
     export let queryFilters: string
+    export let showFilter: boolean = false
+    export let filterPlaceholder: string = ''
+    export let showAll: boolean = false
+    export let preprocessLabel: (label: string) => string = label => label
 
     function generateURL(filter: SidebarFilter, remove: boolean) {
         const url = new URL($page.url)
@@ -33,25 +38,42 @@
         }
         return url.toString()
     }
+
+    let filterText = ''
+    $: processedFilterText = filterText.trim().toLowerCase()
+    $: filteredItems =
+        showFilter && processedFilterText
+            ? items.filter(item => preprocessLabel(item.label).toLowerCase().includes(processedFilterText))
+            : items
+    $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
 </script>
 
 <article>
     <header><h4>{title}</h4></header>
+    {#if showFilter && items.length > 5}
+        <input bind:value={filterText} placeholder={filterPlaceholder} />
+    {/if}
     <ul>
-        {#each items as item}
+        {#each limitedItems as item}
             {@const selected = queryFilters.includes(item.value)}
             <li>
                 <a href={generateURL(item, selected)} class:selected>
                     <span class="label">
-                        <slot name="label" label={item.label}>
+                        <slot name="label" label={item.label} value={item.value}>
                             {item.label}
                         </slot>
                     </span>
                     {#if item.count !== undefined}
                         <span class="count">
-                            <Tooltip tooltip="At least {item.count} results match this filter.">
+                            {#if item.exhaustive}
                                 <Badge variant="secondary">{item.count}</Badge>
-                            </Tooltip>
+                            {:else}
+                                <Tooltip
+                                    tooltip="At least {item.count} {pluralize('result', item.count)} match this filter."
+                                >
+                                    <Badge variant="secondary">{item.count}+</Badge>
+                                </Tooltip>
+                            {/if}
                         </span>
                     {/if}
                     {#if selected}
@@ -63,18 +85,52 @@
             </li>
         {/each}
     </ul>
+    {#if limitedItems.length < filteredItems.length}
+        <footer>
+            <Button variant="link" on:click={() => (showAll = true)}>
+                Show all ({filteredItems.length})
+            </Button>
+        </footer>
+    {:else if limitedItems.length > 5}
+        <footer>
+            <Button variant="link" on:click={() => (showAll = false)}>Show less</Button>
+        </footer>
+    {/if}
 </article>
 
 <style lang="scss">
+    article {
+        padding-bottom: 1rem;
+    }
+
     h4 {
         white-space: nowrap;
+    }
+
+    input {
+        display: block;
+        width: 100%;
+        height: var(--input-height);
+        padding: var(--input-padding-y) var(--input-padding-x);
+        font-size: var(--input-font-size);
+        font-weight: var(--input-font-weight);
+        line-height: var(--input-line-height);
+        color: var(--input-color);
+        background-color: var(--input-bg);
+        background-clip: padding-box;
+        border: var(--input-border-width) solid var(--input-border-color);
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
     }
 
     ul {
         margin: 0;
         padding: 0.125rem;
-        padding-bottom: 1rem;
         list-style: none;
+    }
+
+    footer {
+        text-align: center;
     }
 
     a {

@@ -43,9 +43,10 @@ import (
 )
 
 type CrossStackOutput struct {
-	DiagnosticsSecret *random.Output
-	RedisInstanceID   *string
-	SentryProject     sentryproject.Project
+	DiagnosticsSecret  *random.Output
+	RedisInstanceID    *string
+	CloudSQLInstanceID *string
+	SentryProject      sentryproject.Project
 }
 
 type Variables struct {
@@ -204,6 +205,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		sslCertDirs = append(sslCertDirs, "/etc/ssl/custom-certs")
 	}
 
+	var cloudSQLInstanceID *string
 	if vars.Environment.Resources != nil && vars.Environment.Resources.PostgreSQL != nil {
 		pgSpec := *vars.Environment.Resources.PostgreSQL
 		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
@@ -227,6 +229,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Cloud SQL instance")
 		}
+
+		cloudSQLInstanceID = sqlInstance.Instance.Id()
 
 		// Add parameters required for authentication
 		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
@@ -346,9 +350,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	locals.Add("image_tag", *imageTag.StringValue,
 		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
-		SentryProject:     sentryProject,
-		DiagnosticsSecret: diagnosticsSecret,
-		RedisInstanceID:   redisInstanceID,
+		DiagnosticsSecret:  diagnosticsSecret,
+		RedisInstanceID:    redisInstanceID,
+		CloudSQLInstanceID: cloudSQLInstanceID,
+		SentryProject:      sentryProject,
 	}, nil
 }
 

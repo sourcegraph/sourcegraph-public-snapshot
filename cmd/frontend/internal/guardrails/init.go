@@ -11,8 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
 
 func Init(
@@ -23,17 +25,28 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	// Guardrails is only available in enterprise instances.
+	resolver := &resolvers.GuardrailsResolver{}
 	if envvar.SourcegraphDotComMode() {
-		return nil
+		// On DotCom guardrails endpoint runs search.
+		resolver.AttributionService = initDotcomAttributionService(observationCtx, db)
+	} else {
+		// On an Enterprise instance endpoint proxies to gateway.
+		resolver.AttributionService = initEnterpriseAttributionService(observationCtx)
 	}
+	enterpriseServices.GuardrailsResolver = resolver
+	return nil
+}
+
+func initEnterpriseAttributionService(observationCtx *observation.Context) attribution.Service {
 	client, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
 	if !ok {
-		// TODO handle error
+		// TODO(#59701) handle error
 		return nil
 	}
-	enterpriseServices.GuardrailsResolver = &resolvers.GuardrailsResolver{
-		AttributionService: attribution.NewService(observationCtx, client),
-	}
-	return nil
+	return attribution.NewGatewayProxy(observationCtx, client)
+}
+
+func initDotcomAttributionService(observationCtx *observation.Context, db database.DB) attribution.Service {
+	searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
+	return attribution.NewLocalSearch(observationCtx, searchClient)
 }

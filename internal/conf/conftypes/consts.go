@@ -30,6 +30,7 @@ type ConfigFeatures struct {
 	Chat         bool
 	AutoComplete bool
 	Commands     bool
+	Attribution  bool
 }
 
 type CompletionsProviderName string

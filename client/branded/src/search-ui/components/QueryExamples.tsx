@@ -6,25 +6,43 @@ import classNames from 'classnames'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, ButtonLink } from '@sourcegraph/wildcard'
+import {
+    ButtonLink,
+    H2,
+    Icon,
+    Link,
+    ProductStatusBadge,
+    ProductStatusType,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
-import { useQueryExamples, type QueryExamplesSection } from './useQueryExamples'
+import { type QueryExamplesSection, useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamples.module.scss'
 
 export interface QueryExamplesProps extends TelemetryProps {
     selectedSearchContextSpec?: string
     isSourcegraphDotCom?: boolean
+    patternType: SearchPatternType
 }
 
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
     isSourcegraphDotCom = false,
+    patternType,
 }) => {
-    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    const exampleSyntaxColumns = useQueryExamples(
+        selectedSearchContextSpec ?? 'global',
+        isSourcegraphDotCom,
+        patternType === SearchPatternType.keyword
+    )
 
     const onQueryExampleClick = useCallback(
         (query: string) => {
@@ -44,24 +62,38 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
                     <QueryExamplesLayout
                         queryColumns={exampleSyntaxColumns}
                         onQueryExampleClick={onQueryExampleClick}
+                        patternType={patternType}
                     />
                 </TabPanel>
                 <TabPanel className={styles.tabPanel}>
-                    <QueryExamplesLayout queryColumns={exampleQueryColumns} onQueryExampleClick={onQueryExampleClick} />
+                    <QueryExamplesLayout
+                        queryColumns={exampleQueryColumns}
+                        onQueryExampleClick={onQueryExampleClick}
+                        patternType={patternType}
+                    />
                 </TabPanel>
             </TabPanels>
         </Tabs>
     ) : (
-        <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
+        <QueryExamplesLayout
+            queryColumns={exampleSyntaxColumns}
+            onQueryExampleClick={onQueryExampleClick}
+            patternType={patternType}
+        />
     )
 }
 
 interface QueryExamplesLayout {
     queryColumns: QueryExamplesSection[][]
     onQueryExampleClick: (query: string) => void
+    patternType: SearchPatternType
 }
 
-const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ queryColumns, onQueryExampleClick }) => (
+const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({
+    queryColumns,
+    onQueryExampleClick,
+    patternType,
+}) => (
     <div className={styles.queryExamplesSectionsColumns}>
         {queryColumns.map((column, index) => (
             <div key={`column-${queryColumns[index][0].title}`}>
@@ -71,6 +103,7 @@ const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ que
                         title={title}
                         queryExamples={queryExamples}
                         onQueryExampleClick={onQueryExampleClick}
+                        patternType={patternType}
                     />
                 ))}
                 {/* Add docs link to last column */}
@@ -89,16 +122,29 @@ const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ que
 
 interface ExamplesSection extends QueryExamplesSection {
     onQueryExampleClick: (query: string) => void
+    patternType: SearchPatternType
 }
 
-const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({ title, queryExamples, onQueryExampleClick }) => (
+const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
+    title,
+    queryExamples,
+    onQueryExampleClick,
+    patternType,
+}) => (
     <div className={styles.queryExamplesSection}>
         <H2 className={styles.queryExamplesSectionTitle}>{title}</H2>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
-                .map(({ query, helperText }) => (
-                    <QueryExampleChip key={query} query={query} helperText={helperText} onClick={onQueryExampleClick} />
+                .map(({ query, helperText, productStatus }) => (
+                    <QueryExampleChip
+                        key={query}
+                        query={query}
+                        helperText={helperText}
+                        onClick={onQueryExampleClick}
+                        productStatus={productStatus}
+                        patternType={patternType}
+                    />
                 ))}
         </ul>
     </div>
@@ -106,7 +152,9 @@ const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({ title, quer
 
 interface QueryExample {
     query: string
+    patternType: SearchPatternType
     helperText?: string
+    productStatus?: ProductStatusType
 }
 
 interface QueryExampleChipProps extends QueryExample {
@@ -119,11 +167,13 @@ const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
     helperText,
     className,
     onClick,
+    productStatus,
+    patternType,
 }) => (
     <li className={classNames('d-flex align-items-center', className)}>
         <ButtonLink
             className={styles.queryExampleChip}
-            to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
+            to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
             onClick={() => onClick(query)}
         >
             <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
@@ -133,5 +183,6 @@ const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
                 <small>{helperText}</small>
             </span>
         )}
+        {productStatus && <ProductStatusBadge status={productStatus} className="ml-2" />}
     </li>
 )

@@ -53,7 +53,6 @@ func (r *Repository) Tag() string {
 
 func ParseRepository(rawImg string) (*Repository, error) {
 	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
-	println(ref)
 	if err != nil {
 		return nil, err
 	}
