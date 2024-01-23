@@ -232,13 +232,23 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 // once completion is large enough to qualify.
 type AttributedCompletions struct {
 	eventWriter func () *streamhttp.Writer
+	// filter exposes a long-running attribution operation
 	filter CompletionFilter
+	// attributionRun synchronizes on attribution to run only once.
 	attributionRun sync.Once
+	// attributionFinished has to have len=1 and stores error from attribution
+	// run once it's finished.
 	attributionFinished chan error
-	// The following fields are guarded by mu.
+	// mu guards all the following fields
 	mu sync.Mutex
+	// sendingBlocked = true indicates that eventWriter should not be used anymore
 	sendingBlocked bool
+	// canUse is nil if attribution has not finished yet,
+	// true if it finished, and result was permissive, and false otherwise
 	canUse *bool
+	// last is the most recent completion response. We keep the most recent
+	// completion passed over to Send while attribution is running. Once attribution
+	// finishes, we carry on sending from the most recent completion.
 	last types.CompletionResponse
 }
 
