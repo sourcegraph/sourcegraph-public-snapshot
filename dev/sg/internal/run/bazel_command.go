@@ -27,6 +27,9 @@ type BazelCommand struct {
 	// Preamble is a short and visible message, displayed when the command is launched.
 	Preamble        string                            `yaml:"preamble"`
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+
+	// RunTarget specifies a target that should be run via `bazel run $RunTarget` instead of directly executing the binary.
+	RunTarget string `yaml:"runTarget"`
 }
 
 func (bc BazelCommand) GetName() string {
@@ -77,6 +80,10 @@ func (bc BazelCommand) GetExternalSecrets() map[string]secrets.ExternalSecret {
 }
 
 func (bc BazelCommand) watchPaths() ([]string, error) {
+	// If no target is defined, there is nothing to be built and watched
+	if bc.Target == "" {
+		return nil, nil
+	}
 	// Grab the location of the binary in bazel-out.
 	binLocation, err := bc.GetBinaryLocation()
 	if err != nil {
@@ -97,12 +104,17 @@ func (bc BazelCommand) StartWatch(ctx context.Context) (<-chan struct{}, error) 
 }
 
 func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
-	binLocation, err := bc.GetBinaryLocation()
-	if err != nil {
-		return nil, err
+	var cmd string
+	var err error
+	if bc.RunTarget != "" {
+		cmd = "bazel run " + bc.RunTarget
+	} else {
+		if cmd, err = bc.GetBinaryLocation(); err != nil {
+			return nil, err
+		}
 	}
 
-	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, binLocation)), nil
+	return exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, cmd)), nil
 }
 
 func outputPath() ([]byte, error) {

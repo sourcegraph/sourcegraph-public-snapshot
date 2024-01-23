@@ -970,6 +970,8 @@ commands:
 bazelCommands:
   blobstore:
     target: //cmd/blobstore:blobstore
+  docsite:
+    runTarget: //doc:serve
   searcher:
     target: //cmd/searcher
   syntax-highlighter:
@@ -1095,10 +1097,10 @@ commandsets:
       - caddy
   simple:
     bazelCommands:
+      - docsite
       - worker
     commands:
       - web
-      - docsite
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
