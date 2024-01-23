@@ -30,7 +30,7 @@ describe('Search contexts', () => {
     })
     after(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function() {
+    beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
