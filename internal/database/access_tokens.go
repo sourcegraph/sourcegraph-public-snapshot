@@ -214,7 +214,7 @@ WITH subject_user AS (
 		  subject_user_id = $1
 		  AND deleted_at IS NULL
 		  AND (expires_at IS NULL OR expires_at > NOW())
-		  AND internal IS NOT True
+		  AND internal IS NOT TRUE
 	) AS active_tokens
    FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
 ),
