@@ -73,7 +73,6 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 
 			// Wait forever until we're asked to stop or that restarting returns an error.
 			for {
-
 				select {
 				// Handle context cancelled
 				case <-ctx.Done():
@@ -81,11 +80,12 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 
 				// Handle process exit
 				case err := <-sc.ErrorChannel():
-					// If the process failed, we exit immedieatly
+					// If the process failed, we exit immediately
 					if err != nil {
 						return err
 					}
-					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.GetName(), output.StyleReset))
+
+					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error: %v, %s", output.StyleBold, cmd.GetName(), err, output.StyleReset))
 
 					// If we shouldn't restart when the process exits, return
 					if !cmd.GetContinueWatchOnExit() {
@@ -243,7 +243,7 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 		}
 
 	default:
-		message = fmt.Sprintf("Failed to run %s: %s", cmdName, err)
+		message = fmt.Sprintf("Failed to run %s: %#v", cmdName, err)
 	}
 
 	separator := strings.Repeat("-", 80)

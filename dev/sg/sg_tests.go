@@ -110,9 +110,9 @@ type sgTestCommand struct {
 	args []string
 }
 
-// Ovrrides the GetExec method with a custom implementation to construct the command
+// Ovrrides the GetExecCmd method with a custom implementation to construct the command
 // using CLI-passed arguments
-func (test sgTestCommand) GetExec(ctx context.Context) (*exec.Cmd, error) {
+func (test sgTestCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	cmdArgs := []string{test.Command.Cmd}
 	if len(test.args) != 0 {
 		cmdArgs = append(cmdArgs, test.args...)
