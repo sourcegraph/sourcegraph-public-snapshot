@@ -2,7 +2,7 @@ import { FC, SVGProps } from 'react'
 
 interface CustomIconProps extends SVGProps<SVGSVGElement> {}
 
-// This file contains core-line icons by https://streamlinehq.com. It is licensed under CC BY 4.0
+// This file contains core-line icons by https://www.streamlinehq.com. It is licensed under CC BY 4.0
 // Original source of icon set - https://www.streamlinehq.com/icons/core-line-free
 
 export const OpenBookIcon: FC<CustomIconProps> = props => (
