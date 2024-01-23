@@ -33,7 +33,7 @@ pkg_tar(
 
 pkg_tar(
     name = "tar_scip-treesitter",
-    srcs = ["//docker-images/syntax-highlighter/crates/scip-treesitter-cli"],
+    srcs = ["//docker-images/syntax-highlighter/crates/scip-treesitter-cli:scip-treesitter"],
     package_dir = "/usr/local/bin",
 )
 
