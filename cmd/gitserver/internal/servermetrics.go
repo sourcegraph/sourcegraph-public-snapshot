@@ -62,9 +62,6 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		return float64(usage.Size())
 	})
 	prometheus.MustRegister(c)
-
-	// Register uniform observability via internal/observation
-	s.operations = newOperations(observationCtx)
 }
 
 func registerEchoMetric(logger log.Logger) {
