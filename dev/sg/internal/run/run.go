@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -85,7 +86,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 						return err
 					}
 
-					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error: %v, %s", output.StyleBold, cmd.GetName(), err, output.StyleReset))
+					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.GetName(), output.StyleReset))
 
 					// If we shouldn't restart when the process exits, return
 					if !cmd.GetContinueWatchOnExit() {
@@ -243,7 +244,19 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 		}
 
 	default:
-		message = fmt.Sprintf("Failed to run %s: %#v", cmdName, err)
+		var exc *exec.ExitError
+		// recurse if it is an exit error
+		if errors.As(err, &exc) {
+			printCmdError(out, cmdName, runErr{
+				cmdName:  cmdName,
+				exitCode: exc.ExitCode(),
+				stderr:   string(exc.Stderr),
+			})
+			return
+		} else {
+			message = fmt.Sprintf("Failed to run %s: %#v", cmdName, err)
+		}
+
 	}
 
 	separator := strings.Repeat("-", 80)

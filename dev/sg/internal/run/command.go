@@ -380,7 +380,7 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 				if !errors.Is(err, syscall.Errno(0x3)) {
 					panic(errors.Wrapf(err, "failed to get process group ID for %s (PID %d)", sc.opts.name, sc.Cmd.Process.Pid))
 				}
-				// note the minus sign
+				// note the minus sign; this signals that we want to kill the whole process group
 			} else if err := syscall.Kill(-pgid, syscall.SIGINT); err != nil {
 				panic(errors.Wrapf(err, "failed kill process group ID %d for cmd %s ", pgid, sc.opts.name))
 			}

@@ -32,7 +32,7 @@ func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
 
 	targets := make([]string, 0, len(cmds))
 	for _, cmd := range cmds {
-		if !slices.Contains(targets, cmd.Target) {
+		if cmd.Target != "" && !slices.Contains(targets, cmd.Target) {
 			targets = append(targets, cmd.Target)
 		}
 	}
