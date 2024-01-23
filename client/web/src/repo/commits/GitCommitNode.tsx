@@ -83,6 +83,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     wrapperElement: WrapperElement = 'div',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
+    const [truncatedCommitMessage, setTruncatedCommitMessage] = useState<boolean>(true)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
 
     const sourceType = node.perforceChangelist ? RepositoryType.PERFORCE_DEPOT : RepositoryType.GIT_REPOSITORY
@@ -160,9 +161,37 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const commitMessageBody =
         expandCommitMessageBody || showCommitMessageBody ? (
             <div className="w-100">
-                <pre className={styles.messageBody}>
-                    {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
-                </pre>
+                {truncatedCommitMessage ? (
+                    <pre className={styles.messageBody}>
+                        <>
+                            {node.body && (
+                                <Linkified input={`${node.body.slice(0, 240)}...`} externalURLs={node.externalURLs} />
+                            )}
+                            <Button
+                                variant="link"
+                                size="sm"
+                                display="inline"
+                                onClick={() => setTruncatedCommitMessage(false)}
+                            >
+                                see more
+                            </Button>
+                        </>
+                    </pre>
+                ) : (
+                    <>
+                        <pre className={styles.messageBody}>
+                            {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
+                        </pre>
+                        <Button
+                            variant="link"
+                            size="sm"
+                            display="inline"
+                            onClick={() => setTruncatedCommitMessage(true)}
+                        >
+                            see less
+                        </Button>
+                    </>
+                )}
             </div>
         ) : undefined
 
