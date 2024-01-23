@@ -113,6 +113,9 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 
 	uid := actor.FromContext(ctx).UID
 	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid, expiresAt)
+	if err != nil {
+		return nil, err
+	}
 	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 
