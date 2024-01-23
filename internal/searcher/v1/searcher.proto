@@ -71,7 +71,7 @@ message SearchResponse {
   // of responses to Search.
   message Done {
     bool limit_hit = 1;
-    bool deadline_hit = 2;
+    reserved 2;
   }
 
   oneof message {
