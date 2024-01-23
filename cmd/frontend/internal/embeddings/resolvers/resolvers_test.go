@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -29,7 +30,8 @@ import (
 
 func TestEmbeddingSearchResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
-
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
 		return nil
@@ -42,6 +44,9 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.GetByIDsFunc.SetDefaultReturn([]*types.Repo{{ID: 1, Name: "repo1"}}, nil)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
+	mockUsers := dbmocks.NewMockUserStore()
+	mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	mockDB.UsersFunc.SetDefaultReturn(mockUsers)
 
 	type Perm struct {
 		namespace rtypes.PermissionNamespace
@@ -52,7 +57,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	}
 	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
+		return &types.User{ID: 1, SiteAdmin: true}, nil
 	})
 	mockDB.UsersFunc.SetDefaultReturn(users)
 	permissions := dbmocks.NewMockPermissionStore()
@@ -99,6 +104,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: pointers.Ptr(true),
 			LicenseKey:  "asdf",
+			Embeddings:  &schema.Embeddings{},
 		},
 	})
 

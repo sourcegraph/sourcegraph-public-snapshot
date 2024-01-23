@@ -2561,6 +2561,7 @@
       "group": "Cody"
     },
     "embeddings": {
+      "deprecationMessage": "Deprecated changes to this section will not be respected.",
       "description": "Configuration for embeddings service.",
       "type": "object",
       "properties": {
