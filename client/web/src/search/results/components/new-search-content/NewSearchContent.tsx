@@ -40,9 +40,8 @@ import { fetchBlob } from '../../../../repo/blob/backend'
 import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
 import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
-import { buildSearchURLQueryFromQueryState, setSearchMode } from '../../../../stores'
+import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
-import { submitSearch } from '../../../helpers'
 import { DidYouMean } from '../../../suggestion/DidYouMean'
 import { SmartSearch } from '../../../suggestion/SmartSearch'
 import { SearchFiltersSidebar } from '../../sidebar/SearchFiltersSidebar'
@@ -100,7 +99,6 @@ interface NewSearchContentProps
 
 export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const {
-        searchMode,
         submittedURLQuery,
         liveQuery,
         queryState,
@@ -304,11 +302,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             showQueryExamplesOnNoResultsPage={true}
                             queryState={queryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            searchMode={searchMode}
-                            setSearchMode={setSearchMode}
-                            submitSearch={submitSearch}
-                            caseSensitive={caseSensitive}
-                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             logSearchResultClicked={onLogSearchResultClick}
                             queryExamplesPatternType={patternType}

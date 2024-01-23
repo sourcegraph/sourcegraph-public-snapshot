@@ -71,7 +71,6 @@ ts_project(
         "src/search-ui/components/ResultContainer.tsx",
         "src/search-ui/components/SearchResultPreviewButton.tsx",
         "src/search-ui/components/SearchResultStar.tsx",
-        "src/search-ui/components/SmartSearchPreview.tsx",
         "src/search-ui/components/SymbolSearchResult.tsx",
         "src/search-ui/components/SyntaxHighlightedSearchQuery.tsx",
         "src/search-ui/components/codeLinkNavigation.ts",
@@ -189,8 +188,6 @@ ts_project(
         "//:node_modules/use-callback-ref",
         "//:node_modules/use-resize-observer",
         "//:node_modules/zustand",
-        "//client/shared:graphql_operations",
-        "//client/shared:shared_lib",
     ],
 )
 

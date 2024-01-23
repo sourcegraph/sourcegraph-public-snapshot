@@ -10,13 +10,7 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import type {
-    BuildSearchQueryURLParameters,
-    QueryState,
-    SearchContextProps,
-    SearchMode,
-    SubmitSearchParameters,
-} from '@sourcegraph/shared/src/search'
+import type { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     type AggregateStreamingSearchResults,
     getMatchUrl,
@@ -86,12 +80,6 @@ export interface StreamingSearchResultsListProps
     queryState?: QueryState
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
-    searchMode?: SearchMode
-    setSearchMode?: (mode: SearchMode) => void
-    submitSearch?: (parameters: SubmitSearchParameters) => void
-    searchQueryFromURL?: string
-    caseSensitive?: boolean
-
     selectedSearchContextSpec?: string
 
     /**
@@ -123,11 +111,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     showQueryExamplesOnNoResultsPage,
     queryState,
     buildSearchURLQueryFromQueryState,
-    searchMode,
-    setSearchMode,
-    submitSearch,
-    caseSensitive,
-    searchQueryFromURL,
     logSearchResultClicked,
     enableRepositoryMetadata,
     queryExamplesPatternType = SearchPatternType.standard,
@@ -311,11 +294,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
-                                searchMode={searchMode}
-                                setSearchMode={setSearchMode}
-                                submitSearch={submitSearch}
-                                caseSensitive={caseSensitive}
-                                searchQueryFromURL={searchQueryFromURL}
                                 queryExamplesPatternType={queryExamplesPatternType}
                             />
                         )}
