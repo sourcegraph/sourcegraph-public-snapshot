@@ -9,7 +9,6 @@ go_library(
         "dependencies_packages.go",
         "lsifuploadstore_expirer.go",
         "metrics_reporter.go",
-        "outline_indexing.go",
         "policies.go",
         "ranking.go",
         "sentinel.go",
