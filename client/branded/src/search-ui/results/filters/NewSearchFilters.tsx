@@ -154,8 +154,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
             <div className={styles.footerContent}>
                 <footer className={styles.actions}>
                     {selectedFilters.length > 0 && (
-                        <Button variant="primary" onClick={handleApplyButtonFilters}>
-                            Apply filters to the query
+                        <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
+                            Move filters to the query
                         </Button>
                     )}
 
