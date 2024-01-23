@@ -267,6 +267,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mroth/weightedrand/v2 v2.0.1
+	github.com/nxadm/tail v1.4.11
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkoukk/tiktoken-go v0.1.6
 	github.com/prometheus/statsd_exporter v0.22.7
@@ -354,7 +355,6 @@ require (
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.7 // indirect
 	github.com/onsi/gomega v1.27.8 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
