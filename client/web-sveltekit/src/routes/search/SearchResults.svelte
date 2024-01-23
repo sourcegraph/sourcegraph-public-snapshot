@@ -34,6 +34,7 @@
     import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
     import CodeHostIcon from './CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
@@ -123,13 +124,13 @@
                 {#each resultTypeFilter as filter}
                     <li class:selected={filter.isSelected(queryFromURL)}>
                         <a
-                            href={getQueryURL({
+                            href="{getQueryURL({
                                 searchMode: $queryState.searchMode,
                                 patternType: $queryState.patternType,
                                 caseSensitive: $queryState.caseSensitive,
                                 searchContext: $queryState.searchContext,
                                 query: filter.getQuery($queryState.query),
-                            })}
+                            })}&{USE_CLIENT_CACHE_QUERY_PARAMETER}"
                         >
                             <Icon svgPath={filter.icon} inline aria-hidden="true" />
                             {filter.label}
