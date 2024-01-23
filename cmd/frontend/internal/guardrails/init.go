@@ -64,8 +64,14 @@ func NewAttributionFilter(observationCtx *observation.Context) ZeroAttributionFi
 	return ZeroAttributionFilter{service: service}
 }
 
+func (f ZeroAttributionFilter) InScope(snippet string) bool {
+	lines := strings.Split(snippet, "\n")
+	return len(lines) > 10
+}
+
 func (f ZeroAttributionFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
 	// TODO
+	start := time.Now()
 	if f.service == nil {
 		fmt.Println("ATTRIBUTION ERROR")
 		return true
@@ -79,22 +85,17 @@ func (f ZeroAttributionFilter) CanUse(ctx context.Context, snippet string, limit
 	if !c.Attribution {
 		return true
 	}
-	if lines := strings.Split(snippet, "\n"); len(lines) < 10 {
-		fmt.Printf("Snippet only %d lines long. Letting through.", len(lines))
-		return true
-	} else {
-		fmt.Println("SNIPPET ", snippet)
-	}
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	if len(snippet) > 50 {
-		snippet = snippet[:50]
-	}
-
+	// if len(snippet) > 50 {
+	// 	snippet = snippet[:50]
+	// }
+	defer func () {
+		now := time.Now()
+		fmt.Printf("ATTRIBUTION TIME %d characters %s\n", len(snippet), now.Sub(start))
+		fmt.Println(snippet)
+		}()
 	attribution, err := f.service.SnippetAttribution(ctx, snippet, 1)
 	// Attribution not available. Mode is permissive.
 	if err != nil {
-		fmt.Println("ATTRIBUTION NOT AVAILABLE", err.Error())
 		return true
 	}
 	// Permit completion if no attribution found.

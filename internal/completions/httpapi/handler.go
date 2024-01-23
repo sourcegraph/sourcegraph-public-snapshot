@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,16 +47,23 @@ var timeToFirstEventMetrics = metrics.NewREDMetrics(
 
 type CompletionFilter interface {
 	CanUse(ctx context.Context, snippet string, limit int) bool
+	InScope(snippet string) bool
 }
 
 type NoFilter struct{}
 func (n NoFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
 	return true
 }
+func (n NoFilter) InScope(snippet string) bool {
+	return false
+}
 
 type LoggingFilter struct{}
 func (f LoggingFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
 	fmt.Println("\nSNIPPET", snippet)
+	return true
+}
+func (n LoggingFilter) InScope(snippet string) bool {
 	return true
 }
 
@@ -220,6 +228,107 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 	}
 }
 
+// AttributionCompletions synchronizes on running a single attribution search
+// once completion is large enough to qualify.
+type AttributedCompletions struct {
+	eventWriter func () *streamhttp.Writer
+	filter CompletionFilter
+	attributionRun sync.Once
+	attributionFinished chan error
+	// The following fields are guarded by mu.
+	mu sync.Mutex
+	sendingBlocked bool
+	canUse *bool
+	last types.CompletionResponse
+}
+
+// Send is invoked each time new completion prefix arrives as the completion is being built.
+func (a *AttributedCompletions) Send(ctx context.Context, e types.CompletionResponse) error {
+	if u := a.getCanUse(); u != nil && *u {
+		return a.send(e)
+	}
+	if a.smallEnough(e) {
+		return a.send(e)
+	}
+	a.setLast(e)
+	a.attributionRun.Do(func () {
+		go a.runAttribution(ctx, e)
+	})
+	return nil
+}
+
+// WaitDone is called after all the completions have finished arriving.
+// It will block on first: context timeout or attribution call finishing.
+// In case attribution call is going to finish first, we return the error
+// that attribution may have encountered.
+func (a *AttributedCompletions) WaitDone(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		a.blockSending()
+		return nil
+	case err := <-a.attributionFinished:
+		return err
+	}
+}
+
+func (a *AttributedCompletions) getCanUse() *bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.canUse
+}
+
+func (a *AttributedCompletions) setCanUse(canUse bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.canUse = &canUse
+}
+
+func (a *AttributedCompletions) send(e types.CompletionResponse) error {
+	if !a.canSend() {
+		return nil
+	}
+	if w := a.eventWriter(); w != nil {
+		return w.Event("completion", e)
+	}
+	return nil
+}
+
+func (a *AttributedCompletions) smallEnough(e types.CompletionResponse) bool {
+	return len(strings.Split(e.Completion, "\n")) < 10
+}
+
+func (a *AttributedCompletions) getLast() types.CompletionResponse {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.last
+}
+
+func (a *AttributedCompletions) setLast(e types.CompletionResponse) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.last = e
+}
+
+func (a *AttributedCompletions) runAttribution(ctx context.Context, e types.CompletionResponse) {
+	canUse := a.filter.CanUse(ctx, e.Completion, 1)
+	a.setCanUse(canUse)
+	err := a.send(a.getLast())
+	a.attributionFinished <- err
+	close(a.attributionFinished)
+}
+
+func (a *AttributedCompletions) blockSending() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.sendingBlocked = true
+}
+
+func (a *AttributedCompletions) canSend() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return !a.sendingBlocked
+}
+
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
 func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
@@ -243,20 +352,24 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 		}()
 		start := time.Now()
+		cs := &AttributedCompletions{
+			eventWriter: eventWriter,
+			filter: filter,
+			attributionFinished: make(chan error, 1),
+		}
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
-				if !filter.CanUse(ctx, event.Completion, 1) {
-					return nil
-				}
-				if ev := eventWriter(); ev != nil {
-					return ev.Event("completion", event)
-				}
-				return nil
+				return cs.Send(ctx, event)
 			})
+		// I'm done sending; wait for attribution to finish if needed.
+		err2 := cs.WaitDone(ctx)
+		if err != nil {
+			err = err2
+		}
 		if err != nil {
 			l := trace.Logger(ctx, logger)
 
