@@ -62,3 +62,11 @@
         display: none;
     }
 }
+
+.move-icon {
+    --icon-color: var(--body-color);
+
+    margin-left: 0.25rem;
+    fill: none !important;
+    transform: rotateX(-180deg);
+}
