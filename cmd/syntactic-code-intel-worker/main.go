@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/outline-scip-code-intel-worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )

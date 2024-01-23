@@ -97,7 +97,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Initialize tracing/metrics
 	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
-		Name: "outline-scip-codeintel-worker",
+		Name: "syntactic-code-intel-worker",
 	}))
 
 	if err := keyring.Init(ctx); err != nil {
@@ -213,7 +213,7 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "outline-scip-code-intel-worker")
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "syntactic-code-intel-worker")
 	if err != nil {
 		log.Scoped("init db").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
@@ -240,7 +240,7 @@ func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelsha
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "outline-scip-code-intel-worker")
+	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "syntactic-code-intel-worker")
 	if err != nil {
 		log.Scoped("init db").Fatal("Failed to connect to codeintel database", log.Error(err))
 	}

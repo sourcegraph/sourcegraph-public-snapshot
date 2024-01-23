@@ -7,7 +7,7 @@ go_library(
         "service.go",
         "shared.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/outline-scip-code-intel-worker/shared",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker/shared",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/authz",

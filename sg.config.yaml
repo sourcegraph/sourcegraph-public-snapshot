@@ -59,7 +59,7 @@ env:
       { "Name": "embeddings", "Host": "127.0.0.1:6099" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
-      { "Name": "outline-scip-codeintel-worker", "Host": "127.0.0.1:6075" },
+      { "Name": "syntactic-codeintel-worker", "Host": "127.0.0.1:6075" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
@@ -563,10 +563,10 @@ commands:
       - cmd/precise-code-intel-worker
       - lib/codeintel
 
-  codeintel-outline-scip-worker:
+  codeintel-syntactic-worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-      .bin/outline-scip-codeintel-worker
+      .bin/syntactic-code-intel-worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
@@ -578,20 +578,15 @@ commands:
       fi
 
       echo "Building codeintel-outkline-scip-worker"
-      go build -gcflags="$GCFLAGS" -o .bin/outline-scip-codeintel-worker github.com/sourcegraph/sourcegraph/cmd/outline-scip-code-intel-worker
-
-
-
-    checkBinary: .bin/outline-scip-codeintel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/syntactic-code-intel-worker github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker
+    checkBinary: .bin/syntactic-code-intel-worker
     watch:
       - lib
       - internal
-      - cmd/outline-scip-code-intel-worker
+      - cmd/syntactic-code-intel-worker
       - lib/codeintel
-      - docker-images/syntax-highlighter/crates/scip-treesitter-cli
     env:
       SCIP_TREESITTER_COMMAND: dev/scip-treesitter-dev
-
 
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
@@ -1223,7 +1218,7 @@ commandsets:
       - grafana
       - prometheus
 
-  codeintel-outline-scip:
+  codeintel-syntactic:
     requiresDevPrivate: true
     checks:
       - docker
@@ -1233,28 +1228,8 @@ commandsets:
     commands:
       - frontend
       - worker
-      # - repo-updater
-      # - gitserver-0
-      # - gitserver-1
-      # - searcher
-      # - symbols
-      # - caddy
-      # - docsite
-      # - syntax-highlighter
-      # - zoekt-index-0
-      # - zoekt-index-1
-      # - zoekt-web-0
-      # - zoekt-web-1
       - blobstore
-      # - codeintel-worker
-      - codeintel-outline-scip-worker
-      # - codeintel-executor
-      # - otel-collector
-      # - jaeger
-      # - grafana
-      # - prometheus
-      # - web
-
+      - codeintel-syntactic-worker
 
 
   codeintel:

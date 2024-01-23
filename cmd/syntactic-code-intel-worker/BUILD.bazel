@@ -5,20 +5,20 @@ load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
-    name = "outline-scip-code-intel-worker_lib",
+    name = "syntactic-code-intel-worker_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/outline-scip-code-intel-worker",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/outline-scip-code-intel-worker/shared",
+        "//cmd/syntactic-code-intel-worker/shared",
         "//internal/sanitycheck",
         "//internal/service/svcmain",
     ],
 )
 
 go_binary(
-    name = "outline-scip-code-intel-worker",
-    embed = [":outline-scip-code-intel-worker_lib"],
+    name = "syntactic-code-intel-worker",
+    embed = [":syntactic-code-intel-worker_lib"],
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
@@ -27,8 +27,8 @@ go_binary(
 )
 
 pkg_tar(
-    name = "tar_outline-scip-code-intel-worker",
-    srcs = [":outline-scip-code-intel-worker"],
+    name = "tar_syntactic-code-intel-worker",
+    srcs = [":syntactic-code-intel-worker"],
 )
 
 oci_image(
@@ -37,16 +37,16 @@ oci_image(
     entrypoint = [
         "/sbin/tini",
         "--",
-        "/outline-scip-code-intel-worker",
+        "/syntactic-code-intel-worker",
     ],
-    tars = [":tar_outline-scip-code-intel-worker"],
+    tars = [":tar_syntactic-code-intel-worker"],
     user = "sourcegraph",
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["outline-scip-code-intel-worker:candidate"],
+    repo_tags = ["syntactic-code-intel-worker:candidate"],
 )
 
 container_structure_test(
@@ -64,5 +64,5 @@ container_structure_test(
 oci_push(
     name = "candidate_push",
     image = ":image",
-    repository = image_repository("outline-scip-code-intel-worker"),
+    repository = image_repository("syntactic-code-intel-worker"),
 )

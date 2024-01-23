@@ -7,15 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "outline-scip-code-intel-worker" }
+func (svc) Name() string { return "syntactic-code-intel-worker" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	symbols.LoadConfig()
 	var config Config
 	config.Load()
 	return &config, nil
