@@ -46,9 +46,7 @@
         "type": "object",
         "title": "ExcludedGerritProject",
         "additionalProperties": false,
-        "anyOf": [
-          { "required": ["name"] }
-        ],
+        "anyOf": [{ "required": ["name"] }],
         "properties": {
           "name": {
             "description": "The name of a Gerrit project to exclude from mirroring.",
@@ -56,9 +54,7 @@
           }
         }
       },
-      "examples": [
-        [{ "name": "docs" }, { "name": "php/php-src" }]
-      ]
+      "examples": [[{ "name": "docs" }, { "name": "php/php-src" }]]
     },
     "authorization": {
       "title": "GerritAuthorization",
