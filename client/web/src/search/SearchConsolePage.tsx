@@ -18,7 +18,6 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
-import { useNavbarQueryState } from '../stores'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, type SearchStreamingProps } from '.'
 
