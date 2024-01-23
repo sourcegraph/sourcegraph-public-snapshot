@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"fmt"
 
 	"net/http"
 	"time"
@@ -32,16 +31,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	logger.Info("Syntactic code intel worker running", log.String("path to scip-treesitter CLI", config.CliPath))
 
-	fmt.Println(config.CliPath)
-
-	// // Initialize health server
+	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Handler:      httpserver.NewHandler(nil),
 	})
 
-	// // Go!
+	// Go!
 	goroutine.MonitorBackgroundRoutines(ctx, server)
 
 	return nil
