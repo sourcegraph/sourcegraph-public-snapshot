@@ -165,7 +165,6 @@ export const ExternalServicePage: FC<Props> = props => {
             )
         }
         const externalServiceCategory = resolveExternalServiceCategory(externalService)
-        const noAuthor: boolean | undefined = externalService.creator === null ? true : undefined
         return (
             <Container className="mb-3">
                 <PageHeader
@@ -176,7 +175,6 @@ export const ExternalServicePage: FC<Props> = props => {
                             updatedAt={externalService.updatedAt}
                             createdBy={externalService.creator}
                             updatedBy={externalService.lastUpdater}
-                            noAuthor={noAuthor}
                             type={externalService.__typename}
                         />
                     }

@@ -27,9 +27,14 @@ export const CreatedByAndUpdatedByInfoByline: FC<BylineProps> = ({
     noAuthor,
     type,
 }) => {
-    const createdByPart = noAuthor ?? (
-        <> by {createdBy ? <Link to={createdBy.url}>{createdBy.username}</Link> : 'a deleted user'}</>
-    )
+    const createdByPart = noAuthor ? null : (
+        type === 'ExternalService' ? (
+            createdBy ? <> by <Link to={createdBy.url}>{createdBy.username}</Link></> : null
+        ) : (
+            <> by {createdBy ? <Link to={createdBy.url}>{createdBy.username}</Link> : 'a deleted user'}</>
+        )
+    );
+
     const updatedPart = (
         <>
             {updatedAt !== null && updatedAt !== createdAt && (
