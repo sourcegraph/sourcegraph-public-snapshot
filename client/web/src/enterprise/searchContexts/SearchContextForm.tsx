@@ -67,8 +67,8 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
         selectedNamespaceType === 'global-owner'
             ? 'Only site-admins can view this context.'
             : selectedNamespaceType === 'org'
-                ? 'Only organization members can view this context.'
-                : 'Only you can view this context.'
+            ? 'Only organization members can view this context.'
+            : 'Only you can view this context.'
 
     return [
         {
@@ -110,8 +110,8 @@ const LOADING = 'loading' as const
 
 export interface SearchContextFormProps
     extends TelemetryProps,
-    Pick<SearchContextProps, 'deleteSearchContext'>,
-    PlatformContextProps<'requestGraphQL'> {
+        Pick<SearchContextProps, 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     searchContext?: SearchContextFields
     query?: string
     authenticatedUser: AuthenticatedUser
@@ -129,13 +129,13 @@ const searchContextVisibility = (searchContext: SearchContextFields): SelectedVi
 
 type RepositoriesParseResult =
     | {
-        type: 'errors'
-        errors: Error[]
-    }
+          type: 'errors'
+          errors: Error[]
+      }
     | {
-        type: 'repositories'
-        repositories: SearchContextRepositoryRevisionsInput[]
-    }
+          type: 'repositories'
+          repositories: SearchContextRepositoryRevisionsInput[]
+      }
 
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
     const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom, platformContext } =
