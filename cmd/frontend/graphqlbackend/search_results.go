@@ -224,7 +224,7 @@ func (sf *searchFilterResolver) LimitHit() bool {
 }
 
 func (sf *searchFilterResolver) Kind() string {
-	return sf.filter.Kind
+	return string(sf.filter.Kind)
 }
 
 // blameFileMatch blames the specified file match to produce the time at which
