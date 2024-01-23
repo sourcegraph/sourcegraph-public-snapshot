@@ -1168,6 +1168,16 @@
           "default": 90,
           "maximum": 365,
           "minimum": 1
+        },
+        "maxTokensPerUser": {
+          "description": "The maximum number of active access tokens a user may have.",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": 25,
+          "maximum": 100,
+          "minimum": 1
         }
       },
       "default": {
