@@ -1,0 +1,110 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    text-align: center;
+}
+
+.no-access-banner {
+    background-color: white;
+    padding: 4rem;
+    margin: 0 auto;
+    margin-top: -5%;
+    margin-bottom: 4.5rem;
+    width: 70%;
+    text-align: center;
+    border-radius: 1rem;
+    border: 1px solid var(--gray-04);
+
+    &-header {
+        font-size: 1.25rem;
+        font-weight: bold;
+        padding: 0;
+        margin-bottom: 0.625rem;
+        color: var(--gray-11);
+    }
+
+    &-description {
+        font-size: 1rem;
+        padding: 0;
+        color: var(--gray-08);
+    }
+}
+
+.cody-intro {
+    width: 70%;
+    height: fit-content;
+    margin: 0 auto;
+    border-radius: 1rem;
+    background: linear-gradient(91deg, rgba(228, 211, 252, 0.32) 3.11%, rgba(215, 240, 253, 0.32) 83.64%), #F9FAFB;
+    display: grid;
+    padding: 2.5rem;
+    grid-template-columns: 1fr 2fr;
+
+    &-text-container {
+        text-align: start;
+    }
+
+    &-logo {
+        width: 3rem;
+        height: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    &-header {
+        margin-bottom: 0.75rem;
+        font-size: 1.5rem;
+    }
+
+    &-description {
+        margin-bottom: 2rem;
+    }
+
+    &-link {
+        text-decoration: dashed;
+        text-decoration-line: underline;
+        text-underline-offset: 0.3rem;
+
+        &:hover {
+            text-decoration: dashed;
+            text-decoration-line: underline;
+        }
+    }
+}
+
+.hero {
+    &-container {
+        background-color: aquamarine;
+        width: 100%;
+        min-height: 400px;
+        display: flex;
+        justify-content: center;
+        border-radius: 0px 0px var(--spacing-1100, 80px) 0px;
+        background: linear-gradient(0deg, #FFF 46.16%, rgba(255, 255, 255, 0.00) 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), conic-gradient(from 71deg at 11.62% 37.39%, rgba(74, 193, 232, 0.48) 99.66692805290222deg, rgba(112, 72, 232, 0.48) 196.56766176223755deg, rgba(77, 11, 121, 0.48) 314.87035274505615deg, rgba(255, 85, 67, 0.48) 360deg), #EFF2F5;
+    }
+
+    &-details {
+        text-align: center;
+        margin-top: 4rem;
+    }
+
+    &-cody {
+        &-highlight {
+            color: linear-gradient(91deg, #FF5543 3.11%, #A112FF 83.64%);
+        }
+
+        &-description {
+            font-size: 1.25rem;
+            width: 45rem;
+            font-weight: 300;
+        }
+
+        &-logo {
+            width: 5rem;
+            height: 5rem;
+            margin-bottom: 1rem;
+        }
+    }
+}
