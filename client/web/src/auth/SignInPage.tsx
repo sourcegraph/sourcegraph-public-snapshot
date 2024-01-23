@@ -81,8 +81,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     // If there is only one auth provider that is going to be displayed on dotcom, we want to redirect to it directly.
     if (
         context.sourcegraphDotComMode &&
-        thirdPartyAuthProviders.length === 1 &&
-        !thirdPartyAuthProviders[0].isBuiltin
+        thirdPartyAuthProviders.length === 1
     ) {
         window.location.replace(thirdPartyAuthProviders[0].authenticationURL)
         return (
