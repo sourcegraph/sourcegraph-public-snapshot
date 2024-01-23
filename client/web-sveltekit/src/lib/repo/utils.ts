@@ -1,5 +1,6 @@
-import type { ResolvedRevision } from '../../routes/[...repo=reporev]/+layout'
 import { resolveRoute } from '$app/paths'
+
+import type { ResolvedRevision } from '../../routes/[...repo=reporev]/+layout'
 
 const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
 
