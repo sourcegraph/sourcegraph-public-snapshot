@@ -44,12 +44,28 @@ var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	metrics.WithDurationBuckets([]float64{0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 25.0, 30.0}),
 )
 
+type CompletionFilter interface {
+	CanUse(ctx context.Context, snippet string, limit int) bool
+}
+
+type NoFilter struct{}
+func (n NoFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
+	return true
+}
+
+type LoggingFilter struct{}
+func (f LoggingFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
+	fmt.Println("\nSNIPPET", snippet)
+	return true
+}
+
 func newCompletionsHandler(
 	logger log.Logger,
 	db database.DB,
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
+	filter CompletionFilter,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
@@ -169,7 +185,7 @@ func newCompletionsHandler(
 			}
 		}
 
-		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore)
+		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore, filter)
 	})
 }
 
@@ -190,14 +206,15 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
 	nonStreamer := newNonStreamingResponseHandler(logger, feature)
 	streamer := newStreamingResponseHandler(logger, feature)
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore,
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter,
 	) {
 		if requestParams.IsStream(feature) {
-			streamer(ctx, requestParams, cc, w, userStore)
+			streamer(ctx, requestParams, cc, w, userStore, filter)
 		} else {
+			// TODO NON STREAMER?
 			nonStreamer(ctx, requestParams, cc, w, userStore)
 		}
 	}
@@ -205,8 +222,8 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
@@ -231,6 +248,9 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
+				}
+				if !filter.CanUse(ctx, event.Completion, 1) {
+					return nil
 				}
 				if ev := eventWriter(); ev != nil {
 					return ev.Event("completion", event)

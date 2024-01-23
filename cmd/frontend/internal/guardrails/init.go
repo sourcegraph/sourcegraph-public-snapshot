@@ -2,6 +2,9 @@ package guardrails
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -9,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -49,4 +53,50 @@ func initEnterpriseAttributionService(observationCtx *observation.Context) attri
 func initDotcomAttributionService(observationCtx *observation.Context, db database.DB) attribution.Service {
 	searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
 	return attribution.NewLocalSearch(observationCtx, searchClient)
+}
+
+type ZeroAttributionFilter struct {
+	service attribution.Service
+}
+
+func NewAttributionFilter(observationCtx *observation.Context) ZeroAttributionFilter {
+	service := initEnterpriseAttributionService(observationCtx)
+	return ZeroAttributionFilter{service: service}
+}
+
+func (f ZeroAttributionFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
+	// TODO
+	if f.service == nil {
+		fmt.Println("ATTRIBUTION ERROR")
+		return true
+	}
+	// Attribution is only-enterprise, dotcom lets everything through.
+	if envvar.SourcegraphDotComMode() {
+		return true
+	}
+	// Check if attribution is on, permit everything if it's off.
+	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
+	if !c.Attribution {
+		return true
+	}
+	if lines := strings.Split(snippet, "\n"); len(lines) < 10 {
+		fmt.Printf("Snippet only %d lines long. Letting through.", len(lines))
+		return true
+	} else {
+		fmt.Println("SNIPPET ", snippet)
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	if len(snippet) > 50 {
+		snippet = snippet[:50]
+	}
+
+	attribution, err := f.service.SnippetAttribution(ctx, snippet, 1)
+	// Attribution not available. Mode is permissive.
+	if err != nil {
+		fmt.Println("ATTRIBUTION NOT AVAILABLE", err.Error())
+		return true
+	}
+	// Permit completion if no attribution found.
+	return len(attribution.RepositoryNames) == 0
 }
