@@ -3,6 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { type SearchContextProps, SearchMode, type SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -47,6 +48,7 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
 interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
+    queryExamplesPatternType: SearchPatternType
     showQueryExamples?: boolean
     searchMode?: SearchMode
     setSearchMode?: (mode: SearchMode) => void
@@ -68,6 +70,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     caseSensitive,
     searchQueryFromURL,
     selectedSearchContextSpec,
+    queryExamplesPatternType,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -108,6 +111,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            patternType={queryExamplesPatternType}
                         />
                     </div>
                 </>

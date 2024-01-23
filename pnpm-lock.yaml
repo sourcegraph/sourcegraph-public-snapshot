@@ -11306,7 +11306,7 @@ packages:
     dev: true
 
   /@vitest/expect@1.0.0-beta.4:
-    resolution: {integrity: sha512-JOpNEva2AFxfySH3F+X+hT52Kq/ZdIrGtzWYbj6yRuBuxFqM55n/7/jV4XtQG+XkmehP3OUZGx5zISOU8KHPQw==}
+    resolution: { integrity: sha512-JOpNEva2AFxfySH3F+X+hT52Kq/ZdIrGtzWYbj6yRuBuxFqM55n/7/jV4XtQG+XkmehP3OUZGx5zISOU8KHPQw== }
     dependencies:
       '@vitest/spy': 1.0.0-beta.4
       '@vitest/utils': 1.0.0-beta.4
@@ -11322,7 +11322,7 @@ packages:
     dev: true
 
   /@vitest/runner@1.0.0-beta.4:
-    resolution: {integrity: sha512-rlXCMp5MxMVVVN5hdhzPL9NpIkfZC0EXwAtN5gwBbCBoVRv9dBQiZ5qTw+LaNmugPl8gm76U4e4/nMZS9s6wyw==}
+    resolution: { integrity: sha512-rlXCMp5MxMVVVN5hdhzPL9NpIkfZC0EXwAtN5gwBbCBoVRv9dBQiZ5qTw+LaNmugPl8gm76U4e4/nMZS9s6wyw== }
     dependencies:
       '@vitest/utils': 1.0.0-beta.4
       p-limit: 4.0.0
@@ -11338,7 +11338,7 @@ packages:
     dev: true
 
   /@vitest/snapshot@1.0.0-beta.4:
-    resolution: {integrity: sha512-CzmHLGo4RNEQUojYtuEz8wWKp9/p3hvXskejRRJB1iCRH48uWROmoyb2iEQUhgpQw/+WwI4wRP7jek5lp48pRA==}
+    resolution: { integrity: sha512-CzmHLGo4RNEQUojYtuEz8wWKp9/p3hvXskejRRJB1iCRH48uWROmoyb2iEQUhgpQw/+WwI4wRP7jek5lp48pRA== }
     dependencies:
       magic-string: 0.30.5
       pathe: 1.1.1
@@ -11352,7 +11352,7 @@ packages:
     dev: true
 
   /@vitest/spy@1.0.0-beta.4:
-    resolution: {integrity: sha512-YvKUUl7KucKzLJb8+RTd8H3G24EVPGk+CVMFawwtD/KuYjBzM8RCh3oJTTba6ktLpB8JLVy8NVTNL4Oeigqs8A==}
+    resolution: { integrity: sha512-YvKUUl7KucKzLJb8+RTd8H3G24EVPGk+CVMFawwtD/KuYjBzM8RCh3oJTTba6ktLpB8JLVy8NVTNL4Oeigqs8A== }
     dependencies:
       tinyspy: 2.2.0
     dev: true
@@ -11366,7 +11366,7 @@ packages:
     dev: true
 
   /@vitest/utils@1.0.0-beta.4:
-    resolution: {integrity: sha512-YY4bhhVqyTxuNwuZJXiCM4/D0Z7Z3H3JDHNM8gXty7EyRUf4iPDQtXzIWe1r4zdTtoFnzFAeMr+891pWlv4SPA==}
+    resolution: { integrity: sha512-YY4bhhVqyTxuNwuZJXiCM4/D0Z7Z3H3JDHNM8gXty7EyRUf4iPDQtXzIWe1r4zdTtoFnzFAeMr+891pWlv4SPA== }
     dependencies:
       diff-sequences: 29.6.3
       loupe: 2.3.7
@@ -24425,7 +24425,7 @@ packages:
     dev: true
 
   /vite-node@1.0.0-beta.4(@types/node@20.8.0)(sass@1.32.4):
-    resolution: {integrity: sha512-YODjVvHd2Jih+TGMG3B99ktSyvET9w2cMevorAjcuQ3KKiPhDxEf2bRia2KsDHfnUGIfSpwoUdbcDdJ5xR7epg==}
+    resolution: { integrity: sha512-YODjVvHd2Jih+TGMG3B99ktSyvET9w2cMevorAjcuQ3KKiPhDxEf2bRia2KsDHfnUGIfSpwoUdbcDdJ5xR7epg== }
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     dependencies:
@@ -24601,7 +24601,7 @@ packages:
     dev: true
 
   /vitest@1.0.0-beta.4(@types/node@20.8.0)(happy-dom@12.10.1)(jsdom@22.1.0)(sass@1.32.4):
-    resolution: {integrity: sha512-WOJTqxY3hWqn4yy26SK+cx+BlPBeK/KtY9ALWkD6FLWLhSGY0QFEmarc8sdb/UGZQ8xs5pOvcQQS9JJSV8HH8g==}
+    resolution: { integrity: sha512-WOJTqxY3hWqn4yy26SK+cx+BlPBeK/KtY9ALWkD6FLWLhSGY0QFEmarc8sdb/UGZQ8xs5pOvcQQS9JJSV8HH8g== }
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:

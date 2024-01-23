@@ -431,6 +431,21 @@ describe('operation overrides', () => {
             data: { currentUser: { name: 'customUser' } },
         })
     })
+
+    test('works with field aliases', () => {
+        const server = new GraphQLMockServer({
+            schema,
+        })
+        server.addOperationMocks({
+            customOperation: () => ({
+                foo: { name: 'customUser' },
+            }),
+        })
+
+        expect(server.query(`query customOperation {foo: currentUser {name}}`)).toMatchObject({
+            data: { foo: { name: 'customUser' } },
+        })
+    })
 })
 
 describe('resolvers', () => {

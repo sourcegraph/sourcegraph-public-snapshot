@@ -95,11 +95,9 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, submitOnToggle])
 
-    const toggleNewStandard = useCallback((): void => {
+    const toggleKeyword = useCallback((): void => {
         const newPatternType =
-            patternType !== SearchPatternType.newStandardRC1
-                ? SearchPatternType.newStandardRC1
-                : SearchPatternType.standard
+            patternType !== SearchPatternType.keyword ? SearchPatternType.keyword : SearchPatternType.standard
 
         setPatternType(newPatternType)
 
@@ -122,7 +120,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             const newSearchMode: SearchMode = enabled ? SearchMode.SmartSearch : SearchMode.Precise
 
             // Disable the experimental pattern type the user activates smart search
-            if (patternType === SearchPatternType.newStandardRC1) {
+            if (patternType === SearchPatternType.keyword) {
                 setPatternType(SearchPatternType.standard)
             }
 
@@ -139,12 +137,12 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             if (mode === SearchModes.Smart) {
                 onSelectSmartSearch(true)
             } else if (mode === SearchModes.PreciseNew) {
-                toggleNewStandard()
+                toggleKeyword()
             } else {
                 onSelectSmartSearch(false)
             }
         },
-        [onSelectSmartSearch, toggleNewStandard]
+        [onSelectSmartSearch, toggleKeyword]
     )
 
     return (
@@ -214,7 +212,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         <SmartSearchToggleExtended
                             className="test-smart-search-toggle"
                             mode={
-                                patternType === SearchPatternType.newStandardRC1
+                                patternType === SearchPatternType.keyword
                                     ? SearchModes.PreciseNew
                                     : searchMode === SearchMode.SmartSearch
                                     ? SearchModes.Smart

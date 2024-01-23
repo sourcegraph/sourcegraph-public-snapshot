@@ -2,31 +2,25 @@ package attribution
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Service is for the attribution service which searches for matches on
 // snippets of code.
-//
-// Use NewService to construct this value.
-type Service struct {
-	client     codygateway.Client
-	operations *operations
-}
-
-// NewService returns a service configured with observationCtx.
-//
-// Note: this registers metrics so should only be called once with the same
-// observationCtx.
-func NewService(observationCtx *observation.Context, client codygateway.Client) *Service {
-	return &Service{
-		operations: newOperations(observationCtx),
-		client:     client,
-	}
+type Service interface {
+	SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error)
 }
 
 // SnippetAttributions is holds the collection of attributions for a snippet.
@@ -55,9 +49,26 @@ type SnippetAttributions struct {
 	LimitHit bool
 }
 
+// gatewayProxy is a Service that proxies requests to cody gateway.
+type gatewayProxy struct {
+	client     codygateway.Client
+	operations *operations
+}
+
+// NewGatewayProxy returns an attribution service that proxies to a gateway request.
+//
+// Note: this registers metrics so should only be called once with the same
+// observationCtx.
+func NewGatewayProxy(observationCtx *observation.Context, client codygateway.Client) Service {
+	return &gatewayProxy{
+		operations: newOperations(observationCtx),
+		client:     client,
+	}
+}
+
 // SnippetAttribution will search the instances indexed code for code matching
 // snippet and return the attribution results.
-func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+func (c *gatewayProxy) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
 	ctx, traceLogger, endObservation := c.operations.snippetAttribution.With(ctx, &err, observation.Args{
 		Attrs: []attribute.KeyValue{
 			attribute.Int("snippet.len", len(snippet)),
@@ -73,5 +84,94 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		RepositoryNames: attribution.Repositories,
 		TotalCount:      len(attribution.Repositories), // TODO: Remove total count.
 		LimitHit:        attribution.LimitHit,
+	}, nil
+}
+
+type localSearch struct {
+	client     client.SearchClient
+	operations *operations
+}
+
+// NewLocalSearch returns an attribution service that searches this instance.
+//
+// Note: this registers metrics so should only be called once with the same
+// observationCtx.
+func NewLocalSearch(observationCtx *observation.Context, client client.SearchClient) Service {
+	return &localSearch{
+		operations: newOperations(observationCtx),
+		client:     client,
+	}
+}
+
+func (c *localSearch) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+	ctx, traceLogger, endObservation := c.operations.snippetAttributionLocal.With(ctx, &err, observation.Args{})
+	defer endObservationWithResult(traceLogger, endObservation, &result)()
+
+	const (
+		version    = "V3"
+		searchMode = search.Precise
+		protocol   = search.Streaming
+	)
+
+	patternType := "literal"
+	searchQuery := fmt.Sprintf("type:file select:repo index:only case:yes count:%d content:%q", limit, snippet)
+
+	inputs, err := c.client.Plan(
+		ctx,
+		version,
+		&patternType,
+		searchQuery,
+		searchMode,
+		protocol,
+		pointers.Ptr(int32(0)),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create search plan")
+	}
+
+	// TODO(keegancsmith) Reading the SearchClient code it seems to miss out
+	// on some of the observability that we instead add in at a later stage.
+	// For example the search dataset in honeycomb will be missing. Will have
+	// to follow-up with observability and maybe solve it for all users.
+	//
+	// Note: In our current API we could just store repo names in seen. But it
+	// is safer to rely on searches ranking for result stability than doing
+	// something like sorting by name from the map.
+	var (
+		mu        sync.Mutex
+		seen      = map[api.RepoID]struct{}{}
+		repoNames []string
+		limitHit  bool
+	)
+	_, err = c.client.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		limitHit = limitHit || ev.Stats.IsLimitHit
+
+		for _, m := range ev.Results {
+			repo := m.RepoName()
+			if _, ok := seen[repo.ID]; ok {
+				continue
+			}
+			seen[repo.ID] = struct{}{}
+			repoNames = append(repoNames, string(repo.Name))
+		}
+	}), inputs)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute search")
+	}
+
+	// Note: Our search API is missing total count internally, but Zoekt does
+	// expose this. For now we just count what we found.
+	totalCount := len(repoNames)
+	if len(repoNames) > limit {
+		repoNames = repoNames[:limit]
+	}
+
+	return &SnippetAttributions{
+		RepositoryNames: repoNames,
+		TotalCount:      totalCount,
+		LimitHit:        limitHit,
 	}, nil
 }

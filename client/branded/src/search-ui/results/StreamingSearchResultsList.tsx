@@ -8,6 +8,7 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { type FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type {
     BuildSearchQueryURLParameters,
@@ -71,7 +72,12 @@ export interface StreamingSearchResultsListProps
     enableKeyboardNavigation?: boolean
 
     showQueryExamplesOnNoResultsPage?: boolean
-
+    /**
+     *  Determines the type of search pattern for the query examples.
+     *  For now, we only want to show the query examples in the style
+     *  of keyword search on the homepage and the search results page.
+     */
+    queryExamplesPatternType?: SearchPatternType
     /**
      * The query state to be used for the query examples and owner search.
      * If not provided, the query examples and owner search will not
@@ -124,6 +130,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     searchQueryFromURL,
     logSearchResultClicked,
     enableRepositoryMetadata,
+    queryExamplesPatternType = SearchPatternType.standard,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -309,6 +316,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}
                                 searchQueryFromURL={searchQueryFromURL}
+                                queryExamplesPatternType={queryExamplesPatternType}
                             />
                         )}
                     </>

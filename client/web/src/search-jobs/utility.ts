@@ -6,4 +6,4 @@
  * It's on for all users on the instance, or it's off for all users.
  * Only admins can turn it on/off in the site configuration page.
  */
-export const isSearchJobsEnabled = (): boolean => window.context?.experimentalFeatures?.searchJobs ?? false
+export const isSearchJobsEnabled = (): boolean => window.context?.experimentalFeatures?.searchJobs ?? true
