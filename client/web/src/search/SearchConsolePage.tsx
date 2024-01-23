@@ -45,10 +45,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         [location.search]
     )
 
-    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
-    const searchMode = useNavbarQueryState(state => state.searchMode)
-    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
-
     const triggerSearch = useCallback(() => {
         navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [navigate, searchQuery])
