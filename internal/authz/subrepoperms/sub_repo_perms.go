@@ -48,8 +48,14 @@ type SubRepoPermsClient struct {
 }
 
 const (
-	defaultCacheSize           = 1000
-	defaultCacheTTL            = 10 * time.Second
+	defaultCacheSize = 1000
+	defaultCacheTTL  = 10 * time.Second
+
+	// We maintain a relatively high TTL for the repo enabled cache
+	// because it only stores whether the repo is a perforce repo and
+	// whether the repo is private. These properties should not change
+	// frequently, and are notably not updated when repo permissions
+	// are enabled/disabled.
 	defaultRepoEnabledCacheTTL = time.Hour
 )
 
@@ -354,6 +360,7 @@ func (s *SubRepoPermsClient) EnabledForRepoID(ctx context.Context, id api.RepoID
 		return enabled, nil
 	}
 
+	// TODO(camdencheek): Ideally, refreshing the cache could be handled in a background goroutine so it never blocks a caller
 	enabled, err := s.permissionsGetter.RepoIDSupported(ctx, id)
 	if err != nil {
 		return false, err
