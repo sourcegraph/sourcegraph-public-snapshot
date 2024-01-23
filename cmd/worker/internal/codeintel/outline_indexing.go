@@ -49,7 +49,6 @@ func (j *outlineIndexingScheduler) Routines(_ context.Context, observationCtx *o
 		true,
 	)
 
-
 	return autoindexing.NewIndexSchedulers(
 		observationCtx,
 		services.UploadsService,

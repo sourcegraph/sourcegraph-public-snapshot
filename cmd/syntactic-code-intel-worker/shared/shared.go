@@ -163,7 +163,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
 	})}
 
-
 	// Initialize sub-repo permissions client
 	authz.DefaultSubRepoPermsChecker = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 
