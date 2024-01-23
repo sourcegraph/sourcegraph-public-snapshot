@@ -604,6 +604,10 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
+	// DiskAutoresize enables automatic disk resizing for the PostgreSQL
+	// instance. This is off by default - you may want to enable it for
+	// production environments.
+	DiskAutoresize *bool `yaml:"diskAutoresize,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }

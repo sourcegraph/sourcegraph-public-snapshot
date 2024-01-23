@@ -86,7 +86,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			// Arbitrary starting disk size - we use autoresizing to scale the
 			// disk up automatically. The minimum size is 10GB.
 			DiskSize:            pointers.Float64(10),
-			DiskAutoresize:      pointers.Ptr(true),
+			DiskAutoresize:      config.Spec.DiskAutoresize,
 			DiskAutoresizeLimit: pointers.Float64(0),
 
 			DatabaseFlags: []sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{{
