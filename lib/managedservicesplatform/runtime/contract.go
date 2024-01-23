@@ -22,7 +22,8 @@ type Contract struct {
 	// environment. In local development, this should generally be false.
 	MSP bool
 	// EnvironmentID is the ID of the MSP environment this service is deployed
-	// in.
+	// in. In local development, this should be 'unknown' if ENVIRONMENT_ID is
+	// not set.
 	EnvironmentID string
 	// Port is the port the service must listen on.
 	Port int
