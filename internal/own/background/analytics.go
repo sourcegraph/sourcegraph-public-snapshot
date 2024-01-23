@@ -8,11 +8,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -21,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleAnalytics(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB, subRepoPermsCache *rcache.Cache) error {
+func handleAnalytics(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error {
 	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user,
 	// and needs to see all repos and files.
 	internalCtx := actor.WithInternalActor(ctx)
-	indexer := newAnalyticsIndexer(gitserver.NewClient("own.analyticsindexer"), db, subRepoPermsCache, lgr)
+	indexer := newAnalyticsIndexer(gitserver.NewClient("own.analyticsindexer"), db, lgr)
 	err := indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		lgr.Error("own analytics indexing failure", log.String("msg", err.Error()))
@@ -34,14 +32,13 @@ func handleAnalytics(ctx context.Context, lgr log.Logger, repoId api.RepoID, db 
 }
 
 type analyticsIndexer struct {
-	client            gitserver.Client
-	db                database.DB
-	logger            log.Logger
-	subRepoPermsCache rcache.Cache
+	client gitserver.Client
+	db     database.DB
+	logger log.Logger
 }
 
-func newAnalyticsIndexer(client gitserver.Client, db database.DB, subRepoPermsCache *rcache.Cache, lgr log.Logger) *analyticsIndexer {
-	return &analyticsIndexer{client: client, db: db, subRepoPermsCache: *subRepoPermsCache, logger: lgr}
+func newAnalyticsIndexer(client gitserver.Client, db database.DB, lgr log.Logger) *analyticsIndexer {
+	return &analyticsIndexer{client: client, db: db, logger: lgr}
 }
 
 var ownAnalyticsFilesCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -51,7 +48,7 @@ var ownAnalyticsFilesCounter = promauto.NewCounter(prometheus.CounterOpts{
 
 func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, checker authz.SubRepoPermissionChecker) error {
 	// If the repo has sub-repo perms enabled, skip indexing
-	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
+	isSubRepoPermsRepo, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoId)
 	if err != nil {
 		return errcode.MakeNonRetryable(err)
 	} else if isSubRepoPermsRepo {
