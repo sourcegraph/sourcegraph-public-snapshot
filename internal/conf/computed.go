@@ -401,14 +401,6 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
-func StructuralSearchEnabled() bool {
-	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
-		return false
-	}
-	return val == "enabled"
-}
-
 // SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
 // SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
 // to match existing behavior where ranks are given half the priority as existing scoring signals.

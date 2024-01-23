@@ -84,6 +84,9 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 			if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 				return err
 			}
+			if attempt > 0 {
+				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+			}
 			callCtx, cancel := perCallContext(parentCtx, callOpts, attempt)
 			defer cancel() // Clean up potential resources.
 			lastErr = invoker(callCtx, fullMethod, req, reply, cc, grpcOpts...)
@@ -91,7 +94,6 @@ func UnaryClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Unar
 			if lastErr == nil {
 				return nil
 			}
-			callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 			if isContextError(lastErr) {
 				if parentCtx.Err() != nil {
 					logTrace(parentCtx, "grpc_retry parent context error", attribute.Int("attempt", int(attempt)), attribute.String("error", parentCtx.Err().Error()))
@@ -155,6 +157,10 @@ func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Str
 				if err := waitRetryBackoff(attempt, parentCtx, callOpts); err != nil {
 					return nil, err
 				}
+				if attempt > 0 {
+					callOpts.onRetryCallback(parentCtx, attempt, lastErr)
+				}
+
 				var newStreamer grpc.ClientStream
 				newStreamer, lastErr = streamer(parentCtx, desc, cc, fullMethod, grpcOpts...)
 				if lastErr == nil {
@@ -171,7 +177,6 @@ func StreamClientInterceptor(logger log.Logger, optFuncs ...CallOption) grpc.Str
 
 					return newRetryingStreamerWithMetrics(retryingStreamer, observer), nil
 				}
-				callOpts.onRetryCallback(parentCtx, attempt, lastErr)
 				if isContextError(lastErr) {
 					if parentCtx.Err() != nil {
 						logTrace(parentCtx, "grpc_retry parent context error",

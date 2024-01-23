@@ -311,6 +311,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             logSearchResultClicked={onLogSearchResultClick}
+                            queryExamplesPatternType={patternType}
                         />
                     </>
                 )}

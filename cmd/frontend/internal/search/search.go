@@ -91,11 +91,13 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	if err != nil {
 		return err
 	}
+	source := GuessSource(r)
 	tr.SetAttributes(
 		attribute.String("query", args.Query),
 		attribute.String("version", args.Version),
 		attribute.String("pattern_type", args.PatternType),
 		attribute.Int("search_mode", args.SearchMode),
+		attribute.String("source", string(source)),
 	)
 
 	inputs, err := h.searchClient.Plan(
@@ -185,11 +187,21 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress, source)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
+func logSearch(
+	ctx context.Context,
+	logger log.Logger,
+	alert *search.Alert,
+	err error,
+	duration time.Duration,
+	latency *time.Duration,
+	originalQuery string,
+	progress *streamclient.ProgressAggregator,
+	source trace.SourceType,
+) {
 	if honey.Enabled() {
 		status := client.DetermineStatusForLogs(alert, progress.Stats, err)
 		var alertType string
@@ -206,7 +218,7 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 		_ = searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: originalQuery,
 			Typ:           "stream",
-			Source:        string(trace.RequestSource(ctx)),
+			Source:        string(source),
 			Status:        status,
 			AlertType:     alertType,
 			DurationMs:    duration.Milliseconds(),
