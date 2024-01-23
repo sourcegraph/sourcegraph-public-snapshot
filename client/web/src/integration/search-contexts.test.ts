@@ -30,7 +30,7 @@ describe('Search contexts', () => {
     })
     after(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async function() {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -142,13 +142,12 @@ describe('Search contexts', () => {
     test('Create static search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            // TODO: fix this test
             RepositoriesByNames: ({ names, first, after }) => ({
                 repositories: {
                     nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
                     pageInfo: {
                         endCursor: null,
-                        hasNextPage: true,
+                        hasNextPage: false,
                     },
                 },
                 variables: {
@@ -300,7 +299,6 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
-    // TODO: Fix this test
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
@@ -309,7 +307,7 @@ describe('Search contexts', () => {
                     nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
                     pageInfo: {
                         endCursor: null,
-                        hasNextPage: true,
+                        hasNextPage: false,
                     },
                 },
                 variables: {
