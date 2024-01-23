@@ -39,12 +39,25 @@
       ]
     },
     "exclude": {
-      "description": "An array of project strings specifying which Gerrit projects to exclude from mirroring on Sourcegraph. If empty, no projects will be excluded. Useful when using an empty 'projects' field. Exclusion takes precedence over inclusion.",
+      "description": "A list of repositories to never mirror from this Gerrit instance. Takes precedence over \"projects\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"})",
       "type": "array",
-      "items": { "type": "string" },
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedGerritProject",
+        "additionalProperties": false,
+        "anyOf": [
+          { "required": ["name"] }
+        ],
+        "properties": {
+          "name": {
+            "description": "The name of a Gerrit project to exclude from mirroring.",
+            "type": "string"
+          }
+        }
+      },
       "examples": [
-        ["name", "owner/name"],
-        ["docs", "kubernetes/kubernetes"]
+        [{ "name": "docs" }, { "name": "php/php-src" }]
       ]
     },
     "authorization": {

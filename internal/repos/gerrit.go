@@ -73,7 +73,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 
 	disallowedProjects := make(map[string]struct{})
 	for _, project := range c.Exclude {
-		disallowedProjects[project] = struct{}{}
+		disallowedProjects[project.Name] = struct{}{}
 	}
 
 	return &GerritSource{

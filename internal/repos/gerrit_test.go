@@ -80,7 +80,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 			Url:      "https://gerrit.sgdev.org",
 			Username: os.Getenv("GERRIT_USERNAME"),
 			Password: os.Getenv("GERRIT_PASSWORD"),
-			Exclude:  []string{"src-cli"},
+			Exclude:  []*schema.ExcludedGerritProject{{Name: "src-cli"}},
 		})
 
 		ctx := context.Background()
@@ -105,7 +105,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 		svc := typestest.MakeExternalService(t, extsvc.VariantGerrit, &schema.GerritConnection{
 			Projects: []string{"src-cli"},
-			Exclude:  []string{"src-cli"},
+			Exclude:  []*schema.ExcludedGerritProject{{Name: "src-cli"}},
 			Url:      "https://gerrit.sgdev.org",
 			Username: os.Getenv("GERRIT_USERNAME"),
 			Password: os.Getenv("GERRIT_PASSWORD"),
