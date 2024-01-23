@@ -327,7 +327,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                 path: PageRoutes.SearchJobs,
                 content: (
                     <>
-                        Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
+                        Search Jobs <ProductStatusBadge className="ml-2" status="beta" />
                     </>
                 ),
             },
