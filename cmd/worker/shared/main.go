@@ -136,9 +136,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 	config.Jobs = map[string]workerjob.Job{}
 
 	for name, job := range builtins {
-		if name == "codeintel-outline-indexing-scheduler" {
-			config.Jobs[name] = job
-		}
+		config.Jobs[name] = job
 	}
 
 	// Setup environment variables
