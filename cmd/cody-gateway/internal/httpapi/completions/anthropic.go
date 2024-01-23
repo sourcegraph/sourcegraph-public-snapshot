@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -103,12 +104,8 @@ func NewAnthropicHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	allowedModels []string,
-	maxTokensToSample int,
+	config config.AnthropicConfig,
 	promptRecorder PromptRecorder,
-	allowedPromptPatterns []string,
-	requestBlockingEnabled bool,
 	autoFlushStreamingResponses bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
@@ -117,7 +114,7 @@ func NewAnthropicHandler(
 		return nil, err
 	}
 	promptRegexps := []*regexp.Regexp{}
-	for _, pattern := range allowedPromptPatterns {
+	for _, pattern := range config.AllowedPromptPatterns {
 		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
 	}
 	return makeUpstreamHandler[anthropicRequest](
@@ -128,8 +125,8 @@ func NewAnthropicHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
 		func(_ codygateway.Feature) string { return anthropicAPIURL },
-		allowedModels,
-		&AnthropicHandlerMethods{accessToken: accessToken, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, maxTokensToSample: maxTokensToSample, promptRecorder: promptRecorder, requestBlockingEnabled: requestBlockingEnabled},
+		config.AllowedModels,
+		&AnthropicHandlerMethods{config: config, anthropicTokenizer: anthropicTokenizer, promptRegexps: promptRegexps, promptRecorder: promptRecorder},
 
 		// Anthropic primarily uses concurrent requests to rate-limit spikes
 		// in requests, so set a default retry-after that is likely to be
@@ -195,17 +192,15 @@ type anthropicResponse struct {
 }
 
 type AnthropicHandlerMethods struct {
-	accessToken            string
-	anthropicTokenizer     *tokenizer.Tokenizer
-	promptRegexps          []*regexp.Regexp
-	maxTokensToSample      int
-	promptRecorder         PromptRecorder
-	requestBlockingEnabled bool
+	anthropicTokenizer *tokenizer.Tokenizer
+	promptRegexps      []*regexp.Regexp
+	promptRecorder     PromptRecorder
+	config             config.AnthropicConfig
 }
 
 func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
-	if ar.MaxTokensToSample > int32(a.maxTokensToSample) {
-		return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", a.maxTokensToSample, ar.MaxTokensToSample)
+	if ar.MaxTokensToSample > int32(a.config.MaxTokensToSample) {
+		return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", a.config.MaxTokensToSample, ar.MaxTokensToSample)
 	}
 
 	if result, err := isFlaggedAnthropicRequest(a.anthropicTokenizer, ar, a.promptRegexps); err != nil {
@@ -216,7 +211,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 		if err := a.promptRecorder.Record(ctx, ar.Prompt); err != nil {
 			logger.Warn("failed to record flagged prompt", log.Error(err))
 		}
-		if a.requestBlockingEnabled && result.shouldBlock {
+		if a.config.RequestBlockingEnabled && result.shouldBlock {
 			return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
 		}
 		return 0, result, nil
@@ -244,7 +239,7 @@ func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
-	r.Header.Set("X-API-Key", a.accessToken)
+	r.Header.Set("X-API-Key", a.config.AccessToken)
 	r.Header.Set("anthropic-version", "2023-01-01")
 }
 func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {

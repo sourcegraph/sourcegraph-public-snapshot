@@ -512,9 +512,9 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
 }
 
 /**
- * scanNewStandardRC1 is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
+ * scanKeyword is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
  */
-const scanNewStandardRC1 = (query: string): ScanResult<Token[]> => {
+const scanKeyword = (query: string): ScanResult<Token[]> => {
     const tokenScanner = [
         keyword,
         filter,
@@ -570,11 +570,11 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword: {
+        case SearchPatternType.codycontext: {
             return scanStandard(query)
         }
-        case SearchPatternType.newStandardRC1: {
-            return scanNewStandardRC1(query)
+        case SearchPatternType.keyword: {
+            return scanKeyword(query)
         }
         case SearchPatternType.literal: {
             patternKind = PatternKind.Literal

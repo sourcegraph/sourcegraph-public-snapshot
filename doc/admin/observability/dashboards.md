@@ -147,27 +147,6 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 <br />
 
-#### frontend: blob_load_latency
-
-<p class="subtitle">90th percentile blob load latency over 10m</p>
-
-- The blob API route provides the files and code snippets that the UI displays.
-
-Refer to the [alerts reference](./alerts.md#frontend-blob-load-latency) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100021` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`
-
-</details>
-
-<br />
-
 ### Frontend: Search-based code intelligence at a glance
 
 #### frontend: 99th_percentile_search_codeintel_request_duration

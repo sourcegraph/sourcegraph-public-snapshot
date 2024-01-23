@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -21,9 +22,10 @@ import (
 )
 
 type createAccessTokenInput struct {
-	User   graphql.ID
-	Scopes []string
-	Note   string
+	User            graphql.ID
+	Scopes          []string
+	Note            string
+	DurationSeconds *int32
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
@@ -59,6 +61,28 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
 	}
 
+	var expiresAt time.Time
+	if args.DurationSeconds != nil {
+		_, allowedOptions := conf.AccessTokensExpirationOptions()
+		maxDuration, err := getMaxExpiryDuration(allowedOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		switch duration := *args.DurationSeconds; {
+		case duration <= 0:
+			return nil, errors.New("expiry must be in the future")
+		case duration > maxDuration:
+			return nil, errors.New("expiry exceeds maximum allowed")
+		default:
+			expiresAt = time.Now().Add(time.Duration(duration) * time.Second)
+		}
+	}
+
+	if expiresAt.IsZero() && !conf.AccessTokensAllowNoExpiration() {
+		return nil, errors.New("Access token creation requires a valid expiration.")
+	}
+
 	// Validate scopes.
 	var hasUserAllScope bool
 	seenScope := map[string]struct{}{}
@@ -88,7 +112,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	}
 
 	uid := actor.FromContext(ctx).UID
-	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid, expiresAt)
 	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 
@@ -272,4 +296,17 @@ func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 		return nil, err
 	}
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit), nil
+}
+
+func getMaxExpiryDuration(allowedOptionsInDays []int) (int32, error) {
+	if len(allowedOptionsInDays) == 0 {
+		return 0, errors.New("no expiry options available")
+	}
+	var maxDays int = 0
+	for _, v := range allowedOptionsInDays {
+		if v > maxDays {
+			maxDays = v
+		}
+	}
+	return int32(maxDays * 86400), nil
 }

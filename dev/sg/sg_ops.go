@@ -35,7 +35,7 @@ var OpsUpdateImagesCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:    "kind",
 			Aliases: []string{"k"},
-			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
+			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose', 'pure-docker')",
 			Value:   string(images.DeploymentTypeK8S),
 		},
 		&cli.StringFlag{
@@ -252,6 +252,10 @@ func opsUpdateImages(
 			}
 		case images.DeploymentTypeCompose:
 			if err := images.UpdateComposeManifests(ctx, registry, path, op); err != nil {
+				return err
+			}
+		case images.DeploymentTypePureDocker:
+			if err := images.UpdatePureDockerManifests(ctx, registry, path, op); err != nil {
 				return err
 			}
 		}

@@ -73,7 +73,7 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "owned/file1.go", user.ID))
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "assigned.go", user.ID))
-	require.NoError(t, newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker))
+	require.NoError(t, newAnalyticsIndexer(client, db, logger).indexRepo(ctx, repoID, checker))
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
@@ -111,7 +111,7 @@ func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
-	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
+	err = newAnalyticsIndexer(client, db, logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
@@ -138,7 +138,7 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
-	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
+	err = newAnalyticsIndexer(client, db, logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
