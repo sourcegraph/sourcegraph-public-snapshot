@@ -1,4 +1,5 @@
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
 import type { InputMaybe, RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
@@ -26,7 +27,7 @@ export async function fetchRepositoriesByNames(
     let after: InputMaybe<string> = null
 
     while (true) {
-        const result = await requestGraphQL<
+        const result: GraphQLResult<RepositoriesByNamesResult> = await requestGraphQL<
             RepositoriesByNamesResult,
             RepositoriesByNamesVariables
         >(query, {
@@ -35,7 +36,7 @@ export async function fetchRepositoriesByNames(
             after,
         }).toPromise()
 
-        const data = dataOrThrowErrors(result)
+        const data: RepositoriesByNamesResult = dataOrThrowErrors(result)
 
         repos = repos.concat(data.repositories.nodes)
         if (!data.repositories.pageInfo.hasNextPage) {
