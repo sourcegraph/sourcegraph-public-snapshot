@@ -163,19 +163,17 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
             <div className="w-100">
                 {truncatedCommitMessage ? (
                     <pre className={styles.messageBody}>
-                        <>
-                            {node.body && (
-                                <Linkified input={`${node.body.slice(0, 240)}...`} externalURLs={node.externalURLs} />
-                            )}
-                            <Button
-                                variant="link"
-                                size="sm"
-                                display="inline"
-                                onClick={() => setTruncatedCommitMessage(false)}
-                            >
-                                see more
-                            </Button>
-                        </>
+                        {node.body && (
+                            <Linkified input={`${node.body.slice(0, 240)}...`} externalURLs={node.externalURLs} />
+                        )}
+                        <Button
+                            variant="link"
+                            size="sm"
+                            display="inline"
+                            onClick={() => setTruncatedCommitMessage(false)}
+                        >
+                            see more
+                        </Button>
                     </pre>
                 ) : (
                     <>
