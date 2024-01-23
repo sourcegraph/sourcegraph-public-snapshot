@@ -20,16 +20,20 @@ type SGConfigCommand interface {
 	GetEnv() map[string]string
 	GetBinaryLocation() (string, error)
 	GetExternalSecrets() map[string]secrets.ExternalSecret
-	GetExec(context.Context) (*exec.Cmd, error)
+	GetExecCmd(context.Context) (*exec.Cmd, error)
 
 	// Start a file watcher on the relevant filesystem sub-tree for this command
 	StartWatch(context.Context) (<-chan struct{}, error)
 }
 
-func WatchPaths(ctx context.Context, paths []string) (<-chan struct{}, error) {
+func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event) (<-chan struct{}, error) {
 	// Set up the watchers.
 	restart := make(chan struct{})
 	events := make(chan notify.EventInfo, 1)
+	skip := make(HashSet[notify.Event], len(skipEvents))
+	for _, event := range skipEvents {
+		skip[event] = struct{}{}
+	}
 
 	// Do nothing if no watch paths are configured
 	if len(paths) == 0 {
@@ -51,8 +55,10 @@ func WatchPaths(ctx context.Context, paths []string) (<-chan struct{}, error) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-events:
-				restart <- struct{}{}
+			case evt := <-events:
+				if _, shouldSkip := skip[evt.Event()]; !shouldSkip {
+					restart <- struct{}{}
+				}
 			}
 
 		}

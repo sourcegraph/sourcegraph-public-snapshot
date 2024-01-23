@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/rjeczalik/notify"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
@@ -88,11 +90,13 @@ func (bc BazelCommand) StartWatch(ctx context.Context) (<-chan struct{}, error) 
 	if watchPaths, err := bc.watchPaths(); err != nil {
 		return nil, err
 	} else {
-		return WatchPaths(ctx, watchPaths)
+		// skip remove events as we don't care about files being removed, we only
+		// want to know when the binary has been rebuilt
+		return WatchPaths(ctx, watchPaths, notify.Remove)
 	}
 }
 
-func (bc BazelCommand) GetExec(ctx context.Context) (*exec.Cmd, error) {
+func (bc BazelCommand) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	binLocation, err := bc.GetBinaryLocation()
 	if err != nil {
 		return nil, err

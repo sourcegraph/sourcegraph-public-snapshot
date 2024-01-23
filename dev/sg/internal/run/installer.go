@@ -49,7 +49,7 @@ func Install(ctx context.Context, parentEnv map[string]string, verbose bool, cmd
 
 	installer.install(ctx, cmds...)
 
-	return installer.wait()
+	return installer.wait(ctx)
 }
 
 func newInstallManager(cmds []Installer, out *std.Output, env map[string]string, verbose bool) *InstallManager {
@@ -99,7 +99,7 @@ func (installer *InstallManager) install(ctx context.Context, cmds ...Installer)
 
 // Blocks until all installations have successfully completed
 // or until a failure occurs
-func (installer *InstallManager) wait() error {
+func (installer *InstallManager) wait(ctx context.Context) error {
 	defer close(installer.installed)
 	defer close(installer.failures)
 	for {
@@ -116,6 +116,10 @@ func (installer *InstallManager) wait() error {
 		case failure := <-installer.failures:
 			installer.handleFailure(failure.cmdName, failure.err)
 			return failure
+
+		case <-ctx.Done():
+			// Context was canceled, exit early
+			return ctx.Err()
 
 		case <-installer.tick():
 			installer.handleWaiting()
@@ -294,6 +298,7 @@ var installFuncs = map[string]installFunc{
 	},
 }
 
+// As per tradition, if you edit this file you must add a new waiting message
 var waitingMessages = []string{
 	"Still waiting for %s to finish installing...",
 	"Yup, still waiting for %s to finish installing...",
@@ -311,4 +316,5 @@ var waitingMessages = []string{
 	"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
 	"If %ss turns out to be cheese I'm gonna lose it. Hey, hurry up, will ya",
 	"Still waiting for %s to finish installing...",
+	"You're probably wondering why I've called %s here today...",
 }

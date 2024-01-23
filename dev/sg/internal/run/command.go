@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -80,7 +81,7 @@ func (cmd Command) GetEnv() map[string]string {
 	return cmd.Env
 }
 
-func (cmd Command) GetExec(ctx context.Context) (*exec.Cmd, error) {
+func (cmd Command) GetExecCmd(ctx context.Context) (*exec.Cmd, error) {
 	return exec.CommandContext(ctx, "bash", "-c", cmd.Cmd), nil
 }
 
@@ -124,7 +125,7 @@ func (cmd Command) functionInstall(ctx context.Context, parentEnv map[string]str
 	return nil
 }
 
-func (cmd Command) watchPaths() ([]string, error) {
+func (cmd Command) getWatchPaths() ([]string, error) {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, err
@@ -139,7 +140,7 @@ func (cmd Command) watchPaths() ([]string, error) {
 }
 
 func (cmd Command) StartWatch(ctx context.Context) (<-chan struct{}, error) {
-	if watchPaths, err := cmd.watchPaths(); err != nil {
+	if watchPaths, err := cmd.getWatchPaths(); err != nil {
 		return nil, err
 	} else {
 		return WatchPaths(ctx, watchPaths)
@@ -232,7 +233,6 @@ func (sc *startedCmd) ErrorChannel() <-chan error {
 	if sc.result == nil {
 		sc.result = make(chan error)
 		go func() {
-			defer close(sc.result)
 			sc.result <- sc.Wait()
 		}()
 	}
@@ -319,7 +319,7 @@ func OpenUnixSocket() error {
 }
 
 func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv map[string]string) (*startedCmd, error) {
-	exec, err := cmd.GetExec(ctx)
+	exec, err := cmd.GetExecCmd(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -368,13 +368,37 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	sc.cancel = func() {
-		sc.Cmd.Process.Signal(os.Interrupt)
+		// The default cancel function will use a SIGKILL (9) which does
+		// not allow processes to cleanup. If they have spawned child processes
+		// those child processes will be orphaned and continue running.
+		// SIGINT will instead gracefully shut down the process and child processes.
+		if sc.Cmd.Process != nil {
+			// We created a process group above which we kill here.
+			pgid, err := syscall.Getpgid(sc.Cmd.Process.Pid)
+			if err != nil {
+				// Ignore Errno 3 (No such process) as this means the process has already exited
+				if !errors.Is(err, syscall.Errno(0x3)) {
+					panic(errors.Wrapf(err, "failed to get process group ID for %s (PID %d)", sc.opts.name, sc.Cmd.Process.Pid))
+				}
+				// note the minus sign
+			} else if err := syscall.Kill(-pgid, syscall.SIGINT); err != nil {
+				panic(errors.Wrapf(err, "failed kill process group ID %d for cmd %s ", pgid, sc.opts.name))
+			}
+		}
+
 		cancel()
 	}
+	// Register an interrput handler
+	interrupt.Register(sc.cancel)
 
 	sc.Cmd = opts.exec
 	sc.Cmd.Dir = opts.dir
 	sc.Cmd.Env = opts.env
+
+	// This sets up a process group which we kill later.
+	// This allows us to ensure that any child processes are killed as well when this exits
+	// This will only work on POSIX systems
+	sc.Cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	if err := sc.connectOutput(ctx); err != nil {
 		sc.cancel()
