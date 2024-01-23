@@ -109,7 +109,13 @@ const (
 	CloudRunService ResourceKind = "cloud-run-service"
 	CloudRunJob     ResourceKind = "cloud-run-job"
 	CloudRedis      ResourceKind = "cloud-redis"
-	URLUptime       ResourceKind = "url-uptime"
+
+	// CloudSQL represents a Cloud SQL instance.
+	CloudSQL ResourceKind = "cloud-sql"
+	// CloudSQLDatabase represents a database within a Cloud SQL instance.
+	CloudSQLDatabase ResourceKind = "cloud-sql-database"
+
+	URLUptime ResourceKind = "url-uptime"
 )
 
 type TriggerKind int
@@ -202,8 +208,15 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 		config.ThresholdAggregation.GroupByFields = append(
 			[]string{"resource.label.revision_name"},
 			config.ThresholdAggregation.GroupByFields...)
-	case CloudRunJob, CloudRedis, URLUptime:
+
+	case CloudSQLDatabase:
+		config.ThresholdAggregation.GroupByFields = append(
+			[]string{"resource.label.database"},
+			config.ThresholdAggregation.GroupByFields...)
+
+	case CloudRunJob, CloudRedis, URLUptime, CloudSQL:
 		// No defaults
+
 	default:
 		return nil, errors.Newf("invalid service kind %q", config.ResourceKind)
 	}
@@ -314,6 +327,14 @@ func buildFilter(config *Config) string {
 			`resource.type = "redis_instance"`,
 			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ResourceName),
 		)
+	case CloudSQL:
+		filters = append(filters,
+			`resource.type = "cloudsql_database"`,
+			fmt.Sprintf(`resource.labels.database_id = "%s"`, config.ResourceName))
+	case CloudSQLDatabase:
+		filters = append(filters,
+			`resource.type = "cloudsql_instance_database"`,
+			fmt.Sprintf(`resource.labels.resource_id = "%s"`, config.ResourceName))
 	case URLUptime:
 		filters = append(filters,
 			`resource.type = "uptime_url"`,

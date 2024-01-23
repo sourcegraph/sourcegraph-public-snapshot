@@ -5688,6 +5688,13 @@ def go_dependencies():
         version = "v0.0.0-20230822024612-edb48c530722",
     )
     go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry",
+        sum = "h1:wHEDTUur95a2HtUUodA8OXQi0Uefwa60CvhN4fLIuhU=",
+        version = "v0.0.0-20240109225336-01188650a68d",
+    )
+    go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_slack",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack",
@@ -5734,8 +5741,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:TB4KxGtcJm98TfyDHhSkbffngM+EVlTu0epG3SxUU0U=",
-        version = "v0.0.0-20240110094557-7487a0d53131",
+        sum = "h1:CumaleyciZzwsNOf1ewSC2hgKdFaBuO0yzTeIUcp64Y=",
+        version = "v0.0.0-20240122093209-b82a981f8240",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

@@ -1096,7 +1096,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 		left, err = p.parseLeaves(Literal)
 	case SearchTypeStandard, SearchTypeLucky:
 		left, err = p.parseLeaves(Literal | Standard)
-	case SearchTypeNewStandardRC1:
+	case SearchTypeKeyword:
 		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals)
 	default:
 		left, err = p.parseLeaves(Literal | Standard)
@@ -1192,7 +1192,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeNewStandardRC1 {
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeKeyword {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err

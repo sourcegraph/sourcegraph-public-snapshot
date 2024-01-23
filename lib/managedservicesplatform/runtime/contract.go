@@ -21,6 +21,10 @@ type Contract struct {
 	// MSP indicates if we are running in a live Managed Services Platform
 	// environment. In local development, this should generally be false.
 	MSP bool
+	// EnvironmentID is the ID of the MSP environment this service is deployed
+	// in. In local development, this should be 'unknown' if ENVIRONMENT_ID is
+	// not set.
+	EnvironmentID string
 	// Port is the port the service must listen on.
 	Port int
 	// ExternalDNSName is the DNS name the service uses, if one is configured.
@@ -57,6 +61,7 @@ func newContract(logger log.Logger, env *Env, service ServiceMetadata) Contract 
 
 	return Contract{
 		MSP:             env.GetBool("MSP", "false", "indicates if we are running in a MSP environment"),
+		EnvironmentID:   env.Get("ENVIRONMENT_ID", "unknown", "MSP Service Environment ID"),
 		Port:            env.GetInt("PORT", "", "service port"),
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
 		RedisEndpoint:   env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),
@@ -109,6 +114,8 @@ type ServiceState interface {
 //
 // ServiceState is a standardized reporter for the state of the service.
 func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state ServiceState) {
+	diagnosticsLogger := c.internal.logger.Scoped("diagnostics")
+
 	// Only enable Prometheus metrics endpoint if we are not in a MSP environment,
 	// i.e. in local dev.
 	if !c.MSP {
@@ -116,7 +123,7 @@ func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state Service
 		// convenience.
 		r.Handle("/metrics", promhttp.Handler())
 		// Warn because this should only be enabled in dev
-		c.internal.logger.Warn("enabled Prometheus metrics endpoint at '/metrics'")
+		diagnosticsLogger.Warn("enabled Prometheus metrics endpoint at '/metrics'")
 	}
 
 	// Simple auth-less version reporter
@@ -128,10 +135,13 @@ func (c Contract) RegisterDiagnosticsHandlers(r HandlerRegisterer, state Service
 	// Authenticated healthcheck
 	r.Handle("/-/healthz", c.DiagnosticsAuthMiddleware(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger := opentelemetry.TracedLogger(r.Context(), c.internal.logger)
+			logger := opentelemetry.TracedLogger(r.Context(),
+				diagnosticsLogger.Scoped("healthz"))
 
 			if err := state.Healthy(r.Context(), r.URL.Query()); err != nil {
-				logger.Error("service not healthy", log.Error(err))
+				logger.Warn("service reported not healthy",
+					log.String("query", r.URL.Query().Encode()),
+					log.Error(err))
 
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte("healthz: " + err.Error()))

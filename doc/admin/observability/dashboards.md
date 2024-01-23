@@ -147,27 +147,6 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 <br />
 
-#### frontend: blob_load_latency
-
-<p class="subtitle">90th percentile blob load latency over 10m</p>
-
-- The blob API route provides the files and code snippets that the UI displays.
-
-Refer to the [alerts reference](./alerts.md#frontend-blob-load-latency) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100021` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`
-
-</details>
-
-<br />
-
 ### Frontend: Search-based code intelligence at a glance
 
 #### frontend: 99th_percentile_search_codeintel_request_duration
@@ -398,7 +377,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${internalInstance:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`(sourcegraph-)?frontend`,instance=~`${internalInstance:regex}`}`
 
 </details>
 
@@ -417,7 +396,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${internalInstance:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`(sourcegraph-)?frontend`,instance=~`${internalInstance:regex}`}[1m]))`
 
 </details>
 
@@ -3413,7 +3392,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102402`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -3941,7 +3920,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102702`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -7314,7 +7293,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10100
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -7337,7 +7316,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10110
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${shard:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`.*gitserver`,instance=~`${shard:regex}`}`
 
 </details>
 
@@ -7356,7 +7335,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10110
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${shard:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`.*gitserver`,instance=~`${shard:regex}`}[1m]))`
 
 </details>
 
@@ -10151,7 +10130,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100000` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (job_name) (src_worker_jobs{job="worker"})`
+Query: `sum by (job_name) (src_worker_jobs{job=~"^worker.*"})`
 
 </details>
 
@@ -10170,7 +10149,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100010` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-upload-janitor"})`
+Query: `sum (src_worker_jobs{job=~"^worker.*", job_name="codeintel-upload-janitor"})`
 
 </details>
 
@@ -10189,7 +10168,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100011` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-commitgraph-updater"})`
+Query: `sum (src_worker_jobs{job=~"^worker.*", job_name="codeintel-commitgraph-updater"})`
 
 </details>
 
@@ -10208,7 +10187,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100012` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum (src_worker_jobs{job="worker", job_name="codeintel-autoindexing-scheduler"})`
+Query: `sum (src_worker_jobs{job=~"^worker.*", job_name="codeintel-autoindexing-scheduler"})`
 
 </details>
 
@@ -13918,7 +13897,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103800` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`^worker.*`,instance=~`${instance:regex}`}`
 
 </details>
 
@@ -13937,7 +13916,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103801` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`^worker.*`,instance=~`${instance:regex}`}[1m]))`
 
 </details>
 
@@ -15833,7 +15812,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -15856,7 +15835,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`.*repo-updater`,instance=~`${instance:regex}`}`
 
 </details>
 
@@ -15875,7 +15854,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`.*repo-updater`,instance=~`${instance:regex}`}[1m]))`
 
 </details>
 
@@ -17419,7 +17398,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100602`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -17442,7 +17421,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100700`
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`.*searcher`,instance=~`${instance:regex}`}`
 
 </details>
 
@@ -17461,7 +17440,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`.*searcher`,instance=~`${instance:regex}`}[1m]))`
 
 </details>
 
@@ -19198,7 +19177,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100702` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -19221,7 +19200,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100800` o
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`.*symbols`,instance=~`${instance:regex}`}`
 
 </details>
 
@@ -19240,7 +19219,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100801` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`.*symbols`,instance=~`${instance:regex}`}[1m]))`
 
 </details>
 
@@ -21979,7 +21958,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101002` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))`
+Query: `(sum(rate(src_grpc_client_retry_attempts_total{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",is_retried="true"}[2m])) by (grpc_method))`
 
 </details>
 
@@ -32013,7 +31992,7 @@ To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}`
+Query: `src_conf_client_time_since_last_successful_update_seconds{job=~`.*embeddings`,instance=~`${instance:regex}`}`
 
 </details>
 
@@ -32032,7 +32011,7 @@ To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{instance=~`${instance:regex}`}[1m]))`
+Query: `max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~`.*embeddings`,instance=~`${instance:regex}`}[1m]))`
 
 </details>
 

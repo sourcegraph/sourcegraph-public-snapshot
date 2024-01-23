@@ -22,9 +22,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Supports custom ChatCompletion models in Cody clients for dotcom users. [#58158](https://github.com/sourcegraph/sourcegraph/pull/58158)
 - Topics synced from GitHub and GitLab are now displayed for repository matches in the search results and on the repository tree page. [#58927](https://github.com/sourcegraph/sourcegraph/pull/58927)
 - Added a new column "Repository metadata JSON" to the CSV export of repository search results, which includes the JSON encoded object of metadata key-value pairs. [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
+- Expiry to access tokens. Users can now select a maximum timespan for which a token is valid. Tokens will automatically lose access after this period. Default timeframes and an override to allow access tokens without expiration can be configured in the `auth.accessTokens` section of the site configuration. [#59565](https://github.com/sourcegraph/sourcegraph/pull/59565)
+- Limit the number of active access tokens for a user. By default users are able to have 25 active access tokens. This limit can be configured using the `maxTokensPerUser` setting in the `auth.accessTokens` section of the site configuration. [#59731](https://github.com/sourcegraph/sourcegraph/pull/59731)
 
 ### Changed
 
+- `cody.restrictUsersFeatureFlag` has been deprecated and replaced by role based access control instead. Until the old configuration value is removed from your site config, it will be respected just as before but with a warning displayed at the top of Sourcegraph. Once removed, the old feature flag will not be respected and instead the Cody access will be managed via role based access controls, see [the docs](https://docs.sourcegraph.com/cody/overview/enable-cody-enterprise#enable-cody-only-for-some-users) for more information. [#58831](https://github.com/sourcegraph/sourcegraph/pull/58831)
 - The setting `experimentalFeatures.searchQueryInput` now refers to the new query input as `v2` (not `experimental`). <!-- NOTE: If v2 becomes the default before this release is cut, then update this entry to mention that instead of adding a separate entry. -->
 - Search-based code intel doesn't include the currently selected search context anymore. It was possible to get into a situation where search-based code intel wouldn't find any information due to being restricted by the current search context. [#58010](https://github.com/sourcegraph/sourcegraph/pull/58010)
 - The last commit which changed a file/directory is now shown in the files panel on the repo and file pages. To avoid duplicating information and confusion, the commits panel was removed. [58328](https://github.com/sourcegraph/sourcegraph/pull/58328)
@@ -35,6 +38,8 @@ All notable changes to Sourcegraph are documented in this file.
   - For `size` and `stars` the supported operators are `<`, `>`, `<=`, `>=`.
   - For `size` the supported units are `B`, `b`, `kB`, `KB`, `kiB`, `KiB`, `MiB`, `MB`, `GiB`, `GB`. No decimals points are supported.
 - Structural Search is now disabled by default. To enable it, set `experimentalFeatures.structuralSearch: "enabled"` in the site configuration. [#57584](https://github.com/sourcegraph/sourcegraph/pull/57584)
+- Search Jobs switches the format of downloaded results from CSV to JSON. [#59619](https://github.com/sourcegraph/sourcegraph/pull/59619)
+- [Search Jobs](https://docs.sourcegraph.com/code_search/how-to/search-jobs) is now in beta and enabled by default. It can be disabled in the site configuration by setting `experimentalFeatures.searchJobs: false`.
 
 ### Fixed
 
@@ -60,6 +65,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 - The experimental `indexRepositoryName` option for the rust packages code host connection has been removed. [#59176](https://github.com/sourcegraph/sourcegraph/pull/59176)
 - The column "Repository metadata" in the CSV export of repository search results is now deprecated and will be removed in a future release. Use "Repository metadata JSON" instead [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
+- Remote embeddings as context source for Cody has been removed. [#59493](https://github.com/sourcegraph/sourcegraph/pull/59493)
 
 ## Unreleased 5.2.6
 

@@ -26,7 +26,9 @@ func BenchmarkSearchRegex_large_fixed(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern: "error handler",
+			Query: &protocol.PatternNode{
+				Value: "error handler",
+			},
 		},
 	})
 }
@@ -36,7 +38,9 @@ func BenchmarkSearchRegex_rare_fixed(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern: "REBOOT_CMD",
+			Query: &protocol.PatternNode{
+				Value: "REBOOT_CMD",
+			},
 		},
 	})
 }
@@ -46,7 +50,9 @@ func BenchmarkSearchRegex_large_fixed_casesensitive(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "error handler",
+			Query: &protocol.PatternNode{
+				Value: "error handler",
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -57,8 +63,10 @@ func BenchmarkSearchRegex_large_re_dotstar(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:  ".*",
-			IsRegExp: true,
+			Query: &protocol.PatternNode{
+				Value:    ".*",
+				IsRegExp: true,
+			},
 		},
 	})
 }
@@ -68,8 +76,10 @@ func BenchmarkSearchRegex_large_re_common(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -86,8 +96,10 @@ func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "^func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "^func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -98,8 +110,10 @@ func BenchmarkSearchRegex_large_capture_group(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "(TODO|FIXME)",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "(TODO|FIXME)",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -111,8 +125,10 @@ func BenchmarkSearchRegex_large_path(b *testing.B) {
 			Repo:   "github.com/golang/go",
 			Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:               "http.*client",
-				IsRegExp:              true,
+				Query: &protocol.PatternNode{
+					Value:    "http.*client",
+					IsRegExp: true,
+				},
 				IsCaseSensitive:       true,
 				PatternMatchesContent: content,
 				PatternMatchesPath:    path,
@@ -129,7 +145,9 @@ func BenchmarkSearchRegex_small_fixed(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern: "object not found",
+			Query: &protocol.PatternNode{
+				Value: "object not found",
+			},
 		},
 	})
 }
@@ -139,7 +157,9 @@ func BenchmarkSearchRegex_small_fixed_casesensitive(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "object not found",
+			Query: &protocol.PatternNode{
+				Value: "object not found",
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -150,8 +170,10 @@ func BenchmarkSearchRegex_small_re_dotstar(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:  ".*",
-			IsRegExp: true,
+			Query: &protocol.PatternNode{
+				Value:    ".*",
+				IsRegExp: true,
+			},
 		},
 	})
 }
@@ -161,8 +183,10 @@ func BenchmarkSearchRegex_small_re_common(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -173,8 +197,10 @@ func BenchmarkSearchRegex_small_re_anchor(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "^func +[A-Z]",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "^func +[A-Z]",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -185,8 +211,10 @@ func BenchmarkSearchRegex_small_capture_group(b *testing.B) {
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
-			Pattern:         "(TODO|FIXME)",
-			IsRegExp:        true,
+			Query: &protocol.PatternNode{
+				Value:    "(TODO|FIXME)",
+				IsRegExp: true,
+			},
 			IsCaseSensitive: true,
 		},
 	})
@@ -203,12 +231,12 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		b.Fatal(err)
 	}
 
-	m, err := compilePattern(&p.PatternInfo)
+	m, err := toMatchTree(p.Query, p.IsCaseSensitive)
 	if err != nil {
 		b.Fatal(err)
 	}
 
-	pm, err := compilePathPatterns(&p.PatternInfo)
+	pm, err := toPathMatcher(&p.PatternInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -319,13 +347,13 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	p := &protocol.PatternInfo{Pattern: pattern}
-	m, err := compilePattern(p)
+	p := &protocol.PatternInfo{Query: &protocol.PatternNode{Value: pattern}}
+	m, err := toMatchTree(p.Query, p.IsCaseSensitive)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	pm, err := compilePathPatterns(p)
+	pm, err := toPathMatcher(p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -372,14 +400,16 @@ func TestPathMatches(t *testing.T) {
 	}
 
 	patternInfo := &protocol.PatternInfo{
-		Pattern:         "",
+		Query: &protocol.PatternNode{
+			Value: "",
+		},
 		IncludePatterns: []string{"a", "b"},
 	}
-	m, err := compilePattern(patternInfo)
+	m, err := toMatchTree(patternInfo.Query, patternInfo.IsCaseSensitive)
 	if err != nil {
 		t.Fatal(err)
 	}
-	pm, err := compilePathPatterns(patternInfo)
+	pm, err := toPathMatcher(patternInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,7 +450,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	pm, err := compilePathPatterns(&protocol.PatternInfo{
+	pm, err := toPathMatcher(&protocol.PatternInfo{
 		IncludePatterns: []string{`a\.go`},
 		ExcludePattern:  `README\.md`,
 	})

@@ -88,6 +88,7 @@ func (r *Renderer) RenderEnvironment(
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
+			"category":    string(env.Category),
 			"msp":         "true",
 		},
 		Services: func() []string {
@@ -143,7 +144,9 @@ func (r *Renderer) RenderEnvironment(
 		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,
 		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
 		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
+		CloudSQLInstanceID:    cloudrunOutput.CloudSQLInstanceID,
 		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
+		SentryProject:         cloudrunOutput.SentryProject,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}

@@ -60,7 +60,7 @@
     <title>{data.displayRepoName} - Sourcegraph</title>
 </svelte:head>
 
-<nav>
+<nav aria-label="repository">
     <h1><a href="/{repoName}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName}</a></h1>
     <!--
         TODO: Add back revision
@@ -72,7 +72,11 @@
         {#each navEntriesToShow as entry}
             {@const href = data.repoURL + entry.path}
             <li>
-                <a {href} class:active={isActive(href, $page.url)} data-sveltekit-reload={entry.external}>
+                <a
+                    {href}
+                    aria-current={isActive(href, $page.url) ? 'page' : undefined}
+                    data-sveltekit-reload={entry.external}
+                >
                     {#if entry.icon}
                         <Icon svgPath={entry.icon} inline />
                     {/if}
@@ -146,7 +150,7 @@
                 background-color: var(--color-bg-2);
             }
 
-            &.active {
+            &[aria-current='page'] {
                 background-color: var(--color-bg-3);
             }
         }

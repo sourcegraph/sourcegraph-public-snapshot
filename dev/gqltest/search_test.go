@@ -515,8 +515,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 			// 	skip:          skipStream,
 			// },
 			{
-				name:  "regular expression without indexed search",
+				name:  "regular expression with unindexed search",
 				query: "index:no patterntype:regexp ^func.*$",
+			},
+			{
+				name:  "empty query with unindexed search",
+				query: "index:no file:\\.go",
+			},
+			{
+				name:  "boolean query with unindexed search",
+				query: "index:no func OR NOT default",
 			},
 			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
 			// {
