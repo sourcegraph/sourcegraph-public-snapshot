@@ -1,8 +1,10 @@
 import { BehaviorSubject, type Observable, of, type Subscription } from 'rxjs'
 import { get } from 'svelte/store'
 
+import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
+import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -15,8 +17,6 @@ import {
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { browser } from '$app/environment'
-import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
 import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
 
 interface SearchStreamCacheEntry {
@@ -29,15 +29,19 @@ interface SearchStreamCacheEntry {
  */
 class CachingStreamManager {
     private cache: Map<string, SearchStreamCacheEntry> = new Map()
-    private activeSubscription: {cacheKey: string, subscription: Subscription} | undefined
+    private activeSubscription: { cacheKey: string; subscription: Subscription } | undefined
     private streamManager = new NonCachingStreamManager()
 
-    search(parsedQuery: ExtendedParsedSearchURL, searchOptions: StreamSearchOptions, bypassCache: boolean): Observable<AggregateStreamingSearchResults | undefined> {
+    search(
+        parsedQuery: ExtendedParsedSearchURL,
+        searchOptions: StreamSearchOptions,
+        bypassCache: boolean
+    ): Observable<AggregateStreamingSearchResults | undefined> {
         const key = createCacheKey(parsedQuery, searchOptions)
 
         // Cancel any active query to reduce load on the server
         {
-            const {cacheKey, subscription} = this.activeSubscription ?? {}
+            const { cacheKey, subscription } = this.activeSubscription ?? {}
             if (cacheKey && cacheKey !== key) {
                 subscription?.unsubscribe()
                 // We need to remove the cache entry for ongoing queries otherwise
@@ -53,18 +57,18 @@ class CachingStreamManager {
         if (bypassCache || !searchStream) {
             const stream = this.streamManager.search(parsedQuery, searchOptions)
             const searchStream = new BehaviorSubject<AggregateStreamingSearchResults | undefined>(undefined)
-            const cacheEntry: SearchStreamCacheEntry = {searchStream, complete: false}
+            const cacheEntry: SearchStreamCacheEntry = { searchStream, complete: false }
             this.cache.set(key, cacheEntry)
             // Primes the stream
             const subscription = stream.subscribe({
-                next: (value) => {
+                next: value => {
                     searchStream.next(value)
                 },
                 complete: () => {
                     cacheEntry.complete = true
-                }
+                },
             })
-            this.activeSubscription = {cacheKey: key, subscription}
+            this.activeSubscription = { cacheKey: key, subscription }
             return searchStream
         }
 
@@ -76,11 +80,13 @@ class CachingStreamManager {
  * NonCachingStreamManager simply executes the search query without caching.
  */
 class NonCachingStreamManager {
-    search(parsedQuery: ExtendedParsedSearchURL, searchOptions: StreamSearchOptions): Observable<AggregateStreamingSearchResults | undefined> {
+    search(
+        parsedQuery: ExtendedParsedSearchURL,
+        searchOptions: StreamSearchOptions
+    ): Observable<AggregateStreamingSearchResults | undefined> {
         return aggregateStreamingSearch(of(parsedQuery.filteredQuery ?? ''), searchOptions)
     }
 }
-
 
 const streamManager = browser ? new CachingStreamManager() : new NonCachingStreamManager()
 
@@ -126,7 +132,11 @@ export const load: PageLoad = ({ url, depends }) => {
         // - we do not have a cached stream (in the browser)
         // - the search result page was expliclty navigated to (not via back/forward buttons)
         // - cache is not enforced (which is used in the filters sidebar)
-        const searchStream = streamManager.search(parsedQuery, options, !forceCache && get(navigating)?.type !== 'popstate')
+        const searchStream = streamManager.search(
+            parsedQuery,
+            options,
+            !forceCache && get(navigating)?.type !== 'popstate'
+        )
 
         return {
             searchStream,

@@ -5,7 +5,7 @@ export interface ExtendedParsedSearchURL extends ParsedSearchURL {
     /**
      * Original query + filters.
      */
-    filteredQuery: string|undefined
+    filteredQuery: string | undefined
 }
 
 export function parseExtendedSearchURL(search: string): ExtendedParsedSearchURL {
