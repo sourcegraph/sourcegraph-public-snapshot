@@ -3,7 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cody",
-    srcs = ["feature_flag.go"],
+    srcs = [
+        "feature_flag.go",
+        "subscription.go",
+        "utils.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cody",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -17,6 +21,8 @@ go_library(
         "//internal/featureflag",
         "//internal/licensing",
         "//internal/rbac",
+        "//internal/ssc",
+        "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
@@ -24,17 +30,25 @@ go_library(
 
 go_test(
     name = "cody_test",
-    srcs = ["feature_flag_test.go"],
+    srcs = [
+        "feature_flag_test.go",
+        "subscription_test.go",
+        "utils_test.go",
+    ],
     embed = [":cody"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
+        "//internal/extsvc",
         "//internal/featureflag",
         "//internal/licensing",
         "//internal/rbac/types",
+        "//internal/ssc",
         "//internal/types",
         "//schema",
+        "@com_github_stretchr_testify//assert",
     ],
 )
