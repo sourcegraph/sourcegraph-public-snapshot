@@ -1042,7 +1042,7 @@ bazelCommands:
       USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
-    env:
+    env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -1051,6 +1051,7 @@ bazelCommands:
   gitserver-0:
     <<: *gitserver_bazel_template
     env:
+      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
@@ -1058,10 +1059,12 @@ bazelCommands:
   gitserver-1:
     <<: *gitserver_bazel_template
     env:
+      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
+
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
