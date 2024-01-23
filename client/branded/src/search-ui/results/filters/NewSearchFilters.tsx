@@ -6,6 +6,7 @@ import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/que
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { Button } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -70,6 +71,12 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onQueryChange(updateFilter(newQuery, FilterType.type, toSearchSyntaxTypeFilter(filterType)))
             }
         }
+    }
+
+    const handleApplyButtonFilters = (): void => {
+        const filterQuery = selectedFilters.map(f => f.value).join(' ')
+
+        onQueryChange(`${query} ${filterQuery}`.trim())
     }
 
     return (
@@ -144,9 +151,19 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <FiltersDocFooter className={styles.footer} />
+            <div className={styles.footerContent}>
+                <footer className={styles.actions}>
+                    {selectedFilters.length > 0 && (
+                        <Button variant="primary" onClick={handleApplyButtonFilters}>
+                            Apply filters to the query
+                        </Button>
+                    )}
 
-            {children}
+                    {children}
+                </footer>
+
+                <FiltersDocFooter />
+            </div>
         </div>
     )
 }
