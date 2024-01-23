@@ -983,7 +983,7 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 		return nil
 	}
 
-	cmd := exec.Command("sh")
+	cmd := exec.Command("zsh")
 	dir.Set(cmd)
 
 	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
