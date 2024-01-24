@@ -30,7 +30,6 @@ export const FEATURE_FLAGS = [
     'enable-sveltekit',
     'enable-sveltekit-toggle',
     'search-content-based-lang-detection',
-    'search-keyword',
     'search-debug',
     'search-simple',
     'cody-chat-mock-test',
