@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -85,7 +87,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	routines = append(routines, newRoutines...)
 
 	// Create HTTP server
-	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	handler := api.NewHandler(searchFunc, func(ctx context.Context, rcp internaltypes.RepoCommitPath) ([]byte, error) {
+		r, err := gitserverClient.NewFileReader(ctx, rcp)
+		if err != nil {
+			return nil, err
+		}
+		defer r.Close()
+		return io.ReadAll(r)
+	}, handleStatus, ctagsBinary)
 
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())

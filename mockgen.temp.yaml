@@ -137,3 +137,8 @@
   interfaces:
     - GitserverServiceClient
     - GitserverService_ExecServer
+- filename: cmd/gitserver/internal/git/mock.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git
+  interfaces:
+    - GitBackend
+    - GitConfigBackend

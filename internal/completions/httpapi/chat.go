@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 
 	"github.com/sourcegraph/log"
 
@@ -40,8 +41,13 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 				if err != nil {
 					return "", err
 				}
-				isProUser := user.CodyProEnabledAt != nil
-				if isAllowedCustomChatModel(requestParams.Model, isProUser) {
+
+				subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+				if err != nil {
+					return "", err
+				}
+
+				if isAllowedCustomChatModel(requestParams.Model, subscription.ApplyProRateLimits) {
 					return requestParams.Model, nil
 				}
 			}

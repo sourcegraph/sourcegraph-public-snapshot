@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -382,16 +383,22 @@ func cleanupRepos(
 	}
 
 	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
-		return false, gitSetAutoGC(rcf, reposDir, dir)
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+
+		return false, gitSetAutoGC(ctx, backend.Config())
 	}
 
 	maybeReclone := func(dir common.GitDir) (done bool, err error) {
-		repoType, err := git.GetRepositoryType(rcf, reposDir, dir)
+		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
+
+		repoType, err := git.GetRepositoryType(ctx, backend.Config())
 		if err != nil {
 			return false, err
 		}
 
-		recloneTime, err := getRecloneTime(rcf, reposDir, dir)
+		recloneTime, err := getRecloneTime(ctx, backend.Config(), dir)
 		if err != nil {
 			return false, err
 		}
@@ -399,7 +406,8 @@ func cleanupRepos(
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := git.ConfigGet(rcf, reposDir, dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+
+		if maybeCorrupt, _ := backend.Config().Get(ctx, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			// Set the reason so that the repo cleaned up
 			reason = maybeCorrupt
 			// We don't log the corruption here, since the corruption *should* have already been
@@ -408,7 +416,7 @@ func cleanupRepos(
 			// the repo is not considered corrupted anymore.
 			//
 			// unset flag to stop constantly re-cloning if it fails.
-			_ = git.ConfigUnset(rcf, reposDir, dir, gitConfigMaybeCorrupt)
+			_ = backend.Config().Unset(ctx, gitConfigMaybeCorrupt)
 		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
@@ -449,7 +457,7 @@ func cleanupRepos(
 		// update the re-clone time so that we don't constantly re-clone if cloning fails.
 		// For example if a repo fails to clone due to being large, we will constantly be
 		// doing a clone which uses up lots of resources.
-		if err := setRecloneTime(rcf, reposDir, dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
+		if err := setRecloneTime(ctx, backend.Config(), dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
 			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
 		}
 
@@ -836,8 +844,8 @@ func findGitDirs(reposDir string) ([]common.GitDir, error) {
 }
 
 // setRecloneTime sets the time a repository is cloned.
-func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, now time.Time) error {
-	err := git.ConfigSet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+func setRecloneTime(ctx context.Context, c git.GitConfigBackend, dir common.GitDir, now time.Time) error {
+	err := c.Set(ctx, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
 		if err2 := git.EnsureHEAD(dir); err2 != nil {
 			err = errors.Append(err, err2)
@@ -850,16 +858,16 @@ func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 // getRecloneTime returns an approximate time a repository is cloned. If the
 // value is not stored in the repository, the re-clone time for the repository is
 // set to now.
-func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (time.Time, error) {
+func getRecloneTime(ctx context.Context, c git.GitConfigBackend, dir common.GitDir) (time.Time, error) {
 	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {
 		now := time.Now()
-		return now, setRecloneTime(rcf, reposDir, dir, now)
+		return now, setRecloneTime(ctx, c, dir, now)
 	}
 
-	value, err := git.ConfigGet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp")
+	value, err := c.Get(ctx, "sourcegraph.recloneTimestamp")
 	if err != nil {
 		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
 	}
@@ -1195,13 +1203,13 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 //
 // The purpose is to avoid repository corruption which can happen if several
 // git-gc operations are running at the same time.
-func gitSetAutoGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) error {
+func gitSetAutoGC(ctx context.Context, c git.GitConfigBackend) error {
 	switch gitGCMode {
 	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return git.ConfigUnset(rcf, reposDir, dir, "gc.auto")
+		return c.Unset(ctx, "gc.auto")
 
 	case gitGCModeMaintenance:
-		return git.ConfigSet(rcf, reposDir, dir, "gc.auto", "0")
+		return c.Set(ctx, "gc.auto", "0")
 
 	default:
 		// should not happen

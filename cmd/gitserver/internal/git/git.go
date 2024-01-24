@@ -261,6 +261,7 @@ func ComputeRefHash(dir common.GitDir) ([]byte, error) {
 
 // CheckSpecArgSafety returns a non-nil err if spec begins with a "-", which could
 // cause it to be interpreted as a git command line argument.
+// TODO: Should be removed once the exec endpoint is gone.
 func CheckSpecArgSafety(spec string) error {
 	if strings.HasPrefix(spec, "-") {
 		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)

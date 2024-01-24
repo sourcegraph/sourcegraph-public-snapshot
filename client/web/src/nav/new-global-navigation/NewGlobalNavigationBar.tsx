@@ -8,8 +8,10 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { Toggles } from '@sourcegraph/branded'
+import { LegacyToggles } from '@sourcegraph/branded'
+import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text, Icon, Button, Modal, Link, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
@@ -182,11 +184,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    // If the feature-flag "search-keyword" is set, we allow the user to
-    // choose between precise (legacy), precise (new), and smart search.  This
-    // is only temporary for internal testing.  The goal is to make the new
-    // precise search the default.
-    const [showExtendedPicker] = useFeatureFlag('search-keyword')
+    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
 
     const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
@@ -234,18 +232,31 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 onChange={setQueryState}
                 onSubmit={submitSearchOnChange}
             >
-                <Toggles
-                    searchMode={searchMode}
-                    patternType={searchPatternType}
-                    caseSensitive={searchCaseSensitivity}
-                    navbarSearchQuery={queryState.query}
-                    structuralSearchDisabled={structuralSearchDisabled}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    setSearchMode={setSearchMode}
-                    submitSearch={submitSearchOnChange}
-                    showExtendedPicker={showExtendedPicker}
-                />
+                {showKeywordSearchToggle ? (
+                    <Toggles
+                        searchMode={searchMode}
+                        patternType={searchPatternType}
+                        caseSensitive={searchCaseSensitivity}
+                        navbarSearchQuery={queryState.query}
+                        structuralSearchDisabled={structuralSearchDisabled}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
+                        setSearchMode={setSearchMode}
+                        submitSearch={submitSearchOnChange}
+                    />
+                ) : (
+                    <LegacyToggles
+                        searchMode={searchMode}
+                        patternType={searchPatternType}
+                        caseSensitive={searchCaseSensitivity}
+                        navbarSearchQuery={queryState.query}
+                        structuralSearchDisabled={structuralSearchDisabled}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
+                        setSearchMode={setSearchMode}
+                        submitSearch={submitSearchOnChange}
+                    />
+                )}
             </LazyV2SearchInput>
 
             {isFocused && <div className={styles.overlay} />}

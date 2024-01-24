@@ -2,10 +2,10 @@ package search
 
 import (
 	"archive/tar"
-	"bytes"
 	"context"
 	"hash"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/bmatcuk/doublestar"
@@ -19,18 +19,20 @@ import (
 // NewFilter calls gitserver to retrieve the ignore-file. If the file doesn't
 // exist we return an empty ignore.Matcher.
 func NewFilter(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
-	ignoreFile, err := client.ReadFile(ctx, repo, commit, ignore.IgnoreFile)
+	r, err := client.NewFileReader(ctx, repo, commit, ignore.IgnoreFile)
 	if err != nil {
-		// We do not ignore anything if the ignore file does not exist.
-		if strings.Contains(err.Error(), "file does not exist") {
+		if os.IsNotExist(err) {
+			// We do not ignore anything if the ignore file does not exist.
 			return func(*tar.Header) bool {
 				return false
 			}, nil
 		}
+
 		return nil, err
 	}
+	defer r.Close()
 
-	ig, err := ignore.ParseIgnoreFile(bytes.NewReader(ignoreFile))
+	ig, err := ignore.ParseIgnoreFile(r)
 	if err != nil {
 		return nil, err
 	}

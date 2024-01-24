@@ -20,7 +20,14 @@ import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableF
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, QueryStateUpdate, QueryUpdate, SearchMode } from '@sourcegraph/shared/src/search'
+import {
+    QueryState,
+    QueryStateUpdate,
+    QueryUpdate,
+    SearchMode,
+    SearchPatternTypeMutationProps,
+    SearchPatternTypeProps,
+} from '@sourcegraph/shared/src/search'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import {
@@ -30,7 +37,7 @@ import {
     PathMatch,
     StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
@@ -68,7 +75,9 @@ interface NewSearchContentProps
     extends TelemetryProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        SearchPatternTypeProps,
+        SearchPatternTypeMutationProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -76,7 +85,6 @@ interface NewSearchContentProps
     searchMode: SearchMode
     trace: boolean
     searchContextsEnabled: boolean
-    patternType: SearchPatternType
     results: AggregateStreamingSearchResults | undefined
     showAggregationPanel: boolean
     selectedSearchContextSpec: string | undefined
@@ -94,6 +102,7 @@ interface NewSearchContentProps
     onExpandAllResultsToggle: () => void
     onSearchAgain: (additionalFilters: string[]) => void
     onDisableSmartSearch: () => void
+    onTogglePatternType: (patternType: SearchPatternType) => void
     onLogSearchResultClick: (index: number, type: string, resultsLength: number) => void
 }
 
@@ -127,6 +136,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onExpandAllResultsToggle,
         onSearchAgain,
         onDisableSmartSearch,
+        onTogglePatternType,
         onLogSearchResultClick,
     } = props
 
@@ -167,6 +177,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         },
         [onSearchSubmit]
     )
+
+    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
@@ -216,6 +228,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 className={styles.infobar}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onShowMobileFiltersChanged={setSidebarCollapsed}
+                showKeywordSearchToggle={!!showKeywordSearchToggle}
+                onTogglePatternType={onTogglePatternType}
                 stats={
                     <>
                         <StreamingProgress

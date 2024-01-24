@@ -1512,7 +1512,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			cloud_default,
 			has_webhooks,
 			token_expires_at,
-			code_host_id
+			code_host_id,
+			creator_id,
+			last_updater_id
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -1555,6 +1557,8 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&hasWebhooks,
 			&tokenExpiresAt,
 			&h.CodeHostID,
+			&h.CreatorID,
+			&h.LastUpdaterID,
 		); err != nil {
 			return nil, err
 		}

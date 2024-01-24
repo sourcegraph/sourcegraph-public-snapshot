@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
@@ -25,31 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
-
-// ShortGitCommandTimeout returns the timeout for git commands that should not
-// take a long time. Some commands such as "git archive" are allowed more time
-// than "git rev-parse", so this will return an appropriate timeout given the
-// command.
-func ShortGitCommandTimeout(args []string) time.Duration {
-	if len(args) < 1 {
-		return time.Minute
-	}
-	switch args[0] {
-	case "archive":
-		// This is a long time, but this never blocks a user request for this
-		// long. Even repos that are not that large can take a long time, for
-		// example a search over all repos in an organization may have several
-		// large repos. All of those repos will be competing for IO => we need
-		// a larger timeout.
-		return conf.GitLongCommandTimeout()
-
-	case "ls-remote":
-		return 30 * time.Second
-
-	default:
-		return time.Minute
-	}
-}
 
 // UnsetExitStatus is a sentinel value for an unknown/unset exit status.
 const UnsetExitStatus = -10810

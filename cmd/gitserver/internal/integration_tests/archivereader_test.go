@@ -20,6 +20,9 @@ import (
 	"google.golang.org/grpc"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -97,6 +100,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 				Logger:   logtest.Scoped(t),
 				ReposDir: filepath.Join(root, "repos"),
 				DB:       newMockDB(),
+				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+					return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+				},
 				GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 					if test.remote != "" {
 						return test.remote, nil

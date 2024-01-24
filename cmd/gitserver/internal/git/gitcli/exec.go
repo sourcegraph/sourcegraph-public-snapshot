@@ -1,16 +1,29 @@
-package gitdomain
+package gitcli
 
 import (
+	"context"
+	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
-	"k8s.io/utils/strings/slices"
-
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 )
+
+func (g *gitCLIBackend) Exec(ctx context.Context, args ...string) (io.ReadCloser, error) {
+	cmd, cancel, err := g.gitCommand(ctx, args...)
+	defer cancel()
+	if err != nil {
+		return nil, err
+	}
+
+	return g.runGitCommand(ctx, cmd)
+}
 
 var (
 	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
@@ -37,6 +50,9 @@ var (
 		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p"},
 		"lfs":          {},
+
+		// Commands used by GitConfigStore:
+		"config": {"--get", "--unset-all"},
 
 		// Commands used by Batch Changes when publishing changesets.
 		"init":       {},
@@ -129,7 +145,7 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 }
 
 // isAllowedDiffPathArg checks if the diff path arg is allowed.
-func isAllowedDiffPathArg(arg string, repoDir string) bool {
+func isAllowedDiffPathArg(arg string, repoDir common.GitDir) bool {
 	// allows diff command path that requires (dot) as path
 	// example: diff --find-renames ... --no-prefix commit -- .
 	if arg == "." {
@@ -138,7 +154,7 @@ func isAllowedDiffPathArg(arg string, repoDir string) bool {
 
 	arg = filepath.Clean(arg)
 	if !filepath.IsAbs(arg) {
-		arg = filepath.Join(repoDir, arg)
+		arg = repoDir.Path(arg)
 	}
 
 	filePath, err := filepath.Abs(arg)
@@ -147,7 +163,7 @@ func isAllowedDiffPathArg(arg string, repoDir string) bool {
 	}
 
 	// Check if absolute path is a sub path of the repo dir
-	repoRoot, err := filepath.Abs(repoDir)
+	repoRoot, err := filepath.Abs(repoDir.Path())
 	if err != nil {
 		return false
 	}
@@ -156,7 +172,10 @@ func isAllowedDiffPathArg(arg string, repoDir string) bool {
 }
 
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
-func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
+//
+// TODO: This should be unexported and solely be a concern of the CLI package,
+// as other backends should do their own validation passes.
+func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
@@ -177,7 +196,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
 				checkFileInput = false
 				continue
 			}
-			logger.Warn("IsAllowedGitCmd: unallowed file input for `git commit`", log.String("cmd", cmd), log.String("arg", arg))
+			logger.Warn("isAllowedGitCmd: unallowed file input for `git commit`", log.String("cmd", cmd), log.String("arg", arg))
 			return false
 		}
 		if strings.HasPrefix(arg, "-") {

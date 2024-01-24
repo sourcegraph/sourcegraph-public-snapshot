@@ -3,15 +3,15 @@ import React, { useCallback, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { SearchBox, Toggles } from '@sourcegraph/branded'
+import { SearchBox, LegacyToggles } from '@sourcegraph/branded'
+import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useExperimentalFeatures, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { type NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { useV2QueryInput } from '../useV2QueryInput'
@@ -78,11 +78,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef.current()
     }, [])
 
-    // If the feature-flag "search-keyword" is set, we allow the user to
-    // choose between precise (legacy), precise (new), and smart search.  This
-    // is only temporary for internal testing.  The goal is to make the new
-    // precise search the default.
-    const [showExtendedPicker] = useFeatureFlag('search-keyword')
+    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
 
     // TODO (#48103): Remove/simplify when new search input is released
     if (v2QueryInput) {
@@ -105,18 +101,35 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
                     className="flex-grow-1"
                 >
-                    <Toggles
-                        patternType={searchPatternType}
-                        caseSensitive={searchCaseSensitivity}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        searchMode={searchMode}
-                        setSearchMode={setSearchMode}
-                        navbarSearchQuery={queryState.query}
-                        submitSearch={submitSearchOnChange}
-                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
-                        showExtendedPicker={showExtendedPicker}
-                    />
+                    {showKeywordSearchToggle ? (
+                        <Toggles
+                            patternType={searchPatternType}
+                            caseSensitive={searchCaseSensitivity}
+                            setPatternType={setSearchPatternType}
+                            setCaseSensitivity={setSearchCaseSensitivity}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
+                            navbarSearchQuery={queryState.query}
+                            submitSearch={submitSearchOnChange}
+                            structuralSearchDisabled={
+                                window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
+                            }
+                        />
+                    ) : (
+                        <LegacyToggles
+                            patternType={searchPatternType}
+                            caseSensitive={searchCaseSensitivity}
+                            setPatternType={setSearchPatternType}
+                            setCaseSensitivity={setSearchCaseSensitivity}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
+                            navbarSearchQuery={queryState.query}
+                            submitSearch={submitSearchOnChange}
+                            structuralSearchDisabled={
+                                window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
+                            }
+                        />
+                    )}
                 </LazyV2SearchInput>
             </Form>
         )
@@ -147,7 +160,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 hideHelpButton={false}
                 showSearchHistory={true}
                 recentSearches={recentSearches}
-                showExtendedPicker={showExtendedPicker}
             />
         </Form>
     )
