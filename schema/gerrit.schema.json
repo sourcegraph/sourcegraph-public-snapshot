@@ -38,6 +38,24 @@
         ["docs", "kubernetes/kubernetes", "golang/go", "facebook/react"]
       ]
     },
+    "exclude": {
+      "description": "A list of repositories to never mirror from this Gerrit instance. Takes precedence over \"projects\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"})",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedGerritProject",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a Gerrit project to exclude from mirroring.",
+            "type": "string"
+          }
+        }
+      },
+      "examples": [[{ "name": "docs" }, { "name": "php/php-src" }]]
+    },
     "authorization": {
       "title": "GerritAuthorization",
       "description": "If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"gerrit\" with the same `url` field as specified in this `GerritConnection`.",

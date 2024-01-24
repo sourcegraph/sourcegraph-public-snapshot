@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "gitcli",
+    srcs = [
+        "clibackend.go",
+        "config.go",
+        "exec.go",
+        "mergebase.go",
+        "metrics.go",
+        "object.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli",
+    visibility = ["//cmd/gitserver:__subpackages__"],
+    deps = [
+        "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/executil",
+        "//cmd/gitserver/internal/git",
+        "//internal/api",
+        "//internal/gitserver/gitdomain",
+        "//internal/lazyregexp",
+        "//internal/trace",
+        "//internal/wrexec",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "gitcli_test",
+    srcs = [
+        "config_test.go",
+        "exec_test.go",
+        "mergebase_test.go",
+        "object_test.go",
+    ],
+    embed = [":gitcli"],
+    deps = [
+        "//cmd/gitserver/internal/common",
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/wrexec",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

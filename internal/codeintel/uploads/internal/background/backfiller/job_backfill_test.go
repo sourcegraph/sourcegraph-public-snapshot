@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestBackfillCommittedAtBatch(t *testing.T) {
@@ -32,9 +33,17 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[string(commit)]
-		return string(commit), date, ok, nil
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		commitDate, ok := expectedCommitDates[string(commitID)]
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
+		}
+		return &gitdomain.Commit{
+			ID: commitID,
+			Committer: &gitdomain.Signature{
+				Date: commitDate,
+			},
+		}, nil
 	})
 
 	pageSize := 50
@@ -111,9 +120,17 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[string(commit)]
-		return string(commit), date, ok, nil
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		commitDate, ok := expectedCommitDates[string(commitID)]
+		if !ok {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
+		}
+		return &gitdomain.Commit{
+			ID: commitID,
+			Committer: &gitdomain.Signature{
+				Date: commitDate,
+			},
+		}, nil
 	})
 
 	pageSize := 50

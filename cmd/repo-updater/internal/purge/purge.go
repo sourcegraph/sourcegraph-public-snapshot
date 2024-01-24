@@ -1,4 +1,4 @@
-package repos
+package purge
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 
 	"golang.org/x/time/rate"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -17,6 +19,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+var (
+	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_repoupdater_purge_success",
+		Help: "Incremented each time we remove a repository clone.",
+	})
+
+	purgeFailed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_repoupdater_purge_failed",
+		Help: "Incremented each time we try and fail to remove a repository clone.",
+	})
 )
 
 // NewRepositoryPurgeWorker is a worker which deletes repos which are present on

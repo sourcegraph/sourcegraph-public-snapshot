@@ -15,8 +15,12 @@ import (
 	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -76,6 +80,9 @@ func InitGitserver() {
 		Logger:         sglog.Scoped("server"),
 		ObservationCtx: &observation.TestContext,
 		ReposDir:       filepath.Join(root, "repos"),
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(&t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return filepath.Join(root, "remotes", string(name)), nil
 		},

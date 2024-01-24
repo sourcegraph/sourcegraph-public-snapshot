@@ -6577,10 +6577,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codyProEnabled: Boolean!
     """
-    The date when the user enrolled for Cody Pro.
-    """
-    codyProEnabledAt: DateTime
-    """
     The start date of current billing period of Cody.
     """
     codyCurrentPeriodStartDate: DateTime

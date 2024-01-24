@@ -32,8 +32,6 @@ export const load: PageLoad = async ({ url, parent }) => {
         })
     return {
         after: afterDate,
-        deferred: {
-            contributors,
-        },
+        contributors,
     }
 }

@@ -265,3 +265,40 @@ func stringsToByteSlices(in []string) [][]byte {
 	}
 	return res
 }
+
+// writeCounter wraps an io.Writer and keeps track of bytes written.
+type writeCounter struct {
+	w io.Writer
+	// n is the number of bytes written to w
+	n int64
+}
+
+func (c *writeCounter) Write(p []byte) (n int, err error) {
+	n, err = c.w.Write(p)
+	c.n += int64(n)
+	return
+}
+
+// limitWriter is a io.Writer that writes to an W but discards after N bytes.
+type limitWriter struct {
+	W io.Writer // underling writer
+	N int       // max bytes remaining
+}
+
+func (l *limitWriter) Write(p []byte) (int, error) {
+	if l.N <= 0 {
+		return len(p), nil
+	}
+	origLen := len(p)
+	if len(p) > l.N {
+		p = p[:l.N]
+	}
+	n, err := l.W.Write(p)
+	l.N -= n
+	if l.N <= 0 {
+		// If we have written limit bytes, then we can include the discarded
+		// part of p in the count.
+		n = origLen
+	}
+	return n, err
+}

@@ -22,6 +22,7 @@ func createResponseCodeAlerts(
 			ID:           config.ID,
 			ProjectID:    vars.ProjectID,
 			Name:         config.Name,
+			Description:  config.Description,
 			ResourceName: vars.Service.ID,
 			ResourceKind: alertpolicy.CloudRunService,
 			ResponseCodeMetric: &alertpolicy.ResponseCodeMetric{
