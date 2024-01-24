@@ -22,7 +22,7 @@ func withCurrentTimeMock(ctx context.Context, t time.Time) context.Context {
 	return context.WithValue(ctx, mockCurrentTimeKey, &t)
 }
 
-func PreSSCReleaseCurrentPeriodDateRange(ctx context.Context, user types.User) (time.Time, time.Time) {
+func preSSCReleaseCurrentPeriodDateRange(ctx context.Context, user types.User) (time.Time, time.Time) {
 	// to allow mocking current time during tests
 	currentDate := currentTimeFromCtx(ctx)
 

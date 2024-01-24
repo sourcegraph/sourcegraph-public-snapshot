@@ -49,3 +49,43 @@ export const LinkShareIcon: FC<CustomIconProps> = props => (
         />
     </svg>
 )
+
+export const ArrowBendIcon: FC<CustomIconProps> = props => (
+    <svg viewBox="0 0 14 14" height="14" width="14" fill="none" {...props}>
+        <path
+            id="Vector"
+            stroke="var(--icon-color)"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m11.5 10.5 -3 3 -3 -3"
+        />
+        <path
+            id="Vector_2"
+            stroke="var(--icon-color)"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M2.5 0.5h2c1.06087 0 2.07828 0.421427 2.82843 1.17157C8.07857 2.42172 8.5 3.43913 8.5 4.5v9"
+        />
+    </svg>
+)
+
+export const DeleteIcon: FC<CustomIconProps> = props => (
+    <svg fill="none" viewBox="0 0 14 14" height="14" width="14" {...props}>
+        <path
+            stroke="var(--icon-color)"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m13.5 0.5 -13 13"
+            strokeWidth="1"
+        />
+        <path
+            stroke="var(--icon-color)"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m0.5 0.5 13 13"
+            strokeWidth="1"
+        />
+    </svg>
+)

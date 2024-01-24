@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
@@ -204,8 +205,13 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 			return licensing.CodyGatewayRateLimit{}, err
 		}
 		intervalSeconds = oneMonthInSeconds
-		isProUser := user.CodyProEnabledAt != nil
-		if isProUser {
+
+		subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+		if err != nil {
+			return licensing.CodyGatewayRateLimit{}, errors.Wrap(err, "error fetching user's cody subscription")
+		}
+
+		if subscription.ApplyProRateLimits {
 			if cfg.PerProUserEmbeddingsMonthlyLimit > 0 {
 				limit = int64(cfg.PerProUserEmbeddingsMonthlyLimit)
 			}
@@ -265,18 +271,17 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 	}
-	isProUser := user.CodyProEnabledAt != nil
-	models := allowedModels(scope, isProUser)
+
+	subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+	if err != nil {
+		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
+	}
+
+	models := allowedModels(scope, subscription.ApplyProRateLimits)
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		user, err := db.Users().GetByID(ctx, userID)
-		if err != nil {
-			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
-		}
-		isProUser := user.CodyProEnabledAt != nil
 		// Update the allowed models based on the user's plan.
-		models = allowedModels(scope, isProUser)
-		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
+		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, subscription.ApplyProRateLimits, *cfg)
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
