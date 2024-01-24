@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, ReactNode, useMemo } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -6,6 +6,7 @@ import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/que
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -22,7 +23,8 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
-import { useFilterQuery } from './hooks'
+import { ArrowBendIcon } from './components/Icons'
+import { mergeQueryAndFilters, useUrlFilters } from './hooks'
 import { SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
@@ -31,10 +33,11 @@ interface NewSearchFiltersProps {
     query: string
     filters?: Filter[]
     onQueryChange: (nextQuery: string) => void
+    children?: ReactNode
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange }) => {
-    const [selectedFilters, setSelectedFilters] = useFilterQuery()
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange, children }) => {
+    const [selectedFilters, setSelectedFilters] = useUrlFilters()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)
@@ -71,8 +74,12 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
         }
     }
 
+    const handleApplyButtonFilters = (): void => {
+        onQueryChange(mergeQueryAndFilters(query, selectedFilters))
+    }
+
     return (
-        <aside className={styles.scrollWrapper}>
+        <div className={styles.scrollWrapper}>
             <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
             {type === SearchFilterType.Symbols && (
@@ -86,28 +93,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 />
             )}
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <>
-                    <SearchDynamicFilter
-                        title="By author"
-                        filterKind="author"
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={authorFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-
-                    <SearchDynamicFilter
-                        title="By commit date"
-                        filterKind="commit date"
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={commitDateFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-                </>
-            )}
-
             <SearchDynamicFilter
                 title="By language"
                 filterKind="lang"
@@ -117,6 +102,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <SearchDynamicFilter
+                    title="By author"
+                    filterKind="author"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={authorFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
+            )}
+
             <SearchDynamicFilter
                 title="By repositories"
                 filterKind="repo"
@@ -125,6 +121,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 renderItem={repoFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
+
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <SearchDynamicFilter
+                    title="By commit date"
+                    filterKind="commit date"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={commitDateFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
+            )}
 
             <SearchDynamicFilter
                 title="By file"
@@ -143,7 +150,25 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <FiltersDocFooter className={styles.footer} />
-        </aside>
+            <div className={styles.footerContent}>
+                <footer className={styles.actions}>
+                    {selectedFilters.length > 0 && (
+                        <Tooltip
+                            placement="right"
+                            content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
+                        >
+                            <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
+                                Move filters to the query
+                                <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
+                            </Button>
+                        </Tooltip>
+                    )}
+
+                    {children}
+                </footer>
+
+                <FiltersDocFooter />
+            </div>
+        </div>
     )
 }

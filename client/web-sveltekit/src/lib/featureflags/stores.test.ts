@@ -1,6 +1,6 @@
 import { describe, test, vi, expect } from 'vitest'
 
-import { mockFeatureFlags, unmockFeatureFlags, useFakeTimers, useRealTimers } from '$mocks'
+import { mockFeatureFlags, unmockFeatureFlags, useFakeTimers, useRealTimers } from '$testing/mocks'
 
 import { createFeatureFlagStore, featureFlag } from './stores'
 

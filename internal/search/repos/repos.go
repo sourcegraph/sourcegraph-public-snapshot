@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -68,22 +69,24 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), r.BackendsMissing)
 }
 
-func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
+func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, zoekt zoekt.Streamer) *Resolver {
 	return &Resolver{
-		logger:    logger,
-		db:        db,
-		gitserver: gitserverClient,
-		zoekt:     zoekt,
-		searcher:  searcher,
+		logger:                      logger,
+		db:                          db,
+		gitserver:                   gitserverClient,
+		zoekt:                       zoekt,
+		searcher:                    searcher,
+		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
 	}
 }
 
 type Resolver struct {
-	logger    log.Logger
-	db        database.DB
-	gitserver gitserver.Client
-	zoekt     zoekt.Streamer
-	searcher  *endpoint.Map
+	logger                      log.Logger
+	db                          database.DB
+	gitserver                   gitserver.Client
+	zoekt                       zoekt.Streamer
+	searcher                    *endpoint.Map
+	searcherGRPCConnectionCache *defaults.ConnectionCache
 }
 
 // Iterator returns an iterator of Resolved for opts.
@@ -176,7 +179,7 @@ func (r *Resolver) ResolveRevSpecs(ctx context.Context, op search.RepoOptions, r
 		Associated: repoRevSpecs,
 	}
 
-	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
+	resolved, err := r.doFilterDBResolved(ctx, tr, r.searcherGRPCConnectionCache, op, result)
 	return resolved, err
 }
 
@@ -203,7 +206,7 @@ func (r *Resolver) resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 	// We then speak to gitserver (and others) to convert revspecs into
 	// revisions to search.
-	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
+	resolved, err := r.doFilterDBResolved(ctx, tr, r.searcherGRPCConnectionCache, op, result)
 	return resolved, next, err
 }
 
@@ -357,7 +360,7 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 //
 // NOTE: This API is not idiomatic and can return non-nil error with a useful
 // Resolved.
-func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trace.Trace, op search.RepoOptions, result dbResolved) (Resolved, error) {
+func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trace.Trace, searcherGRPCConnectionCache *defaults.ConnectionCache, op search.RepoOptions, result dbResolved) (Resolved, error) {
 	// At each step we will discover RepoRevSpecs that do not actually exist.
 	// We keep appending to this.
 	missing := result.Missing
@@ -369,7 +372,7 @@ func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trace.Trace, op se
 	missing = append(missing, filteredMissing...)
 
 	tr.AddEvent("starting contains filtering")
-	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
+	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, searcherGRPCConnectionCache, filteredRepoRevs, op)
 	missing = append(missing, missingHasFileContentRevs...)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "filter has file content")
@@ -644,6 +647,7 @@ func (r *Resolver) filterHasCommitAfter(
 // 4) We collect the set of revisions that matched all contains predicates and return them.
 func (r *Resolver) filterRepoHasFileContent(
 	ctx context.Context,
+	searcherGRPCConnectionCache *defaults.ConnectionCache,
 	repoRevs []*search.RepositoryRevisions,
 	op search.RepoOptions,
 ) (
@@ -788,7 +792,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				return false, nil
 			}
 
-			return r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+			return r.repoHasFileContentAtCommit(ctx, searcherGRPCConnectionCache, repo, commitID, arg)
 		}
 
 		for _, repoRevs := range unindexed {
@@ -835,11 +839,13 @@ func (r *Resolver) filterRepoHasFileContent(
 	return matchedRepoRevs, missing, backendsMissing, nil
 }
 
-func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
+func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, searcherGRPCConnectionCache *defaults.ConnectionCache, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
 	patternInfo := search.TextPatternInfo{
-		Pattern:               args.Content,
-		IsNegated:             args.Negated,
-		IsRegExp:              true,
+		Query: &protocol.PatternNode{
+			Value:     args.Content,
+			IsNegated: args.Negated,
+			IsRegExp:  true,
+		},
 		IsCaseSensitive:       false,
 		FileMatchLimit:        1,
 		PatternMatchesContent: true,
@@ -851,15 +857,14 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 	}
 
 	foundMatches := false
-	onMatches := func(fms []*protocol.FileMatch) {
-		if len(fms) > 0 {
-			foundMatches = true
-		}
+	onMatch := func(fm *protocol.FileMatch) {
+		foundMatches = true
 	}
 
 	_, err := searcher.Search(
 		ctx,
 		r.searcher,
+		searcherGRPCConnectionCache,
 		repo.Name,
 		repo.ID,
 		"", // not using zoekt, don't need branch
@@ -869,7 +874,7 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 		time.Hour,         // depend on context for timeout
 		search.Features{}, // not using any search features
 		0,                 // don't care about the actual content, so don't fetch extra context
-		onMatches,
+		onMatch,
 	)
 	return foundMatches, err
 }

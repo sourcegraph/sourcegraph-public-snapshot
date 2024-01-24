@@ -6,6 +6,8 @@ import (
 	"context"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sourcegraph/run"
 	"go.bobheadxi.dev/streamline/pipeline"
@@ -14,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,13 +39,13 @@ var Targets = []Target{
 		Name:        "go",
 		Description: "Check go code for linting errors, forbidden imports, generated files, etc",
 		Checks: []*linter{
-			goGenerateLinter,
+			timeCheck(goGenerateLinter),
 			onlyLocal(goDBConnImport),
 			onlyLocal(noLocalHost),
-			lintGoDirectives(),
-			lintLoggingLibraries(),
+			timeCheck(lintGoDirectives()),
+			timeCheck(lintLoggingLibraries()),
 			onlyLocal(lintTracingLibraries()),
-			goModGuards(),
+			timeCheck(goModGuards()),
 			onlyLocal(lintSGExit()),
 		},
 	},
@@ -58,7 +61,7 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			onlyLocal(bazelExec("Docsite lint (bazel)", "test //doc:test")),
-			docChangesLint(),
+			timeCheck(docChangesLint()),
 		},
 	},
 	{
@@ -66,36 +69,42 @@ var Targets = []Target{
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{
 			// TODO move to pre-commit
-			hadolint(),
+			timeCheck(hadolint()),
 		},
 	},
 	{
 		Name:        "client",
 		Description: "Check client code for linting errors, forbidden imports, etc",
 		Checks: []*linter{
-			inlineTemplates,
-			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
+			timeCheck(inlineTemplates),
 			// we only run this linter locally, since on CI it has it's own job
-			onlyLocal(runScript("pnpm list:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
-			checkUnversionedDocsLinks(),
+			onlyLocal(runScriptSerialized("pnpm lint:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
+			timeCheck(checkUnversionedDocsLinks()),
+		},
+	},
+	{
+		Name:        "pnpm",
+		Description: "Check pnpm lockfiles for optimality",
+		Checks: []*linter{
+			timeCheck(runScriptSerialized("pnpm dedupe", "dev/check/pnpm-deduplicate.sh")),
 		},
 	},
 	{
 		Name:        "shell",
 		Description: "Check shell code for linting errors, formatting, etc",
 		Checks: []*linter{
-			shFmt,
-			shellCheck,
-			bashSyntax,
+			timeCheck(shFmt),
+			timeCheck(shellCheck),
+			timeCheck(bashSyntax),
 		},
 	},
 	{
 		Name:        "protobuf",
 		Description: "Check protobuf code for linting errors, formatting, etc",
 		Checks: []*linter{
-			bufFormat,
-			bufGenerate,
-			bufLint,
+			timeCheck(bufFormat),
+			timeCheck(bufGenerate),
+			timeCheck(bufLint),
 		},
 	},
 	{
@@ -112,7 +121,7 @@ var Formatting = Target{
 	Name:        "format",
 	Description: "Check client code and docs for formatting errors",
 	Checks: []*linter{
-		prettier,
+		timeCheck(prettier),
 	},
 }
 
@@ -130,6 +139,30 @@ func runScript(name string, script string) *linter {
 	return &linter{
 		Name: name,
 		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
+		},
+	}
+}
+
+var runScriptSerializedMu sync.Mutex
+
+// runScriptSerialized is exactly like runScript, but ensure that all the check functions
+// are run serially by acquiring a lock.
+//
+// This is useful for pnpm for examples, as some tasks might end up writing to the same files
+// concurrently, leading to race conditions and thus CI failures.
+func runScriptSerialized(name string, script string) *linter {
+	return &linter{
+		Name: name,
+		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			event := honey.FromContext(ctx)
+
+			t1 := time.Now()
+			runScriptSerializedMu.Lock()
+			t2 := time.Since(t1)
+			event.AddField("pnpm_lock_duration", t2.Seconds())
+			event.AddField("pnpm_lock_duration_ms", t2.Milliseconds())
+			defer runScriptSerializedMu.Unlock()
 			return root.Run(run.Bash(ctx, script)).StreamLines(out.Write)
 		},
 	}

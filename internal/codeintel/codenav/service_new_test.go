@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -90,10 +91,7 @@ func TestGetDefinitions(t *testing.T) {
 		// Set up request state
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-		err := mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-		if err != nil {
-			t.Fatalf("unexpected error setting local git tree translator: %s", err)
-		}
+		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
 		mockRequestState.GitTreeTranslator = mockedGitTreeTranslator()
 		uploads := []uploadsshared.Dump{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -112,11 +110,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(dumps, nil)
 
 		// upload #150's commit no longer exists; all others do
-		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
-			for _, rc := range rcs {
-				exists = append(exists, rc.CommitID != "deadbeef1")
+		mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
+			if ci == "deadbeef1" {
+				return nil, &gitdomain.RevisionNotFoundError{Repo: rn, Spec: string(ci)}
 			}
-			return
+			return &gitdomain.Commit{ID: ci}, nil
 		})
 
 		symbolNames := []string{
@@ -311,11 +309,11 @@ func TestGetReferences(t *testing.T) {
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{252, 253}, 0, 2, nil)
 
 		// upload #150/#250's commits no longer exists; all others do
-		mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []api.RepoCommit) (exists []bool, _ error) {
-			for _, rc := range rcs {
-				exists = append(exists, rc.CommitID != "deadbeef1")
+		mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
+			if ci == "deadbeef1" {
+				return nil, &gitdomain.RevisionNotFoundError{Repo: rn, Spec: string(ci)}
 			}
-			return
+			return &gitdomain.Commit{ID: ci}, nil
 		})
 
 		monikers := []precise.MonikerData{

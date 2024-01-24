@@ -1,3 +1,4 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import type { SourcegraphContext } from '../jscontext'
@@ -19,6 +20,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     temporarySettings: null,
     externalURL: sourcegraphBaseUrl,
     accessTokensAllow: 'all-users-create',
+    accessTokensAllowNoExpiration: false,
+    accessTokensExpirationDaysDefault: 60,
+    accessTokensExpirationDaysOptions: [7, 30, 60, 90],
     allowSignup: false,
     batchChangesEnabled: true,
     batchChangesDisableWebhooksWarning: false,
@@ -46,6 +50,10 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             maxNumChangesets: -1,
             unrestricted: true,
         },
+        features: {
+            codeSearch: true,
+            cody: true,
+        },
     },
     needServerRestart: false,
     needsSiteInit: false,
@@ -64,4 +72,5 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     embeddingsEnabled: false,
     runningOnMacOS: true,
     primaryLoginProvidersCount: 5,
+    telemetryRecorder: noOpTelemetryRecorder,
 })

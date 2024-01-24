@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "config.go",
+        "service.go",
+        "shared.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/codeintel/shared/lsifuploadstore",
+        "//internal/debugserver",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "//internal/observation",
+        "//internal/service",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

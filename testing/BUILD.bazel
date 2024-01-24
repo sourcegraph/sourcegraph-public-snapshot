@@ -15,7 +15,6 @@ server_integration_test(
         "//cmd/server:image_tarball",
     ],
     env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
@@ -42,6 +41,11 @@ server_integration_test(
     runner_src = ":e2e_test.sh",
 )
 
+# Warning, this targets explicitly exclude p4 subrepo perms tests as they're very heavy and time
+# consuming, due to having to add a repo, index it, etc ...
+#
+# See :backend_integration_test_p4 for then one, as opposed to this target, runs those tests
+# exclusively.
 server_integration_test(
     name = "backend_integration_test",
     timeout = "long",
@@ -54,9 +58,6 @@ server_integration_test(
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
-    env = {
-        "SG_FEATURE_FLAG_GRPC": "false",
-    },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
         "AWS_CODE_COMMIT_PASSWORD",
@@ -78,21 +79,24 @@ server_integration_test(
     runner_src = ":backend_integration_test.sh",
 )
 
+# The perforce subrepo permission testing is really heayv, as it requires to add a new repo,
+# clone it, index it, etc... Therefore a crude yet effective optimization here is to separate
+# those tests from the rest of the backeng integration tests, and instead run them in isolation,
+# with the same exact runner and setup.
+#
+# But because Bazel tests targets are executed concurrently, even if the duration is ultimately the# same, if not even more due to the additional overhead of spawning a Sourcegraph server, the wall
+# clock time is ultimately much better, because they're executed concurrently.
 server_integration_test(
-    name = "grpc_backend_integration_test",
+    name = "backend_integration_test_p4",
     timeout = "long",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
-        "$(location //dev/authtest:authtest_test)",  # actual test
     ],
     data = [
         "//cmd/server:image_tarball",
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
     ],
-    env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
-    },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
         "AWS_CODE_COMMIT_PASSWORD",
@@ -111,11 +115,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_KEY",
     ],
     port = "7082",
-    runner_src = ":backend_integration_test.sh",
-    tags = [
-        "exclusive",
-        "manual",
-    ],
+    runner_src = ":backend_integration_test_p4.sh",
 )
 
 server_integration_test(
@@ -127,20 +127,19 @@ server_integration_test(
         "$(location //dev/codeintel-qa/cmd/clear)",
         "$(location //dev/codeintel-qa/cmd/upload)",
         "$(location //dev/codeintel-qa/cmd/query)",
-        "$(location //dev/ci/integration/code-intel:repos.json)",
+        "$(location //testing/code-intel:repos.json)",
     ],
     data = [
         "//cmd/server:image_tarball",
-        "//dev/ci/integration/code-intel:repos.json",
         "//dev/codeintel-qa/cmd/clear",
         "//dev/codeintel-qa/cmd/download",
         "//dev/codeintel-qa/cmd/query",
         "//dev/codeintel-qa/cmd/upload",
         "//dev/tools:src-cli",
         "//internal/cmd/init-sg",
+        "//testing/code-intel:repos.json",
     ],
     env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_USER": "admin",
@@ -190,7 +189,7 @@ server_integration_test(
             "$(location //dev/codeintel-qa/cmd/clear:clear-darwin-arm64)",
             "$(location //dev/codeintel-qa/cmd/upload:upload-darwin-arm64)",
             "$(location //dev/codeintel-qa/cmd/query:query-darwin-arm64)",
-            "$(location //dev/ci/integration/code-intel:repos.json)",
+            "$(location //testing/code-intel:repos.json)",
         ],
         "//conditions:default": [
             "$(location //internal/cmd/init-sg)",
@@ -199,33 +198,32 @@ server_integration_test(
             "$(location //dev/codeintel-qa/cmd/clear)",
             "$(location //dev/codeintel-qa/cmd/upload)",
             "$(location //dev/codeintel-qa/cmd/query)",
-            "$(location //dev/ci/integration/code-intel:repos.json)",
+            "$(location //testing/code-intel:repos.json)",
         ],
     }),
     data = select({
         "//:darwin_docker_e2e_go": [
             "//cmd/server:image_tarball",
-            "//dev/ci/integration/code-intel:repos.json",
             "//dev/codeintel-qa/cmd/clear:clear-darwin-arm64",
             "//dev/codeintel-qa/cmd/download:download-darwin-arm64",
             "//dev/codeintel-qa/cmd/query:query-darwin-arm64",
             "//dev/codeintel-qa/cmd/upload:upload-darwin-arm64",
             "//internal/cmd/init-sg:init-sg-darwin-arm64",
+            "//testing/code-intel:repos.json",
             "@src-cli-darwin-arm64//:src-cli-darwin-arm64",
         ],
         "//conditions:default": [
             "//cmd/server:image_tarball",
-            "//dev/ci/integration/code-intel:repos.json",
             "//dev/codeintel-qa/cmd/clear",
             "//dev/codeintel-qa/cmd/download",
             "//dev/codeintel-qa/cmd/query",
             "//dev/codeintel-qa/cmd/upload",
             "//dev/tools:src-cli",
             "//internal/cmd/init-sg",
+            "//testing/code-intel:repos.json",
         ],
     }),
     env = {
-        "SG_FEATURE_FLAG_GRPC": "true",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_SUDO_USER": "admin",

@@ -3,17 +3,20 @@ import { FC, ReactNode, useMemo, useState } from 'react'
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Badge, Button, Icon, H4, Input, LanguageIcon, Code } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
+import { codeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
 
 import styles from './SearchDynamicFilter.module.scss'
 
-const MAX_FILTERS_NUMBER = 7
+const DEFAULT_FILTERS_NUMBER = 5
+const MAX_FILTERS_NUMBER = 10
 
 interface SearchDynamicFilterProps {
     /** Name title of the filter section */
@@ -37,7 +40,7 @@ interface SearchDynamicFilterProps {
     filters?: Filter[]
 
     /** Exposes render API to render some custom filter item in the list */
-    renderItem?: (filter: Filter) => ReactNode
+    renderItem?: (filter: Filter, selected: boolean) => ReactNode
 
     /**
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
@@ -58,8 +61,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     renderItem,
     onSelectedFilterChange,
 }) => {
-    const [showAllFilters, setShowAllFilters] = useState(false)
     const [searchTerm, setSearchTerm] = useState<string>('')
+    const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
     const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
@@ -89,15 +92,18 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     const lowerSearchTerm = searchTerm.toLowerCase()
     const filteredFilters = mergedFilters.filter(filter => filter.label.toLowerCase().includes(lowerSearchTerm))
-    const filtersToShow = showAllFilters ? filteredFilters : filteredFilters.slice(0, MAX_FILTERS_NUMBER)
+    const filtersToShow = showMoreFilters
+        ? filteredFilters.slice(0, MAX_FILTERS_NUMBER)
+        : filteredFilters.slice(0, DEFAULT_FILTERS_NUMBER)
 
     return (
         <div className={styles.root}>
-            <H4 className={styles.heading}>{title}</H4>
+            <H4 as={H2} className={styles.heading}>
+                {title}
+            </H4>
 
-            {mergedFilters.length > MAX_FILTERS_NUMBER && (
+            {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
-                    variant="small"
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}
@@ -114,11 +120,25 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                         onClick={handleFilterClick}
                     />
                 ))}
+
+                {filtersToShow.length === 0 && (
+                    <small className={styles.description}>
+                        There are no {filterKind}s to show, try to use different search value
+                    </small>
+                )}
             </ul>
-            {filteredFilters.length > MAX_FILTERS_NUMBER && (
-                <Button variant="link" size="sm" onClick={() => setShowAllFilters(!showAllFilters)}>
-                    {showAllFilters ? `Show less ${filterKind} filters` : `Show all ${filterKind} filters`}
-                </Button>
+            {filteredFilters.length > DEFAULT_FILTERS_NUMBER && (
+                <>
+                    {showMoreFilters && filteredFilters.length > MAX_FILTERS_NUMBER && (
+                        <small className={styles.description}>
+                            There are {filteredFilters.length - MAX_FILTERS_NUMBER} other filters, use search to see
+                            more
+                        </small>
+                    )}
+                    <Button variant="link" size="sm" onClick={() => setShowMoreFilters(!showMoreFilters)}>
+                        {showMoreFilters ? `Show less ${filterKind}s` : `Show more ${filterKind}s`}
+                    </Button>
+                </>
             )}
         </div>
     )
@@ -127,7 +147,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 interface DynamicFilterItemProps {
     filter: Filter
     selected: boolean
-    renderItem?: (filter: Filter) => ReactNode
+    renderItem?: (filter: Filter, selected: boolean) => ReactNode
     onClick: (filter: URLQueryFilter, remove?: boolean) => void
 }
 
@@ -142,7 +162,7 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 className={classNames(styles.item, { [styles.itemSelected]: selected })}
                 onClick={() => onClick(filter, selected)}
             >
-                <span className={styles.itemText}>{renderItem ? renderItem(filter) : filter.label}</span>
+                <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
                 {filter.count !== 0 && (
                     <Badge variant="secondary" className="ml-2">
                         {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
@@ -175,17 +195,22 @@ export const languageFilter = (filter: Filter): ReactNode => (
     </>
 )
 
-export const repoFilter = (filter: Filter): ReactNode => (
-    <>
-        <Icon svgPath={mdiSourceRepository} className={styles.icon} aria-hidden={true} />
-        {filter.label}
-    </>
-)
+export const repoFilter = (filter: Filter): ReactNode => {
+    const { svgPath } = codeHostIcon(filter.label)
 
-export const commitDateFilter = (filter: Filter): ReactNode => (
+    return (
+        <Tooltip content={filter.label}>
+            <span>
+                <Icon aria-hidden={true} svgPath={svgPath ?? mdiSourceRepository} /> {displayRepoName(filter.label)}
+            </span>
+        </Tooltip>
+    )
+}
+
+export const commitDateFilter = (filter: Filter, selected: boolean): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
-        <Code>{filter.value}</Code>
+        <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
     </span>
 )
 

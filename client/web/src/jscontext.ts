@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import type { TemporarySettingsResult } from './graphql-operations'
@@ -94,6 +95,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         endpoint: string
     }
 
+    telemetryRecorder: TelemetryRecorder
+
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
 
@@ -146,6 +149,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
 
+    /** Whether access tokens with not expiration are enabled. */
+    accessTokensAllowNoExpiration: boolean
+
+    /** Available options for number of days until access token expiration. */
+    accessTokensExpirationDaysOptions: number[]
+
+    /** Default value for number of days to access token expiration. */
+    accessTokensExpirationDaysDefault: number
+
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
 
@@ -169,8 +181,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the batch changes feature is enabled on the site. */
     batchChangesEnabled: boolean
 
-    /** Whether the warning about unconfigured webhooks is disabled within Batch
-     * Changes. */
+    /**
+     * Whether the warning about unconfigured webhooks is disabled within Batch Changes.
+     */
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
@@ -262,6 +275,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleExceededLimit?: boolean
         batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
+
+        features: LicenseFeatures
     }
 
     /** sha256 hashed license key */
@@ -281,4 +296,12 @@ export interface BrandAssets {
     logo?: string
     /** The URL to the symbol used as the search icon */
     symbol?: string
+}
+
+/**
+ * Defines the license features available.
+ */
+export interface LicenseFeatures {
+    codeSearch: boolean
+    cody: boolean
 }

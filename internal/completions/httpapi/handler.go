@@ -19,7 +19,6 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 
 	"github.com/sourcegraph/log"
@@ -47,6 +46,7 @@ var timeToFirstEventMetrics = metrics.NewREDMetrics(
 
 func newCompletionsHandler(
 	logger log.Logger,
+	db database.DB,
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
@@ -55,7 +55,7 @@ func newCompletionsHandler(
 	traceFamily string,
 	getModel func(context.Context, types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
 ) http.Handler {
-	responseHandler := newSwitchingResponseHandler(logger, feature)
+	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -66,7 +66,7 @@ func newCompletionsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+		if isEnabled := cody.IsCodyEnabled(ctx, db); !isEnabled {
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
@@ -98,10 +98,9 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 		isDotcom := envvar.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
-		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
+		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
@@ -148,7 +147,7 @@ func newCompletionsHandler(
 			return
 		}
 
-		if !isCodyProEnabled || !isDotcom || !isProviderCodyGateway {
+		if !isDotcom || !isProviderCodyGateway {
 			// Check rate limit.
 			err = rl.TryAcquire(ctx)
 			if err != nil {
@@ -160,8 +159,14 @@ func newCompletionsHandler(
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
-					respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
+					respondRateLimited(w, unwrap, isDotcom, subscription.ApplyProRateLimits)
 					return
 				}
 				l.Warn("Rate limit error", log.Error(err))
@@ -174,12 +179,12 @@ func newCompletionsHandler(
 	})
 }
 
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isCodyProEnabled, isProUser bool) {
+func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isProUser bool) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
 	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
-	if isDotcom && isCodyProEnabled {
+	if isDotcom {
 		if isProUser {
 			w.Header().Set("x-is-cody-pro-user", "true")
 		} else {
@@ -191,9 +196,9 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	nonStreamer := newNonStreamingResponseHandler(logger, feature)
-	streamer := newStreamingResponseHandler(logger, feature)
+func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+	nonStreamer := newNonStreamingResponseHandler(logger, db, feature)
+	streamer := newStreamingResponseHandler(logger, db, feature)
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore,
 	) {
 		if requestParams.IsStream(feature) {
@@ -206,7 +211,7 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
@@ -251,11 +256,17 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
-					isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
-					if isDotcom && isCodyProEnabled {
-						if isProUser {
+					if isDotcom {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")
@@ -294,7 +305,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 // newNonStreamingResponseHandler handles non-streaming requests to an LLM provider,
 // awaiting the complete response before writing it back in a structured JSON response
 // to the client.
-func newNonStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 		completion, err := cc.Complete(ctx, feature, requestParams)
 		if err != nil {
@@ -312,11 +323,16 @@ func newNonStreamingResponseHandler(logger log.Logger, feature types.Completions
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
-					isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						logger.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
-					if isDotcom && isCodyProEnabled {
-						if isProUser {
+					if isDotcom {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")

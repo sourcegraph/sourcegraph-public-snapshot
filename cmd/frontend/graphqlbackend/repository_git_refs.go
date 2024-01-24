@@ -38,13 +38,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var branches []*gitdomain.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = gc.ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
-			// We intentionally do not ask for commits here since it requires
-			// a separate git call per branch. We only need the git commits to
-			// sort by author/commit date and there are few enough branches to
-			// warrant doing it interactively.
-			IncludeCommit: false,
-		})
+		branches, err = gc.ListBranches(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +60,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, r.gitserverClient, r.RepoName(), args.Interactive, branches)
+			branchCommits, ok, err := fetchBranchCommits(ctx, r.gitserverClient, r.RepoName(), args.Interactive, branches)
 			if err != nil {
 				return nil, err
 			}
@@ -83,13 +77,13 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 				}
 				sort.Slice(branches, func(i, j int) bool {
 					bi, bj := branches[i], branches[j]
-					if bi.Commit == nil {
+					if _, ok := branchCommits[*bi]; !ok {
 						return false
 					}
-					if bj.Commit == nil {
+					if _, ok := branchCommits[*bj]; !ok {
 						return true
 					}
-					di, dj := date(bi.Commit), date(bj.Commit)
+					di, dj := date(branchCommits[*bi]), date(branchCommits[*bj])
 					if di.Equal(dj) {
 						return bi.Name < bj.Name
 					}
@@ -147,11 +141,11 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
+func fetchBranchCommits(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (m map[gitdomain.Branch]*gitdomain.Commit, ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {
-			return false, nil
+			return m, false, nil
 		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
@@ -159,21 +153,17 @@ func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client,
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = gitserverClient.GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{
-			// The passed in branches are returned from git a second ago, no reason
-			// to believe the revision doesn't exist.
-			NoEnsureRevision: true,
-		})
+		m[*branch], err = gitserverClient.GetCommit(ctx, repo, branch.Head)
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout
-				return false, nil
+				return m, false, nil
 			}
-			return false, err
+			return m, false, err
 		}
 	}
 
-	return true, nil
+	return m, true, nil
 }
 
 type gitRefConnectionResolver struct {

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -35,6 +36,20 @@ type usageStats struct {
 	characters int
 	// tokens is the number of tokens consumed in the input or response.
 	tokens int
+}
+
+// Hop-by-Hop headers that should not be copied when proxying upstream requests
+// List from https://cs.opensource.google/go/go/+/master:src/net/http/httputil/reverseproxy.go;l=294;drc=7abeefd2b1a03932891e581f1f90656ffebebce4
+var hopHeaders = map[string]struct{}{
+	"Connection":          {},
+	"Proxy-Connection":    {}, // non-standard but still sent by libcurl and rejected by e.g. google
+	"Keep-Alive":          {},
+	"Proxy-Authenticate":  {},
+	"Proxy-Authorization": {},
+	"Te":                  {}, // canonicalized version of "TE"
+	"Trailer":             {}, // not Trailers per URL above; https://www.rfc-editor.org/errata_search.php?eid=4522
+	"Transfer-Encoding":   {},
+	"Upgrade":             {},
 }
 
 // upstreamHandlerMethods declares a set of methods that are used throughout the
@@ -332,6 +347,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			defer func() { _ = resp.Body.Close() }()
 			// Forward upstream http headers.
 			for k, vv := range resp.Header {
+				if _, ok := hopHeaders[http.CanonicalHeaderKey(k)]; ok {
+					// do not forward
+					continue
+				}
 				for _, v := range vv {
 					w.Header().Add(k, v)
 				}
@@ -376,7 +395,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 			// (so events are sent to the client as soon as possible)
 			var responseWriter io.Writer = w
-			if autoFlushStreamingResponses && body.ShouldStream() && feature == codygateway.FeatureCodeCompletions {
+			if autoFlushStreamingResponses && body.ShouldStream() {
 				if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 					responseWriter = fw
 				} else {
@@ -415,6 +434,11 @@ func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[s
 func isAllowedModel(allowedModels []string, model string) bool {
 	for _, m := range allowedModels {
 		if strings.EqualFold(m, model) {
+			return true
+		}
+
+		// Expand virtual model names
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b || model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
 			return true
 		}
 	}

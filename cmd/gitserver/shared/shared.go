@@ -20,6 +20,9 @@ import (
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -92,6 +95,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Logger:         logger,
 		ObservationCtx: observationCtx,
 		ReposDir:       config.ReposDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName)
+		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
@@ -235,6 +241,7 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog"),
 		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog"),
 		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog"),
+		proto.GitserverService_MergeBase_FullMethodName: logger.Scoped("merge-base.accesslog"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)

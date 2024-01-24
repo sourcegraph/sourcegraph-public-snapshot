@@ -30,7 +30,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 		func(_ context.Context,
 			repoName api.RepoName,
 			commit api.CommitID,
-			opts gitserver.ResolveRevisionOptions,
 		) (*gitdomain.Commit, error) {
 			return &gitdomain.Commit{
 				Parents: []api.CommitID{"xxx", "yyy"},
@@ -101,14 +100,14 @@ func TestStreamBlame(t *testing.T) {
 	backend.Mocks.Repos.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
 		return &types.Repo{Name: "github.com/bob/foo"}, nil
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
 		switch rev {
 		case "1234":
 			return "efgh", nil
 		case "":
 			return "abcd", nil
 		default:
-			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
+			return "", &gitdomain.RevisionNotFoundError{Repo: repo}
 		}
 	}
 	usersStore := dbmocks.NewMockUserStore()

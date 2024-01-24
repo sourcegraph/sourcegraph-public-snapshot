@@ -1,6 +1,4 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
-load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 
@@ -33,9 +31,14 @@ SRCS = [
     [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
+        "src/lib/graphql-type-mocks.ts",
+        "src/**/*.gql.ts",
         "src/**/*.gql.d.ts",
     ],
-) + glob(["dev/**/*.cjs"])
+) + glob([
+    "dev/**/*.cjs",
+    "dev/**/*.ts",
+])
 
 BUILD_DEPS = [
     ":node_modules/@faker-js/faker",
@@ -56,10 +59,11 @@ BUILD_DEPS = [
     ":node_modules/@storybook/svelte",
     ":node_modules/@sveltejs/adapter-static",
     ":node_modules/@sveltejs/kit",
+    ":node_modules/@sveltejs/vite-plugin-svelte",
     ":node_modules/@types/prismjs",
-    ":node_modules/lodash-es",
     ":node_modules/graphql",
     ":node_modules/prismjs",
+    ":node_modules/sass",
     ":node_modules/svelte",
     ":node_modules/ts-key-enum",
     ":node_modules/vite",
@@ -77,7 +81,7 @@ BUILD_DEPS = [
     "//:node_modules/classnames",
     "//:node_modules/date-fns",
     "//:node_modules/highlight.js",
-    "//:node_modules/lodash",
+    "//:node_modules/lodash-es",
     "//:node_modules/open-color",
     "//:node_modules/path-browserify",
     "//:node_modules/react-resizable",

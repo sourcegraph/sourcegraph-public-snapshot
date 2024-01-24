@@ -3,6 +3,7 @@ import { Modal, Button, H2, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { ChangeCodyPlanResult, ChangeCodyPlanVariables } from '../../graphql-operations'
+import { CodySubscriptionPlan } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 
@@ -21,7 +22,7 @@ export function CancelProModal({
 
     return (
         <Modal isOpen={true} aria-label="Update to Cody Pro" className={styles.cancelModal} position="center">
-            {data && !data.changeCodyPlan?.codyProEnabled ? (
+            {data && data.changeCodyPlan?.codySubscription?.plan !== CodySubscriptionPlan.PRO ? (
                 <div className="d-flex flex-column py-2">
                     <H2>Sorry to see you go.</H2>
 

@@ -10,8 +10,6 @@ load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//dev:esbuild.bzl", "esbuild_web_app")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# gazelle:js_custom_files stories **/*.story.{ts,tsx}
-
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -143,6 +141,7 @@ filegroup(
 ts_project(
     name = "web_lib",
     srcs = [
+        "src/Index.tsx",
         "src/LegacyLayout.tsx",
         "src/LegacyRouteContext.tsx",
         "src/LegacySourcegraphWebApp.tsx",
@@ -1110,6 +1109,8 @@ ts_project(
         "src/nav/UserNavItem.tsx",
         "src/nav/index.ts",
         "src/nav/new-global-navigation/NewGlobalNavigationBar.tsx",
+        "src/nav/new-global-navigation/index.ts",
+        "src/nav/new-global-navigation/use-new-navigation.ts",
         "src/notebooks/GlobalNotebooksArea.tsx",
         "src/notebooks/backend.ts",
         "src/notebooks/blocks/NotebookBlock.tsx",
@@ -1393,8 +1394,9 @@ ts_project(
         "src/search/results/components/aggregation/index.ts",
         "src/search/results/components/aggregation/pings.ts",
         "src/search/results/components/aggregation/types.ts",
+        "src/search/results/components/filters-panel/SearchFiltersPanel.tsx",
         "src/search/results/components/new-search-content/NewSearchContent.tsx",
-        "src/search/results/components/search-content/SearchContent.tsx",
+        "src/search/results/components/new-search-content/use-new-search-filters.ts",
         "src/search/results/components/search-results-info-bar/SearchResultsInfoBar.tsx",
         "src/search/results/components/search-results-info-bar/createActions.ts",
         "src/search/results/components/utils.ts",
@@ -1690,6 +1692,7 @@ ts_project(
         "src/util/dom.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
+        "src/util/license.ts",
         "src/util/permission.ts",
         "src/util/prettyBytesBigint.ts",
         "src/util/rbac.ts",
@@ -1838,7 +1841,6 @@ ts_project(
     testonly = True,
     srcs = [
         "__mocks__/zustand.ts",
-        "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
         "src/auth/SignUpPage.test.tsx",
@@ -1928,6 +1930,7 @@ ts_project(
         "src/repo/RepositoriesPopover/RepositoriesPopover.test.tsx",
         "src/repo/RevisionsPopover/RevisionsPopover.mocks.ts",
         "src/repo/RevisionsPopover/RevisionsPopover.test.tsx",
+        "src/repo/actions/actions.test.ts",
         "src/repo/blob/actions/ToggleRenderedFileMode.test.tsx",
         "src/repo/blob/codemirror/codeintel/utils.test.ts",
         "src/repo/blob/codemirror/document-highlights.test.ts",
@@ -1967,6 +1970,7 @@ ts_project(
         "src/util/checkRequestAccessAllowed.test.ts",
         "src/util/codeStatsUtils.test.ts",
         "src/util/getReactElements.test.tsx",
+        "src/util/license.test.ts",
         "src/util/prettyBytesBigint.test.ts",
         "src/util/size.test.ts",
         "src/util/time.test.ts",
@@ -2148,7 +2152,6 @@ ts_project(
     srcs = [
         "src/auth/CloudSignUpPage.story.tsx",
         "src/auth/OrDivider.story.tsx",
-        "src/auth/PostSignUpPage.story.tsx",
         "src/auth/RequestAccessPage.story.tsx",
         "src/auth/ResetPasswordPage.story.tsx",
         "src/auth/SignInPage.story.tsx",

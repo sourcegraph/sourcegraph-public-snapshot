@@ -21,3 +21,23 @@ repos:
       'types': [text]
       args: []
       require_serial: false
+    - id: shellcheck
+      name: shellcheck
+      description: 'Run shellcheck'
+      entry: ./dev/check/shellcheck.sh
+      language: script
+      # TODO: adapt shellcheck.sh to only operate on passed-in files,
+      # and fallback to git ls-files when empty
+      pass_filenames: false
+      files: '.*\.(sh|bash)'
+      stages: [pre-push]
+    - id: shfmt
+      name: shfmt
+      description: 'Run shfmt'
+      entry: ./dev/check/shfmt.sh
+      language: script
+      # TODO: adapt shfmt.sh to only operate on passed-in files,
+      # and fallback to git ls-files when empty
+      pass_filenames: false
+      files: '.*\.(sh|bash)'
+      stages: [pre-push]

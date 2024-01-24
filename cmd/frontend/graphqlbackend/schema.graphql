@@ -301,12 +301,14 @@ type Mutation {
     - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
       with this scope.)
 
+    DurationSeconds: If provided, the number of seconds until the token expires automatically.
+
     Only the user or site admins may perform this mutation.
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    createAccessToken(user: ID!, durationSeconds: Int, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     itself.
@@ -2677,7 +2679,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
-    newStandardRC1
+    codycontext
 }
 
 """
@@ -6207,6 +6209,10 @@ type FileMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
+    """
+    The detected languages for the file, empty if the language cannot be determined.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6353,6 +6359,54 @@ type NewUsersConnection implements Connection {
     Pagination information.
     """
     pageInfo: ConnectionPageInfo!
+}
+
+"""
+A status for cody subscription.
+"""
+enum CodySubscriptionStatus {
+    ACTIVE
+    PAST_DUE
+    UNPAID
+    CANCELED
+    TRIALING
+    PENDING
+    OTHER
+}
+
+"""
+A plan for cody subscription.
+"""
+enum CodySubscriptionPlan {
+    FREE
+    PRO
+}
+
+"""
+A subscription for cody.
+"""
+type CodySubscription {
+    """
+    The status for cody subscription.
+    """
+    status: CodySubscriptionStatus!
+    """
+    The plan for cody subscription.
+    """
+    plan: CodySubscriptionPlan!
+    """
+    Whether pro rate limits are applied for the user.
+    """
+    applyProRateLimits: Boolean!
+    """
+    The current billing period start time.
+    """
+    currentPeriodStartAt: DateTime!
+    """
+    The current billing period end time. This may be in the past if the
+    subscription is in a canceled state.
+    """
+    currentPeriodEndAt: DateTime!
 }
 
 """
@@ -6567,21 +6621,14 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codeCompletionsQuotaOverride: Int
     """
+    The Cody subscription details for the user.
+    """
+    codySubscription: CodySubscription
+    """
+    DEPRECATED
     Whether the user has enrolled for Cody Pro.
     """
     codyProEnabled: Boolean!
-    """
-    The date when the user enrolled for Cody Pro.
-    """
-    codyProEnabledAt: DateTime
-    """
-    The start date of current billing period of Cody.
-    """
-    codyCurrentPeriodStartDate: DateTime
-    """
-    The end date of current billing period of Cody.
-    """
-    codyCurrentPeriodEndDate: DateTime
     """
     The count of Cody chats in the current billing period.
     """
@@ -6633,6 +6680,10 @@ type AccessToken implements Node {
     The date when the access token was last used to authenticate a request.
     """
     lastUsedAt: DateTime
+    """
+    If non-null, the token may no longer be used after this date.
+    """
+    expiresAt: DateTime
 }
 
 """
@@ -7491,6 +7542,11 @@ type CodyConfigFeatures {
     Enable Cody special commands feature.
     """
     commands: Boolean!
+
+    """
+    Enable attribution search for Cody-generated snippets.
+    """
+    attribution: Boolean!
 }
 
 """
@@ -10158,6 +10214,10 @@ enum AccessRequestStatus {
     Access request was rejected
     """
     REJECTED
+    """
+    Access request was canceled
+    """
+    CANCELED
 }
 
 """
@@ -10386,6 +10446,11 @@ enum PermissionNamespace {
     key-value pair metadata.
     """
     REPO_METADATA
+
+    """
+    This represents the Cody namespace.
+    """
+    CODY
 }
 
 """

@@ -255,14 +255,14 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 // zoektCompile builds a text search zoekt query for p.
 //
 // This function should support the same features as the "compile" function,
-// but return a zoektquery instead of a regexMatcher.
+// but return a zoektquery instead of a regexMatchTree.
 //
 // Note: This is used by hybrid search and not structural search.
 func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	var parts []zoektquery.Q
 	// we are redoing work here, but ensures we generate the same regex and it
-	// feels nicer than passing in a regexMatcher since handle path directly.
-	if m, err := compilePattern(p); err != nil {
+	// feels nicer than passing in a regexMatchTree since handle path directly.
+	if m, err := toMatchTree(p.Query, p.IsCaseSensitive); err != nil {
 		return nil, err
 	} else {
 		q, err := m.ToZoektQuery(p.PatternMatchesContent, p.PatternMatchesPath)

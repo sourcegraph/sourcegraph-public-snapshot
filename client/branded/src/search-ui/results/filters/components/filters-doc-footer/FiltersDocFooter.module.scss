@@ -1,11 +1,10 @@
 .footer {
-    padding: 1rem 0.5rem;
-    border-top: 1px solid var(--border-color);
+    padding: 1rem 0.75rem;
 }
 
 .link {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.5rem;
     color: var(--text-muted);
 
     &-text {
@@ -16,6 +15,11 @@
     }
 
     &-icon {
-        margin-top: 0.1rem;
+        margin-top: 0.15rem;
+        fill: none !important;
+    }
+
+    &:hover {
+        --icon-color: var(--primary);
     }
 }

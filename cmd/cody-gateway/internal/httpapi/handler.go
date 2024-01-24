@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
@@ -27,22 +29,13 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier                           notify.RateLimitNotifier
-	AnthropicAccessToken                        string
-	AnthropicAllowedModels                      []string
-	AnthropicAllowedPromptPatterns              []string
-	AnthropicRequestBlockingEnabled             bool
-	AnthropicMaxTokensToSample                  int
-	OpenAIAccessToken                           string
-	OpenAIOrgID                                 string
-	OpenAIAllowedModels                         []string
-	FireworksAccessToken                        string
-	FireworksDisableSingleTenant                bool
-	FireworksAllowedModels                      []string
-	FireworksLogSelfServeCodeCompletionRequests bool
-	EmbeddingsAllowedModels                     []string
-	AutoFlushStreamingResponses                 bool
-	EnableAttributionSearch                     bool
+	RateLimitNotifier           notify.RateLimitNotifier
+	Anthropic                   config.AnthropicConfig
+	OpenAI                      config.OpenAIConfig
+	Fireworks                   config.FireworksConfig
+	EmbeddingsAllowedModels     []string
+	AutoFlushStreamingResponses bool
+	EnableAttributionSearch     bool
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -70,27 +63,21 @@ func NewHandler(
 	if err != nil {
 		return nil, errors.Wrap(err, "init metric 'concurrent_upstream_requests'")
 	}
-
-	// Add a prefix to the store for globally unique keys and simpler pruning.
-	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
 	r := mux.NewRouter()
 
 	// V1 service routes
 	v1router := r.PathPrefix("/v1").Subrouter()
 
-	if config.AnthropicAccessToken != "" {
+	if config.Anthropic.AccessToken != "" {
 		anthropicHandler, err := completions.NewAnthropicHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
 			httpClient,
-			config.AnthropicAccessToken,
-			config.AnthropicAllowedModels,
-			config.AnthropicMaxTokensToSample,
+			config.Anthropic,
 			promptRecorder,
-			config.AnthropicAllowedPromptPatterns,
-			config.AnthropicRequestBlockingEnabled,
+
 			config.AutoFlushStreamingResponses,
 		)
 		if err != nil {
@@ -113,7 +100,7 @@ func NewHandler(
 			),
 		)
 	}
-	if config.OpenAIAccessToken != "" {
+	if config.OpenAI.AccessToken != "" {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.openai",
 				gaugeHandler(
@@ -128,9 +115,7 @@ func NewHandler(
 								rs,
 								config.RateLimitNotifier,
 								httpClient,
-								config.OpenAIAccessToken,
-								config.OpenAIOrgID,
-								config.OpenAIAllowedModels,
+								config.OpenAI,
 								config.AutoFlushStreamingResponses,
 							),
 						),
@@ -170,7 +155,7 @@ func NewHandler(
 								rs,
 								config.RateLimitNotifier,
 								embeddings.ModelFactoryMap{
-									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
+									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
 								},
 								config.EmbeddingsAllowedModels,
 							),
@@ -181,7 +166,7 @@ func NewHandler(
 			),
 		)
 	}
-	if config.FireworksAccessToken != "" {
+	if config.Fireworks.AccessToken != "" {
 		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.fireworks",
 				gaugeHandler(
@@ -196,10 +181,7 @@ func NewHandler(
 								rs,
 								config.RateLimitNotifier,
 								httpClient,
-								config.FireworksAccessToken,
-								config.FireworksAllowedModels,
-								config.FireworksLogSelfServeCodeCompletionRequests,
-								config.FireworksDisableSingleTenant,
+								config.Fireworks,
 								config.AutoFlushStreamingResponses,
 							),
 						),

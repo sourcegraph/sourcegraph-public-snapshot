@@ -1,7 +1,9 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -37,11 +39,11 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
+	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, name string) (io.ReadCloser, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
-		return []byte(wantContent), nil
+		return io.NopCloser(bytes.NewReader([]byte(wantContent))), nil
 	})
 	opts := GitTreeEntryResolverOpts{
 		Commit: &GitCommitResolver{
@@ -76,11 +78,11 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
+	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, name string) (io.ReadCloser, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
-		return testContent, nil
+		return io.NopCloser(bytes.NewReader(testContent)), nil
 	})
 
 	tests := []struct {

@@ -40,6 +40,7 @@ if [ "${EXECUTOR_IS_TAGGED_RELEASE}" = "true" ]; then
     echo ":warning: inferring \$BUILDKITE_TAG from \$VERSION"
     export BUILDKITE_TAG="v${VERSION}"
   fi
+
   echo "Uploading binaries for the ${BUILDKITE_TAG} tag"
   # Drop the tag if existing, allowing for rebuilds.
   "$gsutil" rm -rf "gs://sourcegraph-artifacts/executor/${BUILDKITE_TAG}" || true

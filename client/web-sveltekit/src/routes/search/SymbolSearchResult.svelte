@@ -1,9 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import { getSymbolIconPath } from '$lib/search/symbolIcons'
     import type { SymbolMatch } from '$lib/shared'
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
@@ -12,6 +10,7 @@
     import CodeHostIcon from './CodeHostIcon.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
+    import SymbolKind from '$lib/search/SymbolKind.svelte'
 
     export let result: SymbolMatch
 
@@ -22,7 +21,7 @@
 
     let hasBeenVisible = false
     let highlightedHTMLRows: string[][] = []
-    async function onIntersection(event: { detail: boolean }) {
+    async function onIntersection() {
         if (hasBeenVisible) {
             return
         }
@@ -44,9 +43,9 @@
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
-                            <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
-                        </div>
+                        <span class="symbol-kind">
+                            <SymbolKind symbolKind={symbol.kind} />
+                        </span>
                         <CodeExcerpt
                             startLine={symbol.line - 1}
                             plaintextLines={['']}
@@ -61,18 +60,20 @@
 </SearchResult>
 
 <style lang="scss">
-    @import '@sourcegraph/shared/src/symbols/SymbolIcon.module.scss';
-
     .result {
         display: flex;
         align-items: center;
         width: 100%;
         background-color: var(--code-bg);
-        padding: 0.25rem;
+        padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
     }
 
-    a {
+    .symbol-kind {
+        margin-right: 0.5rem;
+    }
+
+    a:hover {
         text-decoration: none;
     }
 </style>
