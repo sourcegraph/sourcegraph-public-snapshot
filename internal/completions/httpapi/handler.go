@@ -12,6 +12,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
@@ -44,28 +45,6 @@ var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	metrics.WithLabels("model"),
 	metrics.WithDurationBuckets([]float64{0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 25.0, 30.0}),
 )
-
-type CompletionFilter interface {
-	CanUse(ctx context.Context, snippet string, limit int) bool
-	InScope(snippet string) bool
-}
-
-type NoFilter struct{}
-func (n NoFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
-	return true
-}
-func (n NoFilter) InScope(snippet string) bool {
-	return false
-}
-
-type LoggingFilter struct{}
-func (f LoggingFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
-	fmt.Println("\nSNIPPET", snippet)
-	return true
-}
-func (n LoggingFilter) InScope(snippet string) bool {
-	return true
-}
 
 func newCompletionsHandler(
 	logger log.Logger,
@@ -257,14 +236,21 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 			return nil
 		}
-		f := guardrails.NewCompletionsFilter(eventSink, test)
+		var f *guardrails.CompletionsFilter  // nil if autocomplete-attribution disabled
+		if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
+			f = guardrails.NewCompletionsFilter(eventSink, test)
+		}
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
-				return f.Send(ctx, event)
+				if f != nil {
+					return f.Send(ctx, event)
+				} else {
+					return eventSink(event)
+				}
 			})
 		if err != nil {
 			l := trace.Logger(ctx, logger)
@@ -315,11 +301,13 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 			return
 		}
-		if err := f.WaitDone(ctx); err != nil {
-			l := trace.Logger(ctx, logger)
-			if ev := eventWriter(); ev != nil {
-				if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
-					l.Error("error reporting streaming completion error", log.Error(err))
+		if f != nil {  // if autocomplete-attribution enabled
+			if err := f.WaitDone(ctx); err != nil {
+				l := trace.Logger(ctx, logger)
+				if ev := eventWriter(); ev != nil {
+					if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
+						l.Error("error reporting streaming completion error", log.Error(err))
+					}
 				}
 			}
 		}
