@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -19,7 +17,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -39,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func (r *schemaResolver) User(
@@ -540,59 +536,10 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		r.logger.Warn("refresh gateway limits", log.Error(err))
 	}
 
-	go func() {
-		if !args.Pro {
-			return
-		}
-
-		var samsProvider *schema.OpenIDConnectAuthProvider
-		for _, p := range conf.Get().AuthProviders {
-			if p.Openidconnect != nil && strings.HasPrefix(p.Openidconnect.ClientID, "sams_cid_") {
-				samsProvider = p.Openidconnect
-				break
-			}
-		}
-		if samsProvider == nil {
-			r.logger.Warn("No SAMS client found, skipped sending webhook to SSC")
-			return
-		}
-
-		// Send webhook to SSC to inform the upgrade
-		token, err := (&clientcredentials.Config{
-			ClientID:     samsProvider.ClientID,
-			ClientSecret: samsProvider.ClientSecret,
-			TokenURL:     fmt.Sprintf("%s/oauth/token", samsProvider.Issuer),
-			Scopes:       []string{"openid", "profile", "email"},
-		}).Token(context.Background())
-		if err != nil {
-			r.logger.Error("Error getting SAMS token", log.Error(err))
-			return
-		}
-
-		// TODO(ssc): send webhook to the right endpoint
-		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/cody/api/rest/test-sams-token-auth", samsProvider.Issuer), nil)
-		if err != nil {
-			r.logger.Error("Error creating request", log.Error(err))
-			return
-		}
-		req.Header.Add("Authorization", "Bearer "+token.AccessToken)
-		resp, err := httpcli.ExternalClient.Do(req)
-		if err != nil {
-			r.logger.Error("Error sending request", log.Error(err))
-			return
-		}
-		defer func() { _ = resp.Body.Close() }()
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			r.logger.Error("Error reading response body", log.Error(err))
-			return
-		}
-		if resp.StatusCode != http.StatusOK {
-			r.logger.Error("Unsuccessful request response", log.Int("status", resp.StatusCode), log.String("body", string(respBody)))
-			return
-		}
-		fmt.Println("SSC response:", string(respBody)) // TODO(ssc): delete me
-	}()
+	go ssc.EmitWebhook(r.Logger, ssc.WebhookEventUserUpgradedToCodyPro, map[string]string{
+		"sgUserID": fmt.Sprint(userID),
+		"toPro":    fmt.Sprint(args.Pro),
+	})
 
 	return UserByIDInt32(ctx, r.db, userID)
 }
