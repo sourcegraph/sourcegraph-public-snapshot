@@ -44,7 +44,7 @@ var bzlgenTargets = map[string]bzlgenTarget{
 
 var bzlgenCommand = &cli.Command{
 	Name:      "bzlgen",
-	Usage:     "wrappers around some commands to generate various files required by Bazel.",
+	Usage:     "wrappers around some commands to generate various files required by Bazel",
 	UsageText: "sg bzlgen [category...]",
 	Description: `For convenience, a number of Bazel commands are wrapped by this command to update various files required by Bazel.
 
