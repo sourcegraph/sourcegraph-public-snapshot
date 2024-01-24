@@ -669,11 +669,11 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
 	backend := s.GetBackendFunc(dir, repoName)
 
-	// if !req.NoTimeout {
-	// 	var cancel context.CancelFunc
-	// 	ctx, cancel = context.WithTimeout(ctx, executil.ShortGitCommandTimeout(req.Args))
-	// 	defer cancel()
-	// }
+	if req.NoTimeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
+		defer cancel()
+	}
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
