@@ -158,29 +158,25 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         </div>
     )
 
+    const handleTruncate = () => setTruncatedCommitMessage(!truncatedCommitMessage)
     const showCommitMessage = expandCommitMessageBody || showCommitMessageBody
-    const commitContent = truncatedCommitMessage && node.body ? `${node.body.slice(0, 240)}` : node.body
+    const commitContent =
+        truncatedCommitMessage && node.body && node.body.length > 240 ? `${node.body.slice(0, 240)}...` : node.body
+    const truncationNeeded = commitContent && commitContent.length > 240
 
-    const commitMessageBody = showCommitMessage && commitContent ? (
-        <div className="w-100">
-            <pre className={styles.messageBody}>
-                <Linkified
-                    input={commitContent}
-                    externalURLs={node.externalURLs}
-                />
-                {commitContent.length >= 240 &&
-                    <Button
-                        variant="link"
-                        size="sm"
-                        display="inline"
-                        onClick={() => setTruncatedCommitMessage(!truncatedCommitMessage)}
-                    >
-                        {truncatedCommitMessage ? '... see more' : 'see less'}
-                    </Button>
-                }
-            </pre>
-        </div>
-    ) : undefined
+    const commitMessageBody =
+        showCommitMessage && commitContent ? (
+            <div className="w-100">
+                <pre className={styles.messageBody}>
+                    <Linkified input={commitContent} externalURLs={node.externalURLs} />
+                    {truncationNeeded && (
+                        <Button variant="link" size="sm" display="inline" onClick={handleTruncate}>
+                            {truncatedCommitMessage ? 'see more' : 'see less'}
+                        </Button>
+                    )}
+                </pre>
+            </div>
+        ) : undefined
 
     const bylineElement = (
         <GitCommitNodeByline
