@@ -34,9 +34,6 @@ const QUERY = gql`
         site {
             ...SiteFlagFields
         }
-        codeIntelligenceConfigurationPolicies(forEmbeddings: true) {
-            totalCount
-        }
     }
 
     ${siteFlagFieldsFragment}
@@ -63,9 +60,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 ({ message }) => !adminOnboardingRemovedAlerts.some(alt => message.includes(alt))
             ) ?? []
     }
-
-    const showNoEmbeddingPoliciesAlert =
-        window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
@@ -126,22 +120,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                     .
                 </DismissibleAlert>
             )}
-            {/* Cody app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
-            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && (
-                <DismissibleAlert
-                    key="no-embeddings-policies-alert"
-                    partialStorageKey="no-embeddings-policies-alert"
-                    variant="danger"
-                    className={styles.alert}
-                >
-                    <div>
-                        <strong>Warning!</strong> No embeddings policies have been configured. This will lead to poor
-                        results from Cody, Sourcegraph’s AI assistant. Add an{' '}
-                        <Link to="/site-admin/embeddings/configuration">embedding policy</Link>
-                    </div>
-                    .
-                </DismissibleAlert>
-            )}
+
             <Notices alertClassName={styles.alert} location="top" />
 
             <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
