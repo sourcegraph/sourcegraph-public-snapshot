@@ -43,11 +43,11 @@ type fakeSearch struct {
 	response chan bool
 }
 
-func (s *fakeSearch) test(_ context.Context, snippet string) bool {
+func (s *fakeSearch) test(_ context.Context, snippet string) (bool, error) {
 	s.mu.Lock()
 	s.snippets = append(s.snippets, snippet)
 	s.mu.Unlock()
-	return <-s.response
+	return <-s.response, nil
 }
 
 type eventOrder []event
@@ -88,7 +88,12 @@ func (_ contextCancelled) NextCompletionLine() *string { return nil }
 func TestAttributionNotFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -116,7 +121,12 @@ func TestAttributionNotFound(t *testing.T) {
 func TestAttributionFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -144,7 +154,12 @@ func TestAttributionFound(t *testing.T) {
 func TestAttributionNotFoundMoreDataAfter(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -177,7 +192,12 @@ func TestAttributionNotFoundMoreDataAfter(t *testing.T) {
 func TestAttributionFoundMoreDataAfter(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -207,7 +227,12 @@ func TestAttributionFoundMoreDataAfter(t *testing.T) {
 func TestTimeout(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 	o := eventOrder{
 		nextLine("1"),
@@ -236,7 +261,12 @@ func TestTimeout(t *testing.T) {
 func TestTimeoutAfterAttributionFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 	o := eventOrder{
 		nextLine("1"),
@@ -273,7 +303,12 @@ func TestTimeoutAfterAttributionFound(t *testing.T) {
 func TestTimeoutBeforeAttributionFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 	o := eventOrder{
 		nextLine("1"),
@@ -306,7 +341,12 @@ func TestTimeoutBeforeAttributionFound(t *testing.T) {
 func TestAttributionSearchFinishesAfterWaitDoneIsCalled(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	ctx := context.Background()
 	o := eventOrder{
 		nextLine("1"),
@@ -350,7 +390,12 @@ func TestAttributionSearchFinishesAfterWaitDoneIsCalled(t *testing.T) {
 func TestWaitDoneErr(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
-	f := guardrails.NewCompletionsFilter(client.stream, search.test)
+	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+		Sink: client.stream,
+		Test: search.test,
+		AttributionError: func (error) {},
+	})
+	require.NoError(t, err)
 	ctx := context.Background()
 	o := eventOrder{
 		nextLine("1"),

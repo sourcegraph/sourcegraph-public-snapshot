@@ -201,7 +201,7 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 		if requestParams.IsStream(feature) {
 			streamer(ctx, requestParams, cc, w, userStore, test)
 		} else {
-			// TODO NON STREAMER?
+			// TODO(#59832): Add attribution to non-streaming endpoint.
 			nonStreamer(ctx, requestParams, cc, w, userStore)
 		}
 	}
@@ -236,9 +236,30 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 			return nil
 		}
-		var f *guardrails.CompletionsFilter  // nil if autocomplete-attribution disabled
+		attributionErrorLog := func (err error) {
+			l := trace.Logger(ctx, logger)
+			ev := eventWriter()
+			if ev != nil {
+				if err := ev.Event("attribution-error", map[string]string{"error": err.Error()}); err != nil {
+					l.Error("error reporting attribution error", log.Error(err))
+				} else {
+					return
+				}
+			}
+			l.Error("attribution error", log.Error(err))
+		}
+		f := guardrails.NoopCompletionsFilter(eventSink)
 		if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
-			f = guardrails.NewCompletionsFilter(eventSink, test)
+			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+				Sink: eventSink,
+				Test: test,
+				AttributionError: attributionErrorLog,
+			})
+			if err != nil {
+				attributionErrorLog(err)
+			} else {
+				f = ff
+			}
 		}
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
@@ -246,11 +267,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
-				if f != nil {
-					return f.Send(ctx, event)
-				} else {
-					return eventSink(event)
-				}
+				return f.Send(ctx, event)
 			})
 		if err != nil {
 			l := trace.Logger(ctx, logger)
