@@ -8,18 +8,12 @@ import (
 const (
 	tagFamily  = "family"
 	tagOwner   = "owner"
-	tagID      = "id"
 	tagSuccess = "success"
 	tagState   = "state"
 	tagReason  = "reason"
 )
 
 var (
-	phabricatorUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_time_last_phabricator_sync",
-		Help: "The last time a comprehensive Phabricator sync finished",
-	}, []string{tagID})
-
 	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_syncer_sync_last_time",
 		Help: "The last time a sync finished",
