@@ -1426,9 +1426,6 @@ func (br *blobReader) convertError(err error) error {
 	if err == io.EOF {
 		return err
 	}
-	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
-		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
-	}
 	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
 }
 

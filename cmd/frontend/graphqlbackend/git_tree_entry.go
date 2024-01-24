@@ -121,9 +121,9 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContent
 			r.contentErr = err
 			return
 		}
+		defer fr.Close()
 
 		r.fullContentBytes, r.contentErr = io.ReadAll(fr)
-		fr.Close()
 	})
 
 	return string(pageContent(r.fullContentBytes, int32ToIntPtr(args.StartLine), int32ToIntPtr(args.EndLine))), r.contentErr
