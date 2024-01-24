@@ -1,7 +1,9 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"os"
 	"sort"
@@ -121,9 +123,9 @@ func TestContextResolver(t *testing.T) {
 	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
 		return fakeFileInfo{path: fileName}, nil
 	})
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
+	mockGitserver.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, ci api.CommitID, fileName string) (io.ReadCloser, error) {
 		if content, ok := files[repo][fileName]; ok {
-			return content, nil
+			return io.NopCloser(bytes.NewReader(content)), nil
 		}
 		return nil, os.ErrNotExist
 	})
