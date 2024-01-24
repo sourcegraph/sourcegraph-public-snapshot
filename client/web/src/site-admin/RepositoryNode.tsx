@@ -76,9 +76,6 @@ const parseRepositoryStatus = (repo: SiteAdminRepositoryFields): string => {
 const repoClonedAndHealthy = (repo: SiteAdminRepositoryFields): boolean =>
     repo.mirrorInfo.cloned && !repo.mirrorInfo.lastError && !repo.mirrorInfo.cloneInProgress
 
-const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
-    repo.mirrorInfo.cloned && !repo.mirrorInfo.cloneInProgress
-
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
     refetchAllRepos: () => Promise<void>
