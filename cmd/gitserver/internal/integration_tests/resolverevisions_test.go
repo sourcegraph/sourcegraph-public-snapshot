@@ -61,9 +61,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		input: []protocol.RevisionSpecifier{{RevSpec: "test-nested-ref"}},
 		want:  []string{hash1},
 	}, {
-		input: []protocol.RevisionSpecifier{{RefGlob: "refs/heads/test-*"}},
-		want:  []string{hash1, hash1}, // two hashes because to refs point to that hash
-	}, {
 		input: []protocol.RevisionSpecifier{{RevSpec: "test-fake-ref"}},
 		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
 	}}

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -68,23 +69,18 @@ func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int
 	})
 }
 
-func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commit string) (string, error) {
-	repo := api.RepoName(repositoryName)
-	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repo, api.CommitID(commit))
+func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commitID string) (string, error) {
+	commit, err := s.gitserverClient.GetCommit(ctx, api.RepoName(repositoryName), api.CommitID(commitID))
 	if err != nil {
-		return "", errors.Wrap(err, "gitserver.CommitDate")
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			// Set a value here that we'll filter out on the query side so that we don't
+			// reprocess the same failing batch infinitely. We could alternatively soft
+			// delete the record, but it would be better to keep record deletion behavior
+			// together in the same place (so we have unified metrics on that event).
+			return "-infinity", nil
+		}
+		return "", err
 	}
 
-	var commitDateString string
-	if revisionExists {
-		commitDateString = commitDate.Format(time.RFC3339)
-	} else {
-		// Set a value here that we'll filter out on the query side so that we don't
-		// reprocess the same failing batch infinitely. We could alternatively soft
-		// delete the record, but it would be better to keep record deletion behavior
-		// together in the same place (so we have unified metrics on that event).
-		commitDateString = "-infinity"
-	}
-
-	return commitDateString, nil
+	return commit.Committer.Date.Format(time.RFC3339), nil
 }

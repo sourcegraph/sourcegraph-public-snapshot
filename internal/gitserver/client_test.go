@@ -2,14 +2,12 @@ package gitserver_test
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"testing/quick"
@@ -186,45 +184,6 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 	})
 }
 
-func TestClient_BatchLog_ProtoRoundTrip(t *testing.T) {
-	var diff string
-
-	t.Run("request", func(t *testing.T) {
-		fn := func(original protocol.BatchLogRequest) bool {
-			var converted protocol.BatchLogRequest
-			converted.FromProto(original.ToProto())
-
-			if diff = cmp.Diff(original, converted); diff != "" {
-				return false
-			}
-
-			return true
-		}
-
-		if err := quick.Check(fn, nil); err != nil {
-			t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("response", func(t *testing.T) {
-		fn := func(original protocol.BatchLogResponse) bool {
-			var converted protocol.BatchLogResponse
-			converted.FromProto(original.ToProto())
-
-			if diff = cmp.Diff(original, converted); diff != "" {
-				return false
-			}
-
-			return true
-		}
-
-		if err := quick.Check(fn, nil); err != nil {
-			t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
-		}
-	})
-
-}
-
 func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
@@ -279,97 +238,6 @@ func TestClient_ListGitolite_ProtoRoundTrip(t *testing.T) {
 
 	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("ListGitoliteRepo proto roundtrip failed (-want +got):\n%s", diff)
-	}
-}
-
-func TestClient_BatchLog(t *testing.T) {
-	addrs := []string{"172.16.8.1:8080"}
-
-	called := false
-
-	source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
-		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-				called = true
-
-				var req protocol.BatchLogRequest
-				req.FromProto(in)
-
-				var results []protocol.BatchLogResult
-				for _, repoCommit := range req.RepoCommits {
-					results = append(results, protocol.BatchLogResult{
-						RepoCommit:    repoCommit,
-						CommandOutput: fmt.Sprintf("out<%s: %s@%s>", addrs[0], repoCommit.Repo, repoCommit.CommitID),
-						CommandError:  "",
-					})
-
-				}
-
-				var resp protocol.BatchLogResponse
-				resp.Results = results
-				return resp.ToProto(), nil
-			}
-
-			cli := gitserver.NewStrictMockGitserverServiceClient()
-			cli.BatchLogFunc.SetDefaultHook(mockBatchLog)
-			return cli
-		}
-	})
-
-	cli := gitserver.NewTestClient(t).WithClientSource(source)
-
-	opts := gitserver.BatchLogOptions{
-		RepoCommits: []api.RepoCommit{
-			{Repo: api.RepoName("github.com/test/foo"), CommitID: api.CommitID("deadbeef01")},
-			{Repo: api.RepoName("github.com/test/bar"), CommitID: api.CommitID("deadbeef02")},
-			{Repo: api.RepoName("github.com/test/baz"), CommitID: api.CommitID("deadbeef03")},
-			{Repo: api.RepoName("github.com/test/bonk"), CommitID: api.CommitID("deadbeef04")},
-			{Repo: api.RepoName("github.com/test/quux"), CommitID: api.CommitID("deadbeef05")},
-			{Repo: api.RepoName("github.com/test/honk"), CommitID: api.CommitID("deadbeef06")},
-			{Repo: api.RepoName("github.com/test/xyzzy"), CommitID: api.CommitID("deadbeef07")},
-			{Repo: api.RepoName("github.com/test/lorem"), CommitID: api.CommitID("deadbeef08")},
-			{Repo: api.RepoName("github.com/test/ipsum"), CommitID: api.CommitID("deadbeef09")},
-			{Repo: api.RepoName("github.com/test/fnord"), CommitID: api.CommitID("deadbeef10")},
-		},
-		Format: "--format=test",
-	}
-
-	results := map[api.RepoCommit]gitserver.RawBatchLogResult{}
-	var mu sync.Mutex
-
-	if err := cli.BatchLog(context.Background(), opts, func(repoCommit api.RepoCommit, gitLogResult gitserver.RawBatchLogResult) error {
-		mu.Lock()
-		defer mu.Unlock()
-
-		results[repoCommit] = gitLogResult
-		return nil
-	}); err != nil {
-		t.Fatalf("unexpected error performing batch log: %s", err)
-	}
-
-	expectedResults := map[api.RepoCommit]gitserver.RawBatchLogResult{
-		// Shard 1
-		{Repo: "github.com/test/baz", CommitID: "deadbeef03"}:  {Stdout: "out<172.16.8.1:8080: github.com/test/baz@deadbeef03>"},
-		{Repo: "github.com/test/quux", CommitID: "deadbeef05"}: {Stdout: "out<172.16.8.1:8080: github.com/test/quux@deadbeef05>"},
-		{Repo: "github.com/test/honk", CommitID: "deadbeef06"}: {Stdout: "out<172.16.8.1:8080: github.com/test/honk@deadbeef06>"},
-
-		// Shard 2
-		{Repo: "github.com/test/bar", CommitID: "deadbeef02"}:   {Stdout: "out<172.16.8.1:8080: github.com/test/bar@deadbeef02>"},
-		{Repo: "github.com/test/xyzzy", CommitID: "deadbeef07"}: {Stdout: "out<172.16.8.1:8080: github.com/test/xyzzy@deadbeef07>"},
-
-		// Shard 3
-		{Repo: "github.com/test/foo", CommitID: "deadbeef01"}:   {Stdout: "out<172.16.8.1:8080: github.com/test/foo@deadbeef01>"},
-		{Repo: "github.com/test/bonk", CommitID: "deadbeef04"}:  {Stdout: "out<172.16.8.1:8080: github.com/test/bonk@deadbeef04>"},
-		{Repo: "github.com/test/lorem", CommitID: "deadbeef08"}: {Stdout: "out<172.16.8.1:8080: github.com/test/lorem@deadbeef08>"},
-		{Repo: "github.com/test/ipsum", CommitID: "deadbeef09"}: {Stdout: "out<172.16.8.1:8080: github.com/test/ipsum@deadbeef09>"},
-		{Repo: "github.com/test/fnord", CommitID: "deadbeef10"}: {Stdout: "out<172.16.8.1:8080: github.com/test/fnord@deadbeef10>"},
-	}
-	if diff := cmp.Diff(expectedResults, results); diff != "" {
-		t.Errorf("unexpected results (-want +got):\n%s", diff)
-	}
-
-	if !called {
-		t.Error("expected mockBatchLog to be called")
 	}
 }
 

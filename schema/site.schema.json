@@ -7,6 +7,16 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
+    "ssc.apiBaseUrl": {
+      "type": "string",
+      "default": "https://accounts.sourcegraph.com/cody/api",
+      "description": "The base URL of the Self-Serve Cody API."
+    },
+    "ssc.apiSecret": {
+      "type": "string",
+      "default": "********",
+      "description": "The Bearer token for the Self-Serve Cody API."
+    },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",

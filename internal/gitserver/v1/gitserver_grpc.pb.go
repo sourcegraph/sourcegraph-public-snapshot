@@ -48,6 +48,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
+	// Deprecated: Do not use.
 	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
@@ -87,6 +88,7 @@ func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClie
 	return &gitserverServiceClient{cc}
 }
 
+// Deprecated: Do not use.
 func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error) {
 	out := new(BatchLogResponse)
 	err := c.cc.Invoke(ctx, GitserverService_BatchLog_FullMethodName, in, out, opts...)
@@ -416,6 +418,7 @@ func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseReq
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
+	// Deprecated: Do not use.
 	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)

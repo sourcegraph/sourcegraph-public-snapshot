@@ -8,7 +8,6 @@ go_library(
         "azuredevops.go",
         "bitbucketcloud.go",
         "bitbucketserver.go",
-        "conf.go",
         "discoverable_sources.go",
         "doc.go",
         "exclude.go",

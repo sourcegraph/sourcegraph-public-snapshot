@@ -34,26 +34,21 @@ type GRPCServer struct {
 var _ proto.GitserverServiceServer = &GRPCServer{}
 
 func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
-	gs.Server.operations = gs.Server.ensureOperations()
-
 	// Validate request parameters
-	if len(req.GetRepoCommits()) == 0 {
+	if len(req.GetRepoCommits()) == 0 { //nolint:staticcheck
 		return &proto.BatchLogResponse{}, nil
 	}
-	if !strings.HasPrefix(req.GetFormat(), "--format=") {
+	if !strings.HasPrefix(req.GetFormat(), "--format=") { //nolint:staticcheck
 		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
-	var r protocol.BatchLogRequest
-	r.FromProto(req)
-
 	// Handle unexpected error conditions
-	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, r)
+	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return resp.ToProto(), nil
+	return resp, nil
 }
 
 func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {

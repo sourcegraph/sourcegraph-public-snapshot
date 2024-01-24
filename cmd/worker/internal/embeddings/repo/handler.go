@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/log"
 
@@ -240,7 +241,12 @@ type revisionFetcher struct {
 }
 
 func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
-	return r.gitserver.ReadFile(ctx, r.repo, r.revision, fileName)
+	fr, err := r.gitserver.NewFileReader(ctx, r.repo, r.revision, fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer fr.Close()
+	return io.ReadAll(fr)
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
