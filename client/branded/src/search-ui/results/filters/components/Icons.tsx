@@ -79,13 +79,13 @@ export const DeleteIcon: FC<CustomIconProps> = props => (
             strokeLinejoin="round"
             d="m13.5 0.5 -13 13"
             strokeWidth="1"
-        ></path>
+        />
         <path
             stroke="var(--icon-color)"
             strokeLinecap="round"
             strokeLinejoin="round"
             d="m0.5 0.5 13 13"
             strokeWidth="1"
-        ></path>
+        />
     </svg>
 )

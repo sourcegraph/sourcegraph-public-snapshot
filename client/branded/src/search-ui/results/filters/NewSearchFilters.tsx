@@ -24,7 +24,7 @@ import {
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { ArrowBendIcon } from './components/Icons'
-import { useUrlFilters } from './hooks'
+import { mergeQueryAndFilters, useUrlFilters } from './hooks'
 import { SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
@@ -75,9 +75,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
     }
 
     const handleApplyButtonFilters = (): void => {
-        const filterQuery = selectedFilters.map(f => f.value).join(' ')
-
-        onQueryChange(`${query} ${filterQuery}`.trim())
+        onQueryChange(mergeQueryAndFilters(query, selectedFilters))
     }
 
     return (
