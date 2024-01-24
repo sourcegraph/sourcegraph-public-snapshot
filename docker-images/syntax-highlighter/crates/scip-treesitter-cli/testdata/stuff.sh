@@ -19,8 +19,10 @@ ls -lR $tmp_folder
 
 chmod -R 0777 $tmp_folder
 
-docker load --input="$tarball"
-# docker run -v "$tmp_folder":/sources "$image_name" -- ls -lR /sources
-docker run --privileged --mount type=bind,source="$tmp_folder",target=/sources "$image_name" -- ls -lR /sources
+hacky_cmd="scip-java index > /dev/null && (cat ./index.scip | base64)"
+command="(docker run -a stdout -v $tmp_folder:/sources $image_name bash -c '$hacky_cmd') | tee test.log | base64 -D > $tmp_folder/index-piped.scip"
 
-cp "$tmp_folder"/index.scip "$out"
+docker load --input="$tarball"
+eval $command
+
+cp "$tmp_folder"/index-piped.scip "$out"
