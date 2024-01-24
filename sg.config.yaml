@@ -563,7 +563,7 @@ commands:
       - cmd/precise-code-intel-worker
       - lib/codeintel
 
-  codeintel-syntactic-worker:
+  syntactic-codeintel-worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/syntactic-code-intel-worker

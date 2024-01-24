@@ -20,11 +20,6 @@ const addr = ":3188"
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config Config) error {
 	logger := observationCtx.Logger
 
-	// Initialize tracing/metrics
-	// observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
-	// 	Name: "syntactic-code-intel-worker",
-	// }))
-
 	if err := keyring.Init(ctx); err != nil {
 		return errors.Wrap(err, "initializing keyring")
 	}

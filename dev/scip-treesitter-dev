@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-# This script is a wrapper around `scip-ctags`.
+# Wrapper for `scip-treesitter` similar to `dev/scip-ctags-dev`.
 #
-# It checks if scip-ctags has been installed through ./dev/scip-ctags-install.sh or prints an error and explain
-# how to install it.
-#
-# To use your own `scip-ctags` binary instead of this wrapper in your local dev server, use
-# `SCIP_CTAGS_COMMAND=path/to/ctags sg start`.
+# To use an alternate scip-treesitter binary for development, invoke
+# `SCIP_TREESITTER_COMMAND=path/to/scip-treesitter sg start`.
 
 root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 TARGET=$("$root/dev/scip-treesitter-install.sh" which)
