@@ -1526,7 +1526,6 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 	Before string // include only commits before this date
 
-	Reverse   bool // Whether or not commits should be given in reverse order (optional)
 	DateOrder bool // Whether or not commits should be sorted by date (optional)
 
 	Path string // only commits modifying the given path are selected (optional)
@@ -1990,9 +1989,6 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	}
 	if opt.Before != "" {
 		args = append(args, "--before="+opt.Before)
-	}
-	if opt.Reverse {
-		args = append(args, "--reverse")
 	}
 	if opt.DateOrder {
 		args = append(args, "--date-order")
