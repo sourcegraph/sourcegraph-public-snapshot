@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -113,7 +114,14 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		goroutine.WithIntervalFunc(opts.EnqueueInterval),
 	)
 
-	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
+	routines := []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
+
+	if opts.IsDotCom {
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
+		routines = append(routines, s.newSyncReposWithLastErrorsWorker(ctx, rateLimiter))
+	}
+
+	return routines
 }
 
 type syncHandler struct {
