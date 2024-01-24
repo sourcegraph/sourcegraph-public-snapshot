@@ -654,11 +654,18 @@ func TestRepoHasFileContent(t *testing.T) {
 		},
 	}
 	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
+		var pattern string
+		if pt, ok := p.Query.(*protocol.PatternNode); ok {
+			pattern = pt.Value
+		} else {
+			return false, errors.New("expected a simple regex pattern")
+		}
+
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
 				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
 					for line := range lines {
-						if p.Pattern == line || p.Pattern == "" {
+						if pattern == line || pattern == "" {
 							onMatch(&protocol.FileMatch{})
 						}
 					}

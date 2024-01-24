@@ -3,6 +3,8 @@ service:
   name: {{ .Name }}
   owners:
     - {{ .Owner }}
+  # TODO: Write a simple description of what this service is for and what it does.
+  description: "TODO"
 
 build:
   # TODO: Configure the correct image for your service here. If you use a private
@@ -43,6 +45,6 @@ environments:
       scaling:
         maxCount: 3
         minCount: 1
-    startupProbe:
+    healthProbes:
       # Only enable if your service implements MSP /-/healthz conventions.
-      disabled: true
+      healthzProbes: false

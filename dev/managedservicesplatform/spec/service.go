@@ -18,6 +18,14 @@ type ServiceSpec struct {
 	// service. Each owner MUST be a valid Opsgenie team name - this is validated
 	// in each environment's monitoring stack.
 	Owners []string `yaml:"owners"`
+	// Description briefly summarizing what the service does. Required.
+	//
+	// ❗ We do NOT include this description in generated docs today - while it
+	// might be helpful to include service descriptions, some services have
+	// sensitive details or descriptions that are difficult to put into words
+	// in a public-facing document. For now, this is used for reference in the
+	// private service spec and for internal integrations like Opsgenie.
+	Description string `yaml:"description"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
@@ -35,6 +43,11 @@ type ServiceSpec struct {
 // GetName returns Name if configured, otherwise the ID.
 func (s ServiceSpec) GetName() string {
 	return pointers.Deref(s.Name, s.ID)
+}
+
+// GetKind returns Kind if configured, otherwise the default (ServiceKindService).
+func (s ServiceSpec) GetKind() ServiceKind {
+	return pointers.Deref(s.Kind, ServiceKindService)
 }
 
 func (s ServiceSpec) Validate() []error {
@@ -56,6 +69,9 @@ func (s ServiceSpec) Validate() []error {
 		if o == "" {
 			errs = append(errs, errors.Newf("owners[%d] is invalid", i))
 		}
+	}
+	if len(s.Description) == 0 {
+		errs = append(errs, errors.New("description is required"))
 	}
 
 	if s.IAM != nil {

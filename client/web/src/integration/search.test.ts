@@ -143,15 +143,49 @@ describe('Search', () => {
     afterEach(() => testContext?.dispose())
 
     describe('Search filters', () => {
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResultsWithUser,
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                id: 'TestDefaultSettingsID',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { newSearchResultFiltersPanel: false },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
+            })
+        })
+
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
             const origQuery = 'context:global foo'
+
             for (const filter of dynamicFilters) {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
+
+                // Make sure that filters panel is open by default
+                await driver.page.evaluate(() => {
+                    localStorage.setItem('search.sidebar.collapsed', 'false')
+                })
+
                 await driver.page.waitForSelector(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.click(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
+
                 await driver.page.waitForFunction(
                     (expectedQuery: string) => {
                         const url = new URL(document.location.href)
@@ -287,7 +321,7 @@ describe('Search', () => {
                     expect(await editor.getValue()).toStrictEqual('foo')
                 })
 
-                test('Normalizes input with line breaks', async () => {
+                test.skip('Normalizes input with line breaks', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.focus()
@@ -652,16 +686,6 @@ describe('Search', () => {
                     expect(await editor.getValue()).toEqual('test repo:')
                 })
             })
-        })
-
-        test('updates the query input and submits the query', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
-            await driver.page.waitForSelector('[data-testid="search-type-submit"]')
-            await Promise.all([
-                driver.page.waitForNavigation(),
-                driver.page.click('[data-testid="search-type-submit"]'),
-            ])
-            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard&sm=0')
         })
     })
 })

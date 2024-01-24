@@ -142,7 +142,7 @@
 
 <style lang="scss">
     div {
-        overflow: scroll;
+        overflow: auto;
 
         :global(.treeitem.selectable) > :global(.label) {
             cursor: pointer;

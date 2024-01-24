@@ -14,6 +14,7 @@ import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useV2QueryInput } from '../../../search/useV2QueryInput'
+import { useNavbarQueryState } from '../../../stores'
 import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
 
@@ -68,6 +69,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
     const showCodyCTA = !showOnboardingTour
+
+    const patternType = useNavbarQueryState.getState().searchPatternType
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -148,6 +151,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
                             isSourcegraphDotCom={isSourcegraphDotCom}
+                            patternType={patternType}
                         />
                     )}
                 </div>
