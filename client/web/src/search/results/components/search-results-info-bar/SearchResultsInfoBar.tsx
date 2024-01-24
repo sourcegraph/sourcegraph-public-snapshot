@@ -1,6 +1,13 @@
 import { FC, useCallback, useMemo, useState } from 'react'
 
-import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
+import {
+    mdiChevronDoubleDown,
+    mdiChevronDoubleUp,
+    mdiOpenInNew,
+    mdiThumbDown,
+    mdiThumbUp,
+    mdiInformation,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -232,15 +239,18 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                 <div className={styles.expander} />
 
                 {props.showKeywordSearchToggle && (
-                    <Label className={styles.toggle}>
-                        Search language update{' '}
-                        <Toggle
-                            value={props.patternType === SearchPatternType.keyword}
-                            onToggle={() => props.onTogglePatternType(props.patternType)}
-                            title="Enable search language update"
-                            className="mr-2"
-                        />
-                    </Label>
+                    <div className={styles.toggleWrapper}>
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiInformation} />
+                        <Label className={styles.toggle}>
+                            Search language update{' '}
+                            <Toggle
+                                value={props.patternType === SearchPatternType.keyword}
+                                onToggle={() => props.onTogglePatternType(props.patternType)}
+                                title="Enable search language update"
+                                className="mr-2"
+                            />
+                        </Label>
+                    </div>
                 )}
 
                 <ul className="nav align-items-center">
