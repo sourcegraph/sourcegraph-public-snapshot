@@ -2,6 +2,7 @@ package guardrails
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 
@@ -22,7 +23,7 @@ type CompletionEventSink func (types.CompletionResponse) error
 //
 // Example usage:
 // ```
-// sink := func (e types.CompletionsResponse) error {
+// sink := func (e types.CompletionResponse) error {
 //   // stream completions response back to the client
 // }
 // test := func (ctx context.Context, snippet string) bool {
@@ -72,6 +73,9 @@ func NewCompletionsFilter(sink CompletionEventSink, test AttributionTest) *Compl
 // Send is invoked each time new completion prefix arrives as the completion
 // is being yielded by the LLM.
 func (a *CompletionsFilter) Send(ctx context.Context, e types.CompletionResponse) error {
+	if err := ctx.Err(); err != nil && errors.Is(err, context.Canceled) {
+		a.blockSending()
+	}
 	if a.attributionResultPermissive() {
 		return a.send(e)
 	}
@@ -153,8 +157,10 @@ func (a *CompletionsFilter) setMostRecentCompletion(e types.CompletionResponse) 
 func (a *CompletionsFilter) runAttribution(ctx context.Context, e types.CompletionResponse) {
 	result := a.test(ctx, e.Completion)
 	a.setAttributionResult(result)
-	err := a.send(a.getMostRecentCompletion())
-	a.attributionFinished <- err
+	if result {
+		err := a.send(a.getMostRecentCompletion())
+		a.attributionFinished <- err
+	}
 	close(a.attributionFinished)
 }
 
