@@ -1,16 +1,10 @@
 package internal
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -21,17 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -701,233 +691,3 @@ func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		MergeBaseCommitSha: string(sha),
 	}, nil
 }
-
-func (gs *GRPCServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverService_ReadFileServer) error {
-	if hasAccess, err := authz.FilterActorPath(ss.Context(), c.subRepoPermsChecker, a, repo, name); err != nil {
-		return err
-	} else if !hasAccess {
-		return os.ErrNotExist
-	}
-
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
-		return nil, err
-	}
-
-	w := streamio.NewWriter(func(p []byte) error {
-		return ss.Send(&proto.ReadFileResponse{Data: p})
-	})
-
-	name := rel(string(req.GetPath()))
-	br, err := c.newBlobReader(ss.Context(), req.GetRepoName(), req.GetCommitSha(), name)
-	if err != nil {
-		return errors.Wrapf(err, "getting blobReader for %q", name)
-	}
-
-	return br
-}
-
-// rel strips the leading "/" prefix from the path string, effectively turning
-// an absolute path into one relative to the root directory. A path that is just
-// "/" is treated specially, returning just ".".
-//
-// The elements in a file path are separated by slash ('/', U+002F) characters,
-// regardless of host operating system convention.
-func rel(path string) string {
-	if path == "/" {
-		return "."
-	}
-	return strings.TrimPrefix(path, "/")
-}
-
-// blobReader, which should be created using newBlobReader, is a struct that allows
-// us to get a ReadCloser to a specific named file at a specific commit
-type blobReader struct {
-	c      *clientImplementor
-	ctx    context.Context
-	repo   api.RepoName
-	commit api.CommitID
-	name   string
-	cmd    GitCommand
-	rc     io.ReadCloser
-}
-
-func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (string, error) {
-	// Note: when our git is new enough we can just use --object-only
-	out, err := c.gitCommand(repo, "ls-tree", string(commit), "--", name).Output(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to lookup blob OID")
-	}
-
-	out = bytes.TrimSpace(out)
-	if len(out) == 0 {
-		return "", &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
-	}
-
-	// 100644 blob 3bad331187e39c05c78a9b5e443689f78f4365a7	README.md
-	fields := bytes.Fields(out)
-	if len(fields) < 3 {
-		return "", errors.Newf("unexpected output while parsing blob OID: %q", string(out))
-	}
-	return string(fields[2]), nil
-}
-
-func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
-	var cmd GitCommand
-	if strings.Contains(name, "..") {
-		// We special case ".." in path to running a less efficient two
-		// commands. For other paths we can rely on the faster git show.
-		//
-		// git show will try and resolve revisions on anything containing
-		// "..". Depending on what branches/files exist, this can lead to:
-		//
-		//   - error: object $SHA is a tree, not a commit
-		//   - fatal: Invalid symmetric difference expression $SHA:$name
-		//   - outputting a diff instead of the file
-		//
-		// The last point is a security issue for repositories with sub-repo
-		// permissions since the diff will not be filtered.
-		blobOID, err := c.blobOID(ctx, repo, commit, name)
-		if err != nil {
-			return nil, err
-		}
-		cmd = c.gitCommand(repo, "cat-file", "-p", blobOID)
-	} else {
-		// Otherwise we can rely on a single command git show sha:name.
-		cmd = c.gitCommand(repo, "show", string(commit)+":"+name)
-	}
-
-	stdout, err := cmd.StdoutReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &blobReader{
-		c:      c,
-		ctx:    ctx,
-		repo:   repo,
-		commit: commit,
-		name:   name,
-		cmd:    cmd,
-		rc:     stdout,
-	}, nil
-}
-
-func (br *blobReader) Read(p []byte) (int, error) {
-	n, err := br.rc.Read(p)
-	if err != nil {
-		return n, br.convertError(err)
-	}
-	return n, nil
-}
-
-func (br *blobReader) Close() error {
-	return br.rc.Close()
-}
-
-// convertError converts an error returned from 'git show' into a more appropriate error type
-func (br *blobReader) convertError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if err == io.EOF {
-		return err
-	}
-	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
-		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
-	}
-	if strings.Contains(err.Error(), "fatal: bad object ") {
-		// Could be a git submodule.
-		fi, err := br.c.Stat(br.ctx, br.repo, br.commit, br.name)
-		if err != nil {
-			return err
-		}
-		// Return EOF for a submodule for now which indicates zero content
-		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
-			return io.EOF
-		}
-	}
-	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
-}
-
-// Stat returns a FileInfo describing the named file at commit.
-func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			commit.Attr(),
-			attribute.String("path", path),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if err := checkSpecArgSafety(string(commit)); err != nil {
-		return nil, err
-	}
-
-	path = rel(path)
-
-	fi, err := c.lStat(ctx, repo, commit, path)
-	if err != nil {
-		return nil, err
-	}
-
-	return fi, nil
-}
-
-// lStat returns a FileInfo describing the named file at commit. If the file is a
-// symbolic link, the returned FileInfo describes the symbolic link. lStat makes
-// no attempt to follow the link.
-func (c *clientImplementor) lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			commit.Attr(),
-			attribute.String("path", path),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if err := checkSpecArgSafety(string(commit)); err != nil {
-		return nil, err
-	}
-
-	path = filepath.Clean(rel(path))
-
-	if path == "." {
-		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := c.GetObject(ctx, repo, string(commit)+"^{tree}")
-		if err != nil {
-			return nil, err
-		}
-		return &fileutil.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
-	}
-
-	fis, err := c.lsTree(ctx, repo, commit, path, false)
-	if err != nil {
-		return nil, err
-	}
-	if len(fis) == 0 {
-		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
-	}
-
-	if !authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		return fis[0], nil
-	}
-	// Applying sub-repo permissions
-	a := actor.FromContext(ctx)
-	include, filteringErr := authz.FilterActorFileInfo(ctx, c.subRepoPermsChecker, a, repo, fis[0])
-	if include && filteringErr == nil {
-		return fis[0], nil
-	} else {
-		if filteringErr != nil {
-			err = errors.Wrap(filteringErr, "filtering paths")
-		} else {
-			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
-		}
-		return nil, err
-	}
-}
-
-type objectInfo gitdomain.OID
-
-func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
