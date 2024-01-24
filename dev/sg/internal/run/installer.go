@@ -100,8 +100,6 @@ func (installer *InstallManager) install(ctx context.Context, cmds ...Installer)
 // Blocks until all installations have successfully completed
 // or until a failure occurs
 func (installer *InstallManager) wait(ctx context.Context) error {
-	defer close(installer.installed)
-	defer close(installer.failures)
 	for {
 		select {
 		case cmdName := <-installer.installed:
