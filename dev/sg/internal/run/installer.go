@@ -73,7 +73,7 @@ func (installer *InstallManager) start(ctx context.Context) {
 	installer.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", installer.total))
 	installer.Write("")
 
-	installer.progress = std.Out.Progress([]output.ProgressBar{
+	installer.progress = installer.Progress([]output.ProgressBar{
 		{Label: fmt.Sprintf("Installing %d commands", installer.total), Max: float64(installer.total)},
 	}, nil)
 

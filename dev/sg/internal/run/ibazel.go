@@ -143,13 +143,11 @@ func newIBazelEventHandler(filename string) *iBazelEventHandler {
 // This is a blocking function
 func (h *iBazelEventHandler) watch(ctx context.Context) {
 	_, cancel := context.WithCancelCause(ctx)
-	tail, err := tail.TailFile(h.filename, tail.Config{Follow: true})
+	tail, err := tail.TailFile(h.filename, tail.Config{Follow: true, Logger: tail.DiscardingLogger})
 	if err != nil {
 		cancel(err)
 	}
 	defer tail.Cleanup()
-	defer close(h.events)
-	defer close(h.stop)
 
 	for {
 		select {

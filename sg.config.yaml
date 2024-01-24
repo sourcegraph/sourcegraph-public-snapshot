@@ -1095,12 +1095,6 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - caddy
-  simple:
-    bazelCommands:
-      - docsite
-      - worker
-    commands:
-      - web
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
