@@ -267,7 +267,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
-                // TODO: is this the source of the extra style application?
                 className={classNames(styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
