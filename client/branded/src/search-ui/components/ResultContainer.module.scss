@@ -3,7 +3,10 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+
     position: sticky;
+    top: 0;
+
     z-index: 1; // Show on top of search result contents
 
     border-bottom: 1px solid var(--border-color);
