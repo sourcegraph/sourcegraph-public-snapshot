@@ -2,9 +2,6 @@ package guardrails
 
 import (
 	"context"
-	"fmt"
-	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -55,49 +52,31 @@ func initDotcomAttributionService(observationCtx *observation.Context, db databa
 	return attribution.NewLocalSearch(observationCtx, searchClient)
 }
 
-type ZeroAttributionFilter struct {
-	service attribution.Service
+func alwaysTrue(context.Context, string) bool {
+	return true
 }
 
-func NewAttributionFilter(observationCtx *observation.Context) ZeroAttributionFilter {
+func NewAttributionTest(observationCtx *observation.Context) func (context.Context, string) bool {
 	service := initEnterpriseAttributionService(observationCtx)
-	return ZeroAttributionFilter{service: service}
-}
-
-func (f ZeroAttributionFilter) InScope(snippet string) bool {
-	lines := strings.Split(snippet, "\n")
-	return len(lines) > 10
-}
-
-func (f ZeroAttributionFilter) CanUse(ctx context.Context, snippet string, limit int) bool {
-	// TODO
-	start := time.Now()
-	if f.service == nil {
-		fmt.Println("ATTRIBUTION ERROR")
-		return true
+	if service == nil {
+		return nil
 	}
 	// Attribution is only-enterprise, dotcom lets everything through.
 	if envvar.SourcegraphDotComMode() {
-		return true
+		return alwaysTrue
 	}
-	// Check if attribution is on, permit everything if it's off.
-	c := conf.GetConfigFeatures(conf.Get().SiteConfig())
-	if !c.Attribution {
-		return true
+	return func (ctx context.Context, snippet string) bool {
+		// Check if attribution is on, permit everything if it's off.
+		c := conf.GetConfigFeatures(conf.Get().SiteConfig())
+		if !c.Attribution {
+			return true
+		}
+		attribution, err := service.SnippetAttribution(ctx, snippet, 1)
+		// Attribution not available. Mode is permissive.
+		if err != nil {
+			return true
+		}
+		// Permit completion if no attribution found.
+		return len(attribution.RepositoryNames) == 0
 	}
-	// if len(snippet) > 50 {
-	// 	snippet = snippet[:50]
-	// }
-	defer func () {
-		now := time.Now()
-		fmt.Printf("ATTRIBUTION TIME %d characters %s\n", len(snippet), now.Sub(start))
-		fmt.Println(snippet)
-		}()
-	attribution, err := f.service.SnippetAttribution(ctx, snippet, 1)
-	// Attribution not available. Mode is permissive.
-	if err != nil {
-		return true
-	}
-	// Permit completion if no attribution found.
-	return len(attribution.RepositoryNames) == 0
 }

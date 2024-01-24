@@ -73,7 +73,7 @@ func newCompletionsHandler(
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
-	filter CompletionFilter,
+	test guardrails.AttributionTest,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
@@ -193,7 +193,7 @@ func newCompletionsHandler(
 			}
 		}
 
-		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore, filter)
+		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore, test)
 	})
 }
 
@@ -214,13 +214,13 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
+func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 	nonStreamer := newNonStreamingResponseHandler(logger, feature)
 	streamer := newStreamingResponseHandler(logger, feature)
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter,
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest,
 	) {
 		if requestParams.IsStream(feature) {
-			streamer(ctx, requestParams, cc, w, userStore, filter)
+			streamer(ctx, requestParams, cc, w, userStore, test)
 		} else {
 			// TODO NON STREAMER?
 			nonStreamer(ctx, requestParams, cc, w, userStore)
@@ -230,8 +230,8 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, filter CompletionFilter) {
+func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
@@ -251,9 +251,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 		}()
 		start := time.Now()
-		f := guardrails.NewCompletionsFilter(eventWriter, func (ctx context.Context, snippet string) bool {
-			return filter.CanUse(ctx, snippet, 1)
-		})
+		f := guardrails.NewCompletionsFilter(eventWriter, test)
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {

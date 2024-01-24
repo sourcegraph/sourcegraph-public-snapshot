@@ -32,7 +32,7 @@ func Init(
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db, guardrails.NewAttributionFilter(observationCtx))
+		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db, guardrails.NewAttributionTest(observationCtx))
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
 	}
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)
