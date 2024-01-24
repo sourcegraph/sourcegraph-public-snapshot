@@ -65,6 +65,6 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
             className={classNames(styles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
             actions={<SearchResultPreviewButton result={result} />}
-        ></ResultContainer>
+        />
     )
 }
