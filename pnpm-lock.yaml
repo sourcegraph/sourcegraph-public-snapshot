@@ -302,8 +302,11 @@ importers:
         specifier: ^2.7.2
         version: 2.8.0
       lodash:
-        specifier: npm:lodash-es@^4.17.21
-        version: /lodash-es@4.17.21
+        specifier: ^4.17.21
+        version: 4.17.21
+      lodash-es:
+        specifier: ^4.17.21
+        version: 4.17.21
       lru-cache:
         specifier: ^7.8.0
         version: 7.14.0
@@ -21299,7 +21302,7 @@ packages:
   /puppeteer@13.7.0:
     resolution: {integrity: sha512-U1uufzBjz3+PkpCxFrWzh4OrMIdIb2ztzCu0YEPfRHjHswcSwHZswnK+WdsOQJsRV8WeTg3jLhJR4D867+fjsA==}
     engines: {node: '>=10.18.1'}
-    deprecated: < 21.3.7 is no longer supported
+    deprecated: < 21.4.0 is no longer supported
     requiresBuild: true
     dependencies:
       cross-fetch: 3.1.5
