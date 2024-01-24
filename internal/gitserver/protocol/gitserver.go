@@ -258,7 +258,6 @@ type ExecRequest struct {
 	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
 	EnsureRevision string   `json:"ensureRevision"`
 	Args           []string `json:"args"`
-	Stdin          []byte   `json:"stdin,omitempty"`
 	NoTimeout      bool     `json:"noTimeout"`
 }
 

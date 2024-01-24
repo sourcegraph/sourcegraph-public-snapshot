@@ -68,6 +68,14 @@ service GitserverService {
   rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // MergeBase returns the merge base commit sha for the specified revspecs.
+  // If no common merge base exists, an empty string is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a NotFoundPayload in the details.
+  rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -208,11 +216,12 @@ message CreateCommitFromPatchBinaryResponse {
   // changelistid is the Perforce changelist id
   string changelist_id = 3;
 }
+
 message ExecRequest {
   string repo = 1;
   bytes ensure_revision = 2;
   repeated bytes args = 3;
-  bytes stdin = 4;
+  bytes stdin = 4 [deprecated = true];
   bool no_timeout = 5;
 }
 
@@ -681,4 +690,20 @@ message PerforceUsersResponse {
 message PerforceUser {
   string username = 1;
   string email = 2;
+}
+
+// MergeBaseRequest is a request to find the merge base of two revspecs.
+message MergeBaseRequest {
+  // repo_name is the name of the repo to get the merge base for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // base is a revspec, for now, we allow non-utf8 revspecs.
+  bytes base = 3;
+  // head is a revspec, for now, we allow non-utf8 revspecs.
+  bytes head = 4;
+}
+
+// MergeBaseResponse is the response from finding the merge base of two revspecs.
+message MergeBaseResponse {
+  string merge_base_commit_sha = 1;
 }

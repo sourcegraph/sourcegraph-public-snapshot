@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -69,6 +70,15 @@ func AccessTokensAllow() AccessTokenAllow {
 	default:
 		return AccessTokensNone
 	}
+}
+
+func AccessTokensMaxPerUser() int {
+	defaultValue := 25
+	cfg := Get().AuthAccessTokens
+	if cfg == nil || cfg.MaxTokensPerUser == nil {
+		return defaultValue
+	}
+	return *cfg.MaxTokensPerUser
 }
 
 // AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
@@ -885,6 +895,11 @@ const embeddingsMaxFileSizeBytes = 1000000
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
 	// If cody is disabled, don't use embeddings.
 	if !codyEnabled(siteConfig) {
+		return nil
+	}
+
+	// Only allow embeddings on dotcom
+	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
 

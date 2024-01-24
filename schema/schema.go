@@ -94,6 +94,8 @@ type AuthAccessTokens struct {
 	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
 	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
 	ExpirationOptionDays []int `json:"expirationOptionDays,omitempty"`
+	// MaxTokensPerUser description: The maximum number of active access tokens a user may have.
+	MaxTokensPerUser *int `json:"maxTokensPerUser,omitempty"`
 }
 
 // AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
@@ -840,6 +842,10 @@ type ExcludedBitbucketServerRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Bitbucket Server / Bitbucket Data Center repo.
 	Pattern string `json:"pattern,omitempty"`
 }
+type ExcludedGerritProject struct {
+	// Name description: The name of a Gerrit project to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+}
 type ExcludedGitHubRepo struct {
 	// Archived description: If set to true, archived repositories will be excluded.
 	Archived bool `json:"archived,omitempty"`
@@ -1115,6 +1121,10 @@ type GerritAuthorization struct {
 type GerritConnection struct {
 	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
 	Authorization *GerritAuthorization `json:"authorization,omitempty"`
+	// Exclude description: A list of repositories to never mirror from this Gerrit instance. Takes precedence over "projects" configuration.
+	//
+	// Supports excluding by name ({"name": "owner/name"})
+	Exclude []*ExcludedGerritProject `json:"exclude,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.

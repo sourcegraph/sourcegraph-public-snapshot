@@ -292,9 +292,13 @@ describe('StreamingSearchResults', () => {
                 userEvent.click(check, undefined, { skipPointerEventsCheck: true })
             }
 
-            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }), undefined, {
-                skipPointerEventsCheck: true,
-            })
+            userEvent.click(
+                await screen.findByText(/modify and re-run/i, { selector: 'button[type=submit]' }),
+                undefined,
+                {
+                    skipPointerEventsCheck: true,
+                }
+            )
 
             expect(helpers.submitSearch).toBeCalledTimes(index + 1)
             const args = submitSearchMock.mock.calls[index][0]

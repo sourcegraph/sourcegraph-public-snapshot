@@ -354,7 +354,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                             )}
                             {showSearchJobs && (
                                 <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
-                                    Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
+                                    Search Jobs <ProductStatusBadge className="ml-2" status="beta" />
                                 </NavItemLink>
                             )}
                         </ul>

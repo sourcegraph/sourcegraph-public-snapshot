@@ -21,7 +21,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 		events          []SearchEvent
 		wantFilterValue string
 		wantFilterCount int
-		wantFilterKind  string
+		wantFilterKind  FilterKind
 	}{
 		{
 			name: "CommitMatch",

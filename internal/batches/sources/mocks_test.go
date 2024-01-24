@@ -11221,7 +11221,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		MergeBaseFunc: &GitserverClientMergeBaseFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 api.CommitID, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (r0 api.CommitID, r1 error) {
 				return
 			},
 		},
@@ -11523,7 +11523,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		MergeBaseFunc: &GitserverClientMergeBaseFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitserverClient.MergeBase")
 			},
 		},
@@ -15869,15 +15869,15 @@ func (c GitserverClientLsFilesFuncCall) Results() []interface{} {
 // GitserverClientMergeBaseFunc describes the behavior when the MergeBase
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientMergeBaseFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)
+	defaultHook func(context.Context, api.RepoName, string, string) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (api.CommitID, error)
 	history     []GitserverClientMergeBaseFuncCall
 	mutex       sync.Mutex
 }
 
 // MergeBase delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (api.CommitID, error) {
+func (m *MockGitserverClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (api.CommitID, error) {
 	r0, r1 := m.MergeBaseFunc.nextHook()(v0, v1, v2, v3)
 	m.MergeBaseFunc.appendCall(GitserverClientMergeBaseFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -15886,7 +15886,7 @@ func (m *MockGitserverClient) MergeBase(v0 context.Context, v1 api.RepoName, v2 
 // SetDefaultHook sets function that is called when the MergeBase method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+func (f *GitserverClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (api.CommitID, error)) {
 	f.defaultHook = hook
 }
 
@@ -15894,7 +15894,7 @@ func (f *GitserverClientMergeBaseFunc) SetDefaultHook(hook func(context.Context,
 // MergeBase method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error)) {
+func (f *GitserverClientMergeBaseFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (api.CommitID, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15903,19 +15903,19 @@ func (f *GitserverClientMergeBaseFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientMergeBaseFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientMergeBaseFunc) PushReturn(r0 api.CommitID, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (api.CommitID, error) {
+func (f *GitserverClientMergeBaseFunc) nextHook() func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15956,10 +15956,10 @@ type GitserverClientMergeBaseFuncCall struct {
 	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 api.CommitID
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 api.CommitID
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 api.CommitID

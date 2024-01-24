@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -623,6 +624,101 @@ func testAccessTokens_Expiration(t *testing.T) {
 	// Ensure we can no longer lookup the token
 	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal("Lookup: want error looking up expired token")
+	}
+
+}
+
+// 🚨 SECURITY: TestAccessTokens_Limits tests the enforcement of access token limits per user.
+// It creates tokens for a test user and ensures the token limit is enforced
+func TestAccessTokens_Limits(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthAccessTokens: &schema.AuthAccessTokens{
+				MaxTokensPerUser:  pointers.Ptr(2),
+				AllowNoExpiration: true,
+			},
+			Log: &schema.Log{
+				SecurityEventLog: &schema.SecurityEventLog{Location: "database"},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u1@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	creator, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create 2 expired tokens to ensure that expired tokens are not counted against the limit
+	_, _, err = db.AccessTokens().Create(ctx, user.ID, []string{"a"}, "n0", user.ID, time.Now().Add(-1*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = db.AccessTokens().Create(ctx, user.ID, []string{"1"}, "n0", user.ID, time.Now().Add(-1*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create an access token that expires in the future
+	_, tv0, err := db.AccessTokens().Create(ctx, user.ID, []string{"a"}, "n0", user.ID, time.Now().Add(1*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create an access token with no expiration
+	_, tv1, err := db.AccessTokens().Create(ctx, user.ID, []string{"a"}, "n0", user.ID, time.Now().Add(1*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure we can lookup the tokens
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err != nil {
+		t.Fatal("Lookup: no error expected")
+	}
+	if _, err := db.AccessTokens().Lookup(ctx, tv1, TokenLookupOpts{RequiredScope: "a"}); err != nil {
+		t.Fatal("Lookup: no error expected")
+	}
+
+	// Ensure subject user can not create a 3nd token
+	_, _, err = db.AccessTokens().Create(ctx, user.ID, []string{"a"}, "n0", user.ID, time.Now().Add(1*time.Hour))
+	if err != ErrTooManyAccessTokens {
+		t.Fatal("Create: expected ErrTooManyAccessTokens")
+	}
+
+	// Ensure another user can not create a 3nd token for the subject
+	_, _, err = db.AccessTokens().Create(ctx, user.ID, []string{"a"}, "n0", creator.ID, time.Now().Add(1*time.Hour))
+	if err != ErrTooManyAccessTokens {
+		t.Fatal("Create: expected ErrTooManyAccessTokens")
+	}
+
+	// Ensure that a new internal token can be created
+	_, tvInternal, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"a"}, "n0", user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Ensure we can lookup the internal token
+	if _, err := db.AccessTokens().Lookup(ctx, tvInternal, TokenLookupOpts{RequiredScope: "a"}); err != nil {
+		t.Fatal("Lookup: no error expected")
 	}
 
 }

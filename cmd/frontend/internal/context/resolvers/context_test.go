@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,6 +40,8 @@ func TestContextResolver(t *testing.T) {
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
 	truePtr := true
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: &truePtr,
@@ -51,8 +54,9 @@ func TestContextResolver(t *testing.T) {
 		},
 	})
 
+	oldMock := licensing.MockCheckFeature
 	defer func() {
-		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
+		licensing.MockCheckFeature = oldMock
 	}()
 
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {

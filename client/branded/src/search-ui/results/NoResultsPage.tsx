@@ -4,14 +4,13 @@ import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { type SearchContextProps, SearchMode, type SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { type SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { QueryExamples } from '../components/QueryExamples'
-import { SmartSearchPreview } from '../components/SmartSearchPreview'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 
@@ -50,11 +49,6 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
     showSearchContext: boolean
     queryExamplesPatternType: SearchPatternType
     showQueryExamples?: boolean
-    searchMode?: SearchMode
-    setSearchMode?: (mode: SearchMode) => void
-    submitSearch?: (parameters: SubmitSearchParameters) => void
-    searchQueryFromURL?: string
-    caseSensitive?: boolean
     selectedSearchContextSpec?: string
 }
 
@@ -64,11 +58,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     isSourcegraphDotCom,
     showSearchContext,
     showQueryExamples,
-    searchMode,
-    setSearchMode,
-    submitSearch,
-    caseSensitive,
-    searchQueryFromURL,
     selectedSearchContextSpec,
     queryExamplesPatternType,
 }) => {
@@ -90,19 +79,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            {searchMode !== SearchMode.SmartSearch &&
-                setSearchMode &&
-                submitSearch &&
-                typeof caseSensitive === 'boolean' &&
-                searchQueryFromURL && (
-                    <SmartSearchPreview
-                        setSearchMode={setSearchMode}
-                        submitSearch={submitSearch}
-                        caseSensitive={caseSensitive}
-                        searchQueryFromURL={searchQueryFromURL}
-                    />
-                )}
-
             {showQueryExamples && (
                 <>
                     <H3 as={H2}>Search basics</H3>
