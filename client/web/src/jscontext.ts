@@ -19,6 +19,7 @@ export interface AuthProvider {
         | 'http-header'
         | 'openidconnect'
         | 'sourcegraph-operator'
+        | 'sourcegraph-accounts-dev'
         | 'saml'
         | 'builtin'
         | 'gerrit'

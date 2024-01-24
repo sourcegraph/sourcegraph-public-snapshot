@@ -37,6 +37,7 @@ const getNormalizedAccounts = (
     if (
         authProvider.serviceType === 'builtin' ||
         authProvider.serviceType === 'http-header' ||
+        authProvider.serviceType === 'sourcegraph-accounts-dev' ||
         authProvider.serviceType === 'sourcegraph-operator'
     ) {
         return []
