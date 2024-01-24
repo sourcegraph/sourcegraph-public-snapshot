@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Test struct {
@@ -936,7 +938,7 @@ type BatchLogTest struct {
 	Name         string
 	Request      *v1.BatchLogRequest
 	ExpectedCode codes.Code
-	ExpectedBody *protocol.BatchLogResponse
+	ExpectedBody *proto.BatchLogResponse
 }
 
 func TestHandleBatchLog(t *testing.T) {
@@ -963,9 +965,7 @@ func TestHandleBatchLog(t *testing.T) {
 			Name:         "empty",
 			Request:      &v1.BatchLogRequest{},
 			ExpectedCode: codes.OK,
-			ExpectedBody: &protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{},
-			},
+			ExpectedBody: &proto.BatchLogResponse{},
 		},
 		{
 			Name: "all resolved",
@@ -978,22 +978,19 @@ func TestHandleBatchLog(t *testing.T) {
 				Format: "--format=test",
 			},
 			ExpectedCode: codes.OK,
-			ExpectedBody: &protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{
+			ExpectedBody: &proto.BatchLogResponse{
+				Results: []*proto.BatchLogResult{
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
 						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-						CommandError:  "",
 					},
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "deadbeef2"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/baz", Commit: "deadbeef2"},
 						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --name-only --format=test deadbeef2>",
-						CommandError:  "",
 					},
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bonk", CommitID: "deadbeef3"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bonk", Commit: "deadbeef3"},
 						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --name-only --format=test deadbeef3>",
-						CommandError:  "",
 					},
 				},
 			},
@@ -1009,24 +1006,23 @@ func TestHandleBatchLog(t *testing.T) {
 				Format: "--format=test",
 			},
 			ExpectedCode: codes.OK,
-			ExpectedBody: &protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{
+			ExpectedBody: &proto.BatchLogResponse{
+				Results: []*proto.BatchLogResult{
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
 						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-						CommandError:  "",
 					},
 					{
 						// git directory found, but cmd.Run returned error
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "dumbmilk1"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/baz", Commit: "dumbmilk1"},
 						CommandOutput: "",
-						CommandError:  "test error",
+						CommandError:  pointers.Ptr("test error"),
 					},
 					{
 						// no .git directory here
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/honk", CommitID: "deadbeef3"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/honk", Commit: "deadbeef3"},
 						CommandOutput: "",
-						CommandError:  "repo not found",
+						CommandError:  pointers.Ptr("repo not found"),
 					},
 				},
 			},
@@ -1067,10 +1063,7 @@ func TestHandleBatchLog(t *testing.T) {
 				return
 			}
 
-			var have protocol.BatchLogResponse
-			have.FromProto(res)
-
-			require.Equal(t, test.ExpectedBody, &have)
+			require.Equal(t, test.ExpectedBody, res)
 		})
 	}
 }

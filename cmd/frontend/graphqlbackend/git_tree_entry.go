@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -110,12 +111,19 @@ func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 
 func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	r.contentOnce.Do(func() {
-		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(
+		fr, err := r.gitserverClient.NewFileReader(
 			ctx,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 		)
+		if err != nil {
+			r.contentErr = err
+			return
+		}
+		defer fr.Close()
+
+		r.fullContentBytes, r.contentErr = io.ReadAll(fr)
 	})
 
 	return string(pageContent(r.fullContentBytes, int32ToIntPtr(args.StartLine), int32ToIntPtr(args.EndLine))), r.contentErr

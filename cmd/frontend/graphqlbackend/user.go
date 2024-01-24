@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -180,20 +180,17 @@ func (r *UserResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.user.CreatedAt}
 }
 
-func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
+func (r *UserResolver) CodyProEnabled(ctx context.Context) (bool, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil
+		return false, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.user.CodyProEnabledAt == nil {
-		return nil
+	subscription, err := cody.SubscriptionForUser(ctx, r.db, *r.user)
+	if err != nil {
+		return false, err
 	}
 
-	return &gqlutil.DateTime{Time: *r.user.CodyProEnabledAt}
-}
-
-func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
-	return r.CodyProEnabledAt(ctx) != nil
+	return subscription.Plan == cody.UserSubscriptionPlanPro, nil
 }
 
 func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, error) {
@@ -229,11 +226,7 @@ func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return 0, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
+	currentPeriodStartDate, _, err := r.codyCurrentPeriodDateRange(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -279,11 +272,7 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return 0, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
+	currentPeriodStartDate, _, err := r.codyCurrentPeriodDateRange(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -314,22 +303,6 @@ func (r *UserResolver) CodyCurrentPeriodEndDate(ctx context.Context) (*gqlutil.D
 	return endDate, err
 }
 
-type currentTimeCtxKey int
-
-const mockCurrentTimeKey currentTimeCtxKey = iota
-
-func currentTimeFromCtx(ctx context.Context) time.Time {
-	t, ok := ctx.Value(mockCurrentTimeKey).(*time.Time)
-	if !ok || t == nil {
-		return time.Now()
-	}
-	return *t
-}
-
-func withCurrentTimeMock(ctx context.Context, t time.Time) context.Context {
-	return context.WithValue(ctx, mockCurrentTimeKey, &t)
-}
-
 func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil.DateTime, *gqlutil.DateTime, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, nil, errors.New("this feature is only available on sourcegraph.com")
@@ -341,48 +314,10 @@ func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil
 		return nil, nil, err
 	}
 
-	// to allow mocking current time during tests
-	currentDate := currentTimeFromCtx(ctx)
+	// TODO(naman): integrate this with cody.SubscriptionForUser
+	startDate, endDate := cody.PreSSCReleaseCurrentPeriodDateRange(ctx, *r.user)
 
-	subscriptionStartDate := r.user.CreatedAt
-	gaReleaseDate := time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())
-
-	if !currentDate.Before(gaReleaseDate) && subscriptionStartDate.Before(gaReleaseDate) {
-		subscriptionStartDate = gaReleaseDate
-	}
-
-	if r.user.CodyProEnabledAt != nil {
-		subscriptionStartDate = *r.user.CodyProEnabledAt
-	}
-
-	targetDay := subscriptionStartDate.Day()
-	startDayOfTheMonth := targetDay
-	endDayOfTheMonth := targetDay - 1
-	startMonth := currentDate
-	endMonth := currentDate
-
-	if currentDate.Day() < targetDay {
-		// Set to target day of the previous month
-		startMonth = currentDate.AddDate(0, -1, 0)
-	} else {
-		// Set to target day of the next month
-		endMonth = currentDate.AddDate(0, 1, 0)
-	}
-
-	daysInStartingMonth := time.Date(startMonth.Year(), startMonth.Month()+1, 0, 0, 0, 0, 0, startMonth.Location()).Day()
-	if startDayOfTheMonth > daysInStartingMonth {
-		startDayOfTheMonth = daysInStartingMonth
-	}
-
-	daysInEndingMonth := time.Date(endMonth.Year(), endMonth.Month()+1, 0, 0, 0, 0, 0, endMonth.Location()).Day()
-	if endDayOfTheMonth > daysInEndingMonth {
-		endDayOfTheMonth = daysInEndingMonth
-	}
-
-	startDate := &gqlutil.DateTime{Time: time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())}
-	endDate := &gqlutil.DateTime{Time: time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 23, 59, 59, 59, endMonth.Location())}
-
-	return startDate, endDate, nil
+	return &gqlutil.DateTime{Time: startDate}, &gqlutil.DateTime{Time: endDate}, nil
 }
 
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {

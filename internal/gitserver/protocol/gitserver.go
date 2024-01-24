@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -64,29 +63,17 @@ type RevisionSpecifier struct {
 	// RevSpec is a revision range specifier suitable for passing to git. See
 	// the manpage gitrevisions(7).
 	RevSpec string
-
-	// RefGlob is a reference glob to pass to git. See the documentation for
-	// "--glob" in git-log.
-	RefGlob string
-
-	// ExcludeRefGlob is a glob for references to exclude. See the
-	// documentation for "--exclude" in git-log.
-	ExcludeRefGlob string
 }
 
 func (r *RevisionSpecifier) ToProto() *proto.RevisionSpecifier {
 	return &proto.RevisionSpecifier{
-		RevSpec:        r.RevSpec,
-		RefGlob:        r.RefGlob,
-		ExcludeRefGlob: r.ExcludeRefGlob,
+		RevSpec: r.RevSpec,
 	}
 }
 
 func RevisionSpecifierFromProto(p *proto.RevisionSpecifier) RevisionSpecifier {
 	return RevisionSpecifier{
-		RevSpec:        p.GetRevSpec(),
-		RefGlob:        p.GetRefGlob(),
-		ExcludeRefGlob: p.GetExcludeRefGlob(),
+		RevSpec: p.GetRevSpec(),
 	}
 }
 
@@ -259,107 +246,6 @@ type ExecRequest struct {
 	EnsureRevision string   `json:"ensureRevision"`
 	Args           []string `json:"args"`
 	NoTimeout      bool     `json:"noTimeout"`
-}
-
-// BatchLogRequest is a request to execute a `git log` command inside a set of
-// git repositories present on the target shard.
-type BatchLogRequest struct {
-	RepoCommits []api.RepoCommit `json:"repoCommits"`
-
-	// Format is the entire `--format=<format>` argument to git log. This value
-	// is expected to be non-empty.
-	Format string `json:"format"`
-}
-
-func (bl *BatchLogRequest) ToProto() *proto.BatchLogRequest {
-	repoCommits := make([]*proto.RepoCommit, 0, len(bl.RepoCommits))
-	for _, rc := range bl.RepoCommits {
-		repoCommits = append(repoCommits, rc.ToProto())
-	}
-	return &proto.BatchLogRequest{
-		RepoCommits: repoCommits,
-		Format:      bl.Format,
-	}
-}
-
-func (bl *BatchLogRequest) FromProto(p *proto.BatchLogRequest) {
-	repoCommits := make([]api.RepoCommit, 0, len(p.GetRepoCommits()))
-	for _, protoRc := range p.GetRepoCommits() {
-		var rc api.RepoCommit
-		rc.FromProto(protoRc)
-		repoCommits = append(repoCommits, rc)
-	}
-	bl.RepoCommits = repoCommits
-	bl.Format = p.GetFormat()
-}
-
-func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.Int("numRepoCommits", len(req.RepoCommits)),
-		attribute.String("format", req.Format),
-	}
-}
-
-type BatchLogResponse struct {
-	Results []BatchLogResult `json:"results"`
-}
-
-func (bl *BatchLogResponse) ToProto() *proto.BatchLogResponse {
-	results := make([]*proto.BatchLogResult, 0, len(bl.Results))
-	for _, r := range bl.Results {
-		results = append(results, r.ToProto())
-	}
-	return &proto.BatchLogResponse{
-		Results: results,
-	}
-}
-
-func (bl *BatchLogResponse) FromProto(p *proto.BatchLogResponse) {
-	results := make([]BatchLogResult, 0, len(p.GetResults()))
-	for _, protoR := range p.GetResults() {
-		var r BatchLogResult
-		r.FromProto(protoR)
-		results = append(results, r)
-	}
-	*bl = BatchLogResponse{
-		Results: results,
-	}
-}
-
-// BatchLogResult associates a repository and commit pair from the input of a BatchLog
-// request with the result of the associated git log command.
-type BatchLogResult struct {
-	RepoCommit    api.RepoCommit `json:"repoCommit"`
-	CommandOutput string         `json:"output"`
-	CommandError  string         `json:"error,omitempty"`
-}
-
-func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
-	result := &proto.BatchLogResult{
-		RepoCommit:    bl.RepoCommit.ToProto(),
-		CommandOutput: bl.CommandOutput,
-	}
-
-	var cmdErr string
-
-	if bl.CommandError != "" {
-		cmdErr = bl.CommandError
-		result.CommandError = &cmdErr
-	}
-
-	return result
-
-}
-
-func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
-	var rc api.RepoCommit
-	rc.FromProto(p.GetRepoCommit())
-
-	*bl = BatchLogResult{
-		RepoCommit:    rc,
-		CommandOutput: p.GetCommandOutput(),
-		CommandError:  p.GetCommandError(),
-	}
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
