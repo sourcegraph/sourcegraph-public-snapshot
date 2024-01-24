@@ -19,8 +19,9 @@ export default defineConfig(({ mode }) => {
                 ? {}
                 : {
                       'process.platform': '"browser"',
-                      'process.env.VITEST': 'undefined',
-                      'process.env': '({})',
+                      'process.env.VITEST': 'null',
+                      'process.env.NODE_ENV': `"${mode}"`,
+                      'process.env': '{}',
                   },
         css: {
             preprocessorOptions: {
@@ -71,6 +72,18 @@ export default defineConfig(({ mode }) => {
                     find: /^(.*)\.gql$/,
                     replacement: '$1.gql.ts',
                 },
+                // These are directories and cannot be imported from directly in
+                // production build.
+                {
+                    find: /^rxjs\/(operators|fetch)$/,
+                    replacement: 'rxjs/$1/index.js',
+                },
+                // Without aliasing lodash to lodash-es we get the following error:
+                // SyntaxError: Named export 'castArray' not found. The requested module 'lodash' is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^lodash$/,
+                    replacement: 'lodash-es',
+                },
             ],
         },
 
@@ -84,6 +97,15 @@ export default defineConfig(({ mode }) => {
         test: {
             setupFiles: './src/testing/setup.ts',
             include: ['src/**/*.test.ts'],
+        },
+
+        legacy: {
+            // Our existing codebase imports many CommonJS modules as if they were ES modules. The default
+            // Vite 5 behavior doesn't work with this. Enabling this should be OK since we don't
+            // actually use SSR at the moment, so the difference between the dev and prod builds don't matter.
+            // We should revisit this at some point though.
+            // See https://vitejs.dev/guide/migration.html#ssr-externalized-modules-value-now-matches-production
+            proxySsrExternalModules: true,
         },
     }
 

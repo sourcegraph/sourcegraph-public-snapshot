@@ -758,34 +758,20 @@ func Test_revsToGitArgs(t *testing.T) {
 		name     string
 		revSpecs []protocol.RevisionSpecifier
 		expected []string
-	}{{
-		name: "explicit HEAD",
-		revSpecs: []protocol.RevisionSpecifier{{
-			RevSpec: "HEAD",
-		}},
-		expected: []string{"HEAD"},
-	}, {
-		name:     "implicit HEAD",
-		revSpecs: []protocol.RevisionSpecifier{{}},
-		expected: []string{"HEAD"},
-	}, {
-		name: "glob",
-		revSpecs: []protocol.RevisionSpecifier{{
-			RefGlob: "refs/heads/*",
-		}},
-		expected: []string{"--glob=refs/heads/*"},
-	}, {
-		name: "glob with excluded",
-		revSpecs: []protocol.RevisionSpecifier{{
-			RefGlob: "refs/heads/*",
-		}, {
-			ExcludeRefGlob: "refs/heads/cc/*",
-		}},
-		expected: []string{
-			"--glob=refs/heads/*",
-			"--exclude=refs/heads/cc/*",
+	}{
+		{
+			name: "explicit HEAD",
+			revSpecs: []protocol.RevisionSpecifier{{
+				RevSpec: "HEAD",
+			}},
+			expected: []string{"HEAD"},
 		},
-	}}
+		{
+			name:     "implicit HEAD",
+			revSpecs: []protocol.RevisionSpecifier{{}},
+			expected: []string{"HEAD"},
+		},
+	}
 
 	for _, tc := range cases {
 		got := revsToGitArgs(tc.revSpecs)

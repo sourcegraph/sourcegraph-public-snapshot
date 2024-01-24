@@ -17,13 +17,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/sshagent"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	internalperforce "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -127,7 +128,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
+		if !gitcli.IsAllowedGitCmd(logger, cmd.Args[1:], common.GitDir(tmpRepoDir)) {
 			return nil, errors.New("command not on allow list")
 		}
 

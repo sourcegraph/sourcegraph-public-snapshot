@@ -1233,3 +1233,25 @@ func fireworksDefaultMaxPromptTokens(model string) int {
 
 	return 4_000
 }
+
+// RepoListUpdateInterval returns the repository list update interval.
+//
+// If the RepoListUpdateInterval site configuration setting is 0, it defaults to 1 minute.
+func RepoListUpdateInterval() time.Duration {
+	v := Get().RepoListUpdateInterval
+	if v == 0 { //  default to 1 minute
+		v = 1
+	}
+	return time.Duration(v) * time.Minute
+}
+
+// RepoConcurrentExternalServiceSyncers returns the number of concurrent external service syncers.
+//
+// If the RepoConcurrentExternalServiceSyncers site configuration setting is 0, it defaults to 3.
+func RepoConcurrentExternalServiceSyncers() int {
+	v := Get().RepoConcurrentExternalServiceSyncers
+	if v <= 0 {
+		return 3
+	}
+	return v
+}

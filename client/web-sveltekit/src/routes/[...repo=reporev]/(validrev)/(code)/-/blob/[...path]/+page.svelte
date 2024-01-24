@@ -37,7 +37,7 @@
     const { loading, combinedBlobData, set: setBlobData } = createBlobDataHandler()
     let selectedPosition: LineOrPositionOrRange | null = null
 
-    $: setBlobData(data.deferred.blob, data.deferred.highlights)
+    $: setBlobData(data.blob, data.highlights)
     $: blobData = $combinedBlobData.blob
     $: formatted = !!blobData?.richHTML
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
@@ -57,10 +57,10 @@
 </svelte:head>
 
 <FileHeader>
-    <Icon slot="icon" svgPath={data.deferred.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
+    <Icon slot="icon" svgPath={data.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
     <svelte:fragment slot="actions">
-        {#if data.deferred.compare}
-            <span>{data.deferred.compare.revisionToCompare}</span>
+        {#if data.compare}
+            <span>{data.compare.revisionToCompare}</span>
         {:else}
             {#if !formatted || showRaw}
                 <WrapLinesAction />
@@ -73,9 +73,9 @@
     </svelte:fragment>
 </FileHeader>
 
-<div class="content" class:loading={$loading} class:compare={!!data.deferred.compare}>
-    {#if data.deferred.compare}
-        {#await data.deferred.compare.diff}
+<div class="content" class:loading={$loading} class:compare={!!data.compare}>
+    {#if data.compare}
+        {#await data.compare.diff}
             <LoadingSpinner />
         {:then fileDiff}
             {#if fileDiff}

@@ -51,12 +51,10 @@ export const load: LayoutLoad = async ({ parent, params }) => {
     return {
         parentPath,
         commitHistory,
-        deferred: {
-            fileTree: fetchSidebarFileTree({
-                repoID: resolvedRevision.repo.id,
-                commitID: resolvedRevision.commitID,
-                filePath: parentPath,
-            }),
-        },
+        fileTree: fetchSidebarFileTree({
+            repoID: resolvedRevision.repo.id,
+            commitID: resolvedRevision.commitID,
+            filePath: parentPath,
+        }),
     }
 }

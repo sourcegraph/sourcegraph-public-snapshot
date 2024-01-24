@@ -3,8 +3,9 @@ import { FC } from 'react'
 import create from 'zustand'
 
 import { NewSearchFilters, useUrlFilters } from '@sourcegraph/branded'
+import { DeleteIcon } from '@sourcegraph/branded/src/search-ui/results/filters/components/Icons'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Badge, Button, Modal, Panel, useWindowSize } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, Modal, Panel, useWindowSize } from '@sourcegraph/wildcard'
 
 import styles from './SearchFiltersPanel.module.scss'
 
@@ -62,8 +63,9 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
             onDismiss={() => setFiltersPanel(false)}
         >
             <NewSearchFilters query={query} filters={filters} onQueryChange={onQueryChange}>
-                <Button variant="primary" className={styles.closeFilters} onClick={() => setFiltersPanel(false)}>
-                    Close filters panel
+                <Button variant="secondary" outline={true} onClick={() => setFiltersPanel(false)}>
+                    <Icon as={DeleteIcon} width={14} height={14} aria-hidden={true} className={styles.closeIcon} />{' '}
+                    Close filters
                 </Button>
             </NewSearchFilters>
         </Modal>

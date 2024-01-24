@@ -91,8 +91,17 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 			return
 		}
 
-		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
+		if r.commitErr != nil && errors.HasType(r.commitErr, &gitdomain.RevisionNotFoundError{}) {
+			// If the commit is not found, attempt to do a ensure revision call.
+			_, err := r.gitserverClient.ResolveRevision(ctx, r.gitRepo, string(r.oid), gitserver.ResolveRevisionOptions{})
+			if err != nil {
+				r.logger.Error("failed to resolve commit", log.Error(err), log.String("oid", string(r.oid)))
+			} else {
+				// Try again to resolve the commit.
+				r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
+			}
+		}
 	})
 	return r.commit, r.commitErr
 }
