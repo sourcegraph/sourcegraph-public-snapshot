@@ -99,11 +99,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 }
 
 func (c *gitserverClient) NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error) {
-	r, err := c.innerClient.NewFileReader(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get file content reader")
-	}
-	return r, nil
+	return c.innerClient.NewFileReader(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
 }
 
 func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
