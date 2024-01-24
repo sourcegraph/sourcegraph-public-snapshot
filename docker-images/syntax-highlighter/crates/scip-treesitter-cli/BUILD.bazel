@@ -3,7 +3,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 rust_binary(
     name = "scip-treesitter",
-    srcs = ["src/main.rs"],
+    srcs = ["src/bin/scip-treesitter.rs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,

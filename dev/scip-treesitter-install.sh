@@ -25,8 +25,8 @@ trap ctrl_c INT
 
 function build_scip_treesitter {
   cd docker-images/syntax-highlighter/crates/scip-treesitter-cli
-  cargo build --bin scip-treesitter-cli --target-dir target
-  cp ./target/release/scip-treesitter-cli "$TARGET"
+  cargo build --bin scip-treesitter --target-dir target
+  cp ./target/release/scip-treesitter "$TARGET"
 }
 
 build_scip_treesitter
