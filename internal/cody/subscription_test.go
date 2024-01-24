@@ -43,13 +43,14 @@ func TestGetSubscriptionForUser(t *testing.T) {
 	testSAMSAccountID := "123"
 
 	tests := []struct {
-		name                 string
-		user                 types.User
-		today                time.Time
-		mockSSCSubscription  *ssc.Subscription
-		mockSAMSAccountID    *string
-		featureFlagEnabled   bool
-		expectedSubscription UserSubscription
+		name                         string
+		user                         types.User
+		today                        time.Time
+		mockSSCSubscription          *ssc.Subscription
+		mockSAMSAccountID            *string
+		useSSCFeatureFlag            bool
+		codyProTrialEndedFeatureFlag bool
+		expectedSubscription         UserSubscription
 	}{
 		{
 			name: "free user without SAMS account & SSC subscription",
@@ -61,7 +62,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			today:               time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC),
 			mockSSCSubscription: nil,
 			mockSAMSAccountID:   nil,
-			featureFlagEnabled:  true,
+			useSSCFeatureFlag:   true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
 				Plan:                 UserSubscriptionPlanFree,
@@ -80,7 +81,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			today:               time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC),
 			mockSSCSubscription: nil,
 			mockSAMSAccountID:   &testSAMSAccountID,
-			featureFlagEnabled:  true,
+			useSSCFeatureFlag:   true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
 				Plan:                 UserSubscriptionPlanFree,
@@ -105,8 +106,8 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CurrentPeriodStart: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				CurrentPeriodEnd:   time.Date(2024, 1, 31, 23, 59, 59, 59, time.UTC).Format(time.RFC3339Nano),
 			},
-			mockSAMSAccountID:  &testSAMSAccountID,
-			featureFlagEnabled: true,
+			mockSAMSAccountID: &testSAMSAccountID,
+			useSSCFeatureFlag: true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusActive,
 				Plan:                 UserSubscriptionPlanPro,
@@ -131,8 +132,8 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CurrentPeriodStart: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				CurrentPeriodEnd:   time.Date(2025, 1, 31, 23, 59, 59, 59, time.UTC).Format(time.RFC3339Nano),
 			},
-			mockSAMSAccountID:  &testSAMSAccountID,
-			featureFlagEnabled: false,
+			mockSAMSAccountID: &testSAMSAccountID,
+			useSSCFeatureFlag: false,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
 				Plan:                 UserSubscriptionPlanFree,
@@ -151,7 +152,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			today:               time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC),
 			mockSSCSubscription: nil,
 			mockSAMSAccountID:   nil,
-			featureFlagEnabled:  true,
+			useSSCFeatureFlag:   true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
 				Plan:                 UserSubscriptionPlanPro,
@@ -167,13 +168,14 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CreatedAt:        time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 				CodyProEnabledAt: toTimePtr(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
-			today:               time.Date(2024, 2, 16, 0, 0, 0, 0, time.UTC),
-			mockSSCSubscription: nil,
-			mockSAMSAccountID:   nil,
-			featureFlagEnabled:  true,
+			today:                        time.Date(2024, 2, 16, 0, 0, 0, 0, time.UTC),
+			mockSSCSubscription:          nil,
+			mockSAMSAccountID:            nil,
+			useSSCFeatureFlag:            true,
+			codyProTrialEndedFeatureFlag: true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
-				Plan:                 UserSubscriptionPlanFree,
+				Plan:                 UserSubscriptionPlanPro,
 				ApplyProRateLimits:   false,
 				CurrentPeriodStartAt: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
 				CurrentPeriodEndAt:   time.Date(2024, 2, 29, 23, 59, 59, 59, time.UTC),
@@ -189,7 +191,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			today:               time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC),
 			mockSSCSubscription: nil,
 			mockSAMSAccountID:   &testSAMSAccountID,
-			featureFlagEnabled:  true,
+			useSSCFeatureFlag:   true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
 				Plan:                 UserSubscriptionPlanPro,
@@ -205,13 +207,14 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CreatedAt:        time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 				CodyProEnabledAt: toTimePtr(time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)),
 			},
-			today:               time.Date(2024, 2, 16, 0, 0, 0, 0, time.UTC),
-			mockSSCSubscription: nil,
-			mockSAMSAccountID:   &testSAMSAccountID,
-			featureFlagEnabled:  true,
+			today:                        time.Date(2024, 2, 16, 0, 0, 0, 0, time.UTC),
+			mockSSCSubscription:          nil,
+			mockSAMSAccountID:            &testSAMSAccountID,
+			useSSCFeatureFlag:            true,
+			codyProTrialEndedFeatureFlag: true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
-				Plan:                 UserSubscriptionPlanFree,
+				Plan:                 UserSubscriptionPlanPro,
 				ApplyProRateLimits:   false,
 				CurrentPeriodStartAt: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
 				CurrentPeriodEndAt:   time.Date(2024, 2, 29, 23, 59, 59, 59, time.UTC),
@@ -232,8 +235,8 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CurrentPeriodStart: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				CurrentPeriodEnd:   time.Date(2024, 1, 31, 23, 59, 59, 59, time.UTC).Format(time.RFC3339Nano),
 			},
-			mockSAMSAccountID:  &testSAMSAccountID,
-			featureFlagEnabled: true,
+			mockSAMSAccountID: &testSAMSAccountID,
+			useSSCFeatureFlag: true,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusActive,
 				Plan:                 UserSubscriptionPlanPro,
@@ -258,8 +261,8 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CurrentPeriodStart: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
 				CurrentPeriodEnd:   time.Date(2025, 1, 31, 23, 59, 59, 59, time.UTC).Format(time.RFC3339Nano),
 			},
-			mockSAMSAccountID:  &testSAMSAccountID,
-			featureFlagEnabled: false,
+			mockSAMSAccountID: &testSAMSAccountID,
+			useSSCFeatureFlag: false,
 			expectedSubscription: UserSubscription{
 				Status:               ssc.SubscriptionStatusPending,
 				Plan:                 UserSubscriptionPlanPro,
@@ -274,7 +277,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(test.user.ID))
 			ctx = withCurrentTimeMock(ctx, test.today)
-			flags := map[string]bool{USE_SSC_FEATURE_FLAG: test.featureFlagEnabled}
+			flags := map[string]bool{USE_SSC_FEATURE_FLAG: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED: test.codyProTrialEndedFeatureFlag}
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
 
 			db := dbmocks.NewMockDB()
@@ -294,7 +297,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				t:                     t,
 				expectedSAMSAccountID: test.mockSAMSAccountID,
 				mockSSCSubscription:   test.mockSSCSubscription,
-				shouldBeCalled:        test.featureFlagEnabled && test.mockSAMSAccountID != nil,
+				shouldBeCalled:        test.useSSCFeatureFlag && test.mockSAMSAccountID != nil,
 			}
 
 			actualSubscription, err := getSubscriptionForUser(ctx, db, sscClient, test.user)
