@@ -536,7 +536,7 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		r.logger.Warn("refresh gateway limits", log.Error(err))
 	}
 
-	go ssc.EmitWebhook(r.Logger, ssc.WebhookEventUserUpgradedToCodyPro, map[string]string{
+	go ssc.EmitWebhook(r.logger, ssc.WebhookEventUserUpgradedToCodyPro, map[string]string{
 		"sgUserID": fmt.Sprint(userID),
 		"toPro":    fmt.Sprint(args.Pro),
 	})

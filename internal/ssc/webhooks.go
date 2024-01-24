@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -35,6 +36,12 @@ func EmitWebhook(logger log.Logger, event WebhookEvent, payload map[string]strin
 	}
 	logger.Debug("sending SSC webhook", log.Int("event", int(event)))
 
+	// We intentionally do not use the HTTP request context from whatever triggered the webhook to be sent.
+	// Doing so would cause instability, such as if the original HTTP request were canceled before the
+	// webhook deliver is complete.
+	ctx := context.Background()
+	logger = trace.Logger(ctx, logger)
+
 	// Get all SAMS identity providers. Dotcom may have both a -dev and -prod instance configured.
 	var samsProviders []*schema.OpenIDConnectAuthProvider
 	for _, p := range conf.Get().AuthProviders {
@@ -48,16 +55,13 @@ func EmitWebhook(logger log.Logger, event WebhookEvent, payload map[string]strin
 	}
 
 	for _, samsProvider := range samsProviders {
-		sendWebhookToSAMS(logger, samsProvider, event, payload)
+		sendWebhookToSAMS(ctx, logger, samsProvider, event, payload)
 	}
 }
 
-func sendWebhookToSAMS(logger log.Logger, sams *schema.OpenIDConnectAuthProvider, event WebhookEvent, payload map[string]string) {
-	// We intentionally do not use the HTTP request context from whatever triggered the webhook to be sent.
-	// Doing so would cause instability, such as if the original HTTP request were canceled before the
-	// webhook deliver is complete.
-	ctx := context.Background()
-
+func sendWebhookToSAMS(
+	ctx context.Context, logger log.Logger, sams *schema.OpenIDConnectAuthProvider,
+	event WebhookEvent, payload map[string]string) {
 	// Create a generic OAuth client using the supplied SAMS credentials. Only the "dotcom" SAMS client
 	// will have the ability to create tokens with the "client.dotcom" scope. This how the recipient of
 	// this token will be able to authorize the request.
@@ -73,6 +77,7 @@ func sendWebhookToSAMS(logger log.Logger, sams *schema.OpenIDConnectAuthProvider
 		return
 	}
 
+	// Stuff the event into the payload itself to simplify the message protocol.
 	payload["event"] = fmt.Sprint(event)
 	bodyJSON, err := json.Marshal(payload)
 	if err != nil {
