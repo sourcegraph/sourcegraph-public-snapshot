@@ -32,7 +32,6 @@ type operations struct {
 	mergeBase                *observation.Operation
 	newFileReader            *observation.Operation
 	readDir                  *observation.Operation
-	readFile                 *observation.Operation
 	resolveRevision          *observation.Operation
 	revList                  *observation.Operation
 	search                   *observation.Operation
@@ -138,7 +137,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		mergeBase:                op("MergeBase"),
 		newFileReader:            op("NewFileReader"),
 		readDir:                  op("ReadDir"),
-		readFile:                 op("ReadFile"),
 		resolveRevision:          resolveRevisionOperation,
 		revList:                  op("RevList"),
 		search:                   op("Search"),

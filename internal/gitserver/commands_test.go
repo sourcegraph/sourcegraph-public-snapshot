@@ -2421,41 +2421,6 @@ func TestRead(t *testing.T) {
 			}
 		}
 
-		t.Run(name+"-ReadFile", func(t *testing.T) {
-			client := NewTestClient(t).WithChecker(checker)
-			data, err := client.ReadFile(ctx, repo, commitID, test.file)
-			checkFn(t, err, data)
-		})
-		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
-				return true
-			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				if content.Path == test.file {
-					return authz.Read, nil
-				}
-				return authz.None, nil
-			})
-			client := NewTestClient(t).WithChecker(checker)
-			data, err := client.ReadFile(ctx, repo, commitID, test.file)
-			checkFn(t, err, data)
-		})
-		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
-				return true
-			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				return authz.None, nil
-			})
-			client := NewTestClient(t).WithChecker(checker)
-			data, err := client.ReadFile(ctx, repo, commitID, test.file)
-			if err != os.ErrNotExist {
-				t.Errorf("unexpected error reading file: %s", err)
-			}
-			if string(data) != "" {
-				t.Errorf("unexpected data: %s", data)
-			}
-		})
 		t.Run(name+"-GetFileReader", func(t *testing.T) {
 			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, checkFn)
 		})
@@ -2503,7 +2468,8 @@ func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, 
 			t.Fatal(err)
 		}
 	}()
-	data, err := io.ReadAll(rc)
+	data, dataErr := io.ReadAll(rc)
+	require.NoError(t, dataErr)
 	checkFn(t, err, data)
 }
 

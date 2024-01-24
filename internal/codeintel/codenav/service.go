@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -983,7 +984,12 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 
-	file, err := s.gitserver.ReadFile(ctx, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	if err != nil {
+		return nil, err
+	}
+	file, err := io.ReadAll(r)
+	r.Close()
 	if err != nil {
 		return nil, err
 	}

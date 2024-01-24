@@ -358,6 +358,14 @@ type Client interface {
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
+	//
+	// If you just need to check a file's existence, use Stat, not a file reader.
+	//
+	// If the file doesn't exist, the returned error will pass the os.IsNotExist()
+	// check.
+	//
+	// If the path points to a submodule, a reader for an empty file is returned
+	// (ie. io.EOF is returned immediately).
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -381,10 +389,6 @@ type Client interface {
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
-
-	// ReadFile returns the full contents of the named file at commit.
-	// (If you just need to check a file's existence, use Stat, not ReadFile.)
-	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
 
 	// BranchesContaining returns a map from branch names to branch tip hashes for
 	// each branch containing the given commit.

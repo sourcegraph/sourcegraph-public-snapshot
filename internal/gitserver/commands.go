@@ -1318,33 +1318,6 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// ReadFile returns the full contents of the named file at commit.
-// (If you just need to check a file's existence, use Stat, not ReadFile.)
-func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			commit.Attr(),
-			attribute.String("name", name),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	br, err := c.NewFileReader(ctx, repo, commit, name)
-	if err != nil {
-		return nil, err
-	}
-	defer br.Close()
-
-	r := io.Reader(br)
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
@@ -1369,22 +1342,12 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	name = rel(name)
 	br, err := c.newBlobReader(ctx, repo, commit, name)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
+		return nil, err
 	}
 	return br, nil
 }
 
-// blobReader, which should be created using newBlobReader, is a struct that allows
-// us to get a ReadCloser to a specific named file at a specific commit
-type blobReader struct {
-	c      *clientImplementor
-	ctx    context.Context
-	repo   api.RepoName
-	commit api.CommitID
-	name   string
-	cmd    GitCommand
-	rc     io.ReadCloser
-}
+var errIsSubmodule = errors.New("blob is a submodule")
 
 func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (string, error) {
 	// Note: when our git is new enough we can just use --object-only
@@ -1403,52 +1366,44 @@ func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, comm
 	if len(fields) < 3 {
 		return "", errors.Newf("unexpected output while parsing blob OID: %q", string(out))
 	}
+	if string(fields[0]) == "160000" {
+		return "", errIsSubmodule
+	}
 	return string(fields[2]), nil
 }
 
-func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
+func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
-	var cmd GitCommand
-	if strings.Contains(name, "..") {
-		// We special case ".." in path to running a less efficient two
-		// commands. For other paths we can rely on the faster git show.
-		//
-		// git show will try and resolve revisions on anything containing
-		// "..". Depending on what branches/files exist, this can lead to:
-		//
-		//   - error: object $SHA is a tree, not a commit
-		//   - fatal: Invalid symmetric difference expression $SHA:$name
-		//   - outputting a diff instead of the file
-		//
-		// The last point is a security issue for repositories with sub-repo
-		// permissions since the diff will not be filtered.
-		blobOID, err := c.blobOID(ctx, repo, commit, name)
-		if err != nil {
-			return nil, err
+	blobOID, err := c.blobOID(ctx, repo, commit, name)
+	if err != nil {
+		if err == errIsSubmodule {
+			return io.NopCloser(bytes.NewReader(nil)), nil
 		}
-		cmd = c.gitCommand(repo, "cat-file", "-p", blobOID)
-	} else {
-		// Otherwise we can rely on a single command git show sha:name.
-		cmd = c.gitCommand(repo, "show", string(commit)+":"+name)
+		return nil, err
 	}
 
+	cmd := c.gitCommand(repo, "cat-file", "-p", blobOID)
 	stdout, err := cmd.StdoutReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &blobReader{
-		c:      c,
-		ctx:    ctx,
-		repo:   repo,
-		commit: commit,
-		name:   name,
-		cmd:    cmd,
-		rc:     stdout,
+		name: name,
+		cmd:  cmd,
+		rc:   stdout,
 	}, nil
+}
+
+// blobReader, which should be created using newBlobReader, is a struct that allows
+// us to get a ReadCloser to a specific named file at a specific commit
+type blobReader struct {
+	name string
+	cmd  GitCommand
+	rc   io.ReadCloser
 }
 
 func (br *blobReader) Read(p []byte) (int, error) {
@@ -1470,20 +1425,6 @@ func (br *blobReader) convertError(err error) error {
 	}
 	if err == io.EOF {
 		return err
-	}
-	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
-		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
-	}
-	if strings.Contains(err.Error(), "fatal: bad object ") {
-		// Could be a git submodule.
-		fi, err := br.c.Stat(br.ctx, br.repo, br.commit, br.name)
-		if err != nil {
-			return err
-		}
-		// Return EOF for a submodule for now which indicates zero content
-		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
-			return io.EOF
-		}
 	}
 	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
 }
