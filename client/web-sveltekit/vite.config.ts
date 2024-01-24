@@ -78,6 +78,12 @@ export default defineConfig(({ mode }) => {
                     find: /^rxjs\/(operators|fetch)$/,
                     replacement: 'rxjs/$1/index.js',
                 },
+                // Without aliasing lodash to lodash-es we get the following error:
+                // SyntaxError: Named export 'castArray' not found. The requested module 'lodash' is a CommonJS module, which may not support all module.exports as named exports.
+                {
+                    find: /^lodash$/,
+                    replacement: 'lodash-es',
+                },
             ],
         },
 
