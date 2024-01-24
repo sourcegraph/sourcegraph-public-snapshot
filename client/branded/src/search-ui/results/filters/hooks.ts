@@ -31,7 +31,7 @@ export function useUrlFilters(): [URLQueryFilter[], (newFilters: URLQueryFilter[
     return [filterQuery, setFilterQuery]
 }
 
-export function mergeQueryAndFilters(query: string, filters: URLQueryFilter[]) {
+export function mergeQueryAndFilters(query: string, filters: URLQueryFilter[]): string {
     const tokens = scanSearchQuery(query)
 
     // Return original query if it's non-valid query
