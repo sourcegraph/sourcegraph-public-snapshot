@@ -44,40 +44,49 @@ var bzlgenTargets = map[string]bzlgenTarget{
 
 var bzlgenCommand = &cli.Command{
 	Name:      "bzlgen",
-	Usage:     "generates bazel build files that can be generated automatically",
-	UsageText: "sg bzlgen [group...]",
-	Category:  category.Dev,
+	Usage:     "wrappers around some commands to generate various files required by Bazel.",
+	UsageText: "sg bzlgen [category...]",
+	Description: `For convenience, a number of Bazel commands are wrapped by this command to update various files required by Bazel.
+
+Available categories:
+	- builds: updates BUILD.bazel files for Go & Typescript targets.
+	- godeps: updates the bazel Go dependency targets based on go.mod changes.
+	- rustdeps: updates the cargo bazel lockfile.
+	- all: catch-all for the above
+
+If no categories are referenced, then 'builds' is assumed as the default.`,
+	Category: category.Dev,
 	Before: func(ctx *cli.Context) error {
 		for i := 0; i < ctx.NArg(); i++ {
 			if _, ok := bzlgenTargets[ctx.Args().Get(i)]; !ok && ctx.Args().Get(i) != "all" {
-				return errors.Errorf("group doesn't exist %q", ctx.Args().Get(i))
+				return errors.Errorf("category doesn't exist %q", ctx.Args().Get(i))
 			}
 		}
 		return nil
 	},
 	Action: func(ctx *cli.Context) error {
-		var groups []bzlgenTarget
-		var groupNames []string
+		var categories []bzlgenTarget
+		var categoryNames []string
 		if slices.Contains(ctx.Args().Slice(), "all") {
-			groups = maps.Values(bzlgenTargets)
-			groupNames = maps.Keys(bzlgenTargets)
+			categories = maps.Values(bzlgenTargets)
+			categoryNames = maps.Keys(bzlgenTargets)
 		} else if ctx.NArg() == 0 {
-			groups = []bzlgenTarget{bzlgenTargets["builds"]}
-			groupNames = []string{"builds"}
+			categories = []bzlgenTarget{bzlgenTargets["builds"]}
+			categoryNames = []string{"builds"}
 		} else {
 			for i := 0; i < ctx.NArg(); i++ {
-				groups = append(groups, bzlgenTargets[ctx.Args().Get(i)])
-				groupNames = append(groupNames, ctx.Args().Get(i))
+				categories = append(categories, bzlgenTargets[ctx.Args().Get(i)])
+				categoryNames = append(categoryNames, ctx.Args().Get(i))
 			}
 		}
 
-		slices.SortFunc(groups, func(a, b bzlgenTarget) bool {
+		slices.SortFunc(categories, func(a, b bzlgenTarget) bool {
 			return a.order < b.order
 		})
 
-		std.Out.WriteLine(output.Emojif(output.EmojiAsterisk, "Generating the following Bazel groups: %s", strings.Join(groupNames, ", ")))
+		std.Out.WriteLine(output.Emojif(output.EmojiAsterisk, "Invoking the following Bazel generating categories: %s", strings.Join(categoryNames, ", ")))
 
-		for _, c := range groups {
+		for _, c := range categories {
 			root, err := root.RepositoryRoot()
 			if err != nil {
 				return err
