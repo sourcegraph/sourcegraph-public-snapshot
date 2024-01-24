@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
+	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -87,18 +87,84 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	redactor := newSecretRedactor(union(h.options.RedactedValues, job.RedactedValues))
 
-	// If audit logs are enabled, we dump the whole job payload to the logs.
+	// If audit logs are enabled, we log all safe job properties to the logs.
+	// Note: This is a best-effort redaction. Depending on encoding, some secrets might
+	// still be present in the logs.
+	// Thus, the audit logs are disabled by default and strictly opt-in.
 	if h.options.EnableJobAuditLogging {
-		jobPayload, err := json.Marshal(job)
-		if err != nil {
-			logger.Error("failed to marshal job payload to JSON, SKIPPING AUDIT LOG ENTRY", log.Error(err))
+		redactedValues := make([]string, 0, len(job.RedactedValues))
+		for _, redactedValue := range job.RedactedValues {
+			redactedValues = append(redactedValues, redactedValue)
 		}
-		// Redact any secret values in the marshalled JSON payload:
-		// Note: This is a best-effort redaction. Depending on encoding, some secrets might
-		// still be present in the logs.
-		// Thus, the audit logs are disabled by default and strictly opt-in.
-		redactedPayload := redactor.Replace(string(jobPayload))
-		logger.Warn("Received new job to process", log.String("jobPayload", redactedPayload))
+
+		virtualMachineFileFields := []log.Field{}
+		for path, file := range job.VirtualMachineFiles {
+			if binary.IsBinary(file.Content) {
+				virtualMachineFileFields = append(virtualMachineFileFields,
+					log.Object(path, log.Bool("binaryContent", true)),
+				)
+				continue
+			}
+
+			virtualMachineFileFields = append(virtualMachineFileFields,
+				log.Object(path, log.String("content", redactor.Replace(string(file.Content)))),
+			)
+		}
+
+		redactEachString := func(in []string) []string {
+			out := make([]string, 0, len(in))
+			for _, s := range in {
+				out = append(out, redactor.Replace(s))
+			}
+			return out
+		}
+
+		dockerStepsFields := []log.Field{}
+		for i, step := range job.DockerSteps {
+			dockerStepsFields = append(dockerStepsFields,
+				log.Object(
+					fmt.Sprintf("step%d", i),
+					log.String("key", step.Key),
+					log.String("image", step.Image),
+					log.Strings("command", redactEachString(step.Commands)),
+					log.String("dir", step.Dir),
+					log.Strings("env", redactEachString(step.Env)),
+				),
+			)
+		}
+
+		cliStepsFields := []log.Field{}
+		for i, step := range job.CliSteps {
+			cliStepsFields = append(cliStepsFields,
+				log.Object(
+					fmt.Sprintf("step%d", i),
+					log.String("key", step.Key),
+					log.Strings("command", redactEachString(step.Commands)),
+					log.String("dir", step.Dir),
+					log.Strings("env", redactEachString(step.Env)),
+				),
+			)
+		}
+
+		logger.Warn(
+			"Received new job to process",
+			log.Object("job",
+				log.Int("id", job.ID),
+				log.Int("version", job.Version),
+				log.String("queueName", job.Queue),
+				log.String("repositoryName", job.RepositoryName),
+				log.String("repositoryDirectory", job.RepositoryDirectory),
+				log.String("commit", job.Commit),
+				log.Bool("fetchTags", job.FetchTags),
+				log.Bool("shallowClone", job.ShallowClone),
+				log.Strings("sparseCheckout", job.SparseCheckout),
+				log.Strings("redactedValueReplacements", redactedValues),
+				log.Int("dockerAuthConfigEntries", len(job.DockerAuthConfig.Auths)),
+				log.Object("virtualMachineFiles", virtualMachineFileFields...),
+				log.Object("dockerSteps", dockerStepsFields...),
+				log.Object("cliSteps", cliStepsFields...),
+			),
+		)
 	}
 
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
