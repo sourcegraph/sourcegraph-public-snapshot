@@ -2,11 +2,11 @@ package guardrails
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // AttributionTest is a predicate that tells whether given snippet can be freely used.

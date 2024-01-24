@@ -6,7 +6,10 @@ go_library(
     srcs = ["attribution_filter.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/guardrails",
     visibility = ["//:__subpackages__"],
-    deps = ["//internal/completions/types"],
+    deps = [
+        "//internal/completions/types",
+        "//lib/errors",
+    ],
 )
 
 go_test(
