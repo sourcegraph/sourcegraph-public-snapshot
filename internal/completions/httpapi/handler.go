@@ -251,7 +251,13 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 			}
 		}()
 		start := time.Now()
-		f := guardrails.NewCompletionsFilter(eventWriter, test)
+		eventSink := func (e types.CompletionResponse) error {
+			if w := eventWriter(); w != nil {
+				return w.Event("completion", e)
+			}
+			return nil
+		}
+		f := guardrails.NewCompletionsFilter(eventSink, test)
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {

@@ -6,8 +6,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
 // AttributionTest is a predicate that tells whether given snippet can be freely used.
@@ -16,23 +14,30 @@ import (
 // context cancellation.
 type AttributionTest func (context.Context, string) bool
 
+// CompletionEventSink is where selected events end up being streamed to.
+type CompletionEventSink func (types.CompletionResponse) error
+
 // CompletionsFilter is used to filter out the completions with potential risk
 // due to attribution.
 //
 // Example usage:
 // ```
-// filter := NewCompletionsFilter(w, func (ctx context.Context, snippet string) bool {
+// sink := func (e types.CompletionsResponse) error {
+//   // stream completions response back to the client
+// }
+// test := func (ctx context.Context, snippet string) bool {
 //   // execute attribution search and return true/false.
-// })
+// }
+// filter := NewCompletionsFilter(sink, test)
 // // as completion events arrive:
 // err := filter.Send(ctx, event)
 // // all send operations finished:
 // err := filter.WaitDone(ctx)
 // ```
 type CompletionsFilter struct {
-	// eventWriter is the sink where completion stream events end up if they can
+	// sink where completion stream events end up if they can
 	// get passed along to the user.
-	eventWriter func () *streamhttp.Writer
+	sink CompletionEventSink
 	// filter exposes a long-running attribution operation
 	test AttributionTest
 	// attributionRun synchronizes on attribution to run only once.
@@ -44,22 +49,22 @@ type CompletionsFilter struct {
 	mu sync.Mutex
 	// sendingBlocked = true indicates that eventWriter should not be used anymore
 	sendingBlocked bool
-	// canUse is nil if attribution has not finished yet,
+	// attributionResult is nil if attribution search has not finished yet,
 	// true if it finished, and result was permissive, and false otherwise
-	canUse *bool
-	// last is the most recent completion response. We keep the most recent
+	attributionResult *bool
+	// mostRecentCompletion memoized. We keep the most recent
 	// completion passed over to Send while attribution is running. Once attribution
 	// finishes, we carry on sending from the most recent completion.
-	last types.CompletionResponse
+	mostRecentCompletion types.CompletionResponse
 }
 
 // NewCompletionsFilter returns a fully initialized streaming filter.
 // This filter should be used for only a single code completions streaming
 // since it keeps internal state. Public methods are synchronized.
-func NewCompletionsFilter(w func () *streamhttp.Writer, t AttributionTest) *CompletionsFilter {
+func NewCompletionsFilter(sink CompletionEventSink, test AttributionTest) *CompletionsFilter {
 	return &CompletionsFilter{
-		eventWriter: w,
-		test: t,
+		sink: sink,
+		test: test,
 		attributionFinished: make(chan error, 1),
 	}
 }
@@ -67,13 +72,13 @@ func NewCompletionsFilter(w func () *streamhttp.Writer, t AttributionTest) *Comp
 // Send is invoked each time new completion prefix arrives as the completion
 // is being yielded by the LLM.
 func (a *CompletionsFilter) Send(ctx context.Context, e types.CompletionResponse) error {
-	if u := a.getCanUse(); u != nil && *u {
+	if a.attributionResultPermissive() {
 		return a.send(e)
 	}
-	a.setLast(e)
 	if a.smallEnough(e) {
 		return a.send(e)
 	}
+	a.setMostRecentCompletion(e)
 	a.attributionRun.Do(func () {
 		go a.runAttribution(ctx, e)
 	})
@@ -95,23 +100,21 @@ func (a *CompletionsFilter) WaitDone(ctx context.Context) error {
 	}
 }
 
-// getCanUse returns the attribution search result.
-// It is true if attribution was empty and snippet is free to be used.
-// It is false if attribution was not empty and caution should be used proceeding.
-// It is nil if attribution search did not finish (or run) yet.
-func (a *CompletionsFilter) getCanUse() *bool {
+// attributionResultPermissive states whether attribution search
+// finished and is permissive - that is no attribution was found.
+func (a *CompletionsFilter) attributionResultPermissive() bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.canUse
+	return a.attributionResult != nil && *a.attributionResult
 }
 
-// setCanUse is invoked to note the result of attribution search.
+// setAttributionResult is invoked to note the result of attribution search.
 // If true, attribution is emtpy, and the snippet is safe to be used.
 // If false, attribution is not empty, and the snippet should be used with caution.
-func (a *CompletionsFilter) setCanUse(canUse bool) {
+func (a *CompletionsFilter) setAttributionResult(attributionResult bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.canUse = &canUse
+	a.attributionResult = &attributionResult
 }
 
 // send invokes eventWriter if available. Sending is only enabled
@@ -121,10 +124,7 @@ func (a *CompletionsFilter) send(e types.CompletionResponse) error {
 	if !a.canSend() {
 		return nil
 	}
-	if w := a.eventWriter(); w != nil {
-		return w.Event("completion", e)
-	}
-	return nil
+	return a.sink(e)
 }
 
 // smallEnough indicates whether snippet size is small enough not to consider
@@ -134,26 +134,26 @@ func (a *CompletionsFilter) smallEnough(e types.CompletionResponse) bool {
 	return len(strings.Split(e.Completion, "\n")) < 10
 }
 
-// getLast returns the last completion event to be fed to `Send`.
-func (a *CompletionsFilter) getLast() types.CompletionResponse {
+// getMostRecentCompletion returns the last completion event to be fed to `Send`.
+func (a *CompletionsFilter) getMostRecentCompletion() types.CompletionResponse {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.last
+	return a.mostRecentCompletion
 }
 
-// setLast overwrites the last completion event passed to `Send`.
-func (a *CompletionsFilter) setLast(e types.CompletionResponse) {
+// setMostRecentCompletion overwrites the last completion event passed to `Send`.
+func (a *CompletionsFilter) setMostRecentCompletion(e types.CompletionResponse) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.last = e
+	a.mostRecentCompletion = e
 }
 
 // runAttribution performs attribution search and updates the state of the object
 // after finishing. It's run within `attributionRun` to ensure it only runs once.
 func (a *CompletionsFilter) runAttribution(ctx context.Context, e types.CompletionResponse) {
-	canUse := a.test(ctx, e.Completion)
-	a.setCanUse(canUse)
-	err := a.send(a.getLast())
+	result := a.test(ctx, e.Completion)
+	a.setAttributionResult(result)
+	err := a.send(a.getMostRecentCompletion())
 	a.attributionFinished <- err
 	close(a.attributionFinished)
 }
