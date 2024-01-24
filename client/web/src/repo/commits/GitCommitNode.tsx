@@ -158,31 +158,29 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         </div>
     )
 
-    const commitContent = truncatedCommitMessage && node.body ? `${node.body.slice(0, 240)}...` : node.body
+    const showCommitMessage = expandCommitMessageBody || showCommitMessageBody
+    const commitContent = truncatedCommitMessage && node.body ? `${node.body.slice(0, 240)}` : node.body
 
-    const commitMessageBody =
-        expandCommitMessageBody || showCommitMessageBody ? (
-            <div className="w-100">
-                {commitContent && node.body && (
-                    <pre className={styles.messageBody}>
-                        <Linkified
-                            input={node.body.length < 240 ? node.body : commitContent}
-                            externalURLs={node.externalURLs}
-                        />
-                        {node.body.length > 240 && (
-                            <Button
-                                variant="link"
-                                size="sm"
-                                display="inline"
-                                onClick={() => setTruncatedCommitMessage(!truncatedCommitMessage)}
-                            >
-                                {truncatedCommitMessage ? 'see more' : 'see less'}
-                            </Button>
-                        )}
-                    </pre>
-                )}
-            </div>
-        ) : undefined
+    const commitMessageBody = showCommitMessage && commitContent ? (
+        <div className="w-100">
+            <pre className={styles.messageBody}>
+                <Linkified
+                    input={commitContent}
+                    externalURLs={node.externalURLs}
+                />
+                {commitContent.length >= 240 &&
+                    <Button
+                        variant="link"
+                        size="sm"
+                        display="inline"
+                        onClick={() => setTruncatedCommitMessage(!truncatedCommitMessage)}
+                    >
+                        {truncatedCommitMessage ? '... see more' : 'see less'}
+                    </Button>
+                }
+            </pre>
+        </div>
+    ) : undefined
 
     const bylineElement = (
         <GitCommitNodeByline
