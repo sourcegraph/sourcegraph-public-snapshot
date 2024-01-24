@@ -1,12 +1,31 @@
 <script lang="ts" context="module">
-    import type { BlobFileFields } from '$lib/repo/api/blob'
     import { HovercardView } from '$lib/repo/HovercardView'
 
-    export interface BlobInfo extends BlobFileFields {
-        commitID: string
-        filePath: string
+    export interface BlobInfo {
+        /**
+         * Name of the repository this file belongs to.
+         */
         repoName: string
+        /**
+         * The commit OID of the currently viewed commit.
+         */
+        commitID: string
+        /**
+         * Human readable version of the current commit (e.g. branch name).
+         */
         revision: string
+        /**
+         * The path of the file relative to the repository root.
+         */
+        filePath: string
+        /**
+         * The content of the file.
+         */
+        content: string
+        /**
+         * The language of the file.
+         */
+        languages: string[]
     }
 
     const extensionsCompartment = new Compartment()
@@ -107,7 +126,7 @@
         temporaryTooltip,
     } from '$lib/web'
     import { goto } from '$app/navigation'
-    import { getModeFromPath, type CodeIntelAPI } from '$lib/shared'
+    import type { CodeIntelAPI } from '$lib/shared'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
     import type { LineOrPositionOrRange } from '$lib/common'
 
@@ -134,13 +153,12 @@
         commitID: blobInfo.commitID,
         revision: blobInfo.revision,
         filePath: blobInfo.filePath,
+        languages: blobInfo.languages,
     }
-    $: mode = getModeFromPath(blobInfo.filePath)
     $: codeIntelExtension = createCodeIntelExtension({
         api: {
             api: codeIntelAPI,
             documentInfo: documentInfo,
-            mode,
             goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
             openReferences,
             openImplementations,

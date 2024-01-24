@@ -126,11 +126,19 @@ type FeatureBatchChanges struct {
 	MaxNumChangesets int `json:"maxNumChangesets"`
 }
 
+// LicenseFeatures contains information about licensed features that are
+// enabled/disabled on the current license.
+type LicenseFeatures struct {
+	CodeSearch bool `json:"codeSearch"`
+	Cody       bool `json:"cody"`
+}
+
 // LicenseInfo contains non-sensitive information about the legitimate usage of the
 // current license on the instance. It is technically accessible to all users, so only
 // include information that is safe to be seen by others.
 type LicenseInfo struct {
 	BatchChanges *FeatureBatchChanges `json:"batchChanges"`
+	Features     LicenseFeatures      `json:"features"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -170,7 +178,10 @@ type JSContext struct {
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
-	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllow                 conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllowNoExpiration     bool                  `json:"accessTokensAllowNoExpiration"`
+	AccessTokensDefaultExpirationDays int                   `json:"accessTokensExpirationDaysDefault"`
+	AccessTokensExpirationDaysOptions []int                 `json:"accessTokensExpirationDaysOptions"`
 
 	AllowSignup bool `json:"allowSignup"`
 
@@ -322,6 +333,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
 
+	accessTokenDefaultExpirationDays, accessTokenExpirationDaysOptions := conf.AccessTokensExpirationOptions()
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -357,7 +370,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
-		AccessTokensAllow: conf.AccessTokensAllow(),
+		AccessTokensAllow:                 conf.AccessTokensAllow(),
+		AccessTokensAllowNoExpiration:     conf.AccessTokensAllowNoExpiration(),
+		AccessTokensDefaultExpirationDays: accessTokenDefaultExpirationDays,
+		AccessTokensExpirationDaysOptions: accessTokenExpirationDaysOptions,
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
@@ -378,7 +394,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
 		CodyEnabled:               conf.CodyEnabled(),
-		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
+		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx, db),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		ExecutorsEnabled:                               conf.ExecutorsEnabled(),

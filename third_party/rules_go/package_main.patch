@@ -19,7 +19,7 @@ index a4e737ee..16d545e0 100644
              out_lib = out_lib,
              out_export = out_export,
 diff --git a/go/private/actions/compilepkg.bzl b/go/private/actions/compilepkg.bzl
-index 03096a92..533425a9 100644
+index 48adb910..016a6a66 100644
 --- a/go/private/actions/compilepkg.bzl
 +++ b/go/private/actions/compilepkg.bzl
 @@ -44,6 +44,7 @@ def emit_compilepkg(
@@ -39,7 +39,7 @@ index 03096a92..533425a9 100644
 
      args.add("-o", out_lib)
 diff --git a/go/tools/builders/compilepkg.go b/go/tools/builders/compilepkg.go
-index b3a6d283..6c1da815 100644
+index bcbdb642..f57062e8 100644
 --- a/go/tools/builders/compilepkg.go
 +++ b/go/tools/builders/compilepkg.go
 @@ -51,7 +51,7 @@ func compilePkg(args []string) error {
@@ -75,17 +75,17 @@ index b3a6d283..6c1da815 100644
  	srcs archiveSrcs,
  	deps []archive,
  	coverMode string,
-@@ -453,7 +456,7 @@ func compileArchive(
+@@ -441,7 +444,7 @@ func compileArchive(
  		ctx, cancel := context.WithCancel(context.Background())
  		nogoChan = make(chan error)
  		go func() {
--			nogoChan <- runNogo(ctx, workDir, nogoPath, nogoSrcs, deps, packagePath, importcfgPath, outFactsPath)
-+			nogoChan <- runNogo(ctx, workDir, nogoPath, nogoSrcs, deps, realPackagePath, importcfgPath, outFactsPath)
+-			nogoChan <- runNogo(ctx, workDir, nogoPath, goSrcsNogo, deps, packagePath, importcfgPath, outFactsPath)
++			nogoChan <- runNogo(ctx, workDir, nogoPath, goSrcsNogo, deps, realPackagePath, importcfgPath, outFactsPath)
  		}()
  		defer func() {
  			if nogoChan != nil {
 diff --git a/go/tools/builders/nogo_main.go b/go/tools/builders/nogo_main.go
-index 17ff5314..3ce75fa5 100644
+index 17ff5314..2a6c98b2 100644
 --- a/go/tools/builders/nogo_main.go
 +++ b/go/tools/builders/nogo_main.go
 @@ -78,6 +78,10 @@ func run(args []string) error {
@@ -93,7 +93,7 @@ index 17ff5314..3ce75fa5 100644
  	srcs := flags.Args()
 
 +	if *packagePath == "main" {
-+		panic("packagePath='main' is invalid, expected fully qualified package path")
++		panic("packagePath='main' is invalid, expected full qualified package path")
 +	}
 +
  	packageFile, importMap, err := readImportCfg(*importcfg)

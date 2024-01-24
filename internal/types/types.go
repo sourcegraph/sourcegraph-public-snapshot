@@ -528,14 +528,6 @@ type MinimalRepo struct {
 	Stars int
 }
 
-func (r *MinimalRepo) ToRepo() *Repo {
-	return &Repo{
-		ID:    r.ID,
-		Name:  r.Name,
-		Stars: r.Stars,
-	}
-}
-
 // MinimalRepos is an utility type with convenience methods for operating on lists of repo names
 type MinimalRepos []MinimalRepo
 
@@ -864,6 +856,16 @@ type User struct {
 	CompletedPostSignup   bool
 	SCIMControlled        bool
 	CodyProEnabledAt      *time.Time
+}
+
+// Name returns a name for the user. If the user has a display name,
+// that is returned, otherwise their username is returned.
+func (u *User) Name() string {
+	if u.DisplayName != "" {
+		return u.DisplayName
+	}
+
+	return u.Username
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
@@ -2098,6 +2100,7 @@ const (
 	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+	AccessRequestStatusCanceled AccessRequestStatus = "CANCELED"
 )
 
 type PerforceChangelist struct {

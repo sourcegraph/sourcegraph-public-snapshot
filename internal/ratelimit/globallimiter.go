@@ -303,7 +303,7 @@ var setTokenBucketReplenishmentLuaScript string
 
 type getTokenGrantType int64
 
-var (
+const (
 	tokenGranted            getTokenGrantType = 1
 	waitTimeExceedsDeadline getTokenGrantType = -1
 	negativeTimeDifference  getTokenGrantType = -2

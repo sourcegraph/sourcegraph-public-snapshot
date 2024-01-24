@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
@@ -11,12 +12,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/zoekt"
 	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
 	"google.golang.org/grpc"
+
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 
 	webproto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/query"
@@ -134,7 +136,7 @@ Hello world example in go`, typeFile},
 		Service: service,
 	})
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, service)
+	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
 	ts := httptest.NewServer(handler)
 
@@ -149,7 +151,7 @@ Hello world example in go`, typeFile},
 		Want    string
 	}{{
 		Name:    "all",
-		Pattern: protocol.PatternInfo{Pattern: "world"},
+		Pattern: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}},
 		Want: `
 added.md:1:1:
 hello world I am added
@@ -163,7 +165,7 @@ Hello world example in go
 	}, {
 		Name: "added",
 		Pattern: protocol.PatternInfo{
-			Pattern:         "world",
+			Query:           &protocol.PatternNode{Value: "world"},
 			IncludePatterns: []string{"added"},
 		},
 		Want: `
@@ -171,8 +173,54 @@ added.md:1:1:
 hello world I am added
 `,
 	}, {
+		Name: "example",
+		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{Value: "example"},
+		},
+		Want: `
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}, {
+		Name: "boolean query",
+		Pattern: protocol.PatternInfo{
+			Query: &protocol.AndNode{
+				Children: []protocol.QueryNode{
+					&protocol.OrNode{
+						Children: []protocol.QueryNode{
+							&protocol.PatternNode{Value: "w.rld", IsRegExp: true},
+							&protocol.PatternNode{Value: "package"},
+						},
+					},
+					&protocol.PatternNode{Value: "nonexistent", IsNegated: true},
+				},
+			},
+		},
+		Want: `
+added.md:1:1:
+hello world I am added
+changed.go:1:1:
+package main
+changed.go:6:6:
+	fmt.Println("Hello world")
+unchanged.md:1:1:
+# Hello World
+unchanged.md:3:3:
+Hello world example in go
+`,
+	}, {
+		Name: "negated-pattern-example",
+		Pattern: protocol.PatternInfo{
+			Query: &protocol.PatternNode{Value: "example", IsNegated: true},
+		},
+		Want: `
+added.md
+changed.go
+`,
+	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
+			Query:           &protocol.PatternNode{Value: ""},
 			IncludePatterns: []string{"^added"},
 		},
 		Want: `
@@ -181,6 +229,7 @@ added.md
 	}, {
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
+			Query:          &protocol.PatternNode{Value: ""},
 			ExcludePattern: "added",
 		},
 		Want: `
@@ -190,6 +239,7 @@ unchanged.md
 	}, {
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
+			Query:          &protocol.PatternNode{Value: ""},
 			ExcludePattern: "unchanged",
 		},
 		Want: `
@@ -199,6 +249,7 @@ changed.go
 	}, {
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
+			Query:           &protocol.PatternNode{Value: ""},
 			IncludePatterns: []string{"."},
 		},
 		Want: `
@@ -209,7 +260,7 @@ unchanged.md
 	}, {
 		Name: "pattern-path",
 		Pattern: protocol.PatternInfo{
-			Pattern:               "go",
+			Query:                 &protocol.PatternNode{Value: "go"},
 			PatternMatchesContent: true,
 			PatternMatchesPath:    true,
 		},
@@ -217,6 +268,16 @@ unchanged.md
 changed.go
 unchanged.md:3:3:
 Hello world example in go
+`,
+	}, {
+		Name: "negated-pattern-path",
+		Pattern: protocol.PatternInfo{
+			Query:              &protocol.PatternNode{Value: "go", IsNegated: true},
+			PatternMatchesPath: true,
+		},
+		Want: `
+added.md
+unchanged.md
 `,
 	}}
 
@@ -231,7 +292,7 @@ Hello world example in go
 				FetchTimeout: fetchTimeoutForCI(t),
 			}
 
-			m, err := doSearch(ts.URL, &req)
+			m, err := doSearch(t, ts.URL, &req)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -71,7 +71,7 @@ func (m *mockResolver) LookupHost(hostname string) ([]string, error) {
 	switch hostname {
 	case "sourcegraph.local":
 		return []string{"127.0.0.1"}, nil
-	case "localhost":
+	case "localhost": // (CI:LOCALHOST_OK)
 		return []string{"127.0.0.1"}, nil
 	case "sourcegraph.com":
 		return []string{"1.2.3.4"}, nil

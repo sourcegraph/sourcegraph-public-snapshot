@@ -301,12 +301,14 @@ type Mutation {
     - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
       with this scope.)
 
+    DurationSeconds: If provided, the number of seconds until the token expires automatically.
+
     Only the user or site admins may perform this mutation.
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    createAccessToken(user: ID!, durationSeconds: Int, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     itself.
@@ -2677,7 +2679,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
-    newStandardRC1
+    codycontext
 }
 
 """
@@ -5815,6 +5817,16 @@ interface File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's name and contents.
+
+    The resulting array may be empty if no language could be determined,
+    or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
+    """
+    languages: [String!]!
 }
 
 """
@@ -5918,6 +5930,16 @@ type VirtualFile implements File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's name and contents.
+
+    The resulting array may be empty if no language could be determined,
+    or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6062,6 +6084,16 @@ type GitBlob implements TreeEntry & File2 {
         endLine: Int
     ): HighlightedFile!
     """
+    The language(s) determined based on the file's name and contents.
+
+    The resulting array may be empty if no language could be determined,
+    or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
+    """
+    languages: [String!]!
+    """
     Submodule metadata if this tree points to a submodule
     """
     submodule: Submodule
@@ -6177,6 +6209,10 @@ type FileMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
+    """
+    The detected languages for the file, empty if the language cannot be determined.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6541,10 +6577,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codyProEnabled: Boolean!
     """
-    The date when the user enrolled for Cody Pro.
-    """
-    codyProEnabledAt: DateTime
-    """
     The start date of current billing period of Cody.
     """
     codyCurrentPeriodStartDate: DateTime
@@ -6603,6 +6635,10 @@ type AccessToken implements Node {
     The date when the access token was last used to authenticate a request.
     """
     lastUsedAt: DateTime
+    """
+    If non-null, the token may no longer be used after this date.
+    """
+    expiresAt: DateTime
 }
 
 """
@@ -7392,6 +7428,13 @@ type Site implements SettingsSubject {
     codyLLMConfiguration: CodyLLMConfiguration
 
     """
+    Decides which features to enable for the users of this SG instance
+
+    Site-admin only.
+    """
+    codyConfigFeatures: CodyConfigFeatures
+
+    """
     Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
     If the instance is not using the Cody Gateway there will be no rate limits.
 
@@ -7433,6 +7476,32 @@ type CodyLLMConfiguration {
     Name of the provider being used for LLM interactions.
     """
     provider: String!
+}
+
+"""
+Cody Config features contains information about which LLM features are enabled
+for this SG instance
+"""
+type CodyConfigFeatures {
+    """
+    Enable Cody chat feature.
+    """
+    chat: Boolean!
+
+    """
+    Enable Cody autocomplete feature.
+    """
+    autoComplete: Boolean!
+
+    """
+    Enable Cody special commands feature.
+    """
+    commands: Boolean!
+
+    """
+    Enable attribution search for Cody-generated snippets.
+    """
+    attribution: Boolean!
 }
 
 """
@@ -10141,6 +10210,10 @@ enum AccessRequestStatus {
     Access request was rejected
     """
     REJECTED
+    """
+    Access request was canceled
+    """
+    CANCELED
 }
 
 """
@@ -10375,6 +10448,11 @@ enum PermissionNamespace {
     Only useful on Sourcegraph.com.
     """
     LICENSE_MANAGER
+
+    """
+    This represents the Cody namespace.
+    """
+    CODY
 }
 
 """

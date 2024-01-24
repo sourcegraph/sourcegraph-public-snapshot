@@ -129,7 +129,7 @@ func (s *Store) Start() {
 		s.ObservationCtx.Registerer.MustRegister(m)
 
 		go s.watchAndEvict()
-		go s.watchConfig()
+		s.watchConfig()
 	})
 }
 
@@ -431,16 +431,14 @@ func (s *Store) watchAndEvict() {
 
 // watchConfig updates fetchLimiter as the number of gitservers change.
 func (s *Store) watchConfig() {
-	for {
+	conf.Watch(func() {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(s.GitserverClient.Addrs())
+		limit := 10 * len(conf.Get().ServiceConnections().GitServers)
 		if limit == 0 {
 			limit = 15
 		}
 		s.fetchLimiter.SetLimit(limit)
-
-		time.Sleep(10 * time.Second)
-	}
+	})
 }
 
 var (

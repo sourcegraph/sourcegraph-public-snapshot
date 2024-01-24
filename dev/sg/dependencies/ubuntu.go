@@ -31,7 +31,7 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
+				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.42.0"))),
 				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
 			}, {
 				Name:  "pcre",
@@ -255,7 +255,7 @@ To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
 				Description: `In order to use TLS to access your local Sourcegraph instance, you need to
 trust the certificate created by Caddy, the proxy we use locally.
 
-YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
+WARNING: if you just fixed (automatically or manually) this step, you must restart sg setup for the check to pass.`,
 				Enabled: disableInCI(), // Can't seem to get this working
 				Check:   checkAction(checkCaddyTrusted),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {

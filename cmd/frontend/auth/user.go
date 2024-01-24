@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,6 +34,53 @@ type GetAndSaveUserOp struct {
 	ExternalAccountData extsvc.AccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool
+}
+
+// Checks if the user's email defined in the GetAndSaveUserOp is banned.
+// This is done by first checking a list of banned email domains.
+// If the domain is not banned, we then check if the email is a Google account
+// that's hosted on a non-gmail.com domain. Then, if too many signups have
+// happend recently, we prevent the signup.
+func checkIfEmailDomainIsBanned(ctx context.Context, recorder *telemetry.BestEffortEventRecorder, op GetAndSaveUserOp, acct *extsvc.Account) (string, error) {
+	domain, _ := security.ParseEmailDomain(op.UserProps.Email)
+
+	banned, err := security.IsEmailBanned(op.UserProps.Email)
+	if err != nil {
+		return "could not determine if email domain is banned", err
+	}
+
+	if banned {
+		recorder.Record(ctx, telemetry.FeaturesSignUpBlockedBannedDomain, telemetry.ActionFailed, &telemetry.EventParameters{
+			PrivateMetadata: map[string]any{
+				"serviceType": acct.AccountSpec.ServiceType,
+				"serviceId":   acct.AccountSpec.ServiceID,
+				"emailDomain": domain,
+			},
+		})
+
+		return "this email address is not allowed to register", errors.New("email domain banned")
+	}
+
+	if acct.AccountSpec.ServiceID == "https://accounts.google.com" && domain != "gmail.com" {
+		banned, err := security.IsEmailBlockedDueToTooManySignups(op.UserProps.Email)
+		if err != nil {
+			return "could not determine if email domain is banned", err
+		}
+
+		if banned {
+			recorder.Record(ctx, telemetry.FeaturesSignUpBlockedTooManySignups, telemetry.ActionFailed, &telemetry.EventParameters{
+				PrivateMetadata: map[string]any{
+					"serviceType": acct.AccountSpec.ServiceType,
+					"serviceId":   acct.AccountSpec.ServiceID,
+					"emailDomain": domain,
+				},
+			})
+
+			return "There seem to be too many signups occurring today. Please try again at a later time.", errors.New("Email not allowed to register due to too many signups")
+		}
+	}
+
+	return "", nil
 }
 
 // GetAndSaveUser accepts authentication information associated with a given user, validates and applies
@@ -127,6 +175,13 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 
 		act := &sgactor.Actor{
 			SourcegraphOperator: acct.AccountSpec.ServiceType == auth.SourcegraphOperatorProviderType,
+		}
+
+		if envvar.SourcegraphDotComMode() {
+			reason, err := checkIfEmailDomainIsBanned(ctx, recorder, op, acct)
+			if err != nil {
+				return 0, false, false, reason, err
+			}
 		}
 
 		// Fourth and finally, create a new user account and return it.
@@ -313,40 +368,5 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 	}
 
-	addCodyProForTestUsers(ctx, db, userID, logger)
 	return newUserSaved, userID, "", nil
-}
-
-// addCodyProForTestUsers adds the cody-pro feature flag for users who are on the
-// "exempted from the minimum external account age" list
-// This is temporary for testing before 2023-12-14
-func addCodyProForTestUsers(ctx context.Context, db database.DB, userID int32, logger sglog.Logger) {
-	dc := conf.Get().Dotcom
-	if dc == nil {
-		return
-	}
-
-	verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userID, OnlyVerified: true})
-	if err != nil {
-		return
-	}
-
-	exempted := false
-	for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
-		for _, verifiedEmail := range verifiedEmails {
-			if verifiedEmail.Email == exemptedEmail {
-				exempted = true
-				break
-			}
-		}
-		if exempted {
-			break
-		}
-	}
-	if exempted {
-		_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &userID})
-		if err != nil {
-			logger.Error("failed to create feature flag override", sglog.Error(err))
-		}
-	}
 }

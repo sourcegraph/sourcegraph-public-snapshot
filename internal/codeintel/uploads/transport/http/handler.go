@@ -89,7 +89,7 @@ func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName
 	//
 	// 2. Resolve commit
 
-	if _, err := repoStore.ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := repoStore.ResolveRev(ctx, repo.Name, commit); err != nil {
 		var reason string
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			reason = "commit not found"

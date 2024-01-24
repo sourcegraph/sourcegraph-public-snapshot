@@ -22,6 +22,5 @@ jobs:
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
                   team/devops=@sourcegraph/cloud-devops
-                  team/source=@mrnugget
                   cody-gateway=@unknwon @eseliger @bobheadxi @rafax
                   team/search-platform=@sourcegraph/search-platform

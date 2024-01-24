@@ -40,17 +40,19 @@ import { fetchBlob } from '../../../../repo/blob/backend'
 import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
 import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
-import { buildSearchURLQueryFromQueryState, setSearchMode } from '../../../../stores'
+import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
-import { submitSearch } from '../../../helpers'
 import { DidYouMean } from '../../../suggestion/DidYouMean'
 import { SmartSearch } from '../../../suggestion/SmartSearch'
 import { SearchFiltersSidebar } from '../../sidebar/SearchFiltersSidebar'
 import { AggregationUIMode, SearchAggregationResult } from '../aggregation'
+import { SearchFiltersPanel, SearchFiltersTabletButton } from '../filters-panel/SearchFiltersPanel'
 import { SearchResultsInfoBar } from '../search-results-info-bar/SearchResultsInfoBar'
 import { SearchAlert } from '../SearchAlert'
 import { UnownedResultsAlert } from '../UnownedResultsAlert'
 import { isSmartSearchAlert } from '../utils'
+
+import { useIsNewSearchFiltersEnabled } from './use-new-search-filters'
 
 import styles from './NewSearchContent.module.scss'
 
@@ -97,7 +99,6 @@ interface NewSearchContentProps
 
 export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const {
-        searchMode,
         submittedURLQuery,
         liveQuery,
         queryState,
@@ -132,13 +133,15 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const submittedURLQueryRef = useRef(submittedURLQuery)
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
+
+    const newFiltersEnabled = useIsNewSearchFiltersEnabled()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
     useScrollManager('SearchResultsContainer', containerRef)
 
     // Clean up hook, close the preview panel if search result page
     // have been closed/unmount
-    useEffect(() => clearPreview, [clearPreview])
+    useEffect(clearPreview, [clearPreview])
 
     // File preview clean up hook, close the preview panel every time when we
     // re-search / re-submit the query.
@@ -158,9 +161,25 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         []
     )
 
+    const handleFilterPanelQueryChange = useCallback(
+        (updatedQuery: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }])
+        },
+        [onSearchSubmit]
+    )
+
     return (
-        <div className={styles.root}>
-            {!sidebarCollapsed && (
+        <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
+            {newFiltersEnabled && (
+                <SearchFiltersPanel
+                    query={submittedURLQuery}
+                    filters={results?.filters}
+                    onQueryChange={handleFilterPanelQueryChange}
+                    className={styles.newFilters}
+                />
+            )}
+
+            {!newFiltersEnabled && !sidebarCollapsed && (
                 <SearchFiltersSidebar
                     as={NewSearchSidebarWrapper}
                     liveQuery={liveQuery}
@@ -198,15 +217,18 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onShowMobileFiltersChanged={setSidebarCollapsed}
                 stats={
-                    <StreamingProgress
-                        showTrace={trace}
-                        query={`${submittedURLQuery} patterntype:${patternType}`}
-                        progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                        state={results?.state || 'loading'}
-                        onSearchAgain={onSearchAgain}
-                        isSearchJobsEnabled={isSearchJobsEnabled()}
-                        telemetryService={props.telemetryService}
-                    />
+                    <>
+                        <StreamingProgress
+                            showTrace={trace}
+                            query={`${submittedURLQuery} patterntype:${patternType}`}
+                            progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                            state={results?.state || 'loading'}
+                            onSearchAgain={onSearchAgain}
+                            isSearchJobsEnabled={isSearchJobsEnabled()}
+                            telemetryService={props.telemetryService}
+                        />
+                        {newFiltersEnabled && <SearchFiltersTabletButton />}
+                    </>
                 }
             />
 
@@ -280,13 +302,9 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             showQueryExamplesOnNoResultsPage={true}
                             queryState={queryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            searchMode={searchMode}
-                            setSearchMode={setSearchMode}
-                            submitSearch={submitSearch}
-                            caseSensitive={caseSensitive}
-                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             logSearchResultClicked={onLogSearchResultClick}
+                            queryExamplesPatternType={patternType}
                         />
                     </>
                 )}
@@ -316,7 +334,11 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     const { children, className, onClose, ...attributes } = props
 
     return (
-        <aside {...attributes} className={classNames(styles.filters, className)}>
+        <div
+            {...attributes}
+            aria-label="Search dynamic filters panel"
+            className={classNames(styles.filters, className)}
+        >
             <header className={styles.filtersHeader}>
                 <H4 as={H2} className="mb-0">
                     Filters
@@ -326,7 +348,7 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
                 </Button>
             </header>
             <div className={styles.filtersContent}>{children}</div>
-        </aside>
+        </div>
     )
 }
 

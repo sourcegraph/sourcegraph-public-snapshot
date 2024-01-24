@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSubRepoPermsPermissions(t *testing.T) {
@@ -416,4 +417,26 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	if len(h) != 2 {
 		t.Fatal("Should have been called twice")
 	}
+}
+
+func TestRepoEnabledCache(t *testing.T) {
+	cache := newRepoEnabledCache(time.Hour)
+
+	_, cacheHit := cache.RepoIsEnabled(api.RepoID(42))
+	require.False(t, cacheHit)
+
+	cache.SetRepoIsEnabled(api.RepoID(42), true)
+	enabled, cacheHit := cache.RepoIsEnabled(api.RepoID(42))
+	require.True(t, cacheHit)
+	require.True(t, enabled)
+
+	cache.SetRepoIsEnabled(api.RepoID(43), false)
+	enabled, cacheHit = cache.RepoIsEnabled(api.RepoID(43))
+	require.True(t, cacheHit)
+	require.False(t, enabled)
+
+	cache.lastReset = time.Now().Add(-10 * time.Hour)
+
+	_, cacheHit = cache.RepoIsEnabled(api.RepoID(42))
+	require.False(t, cacheHit)
 }

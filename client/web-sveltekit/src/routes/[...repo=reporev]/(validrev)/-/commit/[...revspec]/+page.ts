@@ -1,32 +1,45 @@
-import { fetchRepoCommit, queryRepositoryComparisonFileDiffs } from '$lib/repo/api/commits'
-
 import type { PageLoad } from './$types'
+import { CommitPage_CommitQuery, CommitPage_DiffQuery } from './page.gql'
+
+const PAGE_SIZE = 20
 
 export const load: PageLoad = async ({ parent, params }) => {
-    const { resolvedRevision } = await parent()
-    const commit = fetchRepoCommit(resolvedRevision.repo.id, params.revspec).then(data => {
-        if (data?.node?.__typename === 'Repository') {
-            return { commit: data.node.commit, repo: resolvedRevision.repo }
-        }
-        return { commit: null, repo: resolvedRevision.repo }
-    })
+    const {
+        resolvedRevision: { repo },
+        graphqlClient,
+    } = await parent()
+
+    const commit = await graphqlClient
+        .query({ query: CommitPage_CommitQuery, variables: { repo: repo.id, revspec: params.revspec } })
+        .then(result => {
+            if (result.data.node?.__typename === 'Repository') {
+                return result.data.node.commit
+            }
+            return null
+        })
+
+    const diff =
+        commit?.oid && commit?.parents[0]?.oid
+            ? graphqlClient.watchQuery({
+                  query: CommitPage_DiffQuery,
+                  variables: {
+                      repo: repo.id,
+                      base: commit.parents[0].oid,
+                      head: commit.oid,
+                      first: PAGE_SIZE,
+                      after: null,
+                  },
+              })
+            : null
+
+    if (diff && !graphqlClient.readQuery({ query: CommitPage_DiffQuery, variables: diff.variables })) {
+        // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
+        // as soon as possible, not only after the layout subscribes to the query.
+        diff.refetch()
+    }
 
     return {
-        deferred: {
-            commit: commit.then(result => result?.commit ?? null),
-            diff: commit.then(result => {
-                if (!result.commit?.oid || !result.commit.parents[0]?.oid) {
-                    return null
-                }
-                return queryRepositoryComparisonFileDiffs({
-                    repo: result.repo.id,
-                    base: result.commit?.parents[0].oid,
-                    head: result.commit?.oid,
-                    paths: [],
-                    first: null,
-                    after: null,
-                })
-            }),
-        },
+        commit,
+        diff,
     }
 }

@@ -19,15 +19,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
-	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/retry"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -77,25 +77,27 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(creds),
 		grpc.WithChainStreamInterceptor(
-			metrics.StreamClientInterceptor(),
-			messagesize.StreamClientInterceptor,
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
 			propagator.StreamClientPropagator(requestinteraction.Propagator{}),
-			otelgrpc.StreamClientInterceptor(),
+			otelgrpc.StreamClientInterceptor(), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
+			retry.StreamClientInterceptor(logger),
+			metrics.StreamClientInterceptor(),
+			messagesize.StreamClientInterceptor,
 			internalerrs.PrometheusStreamClientInterceptor,
 			internalerrs.LoggingStreamClientInterceptor(logger),
 			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
-			metrics.UnaryClientInterceptor(),
-			messagesize.UnaryClientInterceptor,
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
 			propagator.UnaryClientPropagator(requestinteraction.Propagator{}),
-			otelgrpc.UnaryClientInterceptor(),
+			otelgrpc.UnaryClientInterceptor(), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
+			retry.UnaryClientInterceptor(logger),
+			metrics.UnaryClientInterceptor(),
+			messagesize.UnaryClientInterceptor,
 			internalerrs.PrometheusUnaryClientInterceptor,
 			internalerrs.LoggingUnaryClientInterceptor(logger),
 			contextconv.UnaryClientInterceptor,
@@ -178,7 +180,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			propagator.StreamServerPropagator(requestinteraction.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
-			otelgrpc.StreamServerInterceptor(otelOpts...),
+			otelgrpc.StreamServerInterceptor(otelOpts...), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
 			contextconv.StreamServerInterceptor,
 		),
 		grpc.ChainUnaryInterceptor(
@@ -190,7 +192,7 @@ func buildServerOptions(logger log.Logger, opts serverOptions) []grpc.ServerOpti
 			propagator.UnaryServerPropagator(requestinteraction.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
-			otelgrpc.UnaryServerInterceptor(otelOpts...),
+			otelgrpc.UnaryServerInterceptor(otelOpts...), //lint:ignore SA1019 the advertised replacement doesn't seem to be a drop-in replacement, use deprecated mechanism for now
 			contextconv.UnaryServerInterceptor,
 		),
 		grpc.MaxRecvMsgSize(defaultGRPCMessageReceiveSizeBytes),

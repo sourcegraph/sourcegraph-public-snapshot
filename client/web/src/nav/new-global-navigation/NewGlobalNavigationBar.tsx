@@ -182,11 +182,11 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    // If the feature-flag "search-new-keyword" is set, we allow the user to
+    // If the feature-flag "search-keyword" is set, we allow the user to
     // choose between precise (legacy), precise (new), and smart search.  This
     // is only temporary for internal testing.  The goal is to make the new
     // precise search the default.
-    const [showExtendedPicker] = useFeatureFlag('search-new-keyword')
+    const [showExtendedPicker] = useFeatureFlag('search-keyword')
 
     const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
@@ -214,7 +214,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     }, [])
 
     // TODO: Move this check outside of navigation component and share it via context
-    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
+    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
 
     return (
         <>
@@ -354,13 +354,13 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                             )}
                             {showSearchJobs && (
                                 <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
-                                    Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
+                                    Search Jobs <ProductStatusBadge className="ml-2" status="beta" />
                                 </NavItemLink>
                             )}
                         </ul>
                     </li>
 
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
+                    <NavItemLink url={PageRoutes.CodyChat} icon={CodyLogo} onClick={handleNavigationClick}>
                         Cody
                     </NavItemLink>
 

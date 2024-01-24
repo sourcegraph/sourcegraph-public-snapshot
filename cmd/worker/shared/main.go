@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
+	workerauthz "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors"
@@ -113,7 +114,6 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-ranking-file-reference-counter":    codeintel.NewRankingFileReferenceCounter(),
 		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
-		"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
 		"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
@@ -128,6 +128,8 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
 
 		"exhaustive-search-job": search.NewSearchJob(),
+
+		"repo-perms-syncer": workerauthz.NewPermsSyncerJob(),
 	}
 
 	var config Config

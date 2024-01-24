@@ -20,6 +20,8 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
                 isRoot: true,
                 url,
                 entries: toplevelFiles.map(name => ({
+                    __typename: 'GitBlob',
+                    languages: [],
                     name,
                     path: name,
                     isDirectory: false,
@@ -48,6 +50,7 @@ export const createBlobContentResult = (content: string, lsif?: JsonDocument): B
                     aborted: false,
                     lsif: lsif ? JSON.stringify(lsif) : '',
                 },
+                languages: [], // OK as this is only for testing
             },
         },
         changelist: null,

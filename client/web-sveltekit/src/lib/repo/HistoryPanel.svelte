@@ -1,6 +1,5 @@
 <script lang="ts" context="module">
     export interface Capture {
-        history: HistoryResult | null
         scroller?: ScrollerCapture
     }
 </script>
@@ -11,28 +10,26 @@
 
     import { page } from '$app/stores'
     import { scrollIntoView } from '$lib/actions'
-    import type { HistoryResult } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { createHistoryPanelStore } from '$lib/repo/stores'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import UserAvatar from '$lib/UserAvatar.svelte'
+    import Avatar from '$lib/Avatar.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
+    import type { HistoryPanel_HistoryConnection } from './HistoryPanel.gql'
 
-    export let history: Promise<HistoryResult>
-    export let fetchMoreHandler: (pageInfo: HistoryResult['pageInfo']) => Promise<HistoryResult>
+    export let history: HistoryPanel_HistoryConnection | null
+    export let fetchMore: (afterCursor: string | null) => void
+    export let loading: boolean = false
+    export let enableInlineDiffs: boolean
 
     export function capture(): Capture {
         return {
-            history: historyStore.capture(),
             scroller: scroller?.capture(),
         }
     }
 
     export async function restore(data: Capture) {
-        historyStore.restore(data.history)
-
         if (data.scroller) {
             // Wait until DOM was update before updating the scroll position
             await tick()
@@ -48,58 +45,59 @@
         return url.href
     }
 
-    const historyStore = createHistoryPanelStore(history)
-    $: loading = $historyStore.loading
-    $: resolvedCommits = $historyStore.history?.nodes ?? []
-
     function loadMore() {
-        historyStore.loadMore(fetchMoreHandler)
+        if (history?.pageInfo.hasNextPage) {
+            fetchMore(history.pageInfo.endCursor)
+        }
     }
 
-    // If the selected revision is not in the set of currentl loaded commits, load more
+    let scroller: Scroller
+
+    // If the selected revision is not in the set of currently loaded commits, load more
     $: if (
         selectedRev &&
-        resolvedCommits.length > 0 &&
-        !resolvedCommits.some(commit => commit.abbreviatedOID === selectedRev)
+        history &&
+        history.nodes.length > 0 &&
+        !history.nodes.some(commit => commit.abbreviatedOID === selectedRev)
     ) {
         loadMore()
     }
 
     $: selectedRev = $page.url?.searchParams.get('rev')
     $: clearURL = getClearURL()
-
-    let scroller: Scroller
 </script>
 
 <Scroller bind:this={scroller} margin={200} on:more={loadMore}>
-    <table>
-        {#each resolvedCommits as commit (commit.id)}
-            {@const selected = commit.abbreviatedOID === selectedRev}
-            <tr class:selected use:scrollIntoView={selected}>
-                <td>
-                    <UserAvatar user={commit.author.person} />&nbsp;
-                    {commit.author.person.displayName}
-                </td>
-                <td class="subject">
-                    {#if $page.params?.path}
-                        <a href="?rev={commit.abbreviatedOID}">{commit.subject}</a>
-                    {:else}
-                        {commit.subject}
-                    {/if}
-                </td>
-                <td><Timestamp date={new Date(commit.author.date)} strict /></td>
-                <td><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></td>
-                <td>
-                    {#if selected}
-                        <Tooltip tooltip="Hide comparison">
-                            <a href={clearURL}><Icon svgPath={mdiClose} inline /></a>
-                        </Tooltip>
-                    {/if}
-                </td>
-            </tr>
-        {/each}
-    </table>
-    {#if loading}
+    {#if history}
+        <table>
+            {#each history.nodes as commit (commit.id)}
+                {@const selected = commit.abbreviatedOID === selectedRev}
+                <tr class:selected use:scrollIntoView={selected}>
+                    <td>
+                        <Avatar avatar={commit.author.person} />&nbsp;
+                        {commit.author.person.displayName}
+                    </td>
+                    <td class="subject">
+                        {#if enableInlineDiffs}
+                            <a href="?rev={commit.abbreviatedOID}">{commit.subject}</a>
+                        {:else}
+                            {commit.subject}
+                        {/if}
+                    </td>
+                    <td><Timestamp date={new Date(commit.author.date)} strict /></td>
+                    <td><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></td>
+                    <td>
+                        {#if selected}
+                            <Tooltip tooltip="Hide comparison">
+                                <a href={clearURL}><Icon svgPath={mdiClose} inline /></a>
+                            </Tooltip>
+                        {/if}
+                    </td>
+                </tr>
+            {/each}
+        </table>
+    {/if}
+    {#if !history || loading}
         <LoadingSpinner />
     {/if}
 </Scroller>
@@ -108,7 +106,6 @@
     table {
         width: 100%;
         max-width: 100%;
-        overflow-y: auto;
     }
 
     td {

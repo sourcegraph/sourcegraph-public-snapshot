@@ -88,6 +88,14 @@ type AuthAccessRequest struct {
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
 	Allow string `json:"allow,omitempty"`
+	// AllowNoExpiration description: Allows new tokens to be created without specifying an expiration.
+	AllowNoExpiration bool `json:"allowNoExpiration,omitempty"`
+	// DefaultExpirationDays description: The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present
+	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
+	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
+	ExpirationOptionDays []int `json:"expirationOptionDays,omitempty"`
+	// MaxTokensPerUser description: The maximum number of active access tokens a user may have.
+	MaxTokensPerUser *int `json:"maxTokensPerUser,omitempty"`
 }
 
 // AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
@@ -642,6 +650,16 @@ type Completions struct {
 	Provider string `json:"provider,omitempty"`
 }
 
+// ConfigFeatures description: Configuration for the completions service.
+type ConfigFeatures struct {
+	// AutoComplete description: Enable/Disable AutoComplete for the clients
+	AutoComplete bool `json:"autoComplete,omitempty"`
+	// Chat description: Enable/Disable Chat for the clients
+	Chat bool `json:"chat,omitempty"`
+	// Commands description: Enable/Disable special commands for the clients
+	Commands bool `json:"commands,omitempty"`
+}
+
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -674,6 +692,8 @@ type Dotcom struct {
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
+	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
+	SlackLicenseCreationWebhook string `json:"slackLicenseCreationWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -822,6 +842,10 @@ type ExcludedBitbucketServerRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Bitbucket Server / Bitbucket Data Center repo.
 	Pattern string `json:"pattern,omitempty"`
 }
+type ExcludedGerritProject struct {
+	// Name description: The name of a Gerrit project to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+}
 type ExcludedGitHubRepo struct {
 	// Archived description: If set to true, archived repositories will be excluded.
 	Archived bool `json:"archived,omitempty"`
@@ -891,8 +915,6 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// EnableGRPC description: Enables gRPC for communication between internal services
-	EnableGRPC *bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
@@ -913,6 +935,8 @@ type ExperimentalFeatures struct {
 	InsightsDataRetention *bool `json:"insightsDataRetention,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// LanguageDetection description: Setting for customizing language detection behavior
+	LanguageDetection *LanguageDetection `json:"languageDetection,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
@@ -984,7 +1008,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.enablePerforce")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
-	delete(m, "enableGRPC")
 	delete(m, "enableGithubInternalRepoVisibility")
 	delete(m, "enablePermissionsWebhooks")
 	delete(m, "enableStorm")
@@ -995,6 +1018,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "insightsBackfillerV2")
 	delete(m, "insightsDataRetention")
 	delete(m, "jvmPackages")
+	delete(m, "languageDetection")
 	delete(m, "npmPackages")
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
@@ -1097,6 +1121,10 @@ type GerritAuthorization struct {
 type GerritConnection struct {
 	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
 	Authorization *GerritAuthorization `json:"authorization,omitempty"`
+	// Exclude description: A list of repositories to never mirror from this Gerrit instance. Takes precedence over "projects" configuration.
+	//
+	// Supports excluding by name ({"name": "owner/name"})
+	Exclude []*ExcludedGerritProject `json:"exclude,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
@@ -1512,6 +1540,12 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
+}
+
+// LanguageDetection description: Setting for customizing language detection behavior
+type LanguageDetection struct {
+	// GraphQL description: What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.
+	GraphQL string `json:"graphQL"`
 }
 
 // LinkStep description: Link step
@@ -2066,8 +2100,12 @@ type RateLimits struct {
 	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
 	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
 	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
+	// GraphQLMaxDuplicateFieldCount description: Maximum number of duplicate fields allowed in a GraphQL request
+	GraphQLMaxDuplicateFieldCount int `json:"graphQLMaxDuplicateFieldCount,omitempty"`
 	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
 	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
+	// GraphQLMaxUniqueFieldCount description: Maximum number of unique fields allowed in a GraphQL request
+	GraphQLMaxUniqueFieldCount int `json:"graphQLMaxUniqueFieldCount,omitempty"`
 }
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
@@ -2140,10 +2178,6 @@ type RubyRateLimit struct {
 type RustPackagesConnection struct {
 	// Dependencies description: An array of strings specifying Rust packages to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
-	// IndexRepositoryName description: Name of the git repository containing the crates.io index. Only set if you intend to sync every crate from the index. Updating this setting does not trigger a sync immediately, you must wait until the next scheduled sync for the value to get picked up.
-	IndexRepositoryName string `json:"indexRepositoryName,omitempty"`
-	// IndexRepositorySyncInterval description: How frequently to sync with the index repository. String formatted as a Go time.Duration. The Sourcegraph server needs to be restarted to pick up a new value of this configuration option.
-	IndexRepositorySyncInterval string `json:"indexRepositorySyncInterval,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the configured Rust repository APIs.
 	RateLimit *RustRateLimit `json:"rateLimit,omitempty"`
 }
@@ -2481,6 +2515,8 @@ type SettingsExperimentalFeatures struct {
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// NewSearchNavigationUI description: Enables new experimental search UI navigation
 	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
+	// NewSearchResultFiltersPanel description: Enables new experimental search results filters panel
+	NewSearchResultFiltersPanel *bool `json:"newSearchResultFiltersPanel,omitempty"`
 	// NewSearchResultsUI description: Enables new experimental search results UI, such as preview panel feature and updated search and filter layouts.
 	NewSearchResultsUI *bool `json:"newSearchResultsUI,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
@@ -2548,6 +2584,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "newSearchNavigationUI")
+	delete(m, "newSearchResultFiltersPanel")
 	delete(m, "newSearchResultsUI")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
@@ -2597,12 +2634,16 @@ type SettingsOpenInEditor struct {
 type SiteConfiguration struct {
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
+	// AttributionEnabled description: Enable/Disable attribution search for Cody-generated snippets
+	AttributionEnabled *bool `json:"attribution.enabled,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.
 	AuthAllowedIpAddress *AuthAllowedIpAddress `json:"auth.allowedIpAddress,omitempty"`
+	// AuthDailyEmailDomainSignupLimit description: The maximum number of users that can sign from Google using the same email domain in a 24 hour period.
+	AuthDailyEmailDomainSignupLimit int `json:"auth.dailyEmailDomainSignupLimit,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
 	// AuthLockout description: The config options for account lockout
@@ -2683,10 +2724,14 @@ type SiteConfiguration struct {
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://docs.sourcegraph.com/admin/access_control
+	CodyPermissions *bool `json:"cody.permissions,omitempty"`
+	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
+	// ConfigFeatures description: Configuration for the completions service.
+	ConfigFeatures *ConfigFeatures `json:"configFeatures,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -2865,6 +2910,10 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
+	// SscApiBaseUrl description: The base URL of the Self-Serve Cody API.
+	SscApiBaseUrl string `json:"ssc.apiBaseUrl,omitempty"`
+	// SscApiSecret description: The Bearer token for the Self-Serve Cody API.
+	SscApiSecret string `json:"ssc.apiSecret,omitempty"`
 	// SyntaxHighlighting description: Syntax highlighting configuration
 	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
@@ -2905,9 +2954,11 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "RedirectUnsupportedBrowser")
+	delete(m, "attribution.enabled")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.allowedIpAddress")
+	delete(m, "auth.dailyEmailDomainSignupLimit")
 	delete(m, "auth.enableUsernameChanges")
 	delete(m, "auth.lockout")
 	delete(m, "auth.minPasswordLength")
@@ -2942,8 +2993,10 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
 	delete(m, "cody.enabled")
+	delete(m, "cody.permissions")
 	delete(m, "cody.restrictUsersFeatureFlag")
 	delete(m, "completions")
+	delete(m, "configFeatures")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")
 	delete(m, "defaultRateLimit")
@@ -3033,6 +3086,8 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "search.index.symbols.enabled")
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")
+	delete(m, "ssc.apiBaseUrl")
+	delete(m, "ssc.apiSecret")
 	delete(m, "syntaxHighlighting")
 	delete(m, "update.channel")
 	delete(m, "webhook.logging")

@@ -10,6 +10,7 @@ import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
+import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from './util/license'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const LicenseManagementArea = lazyComponent(
@@ -74,6 +75,8 @@ const CodySubscriptionPage = lazyComponent(
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
+const Index = lazyComponent(() => import('./Index'), 'IndexPage')
+
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
     useEffect(() => {
@@ -82,21 +85,7 @@ const PassThroughToServer: React.FC = () => {
     return null
 }
 
-/**
- * Holds all top-level routes for the app because both the navbar and the main content area need to
- * switch over matched path.
- *
- * See https://reacttraining.com/react-router/web/example/sidebar
- */
-export const routes: RouteObject[] = [
-    {
-        path: PageRoutes.GetCody,
-        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
-    },
-    {
-        path: PageRoutes.PostSignUp,
-        element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
-    },
+const codeSearchRoutes: readonly RouteObject[] = [
     {
         path: PageRoutes.BatchChanges,
         element: (
@@ -166,12 +155,23 @@ export const routes: RouteObject[] = [
         element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
     {
+        path: PageRoutes.Own,
+        element: <OwnPage />,
+    },
+    {
+        path: PageRoutes.SearchConsole,
+        element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
+    },
+]
+
+const codyRoutes: readonly RouteObject[] = [
+    {
         path: PageRoutes.CodySearch,
         element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
     },
     // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
     {
-        path: '/cody/*',
+        path: `${PageRoutes.Cody}/*`,
         element: (
             <LegacyRoute
                 render={() => {
@@ -189,7 +189,7 @@ export const routes: RouteObject[] = [
         ),
     },
     {
-        path: PageRoutes.Cody + '/*',
+        path: PageRoutes.CodyChat + '/*',
         element: <LegacyRoute render={props => <CodyChatPage {...props} context={window.context} />} />,
     },
     {
@@ -200,21 +200,26 @@ export const routes: RouteObject[] = [
         path: PageRoutes.CodySubscription,
         element: <LegacyRoute render={props => <CodySubscriptionPage {...props} />} />,
     },
+]
+
+/**
+ * Holds all top-level routes for the app because both the navbar and the main content area need to
+ * switch over matched path.
+ *
+ * See https://reacttraining.com/react-router/web/example/sidebar
+ */
+export const routes: RouteObject[] = [
     {
-        path: PageRoutes.Own,
-        element: <OwnPage />,
+        path: PageRoutes.GetCody,
+        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.PostSignUp,
+        element: <LegacyRoute render={() => <PostSignUpPage />} />,
     },
     {
         path: PageRoutes.Index,
-        element: <Navigate replace={true} to={PageRoutes.Search} />,
-    },
-    {
-        path: PageRoutes.Search,
-        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
-    },
-    {
-        path: PageRoutes.SearchConsole,
-        element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
+        element: <Index />,
     },
     {
         path: PageRoutes.SignIn,
@@ -285,6 +290,11 @@ export const routes: RouteObject[] = [
         path: PageRoutes.ApiConsole,
         element: <ApiConsole />,
     },
+    // TODO(BolajiOlajide): render landing page instead of SearchPageWrapper when on Cody-only license
+    {
+        path: PageRoutes.Search,
+        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
+    },
     {
         path: PageRoutes.UserArea,
         element: <LegacyRoute render={props => <UserArea {...props} />} />,
@@ -302,23 +312,32 @@ export const routes: RouteObject[] = [
         element: <PassThroughToServer />,
     },
     ...communitySearchContextsRoutes,
-    {
-        path: PageRoutes.RepoContainer,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
-                        <RepoContainer {...props} />
-                    </CodySidebarStoreProvider>
-                )}
-            />
-        ),
-        // In RR6, the useMatches hook will only give you the location that is matched
-        // by the path rule and not the path rule instead. Since we need to be able to
-        // detect if we're inside the repo container reliably inside the Layout, we
-        // expose this information in the handle object instead.
-        handle: { isRepoContainer: true },
-    },
+    ...(isCodeSearchOnlyLicense() ? [] : codyRoutes),
+    ...(isCodyOnlyLicense() ? [] : codeSearchRoutes),
+
+    // this should be the last route to be regustered because it's a catch all route
+    // when the instance has the code search feature.
+    ...(isCodyOnlyLicense()
+        ? []
+        : [
+              {
+                  path: PageRoutes.RepoContainer,
+                  element: (
+                      <LegacyRoute
+                          render={props => (
+                              <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                                  <RepoContainer {...props} />
+                              </CodySidebarStoreProvider>
+                          )}
+                      />
+                  ),
+                  // In RR6, the useMatches hook will only give you the location that is matched
+                  // by the path rule and not the path rule instead. Since we need to be able to
+                  // detect if we're inside the repo container reliably inside the Layout, we
+                  // expose this information in the handle object instead.
+                  handle: { isRepoContainer: true },
+              },
+          ]),
 ]
 
 function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {

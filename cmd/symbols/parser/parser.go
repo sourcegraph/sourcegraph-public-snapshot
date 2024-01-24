@@ -6,7 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/go-ctags"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -141,7 +141,7 @@ func (p *parser) handleParseRequest(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	language, found := languages.GetLanguage(parseRequest.Path, string(parseRequest.Data))
+	language, found := languages.GetMostLikelyLanguage(parseRequest.Path, string(parseRequest.Data))
 	if !found {
 		return nil
 	}

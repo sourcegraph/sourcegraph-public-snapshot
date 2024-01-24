@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, type PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -22,7 +21,7 @@ export interface FilePathSearchResult extends SettingsCascadeProps {
     index: number
 }
 
-export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult & TelemetryProps> = ({
+export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = ({
     result,
     repoDisplayName,
     onSelect,
@@ -33,14 +32,6 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
-
-    const newSearchUIEnabled = useMemo(() => {
-        const settings = settingsCascade.final
-        if (!isErrorLike(settings)) {
-            return settings?.experimentalFeatures?.newSearchResultsUI
-        }
-        return false
-    }, [settingsCascade])
 
     const title = (
         <span className="d-flex align-items-center">
@@ -73,7 +64,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
             rankingDebug={result.debug}
             className={classNames(styles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
-            actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
+            actions={<SearchResultPreviewButton result={result} />}
         >
             <div className={classNames(styles.searchResultMatch, 'p-2')}>
                 <small>{result.pathMatches ? 'Path match' : 'File contains matching content'}</small>

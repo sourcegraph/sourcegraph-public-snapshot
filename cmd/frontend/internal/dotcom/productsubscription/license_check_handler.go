@@ -59,12 +59,26 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 }
 
 const multipleInstancesSameKeySlackFmt = `
-The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> is used on multiple customer instances with site IDs: ` + "`%s`" + ` and ` + "`%s`" + `.
+The site ID for ` + "`%s`" + `'s license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> has been updated from ` + "`%s` to `%s`." + `
+
+If this is a regular occurence, it could mean that the license key is being used on multiple Sourcegraph instances.
 
 To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
 
-func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
+func multipleInstancesSameKeySlackMessage(externalURL *url.URL, license *dbLicense, customerName string, oldSiteID string) string {
+	return fmt.Sprintf(
+		multipleInstancesSameKeySlackFmt,
+		customerName,
+		externalURL.String(),
+		url.QueryEscape(license.ProductSubscriptionID),
+		url.QueryEscape(license.ID),
+		license.ID,
+		oldSiteID,
+		*license.SiteID)
+}
+
+func sendSlackMessage(logger log.Logger, license *dbLicense, customerName string, oldSiteID string) {
 	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		logger.Error("parsing external URL from site config", log.Error(err))
@@ -79,7 +93,7 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
 
 	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
 	err = client.Post(context.Background(), &slack.Payload{
-		Text: fmt.Sprintf(multipleInstancesSameKeySlackFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID, siteID),
+		Text: multipleInstancesSameKeySlackMessage(externalURL, license, customerName, oldSiteID),
 	})
 	if err != nil {
 		logger.Error("error sending Slack message", log.Error(err))
@@ -87,6 +101,30 @@ func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
 	}
 }
 
+func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db database.DB, license *dbLicense) string {
+	// Best effort fetch of customer name for slack message
+	customerName := "could not load customer name"
+
+	subscriptionsStore := dbSubscriptions{db: db}
+	dbSubscription, err := subscriptionsStore.GetByID(ctx, license.ProductSubscriptionID)
+	if err != nil {
+		logger.Warn("could not find subscription for license", log.String("licenseID", license.ID), log.String("productSubscriptionID", license.ProductSubscriptionID), log.Error(err))
+	} else {
+		user, err := db.Users().GetByID(ctx, dbSubscription.UserID)
+		if err != nil {
+			logger.Warn("could not find user for subscription", log.String("licenseID", license.ID), log.String("subscriptionID", dbSubscription.ID), log.Int32("userID", dbSubscription.UserID), log.Error(err))
+		} else {
+			customerName = user.Name()
+		}
+	}
+
+	return customerName
+}
+
+// NewLicenseCheckHandler creates a new license check handler that uses the provided database.
+//
+// This handler receives requests from customer instances to check for license
+// validity.
 func NewLicenseCheckHandler(db database.DB) http.Handler {
 	baseLogger := log.Scoped("LicenseCheckHandler")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -128,6 +166,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			})
 			return
 		}
+
 		now := time.Now()
 		if license.LicenseExpiresAt != nil && license.LicenseExpiresAt.Before(now) {
 			logger.Warn("license is expired")
@@ -151,8 +190,18 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			return
 		}
 
-		if license.SiteID != nil && !strings.EqualFold(*license.SiteID, siteID) {
+		if license.SiteID == nil {
+			if _, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
+				logger.Warn("failed to assign site ID to license")
+				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
+					Error: ErrFailedToAssignSiteIDMsg,
+				})
+				return
+			}
+			logEvent(ctx, db, EventNameAssigned, siteID)
+		} else if !strings.EqualFold(*license.SiteID, siteID) {
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
+
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 				// TODO: revert this to false again in the future, once most customers have a separate
 				// license key per instance
@@ -161,19 +210,17 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 					Reason:  ReasonLicenseIsAlreadyInUseMsg,
 				},
 			})
-			sendSlackMessage(logger, license, siteID)
-			return
-		}
 
-		if license.SiteID == nil {
-			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
-				logger.Warn("failed to assign site ID to license")
-				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
-					Error: ErrFailedToAssignSiteIDMsg,
-				})
+			oldSiteID := *license.SiteID
+			if license, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
+				logger.Error("failed to update site ID associated with license", log.String("licenseID", license.ID), log.String("siteID", siteID), log.Error(err))
 				return
 			}
-			logEvent(ctx, db, EventNameAssigned, siteID)
+
+			customerName := getCustomerNameFromLicense(r.Context(), logger, db, license)
+
+			sendSlackMessage(logger, license, customerName, oldSiteID)
+			return
 		}
 
 		logger.Debug("finished license validity check")

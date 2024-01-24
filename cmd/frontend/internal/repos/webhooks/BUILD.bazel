@@ -50,7 +50,6 @@ go_test(
         "//internal/extsvc/gitlab/webhooks",
         "//internal/grpc",
         "//internal/grpc/defaults",
-        "//internal/httpcli",
         "//internal/repos",
         "//internal/repoupdater",
         "//internal/repoupdater/protocol",

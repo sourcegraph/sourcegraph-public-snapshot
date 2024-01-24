@@ -13,9 +13,11 @@ type eventFeature string
 const (
 	FeatureExample eventFeature = "exampleFeature"
 
-	FeatureSignIn  eventFeature = "signIn"
-	FeatureSignOut eventFeature = "signOut"
-	FeatureSignUp  eventFeature = "signUp"
+	FeatureSignIn                       eventFeature = "signIn"
+	FeatureSignOut                      eventFeature = "signOut"
+	FeatureSignUp                       eventFeature = "signUp"
+	FeaturesSignUpBlockedBannedDomain   eventFeature = "signUpBlocked:BannedDomain"
+	FeaturesSignUpBlockedTooManySignups eventFeature = "signUpBlocked:TooManySignups"
 )
 
 // eventAction defines the action associated with an event. Values should

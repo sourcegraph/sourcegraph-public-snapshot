@@ -28,8 +28,9 @@ import {
 import type { AuthenticatedUser } from '../auth'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { canReadLicenseManagement } from '../rbac/check'
-import { useV2QueryInput } from '../search/useV2QueryInput'
 import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
+
+import { useNewSearchNavigation } from './new-global-navigation'
 
 import styles from './UserNavItem.module.scss'
 
@@ -68,7 +69,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
-        telemetryService,
         className,
     } = props
 
@@ -92,16 +92,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     }, [setThemeSetting, themeSetting])
 
     const organizations = authenticatedUser.organizations.nodes
-    const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
-    const [v2QueryInputEnabled, setV2QueryInputEnabled] = useV2QueryInput()
+    const newSearchNavigationUI = useExperimentalFeatures(features => features.newSearchNavigationUI)
+    const [newNavigationEnabled, setNewNavigationEnabled] = useNewSearchNavigation()
     const developerMode = useDeveloperSettings(settings => settings.enabled)
 
-    const onV2QueryInputChange = useCallback(
+    const onNewSearchNavigationChange = useCallback(
         (enabled: boolean) => {
-            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
-            setV2QueryInputEnabled(enabled)
+            setNewNavigationEnabled(enabled)
         },
-        [telemetryService, setV2QueryInputEnabled]
+        [setNewNavigationEnabled]
     )
 
     return (
@@ -186,11 +185,12 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {searchQueryInputFeature !== 'v1' && (
+
+                            {!newSearchNavigationUI && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
-                                        <div className="mr-2">New search input</div>
-                                        <Toggle value={v2QueryInputEnabled} onToggle={onV2QueryInputChange} />
+                                        <div className="mr-2">New search navigation UI</div>
+                                        <Toggle value={newNavigationEnabled} onToggle={onNewSearchNavigationChange} />
                                     </div>
                                 </div>
                             )}

@@ -1,0 +1,26 @@
+.footer {
+    padding: 1rem 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.link {
+    display: flex;
+    gap: 0.5rem;
+    color: var(--text-muted);
+
+    &-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex-grow: 1;
+    }
+
+    &-icon {
+        margin-top: 0.15rem;
+        fill: none !important;
+    }
+
+    &:hover {
+        --icon-color: var(--primary);
+    }
+}

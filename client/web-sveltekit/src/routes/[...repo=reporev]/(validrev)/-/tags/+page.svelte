@@ -2,16 +2,17 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
     import { createPromiseStore } from '$lib/utils'
+    import type { GitTagsConnection } from './page.gql'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    const { pending, value: tags, set } = createPromiseStore<PageData['deferred']['tags']>()
-    $: set(data.deferred.tags)
+    const { pending, value: connection, set } = createPromiseStore<GitTagsConnection>()
+    $: set(data.tags)
 
-    $: nodes = $tags?.nodes
-    $: total = $tags?.totalCount
+    $: nodes = $connection?.nodes
+    $: total = $connection?.totalCount
 </script>
 
 <svelte:head>

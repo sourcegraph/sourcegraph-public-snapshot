@@ -13,6 +13,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import type { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
+import { EventName } from '../util/constants'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { FeatureList } from './components/FeatureList'
@@ -80,7 +81,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
-        telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
+        telemetryService.log(EventName.AUTH_INITIATED, { type: eventType }, { type: eventType })
     }
 
     const signUpForm = (

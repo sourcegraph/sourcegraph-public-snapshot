@@ -7,6 +7,16 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
+    "ssc.apiBaseUrl": {
+      "type": "string",
+      "default": "https://accounts.sourcegraph.com/cody/api",
+      "description": "The base URL of the Self-Serve Cody API."
+    },
+    "ssc.apiSecret": {
+      "type": "string",
+      "default": "********",
+      "description": "The Bearer token for the Self-Serve Cody API."
+    },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",
@@ -73,6 +83,16 @@
           "description": "Maximum number of estimated fields allowed in a GraphQL response",
           "type": "integer",
           "default": 500000
+        },
+        "graphQLMaxDuplicateFieldCount": {
+          "description": "Maximum number of duplicate fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxUniqueFieldCount": {
+          "description": "Maximum number of unique fields allowed in a GraphQL request",
+          "type": "integer",
+          "default": 500
         }
       }
     },
@@ -223,7 +243,7 @@
           "description": "Enables structural search.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
@@ -418,14 +438,6 @@
           "type": "boolean",
           "default": false
         },
-        "enableGRPC": {
-          "description": "Enables gRPC for communication between internal services",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "enablePermissionsWebhooks": {
           "description": "DEPRECATED: No longer has any effect.",
           "type": "boolean",
@@ -567,6 +579,20 @@
           "type": "boolean",
           "group": "BatchChanges",
           "default": false
+        },
+        "languageDetection": {
+          "description": "Setting for customizing language detection behavior",
+          "type": "object",
+          "required": ["graphQL"],
+          "additionalProperties": false,
+          "properties": {
+            "graphQL": {
+              "description": "What to take into account for computing 'languages' for the GraphQL API. This setting indirectly affects client-side code attempting to determine languages, such as search-based code navigation and the files sidebar.",
+              "type": "string",
+              "enum": ["useFileContents", "useFileNamesOnly"],
+              "default": "useFileContents"
+            }
+          }
         }
       },
       "examples": [
@@ -1111,6 +1137,11 @@
         }
       ]
     },
+    "auth.dailyEmailDomainSignupLimit": {
+      "type": "integer",
+      "default": 0,
+      "description": "The maximum number of users that can sign from Google using the same email domain in a 24 hour period."
+    },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
       "type": "object",
@@ -1121,17 +1152,62 @@
           "type": "string",
           "enum": ["all-users-create", "site-admin-create", "none"],
           "default": "all-users-create"
+        },
+        "allowNoExpiration": {
+          "description": "Allows new tokens to be created without specifying an expiration.",
+          "type": "boolean",
+          "default": "false"
+        },
+        "expirationOptionDays": {
+          "description": "Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.",
+          "type": "array",
+          "default": [7, 14, 30, 60, 90],
+          "items": {
+            "type": "integer",
+            "maximum": 365,
+            "minimum": 1
+          },
+          "examples": [[7, 14, 30, 60, 90]]
+        },
+        "defaultExpirationDays": {
+          "description": "The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": 90,
+          "maximum": 365,
+          "minimum": 1
+        },
+        "maxTokensPerUser": {
+          "description": "The maximum number of active access tokens a user may have.",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": 25,
+          "maximum": 100,
+          "minimum": 1
         }
       },
       "default": {
-        "allow": "all-users-create"
+        "allow": "all-users-create",
+        "allowNoExpiration": false,
+        "expirationOptionDays": [7, 14, 30, 60, 90],
+        "defaultExpirationDays": 90
       },
       "examples": [
         {
-          "allow": "site-admin-create"
+          "allow": "site-admin-create",
+          "allowNoExpiration": true,
+          "expirationOptionDays": [7, 14, 30, 60, 90],
+          "defaultExpirationDays": 90
         },
         {
-          "allow": "none"
+          "allow": "none",
+          "allowNoExpiration": false,
+          "expirationOptionDays": [7, 14, 30, 60, 90],
+          "defaultExpirationDays": 45
         }
       ],
       "group": "Security"
@@ -2063,6 +2139,11 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
+        "slackLicenseCreationWebhook": {
+          "description": "Slack webhook for when a license key is created.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
@@ -2471,8 +2552,17 @@
       },
       "group": "Cody"
     },
+    "cody.permissions": {
+      "description": "Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://docs.sourcegraph.com/admin/access_control",
+      "type": "boolean",
+      "default": true,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
     "cody.restrictUsersFeatureFlag": {
-      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "description": "DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
       "type": "boolean",
       "default": false,
       "!go": {
@@ -2481,6 +2571,7 @@
       "group": "Cody"
     },
     "embeddings": {
+      "deprecationMessage": "Deprecated changes to this section will not be respected.",
       "description": "Configuration for embeddings service.",
       "type": "object",
       "properties": {
@@ -2866,6 +2957,36 @@
           "perUserDailyLimit": 100
         }
       ]
+    },
+    "configFeatures": {
+      "description": "Configuration for the completions service.",
+      "type": "object",
+      "properties": {
+        "chat": {
+          "description": "Enable/Disable Chat for the clients",
+          "type": "boolean"
+        },
+        "autoComplete": {
+          "description": "Enable/Disable AutoComplete for the clients",
+          "type": "boolean"
+        },
+        "commands": {
+          "description": "Enable/Disable special commands for the clients",
+          "type": "boolean"
+        }
+      },
+      "examples": [
+        {
+          "chat": true
+        }
+      ]
+    },
+    "attribution.enabled": {
+      "description": "Enable/Disable attribution search for Cody-generated snippets",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {

@@ -9,7 +9,7 @@ import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import type { AuthenticatedUser } from '../auth'
 
-import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import { CopyPermalinkAction } from './actions/CopyPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
 import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
@@ -76,12 +76,12 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
         id: 'go-to-permalink',
         position: 'right',
         children: () => (
-            <GoToPermalinkAction
-                telemetryService={NOOP_TELEMETRY_SERVICE}
+            <CopyPermalinkAction
                 revision="main"
                 commitID="123"
                 repoName="sourcegraph/sourcegraph"
                 actionType="nav"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         ),
     })
@@ -147,7 +147,6 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     authenticatedUser: mockUser,
     platformContext: {} as any,
-    telemetryService: NOOP_TELEMETRY_SERVICE,
     forceWrap,
 })
 

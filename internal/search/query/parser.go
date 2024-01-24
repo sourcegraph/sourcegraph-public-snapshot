@@ -8,8 +8,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -868,7 +866,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 // (-?)field:<string> where : matches the first encountered colon, and field
 // must match ^[a-zA-Z]+ and be allowed by allFields. Field may optionally
 // be preceded by '-' which means the parameter is negated.
-func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
+func (p *parser) ParseParameter() (Parameter, bool, error) {
 	start := p.pos
 	field, negated, advance := ScanField(p.buf[p.pos:])
 	if field == "" {
@@ -876,56 +874,16 @@ func (p *parser) ParseParameter(label labels) (Parameter, bool, error) {
 	}
 
 	p.pos += advance
-	value, parsedLabels, err := p.ParseFieldValue(field)
+	value, labels, err := p.ParseFieldValue(field)
 	if err != nil {
 		return Parameter{}, false, err
 	}
-
-	if label.IsSet(GlobFilters) && !parsedLabels.IsSet(IsPredicate) {
-		switch field {
-		case "r", "repo", "f", "file":
-			value = globToRegex(value)
-		}
-	}
-
 	return Parameter{
 		Field:      field,
 		Value:      value,
 		Negated:    negated,
-		Annotation: Annotation{Range: newRange(start, p.pos), Labels: parsedLabels},
+		Annotation: Annotation{Range: newRange(start, p.pos), Labels: labels},
 	}, true, nil
-}
-
-var regexSpecialCharacter = regexp.MustCompile(`[\$\(\)\*\+\.\?\[\\\]\^\{\|\}]`)
-
-func globToRegex(glob string) string {
-	// First, we escape all the regex special characters.
-	r := regexSpecialCharacter.ReplaceAllStringFunc(glob, func(match string) string {
-		if match == "*" {
-			return ".*"
-		}
-		return "\\" + match
-	})
-
-	// Special case for ".*" as it behaves differently with anchoring logic.
-	if r == ".*" {
-		return r
-	}
-
-	// Adjust the regex to account for implicit .* on either end.
-	if strings.HasPrefix(r, ".*") {
-		r = strings.TrimPrefix(r, ".*")
-	} else {
-		r = "^" + r
-	}
-
-	if strings.HasSuffix(r, ".*") {
-		r = strings.TrimSuffix(r, ".*")
-	} else {
-		r = r + "$"
-	}
-
-	return r
 }
 
 // partitionParameters constructs a parse tree to distinguish terms where
@@ -962,16 +920,6 @@ func partitionParameters(nodes []Node) []Node {
 
 // parseLeaves scans for consecutive leaf nodes and applies
 // label to patterns.
-//
-// Note: "label" is used both as option for the parser and as an annotation for
-// the nodes the parser returns.
-//
-// Examples of labels that are used as an option are "Standard", "GlobFilters",
-// "QuotesAsLiterals". These options made it very easy to implement new behavior
-// for keyword based search syntax.
-//
-// However, mixing these two concepts makes the code more confusing to read. We
-// might want to separate the two concerns in the future.
 func (p *parser) parseLeaves(label labels) ([]Node, error) {
 	var nodes []Node
 	start := p.pos
@@ -1036,7 +984,7 @@ loop:
 			if p.match(LPAREN) {
 				return nil, errors.New("it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries")
 			}
-			if parameter, ok, _ := p.ParseParameter(label); ok {
+			if parameter, ok, _ := p.ParseParameter(); ok {
 				// we don't support NOT -field:value
 				if parameter.Negated {
 					return nil, errors.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
@@ -1052,7 +1000,7 @@ loop:
 			pattern.Annotation.Range = newRange(start, p.pos)
 			nodes = append(nodes, pattern)
 		default:
-			parameter, ok, err := p.ParseParameter(label)
+			parameter, ok, err := p.ParseParameter()
 			if err != nil {
 				return nil, err
 			}
@@ -1148,8 +1096,8 @@ func (p *parser) parseAnd() ([]Node, error) {
 		left, err = p.parseLeaves(Literal)
 	case SearchTypeStandard, SearchTypeLucky:
 		left, err = p.parseLeaves(Literal | Standard)
-	case SearchTypeNewStandardRC1:
-		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals | GlobFilters)
+	case SearchTypeKeyword:
+		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals)
 	default:
 		left, err = p.parseLeaves(Literal | Standard)
 	}
@@ -1244,7 +1192,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeNewStandardRC1 {
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeKeyword {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err

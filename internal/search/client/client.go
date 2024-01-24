@@ -98,10 +98,6 @@ func (s *searchClient) Plan(
 	}
 	searchType = overrideSearchType(searchQuery, searchType)
 
-	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
-
 	settings, err := s.settingsService.UserFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to resolve user settings")
@@ -241,10 +237,10 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeStructural, nil
 	case "lucky":
 		return query.SearchTypeLucky, nil
+	case "codycontext":
+		return query.SearchTypeCodyContext, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
-	case "newStandardRC1":
-		return query.SearchTypeNewStandardRC1, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -267,7 +263,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V3":
 			searchType = query.SearchTypeStandard
 		case "V4-rc1":
-			searchType = query.SearchTypeNewStandardRC1
+			searchType = query.SearchTypeKeyword
 		default:
 			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got %q", version)
 		}
@@ -295,10 +291,10 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "codycontext":
+			searchType = query.SearchTypeCodyContext
 		case "keyword":
 			searchType = query.SearchTypeKeyword
-		case "newStandardRC1":
-			searchType = query.SearchTypeNewStandardRC1
 		}
 	})
 	return searchType

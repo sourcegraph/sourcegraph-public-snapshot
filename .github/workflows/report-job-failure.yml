@@ -28,7 +28,7 @@ jobs:
       - name: Send Sentry event for failed action
         run: |
           npm i -g @sentry/cli
-          sentry-cli send-event -m "A job in the ${{ inputs.workflow_name }} action has failed - see run for exact failure" \
+          sentry-cli send-event -m "A job in the ${{ inputs.workflow_name }} action for the repository '${{ inputs.repo }}' has failed - see run for exact failure" \
             -t "github-action:${{ inputs.workflow_name }}" \
             -t "branch:${{ inputs.branch }}" \
             -t "repository:${{ inputs.repo }}" \

@@ -13,6 +13,9 @@ namespaces:
     actions:
       - READ
       - WRITE
+  - name: CODY
+    actions:
+      - ACCESS
 excludeFromUserRole:
   - OWNERSHIP
   - LICENSE_MANAGER

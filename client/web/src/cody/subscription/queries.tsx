@@ -5,7 +5,6 @@ export const USER_CODY_PLAN = gql`
         currentUser {
             id
             codyProEnabled
-            codyProEnabledAt
         }
     }
 `
@@ -29,7 +28,6 @@ export const CHANGE_CODY_PLAN = gql`
         changeCodyPlan(user: $id, pro: $pro) {
             id
             codyProEnabled
-            codyProEnabledAt
         }
     }
 `

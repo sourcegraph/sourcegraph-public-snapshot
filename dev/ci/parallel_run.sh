@@ -26,4 +26,4 @@ cat "$log_file"
 
 create_annotation "$code" "$log_file"
 
-exit $code
+exit "$code"

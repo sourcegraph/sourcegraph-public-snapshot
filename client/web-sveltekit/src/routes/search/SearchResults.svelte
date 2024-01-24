@@ -23,7 +23,7 @@
     import { resultTypeFilter } from '$lib/search/sidebar'
     import { submitSearch, type QueryStateStore, getQueryURL } from '$lib/search/state'
     import { groupFilters } from '$lib/search/utils'
-    import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch } from '$lib/shared'
+    import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch, type Progress } from '$lib/shared'
 
     import Section from './SidebarSection.svelte'
     import StreamingProgress from './StreamingProgress.svelte'
@@ -33,6 +33,7 @@
     import Icon from '$lib/Icon.svelte'
     import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
     import CodeHostIcon from './CodeHostIcon.svelte'
+    import SymbolKind from '$lib/search/SymbolKind.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
@@ -40,7 +41,6 @@
     export let queryState: QueryStateStore
 
     let resultContainer: HTMLElement | null = null
-    let searchInput: SearchInput
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
 
@@ -48,7 +48,7 @@
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
     // $stream.state is always "loading". Need to look into this.
-    $: loading = !progress?.done
+    $: loading = !(progress as Progress & { done?: boolean })?.done
     $: results = $stream?.results
     $: filters = groupFilters($stream?.filters)
     $: hasFilters = filters.lang.length > 0 || filters.repo.length > 0 || filters.file.length > 0
@@ -110,7 +110,7 @@
 </svelte:head>
 
 <div class="search">
-    <SearchInput bind:this={searchInput} {queryState} showSmartSearchButton />
+    <SearchInput {queryState} showSmartSearchButton />
 </div>
 
 <div class="search-results">
@@ -138,12 +138,57 @@
         </div>
         {#if hasFilters}
             <div class="section">
-                <h4>Filter results</h4>
+                {#if filters['symbol type'].length > 0}
+                    <Section
+                        items={filters['symbol type']}
+                        title="By symbol type"
+                        filterPlaceholder="Filter symbol types"
+                        showFilter
+                        {queryFilters}
+                    >
+                        <svelte:fragment slot="label" let:label>
+                            <SymbolKind symbolKind={label.toUpperCase()} />
+                            {label}
+                        </svelte:fragment>
+                    </Section>
+                {/if}
+                {#if filters.author.length > 0}
+                    <Section
+                        items={filters.author}
+                        title="By author"
+                        filterPlaceholder="Filter authors"
+                        showFilter
+                        {queryFilters}
+                    />
+                {/if}
+                {#if filters['commit date'].length > 0}
+                    <Section items={filters['commit date']} title="By commit date" {queryFilters}>
+                        <svelte:fragment slot="label" let:label let:value>
+                            <span class="commit-date-label">
+                                {label}
+                                <small><pre>{value}</pre></small>
+                            </span>
+                        </svelte:fragment>
+                    </Section>
+                {/if}
                 {#if filters.lang.length > 0}
-                    <Section items={filters.lang} title="By languages" {queryFilters} />
+                    <Section
+                        items={filters.lang}
+                        title="By language"
+                        showFilter
+                        filterPlaceholder="Filter languages"
+                        {queryFilters}
+                    />
                 {/if}
                 {#if filters.repo.length > 0}
-                    <Section items={filters.repo} title="By repositories" {queryFilters}>
+                    <Section
+                        items={filters.repo}
+                        title="By repository"
+                        showFilter
+                        filterPlaceholder="Filter repositories"
+                        preprocessLabel={displayRepoName}
+                        {queryFilters}
+                    >
                         <svelte:fragment slot="label" let:label>
                             <CodeHostIcon repository={label} />
                             {displayRepoName(label)}
@@ -151,7 +196,10 @@
                     </Section>
                 {/if}
                 {#if filters.file.length > 0}
-                    <Section items={filters.file} title="By paths" {queryFilters} />
+                    <Section items={filters.file} title="By file" {queryFilters} />
+                {/if}
+                {#if filters.utility.length > 0}
+                    <Section items={filters.utility} title="Utility" {queryFilters} />
                 {/if}
             </div>
         {/if}
@@ -222,7 +270,7 @@
         }
 
         .section {
-            padding: 1rem;
+            padding: 1rem 0.5rem 1rem 1rem;
             border-top: 1px solid var(--border-color);
 
             &:first-child {
@@ -317,5 +365,10 @@
         .icon {
             flex-shrink: 0;
         }
+    }
+
+    pre {
+        // Overwrites global default
+        margin-bottom: 0;
     }
 </style>

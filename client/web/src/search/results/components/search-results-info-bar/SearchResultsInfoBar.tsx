@@ -1,6 +1,6 @@
-import { useMemo, useState, FC, useCallback } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
-import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdiOpenInNew } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -8,8 +8,9 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, Link, Text, useSessionStorage } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import {
@@ -21,6 +22,7 @@ import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../../../tracking/util'
 import { SearchResultsCsvExportModal } from '../../export/SearchResultsCsvExportModal'
+import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
 import { SearchActionsMenu } from '../SearchActionsMenu'
 
 import {
@@ -81,7 +83,9 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
     const { query, patternType, authenticatedUser, results, options, sourcegraphURL, telemetryService } = props
 
     const navigate = useNavigate()
+    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
 
+    const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
     const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const [showCsvExportModal, setShowCsvExportModal] = useState(false)
 
@@ -237,28 +241,30 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                     />
                 </ul>
 
-                <Button
-                    className={classNames(
-                        'd-flex align-items-center d-lg-none',
-                        styles.filtersButton,
-                        showMobileFilters && 'active'
-                    )}
-                    aria-pressed={showMobileFilters}
-                    onClick={onShowMobileFiltersClicked}
-                    outline={true}
-                    variant="secondary"
-                    size="sm"
-                    aria-label={`${showMobileFilters ? 'Hide' : 'Show'} filters`}
-                >
-                    Filters
-                    <Icon
-                        aria-hidden={true}
-                        className="ml-2"
-                        svgPath={showMobileFilters ? mdiChevronDoubleUp : mdiChevronDoubleDown}
-                    />
-                </Button>
+                {!newFiltersEnabled && (
+                    <Button
+                        className={classNames(
+                            'd-flex align-items-center d-lg-none',
+                            styles.filtersButton,
+                            showMobileFilters && 'active'
+                        )}
+                        aria-pressed={showMobileFilters}
+                        onClick={onShowMobileFiltersClicked}
+                        outline={true}
+                        variant="secondary"
+                        size="sm"
+                        aria-label={`${showMobileFilters ? 'Hide' : 'Show'} filters`}
+                    >
+                        Filters
+                        <Icon
+                            aria-hidden={true}
+                            className="ml-2"
+                            svgPath={showMobileFilters ? mdiChevronDoubleUp : mdiChevronDoubleDown}
+                        />
+                    </Button>
+                )}
 
-                {props.sidebarCollapsed && (
+                {!newFiltersEnabled && props.sidebarCollapsed && (
                     <Button
                         className={classNames('align-items-center d-none d-lg-flex', styles.filtersButton)}
                         onClick={() => props.setSidebarCollapsed(false)}
@@ -269,6 +275,24 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                     >
                         Filters
                         <Icon aria-hidden={true} className="ml-2" svgPath={mdiChevronDoubleDown} />
+                    </Button>
+                )}
+                {newFiltersEnabled && (
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        outline={true}
+                        aria-label="Show aggregation results"
+                        className="align-items-center d-lg-flex"
+                        onClick={() =>
+                            setAggregationUIMode(
+                                aggregationUIMode === AggregationUIMode.SearchPage
+                                    ? AggregationUIMode.Sidebar
+                                    : AggregationUIMode.SearchPage
+                            )
+                        }
+                    >
+                        {aggregationUIMode === AggregationUIMode.SearchPage ? 'Hide' : 'Show'} aggregation results
                     </Button>
                 )}
             </div>

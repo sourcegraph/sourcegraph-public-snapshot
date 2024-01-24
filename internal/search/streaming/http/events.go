@@ -30,6 +30,7 @@ type EventContentMatch struct {
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
 	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Language        string           `json:"language,omitempty"`
 	Debug           string           `json:"debug,omitempty"`
 }
 
@@ -51,6 +52,7 @@ type EventPathMatch struct {
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Language        string     `json:"language,omitempty"`
 	Debug           string     `json:"debug,omitempty"`
 }
 
@@ -126,6 +128,7 @@ type EventSymbolMatch struct {
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
+	Language        string     `json:"language,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }
@@ -204,11 +207,11 @@ func (e *EventTeamMatch) eventMatch() {}
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
 type EventFilter struct {
-	Value    string `json:"value"`
-	Label    string `json:"label"`
-	Count    int    `json:"count"`
-	LimitHit bool   `json:"limitHit"`
-	Kind     string `json:"kind"`
+	Value      string `json:"value"`
+	Label      string `json:"label"`
+	Count      int    `json:"count"`
+	Exhaustive bool   `json:"exhaustive"`
+	Kind       string `json:"kind"`
 }
 
 // EventAlert is GQL.SearchAlert. It replaces when sent to match existing

@@ -13,8 +13,7 @@ set -eu
 changes_count=$(target-determinator \
   --verbose \
   --targets \
-  //cmd/executor/vm-image:ami.push \
-  //cmd/executor/docker-mirror \
+  "//cmd/executor/vm-image:ami.build union //cmd/executor/docker-mirror:ami.build" \
   HEAD^ \
   | wc -l
 )

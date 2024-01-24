@@ -151,7 +151,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 navbarSearchQuery={queryState.query}
                 showSmartSearchButton={false}
                 showExtendedPicker={false}
-                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
             />
         </LazyV2SearchInput>
     ) : (
@@ -177,7 +177,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             onChange={setQueryState}
             onSubmit={onSubmit}
             autoFocus={!isTouchOnlyDevice}
-            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
             showSearchHistory={true}
             recentSearches={recentSearches}
         />

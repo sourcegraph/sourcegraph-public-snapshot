@@ -162,6 +162,10 @@ func TestTeams_GetListCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	alex, err := db.Users().Create(internalCtx, NewUser{Username: "alex"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	store := db.Teams()
 
@@ -181,7 +185,7 @@ func TestTeams_GetListCount(t *testing.T) {
 	engineeringTeam := createTeam(&types.Team{Name: "engineering"}, johndoe.ID)
 	salesTeam := createTeam(&types.Team{Name: "sales"})
 	supportTeam := createTeam(&types.Team{Name: "support"}, johndoe.ID)
-	ownTeam := createTeam(&types.Team{Name: "sgown", ParentTeamID: engineeringTeam.ID}, alice.ID)
+	ownTeam := createTeam(&types.Team{Name: "sgown", ParentTeamID: engineeringTeam.ID}, alice.ID, alex.ID)
 	batchesTeam := createTeam(&types.Team{Name: "batches", ParentTeamID: engineeringTeam.ID}, johndoe.ID, alice.ID)
 
 	t.Run("GetByID", func(t *testing.T) {
@@ -328,6 +332,7 @@ func TestTeams_GetListCount(t *testing.T) {
 		t.Run("ForUserMember", func(t *testing.T) {
 			johnTeams := []*types.Team{engineeringTeam, supportTeam, batchesTeam}
 			aliceTeams := []*types.Team{ownTeam, batchesTeam}
+			alexTeams := []*types.Team{ownTeam}
 
 			t.Run("johndoe", func(t *testing.T) {
 				haveTeams, haveCursor, err := store.ListTeams(internalCtx, ListTeamsOpts{ForUserMember: johndoe.ID})
@@ -351,6 +356,21 @@ func TestTeams_GetListCount(t *testing.T) {
 				}
 
 				if diff := cmp.Diff(aliceTeams, haveTeams); diff != "" {
+					t.Fatal(diff)
+				}
+
+				if haveCursor != 0 {
+					t.Fatal("incorrect cursor returned")
+				}
+			})
+
+			t.Run("alex", func(t *testing.T) {
+				haveTeams, haveCursor, err := store.ListTeams(internalCtx, ListTeamsOpts{ForUserMember: alex.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(alexTeams, haveTeams); diff != "" {
 					t.Fatal(diff)
 				}
 
@@ -404,6 +424,11 @@ func TestTeams_GetListCount(t *testing.T) {
 			engineeringTeam: {johndoe.ID},
 			salesTeam:       {},
 			batchesTeam:     {johndoe.ID, alice.ID},
+		}
+
+		err := db.Users().Delete(internalCtx, alex.ID)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		for team, wantMembers := range allTeams {
