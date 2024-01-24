@@ -187,16 +187,6 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 	content, err := io.ReadAll(r)
 	r.Close()
 	if err != nil {
-		// TODO: Currently, it is required to start reading from the file
-		// reader to detect file not found errors.
-		// With the move to proper endpoints, we should be able to move
-		// this error check to before the stream is started, ie. when
-		// client.NewFileReader returns.
-		// Then, we should be able to remove this check here.
-		if os.IsNotExist(err) {
-			return nil, false, nil
-		}
-
 		return nil, false, err
 	}
 
