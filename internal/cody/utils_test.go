@@ -125,7 +125,7 @@ func TestPreSSCReleaseCurrentPeriodDateRange(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
 			ctx = withCurrentTimeMock(ctx, test.today)
 
-			startDate, endDate := PreSSCReleaseCurrentPeriodDateRange(ctx, *user)
+			startDate, endDate := preSSCReleaseCurrentPeriodDateRange(ctx, *user)
 			assert.Equal(t, test.start, startDate, "startDate")
 			assert.Equal(t, test.end, endDate, "endDate")
 		})

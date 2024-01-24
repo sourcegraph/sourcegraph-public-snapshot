@@ -30,7 +30,6 @@ export const FEATURE_FLAGS = [
     'enable-sveltekit',
     'enable-sveltekit-toggle',
     'search-content-based-lang-detection',
-    'search-keyword',
     'search-debug',
     'search-simple',
     'cody-chat-mock-test',
@@ -38,6 +37,7 @@ export const FEATURE_FLAGS = [
     'opencodegraph',
     'auditlog-expansion',
     'search.newFilters',
+    'use-ssc-for-cody-subscription',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

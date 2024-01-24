@@ -504,7 +504,7 @@ function initiateSearchStream(
         zoektSearchOptions,
         featureOverrides,
         searchMode = SearchMode.Precise,
-        displayLimit = 1500,
+        displayLimit = 500,
         sourcegraphURL = '',
         chunkMatches = false,
     }: StreamSearchOptions,

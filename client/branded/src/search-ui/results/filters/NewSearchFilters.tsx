@@ -6,6 +6,7 @@ import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/que
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -22,7 +23,8 @@ import {
     toSearchSyntaxTypeFilter,
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
-import { useUrlFilters } from './hooks'
+import { ArrowBendIcon } from './components/Icons'
+import { mergeQueryAndFilters, useUrlFilters } from './hooks'
 import { SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
@@ -70,6 +72,10 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onQueryChange(updateFilter(newQuery, FilterType.type, toSearchSyntaxTypeFilter(filterType)))
             }
         }
+    }
+
+    const handleApplyButtonFilters = (): void => {
+        onQueryChange(mergeQueryAndFilters(query, selectedFilters))
     }
 
     return (
@@ -144,9 +150,25 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <FiltersDocFooter className={styles.footer} />
+            <div className={styles.footerContent}>
+                <footer className={styles.actions}>
+                    {selectedFilters.length > 0 && (
+                        <Tooltip
+                            placement="right"
+                            content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
+                        >
+                            <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
+                                Move filters to the query
+                                <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
+                            </Button>
+                        </Tooltip>
+                    )}
 
-            {children}
+                    {children}
+                </footer>
+
+                <FiltersDocFooter />
+            </div>
         </div>
     )
 }
