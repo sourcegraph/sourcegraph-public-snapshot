@@ -46,8 +46,9 @@ func TestApplySubRepoFiltering(t *testing.T) {
 		}, nil
 	})
 
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
-		if rn.Equal("noSubRepoPerms") {
+	noSubRepoPermsID := api.RepoID(42)
+	checker.EnabledForRepoIDFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		if id == noSubRepoPermsID {
 			return false, nil
 		}
 		return true, nil
@@ -212,7 +213,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 					&result.CommitMatch{
 						ModifiedFiles: []string{unauthorizedFileName},
 						Repo: types.MinimalRepo{
-							Name: "noSubRepoPerms",
+							ID: noSubRepoPermsID,
 						},
 					},
 					&result.CommitMatch{
@@ -227,7 +228,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				&result.CommitMatch{
 					ModifiedFiles: []string{unauthorizedFileName},
 					Repo: types.MinimalRepo{
-						Name: "noSubRepoPerms",
+						ID: noSubRepoPermsID,
 					},
 				},
 			},

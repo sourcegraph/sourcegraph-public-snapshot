@@ -364,7 +364,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
         <section className={styles.exhaustiveSearch}>
             <header className={styles.exhaustiveSearchHeader}>
                 <Text className="m-0">Create a search job:</Text>
-                <ProductStatusBadge status="experimental" />
+                <ProductStatusBadge status="beta" />
             </header>
 
             {validationError && (

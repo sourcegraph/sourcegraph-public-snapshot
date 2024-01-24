@@ -61,7 +61,11 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
             className={styles.modal}
             onDismiss={() => setFiltersPanel(false)}
         >
-            <NewSearchFilters query={query} filters={filters} onQueryChange={onQueryChange} />
+            <NewSearchFilters query={query} filters={filters} onQueryChange={onQueryChange}>
+                <Button variant="primary" className={styles.closeFilters} onClick={() => setFiltersPanel(false)}>
+                    Close filters panel
+                </Button>
+            </NewSearchFilters>
         </Modal>
     )
 }

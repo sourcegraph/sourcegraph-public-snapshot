@@ -44,6 +44,9 @@ type AccessToken struct {
 // but it does not exist.
 var ErrAccessTokenNotFound = errors.New("access token not found")
 
+// ErrTooManyAccessTokens is returned when creating an access token would exceed the configured maximum number of active access tokens.
+var ErrTooManyAccessTokens = errors.New("number of active access tokens exceeds limit")
+
 // MaxAccessTokenLastUsedAtAge is the maximum amount of time we will wait before updating an access token's
 // last_used_at column. We are OK letting the value get a little stale in order to cut down on database writes.
 const MaxAccessTokenLastUsedAtAge = 5 * time.Minute
@@ -202,7 +205,18 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		// not been deleted. If they were deleted, the query will return an error.
 		`
 WITH subject_user AS (
-  SELECT id FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
+  SELECT
+    id,
+	(
+		SELECT COUNT(*)
+		FROM access_tokens
+		WHERE
+		  subject_user_id = $1
+		  AND deleted_at IS NULL
+		  AND (expires_at IS NULL OR expires_at > NOW())
+		  AND internal IS NOT TRUE
+	) AS active_tokens
+   FROM users WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
 ),
 creator_user AS (
   SELECT id FROM users WHERE id=$5 AND deleted_at IS NULL FOR UPDATE
@@ -210,11 +224,21 @@ creator_user AS (
 insert_values AS (
   SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id, $6::timestamp with time zone AS expires_at, $7::boolean AS internal
   FROM subject_user, creator_user
+  WHERE subject_user.active_tokens < $8::int OR $7::boolean
 )
 INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, expires_at, internal) SELECT * FROM insert_values RETURNING id
 `,
-		subjectUserID, pq.Array(scopes), hashutil.ToSHA256Bytes(b[:]), note, creatorUserID, dbutil.NullTimeColumn(expiresAt), internal,
+		subjectUserID, pq.Array(scopes), hashutil.ToSHA256Bytes(b[:]), note, creatorUserID, dbutil.NullTimeColumn(expiresAt), internal, conf.AccessTokensMaxPerUser(),
 	).Scan(&id); err != nil {
+		// if creation failed check to see if it was because too many tokens already
+		count, countErr := s.Count(ctx, AccessTokensListOptions{SubjectUserID: subjectUserID})
+		// if checking the count fails just return the original error
+		if countErr != nil {
+			return 0, "", err
+		}
+		if count >= conf.AccessTokensMaxPerUser() {
+			return 0, "", ErrTooManyAccessTokens
+		}
 		return 0, "", err
 	}
 

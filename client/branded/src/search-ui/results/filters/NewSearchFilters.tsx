@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, ReactNode, useMemo } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -31,9 +31,10 @@ interface NewSearchFiltersProps {
     query: string
     filters?: Filter[]
     onQueryChange: (nextQuery: string) => void
+    children?: ReactNode
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange }) => {
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange, children }) => {
     const [selectedFilters, setSelectedFilters] = useUrlFilters()
 
     const type = useMemo(() => {
@@ -86,28 +87,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 />
             )}
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <>
-                    <SearchDynamicFilter
-                        title="By author"
-                        filterKind="author"
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={authorFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-
-                    <SearchDynamicFilter
-                        title="By commit date"
-                        filterKind="commit date"
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={commitDateFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-                </>
-            )}
-
             <SearchDynamicFilter
                 title="By language"
                 filterKind="lang"
@@ -117,6 +96,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <SearchDynamicFilter
+                    title="By author"
+                    filterKind="author"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={authorFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
+            )}
+
             <SearchDynamicFilter
                 title="By repositories"
                 filterKind="repo"
@@ -125,6 +115,17 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 renderItem={repoFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
+
+            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
+                <SearchDynamicFilter
+                    title="By commit date"
+                    filterKind="commit date"
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={commitDateFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
+            )}
 
             <SearchDynamicFilter
                 title="By file"
@@ -144,6 +145,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
             />
 
             <FiltersDocFooter className={styles.footer} />
+
+            {children}
         </div>
     )
 }

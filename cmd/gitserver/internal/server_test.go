@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"container/list"
 	"context"
 	"fmt"
@@ -25,6 +26,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -50,6 +53,7 @@ type Test struct {
 	Request         *v1.ExecRequest
 	ExpectedCode    codes.Code
 	ExpectedBody    string
+	ExpectedError   string
 	ExpectedDetails []any
 }
 
@@ -62,41 +66,24 @@ func TestExecRequest(t *testing.T) {
 			Name: "Command",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("testcommand")},
+				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.Unknown,
+			ExpectedCode:  codes.Unknown,
+			ExpectedBody:  "teststdout",
+			ExpectedError: "teststderr",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 42,
 				Stderr:     "teststderr",
 			}},
 		},
 		{
-			Name: "echo",
-			Request: &v1.ExecRequest{
-				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("testecho"), []byte("hi")},
-			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: "hi",
-		},
-		{
-			Name: "stdin",
-			Request: &v1.ExecRequest{
-				Repo:  "github.com/gorilla/mux",
-				Args:  [][]byte{[]byte("testcat")},
-				Stdin: []byte("hi"),
-			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: "hi",
-		},
-		{
 			Name: "NonexistingRepo",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/doesnotexist",
-				Args: [][]byte{[]byte("testcommand")},
+				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.NotFound,
-			ExpectedBody: "repo not found",
+			ExpectedCode:  codes.NotFound,
+			ExpectedError: "repo not found",
 			ExpectedDetails: []any{&v1.NotFoundPayload{
 				Repo:            "github.com/gorilla/doesnotexist",
 				CloneInProgress: false,
@@ -106,10 +93,10 @@ func TestExecRequest(t *testing.T) {
 			Name: "UnclonedRepo",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/nicksnyder/go-i18n",
-				Args: [][]byte{[]byte("testcommand")},
+				Args: [][]byte{[]byte("diff")},
 			},
-			ExpectedCode: codes.NotFound,
-			ExpectedBody: "repo not found",
+			ExpectedCode:  codes.NotFound,
+			ExpectedError: "repo not found",
 			ExpectedDetails: []any{&v1.NotFoundPayload{
 				Repo:            "github.com/nicksnyder/go-i18n",
 				CloneInProgress: true,
@@ -119,29 +106,31 @@ func TestExecRequest(t *testing.T) {
 			Name: "Error",
 			Request: &v1.ExecRequest{
 				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("testerror")},
+				Args: [][]byte{[]byte("merge-base")},
 			},
-			ExpectedCode: codes.Unknown,
-			ExpectedBody: "testerror",
+			ExpectedCode:  codes.Unknown,
+			ExpectedError: "testerror",
 			ExpectedDetails: []any{&v1.ExecStatusPayload{
 				StatusCode: 1,
 				Stderr:     "teststderr",
 			}},
 		},
 		{
-			Name:         "EmptyInput",
-			Request:      &v1.ExecRequest{},
-			ExpectedCode: codes.InvalidArgument,
-			ExpectedBody: "invalid command",
+			Name: "EmptyInput",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/mux",
+			},
+			ExpectedCode:  codes.InvalidArgument,
+			ExpectedError: "invalid command",
 		},
 		{
 			Name: "BadCommand",
 			Request: &v1.ExecRequest{
-				Repo: "github.com/sourcegraph/sourcegraph",
+				Repo: "github.com/gorilla/mux",
 				Args: [][]byte{[]byte("invalid-command")},
 			},
-			ExpectedCode: codes.InvalidArgument,
-			ExpectedBody: "invalid command",
+			ExpectedCode:  codes.InvalidArgument,
+			ExpectedError: "invalid command",
 		},
 	}
 
@@ -154,6 +143,39 @@ func TestExecRequest(t *testing.T) {
 		ObservationCtx:    observation.TestContextTB(t),
 		ReposDir:          reposDir,
 		skipCloneForTests: true,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			backend := git.NewMockGitBackend()
+			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
+				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args, gitserverfs.RepoDirFromName(reposDir, repoName)) {
+					return nil, gitcli.ErrBadGitCommand
+				}
+
+				switch args[0] {
+				case "diff":
+					var stdout bytes.Buffer
+					stdout.Write([]byte("teststdout"))
+					return &errorReader{
+						ReadCloser: io.NopCloser(&stdout),
+						err: &gitcli.CommandFailedError{
+							Stderr:     []byte("teststderr"),
+							ExitStatus: 42,
+							Inner:      errors.New("teststderr"),
+						},
+					}, nil
+				case "merge-base":
+					return &errorReader{
+						ReadCloser: io.NopCloser(&bytes.Buffer{}),
+						err: &gitcli.CommandFailedError{
+							Stderr:     []byte("teststderr"),
+							ExitStatus: 1,
+							Inner:      errors.New("testerror"),
+						},
+					}, nil
+				}
+				return io.NopCloser(&bytes.Buffer{}), nil
+			})
+			return backend
+		},
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
@@ -184,37 +206,6 @@ func TestExecRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
 
-	executil.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
-		switch cmd.Args[1] {
-		case "testcommand":
-			_, _ = cmd.Stdout.Write([]byte("teststdout"))
-			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 42, nil
-		case "testerror":
-			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 1, errors.New("testerror")
-		case "testecho", "testcat":
-			// We do an actual exec in this case to test that code path.
-			exe := strings.TrimPrefix(cmd.Args[1], "test")
-			lp, err := exec.LookPath(exe)
-			if err != nil {
-				return -1, err
-			}
-			cmd.Path = lp
-			cmd.Args = cmd.Args[1:]
-			cmd.Args[0] = exe
-			cmd.Dir = "" // the test doesn't setup the dir
-
-			// We run the real codepath cause we can in this case.
-			m := executil.RunCommandMock
-			executil.RunCommandMock = nil
-			defer func() { executil.RunCommandMock = m }()
-			return executil.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
-		}
-		return 0, nil
-	}
-	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
-
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			ss := gitserver.NewMockGitserverService_ExecServer()
@@ -236,7 +227,7 @@ func TestExecRequest(t *testing.T) {
 				}
 				s, ok := status.FromError(err)
 				require.True(t, ok)
-				require.Equal(t, test.ExpectedCode, s.Code())
+				require.Equal(t, test.ExpectedCode, s.Code(), "wrong error code: expected %v, got %v %v", test.ExpectedCode, s.Code(), err)
 
 				if len(test.ExpectedDetails) > 0 {
 					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.NotFoundPayload{})); diff != "" {
@@ -244,10 +235,9 @@ func TestExecRequest(t *testing.T) {
 					}
 				}
 
-				if strings.TrimSpace(s.Message()) != test.ExpectedBody {
-					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedBody, s.Message())
+				if strings.TrimSpace(s.Message()) != test.ExpectedError {
+					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedError, s.Message())
 				}
-				return
 			}
 
 			if strings.TrimSpace(string(receivedData)) != test.ExpectedBody {
@@ -255,6 +245,23 @@ func TestExecRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+type errorReader struct {
+	io.ReadCloser
+
+	err error
+}
+
+func (ec *errorReader) Read(p []byte) (int, error) {
+	n, err := ec.ReadCloser.Read(p)
+	if err == nil {
+		return n, nil
+	}
+	if err == io.EOF {
+		return n, ec.err
+	}
+	return n, err
 }
 
 // makeSingleCommitRepo make create a new repo with a single commit and returns
@@ -298,11 +305,15 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		Logger:         logger,
 		ObservationCtx: obctx,
 		ReposDir:       repoDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		GetRemoteURLFunc: func(context.Context, api.RepoName) (string, error) {
 			return remote, nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.
+				NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
@@ -1031,6 +1042,9 @@ func TestHandleBatchLog(t *testing.T) {
 				DB:                      dbmocks.NewMockDB(),
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  NewRepositoryLocker(),
+				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+					return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+				},
 			}
 			// Initialize side-effects.
 			_ = server.Handler()
@@ -1094,7 +1108,9 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, common.ErrRepoCorrupted{
+			Reason: stdErr,
+		})
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
@@ -1118,44 +1134,12 @@ func TestLogIfCorrupt(t *testing.T) {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		stdErr := "Brought to you by Horsegraph"
-
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
 		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
-}
-
-func TestStdErrIndicatesCorruption(t *testing.T) {
-	bad := []string{
-		"error: packfile .git/objects/pack/pack-a.pack does not match index",
-		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
-		`error: short SHA1 1325 is ambiguous
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		`unrelated
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
-		"fatal: commit-graph requires overflow generation data but has none\n",
-		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
-	}
-	good := []string{
-		"",
-		"error: short SHA1 1325 is ambiguous",
-		"error: object 156639577dd2ea91cdd53b25352648387d985743 is a blob, not a commit",
-		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
-	}
-	for _, stderr := range bad {
-		if !stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should contain corrupt line:\n%s", stderr)
-		}
-	}
-	for _, stderr := range good {
-		if stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should not contain corrupt line:\n%s", stderr)
-		}
-	}
 }
 
 func TestLinebasedBufferedWriter(t *testing.T) {

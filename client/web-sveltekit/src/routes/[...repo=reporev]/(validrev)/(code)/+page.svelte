@@ -13,7 +13,7 @@
     export let data: PageData
 
     const { value: readme, set: setReadme, pending: readmePending } = createPromiseStore<RepoPage_Readme | null>()
-    $: setReadme(data.deferred.readme)
+    $: setReadme(data.readme)
 </script>
 
 <h3 class="header">

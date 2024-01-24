@@ -29,7 +29,7 @@ export const load: LayoutLoad = async () => {
 
     const settings = parseJSONCOrError<Settings>(result.data.viewerSettings.final)
     if (isErrorLike(settings)) {
-        throw error(500, `Failed to parse user settings: ${settings.message}`)
+        error(500, `Failed to parse user settings: ${settings.message}`)
     }
 
     return {

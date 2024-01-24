@@ -94,6 +94,8 @@ type AuthAccessTokens struct {
 	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
 	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
 	ExpirationOptionDays []int `json:"expirationOptionDays,omitempty"`
+	// MaxTokensPerUser description: The maximum number of active access tokens a user may have.
+	MaxTokensPerUser *int `json:"maxTokensPerUser,omitempty"`
 }
 
 // AuthAllowedIpAddress description: IP allowlist for access to the Sourcegraph instance. If set, only requests from these IP addresses will be allowed. By default client IP is infered connected client IP address, and you may configure to use a request header to determine the user IP.

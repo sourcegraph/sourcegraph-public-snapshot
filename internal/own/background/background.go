@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -145,10 +144,9 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 	})
 
 	task := handler{
-		workerStore:       workerStore,
-		limiter:           indexLimiter,
-		db:                db,
-		subRepoPermsCache: rcache.NewWithTTL("own_signals_subrepoperms", 3600),
+		workerStore: workerStore,
+		limiter:     indexLimiter,
+		db:          db,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
@@ -170,11 +168,10 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 }
 
 type handler struct {
-	db                database.DB
-	workerStore       dbworkerstore.Store[*Job]
-	limiter           *ratelimit.InstrumentedLimiter
-	op                *observation.Operation
-	subRepoPermsCache *rcache.Cache
+	db          database.DB
+	workerStore dbworkerstore.Store[*Job]
+	limiter     *ratelimit.InstrumentedLimiter
+	op          *observation.Operation
 }
 
 func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error {
@@ -193,10 +190,10 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
 	}
 
-	return delegate(ctx, lgr, api.RepoID(record.RepoId), h.db, h.subRepoPermsCache)
+	return delegate(ctx, lgr, api.RepoID(record.RepoId), h.db)
 }
 
-type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB, cache *rcache.Cache) error
+type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error
 
 // janitorQuery is split into 2 parts. The first half is records that are finished (either completed or failed), the second half is records for jobs that are not enabled.
 func janitorQuery(deleteSince time.Time) *sqlf.Query {

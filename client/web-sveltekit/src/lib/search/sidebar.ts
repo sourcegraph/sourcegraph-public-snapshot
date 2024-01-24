@@ -36,7 +36,10 @@ export const resultTypeFilter: ResultTypeFilter[] = [
         label: 'Code',
         icon: mdiCodeTags,
         getQuery: addOrUpdateTypeFilter('file'),
-        isSelected: isSelectedTypeFilter('file'),
+        isSelected: query => {
+            const filter = findFilter(query, FilterType.type, FilterKind.Global)
+            return !filter || filter.value?.value === 'file'
+        },
     },
     {
         label: 'Repositories',

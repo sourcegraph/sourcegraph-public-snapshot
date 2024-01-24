@@ -9,7 +9,7 @@
     export let data: PageData
 
     const { pending, value: connection, set } = createPromiseStore<GitTagsConnection>()
-    $: set(data.deferred.tags)
+    $: set(data.tags)
 
     $: nodes = $connection?.nodes
     $: total = $connection?.totalCount
