@@ -17,7 +17,7 @@ go_library(
         "//cmd/gitserver/internal/cloneurl",
         "//cmd/gitserver/internal/common",
         "//cmd/gitserver/internal/git",
-        "//cmd/gitserver/internal/git/cli",
+        "//cmd/gitserver/internal/git/gitcli:cli",
         "//cmd/gitserver/internal/gitserverfs",
         "//cmd/gitserver/internal/perforce",
         "//cmd/gitserver/internal/vcssyncer",
