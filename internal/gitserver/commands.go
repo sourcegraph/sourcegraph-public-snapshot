@@ -1467,7 +1467,6 @@ type CommitsOptions struct {
 	After  string // include only commits after this date
 	Before string // include only commits before this date
 
-	Reverse   bool // Whether or not commits should be given in reverse order (optional)
 	DateOrder bool // Whether or not commits should be sorted by date (optional)
 
 	Path string // only commits modifying the given path are selected (optional)
@@ -1484,14 +1483,13 @@ type CommitsOptions struct {
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
 			ev.SetSampleRate(10) // 1 in 10
 			ev.AddField("repo", repo)
 			ev.AddField("commit", id)
-			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
 			ev.AddField("actor", actor.FromContext(ctx).UIDString())
 
 			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
@@ -1512,7 +1510,7 @@ func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 	commitOptions := CommitsOptions{
 		Range:            string(id),
 		N:                1,
-		NoEnsureRevision: opt.NoEnsureRevision,
+		NoEnsureRevision: true,
 	}
 	commitOptions = addNameOnly(commitOptions, c.subRepoPermsChecker)
 
@@ -1531,24 +1529,23 @@ func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id
 	return commits[0], nil
 }
 
-// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
+// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 // exists.
 //
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
 			repo.Attr(),
 			id.Attr(),
-			attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	return c.getCommit(ctx, repo, id, opt)
+	return c.getCommit(ctx, repo, id)
 }
 
 // Commits returns all commits matching the options.
@@ -1650,11 +1647,7 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, repo api.
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// The commits are returned from git log, so we are sure they exist and
-			// don't need to ensure the revision.
-			NoEnsureRevision: true,
-		})
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
 		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
@@ -1938,9 +1931,6 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Before != "" {
 		args = append(args, "--before="+opt.Before)
 	}
-	if opt.Reverse {
-		args = append(args, "--reverse")
-	}
 	if opt.DateOrder {
 		args = append(args, "--date-order")
 	}
@@ -1987,184 +1977,7 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, repo api.RepoNa
 	}
 	first := tokens[0]
 	id := api.CommitID(bytes.TrimSpace(first))
-	return c.GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
-}
-
-// CommitExists determines if the given commit exists in the given repository.
-func (c *clientImplementor) CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(id)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	commit, err := c.getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return commit != nil, nil
-}
-
-// CommitsExist determines if the given commits exists in the given repositories. This function returns
-// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
-// exists.
-func (c *clientImplementor) CommitsExist(ctx context.Context, repoCommits []api.RepoCommit) ([]bool, error) {
-	commits, err := c.GetCommits(ctx, repoCommits, true)
-	if err != nil {
-		return nil, err
-	}
-
-	exists := make([]bool, len(commits))
-	for i, commit := range commits {
-		exists[i] = commit != nil
-	}
-
-	return exists, nil
-}
-
-// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
-// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
-// their associated repository or commit are unresolvable.
-//
-// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
-// resulting commit to be nil, but not fail the entire operation.
-func (c *clientImplementor) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) (_ []*gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.getCommits.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			attribute.Int("numRepoCommits", len(repoCommits)),
-			attribute.Bool("ignoreErrors", ignoreErrors),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
-	for i, repoCommit := range repoCommits {
-		if err := checkSpecArgSafety(string(repoCommit.CommitID)); err != nil {
-			return nil, err
-		}
-
-		// Ensure repository names are normalized. If do this in a lower layer, then we may
-		// not be able to compare the RepoCommit parameter in the callback below with the
-		// input values.
-		repoCommits[i].Repo = protocol.NormalizeRepo(repoCommit.Repo)
-
-		// Make it easy to look up the index to populate for a particular RepoCommit value.
-		// Note that we use the slice-indexed version as the key, not the local variable, which
-		// was not updated in the normalization phase above
-		indexesByRepoCommit[repoCommits[i]] = i
-	}
-
-	// Create a slice with values populated in the callback defined below. Since the callback
-	// may be invoked concurrently inside BatchLog, we need to synchronize writes to this slice
-	// with this local mutex.
-	commits := make([]*gitdomain.Commit, len(repoCommits))
-	var mu sync.Mutex
-
-	callback := func(repoCommit api.RepoCommit, rawResult RawBatchLogResult) error {
-		if err := rawResult.Error; err != nil {
-			if ignoreErrors {
-				// Treat as not-found
-				return nil
-			}
-
-			return errors.Wrap(err, "failed to perform git log")
-		}
-
-		wrappedCommits, err := parseCommitLogOutput(strings.NewReader(rawResult.Stdout))
-		if err != nil {
-			if ignoreErrors {
-				// Treat as not-found
-				return nil
-			}
-			return errors.Wrap(err, "parseCommitLogOutput")
-		}
-		if len(wrappedCommits) > 1 {
-			// Check this prior to filtering commits so that we still log an issue
-			// if the user happens to have access one but not the other; a rev being
-			// ambiguous here should be a visible issue regardless of permissions.
-			return errors.Errorf("git log: expected 1 commit, got %d", len(commits))
-		}
-
-		// Enforce sub-repository permissions
-		filteredCommits, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repoCommit.Repo)
-		if err != nil {
-			// Note that we don't check ignoreErrors on this condition. When we
-			// ignore errors it's to hide an issue with a single git log request on a
-			// single shard, which could return an error if that repo is missing, the
-			// supplied commit does not exist in the clone, or if the repo is malformed.
-			//
-			// We don't want to hide unrelated infrastructure errors caused by this
-			// method call.
-			return errors.Wrap(err, "filterCommits")
-		}
-		if len(filteredCommits) == 0 {
-			// Not found
-			return nil
-		}
-
-		mu.Lock()
-		defer mu.Unlock()
-		index := indexesByRepoCommit[repoCommit]
-		commits[index] = filteredCommits[0]
-		return nil
-	}
-
-	opts := BatchLogOptions{
-		RepoCommits: repoCommits,
-		Format:      logFormatWithoutRefs,
-	}
-	if err := c.BatchLog(ctx, opts, callback); err != nil {
-		return nil, errors.Wrap(err, "gitserver.BatchLog")
-	}
-
-	return commits, nil
-}
-
-// Head determines the tip commit of the default branch for the given repository.
-// If no HEAD revision exists for the given repository (which occurs with empty
-// repositories), a false-valued flag is returned along with a nil error and
-// empty revision.
-func (c *clientImplementor) Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
-	ctx, _, endObservation := c.operations.head.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
-
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return checkError(err)
-	}
-	commitID := string(out)
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if _, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// We expect the HEAD reference to not be broken, let's not ensure the
-			// revision here.
-			NoEnsureRevision: true,
-		}); err != nil {
-			return checkError(err)
-		}
-	}
-
-	return commitID, true, nil
-}
-
-func checkError(err error) (string, bool, error) {
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		err = nil
-	}
-	return "", false, err
+	return c.GetCommit(ctx, repo, id)
 }
 
 const (
@@ -2243,11 +2056,7 @@ func (c *clientImplementor) BranchesContaining(ctx context.Context, repo api.Rep
 
 	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
-			// Don't ensure the revision here, the branch command below will fail
-			// anyways.
-			NoEnsureRevision: true,
-		}); err != nil {
+		if _, err := c.GetCommit(ctx, repo, commit); err != nil {
 			return nil, err
 		}
 	}
@@ -2342,10 +2151,7 @@ func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{
-			// The commits are returned from git already, so they must exist.
-			NoEnsureRevision: true,
-		})
+		_, err := c.GetCommit(ctx, repo, api.CommitID(commitID))
 		if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
@@ -2430,59 +2236,6 @@ lineLoop:
 	}
 
 	return refDescriptions, nil
-}
-
-// CommitDate returns the time that the given commit was committed. If the given
-// revision does not exist, a false-valued flag is returned along with a nil
-// error and zero-valued time.
-func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
-	ctx, _, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.String("commit", string(commit)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		// GetCommit to validate that the user has permissions to access it.
-		if _, err := c.GetCommit(ctx, repo, commit, ResolveRevisionOptions{
-			// The show command below will fail anyways, so no need to ensure
-			// that the revision exists here.
-			NoEnsureRevision: true,
-		}); err != nil {
-			return "", time.Time{}, false, nil
-		}
-	}
-
-	cmd := c.gitCommand(repo, "show", "-s", "--format=%H:%cI", string(commit))
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
-		}
-		return "", time.Time{}, false, err
-	}
-	outs := string(out)
-
-	line := strings.TrimSpace(outs)
-	if line == "" {
-		return "", time.Time{}, false, nil
-	}
-
-	parts := strings.SplitN(line, ":", 2)
-	if len(parts) != 2 {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
-	}
-
-	duration, err := time.Parse(time.RFC3339, parts[1])
-	if err != nil {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
-	}
-
-	return parts[0], duration, true, nil
 }
 
 type ArchiveFormat string
@@ -2614,89 +2367,13 @@ func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) Com
 	return opt
 }
 
-// BranchesOptions specifies options for the list of branches returned by
-// (Repository).Branches.
-type BranchesOptions struct {
-	// MergedInto will cause the returned list to be restricted to only
-	// branches that were merged into this branch name.
-	MergedInto string `json:"MergedInto,omitempty" url:",omitempty"`
-	// IncludeCommit controls whether complete commit information is included.
-	IncludeCommit bool `json:"IncludeCommit,omitempty" url:",omitempty"`
-	// BehindAheadBranch specifies a branch name. If set to something other than blank
-	// string, then each returned branch will include a behind/ahead commit counts
-	// information against the specified base branch. If left blank, then branches will
-	// not include that information and their Counts will be nil.
-	BehindAheadBranch string `json:"BehindAheadBranch,omitempty" url:",omitempty"`
-	// ContainsCommit filters the list of branches to only those that
-	// contain a specific commit ID (if set).
-	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
-}
-
-func (bo *BranchesOptions) Attrs() (res []attribute.KeyValue) {
-	if bo.MergedInto != "" {
-		res = append(res, attribute.String("mergedInto", bo.MergedInto))
-	}
-	res = append(res, attribute.Bool("includeCommit", bo.IncludeCommit))
-
-	if bo.BehindAheadBranch != "" {
-		res = append(res, attribute.String("behindAheadBranch", bo.BehindAheadBranch))
-	}
-
-	if bo.ContainsCommit != "" {
-		res = append(res, attribute.String("containsCommit", bo.ContainsCommit))
-	}
-
-	return res
-}
-
-// branchFilter is a filter for branch names.
-// If not empty, only contained branch names are allowed. If empty, all names are allowed.
-// The map should be made so it's not nil.
-type branchFilter map[string]struct{}
-
-// allows will return true if the current filter set-up validates against
-// the passed string. If there are no filters, all strings pass.
-func (f branchFilter) allows(name string) bool {
-	if len(f) == 0 {
-		return true
-	}
-	_, ok := f[name]
-	return ok
-}
-
-// add adds a slice of strings to the filter.
-func (f branchFilter) add(list []string) {
-	for _, l := range list {
-		f[l] = struct{}{}
-	}
-}
-
 // ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (_ []*gitdomain.Branch, err error) {
+func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Branch, err error) {
 	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
-		Attrs: append(
-			[]attribute.KeyValue{repo.Attr()},
-			opt.Attrs()...,
-		),
+		Attrs:             []attribute.KeyValue{repo.Attr()},
 	})
 	defer endObservation(1, observation.Args{})
-
-	f := make(branchFilter)
-	if opt.MergedInto != "" {
-		b, err := c.branches(ctx, repo, "--merged", opt.MergedInto)
-		if err != nil {
-			return nil, err
-		}
-		f.add(b)
-	}
-	if opt.ContainsCommit != "" {
-		b, err := c.branches(ctx, repo, "--contains="+opt.ContainsCommit)
-		if err != nil {
-			return nil, err
-		}
-		f.add(b)
-	}
 
 	refs, err := c.showRef(ctx, repo, "--heads")
 	if err != nil {
@@ -2706,45 +2383,8 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 	var branches []*gitdomain.Branch
 	for _, ref := range refs {
 		name := strings.TrimPrefix(ref.Name, "refs/heads/")
-		if !f.allows(name) {
-			continue
-		}
-
 		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
-		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{
-				// The commitID comes from git, so surely it knows about it and
-				// there's no need to ensure the revision exists.
-				NoEnsureRevision: true,
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = c.GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
-			if err != nil {
-				return nil, err
-			}
-		}
 		branches = append(branches, branch)
-	}
-	return branches, nil
-}
-
-// branches runs the `git branch` command followed by the given arguments and
-// returns the list of branches if successful.
-func (c *clientImplementor) branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := c.gitCommand(repo, append([]string{"branch"}, args...)...)
-	out, err := cmd.Output(ctx)
-	if err != nil {
-		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
-	}
-	lines := strings.Split(string(out), "\n")
-	lines = lines[:len(lines)-1]
-	branches := make([]string, len(lines))
-	for i, line := range lines {
-		branches[i] = line[2:]
 	}
 	return branches, nil
 }

@@ -4,15 +4,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSearchRequestProtoRoundtrip(t *testing.T) {
 	req := &SearchRequest{
 		Repo:      "test1",
-		Revisions: []RevisionSpecifier{{RevSpec: "ABC"}, {RefGlob: "refs/heads/*"}},
+		Revisions: []RevisionSpecifier{{RevSpec: "ABC"}},
 		Query: &Operator{
 			Kind: And,
 			Operands: []Node{

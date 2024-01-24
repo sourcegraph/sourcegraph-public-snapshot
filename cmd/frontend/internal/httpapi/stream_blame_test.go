@@ -30,7 +30,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 		func(_ context.Context,
 			repoName api.RepoName,
 			commit api.CommitID,
-			opts gitserver.ResolveRevisionOptions,
 		) (*gitdomain.Commit, error) {
 			return &gitdomain.Commit{
 				Parents: []api.CommitID{"xxx", "yyy"},

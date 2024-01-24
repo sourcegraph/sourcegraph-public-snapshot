@@ -9,6 +9,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {
+    option deprecated = true;
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
@@ -98,17 +99,17 @@ message DiskInfoResponse {
 message BatchLogRequest {
   // repo_commits is the list of repositories and commits to run the git log
   // command on.
-  repeated RepoCommit repo_commits = 1;
+  repeated RepoCommit repo_commits = 1 [deprecated = true];
   // format is the entire `--format=<format>` argument to git log. This value is
   // expected to be non-empty.
-  string format = 2;
+  string format = 2 [deprecated = true];
 }
 
 // BatchLogResponse contains the results of the BatchLog request.
 message BatchLogResponse {
   // results is the list of results for each repository and commit pair from the
   // input of a BatchLog request.
-  repeated BatchLogResult results = 1;
+  repeated BatchLogResult results = 1 [deprecated = true];
 }
 
 // BatchLogResult is the result that associates a repository and commit pair
@@ -117,18 +118,18 @@ message BatchLogResponse {
 message BatchLogResult {
   // repo_commit is the repository and commit pair from the input of a BatchLog
   // request.
-  RepoCommit repo_commit = 1;
+  RepoCommit repo_commit = 1 [deprecated = true];
   // command_output is the output of the git log command.
-  string command_output = 2;
+  string command_output = 2 [deprecated = true];
   // command_error is an optional error message if the git log command
   // encountered an error.
-  optional string command_error = 3;
+  optional string command_error = 3 [deprecated = true];
 }
 
 // RepoCommit is the represention of a repository and commit pair.
 message RepoCommit {
-  string repo = 1;
-  string commit = 2;
+  string repo = 1 [deprecated = true];
+  string commit = 2 [deprecated = true];
 }
 
 message PatchCommitInfo {
@@ -264,12 +265,8 @@ message RevisionSpecifier {
   // RevSpec is a revision range specifier suitable for passing to git. See
   // the manpage gitrevisions(7).
   string rev_spec = 1;
-  // RefGlob is a reference glob to pass to git. See the documentation for
-  // "--glob" in git-log.
-  string ref_glob = 2;
-  // ExcludeRefGlob is a glob for references to exclude. See the
-  // documentation for "--exclude" in git-log.
-  string exclude_ref_glob = 3;
+  reserved 2;
+  reserved 3;
 }
 
 // AuthorMatchesNode is a predicate that matches if the author's name or email
