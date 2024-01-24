@@ -6361,6 +6361,9 @@ type NewUsersConnection implements Connection {
     pageInfo: ConnectionPageInfo!
 }
 
+"""
+A status for cody subscription.
+"""
 enum CodySubscriptionStatus {
     active
     past_due
@@ -6371,16 +6374,37 @@ enum CodySubscriptionStatus {
     other
 }
 
+"""
+A plan for cody subscription.
+"""
 enum CodySubscriptionPlan {
     free
     pro
 }
 
+"""
+A subscription for cody.
+"""
 type CodySubscription {
+    """
+    The status for cody subscription.
+    """
     status: CodySubscriptionStatus!
+    """
+    The plan for cody subscription.
+    """
     plan: CodySubscriptionPlan!
+    """
+    Whether pro rate limits are applied for the user.
+    """
     applyProRateLimits: Boolean!
+    """
+    The current billing period start time.
+    """
     currentPeriodStartAt: DateTime!
+    """
+    The current billing period end time.
+    """
     currentPeriodEndAt: DateTime!
 }
 

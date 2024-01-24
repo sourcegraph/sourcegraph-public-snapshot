@@ -40,6 +40,7 @@ interface CodySubscriptionPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
+const MANAGE_SUBSCRIPTION_REDIRECT_URL = 'https://accounts.sourcegraph.com/cody/subscription'
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
@@ -209,8 +210,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                     }
                                                 )
                                                 if (sscEnabled) {
-                                                    window.location.href =
-                                                        'https://accounts.sourcegraph.com/cody/subscription?pro=true'
+                                                    window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
                                                     return
                                                 }
 
@@ -231,8 +231,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' }
                                             )
                                             if (sscEnabled) {
-                                                window.location.href =
-                                                    'https://accounts.sourcegraph.com/cody/subscription'
+                                                window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
                                                 return
                                             }
 

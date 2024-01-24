@@ -76,11 +76,13 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const enrollPro = parameters.get('pro') === 'true'
 
+    const subscription = data?.currentUser?.codySubscription
+
     useEffect(() => {
-        if (enrollPro && data?.currentUser && data?.currentUser?.codySubscription?.plan !== CodySubscriptionPlan.pro) {
+        if (enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.pro) {
             changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
-    }, [data?.currentUser, changeCodyPlan, enrollPro])
+    }, [data?.currentUser, changeCodyPlan, enrollPro, subscription])
 
     const navigate = useNavigate()
 
@@ -90,19 +92,15 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser) {
-        return null
-    }
-
-    const subscription = data.currentUser.codySubscription
-    if (!subscription) {
+    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
         return null
     }
 
     const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
+    const userIsOnProTier = subscription.plan === CodySubscriptionPlan.pro
 
-    const showUpgradeBanner = subscription.plan !== CodySubscriptionPlan.pro && (codeLimitReached || chatLimitReached)
+    const showUpgradeBanner = !userIsOnProTier && (codeLimitReached || chatLimitReached)
 
     return (
         <>
@@ -144,12 +142,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div>
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
-                                You are on the{' '}
-                                {subscription.plan === CodySubscriptionPlan.pro ? CodySubscriptionPlan.pro : 'Free'}{' '}
-                                tier.
+                                You are on the {userIsOnProTier ? 'Pro' : 'Free'} tier.
                             </Text>
                         </div>
-                        {subscription.plan === CodySubscriptionPlan.pro ? (
+                        {userIsOnProTier ? (
                             <div>
                                 <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
                                     Manage subscription
@@ -166,7 +162,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                            {subscription.plan === CodySubscriptionPlan.pro ? (
+                            {userIsOnProTier ? (
                                 <ProTierIcon />
                             ) : (
                                 <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
@@ -269,7 +265,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ))}
                         </div>
-                        {subscription.plan === CodySubscriptionPlan.pro &&
+                        {userIsOnProTier &&
                             (subscription.applyProRateLimits ? (
                                 <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
                                     <TrialPeriodIcon />
