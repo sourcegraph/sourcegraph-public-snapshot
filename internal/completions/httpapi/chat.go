@@ -21,8 +21,8 @@ import (
 // chatAttributionTest always returns true, as chat attribution
 // is performed on the client side (as opposed to code completions)
 // which works on the server side.
-func chatAttributionTest(context.Context, string) bool {
-	return true
+func chatAttributionTest(context.Context, string) (bool, error) {
+	return true, nil
 }
 
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.

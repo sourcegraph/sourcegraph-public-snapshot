@@ -13,7 +13,7 @@ import (
 // Returning false indicates that some attribution of snippet was found, and the snippet
 // should be used with caution. The operation can be long-running, and should respect
 // context cancellation.
-type AttributionTest func (context.Context, string) bool
+type AttributionTest func (context.Context, string) (bool, error)
 
 // CompletionEventSink is where selected events end up being streamed to.
 type CompletionEventSink func (types.CompletionResponse) error
@@ -155,7 +155,10 @@ func (a *CompletionsFilter) setMostRecentCompletion(e types.CompletionResponse) 
 // runAttribution performs attribution search and updates the state of the object
 // after finishing. It's run within `attributionRun` to ensure it only runs once.
 func (a *CompletionsFilter) runAttribution(ctx context.Context, e types.CompletionResponse) {
-	result := a.test(ctx, e.Completion)
+	result, err := a.test(ctx, e.Completion)
+	if err != nil {
+
+	}
 	a.setAttributionResult(result)
 	if result {
 		err := a.send(a.getMostRecentCompletion())
