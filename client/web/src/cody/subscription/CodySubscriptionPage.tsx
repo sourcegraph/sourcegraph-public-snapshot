@@ -40,7 +40,16 @@ interface CodySubscriptionPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
-const MANAGE_SUBSCRIPTION_REDIRECT_URL = 'https://accounts.sourcegraph.com/cody/subscription'
+
+const useManageSubscriptionRedirectURL = (pro: boolean): string => {
+    const [useSAMSTestInstance] = useFeatureFlag('use-sams-test-instance', false)
+
+    if (useSAMSTestInstance) {
+        return 'https://accounts.sgdev.org/cody/subscription' + (pro ? '?pro=true' : '')
+    }
+
+    return 'https://accounts.sourcegraph.com/cody/subscription' + (pro ? '?pro=true' : '')
+}
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
@@ -51,7 +60,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const utm_source = parameters.get('utm_source')
 
     const [sscEnabled] = useFeatureFlag('use-ssc-for-cody-subscription', false)
-
     useEffect(() => {
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
@@ -60,6 +68,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
+
+    const manageSubscriptionRedirestURL = useManageSubscriptionRedirectURL(
+        data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO
+    )
 
     const navigate = useNavigate()
 
@@ -210,7 +222,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                     }
                                                 )
                                                 if (sscEnabled) {
-                                                    window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                    window.location.href = manageSubscriptionRedirestURL
                                                     return
                                                 }
 
@@ -231,7 +243,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' }
                                             )
                                             if (sscEnabled) {
-                                                window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                window.location.href = manageSubscriptionRedirestURL
                                                 return
                                             }
 

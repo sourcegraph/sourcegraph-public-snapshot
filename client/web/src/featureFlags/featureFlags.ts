@@ -38,6 +38,7 @@ export const FEATURE_FLAGS = [
     'auditlog-expansion',
     'search.newFilters',
     'use-ssc-for-cody-subscription',
+    'use-sams-test-instance',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

@@ -7,15 +7,29 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
-    "ssc.apiBaseUrl": {
+    "ssc.api.baseURL": {
       "type": "string",
-      "default": "https://accounts.sourcegraph.com/cody/api",
       "description": "The base URL of the Self-Serve Cody API."
     },
-    "ssc.apiSecret": {
+    "ssc.api.secret": {
       "type": "string",
-      "default": "********",
       "description": "The Bearer token for the Self-Serve Cody API."
+    },
+    "ssc.sams.serviceID": {
+      "type": "string",
+      "description": "The service ID for SAMS external service."
+    },
+    "ssc.test.api.baseURL": {
+      "type": "string",
+      "description": "The base URL of the Self-Serve Cody test API."
+    },
+    "ssc.test.api.secret": {
+      "type": "string",
+      "description": "The Bearer token for the Self-Serve Cody test API."
+    },
+    "ssc.test.sams.serviceID": {
+      "type": "string",
+      "description": "The service ID for SAMS test external service."
     },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",

@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,6 +47,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 	tests := []struct {
 		name                         string
 		user                         types.User
+		isTestUser                   bool
 		today                        time.Time
 		mockSSCSubscription          *ssc.Subscription
 		mockSAMSAccountID            *string
@@ -59,6 +62,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CreatedAt:        time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 				CodyProEnabledAt: nil,
 			},
+			isTestUser:          true,
 			today:               time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC),
 			mockSSCSubscription: nil,
 			mockSAMSAccountID:   nil,
@@ -149,6 +153,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 				CreatedAt:        time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 				CodyProEnabledAt: toTimePtr(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
+			isTestUser:          true,
 			today:               time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC),
 			mockSSCSubscription: nil,
 			mockSAMSAccountID:   nil,
@@ -277,13 +282,30 @@ func TestGetSubscriptionForUser(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(test.user.ID))
 			ctx = withCurrentTimeMock(ctx, test.today)
-			flags := map[string]bool{USE_SSC_FOR_SUBSCRIPTION_FF: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED_FF: test.codyProTrialEndedFeatureFlag}
+			flags := map[string]bool{USE_SSC_FOR_SUBSCRIPTION_FF: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED_FF: test.codyProTrialEndedFeatureFlag, ssc.USE_SAMS_TEST_INSTANCE_FF: test.isTestUser}
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					SscSamsServiceID:     "https://accounts.sourcegraph.com",
+					SscTestSamsServiceID: "https://accounts.sgdev.org",
+				},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
 
 			db := dbmocks.NewMockDB()
 			userExternalAccount := dbmocks.NewMockUserExternalAccountsStore()
 			userExternalAccount.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 				assert.Equal(t, test.user.ID, opts.UserID)
+
+				if test.isTestUser {
+					assert.Equal(t, "https://accounts.sgdev.org", opts.ServiceID)
+				} else {
+
+					assert.Equal(t, "https://accounts.sourcegraph.com", opts.ServiceID)
+				}
 
 				if test.mockSAMSAccountID != nil {
 					return []*extsvc.Account{{AccountSpec: extsvc.AccountSpec{AccountID: *test.mockSAMSAccountID}}}, nil

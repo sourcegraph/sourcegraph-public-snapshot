@@ -2913,10 +2913,18 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
-	// SscApiBaseUrl description: The base URL of the Self-Serve Cody API.
-	SscApiBaseUrl string `json:"ssc.apiBaseUrl,omitempty"`
+	// SscApiBaseURL description: The base URL of the Self-Serve Cody API.
+	SscApiBaseURL string `json:"ssc.api.baseURL,omitempty"`
 	// SscApiSecret description: The Bearer token for the Self-Serve Cody API.
-	SscApiSecret string `json:"ssc.apiSecret,omitempty"`
+	SscApiSecret string `json:"ssc.api.secret,omitempty"`
+	// SscSamsServiceID description: The service ID for SAMS external service.
+	SscSamsServiceID string `json:"ssc.sams.serviceID,omitempty"`
+	// SscTestApiBaseURL description: The base URL of the Self-Serve Cody test API.
+	SscTestApiBaseURL string `json:"ssc.test.api.baseURL,omitempty"`
+	// SscTestApiSecret description: The Bearer token for the Self-Serve Cody test API.
+	SscTestApiSecret string `json:"ssc.test.api.secret,omitempty"`
+	// SscTestSamsServiceID description: The service ID for SAMS test external service.
+	SscTestSamsServiceID string `json:"ssc.test.sams.serviceID,omitempty"`
 	// SyntaxHighlighting description: Syntax highlighting configuration
 	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
@@ -3089,8 +3097,12 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "search.index.symbols.enabled")
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")
-	delete(m, "ssc.apiBaseUrl")
-	delete(m, "ssc.apiSecret")
+	delete(m, "ssc.api.baseURL")
+	delete(m, "ssc.api.secret")
+	delete(m, "ssc.sams.serviceID")
+	delete(m, "ssc.test.api.baseURL")
+	delete(m, "ssc.test.api.secret")
+	delete(m, "ssc.test.sams.serviceID")
 	delete(m, "syntaxHighlighting")
 	delete(m, "update.channel")
 	delete(m, "webhook.logging")

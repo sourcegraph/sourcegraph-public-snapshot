@@ -1,6 +1,7 @@
 package ssc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,9 +9,13 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// use-sams-test-instance is a feature flag that enables the use of accounts.sgdev.org rather than the default accounts.sourcegraph.com for SAMS.
+const USE_SAMS_TEST_INSTANCE_FF = "use-sams-test-instance"
 
 // Client is the interface for making requests to the Self-Service Cody backend.
 // This uses a REST API exposed from the service, and not the GraphQL API (which is
@@ -86,11 +91,18 @@ func (c *SSCClient) FetchSubscriptionBySAMSAccountID(samsAccountID string) (*Sub
 	return nil, errors.Errorf("unexpected status code %d while fetching user subscription from SSC", *code)
 }
 
-func NewClient() *SSCClient {
+func NewClient(ctx context.Context) *SSCClient {
 	sgconf := conf.Get().SiteConfig()
 
+	if featureflag.FromContext(ctx).GetBoolOr(USE_SAMS_TEST_INSTANCE_FF, false) {
+		return &SSCClient{
+			baseURL:     sgconf.SscTestApiBaseURL,
+			secretToken: sgconf.SscTestApiSecret,
+		}
+	}
+
 	return &SSCClient{
-		baseURL:     sgconf.SscApiBaseUrl,
+		baseURL:     sgconf.SscApiBaseURL,
 		secretToken: sgconf.SscApiSecret,
 	}
 }

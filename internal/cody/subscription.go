@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
@@ -18,7 +19,6 @@ const USE_SSC_FOR_SUBSCRIPTION_FF = "use-ssc-for-cody-subscription"
 // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
 const CODY_PRO_TRIAL_ENDED_FF = "cody-pro-trial-ended"
 
-const SAMS_SERVICE_ID = "https://accounts.sgdev.org"
 const SAMS_SERVICE_TYPE = "openidconnect"
 
 type UserSubscriptionPlan string
@@ -100,13 +100,36 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 	}, nil
 }
 
+func getSAMSServiceID(ctx context.Context) (string, error) {
+	sgconf := conf.Get().SiteConfig()
+
+	if featureflag.FromContext(ctx).GetBoolOr(ssc.USE_SAMS_TEST_INSTANCE_FF, false) {
+		if sgconf.SscTestSamsServiceID == "" {
+			return "", errors.New("ssc.test.sams.serviceID not set in site config")
+		}
+		return sgconf.SscTestSamsServiceID, nil
+	}
+
+	if sgconf.SscSamsServiceID == "" {
+		if sgconf.SscSamsServiceID == "" {
+			return "", errors.New("ssc.sams.serviceID not set in site config")
+		}
+	}
+
+	return sgconf.SscSamsServiceID, nil
+}
+
 // getSAMSAccountIDForUser returns the user's SAMS account ID from users_external_accounts table.
 func getSAMSAccountIDForUser(ctx context.Context, db database.DB, user types.User) (string, error) {
-	// TODO(sourcegraph#59786): make service_id configurable between accounts.sourcegraph.com and accounts.sgdev.org using a feature flag for testing.
+	serviceID, err := getSAMSServiceID(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "error while getting SAMS service id")
+	}
+
 	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID:      user.ID,
 		ServiceType: SAMS_SERVICE_TYPE,
-		ServiceID:   SAMS_SERVICE_ID,
+		ServiceID:   serviceID,
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
 		},
@@ -143,5 +166,5 @@ func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.C
 
 // SubscriptionForUser returns the user's Cody subscription details.
 func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
-	return getSubscriptionForUser(ctx, db, ssc.NewClient(), user)
+	return getSubscriptionForUser(ctx, db, ssc.NewClient(ctx), user)
 }
