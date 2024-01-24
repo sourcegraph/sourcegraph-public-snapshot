@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"io/fs"
-	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"os"
 	"os/exec"
 	"path"
@@ -21,7 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -381,7 +380,7 @@ func TestCleanupExpired(t *testing.T) {
 	recloneTime := func(path string) time.Time {
 		t.Helper()
 
-		cli := cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(path), "git")
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(path), "git")
 
 		ts, err := getRecloneTime(ctx, cli.Config(), common.GitDir(path))
 		if err != nil {
@@ -402,7 +401,7 @@ func TestCleanupExpired(t *testing.T) {
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
-		cli := cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(gitDirPath), "git")
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(gitDirPath), "git")
 		if err := setRecloneTime(ctx, cli.Config(), common.GitDir(gitDirPath), ts); err != nil {
 			t.Fatal(err)
 		}
@@ -411,19 +410,19 @@ func TestCleanupExpired(t *testing.T) {
 		}
 	}
 	{
-		cli := cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoCorrupt), "perforce")
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoCorrupt), "perforce")
 		if err := cli.Config().Set(ctx, gitConfigMaybeCorrupt, "1"); err != nil {
 			t.Fatal(err)
 		}
 	}
 	{
-		cli := cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforce), "perforce")
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforce), "perforce")
 		if err := git.SetRepositoryType(ctx, cli.Config(), "perforce"); err != nil {
 			t.Fatal(err)
 		}
 	}
 	{
-		cli := cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
+		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
 		if err := git.SetRepositoryType(ctx, cli.Config(), "perforce"); err != nil {
 			t.Fatal(err)
 		}
@@ -817,7 +816,7 @@ func assertPaths(t *testing.T, root string, want ...string) {
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	if len(notfound) > 0 {

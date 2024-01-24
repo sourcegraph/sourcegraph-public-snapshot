@@ -18,7 +18,7 @@ import (
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -55,7 +55,7 @@ func TestClone(t *testing.T) {
 		Logger:   logger,
 		ReposDir: reposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			return cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			require.Equal(t, repo, name)
@@ -151,7 +151,7 @@ func TestClone_Fail(t *testing.T) {
 		Logger:   logger,
 		ReposDir: reposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			return cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			require.Equal(t, repo, name)

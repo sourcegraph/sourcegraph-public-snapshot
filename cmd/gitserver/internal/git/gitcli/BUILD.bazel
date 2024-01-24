@@ -12,7 +12,7 @@ go_library(
         "object.go",
         "util.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli",
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",

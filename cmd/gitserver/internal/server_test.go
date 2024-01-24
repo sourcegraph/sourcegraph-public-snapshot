@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -146,8 +146,8 @@ func TestExecRequest(t *testing.T) {
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			backend := git.NewMockGitBackend()
 			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
-				if !cli.IsAllowedGitCmd(logtest.Scoped(t), args, gitserverfs.RepoDirFromName(reposDir, repoName)) {
-					return nil, cli.ErrBadGitCommand
+				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args, gitserverfs.RepoDirFromName(reposDir, repoName)) {
+					return nil, gitcli.ErrBadGitCommand
 				}
 
 				switch args[0] {
@@ -156,7 +156,7 @@ func TestExecRequest(t *testing.T) {
 					stdout.Write([]byte("teststdout"))
 					return &errorReader{
 						ReadCloser: io.NopCloser(&stdout),
-						err: &cli.CommandFailedError{
+						err: &gitcli.CommandFailedError{
 							Stderr:     []byte("teststderr"),
 							ExitStatus: 42,
 							Inner:      errors.New("teststderr"),
@@ -165,7 +165,7 @@ func TestExecRequest(t *testing.T) {
 				case "merge-base":
 					return &errorReader{
 						ReadCloser: io.NopCloser(&bytes.Buffer{}),
-						err: &cli.CommandFailedError{
+						err: &gitcli.CommandFailedError{
 							Stderr:     []byte("teststderr"),
 							ExitStatus: 1,
 							Inner:      errors.New("testerror"),
@@ -306,7 +306,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ObservationCtx: obctx,
 		ReposDir:       repoDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			return cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
 		GetRemoteURLFunc: func(context.Context, api.RepoName) (string, error) {
 			return remote, nil
@@ -1043,7 +1043,7 @@ func TestHandleBatchLog(t *testing.T) {
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  NewRepositoryLocker(),
 				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-					return cli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+					return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 				},
 			}
 			// Initialize side-effects.

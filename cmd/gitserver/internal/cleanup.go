@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -384,14 +384,14 @@ func cleanupRepos(
 
 	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
 		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
-		backend := cli.NewBackend(logger, rcf, dir, repoName)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
 
 		return false, gitSetAutoGC(ctx, backend.Config())
 	}
 
 	maybeReclone := func(dir common.GitDir) (done bool, err error) {
 		repoName := gitserverfs.RepoNameFromDir(reposDir, dir)
-		backend := cli.NewBackend(logger, rcf, dir, repoName)
+		backend := gitcli.NewBackend(logger, rcf, dir, repoName)
 
 		repoType, err := git.GetRepositoryType(ctx, backend.Config())
 		if err != nil {

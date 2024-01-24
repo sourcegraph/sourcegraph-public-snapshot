@@ -31,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
@@ -809,7 +809,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	_, execErr = io.Copy(w, stdout)
 	if execErr != nil {
 		s.logIfCorrupt(ctx, repoName, execErr)
-		commandFailedErr := &cli.CommandFailedError{}
+		commandFailedErr := &gitcli.CommandFailedError{}
 		if errors.As(execErr, &commandFailedErr) {
 			exitStatus = commandFailedErr.ExitStatus
 			status = strconv.Itoa(exitStatus)
@@ -1169,7 +1169,7 @@ func postRepoFetchActions(
 	remoteURL *vcs.URL,
 	syncer vcssyncer.VCSSyncer,
 ) (errs error) {
-	backend := cli.NewBackend(logger, rcf, dir, repo)
+	backend := gitcli.NewBackend(logger, rcf, dir, repo)
 
 	// Note: We use a multi error in this function to try to make as many of the
 	// post repo fetch actions succeed.
