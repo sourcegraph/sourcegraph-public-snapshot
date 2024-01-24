@@ -88,6 +88,7 @@ export const EnterpriseWebApp: FC<AppShellInit> = props => {
                 routes={stormRoutes}
                 graphqlClient={graphqlClient}
                 temporarySettingsStorage={temporarySettingsStorage}
+                telemetryRecorder={window.context.telemetryRecorder}
             />
         )
     }
