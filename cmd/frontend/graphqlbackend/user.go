@@ -4,21 +4,22 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func (r *schemaResolver) User(
@@ -556,6 +558,60 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		r.logger.Warn("refresh gateway limits", log.Error(err))
 	}
 
+	go func() {
+		if !args.Pro {
+			return
+		}
+
+		var samsProvider *schema.OpenIDConnectAuthProvider
+		for _, p := range conf.Get().AuthProviders {
+			if p.Openidconnect != nil && strings.HasPrefix(p.Openidconnect.ClientID, "sams_cid_") {
+				samsProvider = p.Openidconnect
+				break
+			}
+		}
+		if samsProvider == nil {
+			r.logger.Warn("No SAMS client found, skipped sending webhook to SSC")
+			return
+		}
+
+		// Send webhook to SSC to inform the upgrade
+		token, err := (&clientcredentials.Config{
+			ClientID:     samsProvider.ClientID,
+			ClientSecret: samsProvider.ClientSecret,
+			TokenURL:     fmt.Sprintf("%s/oauth/token", samsProvider.Issuer),
+			Scopes:       []string{"openid", "profile", "email"},
+		}).Token(context.Background())
+		if err != nil {
+			r.logger.Error("Error getting SAMS token", log.Error(err))
+			return
+		}
+
+		// TODO(ssc): send webhook to the right endpoint
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/cody/api/rest/test-sams-token-auth", samsProvider.Issuer), nil)
+		if err != nil {
+			r.logger.Error("Error creating request", log.Error(err))
+			return
+		}
+		req.Header.Add("Authorization", "Bearer "+token.AccessToken)
+		resp, err := httpcli.ExternalClient.Do(req)
+		if err != nil {
+			r.logger.Error("Error sending request", log.Error(err))
+			return
+		}
+		defer func() { _ = resp.Body.Close() }()
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			r.logger.Error("Error reading response body", log.Error(err))
+			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			r.logger.Error("Unsuccessful request response", log.Int("status", resp.StatusCode), log.String("body", string(respBody)))
+			return
+		}
+		fmt.Println("SSC response:", string(respBody)) // TODO(ssc): delete me
+	}()
+
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
@@ -563,7 +619,7 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 func (r *schemaResolver) refreshGatewayRateLimits(ctx context.Context) error {
 	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	// We don't need to do anything if the target is not Cody Gateway, but it's not an error either.
-	if completionsConfig.Provider != conftypes.CompletionsProviderNameSourcegraph {
+	if completionsConfig == nil || completionsConfig.Provider != conftypes.CompletionsProviderNameSourcegraph {
 		return nil
 	}
 
