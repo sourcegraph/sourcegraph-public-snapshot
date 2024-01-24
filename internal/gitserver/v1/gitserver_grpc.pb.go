@@ -42,7 +42,6 @@ const (
 	GitserverService_IsPerforceSuperUser_FullMethodName         = "/gitserver.v1.GitserverService/IsPerforceSuperUser"
 	GitserverService_PerforceGetChangelist_FullMethodName       = "/gitserver.v1.GitserverService/PerforceGetChangelist"
 	GitserverService_MergeBase_FullMethodName                   = "/gitserver.v1.GitserverService/MergeBase"
-	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -78,11 +77,6 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a NotFoundPayload in the details.
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
-	// ReadFile returns the contents of a file at the given path and given commit SHA.
-	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a NotFoundPayload in the details.
-	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -418,38 +412,6 @@ func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseReq
 	return out, nil
 }
 
-func (c *gitserverServiceClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_ReadFile_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &gitserverServiceReadFileClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type GitserverService_ReadFileClient interface {
-	Recv() (*ReadFileResponse, error)
-	grpc.ClientStream
-}
-
-type gitserverServiceReadFileClient struct {
-	grpc.ClientStream
-}
-
-func (x *gitserverServiceReadFileClient) Recv() (*ReadFileResponse, error) {
-	m := new(ReadFileResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -483,11 +445,6 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a NotFoundPayload in the details.
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
-	// ReadFile returns the contents of a file at the given path and given commit SHA.
-	//
-	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a NotFoundPayload in the details.
-	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -563,9 +520,6 @@ func (UnimplementedGitserverServiceServer) PerforceGetChangelist(context.Context
 }
 func (UnimplementedGitserverServiceServer) MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MergeBase not implemented")
-}
-func (UnimplementedGitserverServiceServer) ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error {
-	return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1014,27 +968,6 @@ func _GitserverService_MergeBase_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GitserverService_ReadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ReadFileRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(GitserverServiceServer).ReadFile(m, &gitserverServiceReadFileServer{stream})
-}
-
-type GitserverService_ReadFileServer interface {
-	Send(*ReadFileResponse) error
-	grpc.ServerStream
-}
-
-type gitserverServiceReadFileServer struct {
-	grpc.ServerStream
-}
-
-func (x *gitserverServiceReadFileServer) Send(m *ReadFileResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1139,11 +1072,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "P4Exec",
 			Handler:       _GitserverService_P4Exec_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "ReadFile",
-			Handler:       _GitserverService_ReadFile_Handler,
 			ServerStreams: true,
 		},
 	},

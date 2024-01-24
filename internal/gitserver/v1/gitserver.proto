@@ -76,13 +76,6 @@ service GitserverService {
   rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // ReadFile returns the contents of a file at the given path and given commit SHA.
-  //
-  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-  // error will be returned, with a NotFoundPayload in the details.
-  rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -713,17 +706,4 @@ message MergeBaseRequest {
 // MergeBaseResponse is the response from finding the merge base of two revspecs.
 message MergeBaseResponse {
   string merge_base_commit_sha = 1;
-}
-
-message ReadFileRequest {
-  // repo_name is the name of the repo to get the file from.
-  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
-  string repo_name = 2;
-  string commit_sha = 3;
-  // Path is the filepath. For now, we allow non-utf8 here.
-  bytes path = 4;
-}
-
-message ReadFileResponse {
-  bytes data = 1;
 }

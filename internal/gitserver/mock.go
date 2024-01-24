@@ -75,9 +75,6 @@ type MockGitserverServiceClient struct {
 	// PerforceUsersFunc is an instance of a mock function object
 	// controlling the behavior of the method PerforceUsers.
 	PerforceUsersFunc *GitserverServiceClientPerforceUsersFunc
-	// ReadFileFunc is an instance of a mock function object controlling the
-	// behavior of the method ReadFile.
-	ReadFileFunc *GitserverServiceClientReadFileFunc
 	// RepoCloneFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoClone.
 	RepoCloneFunc *GitserverServiceClientRepoCloneFunc
@@ -187,11 +184,6 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		PerforceUsersFunc: &GitserverServiceClientPerforceUsersFunc{
 			defaultHook: func(context.Context, *v1.PerforceUsersRequest, ...grpc.CallOption) (r0 *v1.PerforceUsersResponse, r1 error) {
-				return
-			},
-		},
-		ReadFileFunc: &GitserverServiceClientReadFileFunc{
-			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (r0 v1.GitserverService_ReadFileClient, r1 error) {
 				return
 			},
 		},
@@ -318,11 +310,6 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.PerforceUsers")
 			},
 		},
-		ReadFileFunc: &GitserverServiceClientReadFileFunc{
-			defaultHook: func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.ReadFile")
-			},
-		},
 		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
 			defaultHook: func(context.Context, *v1.RepoCloneRequest, ...grpc.CallOption) (*v1.RepoCloneResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.RepoClone")
@@ -409,9 +396,6 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		PerforceUsersFunc: &GitserverServiceClientPerforceUsersFunc{
 			defaultHook: i.PerforceUsers,
-		},
-		ReadFileFunc: &GitserverServiceClientReadFileFunc{
-			defaultHook: i.ReadFile,
 		},
 		RepoCloneFunc: &GitserverServiceClientRepoCloneFunc{
 			defaultHook: i.RepoClone,
@@ -2603,126 +2587,6 @@ func (c GitserverServiceClientPerforceUsersFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientPerforceUsersFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientReadFileFunc describes the behavior when the
-// ReadFile method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientReadFileFunc struct {
-	defaultHook func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error)
-	hooks       []func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error)
-	history     []GitserverServiceClientReadFileFuncCall
-	mutex       sync.Mutex
-}
-
-// ReadFile delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) ReadFile(v0 context.Context, v1 *v1.ReadFileRequest, v2 ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2...)
-	m.ReadFileFunc.appendCall(GitserverServiceClientReadFileFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReadFile method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientReadFileFunc) SetDefaultHook(hook func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadFile method of the parent MockGitserverServiceClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverServiceClientReadFileFunc) PushHook(hook func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientReadFileFunc) SetDefaultReturn(r0 v1.GitserverService_ReadFileClient, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientReadFileFunc) PushReturn(r0 v1.GitserverService_ReadFileClient, r1 error) {
-	f.PushHook(func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientReadFileFunc) nextHook() func(context.Context, *v1.ReadFileRequest, ...grpc.CallOption) (v1.GitserverService_ReadFileClient, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientReadFileFunc) appendCall(r0 GitserverServiceClientReadFileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientReadFileFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientReadFileFunc) History() []GitserverServiceClientReadFileFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientReadFileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientReadFileFuncCall is an object that describes an
-// invocation of method ReadFile on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientReadFileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.ReadFileRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 v1.GitserverService_ReadFileClient
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientReadFileFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientReadFileFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
