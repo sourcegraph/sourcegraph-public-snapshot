@@ -2,7 +2,9 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -83,13 +85,29 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		}
 	}()
 
+	redactor := newSecretRedactor(union(h.options.RedactedValues, job.RedactedValues))
+
+	// If audit logs are enabled, we dump the whole job payload to the logs.
+	if h.options.EnableJobAuditLogging {
+		jobPayload, err := json.Marshal(job)
+		if err != nil {
+			logger.Error("failed to marshal job payload to JSON, SKIPPING AUDIT LOG ENTRY", log.Error(err))
+		}
+		// Redact any secret values in the marshalled JSON payload:
+		// Note: This is a best-effort redaction. Depending on encoding, some secrets might
+		// still be present in the logs.
+		// Thus, the audit logs are disabled by default and strictly opt-in.
+		redactedPayload := redactor.Replace(string(jobPayload))
+		logger.Warn("Received new job to process", log.String("jobPayload", redactedPayload))
+	}
+
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
 	// in a command constructed and run in the following function. Note that the command and
 	// its output may both contain sensitive values, but only values which we directly
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := cmdlogger.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := cmdlogger.NewLogger(logger, h.logStore, job, redactor)
 	defer func() {
 		if flushErr := commandLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)
@@ -179,6 +197,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	}
 
 	return nil
+}
+
+func newSecretRedactor(replacements map[string]string) *strings.Replacer {
+	oldnew := make([]string, 0, len(replacements)*2)
+	for k, v := range replacements {
+		oldnew = append(oldnew, k, v)
+	}
+
+	return strings.NewReplacer(oldnew...)
 }
 
 func createHoneyEvent(_ context.Context, job types.Job, err error, duration time.Duration) honey.Event {
