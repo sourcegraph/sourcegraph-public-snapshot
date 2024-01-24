@@ -2468,9 +2468,9 @@ func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, 
 			t.Fatal(err)
 		}
 	}()
-	_, err = io.ReadAll(rc)
-	require.NoError(t, err)
-	// checkFn(t, err, data)
+	data, dataErr := io.ReadAll(rc)
+	require.NoError(t, dataErr)
+	checkFn(t, err, data)
 }
 
 func TestRepository_ListBranches(t *testing.T) {

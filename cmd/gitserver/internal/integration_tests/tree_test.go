@@ -128,6 +128,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			continue
 		}
 		file1Data, err := io.ReadAll(file1R)
+		file1R.Close()
 		require.NoError(t, err)
 
 		if !bytes.Equal(file1Data, []byte("infile1")) {
@@ -161,6 +162,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			continue
 		}
 		_, err = io.ReadAll(file2R)
+		file2R.Close()
 		require.NoError(t, err)
 
 		// file1 should also exist in the 2nd commit.
@@ -174,6 +176,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			continue
 		}
 		_, err = io.ReadAll(file1R)
+		file1R.Close()
 		require.NoError(t, err)
 
 		// root should exist (via Stat).
@@ -383,6 +386,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			continue
 		}
 		_, err = io.ReadAll(r)
+		r.Close()
 		require.NoError(t, err)
 	}
 }
