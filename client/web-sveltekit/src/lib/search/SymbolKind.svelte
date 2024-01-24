@@ -112,6 +112,7 @@
     }
 
     .tag {
+        display: inline-block;
         font-size: 0.75rem;
         padding: 0.0625rem 0.25rem;
         border-radius: var(--border-radius);

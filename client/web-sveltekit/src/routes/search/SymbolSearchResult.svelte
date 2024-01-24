@@ -19,14 +19,10 @@
         endLine: symbol.line,
     }))
 
-    let hasBeenVisible = false
-    let highlightedHTMLRows: string[][] = []
-    async function onIntersection() {
-        if (hasBeenVisible) {
-            return
-        }
-        hasBeenVisible = true
-        highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: ranges })
+    let visible = false
+    let highlightedHTMLRows: Promise<string[][]> | undefined
+    $: if (visible) {
+        highlightedHTMLRows = fetchFileRangeMatches({ result, ranges: ranges })
     }
 </script>
 
@@ -39,19 +35,21 @@
         {/if}
     </svelte:fragment>
     <svelte:fragment slot="body">
-        <div use:observeIntersection on:intersecting={onIntersection}>
+        <div use:observeIntersection on:intersecting={event => (visible = event.detail)}>
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
                         <span class="symbol-kind">
                             <SymbolKind symbolKind={symbol.kind} />
                         </span>
-                        <CodeExcerpt
-                            startLine={symbol.line - 1}
-                            plaintextLines={['']}
-                            highlightedHTMLRows={highlightedHTMLRows[index]}
-                            --background-color="transparent"
-                        />
+                        {#await highlightedHTMLRows then result}
+                            <CodeExcerpt
+                                startLine={symbol.line - 1}
+                                plaintextLines={['']}
+                                highlightedHTMLRows={result?.[index]}
+                                --background-color="transparent"
+                            />
+                        {/await}
                     </div>
                 </a>
             {/each}

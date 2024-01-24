@@ -72,18 +72,16 @@
         return `${fileURL}?${searchParams}`
     }
 
-    let hasBeenVisible = false
-    let highlightedHTMLRows: string[][] = []
-    async function onIntersection(event: { detail: boolean }) {
-        if (hasBeenVisible) {
-            return
-        }
-        hasBeenVisible = true
-        const matchRanges = expandedMatchGroups.map(group => ({
-            startLine: group.startLine,
-            endLine: group.endLine,
-        }))
-        highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: matchRanges })
+    let visible = false
+    let highlightedHTMLRows: Promise<string[][]> | undefined
+    $: if (visible) {
+        highlightedHTMLRows = fetchFileRangeMatches({
+            result,
+            ranges: expandedMatchGroups.map(group => ({
+                startLine: group.startLine,
+                endLine: group.endLine,
+            })),
+        })
     }
 </script>
 
@@ -96,16 +94,28 @@
         {/if}
     </svelte:fragment>
 
-    <div bind:this={root} use:observeIntersection on:intersecting={onIntersection} class="matches">
+    <div bind:this={root} use:observeIntersection on:intersecting={event => (visible = event.detail)} class="matches">
         {#each matchesToShow as group, index}
             <div class="code">
                 <a href={getMatchURL(group.startLine + 1, group.endLine)}>
-                    <CodeExcerpt
-                        startLine={group.startLine}
-                        matches={group.matches}
-                        plaintextLines={group.plaintextLines}
-                        highlightedHTMLRows={highlightedHTMLRows[index]}
-                    />
+                    <!--
+                        We need to "post-slice" `highlightedHTMLRows` because we fetch highlighting for
+                        the whole chunk.
+                    -->
+                    {#await highlightedHTMLRows}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                        />
+                    {:then result}
+                        <CodeExcerpt
+                            startLine={group.startLine}
+                            matches={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            highlightedHTMLRows={result?.[index]?.slice(0, group.plaintextLines.length)}
+                        />
+                    {/await}
                 </a>
             </div>
         {/each}
@@ -151,6 +161,8 @@
         a {
             text-decoration: none;
             color: inherit;
+            display: block;
+            padding: 0.125rem 0.375rem;
         }
     }
 </style>
