@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -70,6 +71,8 @@ func (c *SSCClient) FetchSubscriptionBySAMSAccountID(samsAccountID string) (*Sub
 	if err != nil {
 		return nil, err
 	}
+
+	subscription.Status = SubscriptionStatus(strings.ToUpper(subscription.StatusRaw))
 
 	if *code == http.StatusOK {
 		return &subscription, nil

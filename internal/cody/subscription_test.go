@@ -277,7 +277,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(test.user.ID))
 			ctx = withCurrentTimeMock(ctx, test.today)
-			flags := map[string]bool{USE_SSC_FEATURE_FLAG: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED: test.codyProTrialEndedFeatureFlag}
+			flags := map[string]bool{USE_SSC_FOR_SUBSCRIPTION_FF: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED_FF: test.codyProTrialEndedFeatureFlag}
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
 
 			db := dbmocks.NewMockDB()

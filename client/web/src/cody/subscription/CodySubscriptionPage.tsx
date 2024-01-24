@@ -22,6 +22,8 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -38,6 +40,7 @@ interface CodySubscriptionPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
+const MANAGE_SUBSCRIPTION_REDIRECT_URL = 'https://accounts.sourcegraph.com/cody/subscription'
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
@@ -46,6 +49,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
+
+    const [sscEnabled] = useFeatureFlag('use-ssc-for-cody-subscription', false)
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
@@ -67,8 +72,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
         return null
     }
-
-    const { codyProEnabled } = data.currentUser
 
     return (
         <>
@@ -191,7 +194,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text className="mb-3 text-muted" size="small">
                                     Free until Feb 2024, <strong>no credit card needed</strong>
                                 </Text>
-                                {codyProEnabled ? (
+                                {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
                                     <div>
                                         <Text
                                             className="mb-0 text-muted d-inline cursor-pointer"
@@ -206,10 +209,15 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                         tier: 'free',
                                                     }
                                                 )
+                                                if (sscEnabled) {
+                                                    window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                    return
+                                                }
+
                                                 setShowCancelPro(true)
                                             }}
                                         >
-                                            Cancel
+                                            {sscEnabled ? 'Manage' : 'Cancel'} subscription
                                         </Text>
                                     </div>
                                 ) : (
@@ -222,11 +230,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' },
                                                 { tier: 'pro' }
                                             )
+                                            if (sscEnabled) {
+                                                window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                return
+                                            }
+
                                             setShowUpgradeToPro(true)
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        Get Pro trial
+                                        {sscEnabled ? 'Get Pro' : 'Get Pro trial'}
                                     </Button>
                                 )}
                             </div>

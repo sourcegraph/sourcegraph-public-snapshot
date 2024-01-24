@@ -11,21 +11,22 @@ const (
 type SubscriptionStatus string
 
 const (
-	SubscriptionStatusActive   SubscriptionStatus = "active"
-	SubscriptionStatusPastDue  SubscriptionStatus = "past_due"
-	SubscriptionStatusUnpaid   SubscriptionStatus = "unpaid"
-	SubscriptionStatusCanceled SubscriptionStatus = "canceled"
-	SubscriptionStatusTrialing SubscriptionStatus = "trialing"
-	SubscriptionStatusOther    SubscriptionStatus = "other"
+	SubscriptionStatusActive   SubscriptionStatus = "ACTIVE"
+	SubscriptionStatusPastDue  SubscriptionStatus = "PAST_DUE"
+	SubscriptionStatusUnpaid   SubscriptionStatus = "UNPAID"
+	SubscriptionStatusCanceled SubscriptionStatus = "CANCELED"
+	SubscriptionStatusTrialing SubscriptionStatus = "TRIALING"
+	SubscriptionStatusOther    SubscriptionStatus = "OTHER"
 	// NOTE: The "pending" status is only temporary, and will be removed after Feb 15 2024.
 	// This is to support the pre-release state where a user has opted for a free Pro trial
 	// but has not put in their cc in SSC yet.
-	SubscriptionStatusPending SubscriptionStatus = "pending"
+	SubscriptionStatusPending SubscriptionStatus = "PENDING"
 )
 
 type Subscription struct {
 	// Status is the current status of the subscription, e.g. "active" or "canceled".
-	Status          SubscriptionStatus `json:"status"`
+	StatusRaw       string             `json:"status"`
+	Status          SubscriptionStatus `json:"-"`
 	BillingInterval BillingInterval    `json:"billingInterval"`
 
 	// CancelAtPeriodEnd flags whether or not a subscription will automatically cancel at the end
