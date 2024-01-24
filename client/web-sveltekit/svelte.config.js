@@ -1,7 +1,7 @@
 import { join } from 'path'
 
 import staticAdapter from '@sveltejs/adapter-static'
-import { vitePreprocess } from '@sveltejs/kit/vite'
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 
 let adapter
 
@@ -52,19 +52,10 @@ const config = {
     alias: {
       // Makes it easier to refer to files outside packages (such as images)
       $root: '../../',
-      $mocks: 'src/testing/mocks.ts',
       // Used inside tests for easy access to helpers
       $testing: 'src/testing',
       // Map node-module to browser version
       path: '../../node_modules/path-browserify',
-      // These are directories and cannot be imported from directly in
-      // production build. Need to import from _esm5, otherwise there will
-      // be runtime compatibility issues.
-      'rxjs/operators': '../../node_modules/rxjs/_esm5/operators/index',
-      'rxjs/fetch': '../../node_modules/rxjs/_esm5/fetch/index',
-      // Without it prod build doesnt work
-      '@apollo/client$': '../../node_modules/@apollo/client/index.js',
-      lodash: './node_modules/lodash-es',
     },
     typescript: {
       config: config => {
