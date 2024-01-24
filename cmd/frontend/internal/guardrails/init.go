@@ -57,9 +57,12 @@ func alwaysTrue(context.Context, string) bool {
 }
 
 func NewAttributionTest(observationCtx *observation.Context) func (context.Context, string) bool {
+	// TODO(#59701): Re-initialize attribution service. So that changes
+	// in site-config are reflected immediately for subsequent GraphQL
+	// calls and code completions calls.
 	service := initEnterpriseAttributionService(observationCtx)
 	if service == nil {
-		return nil
+		return alwaysTrue
 	}
 	// Attribution is only-enterprise, dotcom lets everything through.
 	if envvar.SourcegraphDotComMode() {
