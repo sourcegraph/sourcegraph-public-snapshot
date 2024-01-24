@@ -79,7 +79,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const subscription = data?.currentUser?.codySubscription
 
     useEffect(() => {
-        if (enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.pro) {
+        if (enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.PRO) {
             changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
     }, [data?.currentUser, changeCodyPlan, enrollPro, subscription])
@@ -98,7 +98,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
-    const userIsOnProTier = subscription.plan === CodySubscriptionPlan.pro
+    const userIsOnProTier = subscription.plan === CodySubscriptionPlan.PRO
 
     const showUpgradeBanner = !userIsOnProTier && (codeLimitReached || chatLimitReached)
 
@@ -271,12 +271,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <TrialPeriodIcon />
                                     <div className="mb-2 mt-4">
                                         <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                                            {subscription.status === CodySubscriptionStatus.pending
+                                            {subscription.status === CodySubscriptionStatus.PENDING
                                                 ? 'Free trial'
-                                                : subscription.status.toUpperCase()}
+                                                : subscription.status}
                                         </Text>
                                     </div>
-                                    {subscription.status === CodySubscriptionStatus.pending ? (
+                                    {subscription.status === CodySubscriptionStatus.PENDING ? (
                                         <Text className="text-muted mb-0" size="small">
                                             Until Feb 14, 2024
                                         </Text>
@@ -290,7 +290,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                             weight="bold"
                                             className={classNames('d-inline mb-0 text-danger', styles.counter)}
                                         >
-                                            {subscription.status === CodySubscriptionStatus.pending
+                                            {subscription.status === CodySubscriptionStatus.PENDING
                                                 ? 'Free trial ended'
                                                 : subscription.status.toUpperCase()}
                                         </Text>

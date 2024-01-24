@@ -6365,21 +6365,21 @@ type NewUsersConnection implements Connection {
 A status for cody subscription.
 """
 enum CodySubscriptionStatus {
-    active
-    past_due
-    unpaid
-    canceled
-    trialing
-    pending
-    other
+    ACTIVE
+    PAST_DUE
+    UNPAID
+    CANCELED
+    TRIALING
+    PENDING
+    OTHER
 }
 
 """
 A plan for cody subscription.
 """
 enum CodySubscriptionPlan {
-    free
-    pro
+    FREE
+    PRO
 }
 
 """
@@ -6403,7 +6403,8 @@ type CodySubscription {
     """
     currentPeriodStartAt: DateTime!
     """
-    The current billing period end time.
+    The current billing period end time. This may be in the past if the
+    subscription is in a canceled state.
     """
     currentPeriodEndAt: DateTime!
 }

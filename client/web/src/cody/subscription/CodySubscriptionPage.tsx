@@ -194,7 +194,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 <Text className="mb-3 text-muted" size="small">
                                     Free until Feb 2024, <strong>no credit card needed</strong>
                                 </Text>
-                                {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.pro ? (
+                                {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
                                     <div>
                                         <Text
                                             className="mb-0 text-muted d-inline cursor-pointer"

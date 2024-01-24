@@ -14,7 +14,8 @@ import (
 // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
 const USE_SSC_FOR_SUBSCRIPTION_FF = "use-ssc-for-cody-subscription"
 
-// cody-pro-trial-ended is a feature flag that indicates if the Cody Pro Trial has ended.
+// cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
+// (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
 const CODY_PRO_TRIAL_ENDED_FF = "cody-pro-trial-ended"
 
 const SAMS_SERVICE_ID = "https://accounts.sgdev.org"
@@ -23,8 +24,8 @@ const SAMS_SERVICE_TYPE = "openidconnect"
 type UserSubscriptionPlan string
 
 const (
-	UserSubscriptionPlanFree UserSubscriptionPlan = "free"
-	UserSubscriptionPlanPro  UserSubscriptionPlan = "pro"
+	UserSubscriptionPlanFree UserSubscriptionPlan = "FREE"
+	UserSubscriptionPlanPro  UserSubscriptionPlan = "PRO"
 )
 
 type UserSubscription struct {
