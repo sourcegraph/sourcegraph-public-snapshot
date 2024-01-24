@@ -17,13 +17,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -51,7 +51,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
@@ -110,7 +109,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	sourceMetrics := repos.NewSourceMetrics()
 	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
-	src := repos.NewSourcer(sourcerLogger, db, cf, gitserver.NewClient("repo-updater.sourcer"), repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
+	src := repos.NewSourcer(
+		sourcerLogger,
+		db,
+		cf,
+		gitserver.NewClient("repo-updater.sourcer"),
+		repos.WithDependenciesService(dependencies.NewService(observationCtx, db)),
+		repos.ObservedSource(sourcerLogger, sourceMetrics),
+	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
 	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
 	server := &repoupdater.Server{
@@ -147,9 +153,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		})...,
 	)
 
-	if envvar.SourcegraphDotComMode() {
-		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
-		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
+	if server.ChangesetSyncRegistry != nil {
+		routines = append(routines, server.ChangesetSyncRegistry)
 	}
 
 	// git-server repos purging thread
@@ -158,7 +163,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
 		logger.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
 	} else {
-		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()))
+		routines = append(routines, purge.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker"), db, conf.DefaultClient()))
 	}
 
 	// Register recorder in all routines that support it.
@@ -290,7 +295,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				return
 			}
 		}
-		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos"), db, limit, perSecond)
+		err = purge.PurgeOldestRepos(log.Scoped("PurgeOldestRepos"), db, limit, perSecond)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return
