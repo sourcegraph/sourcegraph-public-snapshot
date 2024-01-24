@@ -43,6 +43,7 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("filters multiple rules in ignore file", func(t *testing.T) {
 		client := gitserver.NewMockClient()
+		client.HeadFunc.SetDefaultReturn("abc123", true, nil)
 		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
 			if repo == "repo2" { // filter only from repo2
 				return []byte("**/file1.go\nsecret.txt"), nil
@@ -83,6 +84,7 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("uses correct ignore file by repo", func(t *testing.T) {
 		client := gitserver.NewMockClient()
+		client.HeadFunc.SetDefaultReturn("abc123", true, nil)
 		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
 			if repo == "repo1" { // filter file1 from repo1
 				return []byte("**/file1.go"), nil
@@ -125,5 +127,40 @@ func TestNewFilter(t *testing.T) {
 		require.Equal(t, "src/file2.go", filtered[0].Path)
 		require.Equal(t, api.RepoName("repo2"), filtered[1].RepoName)
 		require.Equal(t, "src/file1.go", filtered[1].Path)
+	})
+
+	t.Run("empty repos don't error", func(t *testing.T) {
+		client := gitserver.NewMockClient()
+		client.HeadFunc.SetDefaultReturn("", false, nil)
+		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+			t.Errorf("repos are empty, no files should be read")
+			return nil, nil
+		})
+
+		_, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		require.NoError(t, err)
+	})
+
+	t.Run("errors checking head do error", func(t *testing.T) {
+		client := gitserver.NewMockClient()
+		client.HeadFunc.SetDefaultReturn("", false, errors.New("fail"))
+		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+			t.Errorf("repos are empty, no files should be read")
+			return nil, nil
+		})
+
+		_, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		require.Error(t, err)
+	})
+
+	t.Run("error reading ignore file does error", func(t *testing.T) {
+		client := gitserver.NewMockClient()
+		client.HeadFunc.SetDefaultReturn("abc123", true, nil)
+		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+			return nil, errors.New("fail")
+		})
+
+		_, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		require.Error(t, err)
 	})
 }

@@ -32,7 +32,15 @@ func NewCodyIgnoreFilter(ctx context.Context, client gitserver.Client, repos []t
 		filters: make(map[types.RepoIDName]filterFunc),
 	}
 	for _, repo := range repos {
-		ignoreFile, err := client.ReadFile(ctx, repo.Name, api.CommitID("HEAD"), codyIgnoreFile)
+		head, found, err := client.Head(ctx, repo.Name)
+		if err != nil {
+			return nil, err
+		}
+		// this is an empty repo, there won't be anything to filter
+		if !found {
+			continue
+		}
+		ignoreFile, err := client.ReadFile(ctx, repo.Name, api.CommitID(head), codyIgnoreFile)
 		if err != nil {
 			// We do not ignore anything if the ignore file does not exist.
 			if strings.Contains(err.Error(), "file does not exist") {
