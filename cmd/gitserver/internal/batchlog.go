@@ -23,13 +23,13 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req *proto.
 	// requests.
 
 	g, ctx := errgroup.WithContext(ctx)
-	results := make([]*proto.BatchLogResult, len(req.GetRepoCommits()))
+	results := make([]*proto.BatchLogResult, len(req.GetRepoCommits())) //nolint:staticcheck
 
 	if s.GlobalBatchLogSemaphore == nil {
 		return &proto.BatchLogResponse{}, errors.New("s.GlobalBatchLogSemaphore not initialized")
 	}
 
-	for i, repoCommit := range req.GetRepoCommits() {
+	for i, repoCommit := range req.GetRepoCommits() { //nolint:staticcheck
 		// Avoid capture of loop variables
 		i, repoCommit := i, repoCommit
 
@@ -40,7 +40,7 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req *proto.
 		g.Go(func() error {
 			defer s.GlobalBatchLogSemaphore.Release(1)
 
-			output, isRepoCloned, gitLogErr := s.performGitLogCommand(ctx, repoCommit, req.GetFormat())
+			output, isRepoCloned, gitLogErr := s.performGitLogCommand(ctx, repoCommit, req.GetFormat()) //nolint:staticcheck
 			if gitLogErr == nil && !isRepoCloned {
 				gitLogErr = errors.Newf("repo not found")
 			}
@@ -56,7 +56,7 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req *proto.
 
 			if gitLogErr != nil {
 				errMessage := gitLogErr.Error()
-				results[i].CommandError = &errMessage
+				results[i].CommandError = &errMessage //nolint:staticcheck
 			}
 
 			return nil
@@ -70,20 +70,20 @@ func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req *proto.
 }
 
 func (s *Server) performGitLogCommand(ctx context.Context, repoCommit *proto.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
-	dir := gitserverfs.RepoDirFromName(s.ReposDir, api.RepoName(repoCommit.GetRepo()))
+	dir := gitserverfs.RepoDirFromName(s.ReposDir, api.RepoName(repoCommit.GetRepo())) //nolint:staticcheck
 	if !repoCloned(dir) {
 		return "", false, nil
 	}
 
 	var buf bytes.Buffer
 
-	commitId := repoCommit.GetCommit()
+	commitId := repoCommit.GetCommit() //nolint:staticcheck
 	// make sure CommitID is not an arg
 	if commitId[0] == '-' {
 		return "", true, errors.New("commit ID starting with - is not allowed")
 	}
 
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, repoCommit.GetRepo(), "git", "log", "-n", "1", "--name-only", format, commitId)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, repoCommit.GetRepo(), "git", "log", "-n", "1", "--name-only", format, commitId) //nolint:staticcheck
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = &buf
 

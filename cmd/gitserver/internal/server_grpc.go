@@ -35,10 +35,10 @@ var _ proto.GitserverServiceServer = &GRPCServer{}
 
 func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
 	// Validate request parameters
-	if len(req.GetRepoCommits()) == 0 {
+	if len(req.GetRepoCommits()) == 0 { //nolint:staticcheck
 		return &proto.BatchLogResponse{}, nil
 	}
-	if !strings.HasPrefix(req.GetFormat(), "--format=") {
+	if !strings.HasPrefix(req.GetFormat(), "--format=") { //nolint:staticcheck
 		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
