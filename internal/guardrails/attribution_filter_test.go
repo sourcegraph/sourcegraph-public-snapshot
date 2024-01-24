@@ -52,7 +52,7 @@ func (s *fakeSearch) test(_ context.Context, snippet string) (bool, error) {
 
 type eventOrder []event
 
-func (o eventOrder) replay(ctx context.Context, f *guardrails.CompletionsFilter) error {
+func (o eventOrder) replay(ctx context.Context, f guardrails.CompletionsFilter) error {
 	var completionPrefix string
 	for _, e := range o {
 		if s := e.NextCompletionLine(); s != nil {
@@ -248,7 +248,7 @@ func TestTimeout(t *testing.T) {
 		nextLine("10"),
 	}
 	require.NoError(t, o.replay(ctx, f))
-	require.NoError(t, f.WaitDone(ctx))
+	require.ErrorIs(t, f.WaitDone(ctx), context.Canceled)
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5",

@@ -91,7 +91,7 @@ func NewCompletionsFilter(config CompletionsFilterConfig) (CompletionsFilter, er
 // Send is invoked each time new completion prefix arrives as the completion
 // is being yielded by the LLM.
 func (a *completionsFilter) Send(ctx context.Context, e types.CompletionResponse) error {
-	if err := ctx.Err(); err != nil && errors.Is(err, context.Canceled) {
+	if err := ctx.Err(); err != nil {
 		a.blockSending()
 	}
 	if a.attributionResultPermissive() {
@@ -116,7 +116,7 @@ func (a *completionsFilter) WaitDone(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		a.blockSending()
-		return nil
+		return ctx.Err()
 	case err := <-a.attributionFinished:
 		return err
 	}
@@ -153,7 +153,7 @@ func (a *completionsFilter) send(e types.CompletionResponse) error {
 // it for attribution search. At this point we run attribution search for
 // snippets 10 lines long or longer.
 func (a *completionsFilter) smallEnough(e types.CompletionResponse) bool {
-	return len(strings.Split(e.Completion, "\n")) < 10
+	return strings.Count(e.Completion, "\n") < 9
 }
 
 // getMostRecentCompletion returns the last completion event to be fed to `Send`.
