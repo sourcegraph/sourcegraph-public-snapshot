@@ -78,8 +78,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const tags = [
         ...(metadata
             ? Object.entries(metadata).map(([key, value]) =>
-                metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
-            )
+                  metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
+              )
             : []),
         ...(topics ? topics.map(topic => topicToTag(topic, queryState, false, buildSearchURLQueryFromQueryState)) : []),
     ]
