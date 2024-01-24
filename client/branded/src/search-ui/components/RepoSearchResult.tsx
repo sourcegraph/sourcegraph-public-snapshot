@@ -78,8 +78,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const tags = [
         ...(metadata
             ? Object.entries(metadata).map(([key, value]) =>
-                  metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
-              )
+                metadataToTag({ key, value }, queryState, false, buildSearchURLQueryFromQueryState)
+            )
             : []),
         ...(topics ? topics.map(topic => topicToTag(topic, queryState, false, buildSearchURLQueryFromQueryState)) : []),
     ]
@@ -101,7 +101,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             {(showExtraInfo || description || showRepoMetadata) && (
                 <div
                     data-testid="search-repo-result"
-                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-2 flex-column')}
+                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-3 flex-column')}
                 >
                     {showExtraInfo && (
                         <div className={classNames('d-flex', styles.dividerBetween)}>
