@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -42,17 +41,10 @@ func TestContextResolver(t *testing.T) {
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
 	truePtr := true
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: &truePtr,
 			LicenseKey:  "asdf",
-			Embeddings: &schema.Embeddings{
-				Provider:    "sourcegraph",
-				Enabled:     &truePtr,
-				AccessToken: "123",
-			},
 		},
 	})
 
@@ -105,17 +97,20 @@ func TestContextResolver(t *testing.T) {
 	err = db.Repos().Create(ctx, &repo1, &repo2)
 	require.NoError(t, err)
 
-	_, err = db.ExecContext(ctx, "INSERT INTO repo_embedding_jobs (state, repo_id, revision) VALUES ('completed', $1, 'HEAD');", int32(repo1.ID))
-	require.NoError(t, err)
-
 	files := map[api.RepoName]map[string][]byte{
 		"repo1": {
 			"testcode1.go": []byte("testcode1"),
+			"ignore_me.go": []byte("secret"),
+			"ignore_me.md": []byte("secret"),
 			"testtext1.md": []byte("testtext1"),
+			".cody/ignore": []byte("ignore_me.go\nignore_me.md"),
 		},
 		"repo2": {
 			"testcode2.go": []byte("testcode2"),
+			"ignore_me.go": []byte("secret"),
+			"ignore_me.md": []byte("secret"),
 			"testtext2.md": []byte("testtext2"),
+			".cody/ignore": []byte("ignore_me.go\nignore_me.md"),
 		},
 	}
 
@@ -131,19 +126,7 @@ func TestContextResolver(t *testing.T) {
 	})
 
 	mockEmbeddingsClient := embeddings.NewMockClient()
-	mockEmbeddingsClient.SearchFunc.SetDefaultHook(func(_ context.Context, params embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error) {
-		require.Equal(t, params.RepoNames, []api.RepoName{"repo1"})
-		require.Equal(t, params.TextResultsCount, 1)
-		require.Equal(t, params.CodeResultsCount, 1)
-		return &embeddings.EmbeddingCombinedSearchResults{
-			CodeResults: embeddings.EmbeddingSearchResults{{
-				FileName: "testcode1.go",
-			}},
-			TextResults: embeddings.EmbeddingSearchResults{{
-				FileName: "testtext1.md",
-			}},
-		}, nil
-	})
+	mockEmbeddingsClient.SearchFunc.SetDefaultReturn(nil, errors.New("embeddings should be disabled"))
 
 	lineRange := func(start, end int) result.ChunkMatches {
 		return result.ChunkMatches{{
@@ -163,13 +146,25 @@ func TestContextResolver(t *testing.T) {
 			stream.Send(streaming.SearchEvent{
 				Results: result.Matches{&result.FileMatch{
 					File: result.File{
-						Path: "testcode2.go",
+						Path: "ignore_me.go",
+						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}, &result.FileMatch{
+					File: result.File{
+						Path: "ignore_me.go",
 						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
 					},
 					ChunkMatches: lineRange(0, 4),
 				}, &result.FileMatch{
 					File: result.File{
-						Path: "testcode2again.go",
+						Path: "testcode1.go",
+						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}, &result.FileMatch{
+					File: result.File{
+						Path: "testcode2.go",
 						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
 					},
 					ChunkMatches: lineRange(0, 4),
@@ -178,6 +173,24 @@ func TestContextResolver(t *testing.T) {
 		} else {
 			stream.Send(streaming.SearchEvent{
 				Results: result.Matches{&result.FileMatch{
+					File: result.File{
+						Path: "ignore_me.md",
+						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo1.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}, &result.FileMatch{
+					File: result.File{
+						Path: "ignore_me.md",
+						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}, &result.FileMatch{
+					File: result.File{
+						Path: "testtext1.md",
+						Repo: types.MinimalRepo{ID: repo1.ID, Name: repo2.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}, &result.FileMatch{
 					File: result.File{
 						Path: "testtext2.md",
 						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
@@ -195,6 +208,7 @@ func TestContextResolver(t *testing.T) {
 		mockEmbeddingsClient,
 		mockSearchClient,
 		nil,
+		mockGitserver,
 	)
 
 	resolver := NewResolver(
@@ -216,7 +230,7 @@ func TestContextResolver(t *testing.T) {
 		paths[i] = result.(*graphqlbackend.FileChunkContextResolver).Blob().Path()
 	}
 	// One code result and text result from each repo
-	expected := []string{"testcode1.go", "testtext1.md", "testcode2.go", "testtext2.md"}
+	expected := []string{"testcode1.go", "testcode2.go", "testtext1.md", "testtext2.md"}
 	sort.Strings(expected)
 	sort.Strings(paths)
 	require.Equal(t, expected, paths)

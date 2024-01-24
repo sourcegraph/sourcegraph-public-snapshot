@@ -35,6 +35,7 @@ func Init(
 		embeddingsClient,
 		searchClient,
 		getQdrantSearcher,
+		gitserver.NewClient("graphql.context.codycontext"),
 	)
 	enterpriseServices.CodyContextResolver = resolvers.NewResolver(
 		db,
