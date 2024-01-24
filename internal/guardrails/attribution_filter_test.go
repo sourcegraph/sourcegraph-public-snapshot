@@ -28,6 +28,8 @@ func (s *fakeClient) stream(e types.CompletionResponse) error {
 }
 
 func (s *fakeClient) trimmedDiffs() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	var prefix string
 	var diffs []string
 	for _, e := range s.events {
