@@ -33,11 +33,10 @@ func (pm *pathMatcher) String() string {
 	return strings.Join(parts, " ")
 }
 
-// compilePathPatterns returns a pathMatcher that matches a path iff:
-//
-// * all of the includePatterns match the path; AND
+// toPathMatcher returns a pathMatcher that matches a path iff:
+// * all the includePatterns match the path; AND
 // * the excludePattern does NOT match the path.
-func compilePathPatterns(p *protocol.PatternInfo) (*pathMatcher, error) {
+func toPathMatcher(p *protocol.PatternInfo) (*pathMatcher, error) {
 	// set err once if non-nil. This simplifies our many calls to compilePattern.
 	var err error
 	compile := func(pattern string) *regexp.Regexp {

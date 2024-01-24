@@ -115,7 +115,7 @@ func TestTransformRecord(t *testing.T) {
 							strings.Join(
 								[]string{
 									"src",
-									"lsif", "upload",
+									"code-intel", "upload",
 									"-no-progress",
 									"-repo", "linux",
 									"-commit", "deadbeef",
@@ -217,7 +217,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					strings.Join(
 						[]string{
 							"src",
-							"lsif", "upload",
+							"code-intel", "upload",
 							"-no-progress",
 							"-repo", "linux",
 							"-commit", "deadbeef",
@@ -346,7 +346,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 							strings.Join(
 								[]string{
 									"src",
-									"lsif", "upload",
+									"code-intel", "upload",
 									"-no-progress",
 									"-repo", "linux",
 									"-commit", "deadbeef",
@@ -405,7 +405,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 			{
 				Key:      "upload",
 				Image:    fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
-				Commands: []string{"src lsif upload -no-progress -repo '' -commit '' -root . -upload-route /.executors/lsif/upload -file dump.lsif -associated-index-id 42"},
+				Commands: []string{"src code-intel upload -no-progress -repo '' -commit '' -root . -upload-route /.executors/lsif/upload -file dump.lsif -associated-index-id 42"},
 				Env:      []string{"SRC_ENDPOINT=", "SRC_HEADER_AUTHORIZATION=token-executor hunter2"},
 			},
 		},

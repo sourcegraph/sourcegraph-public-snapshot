@@ -3,11 +3,15 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "protocol",
-    srcs = ["searcher.go"],
+    srcs = [
+        "query.go",
+        "searcher.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/protocol",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
+        "//internal/search/query",
         "//internal/searcher/v1:searcher",
         "@org_golang_google_protobuf//types/known/durationpb",
     ],
@@ -16,9 +20,13 @@ go_library(
 go_test(
     name = "protocol_test",
     timeout = "short",
-    srcs = ["searcher_test.go"],
+    srcs = [
+        "query_test.go",
+        "searcher_test.go",
+    ],
     deps = [
         ":protocol",
+        "//internal/search/query",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",
     ],

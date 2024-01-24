@@ -19,7 +19,6 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 
 	"github.com/sourcegraph/log"
@@ -47,6 +46,7 @@ var timeToFirstEventMetrics = metrics.NewREDMetrics(
 
 func newCompletionsHandler(
 	logger log.Logger,
+	db database.DB,
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
@@ -66,7 +66,7 @@ func newCompletionsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+		if isEnabled := cody.IsCodyEnabled(ctx, db); !isEnabled {
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
@@ -98,10 +98,9 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 		isDotcom := envvar.SourcegraphDotComMode()
 		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
-		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
+		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
@@ -148,7 +147,7 @@ func newCompletionsHandler(
 			return
 		}
 
-		if !isCodyProEnabled || !isDotcom || !isProviderCodyGateway {
+		if !isDotcom || !isProviderCodyGateway {
 			// Check rate limit.
 			err = rl.TryAcquire(ctx)
 			if err != nil {
@@ -161,7 +160,7 @@ func newCompletionsHandler(
 						return
 					}
 					isProUser := user.CodyProEnabledAt != nil
-					respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
+					respondRateLimited(w, unwrap, isDotcom, isProUser)
 					return
 				}
 				l.Warn("Rate limit error", log.Error(err))
@@ -174,12 +173,12 @@ func newCompletionsHandler(
 	})
 }
 
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isCodyProEnabled, isProUser bool) {
+func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isProUser bool) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
 	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
-	if isDotcom && isCodyProEnabled {
+	if isDotcom {
 		if isProUser {
 			w.Header().Set("x-is-cody-pro-user", "true")
 		} else {
@@ -252,9 +251,8 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 						return
 					}
 					isProUser := user.CodyProEnabledAt != nil
-					isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 					isDotcom := envvar.SourcegraphDotComMode()
-					if isDotcom && isCodyProEnabled {
+					if isDotcom {
 						if isProUser {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
@@ -313,9 +311,8 @@ func newNonStreamingResponseHandler(logger log.Logger, feature types.Completions
 						return
 					}
 					isProUser := user.CodyProEnabledAt != nil
-					isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
 					isDotcom := envvar.SourcegraphDotComMode()
-					if isDotcom && isCodyProEnabled {
+					if isDotcom {
 						if isProUser {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {

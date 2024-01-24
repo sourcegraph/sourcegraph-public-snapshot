@@ -342,6 +342,15 @@ func (s *RetrySuite) TestUnary_OnRetryCallbackCalled() {
 		WithMax(10),
 		WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			retryCallbackCount++
+
+			code := status.Code(err)
+			for _, c := range retriableErrors {
+				if code == c {
+					return
+				}
+			}
+
+			require.Fail(s.T(), "OnRetryCallback called with non-retriable error", "error code: %s, err: %v", code, err)
 		}),
 	)
 
@@ -424,12 +433,154 @@ func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled() {
 	stream, err := s.Client.PingList(s.SimpleCtx(), testpb.GoodPingList,
 		WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
 			retryCallbackCount++
+
+			code := status.Code(err)
+			for _, c := range retriableErrors {
+				if code == c {
+					return
+				}
+			}
+
+			require.Fail(s.T(), "OnRetryCallback called with non-retriable error", "error code: %s, err: %v", code, err)
 		}),
 	)
 
 	require.NoError(s.T(), err, "establishing the connection must always succeed")
 	s.assertPingListWasCorrect(stream)
 	require.EqualValues(s.T(), 2, retryCallbackCount, "two retry callbacks should be called")
+}
+
+func (s *RetrySuite) TestServerUnary_OnRetryCallbackCalled_Only_On_RetriableCodes() {
+	s.Run("context cancellation", func() {
+		var lastRetriedErr error
+		retryCallbackCount := 0
+
+		s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(alwaysSucceed, codes.OK, noSleep) // see retriable_errors
+		ctx, cancel := context.WithCancel(s.SimpleCtx())
+		cancel() // cancel the context to force a DeadlineExceeded error
+
+		_, err := s.Client.Ping(ctx, testpb.GoodPing,
+			WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				retryCallbackCount++
+				lastRetriedErr = err
+			}),
+		)
+		require.Error(s.T(), err)
+
+		require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the context is already cancelled")
+		if c := status.Code(err); c != codes.DeadlineExceeded && c != codes.Canceled {
+			require.Fail(s.T(), "error code should be context error")
+		}
+		require.NoError(s.T(), lastRetriedErr)
+	})
+
+	s.Run("non-retriable error code", func() {
+		var lastRetriedErr error
+		retryCallbackCount := 0
+
+		s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(3), codes.OutOfRange, noSleep) // see retriable_errors
+
+		_, err := s.Client.Ping(s.SimpleCtx(), testpb.GoodPing,
+			WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				retryCallbackCount++
+				lastRetriedErr = err
+			}),
+		)
+
+		require.Error(s.T(), err)
+
+		require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the context is already cancelled")
+		// Check that the returned err has codes.OutOfRange:
+		require.Equal(s.T(), codes.OutOfRange, status.Code(err), "returned error code should be codes.OutOfRange")
+		require.NoError(s.T(), lastRetriedErr)
+	})
+}
+
+func (s *RetrySuite) TestServerStream_OnRetryCallbackCalled_Only_On_RetriableCodes() {
+	s.Run("stream establishment", func() {
+		var lastRetriedErr error
+		retryCallbackCount := 0
+
+		ctx, cancel := context.WithCancel(s.SimpleCtx())
+		cancel() // cancel the context to force a DeadlineExceeded error
+
+		s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(failExceptModulo(3), codes.Unavailable, noSleep) // see retriable_errors
+		_, err := s.Client.PingList(ctx, testpb.GoodPingList,
+			WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+				retryCallbackCount++
+				lastRetriedErr = err
+			}),
+		)
+
+		require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the parent context is already cancelled, lastRetriedErr: %v", lastRetriedErr)
+		require.Error(s.T(), err, "establishing the connection should not succeed")
+	})
+
+	s.Run("stream consumption", func() {
+		s.Run("context cancellation", func() {
+			var lastRetriedErr error
+			retryCallbackCount := 0
+
+			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(alwaysSucceed, codes.OK, noSleep) // see retriable_errors
+			ctx, cancel := context.WithCancel(s.SimpleCtx())
+
+			stream, err := s.Client.PingList(ctx, testpb.GoodPingList,
+				WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+					retryCallbackCount++
+					lastRetriedErr = err
+				}),
+			)
+
+			require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the stream has not been consumed yet")
+			require.NoError(s.T(), err, "establishing the connection must always succeed")
+			cancel() // cancel the context to force a DeadlineExceeded error
+
+			var lastErr error
+
+			for {
+				_, lastErr = stream.Recv()
+				if lastErr != nil {
+					break
+				}
+			}
+
+			require.Error(s.T(), lastErr, "we should have received an error since the context was cancelled during stream consumption")
+			require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the parent context is already cancelled, lastRetriedErr: %v", lastRetriedErr)
+		})
+
+		s.Run("non-retriable error code", func() {
+			var lastRetriedErr error
+			retryCallbackCount := 0
+
+			s.srv.resetUnaryOrStreamEstablishmentFailingConfiguration(alwaysSucceed, codes.OutOfRange, noSleep) // see retriable_errors
+			s.srv.resetStreamFailingConfiguration(func() bool { return true }, codes.OutOfRange)
+
+			stream, err := s.Client.PingList(context.Background(), testpb.GoodPingList,
+				WithOnRetryCallback(func(ctx context.Context, attempt uint, err error) {
+					retryCallbackCount++
+					lastRetriedErr = err
+				}),
+			)
+
+			require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the stream has not been consumed yet")
+			require.NoError(s.T(), err, "establishing the connection must always succeed")
+
+			var lastErr error
+
+			for {
+				_, lastErr = stream.Recv()
+				if lastErr != nil {
+					break
+				}
+			}
+
+			require.EqualValues(s.T(), 0, retryCallbackCount, "no retry callbacks should be called since the error code is not declared retriable, lastRetriedErr: %v", lastRetriedErr)
+			// Check that the returned err has codes.OutOfRange:
+			require.Equal(s.T(), codes.OutOfRange, status.Code(lastErr))
+			require.Nil(s.T(), lastRetriedErr)
+		})
+
+	})
 }
 
 func (s *RetrySuite) TestServerStream_CallFailsOnOutOfRetries() {
@@ -612,4 +763,56 @@ func TestJitterUp(t *testing.T) {
 
 	assert.True(t, highCount != 0, "at least one sample should reach to >%s", high)
 	assert.True(t, lowCount != 0, "at least one sample should to <%s", low)
+}
+
+func TestRetryObserver(t *testing.T) {
+
+	t.Run("OnRetry", func(t *testing.T) {
+		observer := &retryObserver{}
+
+		// ensure that hasRetried is always updated
+		observer.OnRetry(1, nil)
+		assert.True(t, observer.hasRetried.Load())
+
+		var retryInvoked bool
+		observer.onRetryFunc = func(_ uint, _ error) {
+			retryInvoked = true
+		}
+
+		observer.OnRetry(2, nil)
+		assert.True(t, retryInvoked)
+
+		// ensure that onFinishFunc is called with the correct value
+
+		var finishInvoked bool
+		observer.onFinishFunc = func(hasRetried bool) {
+			finishInvoked = true
+			assert.True(t, hasRetried)
+		}
+
+		observer.FinishRPC()
+
+		assert.True(t, finishInvoked)
+	})
+
+	t.Run("only FinishRPC", func(t *testing.T) {
+		observer := &retryObserver{}
+
+		var invoked bool
+		observer.onFinishFunc = func(_ bool) {
+			invoked = true
+		}
+
+		// ensure that hasRetried is reset after FinishRPC
+		assert.False(t, observer.hasRetried.Load())
+
+		// ensure that onFinishFunc is called when FinishRPC is invoked
+		observer.FinishRPC()
+		assert.True(t, invoked)
+
+		// assert that FinishRPC only calls onFinishFunc once
+		invoked = false
+		observer.FinishRPC()
+		assert.False(t, invoked)
+	})
 }

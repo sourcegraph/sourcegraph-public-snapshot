@@ -9,7 +9,7 @@
     export let data: PageData
 
     const { pending, value: branches, set } = createPromiseStore<GitBranchesOverview>()
-    $: set(data.deferred.overview)
+    $: set(data.overview)
     $: defaultBranch = $branches?.defaultBranch
     $: activeBranches = $branches?.branches.nodes.filter(branch => branch.id !== defaultBranch?.id)
 </script>

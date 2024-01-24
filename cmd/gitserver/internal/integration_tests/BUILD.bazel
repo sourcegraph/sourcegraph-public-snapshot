@@ -12,6 +12,8 @@ go_library(
     deps = [
         "//cmd/gitserver/internal",
         "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/git",
+        "//cmd/gitserver/internal/git/gitcli",
         "//cmd/gitserver/internal/vcssyncer",
         "//internal/api",
         "//internal/database/dbmocks",
@@ -25,6 +27,7 @@ go_library(
         "//internal/types",
         "//internal/wrexec",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],
@@ -48,6 +51,9 @@ go_test(
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/internal",
+        "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/git",
+        "//cmd/gitserver/internal/git/gitcli",
         "//cmd/gitserver/internal/gitserverfs",
         "//cmd/gitserver/internal/perforce",
         "//cmd/gitserver/internal/vcssyncer",

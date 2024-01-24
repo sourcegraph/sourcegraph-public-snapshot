@@ -9,7 +9,7 @@
     export let data: PageData
 
     const { pending, value: connection, set } = createPromiseStore<GitBranchesConnection>()
-    $: set(data.deferred.branches)
+    $: set(data.branches)
     $: nodes = $connection?.nodes
     $: totalCount = $connection?.totalCount
 </script>

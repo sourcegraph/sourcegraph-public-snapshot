@@ -16,6 +16,7 @@ func writeBigQueryEvent(ctx context.Context, contract runtime.Contract, eventNam
 	if err != nil {
 		return errors.Wrap(err, "BigQuery.GetTableWriter")
 	}
+	defer func() { _ = bq.Close() }()
 
 	return bq.Write(ctx, bigQueryEntry{
 		Name:      eventName,

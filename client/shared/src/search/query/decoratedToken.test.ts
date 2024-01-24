@@ -1825,8 +1825,8 @@ describe('scanSearchQuery() and decorate()', () => {
         `)
     })
 
-    test('Do not highlight keywords inside quotes for newStandardRC1', () => {
-        expect(getTokens(toSuccess(scanSearchQuery('"foo and bar" and bas', false, SearchPatternType.newStandardRC1))))
+    test('Do not highlight keywords inside quotes for keyword pattern type', () => {
+        expect(getTokens(toSuccess(scanSearchQuery('"foo and bar" and bas', false, SearchPatternType.keyword))))
             .toMatchInlineSnapshot(`
               [
                 {

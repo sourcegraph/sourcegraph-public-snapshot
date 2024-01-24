@@ -88,6 +88,7 @@ func (r *Renderer) RenderEnvironment(
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
+			"category":    string(env.Category),
 			"msp":         "true",
 		},
 		Services: func() []string {
@@ -127,8 +128,11 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}
 	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
-		ProjectID:  *projectOutput.Project.ProjectId(),
-		Service:    svc,
+		ProjectID:           *projectOutput.Project.ProjectId(),
+		Service:             svc,
+		EnvironmentCategory: env.Category,
+		EnvironmentID:       env.ID,
+
 		Monitoring: monitoringSpec,
 		MaxInstanceCount: func() *int {
 			if env.Instances.Scaling != nil {
@@ -136,13 +140,13 @@ func (r *Renderer) RenderEnvironment(
 			}
 			return nil
 		}(),
-		RedisInstanceID:     cloudrunOutput.RedisInstanceID,
-		ServiceStartupProbe: pointers.DerefZero(env.EnvironmentServiceSpec).StatupProbe,
-
-		// Notification configuration
-		EnvironmentCategory: env.Category,
-		EnvironmentID:       env.ID,
-		Owners:              svc.Owners,
+		ExternalDomain:        pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
+		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,
+		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
+		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
+		CloudSQLInstanceID:    cloudrunOutput.CloudSQLInstanceID,
+		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
+		SentryProject:         cloudrunOutput.SentryProject,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create monitoring stack")
 	}

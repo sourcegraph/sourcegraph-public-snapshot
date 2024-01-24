@@ -84,6 +84,8 @@ This service is operated on the %s.`,
 		[]string{"Property", "Details"},
 		[][]string{
 			{"Service ID", markdown.Link(markdown.Code(s.Service.ID), serviceConfigURL)},
+			// TODO: See service.Description docstring
+			// {"Description", s.Service.Description},
 			{"Owners", strings.Join(mapTo(s.Service.Owners, markdown.Bold), ", ")},
 			{"Service kind", fmt.Sprintf("Cloud Run %s", string(serviceKind))},
 			{"Environments", strings.Join(mapTo(s.Environments, func(e spec.EnvironmentSpec) string {
@@ -130,6 +132,7 @@ This service is operated on the %s.`,
 				return l
 			}), ", ")},
 			{"Alerts", markdown.Linkf("GCP monitoring", "https://console.cloud.google.com/monitoring/alerting?project=%s", env.ProjectID)},
+			{"Sentry", markdown.Linkf(markdown.Codef("%s-%s", s.Service.ID, env.ID), "https://sourcegraph.sentry.io/projects/%s-%s/", s.Service.ID, env.ID)},
 		}
 		if env.EnvironmentServiceSpec != nil {
 			if domain := env.Domain.GetDNSName(); domain != "" {

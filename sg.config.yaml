@@ -1085,7 +1085,8 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1109,7 +1110,8 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
