@@ -1,20 +1,11 @@
-li.result-container {
-    &:last-child {
-        border-bottom-width: 1px;
-    }
-}
-
 .header {
     padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     position: sticky;
-    // With 0 value there is a rendering bug in Safari where this block
-    // doesn't fit tight enough and hence it's leaving a gap between sticky
-    // header and top of the scrolling block
-    top: -1px;
     z-index: 1; // Show on top of search result contents
+
     border-bottom: 1px solid var(--border-color);
 
     // TODO(taiyab): this needs to be fit into the design system
@@ -31,10 +22,6 @@ li.result-container {
         flex-wrap: wrap;
     }
 
-    p {
-        margin-bottom: 0;
-    }
-
     :global(.match-highlight) {
         color: var(--text-muted-highlighted);
     }
@@ -42,10 +29,6 @@ li.result-container {
 
 .result {
     border-bottom: 1px solid var(--border-color);
-
-    &:hover {
-        border-color: var(--border-color-2);
-    }
 }
 
 .header:focus-within + .highlight-result.result,
