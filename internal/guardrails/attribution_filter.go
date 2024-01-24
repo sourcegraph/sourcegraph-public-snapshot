@@ -13,22 +13,25 @@ import (
 // Returning false indicates that some attribution of snippet was found, and the snippet
 // should be used with caution. The operation can be long-running, and should respect
 // context cancellation.
-type AttributionTest func (context.Context, string) (bool, error)
+type AttributionTest func(context.Context, string) (bool, error)
 
 // CompletionEventSink is where selected events end up being streamed to.
-type CompletionEventSink func (types.CompletionResponse) error
+type CompletionEventSink func(types.CompletionResponse) error
 
 // CompletionsFilter is used to filter out the completions with potential risk
 // due to attribution.
 //
 // Example usage:
 // ```
-// sink := func (e types.CompletionResponse) error {
-//   // stream completions response back to the client
-// }
-// test := func (ctx context.Context, snippet string) bool {
-//   // execute attribution search and return true/false.
-// }
+//
+//	sink := func (e types.CompletionResponse) error {
+//	  // stream completions response back to the client
+//	}
+//
+//	test := func (ctx context.Context, snippet string) bool {
+//	  // execute attribution search and return true/false.
+//	}
+//
 // filter := NewCompletionsFilter(sink, test)
 // // as completion events arrive:
 // err := filter.Send(ctx, event)
@@ -70,9 +73,9 @@ type completionsFilter struct {
 
 // CompletionsFilterConfig assembles parameters needed to create new CompletionFilter.
 type CompletionsFilterConfig struct {
-	Sink CompletionEventSink
-	Test AttributionTest
-	AttributionError func (err error)
+	Sink             CompletionEventSink
+	Test             AttributionTest
+	AttributionError func(err error)
 }
 
 // NewCompletionsFilter returns a fully initialized streaming filter.
@@ -83,7 +86,7 @@ func NewCompletionsFilter(config CompletionsFilterConfig) (CompletionsFilter, er
 		return nil, errors.New("Attribution filtering misconfigured.")
 	}
 	return &completionsFilter{
-		config: config,
+		config:              config,
 		attributionFinished: make(chan error, 1),
 	}, nil
 }
@@ -101,7 +104,7 @@ func (a *completionsFilter) Send(ctx context.Context, e types.CompletionResponse
 		return a.send(e)
 	}
 	a.setMostRecentCompletion(e)
-	a.attributionRun.Do(func () {
+	a.attributionRun.Do(func() {
 		go a.runAttribution(ctx, e)
 	})
 	return nil
@@ -208,5 +211,8 @@ func NoopCompletionsFilter(sink CompletionEventSink) CompletionsFilter {
 type noopCompletionsFilter struct {
 	sink CompletionEventSink
 }
-func (f noopCompletionsFilter) Send(ctx context.Context, e types.CompletionResponse) error { return f.sink(e) }
+
+func (f noopCompletionsFilter) Send(ctx context.Context, e types.CompletionResponse) error {
+	return f.sink(e)
+}
 func (f noopCompletionsFilter) WaitDone(ctx context.Context) error { return nil }

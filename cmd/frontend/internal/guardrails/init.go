@@ -56,7 +56,7 @@ func alwaysTrue(context.Context, string) (bool, error) {
 	return true, nil
 }
 
-func NewAttributionTest(observationCtx *observation.Context) func (context.Context, string) (bool, error) {
+func NewAttributionTest(observationCtx *observation.Context) func(context.Context, string) (bool, error) {
 	// TODO(#59701): Re-initialize attribution service. So that changes
 	// in site-config are reflected immediately for subsequent GraphQL
 	// calls and code completions calls.
@@ -68,7 +68,7 @@ func NewAttributionTest(observationCtx *observation.Context) func (context.Conte
 	if envvar.SourcegraphDotComMode() {
 		return alwaysTrue
 	}
-	return func (ctx context.Context, snippet string) (bool, error) {
+	return func(ctx context.Context, snippet string) (bool, error) {
 		// Check if attribution is on, permit everything if it's off.
 		c := conf.GetConfigFeatures(conf.Get().SiteConfig())
 		if !c.Attribution {

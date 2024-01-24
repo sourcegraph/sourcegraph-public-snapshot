@@ -235,13 +235,13 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 			}
 		}()
 		start := time.Now()
-		eventSink := func (e types.CompletionResponse) error {
+		eventSink := func(e types.CompletionResponse) error {
 			if w := eventWriter(); w != nil {
 				return w.Event("completion", e)
 			}
 			return nil
 		}
-		attributionErrorLog := func (err error) {
+		attributionErrorLog := func(err error) {
 			l := trace.Logger(ctx, logger)
 			ev := eventWriter()
 			if ev != nil {
@@ -256,8 +256,8 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 		f := guardrails.NoopCompletionsFilter(eventSink)
 		if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
 			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-				Sink: eventSink,
-				Test: test,
+				Sink:             eventSink,
+				Test:             test,
 				AttributionError: attributionErrorLog,
 			})
 			if err != nil {
@@ -330,7 +330,7 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 			}
 			return
 		}
-		if f != nil {  // if autocomplete-attribution enabled
+		if f != nil { // if autocomplete-attribution enabled
 			if err := f.WaitDone(ctx); err != nil {
 				l := trace.Logger(ctx, logger)
 				if ev := eventWriter(); ev != nil {

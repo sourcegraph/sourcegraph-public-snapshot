@@ -15,9 +15,9 @@ import (
 )
 
 type fakeClient struct {
-	mu sync.Mutex
+	mu     sync.Mutex
 	events []types.CompletionResponse
-	err error
+	err    error
 }
 
 func (s *fakeClient) stream(e types.CompletionResponse) error {
@@ -38,7 +38,7 @@ func (s *fakeClient) trimmedDiffs() []string {
 }
 
 type fakeSearch struct {
-	mu sync.Mutex
+	mu       sync.Mutex
 	snippets []string
 	response chan bool
 }
@@ -74,24 +74,30 @@ type event interface {
 }
 
 type nextLine string
-func (_ nextLine) Run() {}
+
+func (_ nextLine) Run()                        {}
 func (n nextLine) NextCompletionLine() *string { s := string(n); return &s }
 
-type searchFinishes struct { search *fakeSearch; canUseSnippet bool }
-func (f searchFinishes) Run() { f.search.response <- f.canUseSnippet }
+type searchFinishes struct {
+	search        *fakeSearch
+	canUseSnippet bool
+}
+
+func (f searchFinishes) Run()                        { f.search.response <- f.canUseSnippet }
 func (_ searchFinishes) NextCompletionLine() *string { return nil }
 
-type contextCancelled func ()
-func (c contextCancelled) Run() { c() }
+type contextCancelled func()
+
+func (c contextCancelled) Run()                        { c() }
 func (_ contextCancelled) NextCompletionLine() *string { return nil }
 
 func TestAttributionNotFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	o := eventOrder{
@@ -122,9 +128,9 @@ func TestAttributionFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	o := eventOrder{
@@ -155,9 +161,9 @@ func TestAttributionNotFoundMoreDataAfter(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	o := eventOrder{
@@ -193,9 +199,9 @@ func TestAttributionFoundMoreDataAfter(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	o := eventOrder{
@@ -228,9 +234,9 @@ func TestTimeout(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -262,9 +268,9 @@ func TestTimeoutAfterAttributionFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -304,9 +310,9 @@ func TestTimeoutBeforeAttributionFound(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -342,9 +348,9 @@ func TestAttributionSearchFinishesAfterWaitDoneIsCalled(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -364,7 +370,7 @@ func TestAttributionSearchFinishesAfterWaitDoneIsCalled(t *testing.T) {
 	require.NoError(t, o.replay(ctx, f))
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func () {
+	go func() {
 		require.NoError(t, f.WaitDone(ctx))
 		wg.Done()
 	}()
@@ -376,7 +382,7 @@ func TestAttributionSearchFinishesAfterWaitDoneIsCalled(t *testing.T) {
 	}
 	require.Equal(t, want, got)
 	search.response <- true // Finish attribution search.
-	wg.Wait() // WaitDone returns.
+	wg.Wait()               // WaitDone returns.
 	got = client.trimmedDiffs()
 	want = []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
@@ -391,9 +397,9 @@ func TestWaitDoneErr(t *testing.T) {
 	client := &fakeClient{}
 	search := &fakeSearch{response: make(chan bool)}
 	f, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
-		Sink: client.stream,
-		Test: search.test,
-		AttributionError: func (error) {},
+		Sink:             client.stream,
+		Test:             search.test,
+		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -413,10 +419,10 @@ func TestWaitDoneErr(t *testing.T) {
 	require.NoError(t, o.replay(ctx, f))
 	want := errors.New("fake!")
 	gotErr := make(chan error)
-	go func () {
+	go func() {
 		gotErr <- f.WaitDone(ctx)
 	}()
-	client.err = want// Client's send in WaitDone will err.
+	client.err = want       // Client's send in WaitDone will err.
 	search.response <- true // Finish attribution search.
 	got := <-gotErr
 	require.ErrorIs(t, got, want)
