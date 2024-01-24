@@ -33,7 +33,7 @@ func TestErrStatusNotOK(t *testing.T) {
 	t.Run("IsErrStatusNotOK", func(t *testing.T) {
 		errNotOK, ok := IsErrStatusNotOK(err)
 		require.True(t, ok)
-		assert.Equal(t, resp.StatusCode, errNotOK.statusCode)
+		assert.Equal(t, resp.StatusCode, errNotOK.StatusCode)
 		assert.Equal(t, resp.Header, errNotOK.responseHeader)
 		assert.Equal(t, "oh no, please slow down!", errNotOK.responseBody)
 

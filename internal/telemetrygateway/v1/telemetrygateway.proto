@@ -32,11 +32,15 @@ message Identifier {
     string license_key = 1;
     // Self-reported Sourcegraph instance identifier.
     string instance_id = 2;
+    // Instance external URL defined in the instance site configuration.
+    string external_url = 3;
   }
 
   message UnlicensedInstanceIdentifier {
     // Self-reported Sourcegraph instance identifier.
     string instance_id = 1;
+    // Instance external URL defined in the instance site configuration.
+    string external_url = 2;
   }
 
   oneof identifier {

@@ -47,12 +47,14 @@ func TestWithSelect(t *testing.T) {
 	autogold.Expect(`[
   {
     "Path": "pokeman/",
+    "PreciseLanguage": "",
     "ChunkMatches": null,
     "PathMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
+    "PreciseLanguage": "",
     "ChunkMatches": null,
     "PathMatches": null,
     "LimitHit": false
@@ -62,18 +64,21 @@ func TestWithSelect(t *testing.T) {
 	autogold.Expect(`[
   {
     "Path": "pokeman/charmandar",
+    "PreciseLanguage": "",
     "ChunkMatches": null,
     "PathMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
+    "PreciseLanguage": "",
     "ChunkMatches": null,
     "PathMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
+    "PreciseLanguage": "",
     "ChunkMatches": null,
     "PathMatches": null,
     "LimitHit": false
@@ -83,6 +88,7 @@ func TestWithSelect(t *testing.T) {
 	autogold.Expect(`[
   {
     "Path": "pokeman/charmandar",
+    "PreciseLanguage": "",
     "ChunkMatches": [
       {
         "Content": "",
@@ -134,6 +140,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "pokeman/charmandar",
+    "PreciseLanguage": "",
     "ChunkMatches": [
       {
         "Content": "",
@@ -163,6 +170,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "pokeman/bulbosaur",
+    "PreciseLanguage": "",
     "ChunkMatches": [
       {
         "Content": "",
@@ -192,6 +200,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "digiman/ummm",
+    "PreciseLanguage": "",
     "ChunkMatches": [
       {
         "Content": "",

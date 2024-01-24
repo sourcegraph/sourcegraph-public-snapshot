@@ -12,6 +12,7 @@ Sourcegraph supports the following ways for users to sign in:
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
 - [HTTP authentication proxies](#http-authentication-proxies)
   - [Username header prefixes](#username-header-prefixes)
+- [IP Allow List](#ip-allow-list)
 - [Username normalization](#username-normalization)
 - [Troubleshooting](#troubleshooting)
 
@@ -529,6 +530,61 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
       "stripUsernameHeaderPrefix": "accounts.google.com:"
     }
   ]
+}
+```
+
+## IP Allowlist
+
+In additional to identity authentication provider, you may wish to restrict access to your site to a list of IP addresses. This is only applicable to the UI and GraphQL API endpoints.
+
+__IMPORTANT__: Before you start, you should know the subnet of your Sourcegraph deployment, this is needed to avoid breaking inter-service communication, e.g., kubernetes pod subnet.
+
+In the event of lossing access to the UI, you can still access the UI from `localhost`. This depends on your deployment type. For kubernetes, you can use `kubectl port-forward`. For docker-compose deployment on a VM, you can use `ssh` tunnel.
+
+### Case 1 - Only permit connection from IP addresses
+
+- `auth.allowedIpAddress.userIpAddress` is the authorized user IP addresses. This is usually your organization VPN exit gateway IP addresses. 
+- `auth.allowedIpAddress.trustedClientIpAddress` is the subnet of your Sourcegraph deployment. e.g, kubernetes pod subnet. You must configure this field correctly or risk lossing access to the instance UI.
+
+```json
+{
+  "auth.allowedIpAddress": {
+    "enabled": true,
+    "userIpAddress": [
+      "1.1.1.1",
+      "100.100.100.0/25",
+    ],
+    "trustedClientIpAddress": [
+      "10.244.0.0/16",
+    ]
+  },
+}
+```
+
+### Case 2 - Only permit connection from upstream application load balancer and users from specific exit gateway
+
+- `auth.allowedIpAddress.trustedClientIpAddress` is the subnet of your Sourcegraph deployment. e.g, kubernetes pod subnet. You must configure this field correctly or risk lossing access to the instance UI.
+- `auth.allowedIpAddress.clientIpAddress` is the source ranges of the upstream application load balancer. This ensures only load balancer is permitted to open direct connection with your Sourcegraph instance, and you can trust the `x-forwarded-for` header produced by the application load balancer.
+- `auth.allowedIpAddress.userIpAddress` is the authorized user IP addresses. This is usually your organization VPN exit gateway IP addresses. 
+- `auth.allowedIpAddress.userIpRequestHeaders` is the header to infer user ip address. This depends on the upstream application load balancer, and you need to ensure this value is resilient to IP spoofing.
+
+```json
+{
+  "auth.allowedIpAddress": {
+    "enabled": true,
+    "userIpAddress": [
+      "1.1.1.1",
+      "100.100.100.0/25",
+    ],
+    "trustedClientIpAddress": [
+      "10.244.0.0/16",
+    ],
+    "clientIpAddress": [
+      "130.211.0.0/22",
+    ],
+    // CF-Connecting-IP is reliable and free from spoofing if Cloudflare proxy is used
+    "userIpRequestHeaders": ["X-Forwarded-For", "CF-Connecting-Ip"]
+  },
 }
 ```
 

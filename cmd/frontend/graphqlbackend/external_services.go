@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -79,6 +80,22 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+
+		arg := struct {
+			Kind        string
+			DisplayName string
+			Namespace   *graphql.ID
+		}{
+			Kind:        args.Input.Kind,
+			DisplayName: args.Input.DisplayName,
+			Namespace:   args.Input.Namespace,
+		}
+		// Log action of Code Host Connection being added
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
 	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
@@ -108,6 +125,9 @@ type updateExternalServiceInput struct {
 }
 
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
+	logger := log.Scoped("UpdateExternalServices")
+	logger = trace.Logger(ctx, logger)
+
 	start := time.Now()
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
@@ -134,6 +154,10 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	oldConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, err
+	}
+	prevConfig, err := es.RedactedConfig(ctx)
+	if err != nil {
+		logger.Warn("Failed to get previous redacted config", log.Error(err))
 	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
@@ -164,7 +188,31 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
+	latestConfig, err := es.RedactedConfig(ctx)
+	if err != nil {
+		logger.Warn("Failed to get new redacted config", log.Error(err))
+	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		arg := struct {
+			ID           graphql.ID
+			DisplayName  *string
+			UpdaterID    *int32
+			PrevConfig   string
+			LatestConfig *string
+		}{
+			ID:           args.Input.ID,
+			DisplayName:  args.Input.DisplayName,
+			UpdaterID:    &userID,
+			PrevConfig:   prevConfig,
+			LatestConfig: &latestConfig,
+		}
+		// Log action of Code Host Connection being updated
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+
+	}
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
 	err = s.EnqueueSingleSyncJob(ctx, es.ID)
@@ -270,6 +318,19 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
+		arguments := struct {
+			GraphQLID         graphql.ID `json:"GraphQL ID"`
+			ExternalServiceID int64      `json:"External Service ID"`
+		}{
+			GraphQLID:         args.ExternalService,
+			ExternalServiceID: id,
+		}
+		// Log action of Code Host Connection being deleted
+		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arguments); err != nil {
+			r.logger.Warn("Error logging security event", log.Error(err))
+		}
+	}
 	return &EmptyResponse{}, nil
 }
 

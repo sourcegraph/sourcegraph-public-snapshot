@@ -3,8 +3,8 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 
 rust_binary(
-    name = "scip-treesitter-cli",
-    srcs = ["src/main.rs"],
+    name = "scip-treesitter",
+    srcs = ["src/bin/scip-treesitter.rs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -73,7 +73,7 @@ rust_test(
         allow_empty = False,
     ),
     data = [
-        ":scip-treesitter-cli",
+        ":scip-treesitter",
         ":scip_java_groundtruth_scip",
     ] + glob(
         ["tests/snapshots/**"],
@@ -85,13 +85,13 @@ rust_test(
     env = {
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
-        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter-cli)",
+        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter)",
         "SCIP_JAVA_INDEX": "$(rootpath :scip_java_groundtruth_scip)",
     },
     deps = all_crate_deps(
         normal = True,
     ) + [
-        ":scip-treesitter-cli",
+        ":scip-treesitter",
         ":scip-treesitter-cli-lib",
     ] + WORKSPACE_DEPS,
 )

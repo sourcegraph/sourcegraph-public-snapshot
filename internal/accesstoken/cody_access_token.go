@@ -7,7 +7,7 @@ import (
 )
 
 // DotcomUserGatewayAccessTokenPrefix is the prefix used for identifying tokens
-// generated for a dotcom api token .
+// generated for dotcom users to access Cody Gateway.
 const DotcomUserGatewayAccessTokenPrefix = "sgd_" // "(S)ource(g)raph (d)otcom user key"
 
 // GenerateLicenseKeyBasedAccessToken creates a prefixed, encoded token based on a
@@ -23,5 +23,5 @@ func GenerateDotcomUserGatewayAccessToken(apiToken string) (string, error) {
 		return "", err
 	}
 
-	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes))), nil
+	return DotcomUserGatewayAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes))), nil
 }

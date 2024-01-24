@@ -39,7 +39,6 @@ go_library(
         "external_accounts.go",
         "external_services.go",
         "feature_flags.go",
-        "gen.go",
         "gitserver_localclone_jobs.go",
         "gitserver_repos.go",
         "global_state.go",
@@ -104,7 +103,6 @@ go_library(
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",
         "//internal/conf/reposource",
-        "//internal/cookie",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbconn",
@@ -276,7 +274,6 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/collections",
         "//internal/conf",
         "//internal/database/basestore",
         "//internal/database/batch",
@@ -337,7 +334,6 @@ go_test(
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
-        "@tools_gotest//assert",
     ],
 )
 

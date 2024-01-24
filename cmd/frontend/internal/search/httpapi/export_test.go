@@ -46,11 +46,11 @@ func TestServeSearchJobDownload(t *testing.T) {
 	svc := service.New(observationCtx, s, mockUploadStore, service.NewSearcherFake())
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{id}.csv", ServeSearchJobDownload(logger, svc))
+	router.HandleFunc("/{id}.json", ServeSearchJobDownload(logger, svc))
 
 	// no job
 	{
-		req, err := http.NewRequest(http.MethodGet, "/99.csv", nil)
+		req, err := http.NewRequest(http.MethodGet, "/99.json", nil)
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
@@ -70,7 +70,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 		_, err = svc.CreateSearchJob(userCtx, "1@rev1")
 		require.NoError(t, err)
 
-		req, err := http.NewRequest(http.MethodGet, "/1.csv", nil)
+		req, err := http.NewRequest(http.MethodGet, "/1.json", nil)
 		require.NoError(t, err)
 
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: userID}))
@@ -87,7 +87,7 @@ func TestServeSearchJobDownload(t *testing.T) {
 		userID, err := createUser(bs, "alice")
 		require.NoError(t, err)
 
-		req, err := http.NewRequest(http.MethodGet, "/1.csv", nil)
+		req, err := http.NewRequest(http.MethodGet, "/1.json", nil)
 		require.NoError(t, err)
 
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: userID}))

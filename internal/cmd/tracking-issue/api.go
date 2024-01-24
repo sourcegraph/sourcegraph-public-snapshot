@@ -13,7 +13,7 @@ import (
 // ListTrackingIssues returns all issues with the `tracking` label (and at least one other label)
 // in the given organization.
 func ListTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([]*Issue, error) {
-	issues, _, err := LoadIssues(ctx, cli, []string{fmt.Sprintf("org:%q label:tracking", org)})
+	issues, _, err := LoadIssues(ctx, cli, []string{fmt.Sprintf("org:%q label:tracking is:open", org)})
 	if err != nil {
 		return nil, err
 	}

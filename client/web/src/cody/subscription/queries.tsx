@@ -5,7 +5,6 @@ export const USER_CODY_PLAN = gql`
         currentUser {
             id
             codyProEnabled
-            codyProEnabledAt
         }
     }
 `
@@ -18,6 +17,8 @@ export const USER_CODY_USAGE = gql`
             codyCurrentPeriodCodeUsage
             codyCurrentPeriodChatLimit
             codyCurrentPeriodCodeLimit
+            codyCurrentPeriodStartDate
+            codyCurrentPeriodEndDate
         }
     }
 `
@@ -27,7 +28,6 @@ export const CHANGE_CODY_PLAN = gql`
         changeCodyPlan(user: $id, pro: $pro) {
             id
             codyProEnabled
-            codyProEnabledAt
         }
     }
 `

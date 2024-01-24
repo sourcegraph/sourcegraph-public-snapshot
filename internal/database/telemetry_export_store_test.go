@@ -139,9 +139,11 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	})
 
 	t.Run("CountUnexported", func(t *testing.T) {
-		count, err := store.CountUnexported(ctx)
+		count, oldest, err := store.CountUnexported(ctx)
 		require.NoError(t, err)
-		require.Equal(t, count, int64(3))
+		assert.Equal(t, count, int64(3))
+		// First sample event is the oldest
+		assert.Equal(t, events[0].Timestamp.AsTime(), oldest)
 	})
 
 	t.Run("ListForExport", func(t *testing.T) {
@@ -179,6 +181,35 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		require.NoError(t, store.MarkAsExported(ctx, eventsToExport))
 	})
 
+	t.Run("after export: CountRecentlyExported", func(t *testing.T) {
+		export, err := store.CountRecentlyExported(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, export, int64(2))
+	})
+
+	t.Run("after export: ListRecentlyExported", func(t *testing.T) {
+		exported, err := store.ListRecentlyExported(ctx, 1, nil)
+		require.NoError(t, err)
+		require.Len(t, exported, 1)
+
+		// Most recent first
+		assert.Equal(t, "2", exported[0].ID)
+		assert.Equal(t, "2", exported[0].Payload.GetId())
+		assert.NotZero(t, exported[0].ExportedAt)
+		assert.NotZero(t, exported[0].Timestamp)
+
+		// Next "page"
+		cursor := exported[0].Timestamp
+		exported, err = store.ListRecentlyExported(ctx, 1, &cursor)
+		require.NoError(t, err)
+		require.Len(t, exported, 1)
+
+		assert.Equal(t, "1", exported[0].ID)
+		assert.Equal(t, "1", exported[0].Payload.GetId())
+		assert.NotZero(t, exported[0].ExportedAt)
+		assert.NotZero(t, exported[0].Timestamp)
+	})
+
 	t.Run("after export: QueueForExport", func(t *testing.T) {
 		export, err := store.ListForExport(ctx, len(events))
 		require.NoError(t, err)
@@ -187,9 +218,31 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		assert.Equal(t, "3", export[0].GetId())
 	})
 
+	t.Run("after export: CountUnexported", func(t *testing.T) {
+		count, oldest, err := store.CountUnexported(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, count, int64(1))
+		// The third event is the only one left now
+		assert.Equal(t, events[len(events)-1].Timestamp.AsTime(), oldest)
+	})
+
 	t.Run("after export: DeleteExported", func(t *testing.T) {
 		affected, err := store.DeletedExported(ctx, time.Now())
 		require.NoError(t, err)
 		assert.Equal(t, int(affected), len(eventsToExport))
+	})
+
+	t.Run("mark all as exported", func(t *testing.T) {
+		// Only the third event is left
+		err := store.MarkAsExported(ctx, []string{"3"})
+		require.NoError(t, err)
+	})
+
+	t.Run("after all are exported: CountUnexported", func(t *testing.T) {
+		count, oldest, err := store.CountUnexported(ctx)
+		require.NoError(t, err)
+		// No events are lift
+		assert.Equal(t, count, int64(0))
+		assert.True(t, oldest.IsZero())
 	})
 }

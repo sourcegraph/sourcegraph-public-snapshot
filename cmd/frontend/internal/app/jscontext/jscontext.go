@@ -151,11 +151,12 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	CodyAppMode bool `json:"codyAppMode"`
-
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
-	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllow                 conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllowNoExpiration     bool                  `json:"accessTokensAllowNoExpiration"`
+	AccessTokensDefaultExpirationDays int                   `json:"accessTokensExpirationDaysDefault"`
+	AccessTokensExpirationDaysOptions []int                 `json:"accessTokensExpirationDaysOptions"`
 
 	AllowSignup bool `json:"allowSignup"`
 
@@ -190,9 +191,10 @@ type JSContext struct {
 	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
 
-	ExecutorsEnabled                         bool `json:"executorsEnabled"`
-	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
-	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	ExecutorsEnabled                               bool `json:"executorsEnabled"`
+	CodeIntelAutoIndexingEnabled                   bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies       bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
 	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
 
@@ -219,8 +221,6 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
-
-	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -313,7 +313,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
-	srcServeGitUrl := envvar.SrcServeGitUrl()
+
+	accessTokenDefaultExpirationDays, accessTokenExpirationDaysOptions := conf.AccessTokensExpirationOptions()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -345,13 +346,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		CodyAppMode:           deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
-		AccessTokensAllow: conf.AccessTokensAllow(),
+		AccessTokensAllow:                 conf.AccessTokensAllow(),
+		AccessTokensAllowNoExpiration:     conf.AccessTokensAllowNoExpiration(),
+		AccessTokensDefaultExpirationDays: accessTokenDefaultExpirationDays,
+		AccessTokensExpirationDaysOptions: accessTokenExpirationDaysOptions,
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
@@ -372,12 +375,13 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
 		CodyEnabled:               conf.CodyEnabled(),
-		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
+		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx, db),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
-		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
-		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
-		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
+		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies:       conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		CodeIntelRankingDocumentReferenceCountsEnabled: conf.CodeIntelRankingDocumentReferenceCountsEnabled(),
 
 		CodeInsightsEnabled: insights.IsEnabled(),
 
@@ -402,8 +406,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
-
-		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 

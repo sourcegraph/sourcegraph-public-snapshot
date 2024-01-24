@@ -10,7 +10,7 @@
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
 
-    import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
+    import FileDiff from '$lib/repo/FileDiff.svelte'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
@@ -26,7 +26,8 @@
 
     const {
         revision,
-        resolvedRevision: { commitID, repo },
+        resolvedRevision: { commitID },
+        repoName,
         filePath,
         settings,
         graphqlClient,
@@ -36,7 +37,7 @@
     const { loading, combinedBlobData, set: setBlobData } = createBlobDataHandler()
     let selectedPosition: LineOrPositionOrRange | null = null
 
-    $: setBlobData(data.deferred.blob, data.deferred.highlights)
+    $: setBlobData(data.blob, data.highlights)
     $: blobData = $combinedBlobData.blob
     $: formatted = !!blobData?.richHTML
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
@@ -51,11 +52,15 @@
     }
 </script>
 
+<svelte:head>
+    <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
+
 <FileHeader>
-    <Icon slot="icon" svgPath={data.deferred.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
+    <Icon slot="icon" svgPath={data.compare ? mdiCodeBracesBox : mdiFileCodeOutline} />
     <svelte:fragment slot="actions">
-        {#if data.deferred.compare}
-            <span>{data.deferred.compare.revisionToCompare}</span>
+        {#if data.compare}
+            <span>{data.compare.revisionToCompare}</span>
         {:else}
             {#if !formatted || showRaw}
                 <WrapLinesAction />
@@ -63,14 +68,14 @@
             {#if formatted}
                 <FormatAction />
             {/if}
-            <Permalink resolvedRevision={data.resolvedRevision} />
+            <Permalink commitID={data.resolvedRevision.commitID} />
         {/if}
     </svelte:fragment>
 </FileHeader>
 
-<div class="content" class:loading={$loading} class:compare={!!data.deferred.compare}>
-    {#if data.deferred.compare}
-        {#await data.deferred.compare.diff}
+<div class="content" class:loading={$loading} class:compare={!!data.compare}>
+    {#if data.compare}
+        {#await data.compare.diff}
             <LoadingSpinner />
         {:then fileDiff}
             {#if fileDiff}
@@ -90,7 +95,7 @@
                     ...blobData,
                     revision: revision ?? '',
                     commitID,
-                    repoName: repo.name,
+                    repoName: repoName,
                     filePath,
                 }}
                 highlights={$combinedBlobData.highlights || ''}

@@ -154,15 +154,15 @@ func TestMergeSettings(t *testing.T) {
 	}, {
 		name: "merge int",
 		left: &schema.Settings{
-			SearchContextLines:     0,
+			SearchContextLines:     nil,
 			HistoryDefaultPageSize: 1,
 		},
 		right: &schema.Settings{
-			SearchContextLines:     1,
+			SearchContextLines:     pointers.Ptr(1),
 			HistoryDefaultPageSize: 0, // This is the zero value, so will not override a previous non-zero value
 		},
 		expected: &schema.Settings{
-			SearchContextLines:     1,
+			SearchContextLines:     pointers.Ptr(1),
 			HistoryDefaultPageSize: 1, // This is the zero value, so will not override a previous non-zero value
 		},
 	}, {

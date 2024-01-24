@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -68,6 +69,10 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	mockedEventLogs.InsertFunc.SetDefaultReturn(nil)
 	db.EventLogsFunc.SetDefaultReturn(mockedEventLogs)
 
+	mockedUsers := dbmocks.NewStrictMockUserStore()
+	mockedUsers.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, DisplayName: "test"}, nil)
+	db.UsersFunc.SetDefaultReturn(mockedUsers)
+
 	mocks.licenses.GetByToken = func(tokenHexEncoded string) (*dbLicense, error) {
 		token, err := hex.DecodeString(tokenHexEncoded)
 		if err != nil {
@@ -79,6 +84,13 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			}
 		}
 		return nil, errors.New("not found")
+	}
+
+	mocks.subscriptions.GetByID = func(id string) (*dbSubscription, error) {
+		return &dbSubscription{
+			ID:     id,
+			UserID: 1,
+		}, nil
 	}
 
 	tests := []struct {

@@ -1,110 +1,173 @@
 <script lang="ts">
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-
+    import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
     import type { SidebarFilter } from '$lib/search/utils'
-    import type { SearchSidebarSectionID } from '$lib/shared'
-    import { temporarySetting } from '$lib/temporarySettings'
+    import { updateFilter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
-    import Button from '$lib/wildcard/Button.svelte'
+    import { Badge, Button } from '$lib/wildcard'
+    import { mdiClose } from '@mdi/js'
+    import { pluralize } from '$lib/common'
 
-    export let id: SearchSidebarSectionID
     export let items: SidebarFilter[]
     export let title: string
+    export let queryFilters: string
+    export let showFilter: boolean = false
+    export let filterPlaceholder: string = ''
+    export let showAll: boolean = false
+    export let preprocessLabel: (label: string) => string = label => label
 
-    const collapsedSections = temporarySetting('search.collapsedSidebarSections', {})
-
-    $: sections = !$collapsedSections.loading && $collapsedSections.data ? $collapsedSections.data : null
-    $: open = sections ? !sections[id] : true
-
-    function toggleSection() {
-        collapsedSections.setValue({ ...sections, [id]: open })
+    function generateURL(filter: SidebarFilter, remove: boolean) {
+        const url = new URL($page.url)
+        let filters = queryFilters
+        if (remove) {
+            filters = filters.replace(filter.value, '').trim()
+        } else {
+            try {
+                const separator = filter.value.indexOf(':')
+                const key = filter.value.slice(0, separator)
+                const value = filter.value.slice(separator + 1)
+                filters = updateFilter(queryFilters, key, value)
+            } catch {
+                filters = filter.value
+            }
+        }
+        if (filters) {
+            url.searchParams.set('filters', filters)
+        } else {
+            url.searchParams.delete('filters')
+        }
+        return url.toString()
     }
+
+    let filterText = ''
+    $: processedFilterText = filterText.trim().toLowerCase()
+    $: filteredItems =
+        showFilter && processedFilterText
+            ? items.filter(item => preprocessLabel(item.label).toLowerCase().includes(processedFilterText))
+            : items
+    $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
 </script>
 
-{#if sections}
-    <article>
-        <Button variant="secondary" outline>
-            <button
-                slot="custom"
-                let:className
-                class="{className} header"
-                type="button"
-                aria-expanded={open}
-                aria-label="{open ? 'Collapse' : 'Expand'} {title}"
-                on:click={toggleSection}
-            >
-                <header><h5>{title}</h5></header>
-                <Icon svgPath={open ? mdiChevronUp : mdiChevronDown} inline --color="var(--icon-color)" />
-            </button>
-        </Button>
-
-        {#if open}
-            <ul>
-                {#each items as item}
-                    <li>
-                        <Button variant="secondary" outline>
-                            <button
-                                slot="custom"
-                                let:className
-                                class="{className} item"
-                                on:click
-                                data-value={item.value}
-                                data-run={item.runImmediately}
-                                data-focus-input={!item.runImmediately}
-                            >
-                                <span class="label">{item.label}</span>
-                                {#if item.count !== undefined}
-                                    <Tooltip tooltip="At least {item.count} results match this filter.">
-                                        <span class="count">{item.count}</span>
-                                    </Tooltip>
-                                {/if}
-                            </button>
-                        </Button>
-                    </li>
-                {/each}
-            </ul>
-        {/if}
-    </article>
-{/if}
+<article>
+    <header><h4>{title}</h4></header>
+    {#if showFilter && items.length > 5}
+        <input bind:value={filterText} placeholder={filterPlaceholder} />
+    {/if}
+    <ul>
+        {#each limitedItems as item}
+            {@const selected = queryFilters.includes(item.value)}
+            <li>
+                <a href={generateURL(item, selected)} class:selected>
+                    <span class="label">
+                        <slot name="label" label={item.label} value={item.value}>
+                            {item.label}
+                        </slot>
+                    </span>
+                    {#if item.count !== undefined}
+                        <span class="count">
+                            {#if item.exhaustive}
+                                <Badge variant="secondary">{item.count}</Badge>
+                            {:else}
+                                <Tooltip
+                                    tooltip="At least {item.count} {pluralize('result', item.count)} match this filter."
+                                >
+                                    <Badge variant="secondary">{item.count}+</Badge>
+                                </Tooltip>
+                            {/if}
+                        </span>
+                    {/if}
+                    {#if selected}
+                        <span class="close">
+                            <Icon svgPath={mdiClose} inline />
+                        </span>
+                    {/if}
+                </a>
+            </li>
+        {/each}
+    </ul>
+    {#if limitedItems.length < filteredItems.length}
+        <footer>
+            <Button variant="link" on:click={() => (showAll = true)}>
+                Show all ({filteredItems.length})
+            </Button>
+        </footer>
+    {:else if limitedItems.length > 5}
+        <footer>
+            <Button variant="link" on:click={() => (showAll = false)}>Show less</Button>
+        </footer>
+    {/if}
+</article>
 
 <style lang="scss">
+    article {
+        padding-bottom: 1rem;
+    }
+
+    h4 {
+        white-space: nowrap;
+    }
+
+    input {
+        display: block;
+        width: 100%;
+        height: var(--input-height);
+        padding: var(--input-padding-y) var(--input-padding-x);
+        font-size: var(--input-font-size);
+        font-weight: var(--input-font-weight);
+        line-height: var(--input-line-height);
+        color: var(--input-color);
+        background-color: var(--input-bg);
+        background-clip: padding-box;
+        border: var(--input-border-width) solid var(--input-border-color);
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+    }
+
     ul {
         margin: 0;
         padding: 0.125rem;
-        padding-bottom: 1rem;
         list-style: none;
     }
 
-    button {
+    footer {
+        text-align: center;
+    }
+
+    a {
         display: flex;
         width: 100%;
         align-items: center;
         border: none;
         text-align: left;
-    }
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        color: inherit;
+        white-space: nowrap;
+        gap: 0.25rem;
 
-    button.header {
-        padding: 0.25rem;
-        margin: 0.125rem 0;
-
-        header {
-            flex: 1;
-        }
-    }
-
-    button.item {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.375rem;
+        padding: 0.25rem 0.5rem;
         margin: 0;
         font-weight: 400;
 
         .label {
             flex: 1;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
 
-        .count {
-            color: var(--link-color);
+        &:hover {
+            background-color: var(--secondary-4);
+        }
+
+        &.selected {
+            background-color: var(--primary);
+            color: var(--primary-4);
+            --color: var(--primary-4);
+        }
+
+        .close {
+            margin-left: 0.25rem;
+            flex-shrink: 0;
         }
     }
 </style>

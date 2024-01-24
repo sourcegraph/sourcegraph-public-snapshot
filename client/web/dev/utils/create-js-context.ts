@@ -1,3 +1,5 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
@@ -26,6 +28,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         temporarySettings: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
+        accessTokensAllowNoExpiration: false,
+        accessTokensExpirationDaysDefault: 90,
+        accessTokensExpirationDaysOptions: [7, 14, 30, 60, 90],
         allowSignup: true,
         batchChangesEnabled: true,
         batchChangesDisableWebhooksWarning: false,
@@ -36,6 +41,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         codyRequiresVerifiedEmail: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
+        codeIntelRankingDocumentReferenceCountsEnabled: false,
         codeInsightsEnabled: true,
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
@@ -58,8 +64,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
-        codyAppMode: false,
-        srcServeGitUrl: 'http://127.0.0.1:3434',
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
@@ -74,6 +78,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         openTelemetry: {
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
+        telemetryRecorder: noOpTelemetryRecorder,
         embeddingsEnabled: false,
         primaryLoginProvidersCount: 5,
         // Site-config overrides default JS context

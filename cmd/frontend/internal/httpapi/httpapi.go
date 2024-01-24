@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"context"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"os"
 	"reflect"
@@ -18,7 +18,6 @@ import (
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -113,6 +112,8 @@ func NewHandler(
 	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(trace.Route(handlers.SCIMHandler))
 	m.Path("/graphql").Methods("POST").Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
 
+	m.Path("/opencodegraph").Methods("POST").Handler(trace.Route(jsonHandler(serveOpenCodeGraph(logger))))
+
 	// Webhooks
 	//
 	// First: register handlers
@@ -160,15 +161,13 @@ func NewHandler(
 	m.Path("/src-cli/{rest:.*}").Methods("GET").Handler(trace.Route(newSrcCliVersionHandler(logger)))
 	m.Path("/insights/export/{id}").Methods("GET").Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
 	m.Path("/search/stream").Methods("GET").Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Path("/search/export/{id}.csv").Methods("GET").Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Path("/search/export/{id}.json").Methods("GET").Handler(trace.Route(handlers.SearchJobsDataExportHandler))
 	m.Path("/search/export/{id}.log").Methods("GET").Handler(trace.Route(handlers.SearchJobsLogsHandler))
 
 	m.Path("/completions/stream").Methods("POST").Handler(trace.Route(handlers.NewChatCompletionsStreamHandler()))
 	m.Path("/completions/code").Methods("POST").Handler(trace.Route(handlers.NewCodeCompletionsHandler()))
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(codyapp.AppUpdateHandler(logger)))
-		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
 
 		updatecheckHandler, err := updatecheck.ForwardHandler()
@@ -248,11 +247,10 @@ func RegisterInternalServices(
 	gitService := &gitServiceHandler{Gitserver: gsClient}
 	m.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(gitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(gitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-	m.Path("/repos/index").Methods("POST").Handler(trace.Route(handler(indexer.serveList)))
+
+	// TODO: Can be removed after 5.3 is cut.
 	m.Path("/configuration").Methods("POST").Handler(trace.Route(handler(serveConfiguration)))
-	m.Path("/ranks/{RepoName:.*}/documents").Methods("GET").Handler(trace.Route(handler(indexer.serveDocumentRanks)))
-	m.Path("/search/configuration").Methods("GET", "POST").Handler(trace.Route(handler(indexer.serveConfiguration)))
-	m.Path("/search/index-status").Methods("POST").Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
+
 	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
 	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(newCodeIntelUploadHandler(false)))
 	m.Path("/scip/upload").Methods("HEAD").Handler(trace.Route(noopHandler))

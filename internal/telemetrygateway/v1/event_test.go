@@ -1,7 +1,7 @@
 package v1_test
 
 import (
-	context "context"
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -18,6 +18,12 @@ import (
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
+
+func TestDefaultEventIDFunc(t *testing.T) {
+	var id string
+	assert.NotPanics(t, func() { id = telemetrygatewayv1.DefaultEventIDFunc() })
+	assert.NotEmpty(t, id)
+}
 
 func TestNewEventWithDefaults(t *testing.T) {
 	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")

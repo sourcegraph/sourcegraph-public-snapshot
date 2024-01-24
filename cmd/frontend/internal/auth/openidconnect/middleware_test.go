@@ -151,16 +151,15 @@ func TestMiddleware(t *testing.T) {
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
-	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
-		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
-		assert.Equal(t, "BACKEND", event.Source)
-		assert.NotNil(t, event.Timestamp)
-		if event.Name == database.SecurityEventOIDCLoginFailed {
-			assert.NotEmpty(t, event.AnonymousUserID)
-			assert.IsType(t, json.RawMessage{}, event.Argument)
+	securityLogs.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
+		assert.Equal(t, "/.auth/openidconnect/callback", url)
+		assert.Equal(t, "BACKEND", source)
+		if eventName == database.SecurityEventOIDCLoginFailed {
+			assert.NotEmpty(t, anonymousUserID)
 		} else {
-			assert.Equal(t, uint32(123), event.UserID)
+			assert.Equal(t, uint32(123), userID)
 		}
+		return nil
 	})
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
@@ -372,12 +371,12 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
-	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
-		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
-		assert.Equal(t, "BACKEND", event.Source)
-		assert.NotNil(t, event.Timestamp)
-		assert.Equal(t, database.SecurityEventOIDCLoginSucceeded, event.Name)
-		assert.Equal(t, uint32(123), event.UserID)
+	securityLogs.LogSecurityEventFunc.SetDefaultHook(func(ctx context.Context, eventName database.SecurityEventName, url string, userID uint32, anonymousUserID string, source string, arguments any) error {
+		assert.Equal(t, "/.auth/openidconnect/callback", url)
+		assert.Equal(t, "BACKEND", source)
+		assert.Equal(t, database.SecurityEventOIDCLoginSucceeded, eventName)
+		assert.Equal(t, uint32(123), userID)
+		return nil
 	})
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})

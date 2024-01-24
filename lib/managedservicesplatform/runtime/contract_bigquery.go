@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/bigquery"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/bigquerywriter"
 )
@@ -20,6 +21,12 @@ func loadBigQueryContract(env *Env) bigQueryContract {
 	}
 }
 
+// Configured indicates if a BigQuery dataset is configured for use. It does
+// not guarantee the presence of any BigQuery tables.
+func (c bigQueryContract) Configured() bool {
+	return c.projectID != nil && c.datasetID != nil
+}
+
 // GetTableWriter returns a BigQuery table writer in the MSP-configured
 // BigQuery project and dataset. The returned *bigquerywriter.Writer offers
 // typed helpers for writing rows, but the underlying *bigquery.Inserter can
@@ -34,7 +41,5 @@ func (c bigQueryContract) GetTableWriter(ctx context.Context, table string) (*bi
 		return nil, errors.Wrap(err, "creating BigQuery client")
 	}
 
-	return &bigquerywriter.Writer{
-		Inserter: client.Dataset(*c.datasetID).Table(table).Inserter(),
-	}, nil
+	return bigquerywriter.New(client, *c.datasetID, table), nil
 }

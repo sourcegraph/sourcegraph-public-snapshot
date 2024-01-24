@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type FileChunkContext struct {
@@ -110,6 +112,14 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	ctx, _, endObservation := c.getCodyContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
+	if isEnabled := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
+		return nil, errors.New("cody is not enabled for current user")
+	}
+
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.obsCtx.Logger); err != nil {
+		return nil, err
+	}
+
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
 	if err != nil {
 		return nil, err
@@ -159,6 +169,10 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
 func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
+	// if embeddings are disabled , return all repos in the notEmbedded slice
+	if !conf.EmbeddingsEnabled() {
+		return nil, input, nil
+	}
 	for _, repo := range input {
 		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
 		if err != nil {
@@ -264,14 +278,15 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		patternTypeKeyword := "keyword"
+		patternType := "codycontext"
 		plan, err := c.searchClient.Plan(
 			ctx,
 			"V3",
-			&patternTypeKeyword,
+			&patternType,
 			query,
 			search.Precise,
 			search.Streaming,
+			pointers.Ptr(int32(0)),
 		)
 		if err != nil {
 			return nil, err

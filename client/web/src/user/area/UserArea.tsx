@@ -94,7 +94,6 @@ interface UserAreaProps
     authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
 
 /**
@@ -127,19 +126,12 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 }
 
 /**
  * A user's public profile area.
  */
-export const UserArea: FC<UserAreaProps> = ({
-    useBreadcrumb,
-    userAreaRoutes,
-    isSourcegraphDotCom,
-    isCodyApp,
-    ...props
-}) => {
+export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isSourcegraphDotCom, ...props }) => {
     const { username } = useParams()
     const userAreaMainUrl = `/users/${username}`
 
@@ -194,7 +186,6 @@ export const UserArea: FC<UserAreaProps> = ({
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
-        isCodyApp,
     }
 
     return (

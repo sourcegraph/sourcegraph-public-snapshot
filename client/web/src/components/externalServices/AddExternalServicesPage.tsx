@@ -12,7 +12,6 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Alert, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
@@ -33,7 +32,6 @@ export interface AddExternalServicesPageProps extends TelemetryProps {
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isCodyApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -49,7 +47,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    isCodyApp,
 }) => {
     const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useTemporarySetting(
@@ -108,17 +105,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 description="Add code host connection to one of the supported code hosts."
                 className="mb-3"
             />
-
-            {isCodyApp && (
-                <LimitedAccessBanner
-                    storageKey="app.manage-repositories-with-new-settings"
-                    badgeText="Repositories"
-                    className="mb-3"
-                >
-                    Manage your local repositories in your settings. Go to{' '}
-                    <Link to="/user/app-settings">Settings → Repositories → Local/Remote repositories</Link>
-                </LimitedAccessBanner>
-            )}
 
             <Container>
                 {!hasDismissedPrivacyWarning && (

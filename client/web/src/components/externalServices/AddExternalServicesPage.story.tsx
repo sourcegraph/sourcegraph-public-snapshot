@@ -33,14 +33,13 @@ export const Overview: StoryFn = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isCodyApp={false}
             />
         )}
     </WebStory>
 )
 
 export const OverviewWithBusinessLicense: StoryFn = () => {
-    window.context.licenseInfo = { currentPlan: 'business-0' }
+    window.context.licenseInfo = { currentPlan: 'business-0', features: { codeSearch: true, cody: true } }
     return (
         <WebStory>
             {webProps => (
@@ -52,7 +51,6 @@ export const OverviewWithBusinessLicense: StoryFn = () => {
                     autoFocusForm={false}
                     externalServicesFromFile={false}
                     allowEditExternalServicesWithFile={false}
-                    isCodyApp={false}
                 />
             )}
         </WebStory>
@@ -70,7 +68,6 @@ export const AddConnectionBykind: StoryFn = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isCodyApp={false}
             />
         )}
     </WebStory>

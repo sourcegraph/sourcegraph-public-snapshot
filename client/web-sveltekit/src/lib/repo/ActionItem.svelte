@@ -82,12 +82,14 @@
 <Tooltip {tooltip}>
     {#if !disabled && url}
         <Button variant="secondary" size="sm" {disabled}>
-            <a slot="custom" let:className class={className} href={url} on:click={run} {...newTabProps}>
-                {#if icon}
-                    <img src={icon.url} alt={icon.description} />
-                {/if}
-                {content}
-            </a>
+            <svelte:fragment slot="custom" let:buttonClass>
+                <a class={buttonClass} href={url} on:click={run} {...newTabProps}>
+                    {#if icon}
+                        <img src={icon.url} alt={icon.description} />
+                    {/if}
+                    {content}
+                </a>
+            </svelte:fragment>
         </Button>
     {:else if action.command}
         <Button variant="secondary" size="sm" {disabled} on:click={run}>

@@ -1,6 +1,8 @@
 package licensing
 
-import "golang.org/x/exp/slices"
+import (
+	"golang.org/x/exp/slices"
+)
 
 // CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
 //
@@ -23,8 +25,16 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
+	models := []string{
+		"anthropic/claude-v1",
+		"anthropic/claude-2",
+		"anthropic/claude-2.0",
+		"anthropic/claude-2.1",
+		"anthropic/claude-instant-v1",
+		"anthropic/claude-instant-1",
+		"anthropic/claude-instant-1.2",
+	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
 		models = append(models, "openai/gpt-4", "openai/gpt-3.5-turbo")
 	}
@@ -57,8 +67,13 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
+	models := []string{
+		"anthropic/claude-instant-v1",
+		"anthropic/claude-instant-1",
+		"anthropic/claude-instant-1.2",
+		"fireworks/starcoder",
+	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
 		models = append(models, "openai/gpt-3.5-turbo")
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
@@ -23,6 +24,10 @@ func newTelemetryGatewayEvents(
 	gatewayEvents := make([]*telemetrygatewayv1.Event, len(gqlEvents))
 	for i, gqlEvent := range gqlEvents {
 		event := telemetrygatewayv1.NewEventWithDefaults(ctx, now, newUUID)
+
+		if gqlEvent.Timestamp != nil {
+			event.Timestamp = timestamppb.New(gqlEvent.Timestamp.Time)
+		}
 
 		event.Feature = gqlEvent.Feature
 		event.Action = gqlEvent.Action

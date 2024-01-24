@@ -7,13 +7,13 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/log"
-
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -44,11 +44,27 @@ type Source interface {
 	Get(ctx context.Context, token string) (*Actor, error)
 }
 
+// ErrActorRecentlyUpdated can be used to indicate that an actor cannot be
+// updated because it was already updated more recently than allowed by a
+// Source implementation.
+type ErrActorRecentlyUpdated struct {
+	RetryAt time.Time
+}
+
+func (e ErrActorRecentlyUpdated) Error() string {
+	return fmt.Sprintf("actor was recently updated - try again in %s",
+		time.Until(e.RetryAt).Truncate(time.Second).String())
+}
+
+func IsErrActorRecentlyUpdated(err error) bool { return errors.As(err, &ErrActorRecentlyUpdated{}) }
+
 type SourceUpdater interface {
 	Source
 	// Update updates the given actor's state, though the implementation may
 	// decide not to do so every time.
-	Update(ctx context.Context, actor *Actor)
+	//
+	// Error can be ErrActorRecentlyUpdated if the actor was updated too recently.
+	Update(ctx context.Context, actor *Actor) error
 }
 
 type SourceSyncer interface {
@@ -58,12 +74,6 @@ type SourceSyncer interface {
 	// to skip syncs if the frequency is too high.
 	// Sync should return the number of synced items.
 	Sync(ctx context.Context) (int, error)
-}
-
-type SourceSingleSyncer interface {
-	Source
-	// SyncOne retrieves a single actor from this source and updates its cache.
-	SyncOne(ctx context.Context, token string) error
 }
 
 type Sources struct{ sources []Source }
@@ -150,23 +160,6 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 
 	logger.Info("All sources synced")
 	return nil
-}
-
-// SyncOne immediately runs a sync on the source implementing SourceSingleSyncer that can sync for a given token.
-// Syncing is done sequentially, first error is returned - this mirrors the behaviour of Source.Get()
-//
-// By default, this is only used by "/v1/limits/refresh" endpoint.
-func (s *Sources) SyncOne(ctx context.Context, token string) error {
-	for _, src := range s.sources {
-		if src, ok := src.(SourceSingleSyncer); ok {
-			err := src.SyncOne(ctx, token)
-			if err != nil {
-				return errors.Wrapf(err, "failed to sync %s", src.Name())
-			}
-			return nil
-		}
-	}
-	return errors.Newf("no source found for token %v", token[:4])
 }
 
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
@@ -327,3 +320,18 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	handleLogger.Info("Running sources sync")
 	return s.sources.SyncAll(ctx, handleLogger)
 }
+
+type FakeSource struct {
+	SourceName codygateway.ActorSource
+}
+
+func (m FakeSource) Name() string {
+	return string(m.SourceName)
+}
+
+func (m FakeSource) Get(_ context.Context, _ string) (*Actor, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+var _ Source = FakeSource{}

@@ -90,7 +90,7 @@ type Mutation {
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
-    Updates the user's Cody plan to Pro or Community.
+    Updates the user's Self-serve Cody plan to Free or Pro.
 
     Only the user may perform this mutation.
     """
@@ -301,12 +301,14 @@ type Mutation {
     - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
       with this scope.)
 
+    DurationSeconds: If provided, the number of seconds until the token expires automatically.
+
     Only the user or site admins may perform this mutation.
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    createAccessToken(user: ID!, durationSeconds: Int, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     itself.
@@ -2677,7 +2679,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
-    newStandardRC1
+    codycontext
 }
 
 """
@@ -3212,7 +3214,6 @@ enum ExternalServiceKind {
     JVMPACKAGES
     NPMPACKAGES
     OTHER
-    LOCALGIT
     PAGURE
     PERFORCE
     PHABRICATOR
@@ -3954,6 +3955,11 @@ type Repository implements Node & GenericSearchResultInterface {
     A set of user-defined key-value pairs metadata associated with the repo.
     """
     metadata: [KeyValuePair!]!
+
+    """
+    A list of GitHub or GitLab topics associated with the repo.
+    """
+    topics: [String!]!
 
     """
     The size of repo when cloned on disk
@@ -5811,6 +5817,16 @@ interface File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's name and contents.
+
+    The resulting array may be empty if no language could be determined,
+    or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
+    """
+    languages: [String!]!
 }
 
 """
@@ -5914,6 +5930,16 @@ type VirtualFile implements File2 {
         """
         endLine: Int
     ): HighlightedFile!
+    """
+    The language(s) determined based on the file's name and contents.
+
+    The resulting array may be empty if no language could be determined,
+    or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6058,6 +6084,16 @@ type GitBlob implements TreeEntry & File2 {
         endLine: Int
     ): HighlightedFile!
     """
+    The language(s) determined based on the file's name and contents.
+
+    The resulting array may be empty if no language could be determined,
+    or it may have multiple entries if the language is ambiguous.
+
+    If there are multiple entries, they will be sorted in descending
+    order of likelihood.
+    """
+    languages: [String!]!
+    """
     Submodule metadata if this tree points to a submodule
     """
     submodule: Submodule
@@ -6173,6 +6209,10 @@ type FileMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
+    """
+    The detected languages for the file, empty if the language cannot be determined.
+    """
+    languages: [String!]!
 }
 
 """
@@ -6537,10 +6577,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     codyProEnabled: Boolean!
     """
-    The date when the user enrolled for Cody Pro.
-    """
-    codyProEnabledAt: DateTime
-    """
     The start date of current billing period of Cody.
     """
     codyCurrentPeriodStartDate: DateTime
@@ -6551,19 +6587,19 @@ type User implements Node & SettingsSubject & Namespace {
     """
     The count of Cody chats in the current billing period.
     """
-    codyCurrentPeriodChatUsage: Int
+    codyCurrentPeriodChatUsage: Int!
     """
     The count of Cody code completions in the current billing period.
     """
-    codyCurrentPeriodCodeUsage: Int
+    codyCurrentPeriodCodeUsage: Int!
     """
     The limit of Cody chats for the current billing period.
     """
-    codyCurrentPeriodChatLimit: Int
+    codyCurrentPeriodChatLimit: Int!
     """
     The limit of Cody code completions for the current billing period.
     """
-    codyCurrentPeriodCodeLimit: Int
+    codyCurrentPeriodCodeLimit: Int!
 }
 
 """
@@ -6599,6 +6635,10 @@ type AccessToken implements Node {
     The date when the access token was last used to authenticate a request.
     """
     lastUsedAt: DateTime
+    """
+    If non-null, the token may no longer be used after this date.
+    """
+    expiresAt: DateTime
 }
 
 """
@@ -7250,11 +7290,6 @@ type Site implements SettingsSubject {
     """
     allowEditExternalServicesWithFile: Boolean!
     """
-    The number of external services distinguished by local repositories and remote repositories.
-    Local repository code host connections are only supported in Cody App.
-    """
-    externalServicesCounts: ExternalServicesCounts!
-    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -7368,11 +7403,6 @@ type Site implements SettingsSubject {
     autoUpgradeEnabled: Boolean!
 
     """
-    Wether the current App installation has a connected Sourcegraph.com account.
-    """
-    appHasConnectedDotComAccount: Boolean!
-
-    """
     The quota of completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCompletionsQuota: Int
@@ -7396,6 +7426,13 @@ type Site implements SettingsSubject {
     If Cody is enabled, this returns how Cody is configured to talk to the LLM.
     """
     codyLLMConfiguration: CodyLLMConfiguration
+
+    """
+    Decides which features to enable for the users of this SG instance
+
+    Site-admin only.
+    """
+    codyConfigFeatures: CodyConfigFeatures
 
     """
     Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
@@ -7442,6 +7479,32 @@ type CodyLLMConfiguration {
 }
 
 """
+Cody Config features contains information about which LLM features are enabled
+for this SG instance
+"""
+type CodyConfigFeatures {
+    """
+    Enable Cody chat feature.
+    """
+    chat: Boolean!
+
+    """
+    Enable Cody autocomplete feature.
+    """
+    autoComplete: Boolean!
+
+    """
+    Enable Cody special commands feature.
+    """
+    commands: Boolean!
+
+    """
+    Enable attribution search for Cody-generated snippets.
+    """
+    attribution: Boolean!
+}
+
+"""
 CodyGatewayRateLimitStatus current status of a rate limit.
 """
 type CodyGatewayRateLimitStatus {
@@ -7474,21 +7537,6 @@ type CodyGatewayRateLimitStatus {
     When the rate limit next resets if an interval has already started.
     """
     nextLimitReset: DateTime
-}
-
-"""
-External services count information includes a count of services for remote code host connections and a count of services
-for local code host connections (local is only supported for Cody App).
-"""
-type ExternalServicesCounts {
-    """
-    The count of external services configured for remote code host connections.
-    """
-    remoteExternalServicesCount: Int!
-    """
-    The count of external services configured for local code host connections.
-    """
-    localExternalServicesCount: Int!
 }
 
 """
@@ -10121,6 +10169,10 @@ enum AccessRequestStatus {
     Access request was rejected
     """
     REJECTED
+    """
+    Access request was canceled
+    """
+    CANCELED
 }
 
 """
@@ -10349,6 +10401,11 @@ enum PermissionNamespace {
     key-value pair metadata.
     """
     REPO_METADATA
+
+    """
+    This represents the Cody namespace.
+    """
+    CODY
 }
 
 """

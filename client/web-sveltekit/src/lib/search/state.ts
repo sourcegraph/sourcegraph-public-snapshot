@@ -2,7 +2,7 @@ import { writable, type Readable } from 'svelte/store'
 
 import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
-import { buildSearchURLQuery, type SettingsCascade } from '$lib/shared'
+import { buildSearchURLQuery, type Settings } from '$lib/shared'
 import { defaultSearchModeFromSettings } from '$lib/web'
 
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
@@ -23,7 +23,7 @@ interface Options {
 }
 
 type QuerySettings = Pick<
-    SettingsCascade['final'],
+    Settings,
     'search.defaultCaseSensitive' | 'search.defaultPatternType' | 'search.defaultMode'
 > | null
 export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'searchMode' | 'searchContext'>
@@ -139,9 +139,9 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
     }
 }
 
-export function submitSearch(
+export function getQueryURL(
     queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
-): void {
+): string {
     const searchQueryParameter = buildSearchURLQuery(
         queryState.query,
         queryState.patternType,
@@ -150,7 +150,11 @@ export function submitSearch(
         queryState.searchMode
     )
 
-    // no-void conflicts with no-floating-promises
-    // eslint-disable-next-line no-void
-    void goto('/search?' + searchQueryParameter)
+    return '/search?' + searchQueryParameter
+}
+
+export function submitSearch(
+    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
+): void {
+    void goto(getQueryURL(queryState))
 }

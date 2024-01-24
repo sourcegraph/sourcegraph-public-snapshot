@@ -51,10 +51,14 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "d6ab6b57e48c09523e93050f13698f708428cfd5e619252e369d377af6597707",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/rules_go:package_main.patch",
+    ],
+    sha256 = "de7974538c31f76658e0d333086c69efdf6679dbc6a466ac29e65434bf47076d",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.43.0/rules_go-v0.43.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.43.0/rules_go-v0.43.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.45.0/rules_go-v0.45.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.45.0/rules_go-v0.45.0.zip",
     ],
 )
 
@@ -94,16 +98,16 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "6357de5982dd32526e02278221bb8d6aa45717ba9bbacf43686b130aa2c72e1e",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.30.0/rules_rust-v0.30.0.tar.gz"],
+    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.34.1/rules_rust-v0.34.1.tar.gz"],
 )
 
 # Container rules
 http_archive(
     name = "rules_oci",
-    sha256 = "c71c25ed333a4909d2dd77e0b16c39e9912525a98c7fa85144282be8d04ef54c",
-    strip_prefix = "rules_oci-1.3.4",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.3.4/rules_oci-v1.3.4.tar.gz",
+    sha256 = "d41d0ba7855f029ad0e5ee35025f882cbe45b0d5d570842c52704f7a47ba8668",
+    strip_prefix = "rules_oci-1.4.3",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.4.3/rules_oci-v1.4.3.tar.gz",
 )
 
 http_archive(
@@ -130,7 +134,7 @@ http_archive(
 )
 
 # hermetic_cc_toolchain setup ================================
-HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
 # Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
@@ -146,7 +150,7 @@ http_archive(
     patches = [
         "//third_party/hermetic_cc:disable_ubsan.patch",
     ],
-    sha256 = "28fc71b9b3191c312ee83faa1dc65b38eb70c3a57740368f7e7c7a49bedf3106",
+    sha256 = "3b8107de0d017fe32e6434086a9568f97c60a111b49dc34fc7001e139c30fdea",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
         "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -240,7 +244,6 @@ esbuild_register_toolchains(
 
 # Go toolchain setup
 
-load("@rules_buf//buf:defs.bzl", "buf_dependencies")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 load("//:linter_deps.bzl", "linter_dependencies")
@@ -281,7 +284,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.21.4",
+    version = "1.21.6",
 )
 
 linter_dependencies()

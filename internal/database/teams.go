@@ -320,6 +320,11 @@ func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpt
 		opts.Limit++
 	}
 
+	if opts.Search == "" {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN users ON team_members.user_id = users.id"))
+	}
+	conds = append(conds, sqlf.Sprintf("users.deleted_at IS NULL"))
+
 	q := sqlf.Sprintf(
 		listTeamMembersQueryFmtstr,
 		sqlf.Join(teamMemberColumns, ","),
@@ -359,6 +364,11 @@ func (s *teamStore) CountTeamMembers(ctx context.Context, opts ListTeamMembersOp
 	opts.Cursor = TeamMemberListCursor{}
 	conds, joins := opts.SQL()
 
+	if opts.Search == "" {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN users ON team_members.user_id = users.id"))
+	}
+	conds = append(conds, sqlf.Sprintf("users.deleted_at IS NULL"))
+
 	q := sqlf.Sprintf(
 		countTeamMembersQueryFmtstr,
 		sqlf.Join(joins, "\n"),
@@ -370,7 +380,7 @@ func (s *teamStore) CountTeamMembers(ctx context.Context, opts ListTeamMembersOp
 }
 
 const countTeamMembersQueryFmtstr = `
-SELECT COUNT(*)
+SELECT COUNT(1)
 FROM team_members
 %s
 WHERE %s

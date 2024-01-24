@@ -18,6 +18,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
+import { isCodyOnlyLicense } from '../../util/license'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -51,12 +52,13 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps, 'to'> {
 }
 
 export const NavBar = forwardRef(function NavBar({ children, logo }, reference): JSX.Element {
+    const logoUrl = isCodyOnlyLicense() ? PageRoutes.Cody : PageRoutes.Search
     return (
         <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
             {logo && (
                 <>
                     <H1 className={navBarStyles.logo}>
-                        <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                        <RouterNavLink className="d-flex align-items-center" to={logoUrl}>
                             {logo}
                         </RouterNavLink>
                     </H1>

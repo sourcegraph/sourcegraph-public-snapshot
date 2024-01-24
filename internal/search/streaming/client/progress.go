@@ -63,7 +63,7 @@ func (p *ProgressAggregator) currentStats() api.ProgressStats {
 		BackendsMissing:     p.Stats.BackendsMissing,
 		ExcludedArchived:    p.Stats.ExcludedArchived,
 		ExcludedForks:       p.Stats.ExcludedForks,
-		Timedout:            getRepos(p.Stats, searchshared.RepoStatusTimedout),
+		Timedout:            getRepos(p.Stats, searchshared.RepoStatusTimedOut),
 		Missing:             getRepos(p.Stats, searchshared.RepoStatusMissing),
 		Cloning:             getRepos(p.Stats, searchshared.RepoStatusCloning),
 		LimitHit:            p.Stats.IsLimitHit,

@@ -2,45 +2,41 @@
     import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createPromiseStore } from '$lib/utils'
-
-    import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
+    import type { TreePage_TreeWithCommitInfo, TreePage_Readme } from './page.gql'
 
     import type { PageData } from './$types'
     import FileTable from '$lib/repo/FileTable.svelte'
+    import Readme from '$lib/repo/Readme.svelte'
 
     export let data: PageData
 
-    const { value: tree, set: setTree } = createPromiseStore<PageData['deferred']['treeEntries']>()
-    const { value: readme, set: setReadme } = createPromiseStore<PageData['deferred']['readme']>()
+    const { value: tree, set: setTree } = createPromiseStore<PageData['treeEntries']>()
+    const { value: commitInfo, set: setCommitInfo } = createPromiseStore<Promise<TreePage_TreeWithCommitInfo | null>>()
+    const { value: readme, set: setReadme } = createPromiseStore<Promise<TreePage_Readme | null>>()
 
-    $: setTree(data.deferred.treeEntries)
-    $: setReadme(data.deferred.readme)
+    $: setTree(data.treeEntries)
+    $: setCommitInfo(data.commitInfo)
+    $: setReadme(data.readme)
     $: entries = $tree?.entries ?? []
+    $: entriesWithCommitInfo = $commitInfo?.entries ?? []
 </script>
+
+<svelte:head>
+    <title>{data.filePath} - {data.displayRepoName} - Sourcegraph</title>
+</svelte:head>
 
 <FileHeader>
     <Icon slot="icon" svgPath={mdiFolderOutline} />
     <svelte:fragment slot="actions">
-        <Permalink resolvedRevision={data.resolvedRevision} />
+        <Permalink commitID={data.resolvedRevision.commitID} />
     </svelte:fragment>
 </FileHeader>
 
 <div class="content">
-    {#if data.deferred.compare}
-        {#await data.deferred.compare.diff}
-            <LoadingSpinner />
-        {:then nodes}
-            {#each nodes as fileDiff}
-                <FileDiff {fileDiff} expanded={false} />
-            {/each}
-        {/await}
-    {:else}
-        <FileTable revision={data.revision ?? ''} {entries} />
-    {/if}
+    <FileTable revision={data.revision ?? ''} {entries} commitInfo={entriesWithCommitInfo} />
     {#if $readme}
         <h4 class="header">
             <Icon svgPath={mdiFileDocumentOutline} />
@@ -48,11 +44,7 @@
             {$readme.name}
         </h4>
         <div class="readme">
-            {#if $readme.richHTML}
-                {@html $readme.richHTML}
-            {:else if $readme.content}
-                <pre>{$readme.content}</pre>
-            {/if}
+            <Readme file={$readme} />
         </div>
     {/if}
 </div>
@@ -75,9 +67,5 @@
     .readme {
         padding: 1rem;
         flex: 1;
-
-        pre {
-            white-space: pre-wrap;
-        }
     }
 </style>

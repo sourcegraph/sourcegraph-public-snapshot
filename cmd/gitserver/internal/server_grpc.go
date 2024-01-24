@@ -12,9 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -32,26 +34,21 @@ type GRPCServer struct {
 var _ proto.GitserverServiceServer = &GRPCServer{}
 
 func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
-	gs.Server.operations = gs.Server.ensureOperations()
-
 	// Validate request parameters
-	if len(req.GetRepoCommits()) == 0 {
+	if len(req.GetRepoCommits()) == 0 { //nolint:staticcheck
 		return &proto.BatchLogResponse{}, nil
 	}
-	if !strings.HasPrefix(req.GetFormat(), "--format=") {
+	if !strings.HasPrefix(req.GetFormat(), "--format=") { //nolint:staticcheck
 		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
-	var r protocol.BatchLogRequest
-	r.FromProto(req)
-
 	// Handle unexpected error conditions
-	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, r)
+	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return resp.ToProto(), nil
+	return resp, nil
 }
 
 func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
@@ -109,7 +106,6 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	internalReq := protocol.ExecRequest{
 		Repo:      api.RepoName(req.GetRepo()),
 		Args:      byteSlicesToStrings(req.GetArgs()),
-		Stdin:     req.GetStdin(),
 		NoTimeout: req.GetNoTimeout(),
 
 		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
@@ -177,8 +173,16 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		})
 	})
 
+	// This is a long time, but this never blocks a user request for this
+	// long. Even repos that are not that large can take a long time, for
+	// example a search over all repos in an organization may have several
+	// large repos. All of those repos will be competing for IO => we need
+	// a larger timeout.
+	ctx, cancel := context.WithTimeout(ss.Context(), conf.GitLongCommandTimeout())
+	defer cancel()
+
 	// TODO(mucles): set user agent from all grpc clients
-	return gs.doExec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
+	return gs.doExec(ctx, gs.Server.Logger, execReq, "unknown-grpc-client", w)
 }
 
 // doExec executes the given git command and streams the output to the given writer.
@@ -198,8 +202,7 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 				return err
 			}
 			return s.Err()
-
-		} else if errors.Is(err, ErrInvalidCommand) {
+		} else if errors.Is(err, gitcli.ErrBadGitCommand) {
 			return status.New(codes.InvalidArgument, "invalid command").Err()
 		} else if ctxErr := ctx.Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
@@ -214,11 +217,15 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		}
 
 		gRPCStatus := codes.Unknown
-		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
+		if execStatus.Err != nil && strings.Contains(execStatus.Err.Error(), "signal: killed") {
 			gRPCStatus = codes.Aborted
 		}
 
-		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+		var errString string
+		if execStatus.Err != nil {
+			errString = execStatus.Err.Error()
+		}
+		s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
 			StatusCode: int32(execStatus.ExitStatus),
 			Stderr:     execStatus.Stderr,
 		})
@@ -228,19 +235,23 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		}
 		return s.Err()
 	}
+
 	return nil
 
 }
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
-	var internalReq protocol.GetObjectRequest
-	internalReq.FromProto(req)
+	repoName := api.RepoName(req.GetRepo())
+	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
 
 	// Log which actor is accessing the repo.
-	accesslog.Record(ctx, string(internalReq.Repo), log.String("objectname", internalReq.ObjectName))
+	accesslog.Record(ctx, string(repoName), log.String("objectname", req.GetObjectName()))
 
-	obj, err := git.GetObject(ctx, gs.Server.RecordingCommandFactory, gs.Server.ReposDir, api.RepoName(req.Repo), req.ObjectName)
+	backend := gs.Server.GetBackendFunc(repoDir, repoName)
+
+	obj, err := backend.GetObject(ctx, req.GetObjectName())
 	if err != nil {
+		gs.Server.logIfCorrupt(ctx, repoName, err)
 		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
 	}
@@ -305,7 +316,6 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 }
 
 func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
-
 	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
 
 	if _, err := gs.Server.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
@@ -333,7 +343,7 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
 	repo := req.GetRepo()
 
-	if err := deleteRepo(ctx, gs.Server.Logger, gs.Server.DB, gs.Server.Hostname, gs.Server.ReposDir, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
+	if err := deleteRepo(ctx, gs.Server.Logger, gs.Server.DB, gs.Server.Hostname, gs.Server.ReposDir, api.RepoName(repo)); err != nil {
 		gs.Server.Logger.Error("failed to delete repository", log.String("repo", repo), log.Error(err))
 		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
 	}
@@ -621,4 +631,58 @@ func byteSlicesToStrings(in [][]byte) []string {
 		res[i] = string(b)
 	}
 	return res
+}
+
+func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest) (*proto.MergeBaseResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("base", string(req.GetBase())),
+		log.String("head", string(req.GetHead())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(req.GetBase()) == 0 {
+		return nil, status.New(codes.InvalidArgument, "base must be specified").Err()
+	}
+
+	if len(req.GetHead()) == 0 {
+		return nil, status.New(codes.InvalidArgument, "head must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
+
+	// Ensure that the repo is cloned and if not start a background clone, then
+	// return a well-known NotFound payload error.
+	if notFoundPayload, cloned := gs.Server.maybeStartClone(ctx, gs.Server.Logger, repoName); !cloned {
+		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.NotFoundPayload{
+			CloneInProgress: notFoundPayload.CloneInProgress,
+			CloneProgress:   notFoundPayload.CloneProgress,
+			Repo:            req.GetRepoName(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.Err()
+	}
+
+	// TODO: This should be included in requests where we do ensure the revision exists.
+	// gs.Server.ensureRevision(ctx, repoName, "THE REVISION", repoDir)
+
+	backend := gs.Server.GetBackendFunc(repoDir, repoName)
+
+	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
+	if err != nil {
+		gs.Server.logIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	return &proto.MergeBaseResponse{
+		MergeBaseCommitSha: string(sha),
+	}, nil
 }

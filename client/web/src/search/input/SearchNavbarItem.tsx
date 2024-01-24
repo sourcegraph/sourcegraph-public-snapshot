@@ -78,11 +78,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef.current()
     }, [])
 
-    // If the feature-flag "search-new-keyword" is set, we allow the user to
+    // If the feature-flag "search-keyword" is set, we allow the user to
     // choose between precise (legacy), precise (new), and smart search.  This
     // is only temporary for internal testing.  The goal is to make the new
     // precise search the default.
-    const [showExtendedPicker] = useFeatureFlag('search-new-keyword')
+    const [showExtendedPicker] = useFeatureFlag('search-keyword')
 
     // TODO (#48103): Remove/simplify when new search input is released
     if (v2QueryInput) {
@@ -114,7 +114,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         setSearchMode={setSearchMode}
                         navbarSearchQuery={queryState.query}
                         submitSearch={submitSearchOnChange}
-                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
                         showExtendedPicker={showExtendedPicker}
                     />
                 </LazyV2SearchInput>
@@ -143,10 +143,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
                 hideHelpButton={false}
                 showSearchHistory={true}
                 recentSearches={recentSearches}
+                showExtendedPicker={showExtendedPicker}
             />
         </Form>
     )

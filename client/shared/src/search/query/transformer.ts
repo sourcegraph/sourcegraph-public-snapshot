@@ -2,8 +2,8 @@ import { replaceRange } from '@sourcegraph/common'
 
 import { FILTERS, FilterType } from './filters'
 import { findFilters } from './query'
-import { scanSearchQuery } from './scanner'
-import type { Filter, Token } from './token'
+import { succeedScan } from './scanner'
+import type { Filter } from './token'
 import { filterExists } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
@@ -19,14 +19,6 @@ export function omitFilter(query: string, filter: Filter): string {
     const { start, end } = filter.range
 
     return `${query.slice(0, start).trimEnd()} ${query.slice(end).trimStart()}`.trim()
-}
-
-const succeedScan = (query: string): Token[] => {
-    const result = scanSearchQuery(query)
-    if (result.type !== 'success') {
-        throw new Error('Internal error: invariant broken: succeedScan callers must be called with a valid query')
-    }
-    return result.term
 }
 
 /**

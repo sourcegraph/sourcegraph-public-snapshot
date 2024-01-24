@@ -3,7 +3,6 @@ package featurelimiter
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"net/http"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -99,17 +99,23 @@ func HandleFeature(
 		if err != nil {
 			limitedCause := "quota"
 			defer func() {
+				limitMap := map[string]any{}
+				var limitExceededError limiter.RateLimitExceededError
+				if errors.As(err, &limitExceededError) {
+					limitMap["limit"] = limitExceededError.Limit
+					limitMap["retry_after"] = limitExceededError.RetryAfter
+				}
 				if loggerErr := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameRateLimited,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: map[string]any{
+						Metadata: events.MergeMaps(limitMap, map[string]any{
 							"error": err.Error(),
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"cause": limitedCause,
-						},
+						}),
 					},
 				); loggerErr != nil {
 					logger.Error("failed to log event", log.Error(loggerErr))
@@ -138,7 +144,7 @@ func HandleFeature(
 			return
 		}
 
-		responseRecorder := response.NewStatusHeaderRecorder(w)
+		responseRecorder := response.NewStatusHeaderRecorder(w, logger)
 		next.ServeHTTP(responseRecorder, r)
 
 		// If response is healthy, consume the rate limit
@@ -210,20 +216,21 @@ func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) htt
 	})
 }
 
-func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Handler {
+func RefreshLimitsHandler(baseLogger log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		token, err := authbearer.ExtractBearer(r.Header)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
+		if err := act.Update(r.Context()); err != nil {
+			logger := act.Logger(trace.Logger(r.Context(), baseLogger))
+			if actor.IsErrActorRecentlyUpdated(err) {
+				response.JSONError(logger, w, http.StatusTooManyRequests, err)
+			} else {
+				response.JSONError(logger, w, http.StatusInternalServerError, err)
+			}
+			return
 		}
 
-		err = sources.SyncOne(r.Context(), token)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
-		}
+		w.WriteHeader(http.StatusOK)
 	})
 }
 

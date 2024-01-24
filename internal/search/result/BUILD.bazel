@@ -26,6 +26,7 @@ go_library(
         "//internal/lazyregexp",
         "//internal/search/filter",
         "//internal/types",
+        "//lib/codeintel/languages",
         "//lib/errors",
         "@com_github_bits_and_blooms_bitset//:bitset",
         "@com_github_grafana_regexp//:regexp",

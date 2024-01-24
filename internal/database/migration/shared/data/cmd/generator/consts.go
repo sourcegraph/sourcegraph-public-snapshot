@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// NOTE: This should be kept up-to-date with cmd/migrator/generate.sh so that we "bake in"
+// NOTE: This should be kept up-to-date with the upcoming version to be released, and bumped after.
 // fallback schemas everything we support migrating to. The release tool automates this upgrade, so don't touch this :)
 // This should be the last minor version since patch releases only happen in the release branch.
 const maxVersionString = "5.2.0"

@@ -41,12 +41,12 @@ const (
 
 type usageRoutine struct {
 	logger log.Logger
-	ctx    context.Context
 	cancel context.CancelFunc
 }
 
 func (j *usageRoutine) Start() {
-	j.ctx, j.cancel = context.WithCancel(context.Background())
+	var ctx context.Context
+	ctx, j.cancel = context.WithCancel(context.Background())
 
 	goroutine.Go(func() {
 		checkAndStoreLimits := func() {
@@ -57,7 +57,7 @@ func (j *usageRoutine) Start() {
 				return
 			}
 			j.logger.Info("Checking Cody Gateway usage")
-			limits, err := cgc.GetLimits(j.ctx)
+			limits, err := cgc.GetLimits(ctx)
 			if err != nil {
 				j.logger.Error("failed to get cody gateway limits", log.Error(err))
 				return
@@ -93,7 +93,7 @@ func (j *usageRoutine) Start() {
 			select {
 			case <-ticker.C:
 				checkAndStoreLimits()
-			case <-j.ctx.Done():
+			case <-ctx.Done():
 				return
 			}
 		}
@@ -104,6 +104,4 @@ func (j *usageRoutine) Stop() {
 	if j.cancel != nil {
 		j.cancel()
 	}
-	j.ctx = nil
-	j.cancel = nil
 }

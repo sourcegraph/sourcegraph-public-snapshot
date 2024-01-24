@@ -31,6 +31,8 @@ export interface CodyConfigurationPageProps extends TelemetryProps {
     repo?: { id: string; name: string }
 }
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
     authenticatedUser,
     queryPolicies = defaultQueryPolicies,

@@ -1,0 +1,7 @@
+build --action_env=PATH=/nix/store/8rxm4jzw1dddm53rpc2zdqgafadn7d5n-bash-interactive-5.2-p21/bin:/nix/store/vwh2qqal1q101wv4jy40giavp73q0msd-clang-wrapper-16.0.6/bin:/nix/store/pzajj7gw0nazs3vzp6jld53q8ird5izr-coreutils-9.4/bin:/nix/store/jgzwyxxwd9kxz3sn7q4cidqwxwq59a7f-unzip-6.0/bin:/nix/store/rxakr6pj74ids9przrm4y187l6vhkvss-zip-3.0/bin:/nix/store/wnq7f4ysrjkyj58sly36rg01x98kh0qs-curl-8.4.0-bin/bin:/nix/store/crpi4clk07gy760ydbb710f74dy8q6c9-gzip-1.13/bin:/nix/store/gclclfhq9blxp32lv8kxm9iv5060rx5f-gnutar-1.35/bin:/nix/store/zsm4xd527427rnjfnvfhvsld2n57b822-gnugrep-3.11/bin:/nix/store/9z9k8dwhhiryr7z2pz70zca0vwa15yqc-gnused-4.9/bin:/nix/store/q7avibx4c00h7zl3jfh3r5mc4xs6wsnj-git-2.42.0/bin:/nix/store/kizmwlnj40d11ixbap74c0syaqxn05wc-patch-2.7.6/bin:/nix/store/0pjfqrgs4pki7zjswikbcd2kbjwmzg97-openssh-9.6p1/bin:/nix/store/6x5inimwy8rlvf678yy080zccbw71alb-findutils-4.9.0/bin:/nix/store/6icf13zdmp9wkxc4n299vix9fsmx0jw7-perl-5.38.2/bin:/nix/store/bcfckrsachqca4kgsvhvw8y9dw9cfm6v-python3-3.9.18/bin:/nix/store/7czp7vl3i5v9g2ykb5ky5j43jxa6finj-which-2.21/bin:/nix/store/qsy768bj5iyaglh6paqyi7q2m979wmcn-postgresql-13.13/bin
+build --action_env=REDIS_ENDPOINT
+build --action_env=PGHOST
+build --action_env=PGDATA
+build --action_env=PGDATABASE
+build --action_env=PGDATASOURCE
+build --action_env=PGUSER

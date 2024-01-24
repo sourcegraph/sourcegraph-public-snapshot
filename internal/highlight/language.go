@@ -136,6 +136,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"perl":   EngineScipSyntax,
 		"matlab": EngineScipSyntax,
 		"java":   EngineScipSyntax,
+		"go":     EngineScipSyntax,
 	},
 }
 
@@ -250,7 +251,7 @@ func getLanguage(path string, contents string) (string, bool) {
 	}
 
 	// TODO: Consider if we should just ignore getting empty...?
-	lang, _ = languages.GetLanguage(path, contents)
+	lang, _ = languages.GetMostLikelyLanguage(path, contents)
 	return lang, false
 }
 

@@ -834,7 +834,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		}
 	}
 
-	if label.IsSet(Regexp) {
+	if label.IsSet(Regexp | QuotesAsLiterals) {
 		if pattern, ok := p.parseStringQuotes(); ok {
 			return pattern
 		}
@@ -1094,8 +1094,10 @@ func (p *parser) parseAnd() ([]Node, error) {
 		left, err = p.parseLeaves(Regexp)
 	case SearchTypeLiteral, SearchTypeStructural:
 		left, err = p.parseLeaves(Literal)
-	case SearchTypeStandard, SearchTypeLucky, SearchTypeNewStandardRC1:
+	case SearchTypeStandard, SearchTypeLucky:
 		left, err = p.parseLeaves(Literal | Standard)
+	case SearchTypeKeyword:
+		left, err = p.parseLeaves(Literal | Standard | QuotesAsLiterals)
 	default:
 		left, err = p.parseLeaves(Literal | Standard)
 	}
@@ -1190,7 +1192,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeNewStandardRC1 {
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeKeyword {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err

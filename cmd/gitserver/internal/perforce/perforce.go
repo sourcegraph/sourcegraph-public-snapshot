@@ -232,7 +232,7 @@ func headCommitSHA(ctx context.Context, dir common.GitDir) (string, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return "", &common.GitCommandError{Err: err, Output: string(output)}
+		return "", errors.Wrap(err, "failed to get head commit sha: "+string(output))
 	}
 
 	return string(bytes.TrimSpace(output)), nil

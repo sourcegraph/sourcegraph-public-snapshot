@@ -86,7 +86,7 @@ export function tokenInfo(): Extension {
                 effect.is(setHighlighedTokenPosition)
             )
             if (effect) {
-                position = effect.value
+                position = effect?.value
             }
             if (position !== null) {
                 // Mapping the position might not be necessary since we clear

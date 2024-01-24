@@ -30,7 +30,6 @@ const additionalProps = {
     toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     isLightTheme: false,
-    isCodyApp: false,
 }
 
 const generateMockFetchMonitors =

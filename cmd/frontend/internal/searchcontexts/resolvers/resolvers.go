@@ -500,7 +500,12 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 
 	searchContextRepositories := make([]graphqlbackend.SearchContextRepositoryRevisionsResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient("graphql.searchcontext.repositories"), repoRev.Repo.ToRepo()), repoRev.Revisions}
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewMinimalRepositoryResolver(
+			r.db,
+			gitserver.NewClient("graphql.searchcontext.repositories"),
+			repoRev.Repo.ID,
+			repoRev.Repo.Name,
+		), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
 }

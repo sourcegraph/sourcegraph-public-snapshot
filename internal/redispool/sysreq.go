@@ -25,11 +25,7 @@ func redisCheck(name, addr string, timeout time.Duration, kv KeyValue) sysreq.Ch
 			// grow out of bounds which slows down future startups.
 			// See https://github.com/sourcegraph/sourcegraph/issues/3300 for more context
 
-			pool, ok := kv.Pool()
-			if !ok { // redis disabled
-				return nil
-			}
-
+			pool := kv.Pool()
 			c := pool.Get()
 			defer func() { _ = c.Close() }()
 
