@@ -1,7 +1,7 @@
 /**
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
-import { type Extension, StateEffect, EditorState } from '@codemirror/state'
+import { type Extension, StateEffect, EditorState, StateField, Facet } from '@codemirror/state'
 import { Decoration, EditorView, showPanel, Panel, ViewUpdate, ViewPlugin } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -32,25 +32,31 @@ export interface Location {
 const staticHighlightDecoration = Decoration.mark({ class: 'cm-sg-staticSelection' })
 
 export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): Extension {
-    return [
-        EditorView.decorations.compute(['doc'], state =>
-            Decoration.set(
-                ranges.map(range =>
-                    staticHighlightDecoration.range(
-                        toCodeMirrorLocation(state, range.start),
-                        toCodeMirrorLocation(state, range.end)
-                    )
-                ),
-                true
-            )
-        ),
-        EditorView.theme({
-            '.cm-sg-staticSelection': {
-                backgroundColor: 'var(--mark-bg)',
-            },
-        }),
-        showPanel.of(view => new StaticHighlightsPanel(view, navigate, ranges)),
-    ]
+    const facet = Facet.define<Range[], Range[]>({
+        combine: ranges => ranges.flat(),
+        enables: self => [
+            EditorView.decorations.compute([self], state => {
+                const ranges = state.facet(self)
+                return Decoration.set(
+                    ranges.map(range =>
+                        staticHighlightDecoration.range(
+                            toCodeMirrorLocation(state, range.start),
+                            toCodeMirrorLocation(state, range.end)
+                        )
+                    ),
+                    true
+                )
+            }),
+            EditorView.theme({
+                '.cm-sg-staticSelection': {
+                    backgroundColor: 'var(--mark-bg)',
+                },
+            }),
+            showPanel.of(view => new StaticHighlightsPanel(view, navigate, ranges)),
+        ],
+    })
+
+    return facet.of(ranges)
 }
 
 function toCodeMirrorLocation(state: EditorState, location: Location): number {
@@ -64,12 +70,17 @@ const navigateSelection = StateEffect.define<number>()
 class StaticHighlightsPanel implements Panel {
     public dom: HTMLElement
     public top = true
+    private ranges: {from: number, to: number}[] = []
 
     // Currently selected 0-based match index.
-    private selected: number = 0
+    //private selected: number = 0
     private root: Root | null = null
 
-    constructor(private view: EditorView, private navigate: NavigateFunction, private ranges: Range[]) {
+    constructor(private view: EditorView, private navigate: NavigateFunction, ranges: Range[]) {
+        this.ranges = ranges.map(range => ({
+            from: toCodeMirrorLocation(view.state, range.start),
+            to: toCodeMirrorLocation(view.state, range.end),
+        })),
         this.dom = createElement('div', {
             className: classNames('cm-sg-search-container', styles.root),
             id: STATIC_HIGHLIGHTS_CONTAINER_ID,
@@ -77,20 +88,6 @@ class StaticHighlightsPanel implements Panel {
     }
 
     public update(update: ViewUpdate): void {
-        let diff = 0
-        for (const tr of update.transactions) {
-            for (const effect of tr.effects) {
-                if (effect.is(navigateSelection)) {
-                    diff += effect.value
-                }
-            }
-        }
-        const newSelected = (this.ranges.length + diff) % this.ranges.length
-        if (newSelected !== this.selected) {
-            this.selected = newSelected
-            this.render()
-            this.scrollToSelection() // Is it okay to dispatch in an update?
-        }
     }
 
     public mount(): void {
@@ -99,24 +96,34 @@ class StaticHighlightsPanel implements Panel {
 
     public destroy(): void { }
 
-    private scrollToSelection(): void {
-        const selectedRange = this.ranges[this.selected]
-        const codemirrorLocation =
-            this.view.state.doc.line(selectedRange.start.line + 1).from + selectedRange.start.column
+    private navigatePrevious() {
+        const currentSelection = this.view.state.selection.main
+        let previous: {from: number, to: number} | undefined
+        for (const range of this.ranges) {
+            previous = range
+            if (range.from >= currentSelection.from) {
+                break
+            }
+        }
         this.view.dispatch({
-            effects: EditorView.scrollIntoView(codemirrorLocation, {
-                y: 'nearest',
-                yMargin: this.view.dom.getBoundingClientRect().height / 3,
-            }),
+            selection: {anchor: previous?.from ?? 0, head: previous?.to ?? 0},
+            scrollIntoView: true,
         })
     }
 
-    private navigatePrevious() {
-        this.view.dispatch({ effects: [navigateSelection.of(-1)] })
-    }
-
     private navigateNext() {
-        this.view.dispatch({ effects: [navigateSelection.of(1)] })
+        const currentSelection = this.view.state.selection.main
+        let next: {from: number, to: number} | undefined
+        for (const range of this.ranges) {
+            next = range
+            if (range.from > currentSelection.from) {
+                break
+            }
+        }
+        this.view.dispatch({
+            selection: {anchor: next?.from ?? 0, head: next?.to ?? 0},
+            scrollIntoView: true,
+        })
     }
 
     private render(): void {
@@ -135,7 +142,7 @@ class StaticHighlightsPanel implements Panel {
                             size="sm"
                             outline={true}
                             variant="secondary"
-                            onClick={this.navigatePrevious}
+                            onClick={this.navigatePrevious.bind(this)}
                             data-testid="blob-view-static-previous"
                             aria-label="previous result"
                         >
@@ -148,7 +155,7 @@ class StaticHighlightsPanel implements Panel {
                             size="sm"
                             outline={true}
                             variant="secondary"
-                            onClick={this.navigateNext}
+                            onClick={this.navigateNext.bind(this)}
                             data-testid="blob-view-static-next"
                             aria-label="next result"
                         >
@@ -157,7 +164,6 @@ class StaticHighlightsPanel implements Panel {
                     </div>
                 )}
                 <Text className="cm-search-results m-0 small">
-                    {`${this.selected} of `}
                     {totalMatches} {pluralize('result', totalMatches)}
                 </Text>
             </CodeMirrorContainer>
