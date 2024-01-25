@@ -102,6 +102,7 @@ func TestAttributionNotFound(t *testing.T) {
 		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
+	ctx := context.Background()
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -115,7 +116,8 @@ func TestAttributionNotFound(t *testing.T) {
 		nextLine("10"),
 		searchFinishes{search: search, canUseSnippet: true},
 	}
-	require.NoError(t, o.replay(context.Background(), f))
+	require.NoError(t, o.replay(ctx, f))
+	require.NoError(t, f.WaitDone(ctx))
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
@@ -135,6 +137,7 @@ func TestAttributionFound(t *testing.T) {
 		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
+	ctx := context.Background()
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -148,7 +151,8 @@ func TestAttributionFound(t *testing.T) {
 		nextLine("10"),
 		searchFinishes{search: search, canUseSnippet: false},
 	}
-	require.NoError(t, o.replay(context.Background(), f))
+	require.NoError(t, o.replay(ctx, f))
+	require.NoError(t, f.WaitDone(ctx))
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
@@ -168,6 +172,7 @@ func TestAttributionNotFoundMoreDataAfter(t *testing.T) {
 		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
+	ctx := context.Background()
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -183,7 +188,8 @@ func TestAttributionNotFoundMoreDataAfter(t *testing.T) {
 		nextLine("11"),
 		nextLine("12"),
 	}
-	require.NoError(t, o.replay(context.Background(), f))
+	require.NoError(t, o.replay(ctx, f))
+	require.NoError(t, f.WaitDone(ctx))
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
@@ -206,6 +212,7 @@ func TestAttributionFoundMoreDataAfter(t *testing.T) {
 		AttributionError: func(error) {},
 	})
 	require.NoError(t, err)
+	ctx := context.Background()
 	o := eventOrder{
 		nextLine("1"),
 		nextLine("2"),
@@ -221,7 +228,8 @@ func TestAttributionFoundMoreDataAfter(t *testing.T) {
 		nextLine("11"),
 		nextLine("12"),
 	}
-	require.NoError(t, o.replay(context.Background(), f))
+	require.NoError(t, o.replay(ctx, f))
+	require.NoError(t, f.WaitDone(ctx))
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
@@ -294,7 +302,7 @@ func TestTimeoutAfterAttributionFound(t *testing.T) {
 	}
 	require.NoError(t, o.replay(ctx, f))
 	// Will err iff cancellation races first to select within WaitDone.
-	f.WaitDone(ctx)
+	_ = f.WaitDone(ctx)
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
