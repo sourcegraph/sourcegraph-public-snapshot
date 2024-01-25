@@ -126,6 +126,12 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
+
+    // license related properties
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
@@ -186,6 +192,10 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
+        license: {
+            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+        },
     }
 
     return (

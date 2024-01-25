@@ -1,7 +1,5 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { isCodyOnlyLicense } from '../util/license'
-
 import type { NamespaceAreaRoute } from './NamespaceArea'
 
 const SavedSearchListPage = lazyComponent(() => import('../savedSearches/SavedSearchListPage'), 'SavedSearchListPage')
@@ -15,22 +13,20 @@ const SavedSearchUpdateForm = lazyComponent(
     'SavedSearchUpdateForm'
 )
 
-const disableCodeSearchFeatures = isCodyOnlyLicense()
-
 export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
     {
         path: 'searches',
         render: props => <SavedSearchListPage {...props} />,
-        condition: () => !disableCodeSearchFeatures,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: 'searches/add',
         render: props => <SavedSearchCreateForm {...props} />,
-        condition: () => !disableCodeSearchFeatures,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: 'searches/:id',
         render: props => <SavedSearchUpdateForm {...props} />,
-        condition: () => !disableCodeSearchFeatures,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
 ]
