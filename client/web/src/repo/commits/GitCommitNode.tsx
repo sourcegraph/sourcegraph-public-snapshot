@@ -83,7 +83,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     wrapperElement: WrapperElement = 'div',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
-    const [truncatedCommitMessage, setTruncatedCommitMessage] = useState<boolean>(true)
+    const [truncateCommitMessage, setTruncateCommitMessage] = useState<boolean>(true)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
 
     const sourceType = node.perforceChangelist ? RepositoryType.PERFORCE_DEPOT : RepositoryType.GIT_REPOSITORY
@@ -158,10 +158,10 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         </div>
     )
 
-    const handleTruncate = () => setTruncatedCommitMessage(!truncatedCommitMessage)
+    const handleTruncate = () => setTruncateCommitMessage(!truncateCommitMessage)
     const showCommitMessage = expandCommitMessageBody || showCommitMessageBody
     const commitContent =
-        truncatedCommitMessage && node.body && node.body.length > 240 ? `${node.body.slice(0, 240)}...` : node.body
+        truncateCommitMessage && node.body && node.body.length > 240 ? `${node.body.slice(0, 240)}...` : node.body
     const truncationNeeded = commitContent && commitContent.length > 240
 
     const commitMessageBody =
@@ -171,7 +171,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     <Linkified input={commitContent} externalURLs={node.externalURLs} />
                     {truncationNeeded && (
                         <Button variant="link" size="sm" display="inline" onClick={handleTruncate}>
-                            {truncatedCommitMessage ? 'see more' : 'see less'}
+                            {truncateCommitMessage ? 'see more' : 'see less'}
                         </Button>
                     )}
                 </pre>
