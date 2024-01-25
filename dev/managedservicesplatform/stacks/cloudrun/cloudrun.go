@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deploytarget"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
@@ -341,6 +342,22 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	if err != nil {
 		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
+
+	// TODO
+	_, _ = deploytarget.New(stack, id.Group("target").Group(vars.Environment.ID), deploytarget.Config{
+		Service:                  vars.Service,
+		CloudRunEnvironmentID:    vars.Environment.ID,
+		CloudRunProjectID:        vars.ProjectID,
+		CloudRunResourceName:     *cloudRunResource.Name(),
+		CloudRunResourceLocation: *cloudRunResource.Location(),
+	})
+	_, _ = deploytarget.New(stack, id.Group("target").Group("test"), deploytarget.Config{
+		Service:                  vars.Service,
+		CloudRunEnvironmentID:    "test",
+		CloudRunProjectID:        "msp-testbed-test-77589aae45d0",
+		CloudRunResourceName:     *cloudRunResource.Name(),
+		CloudRunResourceLocation: *cloudRunResource.Location(),
+	})
 
 	// Collect outputs
 	locals.Add("cloud_run_resource_name", *cloudRunResource.Name(),

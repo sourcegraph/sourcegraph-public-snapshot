@@ -1,4 +1,4 @@
-package deploystrategy
+package deploytarget
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
@@ -12,16 +12,30 @@ import (
 
 type Config struct {
 	Service spec.ServiceSpec
+
+	CloudRunEnvironmentID    string
+	CloudRunProjectID        string
+	CloudRunResourceName     string
+	CloudRunResourceLocation string
 }
 
 type Output struct{}
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	_ = clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID("target"), &clouddeploytarget.ClouddeployTargetConfig{
-		Project:          nil,
-		Location:         nil,
-		Name:             nil,
-		DeployParameters: &map[string]*string{},
+		Description: pointers.Stringf("%s - %s",
+			config.Service.GetName(), config.CloudRunEnvironmentID),
+
+		// Configure Cloud Run as the target
+		Name:     &config.CloudRunResourceName,
+		Location: &config.CloudRunResourceLocation,
+		Run: &clouddeploytarget.ClouddeployTargetRun{
+			Location: pointers.Stringf("projects/%s/locations/%s",
+				config.CloudRunProjectID, config.CloudRunResourceLocation),
+		},
+
+		// Target configuration
+		RequireApproval: nil, // TODO
 		ExecutionConfigs: &[]*clouddeploytarget.ClouddeployTargetExecutionConfigs{{
 			Usages: &[]*string{
 				pointers.Ptr("RENDER"),
@@ -29,10 +43,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			},
 			ExecutionTimeout: pointers.Ptr("3600s"),
 		}},
-		RequireApproval: nil,
-		Run: &clouddeploytarget.ClouddeployTargetRun{
-			Location: nil, // `projects/{project}/locations/{location}`
-		},
 	})
 	return nil, nil
 }
