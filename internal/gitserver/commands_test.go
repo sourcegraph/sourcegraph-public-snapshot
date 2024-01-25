@@ -16,6 +16,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/google/go-cmp/cmp"
 	godiff "github.com/sourcegraph/go-diff/diff"
@@ -26,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -2426,278 +2430,58 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 	})
 }
 
-// testGitBlameOutputIncremental is produced by running
-//
-//	git blame -w --porcelain release.sh
-//
-// `sourcegraph/src-cli`
-var testGitBlameOutputIncremental = `8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
-author Adam Harvey
-author-mail <adam@adamharvey.name>
-author-time 1660860583
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1660860583
-committer-tz +0000
-summary release.sh: allow -rc.X suffixes (#829)
-previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
-filename release.sh
-fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
-author Adam Harvey
-author-mail <aharvey@sourcegraph.com>
-author-time 1602630694
-author-tz -0700
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1602630694
-committer-tz -0700
-summary release: add a prompt about DEVELOPMENT.md (#349)
-previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
-filename release.sh
-67b7b725a7ff913da520b997d71c840230351e30 10 20 1
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1600334460
-author-tz +0200
-committer Thorsten Ball
-committer-mail <mrnugget@gmail.com>
-committer-time 1600334460
-committer-tz +0200
-summary Fix goreleaser GitHub action setup and release script
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-67b7b725a7ff913da520b997d71c840230351e30 12 22 2
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1592827635
-author-tz +0200
-committer GitHub
-committer-mail <noreply@github.com>
-committer-time 1592827635
-committer-tz +0200
-summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-`
-
-// This test-data includes the boundary keyword, which is not present in the previous one.
-var testGitBlameOutputIncremental2 = `bbca6551549492486ca1b0f8dee45553dd6aa6d7 16 16 1
-author French Ben
-author-mail <frenchben@docker.com>
-author-time 1517407262
-author-tz +0100
-committer French Ben
-committer-mail <frenchben@docker.com>
-committer-time 1517407262
-committer-tz +0100
-summary Update error output to be clean
-previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
-filename format.go
-bbca6551549492486ca1b0f8dee45553dd6aa6d7 25 25 2
-previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
-filename format.go
-2c87fda17de1def6ea288141b8e7600b888e535b 15 15 1
-author David Tolnay
-author-mail <dtolnay@gmail.com>
-author-time 1478451741
-author-tz -0800
-committer David Tolnay
-committer-mail <dtolnay@gmail.com>
-committer-time 1478451741
-committer-tz -0800
-summary Singular message for a single error
-previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
-filename format.go
-2c87fda17de1def6ea288141b8e7600b888e535b 17 17 2
-previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 1 1 14
-author Mitchell Hashimoto
-author-mail <mitchell.hashimoto@gmail.com>
-author-time 1418673320
-author-tz -0800
-committer Mitchell Hashimoto
-committer-mail <mitchell.hashimoto@gmail.com>
-committer-time 1418673320
-committer-tz -0800
-summary Initial commit
-boundary
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 15 19 6
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 23 27 1
-filename format.go
-`
-
-var testGitBlameOutputHunks = []*Hunk{
-	{
-		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
-		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
-		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
-		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
-		Author: gitdomain.Signature{
-			Name:  "Adam Harvey",
-			Email: "aharvey@sourcegraph.com",
-			Date:  MustParseTime(time.RFC3339, "2020-10-13T23:11:34Z"),
-		},
-		Message:  "release: add a prompt about DEVELOPMENT.md (#349)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
-		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
-		Author: gitdomain.Signature{
-			Name:  "Adam Harvey",
-			Email: "adam@adamharvey.name",
-			Date:  MustParseTime(time.RFC3339, "2022-08-18T22:09:43Z"),
-		},
-		Message:  "release.sh: allow -rc.X suffixes (#829)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
-		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
-		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
-		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
-		},
-		Message:  "Fix goreleaser GitHub action setup and release script",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
-		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
-		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
-	},
-	{
-		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
-		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
-		},
-		Message:  "Fix goreleaser GitHub action setup and release script",
-		Filename: "release.sh",
-	},
-}
-
-func TestStreamBlameFile(t *testing.T) {
-	t.Run("NOK unauthorized", func(t *testing.T) {
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
-			UID: 1,
+func TestClient_StreamBlameFile(t *testing.T) {
+	t.Run("firstChunk memoization", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				bc.RecvFunc.PushReturn(&proto.BlameResponse{Hunk: &proto.BlameHunk{Commit: "deadbeef"}}, nil)
+				bc.RecvFunc.PushReturn(&proto.BlameResponse{Hunk: &proto.BlameHunk{Commit: "deadbeef2"}}, nil)
+				bc.RecvFunc.PushReturn(nil, io.EOF)
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
 		})
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		// User doesn't have access to this file
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			return authz.None, nil
-		})
-		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
-		if hr != nil {
-			t.Fatalf("expected nil HunkReader")
-		}
-		if err == nil {
-			t.Fatalf("expected an error to be returned")
-		}
-		if !errcode.IsUnauthorized(err) {
-			t.Fatalf("expected err to be an authorization error, got %v", err)
-		}
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		hr, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.NoError(t, err)
+
+		// This chunk comes from the memoized first message.
+		h, err := hr.Read()
+		require.NoError(t, err)
+		require.Equal(t, h.CommitID, api.CommitID("deadbeef"))
+
+		// This chunk is returned from Recv inside the hunk reader.
+		h, err = hr.Read()
+		require.NoError(t, err)
+		require.Equal(t, h.CommitID, api.CommitID("deadbeef2"))
+
+		// Done.
+		_, err = hr.Read()
+		require.Error(t, err)
+		require.Equal(t, io.EOF, err)
+
+		require.NoError(t, hr.Close())
 	})
-}
-
-func TestBlameHunkReader(t *testing.T) {
-	t.Run("OK matching hunks", func(t *testing.T) {
-		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(rc)
-		defer reader.Close()
-
-		hunks := []*Hunk{}
-		for {
-			hunk, err := reader.Read()
-			if errors.Is(err, io.EOF) {
-				break
-			} else if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
+	t.Run("permission errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				bc.RecvFunc.PushReturn(nil, status.New(codes.PermissionDenied, "bad actor").Err())
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
 			}
-			hunks = append(hunks, hunk)
-		}
+		})
 
-		sortFn := func(x []*Hunk) func(i, j int) bool {
-			return func(i, j int) bool {
-				return x[i].Author.Date.After(x[j].Author.Date)
-			}
-		}
+		c := NewTestClient(t).WithClientSource(source)
 
-		// We're not giving back bytes, as the output of --incremental only gives back annotations.
-		expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
-		for _, h := range testGitBlameOutputHunks {
-			dup := *h
-			dup.EndByte = 0
-			dup.StartByte = 0
-			expectedHunks = append(expectedHunks, &dup)
-		}
-
-		// Sort expected hunks by the most recent first, as --incremental does.
-		sort.SliceStable(expectedHunks, sortFn(expectedHunks))
-
-		if d := cmp.Diff(expectedHunks, hunks); d != "" {
-			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
-		}
-	})
-
-	t.Run("OK parsing hunks", func(t *testing.T) {
-		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(rc)
-		defer reader.Close()
-
-		for {
-			_, err := reader.Read()
-			if errors.Is(err, io.EOF) {
-				break
-			} else if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
-			}
-		}
+		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.Error(t, err)
+		require.True(t, errcode.IsUnauthorized(err))
 	})
 }
 

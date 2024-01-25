@@ -43,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -269,10 +268,6 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
-func addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName)
-}
-
 // NewClonePipeline creates a new pipeline that clones repos asynchronously. It
 // creates a producer-consumer pipeline that handles clone requests asychronously.
 func (s *Server) NewClonePipeline(logger log.Logger, cloneQueue *common.Queue[*cloneJob]) goroutine.BackgroundRoutine {
@@ -444,7 +439,7 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 	return s.cloneableLimiter.Acquire(ctx)
 }
 
-func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
+func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
 	// We use an internal actor here as the repo may be private. It is safe since all
 	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
 	// the only things that could leak here is whether a private repo exists although
@@ -471,7 +466,7 @@ func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	return resp, nil
 }
 
-func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+func (s *Server) RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 	logger := s.Logger.Scoped("handleRepoUpdate")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
@@ -544,10 +539,10 @@ type execStatus struct {
 }
 
 // TODO: eseliger
-// exec runs a git command. After the first write to w, it must not return an error.
+// Exec runs a git command. After the first write to w, it must not return an error.
 // TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
 // because gRPC can handle trailing errors on a stream.
-func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
+func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) (execStatus, error) {
 	repoName := protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
 	backend := s.GetBackendFunc(dir, repoName)
@@ -579,7 +574,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
 		)
-		logger = logger.WithTrace(trace.Context(ctx))
+		logger := s.Logger.WithTrace(trace.Context(ctx))
 
 		execRunning.WithLabelValues(cmd).Inc()
 		defer func() {
@@ -614,7 +609,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
-				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("exit_status", exitStatus)
 				ev.AddField("status", status)
@@ -648,7 +642,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}()
 	}
 
-	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, repoName); !cloned {
+	if notFoundPayload, cloned := s.MaybeStartClone(ctx, repoName); !cloned {
 		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
 		} else {
@@ -691,7 +685,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	_, execErr = io.Copy(w, stdout)
 	if execErr != nil {
-		s.logIfCorrupt(ctx, repoName, execErr)
+		s.LogIfCorrupt(ctx, repoName, execErr)
 		commandFailedErr := &gitcli.CommandFailedError{}
 		if errors.As(execErr, &commandFailedErr) {
 			exitStatus = commandFailedErr.ExitStatus
@@ -741,7 +735,7 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
-func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, err error) {
+func (s *Server) LogIfCorrupt(ctx context.Context, repo api.RepoName, err error) {
 	var corruptErr common.ErrRepoCorrupted
 	if errors.As(err, &corruptErr) {
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Reason, s.Hostname); err != nil {
@@ -1274,7 +1268,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				// The repo update might have failed due to the repo being corrupt
 				var corruptErr common.ErrRepoCorrupted
 				if errors.As(err, &corruptErr) {
-					s.logIfCorrupt(ctx, repo, corruptErr)
+					s.LogIfCorrupt(ctx, repo, corruptErr)
 				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)

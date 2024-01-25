@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
+func (gs *grpcServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
 	arguments := byteSlicesToStrings(req.GetArgs()) //nolint:staticcheck
 
 	if len(arguments) < 1 {
@@ -50,7 +50,7 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", subCommand))
 	}
 
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -84,11 +84,11 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	var r p4ExecRequest
 	r.FromProto(req)
 
-	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &r, "unknown-grpc-client", w)
+	return gs.doP4Exec(ss.Context(), &r, w)
 }
 
-func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, userAgent string, w io.Writer) error {
-	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
+func (gs *grpcServer) doP4Exec(ctx context.Context, req *p4ExecRequest, w io.Writer) error {
+	execStatus := gs.svc.P4Exec(ctx, gs.logger, req, w)
 
 	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -105,7 +105,7 @@ func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *p4Ex
 			Stderr:     execStatus.Stderr,
 		})
 		if err != nil {
-			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			gs.logger.Error("failed to marshal status", log.Error(err))
 			return err
 		}
 		return s.Err()
@@ -114,7 +114,7 @@ func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *p4Ex
 	return nil
 }
 
-func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, userAgent string, w io.Writer) execStatus {
+func (s *Server) P4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, w io.Writer) execStatus {
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
 	exitStatus := executil.UnsetExitStatus
@@ -163,7 +163,6 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *p4ExecReque
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", act.UIDString())
-				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)

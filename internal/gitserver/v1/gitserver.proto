@@ -77,6 +77,52 @@ service GitserverService {
   rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // Blame runs a blame operation on the specified file. It returns a stream of
+  // hunks as they are found. The --incremental flag is used on the git CLI level
+  // to achieve this behavior.
+  // The endpoint will verify that the user is allowed to blame the given file
+  // if subrepo permissions are enabled for the repo. If access is denied, an error
+  // with a UnauthorizedPayload in the details is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a NotFoundPayload in the details.
+  rpc Blame(BlameRequest) returns (stream BlameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message BlameRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // commit is the commit to start the blame operation in. If not given, the latest
+  // HEAD is used.
+  optional string commit = 3;
+  string path = 4;
+  bool ignore_whitespace = 5;
+  optional uint32 start_line = 6;
+  optional uint32 end_line = 7;
+}
+
+message BlameResponse {
+  BlameHunk hunk = 1;
+}
+
+message BlameHunk {
+  uint32 start_line = 1;
+  uint32 end_line = 2;
+  uint32 start_byte = 3;
+  uint32 end_byte = 4;
+  string commit = 5;
+  BlameAuthor author = 6;
+  string message = 7;
+  string filename = 8;
+}
+
+message BlameAuthor {
+  string name = 1;
+  string email = 2;
+  google.protobuf.Timestamp date = 3;
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -239,6 +285,15 @@ message NotFoundPayload {
 message ExecStatusPayload {
   int32 status_code = 1;
   string stderr = 2;
+}
+
+// UnauthorizedPayload is the payload returned when an actor cannot access
+// a commit or file due to subrepo permissions.
+message UnauthorizedPayload {
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  optional string path = 3;
+  optional string commit = 4;
 }
 
 message SearchRequest {

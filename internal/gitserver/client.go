@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -61,9 +60,9 @@ var _ Client = &clientImplementor{}
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
-	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
-	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
+	AddrForRepo(ctx context.Context, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
 	// GetAddressWithClient returns the address and client for a gitserver instance.
@@ -76,12 +75,8 @@ type ClientSource interface {
 func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
-		logger: logger,
-		scope:  scope,
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               scope,
 		operations:          getOperations(),
 		clientSource:        conns,
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -93,12 +88,8 @@ func NewTestClient(t testing.TB) TestClient {
 	logger := logtest.Scoped(t)
 
 	return &clientImplementor{
-		logger: logger,
-		scope:  fmt.Sprintf("gitserver.test.%s", t.Name()),
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               fmt.Sprintf("gitserver.test.%s", t.Name()),
 		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -194,10 +185,6 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
-	// userAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	userAgent string
-
 	// the current scope of the client.
 	scope string
 
@@ -219,7 +206,6 @@ func (c *clientImplementor) Scoped(scope string) Client {
 	return &clientImplementor{
 		logger:       c.logger,
 		scope:        appendScope(c.scope, scope),
-		userAgent:    c.userAgent,
 		operations:   c.operations,
 		clientSource: c.clientSource,
 	}
@@ -233,8 +219,25 @@ func appendScope(existing, new string) string {
 }
 
 type HunkReader interface {
-	Read() (*Hunk, error)
+	Read() (*gitdomain.Hunk, error)
 	Close() error
+}
+
+// BlameOptions configures a blame.
+type BlameOptions struct {
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+}
+
+func (o *BlameOptions) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Int("startLine", o.StartLine),
+		attribute.Int("endLine", o.EndLine),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
+	}
 }
 
 type CommitLog struct {
@@ -530,11 +533,11 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 }
 
 func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	return c.clientSource.AddrForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.AddrForRepo(ctx, repo)
 }
 
 func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.ClientForRepo(ctx, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
