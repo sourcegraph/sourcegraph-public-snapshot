@@ -25,5 +25,5 @@ string-interner = { workspace = true }
 walkdir = { workspace = true }
 
 scip-syntax = { path = "../scip-syntax" }
-scip-treesitter-languages = { path = "../scip-treesitter-languages" }
+tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
 scip-treesitter= { path = "../scip-treesitter" }

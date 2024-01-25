@@ -2,7 +2,7 @@ load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
-    name = "scip-treesitter-languages",
+    name = "tree-sitter-all-languages",
     srcs = glob(["src/*.rs"]),
     aliases = aliases(),
     compile_data = glob(
@@ -23,7 +23,7 @@ rust_test(
         normal_dev = True,
         proc_macro_dev = True,
     ),
-    crate = ":scip-treesitter-languages",
+    crate = ":tree-sitter-all-languages",
     env = {
         "RUST_BACKTRACE": "1",
     },

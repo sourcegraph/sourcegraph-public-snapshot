@@ -3,7 +3,7 @@
 Crates:
 
 - The main `syntect_server` executable
-- `crates/scip-treesitter-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
+- `crates/tree-sitter-all-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
 - `crates/scip-treesitter/`: Associated utilities for tree-sitter and scip. Not required to be used for other projects
 - `crates/scip-treesitter-cli/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
 - `crates/scip-syntax/`: local navigation calculation (and some other utilities) live here.
@@ -66,7 +66,7 @@ Additionally, it's worth doing a [search](https://sourcegraph.com/search?q=repo:
 
 ## Adding languages (tree-sitter):
 
-See [scip-treesitter-languages](./crates/scip-treesitter-languages/README.md)
+See [tree-sitter-all-languages](./crates/tree-sitter-all-languages/README.md)
 
 ## Adding languages (syntect -- outdated):
 

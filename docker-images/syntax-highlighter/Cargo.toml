@@ -22,7 +22,7 @@ base64 = "0.13.0"
 
 sg-syntax = { path = "./crates/sg-syntax" }
 scip-treesitter = { path = "./crates/scip-treesitter" }
-scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
+tree-sitter-all-languages = { path = "./crates/tree-sitter-all-languages" }
 scip-syntax = { path = "./crates/scip-syntax" }
 # March 20, 2023 - Pinned explicitly with features that match the features
 # required by rocket. Once bazel rules correctly roll up all the features,
@@ -43,7 +43,7 @@ members = [
     # later, these will be pulled out to a separate repo
     "crates/scip-syntax",
     "crates/scip-treesitter",
-    "crates/scip-treesitter-languages",
+    "crates/tree-sitter-all-languages",
     "crates/scip-treesitter-cli",
 ]
 

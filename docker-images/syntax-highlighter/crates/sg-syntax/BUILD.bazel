@@ -12,7 +12,7 @@ rust_library(
     ) + [
         "//docker-images/syntax-highlighter/crates/scip-syntax",
         "//docker-images/syntax-highlighter/crates/scip-treesitter",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+        "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
     ],
 )
 
