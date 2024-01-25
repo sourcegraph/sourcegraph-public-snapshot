@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
@@ -30,6 +32,12 @@ type Variables struct {
 	PrivateNetwork *privatenetwork.Output
 	// ResourceLimits is a map of resource limits for the Cloud Run resource.
 	ResourceLimits map[string]*string
+}
+
+// Name returns the name to use for the Cloud Run resource.
+func (v *Variables) Name() string {
+	return fmt.Sprintf("%s-%s-%s",
+		v.Service.ID, v.Environment.ID, v.GCPRegion)
 }
 
 type SecretRef struct {

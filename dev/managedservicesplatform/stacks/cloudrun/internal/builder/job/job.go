@@ -89,7 +89,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 	}
 
 	job := cloudrunv2job.NewCloudRunV2Job(stack, pointers.Ptr("cloudrun"), &cloudrunv2job.CloudRunV2JobConfig{
-		Name:      pointers.Stringf("%s-%s", vars.Service.ID, vars.Environment.ID),
+		Name:      pointers.Ptr(vars.Name()),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
 

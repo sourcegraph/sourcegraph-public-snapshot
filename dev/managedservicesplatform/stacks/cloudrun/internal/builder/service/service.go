@@ -99,7 +99,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 	}
 
 	svc := cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
-		Name:      pointers.Stringf("%s-%s", vars.Service.ID, vars.Environment.ID),
+		Name:      pointers.Ptr(vars.Name()),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
 
