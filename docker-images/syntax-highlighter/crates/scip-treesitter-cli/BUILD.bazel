@@ -72,8 +72,8 @@ rust_test(
         allow_empty = False,
     ),
     data = [
-        ":scip-treesitter",
         ":java_groundtruth_scip",
+        ":scip-treesitter",
     ] + glob(
         ["tests/snapshots/**"],
         allow_empty = False,
