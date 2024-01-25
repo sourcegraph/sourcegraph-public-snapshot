@@ -20,7 +20,7 @@ const MAX_FILTERS_NUMBER = 10
 
 interface SearchDynamicFilterProps {
     /** Name title of the filter section */
-    title: string
+    title?: string
 
     /**
      * Specifies which type filter we want to render in this particular
@@ -101,9 +101,11 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     return (
         <div className={styles.root}>
-            <H4 as={H2} className={styles.heading}>
-                {title}
-            </H4>
+            {title && (
+                <H4 as={H2} className={styles.heading}>
+                    {title}
+                </H4>
+            )}
 
             {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
@@ -211,6 +213,13 @@ export const repoFilter = (filter: Filter): ReactNode => {
 }
 
 export const commitDateFilter = (filter: Filter, selected: boolean): ReactNode => (
+    <span className={styles.commitDate}>
+        {filter.label}
+        <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
+    </span>
+)
+
+export const countAllFilter = (filter: Filter, selected: boolean): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
         <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
