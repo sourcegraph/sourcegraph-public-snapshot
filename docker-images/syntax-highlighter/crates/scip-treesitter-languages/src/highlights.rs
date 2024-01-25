@@ -2,10 +2,16 @@ use std::collections::HashMap;
 
 use paste::paste;
 use scip::types::SyntaxKind;
-use scip_macros::include_scip_query;
 use tree_sitter_highlight::{Highlight, HighlightConfiguration};
 
 use crate::parsers::BundledParser;
+
+#[macro_export]
+macro_rules! include_scip_query {
+    ($lang: expr, $query: literal) => {
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/queries/", $lang, "/", $query, ".scm"))
+    }
+}
 
 #[rustfmt::skip]
 // Table of (@CaptureGroup, SyntaxKind) mapping.
@@ -77,7 +83,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
 /// This makes it so you don't have to understand how configurations are added,
 /// just add the name of filetype that you want.
 macro_rules! create_configurations {
-    ( $($name: tt),* ) => {{
+    ( $(($name:tt,$dirname:literal)),* ) => {{
         use crate::parsers::BundledParser;
 
         let mut m = HashMap::new();
@@ -88,9 +94,9 @@ macro_rules! create_configurations {
                 // Create HighlightConfiguration language
                 let mut lang = HighlightConfiguration::new(
                     paste! { BundledParser::$name.get_language() },
-                    include_scip_query!($name, "highlights"),
-                    include_scip_query!($name, "injections"),
-                    include_scip_query!($name, "locals"),
+                    include_scip_query!($dirname, "highlights"),
+                    include_scip_query!($dirname, "injections"),
+                    include_scip_query!($dirname, "locals"),
                 ).expect(stringify!("parser for '{}' must be compiled", $name));
 
                 // Associate highlights with configuration
@@ -143,25 +149,25 @@ lazy_static::lazy_static! {
 
         // You can add any new crate::parsers::Parser variants here.
         create_configurations!(
-            C,
-            Cpp,
-            C_Sharp,
-            Go,
-            Java,
-            Javascript,
-            Jsonnet,
-            Kotlin,
-            Matlab,
-            Nickel,
-            Perl,
-            Pod,
-            Python,
-            Ruby,
-            Rust,
-            Scala,
-            Sql,
-            Xlsg,
-            Zig
+            (C, "c"),
+            (Cpp, "cpp"),
+            (C_Sharp, "c_sharp"),
+            (Go, "go"),
+            (Java, "java"),
+            (Javascript, "javascript"),
+            (Jsonnet, "jsonnet"),
+            (Kotlin, "kotlin"),
+            (Matlab, "matlab"),
+            (Nickel, "nickel"),
+            (Perl, "perl"),
+            (Pod, "pod"),
+            (Python, "python"),
+            (Ruby, "ruby"),
+            (Rust, "rust"),
+            (Scala, "scala"),
+            (Sql, "sql"),
+            (Xlsg, "xlsg"),
+            (Zig, "zig")
         )
     };
 }

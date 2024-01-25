@@ -1,5 +1,5 @@
 {
-  "checksum": "2aace7295e52e3affbef65c6d2975a2348c691c9ee9758235daa1104fcda8c37",
+  "checksum": "6a414d8da74b40ffdbd570da02e2fa283740536a9523449227b2899812dbaaee",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10469,44 +10469,6 @@
       },
       "license": "Apache-2.0"
     },
-    "scip-macros 0.1.0": {
-      "name": "scip-macros",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "ProcMacro": {
-            "crate_name": "scip_macros",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "scip_macros",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "quote 1.0.35",
-              "target": "quote"
-            },
-            {
-              "id": "syn 1.0.109",
-              "target": "syn"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "scip-syntax 0.1.0": {
       "name": "scip-syntax",
       "version": "0.1.0",
@@ -11866,83 +11828,6 @@
         "version": "0.10.0"
       },
       "license": "MIT"
-    },
-    "syn 1.0.109": {
-      "name": "syn",
-      "version": "1.0.109",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.109/download",
-          "sha256": "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "syn",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "syn",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "clone-impls",
-            "default",
-            "derive",
-            "parsing",
-            "printing",
-            "proc-macro",
-            "quote"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "proc-macro2 1.0.74",
-              "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.35",
-              "target": "quote"
-            },
-            {
-              "id": "syn 1.0.109",
-              "target": "build_script_build"
-            },
-            {
-              "id": "unicode-ident 1.0.11",
-              "target": "unicode_ident"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "1.0.109"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ]
-      },
-      "license": "MIT OR Apache-2.0"
     },
     "syn 2.0.46": {
       "name": "syn",
@@ -17367,7 +17252,6 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "scip-macros 0.1.0": "docker-images/syntax-highlighter/crates/scip-macros",
     "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
     "scip-treesitter 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter",
     "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
@@ -17893,7 +17777,6 @@
     "paste 1.0.14",
     "predicates 3.0.4",
     "protobuf 3.2.0",
-    "quote 1.0.35",
     "regex 1.9.3",
     "rocket 0.5.0-rc.3",
     "rustc-hash 1.1.0",
@@ -17903,7 +17786,6 @@
     "serde 1.0.194",
     "serde_json 1.0.99",
     "string-interner 0.14.0",
-    "syn 1.0.109",
     "syntect 4.7.0",
     "tree-sitter 0.20.10",
     "tree-sitter-c 0.20.6",

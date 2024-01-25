@@ -16,7 +16,6 @@ serde.workspace = true
 serde_json.workspace = true
 walkdir.workspace = true
 
-scip-macros = { path = "../scip-macros" }
 scip-treesitter = { path = "../scip-treesitter" }
 scip-treesitter-languages = { path = "../scip-treesitter-languages" }
 
