@@ -73,7 +73,7 @@ var langToLangSpec = map[string]LangSpec{
 		name:     "java",
 		language: java.GetLanguage(),
 		commentStyle: CommentStyle{
-			nodeTypes:     []string{"comment"},
+			nodeTypes:     []string{"line_comment", "block_comment"},
 			stripRegex:    javaStyleStripRegex,
 			ignoreRegex:   javaStyleIgnoreRegex,
 			codeFenceName: "java",
