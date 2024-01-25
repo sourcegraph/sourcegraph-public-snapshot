@@ -781,6 +781,68 @@ func TestNewPlanJob(t *testing.T) {
             (patternInfo.isStructural . true)
             (patternInfo.fileMatchLimit . 2000)))))))`),
 		},
+		// The next two queries show an unexpected way that a query is
+		// translated into a global zoekt query, all depending on if context:
+		// is specified (which it normally is). We expect to just have one
+		// global zoekt query, but with context we do not. Recording this test
+		// to capture the current inefficiency.
+		{
+			query:      `context:global (foo AND bar AND baz) OR "foo bar baz"`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeKeyword,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . keyword)
+    (OR
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 2000)
+          (PARALLEL
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . (and substr:"foo" substr:"bar" substr:"baz"))
+              (type . text)
+              (repoOpts.searchContextSpec . global))
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.searchContextSpec . global))
+            (AND
+              (LIMIT
+                (limit . 40000)
+                (REPOSEARCH
+                  (repoOpts.repoFilters . [foo])
+                  (repoOpts.searchContextSpec . global)
+                  (repoNamePatterns . [(?i)foo])))
+              (LIMIT
+                (limit . 40000)
+                (REPOSEARCH
+                  (repoOpts.repoFilters . [bar])
+                  (repoOpts.searchContextSpec . global)
+                  (repoNamePatterns . [(?i)bar])))
+              (LIMIT
+                (limit . 40000)
+                (REPOSEARCH
+                  (repoOpts.repoFilters . [baz])
+                  (repoOpts.searchContextSpec . global)
+                  (repoNamePatterns . [(?i)baz])))))))
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 2000)
+          (PARALLEL
+            (SEQUENTIAL
+              (ensureUnique . false)
+              (ZOEKTGLOBALTEXTSEARCH
+                (query . substr:"foo bar baz")
+                (type . text))
+              (REPOSEARCH
+                (repoOpts.repoFilters . [foo bar baz])
+                (repoNamePatterns . [(?i)foo bar baz])))
+            REPOSCOMPUTEEXCLUDED
+            NOOP))))))`),
+		},
 	}
 
 	for _, tc := range cases {
