@@ -279,7 +279,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                     </Text>
                                     <Text>
                                         <Link
-                                            href="https://sourcegraph.com/docs/code-search/queries#keyword-search-default"
+                                            to="https://sourcegraph.com/docs/code-search/queries#keyword-search-default"
                                             target="_blank"
                                         >
                                             Read the docs
