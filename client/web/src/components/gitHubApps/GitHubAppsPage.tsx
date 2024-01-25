@@ -9,7 +9,6 @@ import { ButtonLink, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHead
 
 import { type GitHubAppsResult, type GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { isCodyOnlyLicense } from '../../util/license'
 import {
     ConnectionContainer,
     ConnectionLoading,
@@ -28,8 +27,6 @@ import styles from './GitHubAppsPage.module.scss'
 interface Props {
     batchChangesEnabled: boolean
 }
-
-const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {
@@ -68,7 +65,7 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
                         <Link to="/help/admin/external_service/github#using-a-github-app" target="_blank">
                             See how GitHub App configuration works.
                         </Link>
-                        {batchChangesEnabled && !disableCodeSearchFeatures && (
+                        {batchChangesEnabled && (
                             <>
                                 {' '}
                                 To create a GitHub App to sign Batch Changes commits, visit{' '}

@@ -59,6 +59,11 @@ export interface SiteAdminAreaRouteContext
     codeInsightsEnabled: boolean
 
     endUserOnboardingEnabled: boolean
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
@@ -135,6 +140,10 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         telemetryService: props.telemetryService,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
+        license: {
+            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+        },
     }
 
     return (
@@ -146,6 +155,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
+                    license={context.license}
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}

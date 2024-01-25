@@ -12,12 +12,9 @@ import { BatchChangesIcon } from '../batches/icons'
 import { CodyPageIcon } from '../cody/chat/CodyPageIcon'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
-import { isCodyOnlyLicense } from '../util/license'
 
 import { isPackagesEnabled } from './flags'
 import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
-
-const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 const analyticsGroup: SiteAdminSideBarGroup = {
     header: {
@@ -33,12 +30,12 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
-            condition: () => !disableCodeSearchFeatures,
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
-            condition: () => !disableCodeSearchFeatures,
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Users',
@@ -47,17 +44,17 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Insights',
             to: '/site-admin/analytics/code-insights',
-            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled && !disableCodeSearchFeatures,
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
         {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
-            condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
-            condition: () => !disableCodeSearchFeatures,
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Extensions',
@@ -66,7 +63,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code ownership',
             to: '/site-admin/analytics/own',
-            condition: () => !disableCodeSearchFeatures,
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Feedback survey',
@@ -181,7 +178,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
-            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled && !disableCodeSearchFeatures,
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
     ],
 }
@@ -191,7 +188,7 @@ const executorsGroup: SiteAdminSideBarGroup = {
         label: 'Executors',
         icon: PackageVariantIcon,
     },
-    condition: () => Boolean(window.context?.executorsEnabled) && !disableCodeSearchFeatures,
+    condition: () => Boolean(window.context?.executorsEnabled),
     items: [
         {
             to: '/site-admin/executors',
@@ -221,7 +218,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             condition: props => props.batchChangesExecutionEnabled,
         },
     ],
-    condition: ({ batchChangesEnabled }) => batchChangesEnabled && !disableCodeSearchFeatures,
+    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -276,7 +273,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/own-signal-page',
         },
     ],
-    condition: () => !disableCodeSearchFeatures,
+    condition: ({ license }) => license.isCodeSearchEnabled,
 }
 
 export const codyGroup: SiteAdminSideBarGroup = {
