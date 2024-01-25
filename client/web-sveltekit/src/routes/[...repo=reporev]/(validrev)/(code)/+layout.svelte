@@ -49,7 +49,7 @@
         )
 
     async function updateFileTreeProvider(repoID: Scalars['ID']['input'], commitID: string, parentPath: string) {
-        const result = await data.deferred.fileTree
+        const result = await data.fileTree
         if (!result) {
             treeProvider = null
             return

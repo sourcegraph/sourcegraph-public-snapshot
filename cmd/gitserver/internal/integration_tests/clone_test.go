@@ -16,6 +16,9 @@ import (
 	"golang.org/x/time/rate"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -51,6 +54,9 @@ func TestClone(t *testing.T) {
 	s := server.Server{
 		Logger:   logger,
 		ReposDir: reposDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			require.Equal(t, repo, name)
 			return remote, nil
@@ -144,6 +150,9 @@ func TestClone_Fail(t *testing.T) {
 	s := server.Server{
 		Logger:   logger,
 		ReposDir: reposDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			require.Equal(t, repo, name)
 			return remote, nil
@@ -179,7 +188,8 @@ func TestClone_Fail(t *testing.T) {
 	resp, err := cli.RequestRepoUpdate(ctx, repo, 0)
 	require.NoError(t, err)
 	// Note that this error is from IsCloneable(), not from Clone().
-	require.Contains(t, resp.Error, "error cloning repo: repo github.com/test/repo not cloneable: exit status 128")
+	require.Contains(t, resp.Error, "error cloning repo: repo github.com/test/repo not cloneable:")
+	require.Contains(t, resp.Error, "exit status 128")
 
 	// No lock should have been acquired.
 	mockassert.NotCalled(t, locker.TryAcquireFunc)
@@ -189,7 +199,8 @@ func TestClone_Fail(t *testing.T) {
 	mockrequire.CalledOnce(t, gsStore.SetLastErrorFunc)
 	// And that it was called for the right repo, setting the last error value.
 	mockassert.CalledWith(t, gsStore.SetLastErrorFunc, mockassert.Values(mockassert.Skip, repo, mockassert.Skip, "test-shard"))
-	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, `error cloning repo: repo github.com/test/repo not cloneable: exit status 128 - output: "fatal:`)
+	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, `error cloning repo: repo github.com/test/repo not cloneable:`)
+	require.Contains(t, gsStore.SetLastErrorFunc.History()[0].Arg2, "exit status 128")
 
 	// And no other DB activity has happened.
 	mockassert.NotCalled(t, gsStore.SetCloneStatusFunc)

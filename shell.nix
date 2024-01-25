@@ -23,7 +23,7 @@ let
   # Additionally bazel seems to break when CC and CXX is set to a nix managed
   # compiler on darwin. So the script unsets those.
   bazel-wrapper = writeShellScriptBin "bazel" (if hostPlatform.isMacOS then ''
-    unset CC CXX
+    export CC=/usr/bin/clang
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
     unset TMPDIR TMP
@@ -33,7 +33,7 @@ let
     exec ${pkgs.bazel_7}/bin/bazel "$@"
   '');
   bazel-watcher = writeShellScriptBin "ibazel" ''
-    ${lib.optionalString hostPlatform.isMacOS "unset CC CXX"}
+    ${lib.optionalString hostPlatform.isMacOS "export CC=/usr/bin/clang"}
     exec ${pkgs.bazel-watcher}/bin/ibazel \
       ${lib.optionalString hostPlatform.isLinux "-bazel_path=${bazel-fhs}/bin/bazel"} "$@"
   '';
@@ -65,7 +65,7 @@ let
   # the binary for GNU sed.
   gsed = pkgs.writeShellScriptBin "gsed" ''exec ${pkgs.gnused}/bin/sed "$@"'';
 in
-mkShell {
+mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else pkgs.stdenv; } {
   name = "sourcegraph-dev";
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
@@ -118,7 +118,7 @@ mkShell {
     bazel-fhs
     bazel-watcher
     bazel-buildtools
-  ]);
+  ]) ++ lib.optional hostPlatform.isMacOS [ bazel-wrapper ];
 
   # Startup postgres, redis & set nixos specific stuff
   shellHook = ''
@@ -143,6 +143,7 @@ mkShell {
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
-  USE_BAZEL_VERSION =
-    if hostPlatform.isMacOS then "" else pkgs.bazel_7.version;
+  USE_BAZEL_VERSION = if hostPlatform.isMacOS then "" else pkgs.bazel_7.version;
+
+  LIBTOOL = if hostPlatform.isMacOS then "${pkgs.libtool}" else "";
 }

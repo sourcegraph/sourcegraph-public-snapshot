@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# Wrapper for `scip-treesitter` similar to `dev/scip-ctags-dev`.
+#
+# To use an alternate scip-treesitter binary for development, invoke
+# `SCIP_TREESITTER_COMMAND=path/to/scip-treesitter sg start`.
+
+root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
+TARGET=$("$root/dev/scip-treesitter-install.sh" which)
+
+if [ ! -f "${TARGET}" ]; then
+    echo "scip-treesitter is not installed, please run ./dev/scip-treesitter-install.sh"
+    echo "Alternatively you can use SCIP_TREESITTER_COMMAND=path/to/scip-treesitter to use your own binary."
+    exit 1
+else
+  ${TARGET} "$@"
+fi

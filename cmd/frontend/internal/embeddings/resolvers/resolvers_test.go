@@ -1,7 +1,9 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -70,9 +72,9 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	mockDB.PermissionsFunc.SetDefaultReturn(permissions)
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
+	mockGitserver.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, fileName string) (io.ReadCloser, error) {
 		if fileName == "testfile" {
-			return []byte("test\nfirst\nfour\nlines\nplus\nsome\nmore"), nil
+			return io.NopCloser(bytes.NewReader([]byte("test\nfirst\nfour\nlines\nplus\nsome\nmore"))), nil
 		}
 		return nil, os.ErrNotExist
 	})

@@ -9,6 +9,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {
+    option deprecated = true;
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
@@ -68,6 +69,14 @@ service GitserverService {
   rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // MergeBase returns the merge base commit sha for the specified revspecs.
+  // If no common merge base exists, an empty string is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a NotFoundPayload in the details.
+  rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -90,17 +99,17 @@ message DiskInfoResponse {
 message BatchLogRequest {
   // repo_commits is the list of repositories and commits to run the git log
   // command on.
-  repeated RepoCommit repo_commits = 1;
+  repeated RepoCommit repo_commits = 1 [deprecated = true];
   // format is the entire `--format=<format>` argument to git log. This value is
   // expected to be non-empty.
-  string format = 2;
+  string format = 2 [deprecated = true];
 }
 
 // BatchLogResponse contains the results of the BatchLog request.
 message BatchLogResponse {
   // results is the list of results for each repository and commit pair from the
   // input of a BatchLog request.
-  repeated BatchLogResult results = 1;
+  repeated BatchLogResult results = 1 [deprecated = true];
 }
 
 // BatchLogResult is the result that associates a repository and commit pair
@@ -109,18 +118,18 @@ message BatchLogResponse {
 message BatchLogResult {
   // repo_commit is the repository and commit pair from the input of a BatchLog
   // request.
-  RepoCommit repo_commit = 1;
+  RepoCommit repo_commit = 1 [deprecated = true];
   // command_output is the output of the git log command.
-  string command_output = 2;
+  string command_output = 2 [deprecated = true];
   // command_error is an optional error message if the git log command
   // encountered an error.
-  optional string command_error = 3;
+  optional string command_error = 3 [deprecated = true];
 }
 
 // RepoCommit is the represention of a repository and commit pair.
 message RepoCommit {
-  string repo = 1;
-  string commit = 2;
+  string repo = 1 [deprecated = true];
+  string commit = 2 [deprecated = true];
 }
 
 message PatchCommitInfo {
@@ -208,11 +217,12 @@ message CreateCommitFromPatchBinaryResponse {
   // changelistid is the Perforce changelist id
   string changelist_id = 3;
 }
+
 message ExecRequest {
   string repo = 1;
   bytes ensure_revision = 2;
   repeated bytes args = 3;
-  bytes stdin = 4;
+  bytes stdin = 4 [deprecated = true];
   bool no_timeout = 5;
 }
 
@@ -255,12 +265,8 @@ message RevisionSpecifier {
   // RevSpec is a revision range specifier suitable for passing to git. See
   // the manpage gitrevisions(7).
   string rev_spec = 1;
-  // RefGlob is a reference glob to pass to git. See the documentation for
-  // "--glob" in git-log.
-  string ref_glob = 2;
-  // ExcludeRefGlob is a glob for references to exclude. See the
-  // documentation for "--exclude" in git-log.
-  string exclude_ref_glob = 3;
+  reserved 2;
+  reserved 3;
 }
 
 // AuthorMatchesNode is a predicate that matches if the author's name or email
@@ -681,4 +687,20 @@ message PerforceUsersResponse {
 message PerforceUser {
   string username = 1;
   string email = 2;
+}
+
+// MergeBaseRequest is a request to find the merge base of two revspecs.
+message MergeBaseRequest {
+  // repo_name is the name of the repo to get the merge base for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // base is a revspec, for now, we allow non-utf8 revspecs.
+  bytes base = 3;
+  // head is a revspec, for now, we allow non-utf8 revspecs.
+  bytes head = 4;
+}
+
+// MergeBaseResponse is the response from finding the merge base of two revspecs.
+message MergeBaseResponse {
+  string merge_base_commit_sha = 1;
 }

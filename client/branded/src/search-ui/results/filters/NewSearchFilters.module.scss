@@ -1,4 +1,5 @@
 .scroll-wrapper {
+    position: relative;
     height: 100%;
     overflow: auto;
     display: flex;
@@ -40,6 +41,32 @@
     }
 }
 
-.footer {
+.footer-content {
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: sticky;
+    bottom: 0;
+    background-color: var(--code-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+.actions {
+    margin: 0.75rem 0.5rem 0 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    &:empty {
+        display: none;
+    }
+}
+
+.move-icon {
+    --icon-color: var(--body-color);
+
+    margin-left: 0.25rem;
+    fill: none !important;
+    transform: rotateX(-180deg);
 }

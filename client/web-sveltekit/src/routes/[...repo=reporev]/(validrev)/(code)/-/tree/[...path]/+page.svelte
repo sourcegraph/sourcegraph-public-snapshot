@@ -13,13 +13,13 @@
 
     export let data: PageData
 
-    const { value: tree, set: setTree } = createPromiseStore<PageData['deferred']['treeEntries']>()
+    const { value: tree, set: setTree } = createPromiseStore<PageData['treeEntries']>()
     const { value: commitInfo, set: setCommitInfo } = createPromiseStore<Promise<TreePage_TreeWithCommitInfo | null>>()
     const { value: readme, set: setReadme } = createPromiseStore<Promise<TreePage_Readme | null>>()
 
-    $: setTree(data.deferred.treeEntries)
-    $: setCommitInfo(data.deferred.commitInfo)
-    $: setReadme(data.deferred.readme)
+    $: setTree(data.treeEntries)
+    $: setCommitInfo(data.commitInfo)
+    $: setReadme(data.readme)
     $: entries = $tree?.entries ?? []
     $: entriesWithCommitInfo = $commitInfo?.entries ?? []
 </script>

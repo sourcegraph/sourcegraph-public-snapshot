@@ -67,6 +67,14 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        creator {
+            username
+            url
+        }
+        lastUpdater {
+            username
+            url
+        }
         webhookURL
         hasConnectionCheck
         unrestricted
@@ -219,6 +227,14 @@ export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         nextSyncAt
         updatedAt
         createdAt
+        creator {
+            username
+            url
+        }
+        lastUpdater {
+            username
+            url
+        }
         webhookURL
         hasConnectionCheck
         syncJobs(first: 1) {

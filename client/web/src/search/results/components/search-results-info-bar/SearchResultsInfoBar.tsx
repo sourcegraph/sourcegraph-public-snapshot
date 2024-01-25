@@ -4,13 +4,14 @@ import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, m
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Icon, Link, Text, useSessionStorage } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon, Label, Link, Text, useSessionStorage } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import {
@@ -73,6 +74,9 @@ export interface SearchResultsInfoBarProps
     isSourcegraphDotCom: boolean
     patternType: SearchPatternType
     sourcegraphURL: string
+
+    showKeywordSearchToggle: boolean
+    onTogglePatternType: (patternType: SearchPatternType) => void
 }
 
 /**
@@ -226,6 +230,18 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                 {props.stats}
 
                 <div className={styles.expander} />
+
+                {props.showKeywordSearchToggle && (
+                    <Label className={styles.toggle}>
+                        Search language update{' '}
+                        <Toggle
+                            value={props.patternType === SearchPatternType.keyword}
+                            onToggle={() => props.onTogglePatternType(props.patternType)}
+                            title="Enable search language update"
+                            className="mr-2"
+                        />
+                    </Label>
+                )}
 
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
