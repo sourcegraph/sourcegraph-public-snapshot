@@ -10989,6 +10989,22 @@
 					"TableName": "lsif_indexes",
 					"IndexName": "lsif_indexes_repository_id_indexer"
 				}
+			},
+			{
+				"ID": 1702500918,
+				"Name": "Add expiry to access tokens",
+				"UpQuery": "ALTER TABLE access_tokens ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone;",
+				"DownQuery": "ALTER TABLE access_tokens DROP COLUMN IF EXISTS expires_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1695152902,
+					1697220815,
+					1700613818,
+					1700645180
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11240,10 +11256,7 @@
 			"v5.3.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1697220815,
-					1700613818,
-					1700645180,
-					1695152902
+					1702500918
 				],
 				"PreCreation": false
 			}
