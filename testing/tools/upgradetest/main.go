@@ -1,5 +1,5 @@
-// Run with bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker
-// Run with bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker
+// Run with bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker -- <test args>
+// Run with bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker -- <test args>
 // Run in CI: sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 //
 // TODO
@@ -71,12 +71,6 @@ func main() {
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Standard Versions:", stdVersions)
 
-					// Get the release candidate image tarball
-					// args := os.Args
-					// fmt.Println(args[1])
-					// fmt.Println(args[2])
-					// fmt.Println(args[3])
-
 					// initialize test results
 					var results TestResults
 
@@ -134,12 +128,6 @@ func main() {
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("MVU Versions:", mvuVersions)
 
-					// Get the release candidate image tarball
-					args := os.Args
-					fmt.Println(args[1])
-					fmt.Println(args[2])
-					fmt.Println(args[3])
-
 					// initialize test results
 					var results TestResults
 
@@ -155,8 +143,6 @@ func main() {
 							start := time.Now()
 							result := multiversionUpgradeTest(ctx, version, latestVersion)
 							result.Runtime = time.Since(start)
-							fmt.Println(">>>>>>>>>>>")
-							result.DisplayLog()
 							results.AddMVUTest(result)
 							return nil
 						})
@@ -195,12 +181,6 @@ func main() {
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Auto Versions:", autoVersions)
 
-					// Get the release candidate image tarball
-					args := os.Args
-					fmt.Println(args[1])
-					fmt.Println(args[2])
-					fmt.Println(args[3])
-
 					// initialize test results
 					var results TestResults
 
@@ -237,109 +217,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ctx := context.Background()
-	// check docker is running
-	if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
-		fmt.Println("🚨 Error: could not connect to docker: ", err)
-		os.Exit(1)
-	}
-
-	// Get init versions to use for initializing upgrade environments for tests
-	latestMinorVersion, latestVersion, stdVersions, mvuVersions, autoVersions, err := getVersions(ctx)
-	if err != nil {
-		fmt.Println("🚨 Error: failed to get test version ranges: ", err)
-		os.Exit(1)
-	}
-
-	fmt.Println("Latest version: ", latestVersion)
-	fmt.Println("Latest minor version: ", latestMinorVersion)
-	fmt.Println("Standard Versions:", stdVersions)
-	fmt.Println("MVU Versions:", mvuVersions)
-	fmt.Println("Auto Versions:", autoVersions)
-
-	// Get the release candidate image tarball
-	args := os.Args
-	fmt.Println(args[1])
-	fmt.Println(args[2])
-	fmt.Println(args[3])
-
-	// initialize test results
-	var results TestResults
-
-	// Run Standard Upgrade Tests in goroutines. The current limit is set as 10 concurrent goroutines per test type (std, mvu, auto). This is to address
-	// dynamic port allocation issues that occur in docker when creating many bridge networks, but tests begin to fail when a sufficient number of
-	// goroutines are running on local machine. We may tune this in CI.
-	// TODO this should likely be made an env var or something to make it easy to swamp out depending on the test box.
-	stdTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
-	for _, version := range stdVersions {
-		version := version
-		if slices.Contains(knownBugVersions, version.String()) {
-			continue
-		}
-		stdTestPool.Go(func() error {
-			fmt.Println("std: ", version)
-			start := time.Now()
-			result := standardUpgradeTest(ctx, version, latestVersion)
-			result.Runtime = time.Since(start)
-			// if len(result.Errors) > 0 {
-			// 	fmt.Printf("--- 🚨 %s Errors:", &result.Version)
-			// 	result.DisplayLog()
-			// }
-			results.AddStdTest(result)
-			return nil
-		})
-	}
-	if err := stdTestPool.Wait(); err != nil {
-		log.Fatal(err)
-	}
-
-	// Run MVU Upgrade Tests
-	mvuTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
-	for _, version := range mvuVersions {
-		version := version
-		if slices.Contains(knownBugVersions, version.String()) {
-			continue
-		}
-		mvuTestPool.Go(func() error {
-			fmt.Println("mvu: ", version)
-			start := time.Now()
-			result := multiversionUpgradeTest(ctx, version, latestVersion)
-			result.Runtime = time.Since(start)
-			// if len(result.Errors) > 0 {
-			// 	fmt.Printf("--- 🚨 %s Errors:", &result.Version)
-			// 	result.DisplayLog()
-			// }
-			results.AddMVUTest(result)
-			return nil
-		})
-	}
-	if err := mvuTestPool.Wait(); err != nil {
-		log.Fatal(err)
-	}
-
-	// // Run Autoupgrade Tests
-	// autoTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
-	// for _, version := range autoVersions {
-	// 	version := version
-	// 	if slices.Contains(knownBugVersions, version.String()) {
-	// 		continue
-	// 	}
-	// 	autoTestPool.Go(func() error {
-	// 		fmt.Println("auto: ", version)
-	// 		start := time.Now()
-	// 		result := autoUpgradeTest(ctx, version, latestVersion)
-	// 		result.Runtime = time.Since(start)
-	// 		results.AddAutoTest(result)
-	// 		return nil
-	// 	})
-	// }
-	// if err := autoTestPool.Wait(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// This is where we do the majority of our printing to stdout.
-	results.OrderByVersion()
-	results.PrintSimpleResults()
 }
 
 // Tests are the basic unit of this program and represent a version being tested. Its methods are generally used to control its logging behavior.
@@ -424,36 +301,42 @@ var knownBugVersions = []string{
 
 // PrintSimpleResults prints a quick view of test results, on an errored test only the first line of the error is printed.
 func (r *TestResults) PrintSimpleResults() {
-	stdRes := []string{}
-	for _, test := range r.StandardUpgradeTests {
-		if 0 < len(test.Errors) {
-			stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
-		} else {
-			stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version.String(), test.Runtime))
+	if len(r.StandardUpgradeTests) != 0 {
+		stdRes := []string{}
+		for _, test := range r.StandardUpgradeTests {
+			if 0 < len(test.Errors) {
+				stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
+			} else {
+				stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version.String(), test.Runtime))
+			}
 		}
+		fmt.Println("--- 🕵️  Standard Upgrade Tests:")
+		fmt.Println(strings.Join(stdRes, "\n"))
 	}
-	mvuRes := []string{}
-	for _, test := range r.MVUUpgradeTests {
-		if 0 < len(test.Errors) {
-			mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
-		} else {
-			mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
+	if len(r.MVUUpgradeTests) != 0 {
+		mvuRes := []string{}
+		for _, test := range r.MVUUpgradeTests {
+			if 0 < len(test.Errors) {
+				mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
+			} else {
+				mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
+			}
 		}
+		fmt.Println("--- 🕵️  Multiversion Upgrade Tests:")
+		fmt.Println(strings.Join(mvuRes, "\n"))
 	}
-	autoRes := []string{}
-	for _, test := range r.AutoupgradeTests {
-		if 0 < len(test.Errors) {
-			autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
-		} else {
-			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
+	if len(r.AutoupgradeTests) != 0 {
+		autoRes := []string{}
+		for _, test := range r.AutoupgradeTests {
+			if 0 < len(test.Errors) {
+				autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
+			} else {
+				autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
+			}
 		}
+		fmt.Println("--- 🕵️  Auto Upgrade Tests:")
+		fmt.Println(strings.Join(autoRes, "\n"))
 	}
-	fmt.Println("--- 🕵️  Standard Upgrade Tests:")
-	fmt.Println(strings.Join(stdRes, "\n"))
-	fmt.Println("--- 🕵️  Multiversion Upgrade Tests:")
-	fmt.Println(strings.Join(mvuRes, "\n"))
-	fmt.Println("--- 🕵️  Auto Upgrade Tests:")
-	fmt.Println(strings.Join(autoRes, "\n"))
 }
 
 // DisplayErrrors, prints errors for all tests that errored.
@@ -728,7 +611,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	// Create a 10 minute timeout to validate the databases have initialized, this is to prevent a hung test
 	// When many goroutines are running this test this is a point of failure.
-	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*10)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*120)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
@@ -1190,9 +1073,8 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 		return nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
 	}
 
-	// testing fake release
-	stdVersions = append(stdVersions, semver.MustParse("5.3.666"))
-	mvuVersions = append(mvuVersions, semver.MustParse("5.3.666"))
+	// Induce test failure
+	// stdVersions = append(stdVersions, semver.MustParse("v6.6.6"))
 
 	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, autoVersions, nil
 
