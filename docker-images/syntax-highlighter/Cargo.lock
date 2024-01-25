@@ -1913,11 +1913,11 @@ dependencies = [
  "rustc-hash",
  "scip",
  "scip-treesitter",
- "scip-treesitter-languages",
  "serde",
  "serde_json",
  "string-interner",
  "tree-sitter",
+ "tree-sitter-all-languages",
  "walkdir",
 ]
 
@@ -1948,42 +1948,11 @@ dependencies = [
  "scip",
  "scip-syntax",
  "scip-treesitter",
- "scip-treesitter-languages",
  "serde",
  "serde_json",
  "string-interner",
+ "tree-sitter-all-languages",
  "walkdir",
-]
-
-[[package]]
-name = "scip-treesitter-languages"
-version = "0.1.0"
-dependencies = [
- "lazy_static",
- "paste",
- "scip",
- "tree-sitter",
- "tree-sitter-c",
- "tree-sitter-c-sharp",
- "tree-sitter-cpp",
- "tree-sitter-go",
- "tree-sitter-highlight",
- "tree-sitter-java",
- "tree-sitter-javascript",
- "tree-sitter-jsonnet",
- "tree-sitter-kotlin",
- "tree-sitter-matlab",
- "tree-sitter-nickel",
- "tree-sitter-perl",
- "tree-sitter-pod",
- "tree-sitter-python",
- "tree-sitter-ruby",
- "tree-sitter-rust",
- "tree-sitter-scala",
- "tree-sitter-sql",
- "tree-sitter-typescript",
- "tree-sitter-xlsg",
- "tree-sitter-zig",
 ]
 
 [[package]]
@@ -2055,11 +2024,11 @@ dependencies = [
  "scip",
  "scip-syntax",
  "scip-treesitter",
- "scip-treesitter-languages",
  "serde",
  "serde_json",
  "syntect",
  "tree-sitter",
+ "tree-sitter-all-languages",
  "tree-sitter-highlight",
 ]
 
@@ -2218,11 +2187,11 @@ dependencies = [
  "scip",
  "scip-syntax",
  "scip-treesitter",
- "scip-treesitter-languages",
  "serde",
  "serde_json",
  "sg-syntax",
  "syntect",
+ "tree-sitter-all-languages",
 ]
 
 [[package]]
@@ -2489,6 +2458,37 @@ checksum = "e747b1f9b7b931ed39a548c1fae149101497de3c1fc8d9e18c62c1a66c683d3d"
 dependencies = [
  "cc",
  "regex",
+]
+
+[[package]]
+name = "tree-sitter-all-languages"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "paste",
+ "scip",
+ "tree-sitter",
+ "tree-sitter-c",
+ "tree-sitter-c-sharp",
+ "tree-sitter-cpp",
+ "tree-sitter-go",
+ "tree-sitter-highlight",
+ "tree-sitter-java",
+ "tree-sitter-javascript",
+ "tree-sitter-jsonnet",
+ "tree-sitter-kotlin",
+ "tree-sitter-matlab",
+ "tree-sitter-nickel",
+ "tree-sitter-perl",
+ "tree-sitter-pod",
+ "tree-sitter-python",
+ "tree-sitter-ruby",
+ "tree-sitter-rust",
+ "tree-sitter-scala",
+ "tree-sitter-sql",
+ "tree-sitter-typescript",
+ "tree-sitter-xlsg",
+ "tree-sitter-zig",
 ]
 
 [[package]]

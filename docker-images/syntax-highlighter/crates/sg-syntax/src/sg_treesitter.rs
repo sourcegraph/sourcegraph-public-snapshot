@@ -3,7 +3,7 @@ use protobuf::Message;
 use rocket::serde::json::{serde_json::json, Value as JsonValue};
 use scip::types::{Document, Occurrence, SyntaxKind};
 use scip_treesitter::types::PackedRange;
-use scip_treesitter_languages::highlights::{
+use tree_sitter_all_languages::highlights::{
     get_highlighting_configuration, get_syntax_kind_for_hl,
 };
 use tree_sitter_highlight::{
@@ -80,7 +80,7 @@ pub fn index_language_with_config(
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
     if include_locals {
-        let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
+        let parser = tree_sitter_all_languages::parsers::BundledParser::get_parser(filetype);
         if let Some(parser) = parser {
             // TODO: Could probably write this in a much better way.
             let mut local_occs =

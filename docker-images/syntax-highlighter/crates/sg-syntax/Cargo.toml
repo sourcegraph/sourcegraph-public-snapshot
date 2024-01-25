@@ -28,7 +28,7 @@ lazy_static = "1.0"
 once_cell = "1.13.0"
 
 scip-treesitter = { path = "../scip-treesitter" }
-scip-treesitter-languages = { path = "../scip-treesitter-languages" }
+tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
 scip-syntax = { path = "../scip-syntax" }
 
 [dev-dependencies]

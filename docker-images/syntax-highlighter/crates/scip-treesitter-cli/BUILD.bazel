@@ -19,7 +19,7 @@ rust_binary(
 WORKSPACE_DEPS = [
     "//docker-images/syntax-highlighter/crates/scip-syntax",
     "//docker-images/syntax-highlighter/crates/scip-treesitter",
-    "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+    "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
 ]
 
 # This separate library target is needed so that the integration
