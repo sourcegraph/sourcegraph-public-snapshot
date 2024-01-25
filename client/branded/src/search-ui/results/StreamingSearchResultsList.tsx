@@ -34,7 +34,6 @@ import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
 import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
-import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
