@@ -1,6 +1,7 @@
 package run
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -96,6 +98,9 @@ func (cmd Command) RunInstall(ctx context.Context, parentEnv map[string]string) 
 
 	return nil
 }
+
+// Standard commands ignore installer
+func (cmd Command) SetInstallerOutput(chan<- output.FancyLine) {}
 
 func (cmd Command) requiresInstall() bool {
 	return cmd.Install != "" || cmd.InstallFunc != ""
@@ -214,77 +219,12 @@ func equal(a, b []string) bool {
 	return true
 }
 
-type startedCmd struct {
-	*exec.Cmd
+var sgConn net.Conn
 
-	cancel func()
-
-	stdoutBuf *prefixSuffixSaver
-	stderrBuf *prefixSuffixSaver
-
-	outEg  *pool.ErrorPool
-	result chan error
-
-	opts        commandOptions
-	startOutput chan struct{}
-}
-
-func (sc *startedCmd) ErrorChannel() <-chan error {
-	if sc.result == nil {
-		sc.result = make(chan error)
-		go func() {
-			sc.result <- sc.Wait()
-		}()
-	}
-	return sc.result
-}
-
-func (sc *startedCmd) Wait() error {
-	err := sc.wait()
-	var e *exec.ExitError
-	if errors.As(err, &e) {
-		err = runErr{
-			cmdName:  sc.opts.name,
-			exitCode: e.ExitCode(),
-			stderr:   sc.CapturedStderr(),
-			stdout:   sc.CapturedStdout(),
-		}
-	}
-
+func OpenUnixSocket() error {
+	var err error
+	sgConn, err = net.Dial("unix", "/tmp/sg.sock")
 	return err
-}
-
-func (sc *startedCmd) wait() error {
-	if err := sc.outEg.Wait(); err != nil {
-		return err
-	}
-	return sc.Cmd.Wait()
-}
-func (sc *startedCmd) CapturedStdout() string {
-	if sc.stdoutBuf == nil {
-		return ""
-	}
-
-	return string(sc.stdoutBuf.Bytes())
-}
-
-func (sc *startedCmd) CapturedStderr() string {
-	if sc.stderrBuf == nil {
-		return ""
-	}
-
-	return string(sc.stderrBuf.Bytes())
-}
-
-// Begins writing output to StdOut and StdErr if it was previously buffered
-// Errors if command was unbuffered
-func (sc *startedCmd) StartOutput() error {
-	if sc.opts.bufferOutput {
-		close(sc.startOutput)
-		return nil
-	}
-
-	return errors.Newf("cannot start output on unbuffered command: %s", sc.opts.name)
 }
 
 func getSecrets(ctx context.Context, name string, extSecrets map[string]secrets.ExternalSecret) (map[string]string, error) {
@@ -310,12 +250,41 @@ func getSecrets(ctx context.Context, name string, extSecrets map[string]secrets.
 	return secretsEnv, errs
 }
 
-var sgConn net.Conn
+type startedCmd struct {
+	*exec.Cmd
+	opts   commandOptions
+	cancel func()
 
-func OpenUnixSocket() error {
-	var err error
-	sgConn, err = net.Dial("unix", "/tmp/sg.sock")
-	return err
+	outEg  *pool.ErrorPool
+	result chan error
+}
+
+type commandOptions struct {
+	name   string
+	exec   *exec.Cmd
+	dir    string
+	env    []string
+	stdout outputOptions
+	stderr outputOptions
+}
+
+type outputOptions struct {
+	// When true, output will be ignored and not written to any writers
+	ignore bool
+
+	// when enabled, output will not be streamed to the writers until
+	// after the process is begun, only captured for later retrieval
+	buffer bool
+
+	// Buffer that captures the output for error logging
+	captured io.ReadWriter
+
+	// Additional writers to write output to
+	additionalWriters []io.Writer
+
+	// Channel that is used to signal that output should start streaming
+	// when buffer is true
+	start chan struct{}
 }
 
 func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv map[string]string) (*startedCmd, error) {
@@ -331,12 +300,12 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv 
 	}
 
 	opts := commandOptions{
-		name:         cmd.GetName(),
-		exec:         exec,
-		env:          makeEnv(parentEnv, secretsEnv, cmd.GetEnv()),
-		dir:          dir,
-		ignoreStdOut: cmd.GetIgnoreStdout(),
-		ignoreStdErr: cmd.GetIgnoreStderr(),
+		name:   cmd.GetName(),
+		exec:   exec,
+		env:    makeEnv(parentEnv, secretsEnv, cmd.GetEnv()),
+		dir:    dir,
+		stdout: outputOptions{ignore: cmd.GetIgnoreStdout()},
+		stderr: outputOptions{ignore: cmd.GetIgnoreStderr()},
 	}
 
 	if cmd.GetPreamble() != "" {
@@ -346,24 +315,9 @@ func startSgCmd(ctx context.Context, cmd SGConfigCommand, dir string, parentEnv 
 	return startCmd(ctx, opts)
 }
 
-type commandOptions struct {
-	name         string
-	exec         *exec.Cmd
-	dir          string
-	env          []string
-	ignoreStdOut bool
-	ignoreStdErr bool
-	// when enabled, stdout/stderr will not be streamed to the loggers
-	// after the process is begun, only captured for later retrieval
-	bufferOutput bool
-}
-
 func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 	sc := &startedCmd{
-		opts:        opts,
-		stdoutBuf:   &prefixSuffixSaver{N: 32 << 10},
-		stderrBuf:   &prefixSuffixSaver{N: 32 << 10},
-		startOutput: make(chan struct{}),
+		opts: opts,
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -405,10 +359,6 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 		return nil, err
 	}
 
-	if !sc.opts.bufferOutput {
-		close(sc.startOutput)
-	}
-
 	if err := sc.Start(); err != nil {
 		sc.cancel()
 		return nil, err
@@ -416,44 +366,139 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 	return sc, nil
 }
 
-func (sc *startedCmd) connectOutput(ctx context.Context) error {
+func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, outputName string) io.Writer {
+	writers := opts.additionalWriters
+	if writers == nil {
+		writers = []io.Writer{}
+	}
+	if opts.captured == nil {
+		opts.captured = &prefixSuffixSaver{N: 32 << 10}
+	}
+	writers = append(writers, opts.captured)
 
-	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(ctx, sc.opts.name, std.Out.Output)
+	if opts.ignore {
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring %s of %s", outputName, sc.opts.name))
+	} else {
+		// Create a channel to signal when output should start. If buffering is disabled, close
+		// the channel so output starts immediately.
+		opts.start = make(chan struct{})
+		if !opts.buffer {
+			close(opts.start)
+		}
 
-	var sgConnLog io.Writer = io.Discard
+		writers = append(writers, newBufferedCmdLogger(ctx, sc.opts.name, std.Out.Output, opts.start))
+	}
+
 	if sgConn != nil {
 		sink := func(data string) {
 			sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, data)))
 		}
-		sgConnLog = process.NewLogger(ctx, sink)
+		writers = append(writers, process.NewLogger(ctx, sink))
 	}
 
-	if sc.opts.ignoreStdOut {
-		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", sc.opts.name))
-		stdoutWriter = sc.stdoutBuf
-	} else {
-		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf, sgConnLog)
-	}
-	if sc.opts.ignoreStdErr {
-		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", sc.opts.name))
-		stderrWriter = sc.stderrBuf
-	} else {
-		stderrWriter = io.MultiWriter(logger, sc.stderrBuf, sgConnLog)
-	}
+	return io.MultiWriter(writers...)
+}
 
-	// Blocks output until startOutput is signaled
-	pipe := func(writer io.Writer, reader io.Reader) error {
-		<-sc.startOutput
-		return process.DefaultPipe(writer, reader)
+func (sc *startedCmd) connectOutput(ctx context.Context) error {
+	stdoutWriter := sc.getOutputWriter(ctx, &sc.opts.stdout, "stdout")
+	stderrWriter := sc.getOutputWriter(ctx, &sc.opts.stderr, "stderr")
 
-	}
-
-	eg, err := process.PipeProcessOutput(ctx, sc.Cmd, stdoutWriter, stderrWriter, pipe)
+	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
 		return err
 	}
 	sc.outEg = eg
 
 	return nil
+}
+
+func (sc *startedCmd) Exit() <-chan error {
+	if sc.result == nil {
+		sc.result = make(chan error)
+		go func() {
+			sc.result <- sc.Wait()
+		}()
+	}
+	return sc.result
+}
+
+func (sc *startedCmd) Wait() error {
+	err := sc.wait()
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		err = runErr{
+			cmdName:  sc.opts.name,
+			exitCode: e.ExitCode(),
+			stderr:   sc.CapturedStderr(),
+			stdout:   sc.CapturedStdout(),
+		}
+	}
+
+	return err
+}
+
+func (sc *startedCmd) wait() error {
+	if err := sc.outEg.Wait(); err != nil {
+		return err
+	}
+	return sc.Cmd.Wait()
+}
+func (sc *startedCmd) CapturedStdout() string {
+	return captured(sc.opts.stdout)
+}
+
+func (sc *startedCmd) CapturedStderr() string {
+	return captured(sc.opts.stderr)
+}
+
+func captured(opts outputOptions) string {
+	if opts.captured == nil {
+		return ""
+	}
+
+	if output, err := io.ReadAll(opts.captured); err == nil {
+		return string(output)
+	}
+
+	return ""
+}
+
+// Begins writing output to StdOut and StdErr if it was previously buffered
+func (sc *startedCmd) StartOutput() {
+	sc.startOutput(sc.opts.stdout)
+	sc.startOutput(sc.opts.stderr)
+}
+
+func (sc *startedCmd) startOutput(opts outputOptions) {
+	if opts.buffer && opts.start != nil {
+		close(opts.start)
+	}
+}
+
+// patternMatcher is writer which looks for a regular expression in the
+// written bytes and calls a callback if a match is found
+// by default it only looks for the matched pattern once
+type patternMatcher struct {
+	regex    *regexp.Regexp
+	callback func()
+	buffer   bytes.Buffer
+	multi    bool
+	disabled bool
+}
+
+func (writer *patternMatcher) Write(p []byte) (int, error) {
+	if writer.disabled {
+		return len(p), nil
+	}
+	n, err := writer.buffer.Write(p)
+	if err != nil {
+		return n, err
+	}
+	if writer.regex.MatchReader(&writer.buffer) {
+		writer.callback()
+		if !writer.multi {
+			writer.disabled = true
+		}
+	}
+	return n, err
 }

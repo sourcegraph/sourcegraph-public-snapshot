@@ -20,6 +20,10 @@ import (
 
 type Installer interface {
 	RunInstall(ctx context.Context, env map[string]string) error
+
+	// Gives a channel which the installer can use to send log messages
+	SetInstallerOutput(chan<- output.FancyLine)
+
 	GetName() string
 }
 
@@ -33,6 +37,7 @@ type InstallManager struct {
 	// State vars
 	installed           chan string
 	failures            chan failedRun
+	logs                chan output.FancyLine
 	done                int
 	total               int
 	waitingMessageIndex int
@@ -42,12 +47,12 @@ type InstallManager struct {
 	stats               *installAnalytics
 }
 
-func Install(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Installer) error {
-	installer := newInstallManager(cmds, std.Out, parentEnv, verbose)
+func Install(ctx context.Context, env map[string]string, verbose bool, cmds ...Installer) error {
+	installer := newInstallManager(cmds, std.Out, env, verbose)
 
 	installer.start(ctx)
 
-	installer.install(ctx, cmds...)
+	installer.install(ctx, cmds)
 
 	return installer.wait(ctx)
 }
@@ -62,6 +67,7 @@ func newInstallManager(cmds []Installer, out *std.Output, env map[string]string,
 
 		installed: make(chan string, total),
 		failures:  make(chan failedRun, total),
+		logs:      make(chan output.FancyLine, 10),
 		done:      0,
 		total:     total,
 	}
@@ -84,9 +90,12 @@ func (installer *InstallManager) start(ctx context.Context) {
 }
 
 // Starts the installation process in a non-blocking process
-func (installer *InstallManager) install(ctx context.Context, cmds ...Installer) {
+func (installer *InstallManager) install(ctx context.Context, cmds []Installer) {
 	for _, cmd := range cmds {
 		go func(ctx context.Context, cmd Installer) {
+			// Set the log channel for the installer
+			cmd.SetInstallerOutput(installer.logs)
+
 			if err := cmd.RunInstall(ctx, installer.env); err != nil {
 				// if failed, put on the failure queue and exit
 				installer.failures <- failedRun{cmdName: cmd.GetName(), err: err}
@@ -114,6 +123,9 @@ func (installer *InstallManager) wait(ctx context.Context) error {
 		case failure := <-installer.failures:
 			installer.handleFailure(failure.cmdName, failure.err)
 			return failure
+
+		case log := <-installer.logs:
+			installer.progress.WriteLine(log)
 
 		case <-ctx.Done():
 			// Context was canceled, exit early
@@ -155,6 +167,16 @@ func (installer *InstallManager) complete() {
 		installer.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 	}
 	installer.Write("")
+
+	// If there are any pendings logs, print them out
+	for {
+		select {
+		case log := <-installer.logs:
+			installer.WriteLine(log)
+		default:
+			return
+		}
+	}
 }
 
 func (installer *InstallManager) handleFailure(name string, err error) {

@@ -342,7 +342,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		if err != nil {
 			return err
 		}
-		defer ibazel.Stop()
+		defer ibazel.Close()
 		installers = append(installers, ibazel)
 	}
 	if err := run.Install(ctx, env, verbose, installers...); err != nil {

@@ -18,6 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+type cmdRunner struct {
+	*std.Output
+	cmds           []SGConfigCommand
+	repositoryRoot string
+	parentEnv      map[string]string
+	verbose        bool
+}
+
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...SGConfigCommand) (err error) {
 	if len(cmds) == 0 {
 		// Exit early if there are no commands to run.
@@ -65,12 +73,12 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 			}
 
 			// start up the binary
-			sc, err := runner.start(ctx, cmd)
+			proc, err := runner.start(ctx, cmd)
 			if err != nil {
 				runner.printError(cmd, err)
 				return errors.Wrapf(err, "failed to start command %q", cmd.GetName())
 			}
-			defer sc.cancel()
+			defer proc.cancel()
 
 			// Wait forever until we're asked to stop or that restarting returns an error.
 			for {
@@ -80,7 +88,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 					return ctx.Err()
 
 				// Handle process exit
-				case err := <-sc.ErrorChannel():
+				case err := <-proc.Exit():
 					// If the process failed, we exit immediately
 					if err != nil {
 						return err
@@ -105,12 +113,12 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 
 					if shouldRestart {
 						runner.WriteLine(output.Styledf(output.StylePending, "Restarting %s...", cmd.GetName()))
-						sc.cancel()
-						sc, err = runner.start(ctx, cmd)
+						proc.cancel()
+						proc, err = runner.start(ctx, cmd)
 						if err != nil {
 							return err
 						}
-						defer sc.cancel()
+						defer proc.cancel()
 					} else {
 						runner.WriteLine(output.Styledf(output.StylePending, "Binary for %s did not change. Not restarting.", cmd.GetName()))
 					}
@@ -120,14 +128,6 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 	}
 
 	return p.Wait()
-}
-
-type cmdRunner struct {
-	*std.Output
-	cmds           []SGConfigCommand
-	repositoryRoot string
-	parentEnv      map[string]string
-	verbose        bool
 }
 
 func (runner *cmdRunner) printError(cmd SGConfigCommand, err error) {
@@ -146,7 +146,10 @@ func (runner *cmdRunner) start(ctx context.Context, cmd SGConfigCommand) (*start
 }
 
 func (runner *cmdRunner) reinstall(ctx context.Context, cmd SGConfigCommand) (bool, error) {
-	if installer, ok := cmd.(Installer); ok {
+	if installer, ok := cmd.(Installer); !ok {
+		// If there is no installer, then we always restart
+		return true, nil
+	} else {
 		bin, err := cmd.GetBinaryLocation()
 		if err != nil {
 			// If the command doesn't have a CheckBinary, we just ignore it
@@ -163,7 +166,7 @@ func (runner *cmdRunner) reinstall(ctx context.Context, cmd SGConfigCommand) (bo
 		}
 
 		if err := installer.RunInstall(ctx, runner.parentEnv); err != nil {
-			printCmdError(std.Out.Output, cmd.GetName(), err)
+			runner.printError(cmd, err)
 			return false, err
 		}
 		newHash, err := md5HashFile(bin)
@@ -173,9 +176,6 @@ func (runner *cmdRunner) reinstall(ctx context.Context, cmd SGConfigCommand) (bo
 
 		return oldHash != newHash, nil
 	}
-
-	// If there is no installer, then we always restart
-	return true, nil
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -357,9 +357,9 @@ func Test(ctx context.Context, cmd SGConfigCommand, parentEnv map[string]string)
 	}
 
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Starting testsuite %q.", cmd.GetName()))
-	sc, err := startSgCmd(ctx, cmd, repoRoot, parentEnv)
+	proc, err := startSgCmd(ctx, cmd, repoRoot, parentEnv)
 	if err != nil {
 		printCmdError(std.Out.Output, cmd.GetName(), err)
 	}
-	return sc.Wait()
+	return proc.Wait()
 }

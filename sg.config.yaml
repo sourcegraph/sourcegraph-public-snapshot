@@ -413,6 +413,12 @@ commands:
     env:
       ENABLE_OPEN_TELEMETRY: true
 
+  slow:
+    description: Nothing
+    cmd: echo hi
+    install: |
+      sleep 25
+
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: pnpm --filter @sourcegraph/web serve:dev --color
@@ -601,8 +607,6 @@ commands:
       .bin/syntactic-code-intel-worker
     env:
       SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6076
-
-
 
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
@@ -1010,7 +1014,7 @@ commands:
 
 bazelCommands:
   blobstore:
-    target: //cmd/blobstore:blobstore
+    target: //cmd/blobstore
   docsite:
     runTarget: //doc:serve
   searcher:
@@ -1060,7 +1064,7 @@ bazelCommands:
       USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
-    env:
+    env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -1118,8 +1122,8 @@ commandsets:
       - bazelisk
       - ibazel
     bazelCommands:
-      # - blobstore
-      # - docsite
+      - blobstore
+      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1127,16 +1131,25 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
-        # - syntax-highlighter
+      # - syntax-highlighter
     commands:
       - web
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+
+  simple:
+    requiresDevPrivate: true
+    bazelCommands:
+      - docsite
+      - worker
+      - syntax-highlighter
+    commands:
+      - web
+      - slow
+
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
@@ -1253,7 +1266,6 @@ commandsets:
       - blobstore
       - syntactic-code-intel-worker-0
       - syntactic-code-intel-worker-1
-
 
   codeintel:
     requiresDevPrivate: true

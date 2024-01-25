@@ -59,12 +59,16 @@ func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
 	return p
 }
 
-func (w *prefixSuffixSaver) Bytes() []byte {
+func (w *prefixSuffixSaver) Read(p []byte) (n int, err error) {
+	return w.Bytes().Read(p)
+}
+
+func (w *prefixSuffixSaver) Bytes() *bytes.Buffer {
 	if w.suffix == nil {
-		return w.prefix
+		return bytes.NewBuffer(w.prefix)
 	}
 	if w.skipped == 0 {
-		return append(w.prefix, w.suffix...)
+		return bytes.NewBuffer(append(w.prefix, w.suffix...))
 	}
 	var buf bytes.Buffer
 	buf.Grow(len(w.prefix) + len(w.suffix) + 50)
@@ -74,5 +78,5 @@ func (w *prefixSuffixSaver) Bytes() []byte {
 	buf.WriteString(" bytes ...\n")
 	buf.Write(w.suffix[w.suffixOff:])
 	buf.Write(w.suffix[:w.suffixOff])
-	return buf.Bytes()
+	return &buf
 }

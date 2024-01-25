@@ -4,28 +4,48 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
 	"slices"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/nxadm/tail"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+func ibazelLogPath(tempDir string) string {
+	return path.Join(tempDir, "ibazel.log")
+}
+
+func profileEventsPath(tempDir string) string {
+	return path.Join(tempDir, "profile.json")
+}
+
+var watchErrorRegex = regexp.MustCompile(`Bazel query failed: exit status 7`)
+
 type IBazel struct {
-	targets   []string
-	handler   *iBazelEventHandler
-	eventsDir string
-	dir       string
-	proc      *startedCmd
+	targets []string
+	events  *iBazelEventHandler
+	tempDir string
+	logFile *os.File
+	dir     string
+	proc    *startedCmd
+	logs    chan<- output.FancyLine
 }
 
 // returns a runner to interact with ibazel.
 func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
-	eventsDir, err := os.MkdirTemp("", "ibazel-events")
+	tempDir, err := os.MkdirTemp("", "ibazel")
+	if err != nil {
+		return nil, err
+	}
+
+	logFile, err := os.Create(ibazelLogPath(tempDir))
 	if err != nil {
 		return nil, err
 	}
@@ -38,10 +58,11 @@ func NewIBazel(cmds []BazelCommand, dir string) (*IBazel, error) {
 	}
 
 	return &IBazel{
-		targets:   targets,
-		handler:   newIBazelEventHandler(profileEventsFilePath(eventsDir)),
-		eventsDir: eventsDir,
-		dir:       dir,
+		targets: targets,
+		events:  newIBazelEventHandler(profileEventsPath(tempDir)),
+		tempDir: tempDir,
+		logFile: logFile,
+		dir:     dir,
 	}, nil
 }
 
@@ -60,33 +81,31 @@ func (ibazel *IBazel) RunInstall(ctx context.Context, env map[string]string) err
 		return err
 	}
 
-	go ibazel.handler.watch(ctx)
+	go ibazel.events.watch(ctx)
 
 	// block until initial ibazel build is completed
 	return ibazel.WaitForInitialBuild(ctx)
 }
 
+func (ib *IBazel) SetInstallerOutput(logs chan<- output.FancyLine) {
+	logs <- output.Styledf(output.StyleGrey, "iBazel output can be found at %s", ibazelLogPath(ib.tempDir))
+	logs <- output.Styledf(output.StyleGrey, "iBazel log events can be found at %s", profileEventsPath(ib.tempDir))
+	ib.logs = logs
+}
+
 func (ib *IBazel) GetExecCmd(ctx context.Context) *exec.Cmd {
 	// Writes iBazel events out to a log file. These are much easier to parse
 	// than trying to understand the output directly
-	profilePath := "--profile_dev=" + ib.profileEventsFilePath()
+	profilePath := "--profile_dev=" + profileEventsPath(ib.tempDir)
 	// This enables iBazel to try to apply the fixes from .bazel_fix_commands.json automatically
 	enableAutoFix := "--run_output_interactive=false"
 	args := append([]string{profilePath, enableAutoFix, "build"}, ib.targets...)
 	return exec.CommandContext(ctx, "ibazel", args...)
 }
 
-func (ib *IBazel) profileEventsFilePath() string {
-	return profileEventsFilePath(ib.eventsDir)
-}
-
-func profileEventsFilePath(eventsDir string) string {
-	return path.Join(eventsDir, "profile.json")
-}
-
 func (ib *IBazel) WaitForInitialBuild(ctx context.Context) error {
-	defer ib.handler.close()
-	for event := range ib.handler.events {
+	defer ib.events.close()
+	for event := range ib.events.events {
 		if event.Type == buildDone {
 			return nil
 		}
@@ -102,9 +121,14 @@ func (ib *IBazel) getCommandOptions(ctx context.Context) commandOptions {
 		name: "iBazel",
 		exec: ib.GetExecCmd(ctx),
 		dir:  ib.dir,
-		// Don't output iBazel logs until initial build is complete
-		// as it will break the progress bar
-		bufferOutput: true,
+		// Don't output iBazel logs (which are all on stderr) until
+		// initial build is complete as it will break the progress bar
+		stderr: outputOptions{
+			buffer: true,
+			additionalWriters: []io.Writer{
+				ib.logFile,
+				&patternMatcher{regex: watchErrorRegex, callback: ib.logWatchError},
+			}},
 	}
 }
 
@@ -115,13 +139,34 @@ func (ib *IBazel) Build(ctx context.Context) (err error) {
 	return err
 }
 
-func (ib *IBazel) StartOutput() error {
-	return ib.proc.StartOutput()
+func (ib *IBazel) StartOutput() {
+	ib.proc.StartOutput()
 }
 
-func (ib *IBazel) Stop() {
-	os.RemoveAll(ib.eventsDir)
+func (ib *IBazel) Close() {
+	ib.logFile.Close()
+	os.RemoveAll(ib.tempDir)
 	ib.proc.cancel()
+}
+
+func (ib *IBazel) logWatchError() {
+	buildQuery := `buildfiles(deps(set(%s)))`
+	queries := make([]string, len(ib.targets))
+	for i, target := range ib.targets {
+		queries[i] = fmt.Sprintf(buildQuery, target)
+	}
+
+	queryString := strings.Join(queries, " union ")
+
+	msg := `WARNING: iBazel failed to watch for changes, and will be unable to reload upon file changes.
+This is likely because bazel query for one of the targets failed. Try running:
+
+bazel query "%s"
+
+to determine which target is crashing the analysis.
+
+`
+	ib.logs <- output.Styledf(output.StyleWarning, msg, queryString)
 }
 
 type iBazelEventHandler struct {
