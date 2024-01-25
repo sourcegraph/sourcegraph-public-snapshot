@@ -10,7 +10,6 @@ import { OwnAnalyticsPage } from '../enterprise/own/admin-ui/OwnAnalyticsPage'
 import type { SiteAdminRolesPageProps } from '../enterprise/rbac/SiteAdminRolesPage'
 import type { RoleAssignmentModalProps } from '../enterprise/site-admin/UserManagement/components/RoleAssignmentModal'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
-import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from '../util/license'
 
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
