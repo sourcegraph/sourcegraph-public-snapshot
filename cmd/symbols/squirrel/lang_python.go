@@ -84,14 +84,24 @@ func (s *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Nod
 				continue
 
 			case "except_clause":
-				if cur.NamedChildCount() < 3 {
+				if cur.NamedChildCount() < 1 {
 					continue
 				}
+				// (except_clause
+				//  (as_pattern (identifier) alias: (as_pattern_target (identifier) @definition)))
 				//        vvvvvvvvv identifier
 				//                     v identifier
 				//                      v block
 				// except Exception as e:
-				exceptIdent := cur.NamedChild(1)
+				asPattern := cur.NamedChild(0)
+				if asPattern == nil || asPattern.Type() != "as_pattern" {
+					continue
+				}
+				asPatternTarget := asPattern.ChildByFieldName("alias")
+				if asPatternTarget == nil || asPatternTarget.Type() != "as_pattern_target" {
+					continue
+				}
+				exceptIdent := asPatternTarget.Child(0)
 				if exceptIdent == nil || exceptIdent.Type() != "identifier" {
 					continue
 				}
@@ -260,9 +270,6 @@ func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *
 						exceptChild := tryChild.NamedChild(k)
 						if exceptChild.Type() == "block" {
 							next := exceptChild
-							if next == nil {
-								return nil
-							}
 							found := s.findNodeInScopePython(swapNode(block, next), ident)
 							if found != nil {
 								return found
