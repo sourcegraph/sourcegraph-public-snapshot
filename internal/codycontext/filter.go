@@ -3,7 +3,8 @@ package context
 import (
 	"bytes"
 	"context"
-	"strings"
+	"io"
+	"os"
 
 	"github.com/sourcegraph/zoekt/ignore"
 
@@ -31,23 +32,23 @@ func NewCodyIgnoreFilter(ctx context.Context, client gitserver.Client, repos []t
 		filters: make(map[types.RepoIDName]filterFunc),
 	}
 	for _, repo := range repos {
-		head, found, err := client.Head(ctx, repo.Name)
+		_, commit, err := client.GetDefaultBranch(ctx, repo.Name, true)
 		if err != nil {
 			return nil, err
 		}
 		// this is an empty repo, there won't be anything to filter
-		if !found {
+		if commit == "" {
 			continue
 		}
-		ignoreFile, err := client.ReadFile(ctx, repo.Name, api.CommitID(head), codyIgnoreFile)
+		ignoreFileBytes, err := getIgnoreFileBytes(ctx, client, repo, commit)
 		if err != nil {
 			// We do not ignore anything if the ignore file does not exist.
-			if strings.Contains(err.Error(), "file does not exist") {
+			if os.IsNotExist(err) {
 				continue
 			}
 			return nil, err
 		}
-		ig, err := ignore.ParseIgnoreFile(bytes.NewReader(ignoreFile))
+		ig, err := ignore.ParseIgnoreFile(bytes.NewReader(ignoreFileBytes))
 		if err != nil {
 			return nil, err
 		}
@@ -69,4 +70,19 @@ func (f *repoFilter) Filter(chunks []FileChunkContext) []FileChunkContext {
 		}
 	}
 	return filtered
+}
+
+func getIgnoreFileBytes(ctx context.Context, client gitserver.Client, repo types.RepoIDName, commit api.CommitID) ([]byte, error) {
+	fr, err := client.NewFileReader(
+		ctx,
+		repo.Name,
+		commit,
+		codyIgnoreFile,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer fr.Close()
+
+	return io.ReadAll(fr)
 }

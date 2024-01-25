@@ -2,6 +2,9 @@ package context
 
 import (
 	"context"
+	"io"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,7 +23,8 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("no ignore files", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.ReadFileFunc.SetDefaultReturn(nil, errors.Errorf("err open .cody/ignore: file does not exist"))
+		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
+		client.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 		f, err := NewCodyIgnoreFilter(context.Background(), client, repos)
 		require.NoError(t, err)
 
@@ -43,12 +47,12 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("filters multiple rules in ignore file", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.HeadFunc.SetDefaultReturn("abc123", true, nil)
-		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
-			if repo == "repo2" { // filter only from repo2
-				return []byte("**/file1.go\nsecret.txt"), nil
+		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
+		client.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
+			if rn == "repo2" {
+				return io.NopCloser(strings.NewReader("**/file1.go\nsecret.txt")), nil
 			}
-			return nil, errors.Errorf("err open .cody/ignore: file does not exist")
+			return nil, os.ErrNotExist
 		})
 
 		f, err := NewCodyIgnoreFilter(context.Background(), client, repos)
@@ -84,17 +88,17 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("uses correct ignore file by repo", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.HeadFunc.SetDefaultReturn("abc123", true, nil)
-		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
-			if repo == "repo1" { // filter file1 from repo1
-				return []byte("**/file1.go"), nil
+		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
+		client.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
+			switch rn {
+			case "repo1":
+				return io.NopCloser(strings.NewReader("**/file1.go")), nil
+			case "repo2":
+				return io.NopCloser(strings.NewReader("**/file2.go")), nil
+			default:
+				return nil, os.ErrNotExist
 			}
-			if repo == "repo2" { // filter file2 from repo2
-				return []byte("**/file2.go"), nil
-			}
-			return nil, errors.Errorf("err open .cody/ignore: file does not exist")
 		})
-
 		f, err := NewCodyIgnoreFilter(context.Background(), client, repos)
 		require.NoError(t, err)
 
@@ -131,8 +135,8 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("empty repos don't error", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.HeadFunc.SetDefaultReturn("", false, nil)
-		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+		client.GetDefaultBranchFunc.SetDefaultReturn("", api.CommitID(""), nil)
+		client.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
 			t.Errorf("repos are empty, no files should be read")
 			return nil, nil
 		})
@@ -143,9 +147,9 @@ func TestNewFilter(t *testing.T) {
 
 	t.Run("errors checking head do error", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.HeadFunc.SetDefaultReturn("", false, errors.New("fail"))
-		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
-			t.Errorf("repos are empty, no files should be read")
+		client.GetDefaultBranchFunc.SetDefaultReturn("", api.CommitID(""), errors.New("fail"))
+		client.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
+			t.Errorf("failed checking head should not continue")
 			return nil, nil
 		})
 
@@ -153,10 +157,10 @@ func TestNewFilter(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("error reading ignore file does error", func(t *testing.T) {
+	t.Run("error reading ignore file causes error", func(t *testing.T) {
 		client := gitserver.NewMockClient()
-		client.HeadFunc.SetDefaultReturn("abc123", true, nil)
-		client.ReadFileFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
+		client.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
 			return nil, errors.New("fail")
 		})
 

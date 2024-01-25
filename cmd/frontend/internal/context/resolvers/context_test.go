@@ -115,7 +115,7 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.HeadFunc.SetDefaultReturn("abc123", true, nil)
+	mockGitserver.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
 		return fakeFileInfo{path: fileName}, nil
 	})
