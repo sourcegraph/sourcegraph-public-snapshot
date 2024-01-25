@@ -23,7 +23,7 @@ export interface SearchFiltersPanelProps {
     query: string
     filters: Filter[] | undefined
     className?: string
-    onQueryChange: (nextQuery: string) => void
+    onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
 }
 
 /**

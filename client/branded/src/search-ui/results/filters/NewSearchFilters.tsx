@@ -24,20 +24,20 @@ import {
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { ArrowBendIcon } from './components/Icons'
-import { mergeQueryAndFilters, useUrlFilters } from './hooks'
-import { SearchFilterType } from './types'
+import { mergeQueryAndFilters, URLQueryFilter, useUrlFilters } from './hooks'
+import { FiltersType, SEARCH_TYPES_TO_FILTER_TYPES, SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
 interface NewSearchFiltersProps {
     query: string
     filters?: Filter[]
-    onQueryChange: (nextQuery: string) => void
+    onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
     children?: ReactNode
 }
 
 export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange, children }) => {
-    const [selectedFilters, setSelectedFilters] = useUrlFilters()
+    const [selectedFilters, setSelectedFilters, serilizeFiltersURL] = useUrlFilters()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)
@@ -57,21 +57,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
     }, [query])
 
     const handleFilterTypeChange = (filterType: SearchFilterType): void => {
-        switch (filterType) {
-            case SearchFilterType.Code: {
-                const filters = findFilters(succeedScan(query), FilterType.type)
+        const newQuery = changeSearchFilterType(query, filterType)
+        const newSelectedFilters = omitImpossibleFilters(selectedFilters, filterType)
 
-                const newQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
-                onQueryChange(newQuery)
-                break
-            }
-            default: {
-                const filters = findFilters(succeedScan(query), FilterType.type)
-                const newQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
-
-                onQueryChange(updateFilter(newQuery, FilterType.type, toSearchSyntaxTypeFilter(filterType)))
-            }
-        }
+        // Replace: true is needed here to avoid populating history with
+        // extra entries with completely internal locations update,
+        // Setting filters shouldn't be in the history since onQueryChange
+        // changes URL itself.
+        onQueryChange(newQuery, serilizeFiltersURL(newSelectedFilters))
     }
 
     const handleApplyButtonFilters = (): void => {
@@ -82,60 +75,54 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
         <div className={styles.scrollWrapper}>
             <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
-            {type === SearchFilterType.Symbols && (
-                <SearchDynamicFilter
-                    title="By symbol kind"
-                    filterKind="symbol type"
-                    filters={filters}
-                    selectedFilters={selectedFilters}
-                    renderItem={symbolFilter}
-                    onSelectedFilterChange={setSelectedFilters}
-                />
-            )}
+            <SearchDynamicFilter
+                title="By symbol kind"
+                filterKind={FiltersType.SymbolKind}
+                filters={filters}
+                selectedFilters={selectedFilters}
+                renderItem={symbolFilter}
+                onSelectedFilterChange={setSelectedFilters}
+            />
 
             <SearchDynamicFilter
                 title="By language"
-                filterKind="lang"
+                filterKind={FiltersType.Language}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 renderItem={languageFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <SearchDynamicFilter
-                    title="By author"
-                    filterKind="author"
-                    filters={filters}
-                    selectedFilters={selectedFilters}
-                    renderItem={authorFilter}
-                    onSelectedFilterChange={setSelectedFilters}
-                />
-            )}
+            <SearchDynamicFilter
+                title="By author"
+                filterKind={FiltersType.Author}
+                filters={filters}
+                selectedFilters={selectedFilters}
+                renderItem={authorFilter}
+                onSelectedFilterChange={setSelectedFilters}
+            />
 
             <SearchDynamicFilter
                 title="By repositories"
-                filterKind="repo"
+                filterKind={FiltersType.Repository}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 renderItem={repoFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <SearchDynamicFilter
-                    title="By commit date"
-                    filterKind="commit date"
-                    filters={filters}
-                    selectedFilters={selectedFilters}
-                    renderItem={commitDateFilter}
-                    onSelectedFilterChange={setSelectedFilters}
-                />
-            )}
+            <SearchDynamicFilter
+                title="By commit date"
+                filterKind={FiltersType.CommitDate}
+                filters={filters}
+                selectedFilters={selectedFilters}
+                renderItem={commitDateFilter}
+                onSelectedFilterChange={setSelectedFilters}
+            />
 
             <SearchDynamicFilter
                 title="By file"
-                filterKind="file"
+                filterKind={FiltersType.File}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 onSelectedFilterChange={setSelectedFilters}
@@ -143,7 +130,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
 
             <SearchDynamicFilter
                 title="Utility"
-                filterKind="utility"
+                filterKind={FiltersType.Utility}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 renderItem={utilityFilter}
@@ -171,4 +158,26 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
             </div>
         </div>
     )
+}
+
+function changeSearchFilterType(query: string, searchType: SearchFilterType): string {
+    switch (searchType) {
+        case SearchFilterType.Code: {
+            const filters = findFilters(succeedScan(query), FilterType.type)
+
+            return filters.reduce((query, filter) => omitFilter(query, filter), query)
+        }
+        default: {
+            const filters = findFilters(succeedScan(query), FilterType.type)
+            const newQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
+
+            return updateFilter(newQuery, FilterType.type, toSearchSyntaxTypeFilter(searchType))
+        }
+    }
+}
+
+function omitImpossibleFilters(filters: URLQueryFilter[], searchType: SearchFilterType): URLQueryFilter[] {
+    const searchTypePossibleFilters = SEARCH_TYPES_TO_FILTER_TYPES[searchType]
+
+    return filters.filter(filter => searchTypePossibleFilters.includes(filter.kind))
 }

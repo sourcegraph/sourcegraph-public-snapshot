@@ -172,8 +172,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     )
 
     const handleFilterPanelQueryChange = useCallback(
-        (updatedQuery: string): void => {
-            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }])
+        (updatedQuery: string, updatedSearchURLQuery?: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }], updatedSearchURLQuery)
         },
         [onSearchSubmit]
     )

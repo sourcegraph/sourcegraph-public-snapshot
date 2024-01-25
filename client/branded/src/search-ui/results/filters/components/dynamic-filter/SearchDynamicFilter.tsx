@@ -64,17 +64,20 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
-    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
+    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
+
     const isSelected = (filter: Filter): boolean =>
         relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
 
     const mergedFilters = [
-        // Selected filters come first, but we want to map them to the backend filters to get the relevant count and exhaustiveness
+        // Selected filters come first, but we want to map them to the backend filters
+        // to get the relevant count and exhaustiveness
         ...relevantSelectedFilters.map(
             sf => filters?.find(f => filtersEqual(f, sf)) ?? { ...sf, count: 0, exhaustive: true }
         ),
-        // Followed by filters from the backend, but excluding the ones we already listed
+        // Followed by filters from the backend, but excluding the ones we
+        // already listed
         ...relevantFilters.filter(f => relevantSelectedFilters.find(sf => filtersEqual(f, sf)) === undefined),
     ]
 

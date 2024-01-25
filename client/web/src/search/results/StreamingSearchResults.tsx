@@ -144,19 +144,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
          * Example use-case: search-aggregation result bar click where we first update the URL
          * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
          */
-        (updates: QueryUpdate[], updatedSearchQuery?: string) =>
+        (updates: QueryUpdate[], updatedSearchQuery?: string) => {
             submitQuerySearch(
                 {
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    source: 'filter',
                     historyOrNavigate: navigate,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
                     location: {
                         ...location,
                         search: updatedSearchQuery || location.search,
                     },
-                    source: 'filter',
                 },
                 updates
-            ),
+            )
+        },
         [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
     )
 

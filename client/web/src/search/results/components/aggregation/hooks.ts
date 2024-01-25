@@ -73,16 +73,11 @@ const aggregationModeDeserializer = (
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
 export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> => {
-    const [aggregationMode, setAggregationMode] = useSyncedWithURLState<
-        SearchAggregationMode | null,
-        SerializedAggregationMode
-    >({
+    return useSyncedWithURLState<SearchAggregationMode | null, SerializedAggregationMode>({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
         deserializer: aggregationModeDeserializer,
     })
-
-    return [aggregationMode, setAggregationMode]
 }
 
 /**
@@ -121,13 +116,11 @@ const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIM
  * ULR query param {@link AGGREGATION_UI_MODE_URL_KEY}
  */
 export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> => {
-    const [aggregationMode, setAggregationMode] = useSyncedWithURLState({
+    return useSyncedWithURLState({
         urlKey: AGGREGATION_UI_MODE_URL_KEY,
         serializer: aggregationUIModeSerializer,
         deserializer: aggregationUIModeDeserializer,
     })
-
-    return [aggregationMode, setAggregationMode]
 }
 
 export const AGGREGATION_SEARCH_QUERY = gql`
