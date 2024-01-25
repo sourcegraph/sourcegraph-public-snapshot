@@ -411,7 +411,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	if licenseInfo != nil {
 		// If the license a Sourcegraph instance is running under does not support Code Search features
 		// we force disable related features (executors, batch-changes, executors, code-insights).
-		if licenseInfo.Features.CodeSearch {
+		if !licenseInfo.Features.CodeSearch {
 			context.BatchChangesEnabled = false
 			context.CodeInsightsEnabled = false
 			context.ExecutorsEnabled = false
