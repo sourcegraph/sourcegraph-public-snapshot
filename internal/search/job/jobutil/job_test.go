@@ -1156,7 +1156,6 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if err != nil {
@@ -1186,7 +1185,6 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -1259,7 +1257,6 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if err != nil {
@@ -1331,7 +1328,6 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if err != nil {
@@ -1474,10 +1470,8 @@ func runRepoSubsetTextSearch(
 	q query.Q,
 	zoekt *searchbackend.FakeStreamer,
 	searcherURLs *endpoint.Map,
-	mode search.GlobalSearchMode,
 	useFullDeadline bool,
 ) ([]*result.FileMatch, streaming.Stats, error) {
-	notSearcherOnly := mode != search.SearcherOnly
 	searcherArgs := &search.SearcherParameters{
 		PatternInfo:     patternInfo,
 		UseFullDeadline: useFullDeadline,
@@ -1500,51 +1494,49 @@ func runRepoSubsetTextSearch(
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	if notSearcherOnly {
-		b, err := query.ToBasicQuery(q)
-		if err != nil {
-			return nil, streaming.Stats{}, err
-		}
-
-		fieldTypes, _ := q.StringValues(query.FieldType)
-		var resultTypes result.Types
-		if len(fieldTypes) == 0 {
-			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, t := range fieldTypes {
-				resultTypes = resultTypes.With(result.TypeFromString[t])
-			}
-		}
-
-		typ := search.TextRequest
-		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &search.Features{}, typ)
-		if err != nil {
-			return nil, streaming.Stats{}, err
-		}
-
-		zoektParams := &search.ZoektParameters{
-			FileMatchLimit:  patternInfo.FileMatchLimit,
-			Select:          patternInfo.Select,
-			NumContextLines: 0,
-		}
-
-		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
-			Repos:       indexed,
-			Query:       zoektQuery,
-			Typ:         search.TextRequest,
-			ZoektParams: zoektParams,
-			Since:       nil,
-		}
-
-		// Run literal and regexp searches on indexed repositories.
-		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, job.RuntimeClients{
-				Logger: logger,
-				Zoekt:  zoekt,
-			}, agg)
-			return err
-		})
+	b, err := query.ToBasicQuery(q)
+	if err != nil {
+		return nil, streaming.Stats{}, err
 	}
+
+	fieldTypes, _ := q.StringValues(query.FieldType)
+	var resultTypes result.Types
+	if len(fieldTypes) == 0 {
+		resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+	} else {
+		for _, t := range fieldTypes {
+			resultTypes = resultTypes.With(result.TypeFromString[t])
+		}
+	}
+
+	typ := search.TextRequest
+	zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &search.Features{}, typ)
+	if err != nil {
+		return nil, streaming.Stats{}, err
+	}
+
+	zoektParams := &search.ZoektParameters{
+		FileMatchLimit:  patternInfo.FileMatchLimit,
+		Select:          patternInfo.Select,
+		NumContextLines: 0,
+	}
+
+	zoektJob := &zoektutil.RepoSubsetTextSearchJob{
+		Repos:       indexed,
+		Query:       zoektQuery,
+		Typ:         search.TextRequest,
+		ZoektParams: zoektParams,
+		Since:       nil,
+	}
+
+	// Run literal and regexp searches on indexed repositories.
+	g.Go(func() error {
+		_, err := zoektJob.Run(ctx, job.RuntimeClients{
+			Logger: logger,
+			Zoekt:  zoekt,
+		}, agg)
+		return err
+	})
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
