@@ -55,7 +55,7 @@
     align-self: center;
 }
 
-.toggleWrapper{
+.toggle-wrapper{
     border-radius: 3px;
     background: var(--Test, linear-gradient(91deg, rgba(228, 211, 252, 0.2) -3.65%, #D7F0FD 117.44%));
     padding: 4px 8px;
@@ -63,6 +63,9 @@
     justify-content: flex-end;
     align-items: center;
     gap: 8px;
+}
+.popover-content{
+    width:200px;
 }
 
 .cody-feedback-alert {

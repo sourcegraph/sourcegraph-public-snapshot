@@ -1,13 +1,6 @@
 import { FC, useCallback, useMemo, useState } from 'react'
 
-import {
-    mdiChevronDoubleDown,
-    mdiChevronDoubleUp,
-    mdiOpenInNew,
-    mdiThumbDown,
-    mdiThumbUp,
-    mdiInformation,
-} from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -18,7 +11,21 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Icon, Label, Link, Text, useSessionStorage } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    createRectangle,
+    H3,
+    Icon,
+    Link,
+    Popover,
+    PopoverContent,
+    PopoverOpenEvent,
+    PopoverTrigger,
+    Position,
+    Text,
+    useSessionStorage,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import {
@@ -40,6 +47,7 @@ import {
     getInsightsCreateAction,
     getSearchContextCreateAction,
 } from './createActions'
+import { SearchIcon } from './SearchIcon'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
@@ -184,6 +192,19 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
+    // search language popover props
+    const [isOpen, setIsOpen] = useState(false)
+
+    // Adds padding to the popover content to add some space between the trigger
+    // button and the content
+    const popoverPadding = createRectangle(0, 0, 0, 2)
+
+    const handlePopoverToggle = (event: PopoverOpenEvent): void => {
+        const { isOpen, reason } = event
+
+        setIsOpen(isOpen)
+    }
+
     return (
         <aside
             role="region"
@@ -240,16 +261,44 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
 
                 {props.showKeywordSearchToggle && (
                     <div className={styles.toggleWrapper}>
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiInformation} />
-                        <Label className={styles.toggle}>
-                            Search language update{' '}
-                            <Toggle
-                                value={props.patternType === SearchPatternType.keyword}
-                                onToggle={() => props.onTogglePatternType(props.patternType)}
-                                title="Enable search language update"
-                                className="mr-2"
-                            />
-                        </Label>
+                        <span className="mr-1">
+                            <SearchIcon aria-hidden={true} />
+                        </span>
+
+                        <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
+                            <PopoverTrigger
+                                as={Button}
+                                type="button"
+                                data-testid="dropdown-toggle"
+                                data-test-tooltip-content="Learn more about the new search language."
+                            >
+                                New search language
+                            </PopoverTrigger>
+                            <PopoverContent
+                                position={Position.bottomStart}
+                                className={classNames('a11y-ignore overflow-hidden ', 'p-4', 'popoverContent')}
+                                data-testid="dropdown-content"
+                                targetPadding={popoverPadding}
+                            >
+                                <div>
+                                    <H3>New, improved search</H3>
+                                    <Text>
+                                        The new search mode ANDs terms together instead of searching literally and
+                                        requires quotes to search specific strings.
+                                    </Text>
+                                    <Text>
+                                        <Link href="#">Read the docs</Link> to learn more.
+                                    </Text>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
+                        <Toggle
+                            value={props.patternType === SearchPatternType.keyword}
+                            onToggle={() => props.onTogglePatternType(props.patternType)}
+                            title="Enable search language update"
+                            className="mr-2"
+                        />
                     </div>
                 )}
 
