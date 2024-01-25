@@ -293,7 +293,8 @@ func TestTimeoutAfterAttributionFound(t *testing.T) {
 		nextLine("12"),
 	}
 	require.NoError(t, o.replay(ctx, f))
-	require.NoError(t, f.WaitDone(ctx))
+	// Will err iff cancellation races first to select within WaitDone.
+	f.WaitDone(ctx)
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
@@ -334,7 +335,8 @@ func TestTimeoutBeforeAttributionFound(t *testing.T) {
 		nextLine("11"),
 	}
 	require.NoError(t, o.replay(ctx, f))
-	require.NoError(t, f.WaitDone(ctx))
+	// Will err iff cancellation races first to select within WaitDone.
+	_ = f.WaitDone(ctx)
 	got := client.trimmedDiffs()
 	want := []string{
 		"1", "2", "3", "4", "5", "6", "7", "8",
