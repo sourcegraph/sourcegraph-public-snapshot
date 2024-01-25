@@ -39,9 +39,9 @@
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <span class="symbol-kind">
+                        <div class="symbol-kind">
                             <SymbolKind symbolKind={symbol.kind} />
-                        </span>
+                        </div>
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
                                 startLine={symbol.line - 1}

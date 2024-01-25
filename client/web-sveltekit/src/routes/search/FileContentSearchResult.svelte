@@ -142,7 +142,7 @@
         border: none;
         padding: 0.25rem 0.5rem;
         background-color: var(--code-bg);
-        color: var(--collapse-results-color);
+        color: var(--text-muted);
         cursor: pointer;
 
         &.expanded {

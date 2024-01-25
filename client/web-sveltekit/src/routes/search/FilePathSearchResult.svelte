@@ -19,7 +19,4 @@
             <RepoStars repoStars={result.repoStars} />
         {/if}
     </svelte:fragment>
-    <div class="p-2">
-        <small>Path match</small>
-    </div>
 </SearchResult>
