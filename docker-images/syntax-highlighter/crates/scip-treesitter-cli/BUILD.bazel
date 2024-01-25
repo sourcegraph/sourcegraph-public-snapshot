@@ -113,7 +113,7 @@ genrule(
         "testdata/scip-index.sh",
         ":scip_java_image_tarball",
     ] + glob(["testdata/java/**"]),
-    outs = ["index.scip"],
+    outs = ["index-java.scip"],
     cmd = """\
     $(location testdata/scip-index.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java/build.gradle) 'scip-java index' $@
     """,
