@@ -23,6 +23,11 @@ export interface OrgSummary {
 
 export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
@@ -45,6 +50,10 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
         batchChangesWebhookLogsEnabled,
         org,
         isSourcegraphDotCom,
+        license: {
+            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+        },
     }
 
     const url = `/organizations/${org.name}`
