@@ -4,7 +4,6 @@ import React, {
     type PropsWithChildren,
     type RefObject,
     Suspense,
-    useContext,
     useEffect,
     useMemo,
     useRef,
@@ -13,7 +12,6 @@ import React, {
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { createPortal } from 'react-dom'
 import { type Location, useLocation, Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -295,17 +293,6 @@ const RepoContainerRoot: FC<PropsWithChildren<{}>> = props => {
             </RepoContainerRootContext.Provider>
         </div>
     )
-}
-
-const RepoContainerRootPortal: FC<PropsWithChildren<{}>> = props => {
-    const { children } = props
-    const { rootElement } = useContext(RepoContainerRootContext)
-
-    if (!rootElement.current) {
-        return null
-    }
-
-    return createPortal(children, rootElement.current)
 }
 
 interface RepoUserContainerProps extends RepoContainerProps {
