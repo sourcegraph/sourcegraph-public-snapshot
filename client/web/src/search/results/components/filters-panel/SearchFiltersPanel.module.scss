@@ -14,8 +14,10 @@
     border-bottom-left-radius: 0;
 }
 
-.close-filters {
-    position: sticky;
-    bottom: 0.5rem;
-    margin: 0 0.5rem 0.5rem 0.5rem;
+.close-icon {
+    --icon-color: var(--body-color);
+
+    fill: none !important;
+    width: 0.75rem !important;
+    margin-right: 0.25rem;
 }

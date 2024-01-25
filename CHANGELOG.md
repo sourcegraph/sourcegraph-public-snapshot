@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.3.0 (planned release date: February, 2024)
+## Unreleased 5.3.0 (planned release date: 15th February, 2024)
 
 ### Added
 
@@ -68,7 +68,17 @@ All notable changes to Sourcegraph are documented in this file.
 - The column "Repository metadata" in the CSV export of repository search results is now deprecated and will be removed in a future release. Use "Repository metadata JSON" instead [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
 - Remote embeddings as context source for Cody has been removed. [#59493](https://github.com/sourcegraph/sourcegraph/pull/59493)
 
-## Unreleased 5.2.6
+## 5.2.7
+
+### Added
+
+### Fixed
+
+### Removed
+
+### Changed
+
+## 5.2.6
 
 ### Added
 
@@ -78,10 +88,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix executors auth header `installSrc` [#59391](https://github.com/sourcegraph/sourcegraph/pull/59391)
 - Avoid constantly rerunning failed embeddings jobs. [#58980](https://github.com/sourcegraph/sourcegraph/pull/58980)
-
-### Changed
-
-### Removed
 
 ## 5.2.5
 

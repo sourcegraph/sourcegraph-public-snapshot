@@ -7,9 +7,9 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use scip_treesitter_languages::parsers::BundledParser;
 use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
+use tree_sitter_all_languages::parsers::BundledParser;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -119,8 +119,8 @@ fn rocket() -> _ {
     // load configurations on-startup instead of on-first-request.
     // TODO: load individual languages lazily on-request instead, currently
     // CONFIGURATIONS.get will load every configured configuration together.
-    scip_treesitter_languages::highlights::CONFIGURATIONS
-        .get(&scip_treesitter_languages::parsers::BundledParser::Go);
+    tree_sitter_all_languages::highlights::CONFIGURATIONS
+        .get(&tree_sitter_all_languages::parsers::BundledParser::Go);
 
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {

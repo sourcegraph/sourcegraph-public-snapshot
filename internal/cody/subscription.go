@@ -11,8 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const USE_SSC_FEATURE_FLAG = "use-ssc-for-cody-subscription"
-const CODY_PRO_TRIAL_ENDED = "cody-pro-trial-ended"
+// use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
+const USE_SSC_FOR_SUBSCRIPTION_FF = "use-ssc-for-cody-subscription"
+
+// cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
+// (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
+const CODY_PRO_TRIAL_ENDED_FF = "cody-pro-trial-ended"
 
 const SAMS_SERVICE_ID = "https://accounts.sgdev.org"
 const SAMS_SERVICE_TYPE = "openidconnect"
@@ -20,8 +24,8 @@ const SAMS_SERVICE_TYPE = "openidconnect"
 type UserSubscriptionPlan string
 
 const (
-	UserSubscriptionPlanFree UserSubscriptionPlan = "free"
-	UserSubscriptionPlanPro  UserSubscriptionPlan = "pro"
+	UserSubscriptionPlanFree UserSubscriptionPlan = "FREE"
+	UserSubscriptionPlanPro  UserSubscriptionPlan = "PRO"
 )
 
 type UserSubscription struct {
@@ -75,13 +79,13 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 
 	// If the user doesn't have a subscription in the SSC backend, then we need
 	// synthesize one using the data available on dotcom.
-	currentPeriodStartAt, currentPeriodEndAt := PreSSCReleaseCurrentPeriodDateRange(ctx, user)
+	currentPeriodStartAt, currentPeriodEndAt := preSSCReleaseCurrentPeriodDateRange(ctx, user)
 
 	if user.CodyProEnabledAt != nil {
 		return &UserSubscription{
 			Status:               ssc.SubscriptionStatusPending,
 			Plan:                 UserSubscriptionPlanPro,
-			ApplyProRateLimits:   !featureflag.FromContext(ctx).GetBoolOr(CODY_PRO_TRIAL_ENDED, false),
+			ApplyProRateLimits:   !featureflag.FromContext(ctx).GetBoolOr(CODY_PRO_TRIAL_ENDED_FF, false),
 			CurrentPeriodStartAt: currentPeriodStartAt,
 			CurrentPeriodEndAt:   currentPeriodEndAt,
 		}, nil
@@ -127,7 +131,7 @@ func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.C
 	var subscription *ssc.Subscription
 
 	// Fetch subscription from SSC only if the feature flag is enabled and the user has a SAMS account ID
-	if samsAccountID != "" && featureflag.FromContext(ctx).GetBoolOr(USE_SSC_FEATURE_FLAG, false) {
+	if samsAccountID != "" && featureflag.FromContext(ctx).GetBoolOr(USE_SSC_FOR_SUBSCRIPTION_FF, false) {
 		subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(samsAccountID)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching user subscription from SSC")

@@ -1,4 +1,4 @@
-# Provides secrets like GH_TOKEN and PERCY_TOKEN via --define flag.
+# Provides secrets like GH_TOKEN and PERCY_TOKEN via --action_env flag.
 # Generated via the `.buildkite/hooks/post-checkout` hook.
 try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
 
@@ -29,13 +29,13 @@ common --test_env=TESTDB_MAXOPENCONNS=15
 common --test_env=BUILDKITE
 
 # Needed for mocha tests
-# We have to use the `--define` flag here instead of `--test_env` because
+# We have to use the `--action_env` flag here instead of `--test_env` because
 # the mocha tests target is the build target and it's tested with `build_test`.
-common --define=E2E_HEADLESS=false
+common --action_env=HEADLESS=false
 # if we set this to localhost, chrome will refuse to conenct since local host is in its HTTP Strict Transport Security
 # by setting the loopback address we get passed that
-common --define=E2E_SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
-common --define=DISPLAY=:99
+common --action_env=SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
+common --action_env=DISPLAY=:99
 
 # Provides git commit, branch information to build targets like Percy via status file.
 # https://bazel.build/docs/user-manual#workspace-status

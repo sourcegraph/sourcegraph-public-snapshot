@@ -4,7 +4,13 @@ export const USER_CODY_PLAN = gql`
     query UserCodyPlan {
         currentUser {
             id
-            codyProEnabled
+            codySubscription {
+                status
+                plan
+                applyProRateLimits
+                currentPeriodStartAt
+                currentPeriodEndAt
+            }
         }
     }
 `
@@ -17,8 +23,13 @@ export const USER_CODY_USAGE = gql`
             codyCurrentPeriodCodeUsage
             codyCurrentPeriodChatLimit
             codyCurrentPeriodCodeLimit
-            codyCurrentPeriodStartDate
-            codyCurrentPeriodEndDate
+            codySubscription {
+                status
+                plan
+                applyProRateLimits
+                currentPeriodStartAt
+                currentPeriodEndAt
+            }
         }
     }
 `
@@ -27,7 +38,13 @@ export const CHANGE_CODY_PLAN = gql`
     mutation ChangeCodyPlan($id: ID!, $pro: Boolean!) {
         changeCodyPlan(user: $id, pro: $pro) {
             id
-            codyProEnabled
+            codySubscription {
+                status
+                plan
+                applyProRateLimits
+                currentPeriodStartAt
+                currentPeriodEndAt
+            }
         }
     }
 `

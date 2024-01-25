@@ -1,3 +1,5 @@
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { Keyword } from '@sourcegraph/shared/src/search/query/token'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useSyncedWithURLState } from '@sourcegraph/wildcard'
 
@@ -27,4 +29,26 @@ export function useUrlFilters(): [URLQueryFilter[], (newFilters: URLQueryFilter[
     })
 
     return [filterQuery, setFilterQuery]
+}
+
+export function mergeQueryAndFilters(query: string, filters: URLQueryFilter[]): string {
+    const tokens = scanSearchQuery(query)
+
+    // Return original query if it's non-valid query
+    if (tokens.type === 'error') {
+        return query
+    }
+
+    const filterQuery = filters.map(f => f.value).join(' ')
+    const keywords = tokens.term.filter(token => token.type === 'keyword') as Keyword[]
+    const hasAnd = keywords.some(filter => filter.kind === 'and')
+    const hasOr = keywords.some(filter => filter.kind === 'or')
+
+    // Wrap original query with parenthesize if the query has 'or' or 'and'
+    // operators, otherwise simple concatenation may not work for all cases.
+    if (hasOr || hasAnd) {
+        return `(${query}) ${filterQuery}`.trim()
+    }
+
+    return `${query} ${filterQuery}`.trim()
 }

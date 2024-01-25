@@ -2,12 +2,14 @@ load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
-    name = "scip-treesitter",
+    name = "tree-sitter-all-languages",
     srcs = glob(["src/*.rs"]),
     aliases = aliases(),
-    proc_macro_deps = all_crate_deps(
-        proc_macro = True,
+    compile_data = glob(
+        ["queries/**"],
+        allow_empty = False,
     ),
+    proc_macro_deps = all_crate_deps(proc_macro = True),
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(
         normal = True,
@@ -21,7 +23,7 @@ rust_test(
         normal_dev = True,
         proc_macro_dev = True,
     ),
-    crate = ":scip-treesitter",
+    crate = ":tree-sitter-all-languages",
     env = {
         "RUST_BACKTRACE": "1",
     },

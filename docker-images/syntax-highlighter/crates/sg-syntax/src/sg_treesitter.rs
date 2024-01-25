@@ -2,8 +2,8 @@ use anyhow::Result;
 use protobuf::Message;
 use rocket::serde::json::{serde_json::json, Value as JsonValue};
 use scip::types::{Document, Occurrence, SyntaxKind};
-use scip_treesitter::types::PackedRange;
-use scip_treesitter_languages::highlights::{
+use scip_syntax::range::PackedRange;
+use tree_sitter_all_languages::highlights::{
     get_highlighting_configuration, get_syntax_kind_for_hl,
 };
 use tree_sitter_highlight::{
@@ -80,7 +80,7 @@ pub fn index_language_with_config(
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
     if include_locals {
-        let parser = scip_treesitter_languages::parsers::BundledParser::get_parser(filetype);
+        let parser = tree_sitter_all_languages::parsers::BundledParser::get_parser(filetype);
         if let Some(parser) = parser {
             // TODO: Could probably write this in a much better way.
             let mut local_occs =
@@ -260,7 +260,7 @@ mod test {
         io::Read,
     };
 
-    use scip_treesitter::snapshot::dump_document_with_config;
+    use scip_syntax::snapshot::{self, dump_document_with_config};
 
     use super::*;
     use crate::determine_filetype;
@@ -269,9 +269,9 @@ mod test {
         dump_document_with_config(
             doc,
             source,
-            scip_treesitter::snapshot::SnapshotOptions {
-                emit_syntax: scip_treesitter::snapshot::EmitSyntax::Highlighted,
-                emit_symbol: scip_treesitter::snapshot::EmitSymbol::None,
+            snapshot::SnapshotOptions {
+                emit_syntax: snapshot::EmitSyntax::Highlighted,
+                emit_symbol: snapshot::EmitSymbol::None,
                 ..Default::default()
             },
         )
@@ -282,9 +282,9 @@ mod test {
         dump_document_with_config(
             doc,
             source,
-            scip_treesitter::snapshot::SnapshotOptions {
-                emit_syntax: scip_treesitter::snapshot::EmitSyntax::Highlighted,
-                emit_symbol: scip_treesitter::snapshot::EmitSymbol::All,
+            snapshot::SnapshotOptions {
+                emit_syntax: snapshot::EmitSyntax::Highlighted,
+                emit_symbol: snapshot::EmitSymbol::All,
                 ..Default::default()
             },
         )

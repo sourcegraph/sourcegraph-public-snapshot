@@ -13,7 +13,7 @@ Queries describing the local binding structure of various programming languages 
 use scip_syntax::languages;
 use scip_syntax::locals;
 use scip::types::Document;
-use scip_treesitter_languages::parsers::BundledParser;
+use tree_sitter_all_languages::parsers::BundledParser;
 
 const SOURCE: &[u8] = b"
 package main

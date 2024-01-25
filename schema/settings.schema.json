@@ -222,6 +222,11 @@
           "!go": {
             "pointer": true
           }
+        },
+        "keywordSearch": {
+          "description": "Whether to enable the 'keyword search' language improvement",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"

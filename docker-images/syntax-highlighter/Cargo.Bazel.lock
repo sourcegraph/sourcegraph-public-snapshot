@@ -1,5 +1,5 @@
 {
-  "checksum": "2aace7295e52e3affbef65c6d2975a2348c691c9ee9758235daa1104fcda8c37",
+  "checksum": "cb6fb8360952587a23bbece0f8c3299a82b055ed9c70fdcdfa7da0a236565015",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10469,44 +10469,6 @@
       },
       "license": "Apache-2.0"
     },
-    "scip-macros 0.1.0": {
-      "name": "scip-macros",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "ProcMacro": {
-            "crate_name": "scip_macros",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "scip_macros",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "quote 1.0.35",
-              "target": "quote"
-            },
-            {
-              "id": "syn 1.0.109",
-              "target": "syn"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "scip-syntax 0.1.0": {
       "name": "scip-syntax",
       "version": "0.1.0",
@@ -10605,52 +10567,6 @@
       },
       "license": null
     },
-    "scip-treesitter 0.1.0": {
-      "name": "scip-treesitter",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "scip_treesitter",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "scip_treesitter",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "anyhow 1.0.75",
-              "target": "anyhow"
-            },
-            {
-              "id": "protobuf 3.2.0",
-              "target": "protobuf"
-            },
-            {
-              "id": "scip 0.3.2",
-              "target": "scip"
-            },
-            {
-              "id": "tree-sitter 0.20.10",
-              "target": "tree_sitter"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "scip-treesitter-cli 0.1.0": {
       "name": "scip-treesitter-cli",
       "version": "0.1.0",
@@ -10728,141 +10644,6 @@
             {
               "id": "walkdir 2.3.3",
               "target": "walkdir"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "proc_macro_deps": {
-          "common": [
-            {
-              "id": "paste 1.0.14",
-              "target": "paste"
-            }
-          ],
-          "selects": {}
-        },
-        "version": "0.1.0"
-      },
-      "license": null
-    },
-    "scip-treesitter-languages 0.1.0": {
-      "name": "scip-treesitter-languages",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "scip_treesitter_languages",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "scip_treesitter_languages",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "lazy_static 1.4.0",
-              "target": "lazy_static"
-            },
-            {
-              "id": "scip 0.3.2",
-              "target": "scip"
-            },
-            {
-              "id": "tree-sitter 0.20.10",
-              "target": "tree_sitter"
-            },
-            {
-              "id": "tree-sitter-c 0.20.6",
-              "target": "tree_sitter_c"
-            },
-            {
-              "id": "tree-sitter-c-sharp 0.20.0",
-              "target": "tree_sitter_c_sharp"
-            },
-            {
-              "id": "tree-sitter-cpp 0.20.3",
-              "target": "tree_sitter_cpp"
-            },
-            {
-              "id": "tree-sitter-go 0.20.0",
-              "target": "tree_sitter_go"
-            },
-            {
-              "id": "tree-sitter-highlight 0.20.1",
-              "target": "tree_sitter_highlight"
-            },
-            {
-              "id": "tree-sitter-java 0.20.2",
-              "target": "tree_sitter_java"
-            },
-            {
-              "id": "tree-sitter-javascript 0.20.0",
-              "target": "tree_sitter_javascript"
-            },
-            {
-              "id": "tree-sitter-jsonnet 0.0.1",
-              "target": "tree_sitter_jsonnet"
-            },
-            {
-              "id": "tree-sitter-kotlin 0.2.11",
-              "target": "tree_sitter_kotlin"
-            },
-            {
-              "id": "tree-sitter-matlab 1.0.2",
-              "target": "tree_sitter_matlab"
-            },
-            {
-              "id": "tree-sitter-nickel 0.0.1",
-              "target": "tree_sitter_nickel"
-            },
-            {
-              "id": "tree-sitter-perl 0.0.1",
-              "target": "tree_sitter_perl"
-            },
-            {
-              "id": "tree-sitter-pod 0.0.1",
-              "target": "tree_sitter_pod"
-            },
-            {
-              "id": "tree-sitter-python 0.20.4",
-              "target": "tree_sitter_python"
-            },
-            {
-              "id": "tree-sitter-ruby 0.20.0",
-              "target": "tree_sitter_ruby"
-            },
-            {
-              "id": "tree-sitter-rust 0.20.4",
-              "target": "tree_sitter_rust"
-            },
-            {
-              "id": "tree-sitter-scala 0.20.2",
-              "target": "tree_sitter_scala"
-            },
-            {
-              "id": "tree-sitter-sql 0.0.2",
-              "target": "tree_sitter_sql"
-            },
-            {
-              "id": "tree-sitter-typescript 0.20.2",
-              "target": "tree_sitter_typescript"
-            },
-            {
-              "id": "tree-sitter-xlsg 0.0.1",
-              "target": "tree_sitter_xlsg"
-            },
-            {
-              "id": "tree-sitter-zig 0.0.1",
-              "target": "tree_sitter_zig"
             }
           ],
           "selects": {}
@@ -11866,83 +11647,6 @@
         "version": "0.10.0"
       },
       "license": "MIT"
-    },
-    "syn 1.0.109": {
-      "name": "syn",
-      "version": "1.0.109",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.109/download",
-          "sha256": "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "syn",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "syn",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "clone-impls",
-            "default",
-            "derive",
-            "parsing",
-            "printing",
-            "proc-macro",
-            "quote"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "proc-macro2 1.0.74",
-              "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.35",
-              "target": "quote"
-            },
-            {
-              "id": "syn 1.0.109",
-              "target": "build_script_build"
-            },
-            {
-              "id": "unicode-ident 1.0.11",
-              "target": "unicode_ident"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "1.0.109"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ]
-      },
-      "license": "MIT OR Apache-2.0"
     },
     "syn 2.0.46": {
       "name": "syn",
@@ -13539,6 +13243,141 @@
         }
       },
       "license": "MIT"
+    },
+    "tree-sitter-all-languages 0.1.0": {
+      "name": "tree-sitter-all-languages",
+      "version": "0.1.0",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_all_languages",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_all_languages",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            },
+            {
+              "id": "scip 0.3.2",
+              "target": "scip"
+            },
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-c 0.20.6",
+              "target": "tree_sitter_c"
+            },
+            {
+              "id": "tree-sitter-c-sharp 0.20.0",
+              "target": "tree_sitter_c_sharp"
+            },
+            {
+              "id": "tree-sitter-cpp 0.20.3",
+              "target": "tree_sitter_cpp"
+            },
+            {
+              "id": "tree-sitter-go 0.20.0",
+              "target": "tree_sitter_go"
+            },
+            {
+              "id": "tree-sitter-highlight 0.20.1",
+              "target": "tree_sitter_highlight"
+            },
+            {
+              "id": "tree-sitter-java 0.20.2",
+              "target": "tree_sitter_java"
+            },
+            {
+              "id": "tree-sitter-javascript 0.20.0",
+              "target": "tree_sitter_javascript"
+            },
+            {
+              "id": "tree-sitter-jsonnet 0.0.1",
+              "target": "tree_sitter_jsonnet"
+            },
+            {
+              "id": "tree-sitter-kotlin 0.2.11",
+              "target": "tree_sitter_kotlin"
+            },
+            {
+              "id": "tree-sitter-matlab 1.0.2",
+              "target": "tree_sitter_matlab"
+            },
+            {
+              "id": "tree-sitter-nickel 0.0.1",
+              "target": "tree_sitter_nickel"
+            },
+            {
+              "id": "tree-sitter-perl 0.0.1",
+              "target": "tree_sitter_perl"
+            },
+            {
+              "id": "tree-sitter-pod 0.0.1",
+              "target": "tree_sitter_pod"
+            },
+            {
+              "id": "tree-sitter-python 0.20.4",
+              "target": "tree_sitter_python"
+            },
+            {
+              "id": "tree-sitter-ruby 0.20.0",
+              "target": "tree_sitter_ruby"
+            },
+            {
+              "id": "tree-sitter-rust 0.20.4",
+              "target": "tree_sitter_rust"
+            },
+            {
+              "id": "tree-sitter-scala 0.20.2",
+              "target": "tree_sitter_scala"
+            },
+            {
+              "id": "tree-sitter-sql 0.0.2",
+              "target": "tree_sitter_sql"
+            },
+            {
+              "id": "tree-sitter-typescript 0.20.2",
+              "target": "tree_sitter_typescript"
+            },
+            {
+              "id": "tree-sitter-xlsg 0.0.1",
+              "target": "tree_sitter_xlsg"
+            },
+            {
+              "id": "tree-sitter-zig 0.0.1",
+              "target": "tree_sitter_zig"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "proc_macro_deps": {
+          "common": [
+            {
+              "id": "paste 1.0.14",
+              "target": "paste"
+            }
+          ],
+          "selects": {}
+        },
+        "version": "0.1.0"
+      },
+      "license": null
     },
     "tree-sitter-c 0.20.6": {
       "name": "tree-sitter-c",
@@ -17367,13 +17206,11 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "scip-macros 0.1.0": "docker-images/syntax-highlighter/crates/scip-macros",
     "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
-    "scip-treesitter 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter",
     "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
-    "scip-treesitter-languages 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-languages",
     "sg-syntax 0.1.0": "docker-images/syntax-highlighter/crates/sg-syntax",
-    "syntect_server 1.0.1": "docker-images/syntax-highlighter"
+    "syntect_server 1.0.1": "docker-images/syntax-highlighter",
+    "tree-sitter-all-languages 0.1.0": "docker-images/syntax-highlighter/crates/tree-sitter-all-languages"
   },
   "conditions": {
     "aarch64-apple-darwin": [
@@ -17893,7 +17730,6 @@
     "paste 1.0.14",
     "predicates 3.0.4",
     "protobuf 3.2.0",
-    "quote 1.0.35",
     "regex 1.9.3",
     "rocket 0.5.0-rc.3",
     "rustc-hash 1.1.0",
@@ -17903,7 +17739,6 @@
     "serde 1.0.194",
     "serde_json 1.0.99",
     "string-interner 0.14.0",
-    "syn 1.0.109",
     "syntect 4.7.0",
     "tree-sitter 0.20.10",
     "tree-sitter-c 0.20.6",
