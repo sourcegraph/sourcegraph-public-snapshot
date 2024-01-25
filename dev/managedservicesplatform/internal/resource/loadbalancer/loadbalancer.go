@@ -65,7 +65,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	endpointGroup := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
 		id.TerraformID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+			Name:    config.TargetService.Name(),
 			Project: pointers.Ptr(config.ProjectID),
 			Region:  pointers.Ptr(config.Region),
 
@@ -79,7 +79,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	backendService := computebackendservice.NewComputeBackendService(scope,
 		id.TerraformID("backend_service"),
 		&computebackendservice.ComputeBackendServiceConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+			Name:    config.TargetService.Name(),
 			Project: pointers.Ptr(config.ProjectID),
 
 			Protocol: pointers.Ptr("HTTP"),
@@ -98,7 +98,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	urlMap := computeurlmap.NewComputeUrlMap(scope,
 		id.TerraformID("url_map"),
 		&computeurlmap.ComputeUrlMapConfig{
-			Name:           pointers.Ptr(id.DisplayName()),
+			Name:           config.TargetService.Name(),
 			Project:        pointers.Ptr(config.ProjectID),
 			DefaultService: backendService.Id(),
 		})
@@ -108,7 +108,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	httpsProxy := computetargethttpsproxy.NewComputeTargetHttpsProxy(scope,
 		id.TerraformID("https-proxy"),
 		&computetargethttpsproxy.ComputeTargetHttpsProxyConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+			Name:    pointers.Stringf("%s-https", *config.TargetService.Name()),
 			Project: pointers.Ptr(config.ProjectID),
 			// target the URL map
 			UrlMap: urlMap.Id(),
@@ -120,7 +120,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				scope,
 				id.TerraformID("ssl-policy"),
 				&computesslpolicy.ComputeSslPolicyConfig{
-					Name:    pointers.Ptr(id.DisplayName()),
+					Name:    pointers.Stringf("%s-https", *config.TargetService.Name()),
 					Project: pointers.Ptr(config.ProjectID),
 
 					Profile:       pointers.Ptr("MODERN"),
@@ -146,7 +146,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	_ = computeglobalforwardingrule.NewComputeGlobalForwardingRule(scope,
 		id.TerraformID("forwarding-rule"),
 		&computeglobalforwardingrule.ComputeGlobalForwardingRuleConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+			Name:    config.TargetService.Name(),
 			Project: pointers.Ptr(config.ProjectID),
 
 			IpAddress: externalAddress.Address(),

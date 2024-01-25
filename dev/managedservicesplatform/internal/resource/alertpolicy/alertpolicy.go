@@ -315,12 +315,12 @@ func buildFilter(config *Config) string {
 	case CloudRunService:
 		filters = append(filters,
 			`resource.type = "cloud_run_revision"`,
-			fmt.Sprintf(`resource.labels.service_name = "%s"`, config.ResourceName),
+			fmt.Sprintf(`resource.labels.service_name = starts_with("%s")`, config.ResourceName),
 		)
 	case CloudRunJob:
 		filters = append(filters,
 			`resource.type = "cloud_run_job"`,
-			fmt.Sprintf(`resource.labels.job_name = "%s"`, config.ResourceName),
+			fmt.Sprintf(`resource.labels.job_name = starts_with("%s")`, config.ResourceName),
 		)
 	case CloudRedis:
 		filters = append(filters,
