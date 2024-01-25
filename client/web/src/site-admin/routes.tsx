@@ -193,10 +193,7 @@ const CodyConfigurationPage = lazyComponent(
     'CodyConfigurationPage'
 )
 
-const disableCodeSearchFeatures = isCodyOnlyLicense()
-const disableCodyFeatures = isCodeSearchOnlyLicense()
-const codyIsEnabled = (): boolean =>
-    Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled && !disableCodyFeatures)
+const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
