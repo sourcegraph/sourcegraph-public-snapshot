@@ -13,10 +13,6 @@ tmp_folder=$(mktemp -d)
 cp -R -L "$project_root"/* $tmp_folder/
 trap "rm -Rf $tmp_folder" EXIT
 
-echo $project_root
-echo $tmp_folder
-ls -lR $tmp_folder
-
 chmod -R 0777 $tmp_folder
 
 hacky_cmd="scip-java index > /dev/null && (cat ./index.scip | base64)"
@@ -24,5 +20,7 @@ command="(docker run -a stdout -v $tmp_folder:/sources $image_name bash -c '$hac
 
 docker load --input="$tarball"
 eval $command
+
+ls -lR $tmp_folder
 
 cp "$tmp_folder"/index-piped.scip "$out"
