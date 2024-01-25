@@ -160,7 +160,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		// Set up a redirect proxy for HTTP to HTTPS
 		// Make sure to use this ID group instead of the root one for resources
 		// in this block.
-		httpToHttpsID := id.Group("http_to_https")
+		httpToHttpsID := id.Group("http-to-https")
 		httpToHttpsURLMap := computeurlmap.NewComputeUrlMap(scope,
 			httpToHttpsID.TerraformID("url_map"),
 			&computeurlmap.ComputeUrlMapConfig{
