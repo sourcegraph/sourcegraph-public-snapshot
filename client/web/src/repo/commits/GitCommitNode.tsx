@@ -21,6 +21,7 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 import styles from './GitCommitNode.module.scss'
 
+const TRUNCATED_COMMIT_MESSAGE_LENGTH = 240
 export interface GitCommitNodeProps {
     node: GitCommitFields
 
@@ -158,25 +159,30 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         </div>
     )
 
-    const handleTruncate = () => setTruncateCommitMessage(!truncateCommitMessage)
-    const showCommitMessage = expandCommitMessageBody || showCommitMessageBody
-    const commitContent =
-        truncateCommitMessage && node.body && node.body.length > 240 ? `${node.body.slice(0, 240)}...` : node.body
-    const truncationNeeded = commitContent && commitContent.length > 240
+    const commitMessage = node.body ?? ''
+    const truncationNeeded = commitMessage.length > TRUNCATED_COMMIT_MESSAGE_LENGTH
+    const truncatedCommitMessage =
+        truncateCommitMessage && truncationNeeded
+            ? `${commitMessage.slice(0, TRUNCATED_COMMIT_MESSAGE_LENGTH)}...`
+            : commitMessage
 
-    const commitMessageBody =
-        showCommitMessage && commitContent ? (
-            <div className="w-100">
-                <pre className={styles.messageBody}>
-                    <Linkified input={commitContent} externalURLs={node.externalURLs} />
-                    {truncationNeeded && (
-                        <Button variant="link" size="sm" display="inline" onClick={handleTruncate}>
-                            {truncateCommitMessage ? 'see more' : 'see less'}
-                        </Button>
-                    )}
-                </pre>
-            </div>
-        ) : undefined
+    const commitMessageBody = (
+        <div className="w-100">
+            <pre className={styles.messageBody}>
+                <Linkified input={truncatedCommitMessage} externalURLs={node.externalURLs} />
+                {truncationNeeded && (
+                    <Button
+                        variant="link"
+                        size="sm"
+                        display="inline"
+                        onClick={() => setTruncateCommitMessage(!truncateCommitMessage)}
+                    >
+                        {truncateCommitMessage ? 'see more' : 'see less'}
+                    </Button>
+                )}
+            </pre>
+        </div>
+    )
 
     const bylineElement = (
         <GitCommitNodeByline
