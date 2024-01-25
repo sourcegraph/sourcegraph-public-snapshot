@@ -321,7 +321,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// server. Including secret fields here is OK if it is based on the user's
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
-	return JSContext{
+	context := JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
@@ -407,6 +407,26 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		RunningOnMacOS: runningOnMacOS,
 	}
+
+	if licenseInfo != nil {
+		// If the license a Sourcegraph instance is running under does not support Code Search features
+		// we force disable related features (executors, batch-changes, executors, code-insights).
+		if licenseInfo.Features.CodeSearch {
+			context.BatchChangesEnabled = false
+			context.CodeInsightsEnabled = false
+			context.ExecutorsEnabled = false
+			context.CodeInsightsEnabled = false
+		}
+
+		// If the license a Sourcegraph instance is running under does not support Cody features
+		// we force disable related features (embeddings etc).
+		if !licenseInfo.Features.Cody {
+			context.CodyEnabled = false
+			context.CodyEnabledForCurrentUser = false
+			context.EmbeddingsEnabled = false
+		}
+	}
+	return context
 }
 
 // createCurrentUser creates CurrentUser object which contains of types.User
