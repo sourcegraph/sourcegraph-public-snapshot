@@ -74,7 +74,7 @@ rust_test(
     ),
     data = [
         ":scip-treesitter",
-        ":scip_java_groundtruth_scip",
+        ":java_groundtruth_scip",
     ] + glob(
         ["tests/snapshots/**"],
         allow_empty = False,
@@ -86,7 +86,7 @@ rust_test(
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
         "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter)",
-        "SCIP_JAVA_INDEX": "$(rootpath :scip_java_groundtruth_scip)",
+        "SCIP_JAVA_INDEX": "$(rootpath :java_groundtruth_scip)",
     },
     deps = all_crate_deps(
         normal = True,
@@ -108,7 +108,7 @@ oci_tarball(
 )
 
 genrule(
-    name = "scip_java_groundtruth_scip",
+    name = "java_groundtruth_scip",
     srcs = [
         "testdata/scip-index.sh",
         ":scip_java_image_tarball",
