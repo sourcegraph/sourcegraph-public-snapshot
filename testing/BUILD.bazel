@@ -30,8 +30,8 @@ server_integration_test(
     },
     env_inherit = [
         "DISPLAY",
-        "E2E_HEADLESS",
-        "E2E_SOURCEGRAPH_BASE_URL",
+        "HEADLESS",
+        "SOURCEGRAPH_BASE_URL",
         "GHE_GITHUB_TOKEN",
         "GH_TOKEN",
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
