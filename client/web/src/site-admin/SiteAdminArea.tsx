@@ -19,6 +19,7 @@ import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
 import type { RouteV6Descriptor } from '../util/contributions'
+import { getLicenseFeatures } from '../util/license'
 
 import {
     maintenanceGroupHeaderLabel,
@@ -140,10 +141,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         telemetryService: props.telemetryService,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
-        license: {
-            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
-            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
-        },
+        license: getLicenseFeatures(),
     }
 
     return (

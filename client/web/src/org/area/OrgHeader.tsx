@@ -6,6 +6,7 @@ import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import type { BatchChangesProps } from '../../batches'
 import type { NavItemWithIconDescriptor } from '../../util/contributions'
+import { getLicenseFeatures } from '../../util/license'
 import { OrgAvatar } from '../OrgAvatar'
 
 import type { OrgAreaRouteContext } from './OrgArea'
@@ -50,10 +51,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
         batchChangesWebhookLogsEnabled,
         org,
         isSourcegraphDotCom,
-        license: {
-            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
-            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
-        },
+        license: getLicenseFeatures(),
     }
 
     const url = `/organizations/${org.name}`
