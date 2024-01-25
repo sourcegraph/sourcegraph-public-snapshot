@@ -20,7 +20,6 @@ import {
     Link,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
     PopoverTrigger,
     Position,
     Text,
@@ -50,6 +49,10 @@ import {
 import { SearchIcon } from './SearchIcon'
 
 import styles from './SearchResultsInfoBar.module.scss'
+
+// Adds padding to the popover content to add some space between the trigger
+// button and the content
+const LANG_UPDATE_POPOVER_PADDING = createRectangle(0, 0, 0, 2)
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
@@ -192,19 +195,6 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
-    // search language popover props
-    const [isOpen, setIsOpen] = useState(false)
-
-    // Adds padding to the popover content to add some space between the trigger
-    // button and the content
-    const popoverPadding = createRectangle(0, 0, 0, 2)
-
-    const handlePopoverToggle = (event: PopoverOpenEvent): void => {
-        const { isOpen, reason } = event
-
-        setIsOpen(isOpen)
-    }
-
     return (
         <aside
             role="region"
@@ -265,10 +255,11 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                             <SearchIcon aria-hidden={true} />
                         </span>
 
-                        <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
+                        <Popover>
                             <PopoverTrigger
                                 as={Button}
                                 type="button"
+                                className="p-0"
                                 data-testid="dropdown-toggle"
                                 data-test-tooltip-content="Learn more about the new search language."
                             >
@@ -276,9 +267,9 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                             </PopoverTrigger>
                             <PopoverContent
                                 position={Position.bottomStart}
-                                className={classNames('a11y-ignore overflow-hidden ', 'p-4', 'popoverContent')}
+                                className={styles.popoverContent}
                                 data-testid="dropdown-content"
-                                targetPadding={popoverPadding}
+                                targetPadding={LANG_UPDATE_POPOVER_PADDING}
                             >
                                 <div>
                                     <H3>New, improved search</H3>
