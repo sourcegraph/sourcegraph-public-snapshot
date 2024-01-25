@@ -27,7 +27,6 @@ import { PageRoutes } from '../../routes.constants'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { LazyV2SearchInput } from '../../search/input/LazyV2SearchInput'
 import { setSearchCaseSensitivity, setSearchMode, setSearchPatternType, useNavbarQueryState } from '../../stores'
-import { isCodyOnlyLicense } from '../../util/license'
 import { InlineNavigationPanel } from '../GlobalNavbar'
 import { UserNavItem } from '../UserNavItem'
 
@@ -70,11 +69,10 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
     // Features enablement flags and conditions
     const isLicensed = !!window.context?.licenseInfo
-    const disableCodeSearchFeatures = isCodyOnlyLicense()
     const showOwn = ownEnabled
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const [showCodySearch] = useFeatureFlag('cody-web-search')
-    const showSearchJobs = isSearchJobsEnabled() && !disableCodeSearchFeatures
+    const showSearchJobs = isSearchJobsEnabled()
     const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom
     const showBatchChanges = batchChangesEnabled && isLicensed && !isSourcegraphDotCom
