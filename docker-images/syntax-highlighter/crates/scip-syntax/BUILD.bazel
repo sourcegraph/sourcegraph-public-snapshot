@@ -12,11 +12,7 @@ rust_library(
         ],
         allow_empty = False,
     ),
-    proc_macro_deps = all_crate_deps(
-        proc_macro = True,
-    ) + [
-        "//docker-images/syntax-highlighter/crates/scip-macros:scip-macros",
-    ],
+    proc_macro_deps = all_crate_deps(proc_macro = True),
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(
         normal = True,

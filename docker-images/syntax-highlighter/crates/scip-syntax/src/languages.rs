@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use scip::types::Descriptor;
-use scip_macros::include_scip_query;
+use scip_treesitter_languages::include_scip_query;
 use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::{Language, Parser, Query};
 

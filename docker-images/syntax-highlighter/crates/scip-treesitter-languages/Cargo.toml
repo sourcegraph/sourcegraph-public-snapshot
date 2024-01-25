@@ -9,8 +9,6 @@ edition = "2021"
 lazy_static = "1.0"
 paste = "1.0.6"
 
-scip-macros = { path = "../scip-macros" }
-
 scip.workspace = true
 tree-sitter.workspace = true
 tree-sitter-highlight.workspace = true

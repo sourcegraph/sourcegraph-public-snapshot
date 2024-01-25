@@ -41,7 +41,6 @@ members = [
     "crates/sg-syntax",
 
     # later, these will be pulled out to a separate repo
-    "crates/scip-macros",
     "crates/scip-syntax",
     "crates/scip-treesitter",
     "crates/scip-treesitter-languages",
