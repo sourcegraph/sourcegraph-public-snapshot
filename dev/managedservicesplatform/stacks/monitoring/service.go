@@ -120,12 +120,12 @@ func createExternalHealthcheckAlert(
 			Filters: map[string]string{
 				"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
 			},
-			Aligner: alertpolicy.MonitoringAlignFractionTrue,
-			// Checks occur every 60s, in a 300s window if 2/5 fail we are in trouble
-			Period:     "300s",
+			Aligner:    alertpolicy.MonitoringAlignFractionTrue,
 			Duration:   "0s",
 			Comparison: alertpolicy.ComparisonLT,
-			Threshold:  0.4,
+			// Checks run once every 60s, if 2/3 fail we are in trouble.
+			Period:    "180s",
+			Threshold: 0.4,
 			// Alert when all locations go down
 			Trigger: alertpolicy.TriggerKindAllInViolation,
 		},
