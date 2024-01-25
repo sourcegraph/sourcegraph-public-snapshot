@@ -291,7 +291,7 @@ export const codyGroup: SiteAdminSideBarGroup = {
             condition: () => window.context?.embeddingsEnabled,
         },
     ],
-    condition: () => window.context?.codyEnabled,
+    condition: () => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled),
 }
 
 const usersGroup: SiteAdminSideBarGroup = {
