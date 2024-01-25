@@ -19,15 +19,14 @@ type repoFilter struct {
 	filters map[types.RepoIDName]filterFunc
 }
 
-type RepoContextFilter interface {
+type RepoContentFilter interface {
 	Filter(chunks []FileChunkContext) []FileChunkContext
 }
 
-// NewCodyIgnoreFilter creates a new Filter that applies .cody/ignore rules from
-// the given repositories to filter file paths. It reads the .cody/ignore file
-// from each repo and parses it into an ignore.Matcher func that is stored in
-// the returned Filter.
-func NewCodyIgnoreFilter(ctx context.Context, client gitserver.Client, repos []types.RepoIDName) (RepoContextFilter, error) {
+// NewCodyIgnoreFilter creates a new RepoContentFilter that filters out
+// content based on the .cody/ignore file at the head of the default branch
+// for the given repositories. If no .cody/ignore file exists, no filtering is done.
+func NewCodyIgnoreFilter(ctx context.Context, client gitserver.Client, repos []types.RepoIDName) (RepoContentFilter, error) {
 	f := &repoFilter{
 		filters: make(map[types.RepoIDName]filterFunc),
 	}
