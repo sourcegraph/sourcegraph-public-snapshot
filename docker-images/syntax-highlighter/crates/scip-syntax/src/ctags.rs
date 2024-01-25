@@ -8,8 +8,8 @@ use std::{
 use anyhow::{Context, Result};
 use itertools::intersperse;
 use scip::types::{descriptor::Suffix, symbol_information, Descriptor};
-use tree_sitter_all_languages::parsers::BundledParser;
 use serde::{Deserialize, Serialize};
+use tree_sitter_all_languages::parsers::BundledParser;
 
 use crate::{get_globals, globals::Scope};
 

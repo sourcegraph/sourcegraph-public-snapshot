@@ -26,4 +26,3 @@ walkdir = { workspace = true }
 
 scip-syntax = { path = "../scip-syntax" }
 tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
-scip-treesitter= { path = "../scip-treesitter" }

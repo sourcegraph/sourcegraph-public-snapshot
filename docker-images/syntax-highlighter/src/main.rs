@@ -7,9 +7,9 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use tree_sitter_all_languages::parsers::BundledParser;
 use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
+use tree_sitter_all_languages::parsers::BundledParser;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {

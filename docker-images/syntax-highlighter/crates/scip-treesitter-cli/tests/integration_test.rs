@@ -17,7 +17,7 @@ lazy_static::lazy_static! {
     };
 }
 
-use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
+use scip_syntax::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
 
 fn snapshot_syntax_document(doc: &scip::types::Document, source: &str) -> String {
     dump_document_with_config(

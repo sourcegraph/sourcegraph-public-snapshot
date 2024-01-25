@@ -1,12 +1,5 @@
 use tree_sitter::Node;
 
-pub mod snapshot;
-pub mod types;
-
-pub mod prelude {
-    pub use super::NodeExt;
-}
-
 /// Extension methods for Tree-sitter's `Node` type.
 pub trait NodeExt {
     fn scip_range(&self) -> Vec<i32>;

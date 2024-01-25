@@ -535,7 +535,7 @@ mod test {
     };
 
     use pretty_assertions::assert_eq;
-    use scip_treesitter::snapshot::{
+    use scip_syntax::snapshot::{
         dump_document_with_config, EmitSymbol, EmitSyntax, SnapshotOptions,
     };
 
