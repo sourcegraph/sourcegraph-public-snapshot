@@ -40,6 +40,8 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
 
   api:register(recognizer.new_path_recognizer {
     patterns = {
+      -- To find package roots
+      pattern.new_path_basename "package.json",
       -- To disambiguate installation steps
       pattern.new_path_basename "yarn.lock",
       -- Try to determine version
@@ -48,7 +50,6 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
       pattern.new_path_basename ".nvmrc",
       -- To reinvoke simple cases with no other files
       pattern.new_path_basename "tsconfig.json",
-      pattern.new_path_basename "package.json",
       pattern.new_path_exclude(exclude_paths),
     },
 
