@@ -126,8 +126,13 @@ func createExternalHealthcheckAlert(
 			// Checks run once every 60s, if 2/3 fail we are in trouble.
 			Period:    "180s",
 			Threshold: 0.4,
-			// Alert when all locations go down
-			Trigger: alertpolicy.TriggerKindAllInViolation,
+			// We want to alert when all locations go down, but right now that
+			// sends 6 notifications when the alert fires, which is annoying -
+			// there seems to be no way to change this. So we group by the check
+			// target anyway.
+			Trigger:       alertpolicy.TriggerKindAllInViolation,
+			GroupByFields: []string{"host"},
+			Reducer:       alertpolicy.MonitoringReduceMean,
 		},
 		NotificationChannels: channels,
 	}); err != nil {
