@@ -88,7 +88,6 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter,
 
 	pr, err := readPingRequest(r)
 	if err != nil {
-		logger.Error("malformed request", log.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
