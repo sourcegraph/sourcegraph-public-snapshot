@@ -355,7 +355,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		Service:                  vars.Service,
 		CloudRunEnvironmentID:    "test",
 		CloudRunProjectID:        "msp-testbed-test-77589aae45d0",
-		CloudRunResourceName:     *cloudRunResource.Name(),
+		CloudRunResourceName:     "msp-testbed", // TODO
 		CloudRunResourceLocation: *cloudRunResource.Location(),
 	})
 
