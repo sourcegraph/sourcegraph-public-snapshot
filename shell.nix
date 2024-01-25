@@ -71,6 +71,7 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
     bashInteractive
+    zip
 
     # nix language server.
     nil

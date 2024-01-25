@@ -126,6 +126,17 @@ namespace Foo {
     }
 }
 `}, {
+		path: "exception.py",
+		contents: `
+def f():
+	try:
+		pass
+	#                   v f.e def
+	#                   v f.e ref
+	except Exception as e:
+		#     v f.e ref
+		print(e)
+`}, {
 		path: "test.py",
 		contents: `
 #     vv f.p1 def

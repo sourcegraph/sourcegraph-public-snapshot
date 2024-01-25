@@ -1,4 +1,4 @@
-# scip-treesitter-languages
+# tree-sitter-all-languages
 
 This is the only location that we should load / compile tree-sitter grammars into their languages.
 

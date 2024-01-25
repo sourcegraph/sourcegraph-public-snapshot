@@ -338,10 +338,8 @@ crates_repository(
     # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
         "//docker-images/syntax-highlighter:Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/tree-sitter-all-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
@@ -434,3 +432,23 @@ gazelle_buf_dependencies()
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
+
+# keep revision up-to-date with client/browser/scripts/build-inline-extensions.js
+http_archive(
+    name = "sourcegraph_extensions_bundle",
+    add_prefix = "bundle",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["bundle"])
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"]
+)
+    """,
+    integrity = "sha256-Spx8LyM7k+dsGOlZ4TdAq+CNk5EzvYB/oxnY4zGpqPg=",
+    strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
+    url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
+)
