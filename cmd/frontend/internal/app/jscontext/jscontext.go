@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -436,6 +437,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 			context.SearchContextsEnabled = false
 			context.OwnEnabled = false
 			context.NotebooksEnabled = false
+
+			// experimental features
+			context.ExperimentalFeatures.SearchJobs = pointers.Ptr(false)
 		}
 
 		// If the license a Sourcegraph instance is running under does not support Cody features

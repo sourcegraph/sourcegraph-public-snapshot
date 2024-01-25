@@ -34,15 +34,24 @@ export interface OrgSettingsAreaProps extends OrgAreaRouteContext {
 
 export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
     org: OrgAreaOrganizationFields
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
+const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
     const context: OrgSettingsAreaRouteContext = {
         ...props,
+        license: {
+            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+        },
     }
 
     return (
