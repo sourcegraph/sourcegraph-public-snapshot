@@ -21,7 +21,6 @@ rustyline = "9.1.2"
 base64 = "0.13.0"
 
 sg-syntax = { path = "./crates/sg-syntax" }
-scip-treesitter = { path = "./crates/scip-treesitter" }
 tree-sitter-all-languages = { path = "./crates/tree-sitter-all-languages" }
 scip-syntax = { path = "./crates/scip-syntax" }
 # March 20, 2023 - Pinned explicitly with features that match the features
@@ -42,7 +41,6 @@ members = [
 
     # later, these will be pulled out to a separate repo
     "crates/scip-syntax",
-    "crates/scip-treesitter",
     "crates/tree-sitter-all-languages",
     "crates/scip-treesitter-cli",
 ]

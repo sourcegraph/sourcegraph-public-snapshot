@@ -1,5 +1,5 @@
 {
-  "checksum": "51dc099459201cf69d18f0d846d0c6e9256d3e4f78a3e24f1d834de9b4b30ccf",
+  "checksum": "cb6fb8360952587a23bbece0f8c3299a82b055ed9c70fdcdfa7da0a236565015",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10567,52 +10567,6 @@
       },
       "license": null
     },
-    "scip-treesitter 0.1.0": {
-      "name": "scip-treesitter",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "scip_treesitter",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "scip_treesitter",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "anyhow 1.0.75",
-              "target": "anyhow"
-            },
-            {
-              "id": "protobuf 3.2.0",
-              "target": "protobuf"
-            },
-            {
-              "id": "scip 0.3.2",
-              "target": "scip"
-            },
-            {
-              "id": "tree-sitter 0.20.10",
-              "target": "tree_sitter"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "scip-treesitter-cli 0.1.0": {
       "name": "scip-treesitter-cli",
       "version": "0.1.0",
@@ -17253,7 +17207,6 @@
   "binary_crates": [],
   "workspace_members": {
     "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
-    "scip-treesitter 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter",
     "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
     "sg-syntax 0.1.0": "docker-images/syntax-highlighter/crates/sg-syntax",
     "syntect_server 1.0.1": "docker-images/syntax-highlighter",

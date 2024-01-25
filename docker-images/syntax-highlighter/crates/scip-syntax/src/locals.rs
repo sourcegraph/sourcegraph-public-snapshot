@@ -10,6 +10,7 @@
 ///
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
 use crate::languages::LocalConfiguration;
+use crate::tree_sitter_ext::NodeExt;
 use core::cmp::Ordering;
 use core::ops::Range;
 use id_arena::{Arena, Id};
@@ -20,7 +21,6 @@ use scip::{
     symbol::format_symbol,
     types::{Occurrence, Symbol},
 };
-use scip_treesitter::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::ops::{Index, IndexMut};
@@ -740,8 +740,8 @@ impl<'a> LocalResolver<'a> {
 
 #[cfg(test)]
 mod test {
+    use crate::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use scip::types::Document;
-    use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use tree_sitter_all_languages::parsers::BundledParser;
 
     use super::*;

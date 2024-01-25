@@ -16,7 +16,6 @@ serde.workspace = true
 serde_json.workspace = true
 walkdir.workspace = true
 
-scip-treesitter = { path = "../scip-treesitter" }
 tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
 
 rustc-hash = "1.1.0"

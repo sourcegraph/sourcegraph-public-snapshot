@@ -1912,23 +1912,12 @@ dependencies = [
  "regex",
  "rustc-hash",
  "scip",
- "scip-treesitter",
  "serde",
  "serde_json",
  "string-interner",
  "tree-sitter",
  "tree-sitter-all-languages",
  "walkdir",
-]
-
-[[package]]
-name = "scip-treesitter"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "protobuf",
- "scip",
- "tree-sitter",
 ]
 
 [[package]]
@@ -1947,7 +1936,6 @@ dependencies = [
  "protobuf",
  "scip",
  "scip-syntax",
- "scip-treesitter",
  "serde",
  "serde_json",
  "string-interner",
@@ -2023,7 +2011,6 @@ dependencies = [
  "rocket",
  "scip",
  "scip-syntax",
- "scip-treesitter",
  "serde",
  "serde_json",
  "syntect",
@@ -2186,7 +2173,6 @@ dependencies = [
  "rustyline",
  "scip",
  "scip-syntax",
- "scip-treesitter",
  "serde",
  "serde_json",
  "sg-syntax",

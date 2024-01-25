@@ -9,8 +9,15 @@ use crate::parsers::BundledParser;
 #[macro_export]
 macro_rules! include_scip_query {
     ($lang: expr, $query: literal) => {
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/queries/", $lang, "/", $query, ".scm"))
-    }
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/queries/",
+            $lang,
+            "/",
+            $query,
+            ".scm"
+        ))
+    };
 }
 
 #[rustfmt::skip]

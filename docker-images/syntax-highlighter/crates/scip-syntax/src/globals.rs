@@ -1,8 +1,8 @@
+use crate::range::PackedRange;
 use anyhow::Result;
 use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
-use scip_treesitter::types::PackedRange;
 
 use crate::languages::TagConfiguration;
 
@@ -312,8 +312,8 @@ pub fn parse_tree<'a>(
 
 #[cfg(test)]
 pub mod test {
+    use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
     use scip::types::Document;
-    use scip_treesitter::snapshot::{dump_document_with_config, SnapshotOptions};
     use tree_sitter_all_languages::parsers::BundledParser;
 
     use super::*;
@@ -340,8 +340,8 @@ pub mod test {
             source_code,
             SnapshotOptions {
                 snapshot_range: None,
-                emit_syntax: scip_treesitter::snapshot::EmitSyntax::None,
-                emit_symbol: scip_treesitter::snapshot::EmitSymbol::Enclosing,
+                emit_syntax: snapshot::EmitSyntax::None,
+                emit_symbol: snapshot::EmitSymbol::Enclosing,
             },
         )?;
 
