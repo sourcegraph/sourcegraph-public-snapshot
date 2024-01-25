@@ -52,7 +52,7 @@ func initDotcomAttributionService(observationCtx *observation.Context, db databa
 	return attribution.NewLocalSearch(observationCtx, searchClient)
 }
 
-func alwaysTrue(context.Context, string) (bool, error) {
+func alwaysAllowed(context.Context, string) (bool, error) {
 	return true, nil
 }
 
@@ -62,11 +62,11 @@ func NewAttributionTest(observationCtx *observation.Context) func(context.Contex
 	// calls and code completions calls.
 	service := initEnterpriseAttributionService(observationCtx)
 	if service == nil {
-		return alwaysTrue
+		return alwaysAllowed
 	}
 	// Attribution is only-enterprise, dotcom lets everything through.
 	if envvar.SourcegraphDotComMode() {
-		return alwaysTrue
+		return alwaysAllowed
 	}
 	return func(ctx context.Context, snippet string) (bool, error) {
 		// Check if attribution is on, permit everything if it's off.
