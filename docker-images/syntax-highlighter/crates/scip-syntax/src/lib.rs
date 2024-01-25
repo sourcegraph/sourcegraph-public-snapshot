@@ -1,6 +1,6 @@
 use anyhow::Result;
 use scip::types::Occurrence;
-use scip_treesitter_languages::parsers::BundledParser;
+use tree_sitter_all_languages::parsers::BundledParser;
 
 pub mod ctags;
 pub mod globals;
@@ -30,7 +30,7 @@ mod test {
     use std::{io::BufWriter, path::Path};
 
     use scip_treesitter::snapshot::dump_document;
-    use scip_treesitter_languages::parsers::BundledParser;
+    use tree_sitter_all_languages::parsers::BundledParser;
 
     use crate::ctags::generate_tags;
 
