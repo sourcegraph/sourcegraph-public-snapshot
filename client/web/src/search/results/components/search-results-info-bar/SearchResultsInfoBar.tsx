@@ -278,7 +278,13 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                         requires quotes to search specific strings.
                                     </Text>
                                     <Text>
-                                        <Link href="#">Read the docs</Link> to learn more.
+                                        <Link
+                                            href="https://sourcegraph.com/docs/code-search/queries#keyword-search-default"
+                                            target="_blank"
+                                        >
+                                            Read the docs
+                                        </Link>{' '}
+                                        to learn more.
                                     </Text>
                                 </div>
                             </PopoverContent>

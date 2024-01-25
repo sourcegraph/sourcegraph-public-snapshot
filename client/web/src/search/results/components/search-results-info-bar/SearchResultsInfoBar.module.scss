@@ -57,12 +57,16 @@
 
 .toggle-wrapper {
     border-radius: 3px;
-    background: var(--Test, linear-gradient(91deg, rgba(228, 211, 252, 0.2) -3.65%, #d7f0fd 117.44%));
+    background: linear-gradient(91deg, rgba(228, 211, 252, 0.2) -3.65%, #d7f0fd 117.44%);
     padding: 4px 8px;
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 8px;
+}
+
+.toggle-wrapper button:hover{
+    color: var(--primary);
 }
 
 .popover-content {
