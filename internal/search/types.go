@@ -142,46 +142,6 @@ type SymbolsResponse struct {
 	Err     string         `json:"error,omitempty"`
 }
 
-// GlobalSearchMode designates code paths which optimize performance for global
-// searches, i.e., literal or regexp, indexed searches without repo: filter.
-type GlobalSearchMode int
-
-const (
-	DefaultMode GlobalSearchMode = iota
-
-	// ZoektGlobalSearch designates a performance optimised code path for indexed
-	// searches. For a global search we don't need to resolve repos before searching
-	// shards on Zoekt, instead we can resolve repos and call Zoekt concurrently.
-	//
-	// Note: Even for a global search we have to resolve repos to filter search results
-	// returned by Zoekt.
-	ZoektGlobalSearch
-
-	// SearcherOnly designated a code path on which we skip indexed search, even if
-	// the user specified index:yes. SearcherOnly is used in conjunction with
-	// ZoektGlobalSearch and designates the non-indexed part of the performance
-	// optimised code path.
-	SearcherOnly
-
-	// SkipUnindexed disables content, path, and symbol search. Used:
-	// (1) in conjunction with ZoektGlobalSearch on Sourcegraph.com.
-	// (2) when a query does not specify any patterns, include patterns, or exclude pattern.
-	SkipUnindexed
-)
-
-var globalSearchModeStrings = map[GlobalSearchMode]string{
-	ZoektGlobalSearch: "ZoektGlobalSearch",
-	SearcherOnly:      "SearcherOnly",
-	SkipUnindexed:     "SkipUnindexed",
-}
-
-func (m GlobalSearchMode) String() string {
-	if s, ok := globalSearchModeStrings[m]; ok {
-		return s
-	}
-	return "None"
-}
-
 type IndexedRequestType string
 
 const (

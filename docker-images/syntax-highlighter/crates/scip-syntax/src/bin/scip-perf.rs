@@ -2,7 +2,7 @@ use std::{path::Path, time::Instant};
 
 use clap::Parser;
 use scip_syntax::locals;
-use scip_treesitter_languages::parsers::BundledParser;
+use tree_sitter_all_languages::parsers::BundledParser;
 use walkdir::WalkDir;
 
 #[derive(Parser)]

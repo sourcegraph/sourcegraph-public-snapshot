@@ -6,7 +6,7 @@ use scip::types::{
     symbol_information, Document, Occurrence, SymbolInformation, SymbolRole, SyntaxKind,
 };
 
-use crate::types::PackedRange;
+use crate::range::PackedRange;
 
 #[derive(Debug, Clone, Default)]
 pub struct SnapshotRange {

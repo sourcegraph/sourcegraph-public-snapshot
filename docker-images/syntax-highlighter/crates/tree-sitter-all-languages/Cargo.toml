@@ -1,5 +1,5 @@
 [package]
-name = "scip-treesitter-languages"
+name = "tree-sitter-all-languages"
 version = "0.1.0"
 edition = "2021"
 

@@ -5569,8 +5569,8 @@ def go_dependencies():
         name = "com_github_smacker_go_tree_sitter",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/smacker/go-tree-sitter",
-        sum = "h1:WrsSqod9T70HFyq8hjL6wambOKb4ISUXzFUuNTJHDwo=",
-        version = "v0.0.0-20220209044044-0d3022e933c3",
+        sum = "h1:PeBjmUlvTGvg6SyM4u7pyk8YCmdbgdFcGrwf7dRBV80=",
+        version = "v0.0.0-20231219031718-233c2f923ac7",
     )
     go_repository(
         name = "com_github_smartystreets_assertions",
