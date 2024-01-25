@@ -68,7 +68,7 @@ export function useSyncedWithURLState<State, SerializedState>(
 
             return `?${urlSearchParameters.toString()}`
         },
-        [navigate, serializer, urlKey, urlSearchParameters, replace]
+        [serializer, urlKey, urlSearchParameters]
     )
 
     return [queryParameter, setNextState, serializeURL]

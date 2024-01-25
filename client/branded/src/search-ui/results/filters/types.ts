@@ -1,7 +1,3 @@
-import { Filter } from '@sourcegraph/shared/out/src/search/stream'
-
-import { URLQueryFilter } from './hooks'
-
 export enum SearchFilterType {
     Code = 'Code',
     Repositories = 'Repositories',

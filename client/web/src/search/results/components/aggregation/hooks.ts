@@ -72,13 +72,12 @@ const aggregationModeDeserializer = (
  * Shared state hook for syncing aggregation type state between different UI trough
  * ULR query param {@link AGGREGATION_MODE_URL_KEY}
  */
-export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> => {
-    return useSyncedWithURLState<SearchAggregationMode | null, SerializedAggregationMode>({
+export const useAggregationSearchMode = (): SetStateResult<SearchAggregationMode | null> =>
+    useSyncedWithURLState<SearchAggregationMode | null, SerializedAggregationMode>({
         urlKey: AGGREGATION_MODE_URL_KEY,
         serializer: aggregationModeSerializer,
         deserializer: aggregationModeDeserializer,
     })
-}
 
 /**
  * Serialized UI mode values
@@ -115,13 +114,12 @@ const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIM
  * Shared state hook for syncing aggregation UI mode state between different UI trough
  * ULR query param {@link AGGREGATION_UI_MODE_URL_KEY}
  */
-export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> => {
-    return useSyncedWithURLState({
+export const useAggregationUIMode = (): SetStateResult<AggregationUIMode> =>
+    useSyncedWithURLState({
         urlKey: AGGREGATION_UI_MODE_URL_KEY,
         serializer: aggregationUIModeSerializer,
         deserializer: aggregationUIModeDeserializer,
     })
-}
 
 export const AGGREGATION_SEARCH_QUERY = gql`
     fragment SearchAggregationModeAvailability on AggregationModeAvailability {
