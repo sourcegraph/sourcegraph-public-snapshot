@@ -62,7 +62,6 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
 import { showTemporaryTooltip, temporaryTooltip } from './codemirror/tooltips/TemporaryTooltip'
 import { locationToURL, positionToOffset } from './codemirror/utils'
@@ -360,19 +359,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             openCodeGraphExtension,
             codeFoldingExtension(),
-            isCodyEnabled()
-                ? codyWidgetExtension(
-                      editorRef.current
-                          ? new CodeMirrorEditor({
-                                view: editorRef.current,
-                                repo: props.blobInfo.repoName,
-                                revision: props.blobInfo.revision,
-                                filename: props.blobInfo.filePath,
-                                content: props.blobInfo.content,
-                            })
-                          : undefined
-                  )
-                : [],
+            [],
             pinnedTooltip,
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
             syntaxHighlight.of(blobInfo),

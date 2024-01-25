@@ -337,30 +337,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
         location.pathname + location.search + location.hash
     )
 
-    const {
-        isSidebarOpen: isCodySidebarOpen,
-        setIsSidebarOpen: setIsCodySidebarOpen,
-        scope,
-        setEditorScope,
-        logTranscriptEvent,
-    } = useCodySidebar()
-
-    const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
-
-    /* eslint-disable react-hooks/exhaustive-deps */
-    const codySidebarSize = useMemo(() => sidebarSize, [isCodySidebarOpen])
-    /* eslint-enable react-hooks/exhaustive-deps */
-
-    useEffect(() => {
-        const activeEditor = scope.editor.getActiveTextEditor()
-
-        if (activeEditor?.repoName !== repoName) {
-            setEditorScope(new RepoContainerEditor(repoName))
-        }
-    }, [scope.editor, repoName, setEditorScope])
-
-    const focusCodyShortcut = useKeyboardShortcut('focusCody')
-
     // The external links to show in the repository header, if any.
     const [externalLinks, setExternalLinks] = useState<ExternalLinkFields[] | undefined>()
 
@@ -473,34 +449,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
     return (
         <>
-            {focusCodyShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut
-                    key={index}
-                    {...keybinding}
-                    onMatch={() => {
-                        setIsCodySidebarOpen(true)
-                    }}
-                />
-            ))}
-
-            {!isCodySidebarOpen && (
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={1}
-                    id="cody"
-                    {...repoHeaderContributionsLifecycleProps}
-                >
-                    {() => (
-                        <AskCodyButton
-                            onClick={() => {
-                                logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
-                                setIsCodySidebarOpen(true)
-                            }}
-                        />
-                    )}
-                </RepoHeaderContributionPortal>
-            )}
-
             <RepoHeaderContributionPortal
                 position="right"
                 priority={3}
@@ -587,26 +535,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                     />
                 </Routes>
             </Suspense>
-
-            {isCodySidebarOpen && (
-                <RepoContainerRootPortal>
-                    <Panel
-                        className="cody-sidebar-panel"
-                        position="right"
-                        ariaLabel="Cody sidebar"
-                        maxSize={CODY_SIDEBAR_SIZES.max}
-                        minSize={CODY_SIDEBAR_SIZES.min}
-                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
-                        storageKey="size-cache-cody-sidebar"
-                        onResize={setCodySidebarSize}
-                    >
-                        <CodySidebar
-                            onClose={() => setIsCodySidebarOpen(false)}
-                            authenticatedUser={props.authenticatedUser}
-                        />
-                    </Panel>
-                </RepoContainerRootPortal>
-            )}
         </>
     )
 }
