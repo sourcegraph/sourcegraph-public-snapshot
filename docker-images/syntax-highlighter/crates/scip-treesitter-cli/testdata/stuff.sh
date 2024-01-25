@@ -15,8 +15,10 @@ trap "rm -Rf $tmp_folder" EXIT
 
 chmod -R 0777 $tmp_folder
 
-hacky_cmd="scip-java index && (cat ./index.scip | base64)"
-command="(docker run -a stdout -v $tmp_folder:/sources $image_name bash -c '$hacky_cmd') | base64 -d > $tmp_folder/index-piped.scip"
+hacky_cmd="scip-java index >&2 && (cat ./index.scip | base64)"
+command="(docker run -v $tmp_folder:/sources $image_name bash -c '$hacky_cmd') | base64 -d > $tmp_folder/index-piped.scip"
+
+echo $command
 
 docker load --input="$tarball"
 eval $command
