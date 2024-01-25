@@ -61,6 +61,7 @@ const staticAppConfig = {
 } satisfies StaticAppConfig
 
 export const EnterpriseWebApp: FC<AppShellInit> = props => {
+    console.log(staticAppConfig, '<====')
     if (window.context.experimentalFeatures.enableStorm) {
         const { graphqlClient, temporarySettingsStorage } = props
 
