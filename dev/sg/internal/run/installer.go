@@ -25,12 +25,15 @@ type Installer interface {
 	SetInstallerOutput(chan<- output.FancyLine)
 
 	GetName() string
+
+	// Number of programs this target is installing
+	Count() int
 }
 
 type InstallManager struct {
 	// Constructor commands
 	*std.Output
-	cmds    map[string]struct{}
+	cmds    map[string]Installer
 	env     map[string]string
 	verbose bool
 
@@ -58,10 +61,15 @@ func Install(ctx context.Context, env map[string]string, verbose bool, cmds ...I
 }
 
 func newInstallManager(cmds []Installer, out *std.Output, env map[string]string, verbose bool) *InstallManager {
-	total := len(cmds)
+	total := 0
+	cmdsMap := make(map[string]Installer, len(cmds))
+	for _, cmd := range cmds {
+		total += cmd.Count()
+		cmdsMap[cmd.GetName()] = cmd
+	}
 	return &InstallManager{
 		Output:  out,
-		cmds:    SliceToHashSet(cmds, func(c Installer) string { return c.GetName() }),
+		cmds:    cmdsMap,
 		verbose: verbose,
 		env:     env,
 
@@ -141,7 +149,7 @@ func (installer *InstallManager) startTicker(interval time.Duration) {
 	installer.tickInterval = interval
 }
 
-func (installer *InstallManager) startAnalytics(ctx context.Context, cmds map[string]struct{}) {
+func (installer *InstallManager) startAnalytics(ctx context.Context, cmds map[string]Installer) {
 	installer.stats = startInstallAnalytics(ctx, cmds)
 }
 
@@ -149,8 +157,8 @@ func (installer *InstallManager) handleInstalled(name string) {
 	installer.stats.handleInstalled(name)
 	installer.ticker.Reset(installer.tickInterval)
 
+	installer.done += installer.cmds[name].Count()
 	delete(installer.cmds, name)
-	installer.done += 1
 
 	installer.progress.WriteLine(output.Styledf(output.StyleSuccess, "%s installed", name))
 	installer.progress.SetValue(0, float64(installer.done))
@@ -214,7 +222,7 @@ type installAnalytics struct {
 	Spans map[string]*analytics.Span
 }
 
-func startInstallAnalytics(ctx context.Context, cmds map[string]struct{}) *installAnalytics {
+func startInstallAnalytics(ctx context.Context, cmds map[string]Installer) *installAnalytics {
 	installer := &installAnalytics{
 		Start: time.Now(),
 		Spans: make(map[string]*analytics.Span, len(cmds)),
@@ -250,16 +258,6 @@ func (a *installAnalytics) handleFailure(name string, err error) {
 
 func (a *installAnalytics) duration() time.Duration {
 	return time.Since(a.Start)
-}
-
-type HashSet[T comparable] map[T]struct{}
-
-func SliceToHashSet[R any, T comparable](slice []R, extract func(R) T) HashSet[T] {
-	set := make(HashSet[T], len(slice))
-	for _, item := range slice {
-		set[extract(item)] = struct{}{}
-	}
-	return set
 }
 
 type installFunc func(context.Context, map[string]string) error

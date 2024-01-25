@@ -102,6 +102,10 @@ func (cmd Command) RunInstall(ctx context.Context, parentEnv map[string]string) 
 // Standard commands ignore installer
 func (cmd Command) SetInstallerOutput(chan<- output.FancyLine) {}
 
+func (cmd Command) Count() int {
+	return 1
+}
+
 func (cmd Command) requiresInstall() bool {
 	return cmd.Install != "" || cmd.InstallFunc != ""
 }

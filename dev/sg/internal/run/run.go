@@ -46,6 +46,10 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		return err
 	}
 
+	if err := writePid(); err != nil {
+		return err
+	}
+
 	runner := cmdRunner{
 		std.Out,
 		cmds,
@@ -58,7 +62,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 }
 
 func (runner *cmdRunner) run(ctx context.Context) error {
-	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 	// Start each command concurrently
 	for _, cmd := range runner.cmds {
 		cmd := cmd
@@ -134,7 +138,7 @@ func (runner *cmdRunner) printError(cmd SGConfigCommand, err error) {
 	printCmdError(runner.Output.Output, cmd.GetName(), err)
 }
 
-func (runner *cmdRunner) debug(msg string, args ...any) {
+func (runner *cmdRunner) debug(msg string, args ...any) { //nolint currently unused but a handy tool for debugginlg
 	if runner.verbose {
 		message := fmt.Sprintf(msg, args...)
 		runner.WriteLine(output.Styledf(output.StylePending, "%s[DEBUG]: %s %s", output.StyleBold, output.StyleReset, message))
@@ -214,8 +218,12 @@ func (e runErr) Error() string {
 }
 
 func printCmdError(out *output.Output, cmdName string, err error) {
-	var message, cmdOut string
+	// Don't log context canceled errors because they are not the root issue
+	if errors.Is(err, context.Canceled) {
+		return
+	}
 
+	var message, cmdOut string
 	switch e := errors.Cause(err).(type) {
 	case installErr:
 		message = "Failed to build " + cmdName

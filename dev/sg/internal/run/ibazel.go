@@ -76,7 +76,7 @@ func (ibazel *IBazel) RunInstall(ctx context.Context, env map[string]string) err
 		return nil
 	}
 
-	err := ibazel.Build(ctx)
+	err := ibazel.build(ctx)
 	if err != nil {
 		return err
 	}
@@ -91,6 +91,10 @@ func (ib *IBazel) SetInstallerOutput(logs chan<- output.FancyLine) {
 	logs <- output.Styledf(output.StyleGrey, "iBazel output can be found at %s", ibazelLogPath(ib.tempDir))
 	logs <- output.Styledf(output.StyleGrey, "iBazel log events can be found at %s", profileEventsPath(ib.tempDir))
 	ib.logs = logs
+}
+
+func (ib *IBazel) Count() int {
+	return len(ib.targets)
 }
 
 func (ib *IBazel) GetExecCmd(ctx context.Context) *exec.Cmd {
@@ -134,7 +138,7 @@ func (ib *IBazel) getCommandOptions(ctx context.Context) commandOptions {
 
 // Build starts an ibazel process to build the targets provided in the constructor
 // It runs perpetually, watching for file changes
-func (ib *IBazel) Build(ctx context.Context) (err error) {
+func (ib *IBazel) build(ctx context.Context) (err error) {
 	ib.proc, err = startCmd(ctx, ib.getCommandOptions(ctx))
 	return err
 }

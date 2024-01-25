@@ -30,7 +30,7 @@ func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event)
 	// Set up the watchers.
 	restart := make(chan struct{})
 	events := make(chan notify.EventInfo, 1)
-	skip := make(HashSet[notify.Event], len(skipEvents))
+	skip := make(map[notify.Event]struct{}, len(skipEvents))
 	for _, event := range skipEvents {
 		skip[event] = struct{}{}
 	}
