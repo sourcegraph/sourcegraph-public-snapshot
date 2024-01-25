@@ -3,11 +3,8 @@ import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
 import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
-import { isCodyOnlyLicense } from '../../util/license'
 
 import type { UserAreaHeaderNavItem } from './UserAreaHeader'
-
-const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
@@ -25,7 +22,7 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister && !disableCodeSearchFeatures,
+        condition: ({ user: { viewerCanAdminister }, license }) => viewerCanAdminister && license.isCodeSearchEnabled,
     },
     ...namespaceAreaHeaderNavItems,
 ]

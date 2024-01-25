@@ -6,7 +6,6 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { OrgExecutorSecretsListPageProps } from '../../enterprise/executors/secrets/ExecutorSecretsListPage'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { isCodyOnlyLicense } from '../../util/license'
 
 import type { OrgSettingsAreaRoute, OrgSettingsAreaRouteContext } from './OrgSettingsArea'
 
@@ -16,8 +15,6 @@ const OrgExecutorSecretsListPage = lazyComponent<OrgExecutorSecretsListPageProps
     () => import('../../enterprise/executors/secrets/ExecutorSecretsListPage'),
     'OrgExecutorSecretsListPage'
 )
-
-const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     {
@@ -35,7 +32,7 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     {
         path: '/executors/secrets',
         render: props => <OrgExecutorSecretsListPage {...props} orgID={props.org.id} />,
-        condition: ({ org: { viewerCanAdminister } }) => !disableCodeSearchFeatures && viewerCanAdminister,
+        condition: ({ org: { viewerCanAdminister }, license }) => license.isCodeSearchEnabled && viewerCanAdminister,
     },
 ]
 
