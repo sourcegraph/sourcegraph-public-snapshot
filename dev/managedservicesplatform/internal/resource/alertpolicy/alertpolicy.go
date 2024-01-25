@@ -252,10 +252,6 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			// Notification strategy
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("86400s"), // 24 hours
-				NotificationRateLimit: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategyNotificationRateLimit{
-					// Not more than one notification per minute please
-					Period: pointers.Ptr("60s"),
-				},
 			},
 			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
 			// For now, set all MSP alerts as WARNING. In the future, we should
