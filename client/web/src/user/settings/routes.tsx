@@ -16,11 +16,8 @@ import type { ExecutorsUserAreaProps } from '../../enterprise/executors/Executor
 import type { UserEventLogsPageProps } from '../../enterprise/user/settings/UserEventLogsPage'
 import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { isCodyOnlyLicense } from '../../util/license'
 
 import type { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
-
-const disableCodeSearchFeatures = isCodyOnlyLicense()
 
 const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
     () => import('../../enterprise/executors/ExecutorsUserArea'),
@@ -39,7 +36,7 @@ const shouldRenderBatchChangesPage = ({
     user: { viewerCanAdminister },
     authenticatedUser,
 }: UserSettingsAreaRouteContext): boolean =>
-    !disableCodeSearchFeatures && batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser)
+    batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser)
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {

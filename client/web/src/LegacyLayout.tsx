@@ -188,7 +188,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !isSearchNotebooksPage &&
         !isCodySearchPage &&
         !isSearchJobsPage
-    console.log({ props })
 
     return (
         <div
