@@ -47,30 +47,16 @@ type Client interface {
 func NewClientFromSiteConfig(cli httpcli.Doer) (_ Client, ok bool) {
 	config := conf.Get().SiteConfig()
 	cc := conf.GetCompletionsConfig(config)
-	ec := conf.GetEmbeddingsConfig(config)
-
-	// If neither completions nor embeddings are configured, return empty.
-	if cc == nil && ec == nil {
-		return nil, false
-	}
 
 	// TODO: What if customer is BYOK? How do we talk to gateway then?
-	// If neither completions nor embeddings use Cody Gateway, return empty.
+	// If completions isn't using Cody Gateway, return empty.
 	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
-	ecUsingGateway := ec != nil && ec.Provider == conftypes.EmbeddingsProviderNameSourcegraph
-	if !ccUsingGateway && !ecUsingGateway {
+	if !ccUsingGateway {
 		return nil, false
 	}
 
-	// It's possible the user is only using Cody Gateway for completions _or_ embeddings
-	// make sure to get the url/token for the sourcegraph provider
-	// start with the embeddings since there are fewer options
-	endpoint := ec.Endpoint
-	token := ec.AccessToken
-	if ec.Provider != conftypes.EmbeddingsProviderNameSourcegraph {
-		endpoint = cc.Endpoint
-		token = cc.AccessToken
-	}
+	endpoint := cc.Endpoint
+	token := cc.AccessToken
 
 	return NewClient(cli, endpoint, token), true
 }

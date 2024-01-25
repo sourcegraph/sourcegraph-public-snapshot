@@ -1,3 +1,5 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
@@ -26,6 +28,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         temporarySettings: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
+        accessTokensAllowNoExpiration: false,
+        accessTokensExpirationDaysDefault: 90,
+        accessTokensExpirationDaysOptions: [7, 14, 30, 60, 90],
         allowSignup: true,
         batchChangesEnabled: true,
         batchChangesDisableWebhooksWarning: false,
@@ -73,6 +78,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         openTelemetry: {
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
+        telemetryRecorder: noOpTelemetryRecorder,
         embeddingsEnabled: false,
         primaryLoginProvidersCount: 5,
         // Site-config overrides default JS context

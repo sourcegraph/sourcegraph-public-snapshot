@@ -3,6 +3,7 @@ package inttests
 import (
 	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -120,11 +122,15 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1Data, err := client.ReadFile(ctx, test.repo, test.first, "dir1/file1")
+		file1R, err := client.NewFileReader(ctx, test.repo, test.first, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs1.ReadFile(dir1/file1): %s", label, err)
 			continue
 		}
+		file1Data, err := io.ReadAll(file1R)
+		file1R.Close()
+		require.NoError(t, err)
+
 		if !bytes.Equal(file1Data, []byte("infile1")) {
 			t.Errorf("%s: got file1Data == %q, want %q", label, string(file1Data), "infile1")
 		}
@@ -144,27 +150,34 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = client.ReadFile(ctx, test.repo, test.first, "file 2")
+		_, err = client.NewFileReader(ctx, test.repo, test.first, "file 2")
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
-		_, err = client.ReadFile(ctx, test.repo, test.second, "file 2")
+		file2R, err := client.NewFileReader(ctx, test.repo, test.second, "file 2")
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
 		}
+		_, err = io.ReadAll(file2R)
+		file2R.Close()
+		require.NoError(t, err)
 
 		// file1 should also exist in the 2nd commit.
 		if _, err := client.Stat(ctx, test.repo, test.second, "dir1/file1"); err != nil {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		if _, err := client.ReadFile(ctx, test.repo, test.second, "dir1/file1"); err != nil {
+		file1R, err = client.NewFileReader(ctx, test.repo, test.second, "dir1/file1")
+		if err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
+		_, err = io.ReadAll(file1R)
+		file1R.Close()
+		require.NoError(t, err)
 
 		// root should exist (via Stat).
 		root, err := client.Stat(ctx, test.repo, test.second, ".")
@@ -367,11 +380,14 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = client.ReadFile(ctx, test.repo, commitID, "submod")
+		r, err := client.NewFileReader(ctx, test.repo, commitID, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
 		}
+		_, err = io.ReadAll(r)
+		r.Close()
+		require.NoError(t, err)
 	}
 }
 

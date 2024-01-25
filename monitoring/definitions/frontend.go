@@ -162,23 +162,6 @@ func Frontend() *monitoring.Dashboard {
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
 							`,
 						},
-						{
-							Name:        "blob_load_latency",
-							Description: "90th percentile blob load latency over 10m",
-							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
-							Critical:    monitoring.Alert().GreaterOrEqual(5).For(10 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								- The blob API route provides the files and code snippets that the UI displays.
-							`,
-							NextSteps: `
-								- When this alert fires, calls to the blob route are slow to return a response. The UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
-								- Confirm that the Sourcegraph gitserver and frontend services have enough CPU/memory using the provisioning panels.
-								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-								- Check that gitserver containers have enough CPU/memory and are not getting throttled.
-							`,
-						},
 					},
 				},
 			},

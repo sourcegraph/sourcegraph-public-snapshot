@@ -116,7 +116,9 @@ func parse(data []byte) (*Spec, error) {
 	}
 
 	// Assign zero value for top-level monitoring spec for covenience
-	s.Monitoring = &MonitoringSpec{}
+	if s.Monitoring == nil {
+		s.Monitoring = &MonitoringSpec{}
+	}
 
 	if validationErrs := s.Validate(); len(validationErrs) > 0 {
 		return nil, errors.Append(nil, validationErrs...)

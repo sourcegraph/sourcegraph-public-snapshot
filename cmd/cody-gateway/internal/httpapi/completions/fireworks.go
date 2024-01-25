@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -30,12 +31,7 @@ func NewFireworksHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	allowedModels []string,
-	logSelfServeCodeCompletionRequests bool,
-	disableSingleTenant bool,
-	starcoderCommunitySingleTenantPercent int,
-	starcoderEnterpriseSingleTenantPercent int,
+	config config.FireworksConfig,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[fireworksRequest](
@@ -52,17 +48,12 @@ func NewFireworksHandler(
 				return fireworksAPIURL
 			}
 		},
-		allowedModels,
+		config.AllowedModels,
 		&FireworksHandlerMethods{
-			accessToken:                            accessToken,
-			baseLogger:                             baseLogger,
-			eventLogger:                            eventLogger,
-			logSelfServeCodeCompletionRequests:     logSelfServeCodeCompletionRequests,
-			disableSingleTenant:                    disableSingleTenant,
-			starcoderCommunitySingleTenantPercent:  starcoderCommunitySingleTenantPercent,
-			starcoderEnterpriseSingleTenantPercent: starcoderEnterpriseSingleTenantPercent,
+			baseLogger:  baseLogger,
+			eventLogger: eventLogger,
+			config:      config,
 		},
-
 		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 		// do any retries
 		30, // seconds
@@ -112,13 +103,9 @@ type fireworksResponse struct {
 }
 
 type FireworksHandlerMethods struct {
-	accessToken                            string
-	logSelfServeCodeCompletionRequests     bool
-	disableSingleTenant                    bool
-	starcoderCommunitySingleTenantPercent  int
-	starcoderEnterpriseSingleTenantPercent int
-	baseLogger                             log.Logger
-	eventLogger                            events.Logger
+	baseLogger  log.Logger
+	eventLogger events.Logger
+	config      config.FireworksConfig
 }
 
 func (f *FireworksHandlerMethods) validateRequest(_ context.Context, _ log.Logger, _ codygateway.Feature, _ fireworksRequest) (int, *flaggingResult, error) {
@@ -135,7 +122,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	// deployment and that is no longer live. Since the clients used to hard code these, some
 	// outdated clients might still be sending these requests and we want to make sure they are
 	// compatible with the new virtual model strings.
-	if f.disableSingleTenant {
+	if f.config.DisableSingleTenant {
 		oldModel := body.Model
 		if body.Model == "accounts/sourcegraph/models/starcoder-16b" {
 			body.Model = "starcoder-16b"
@@ -149,7 +136,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
-		body.Model = pickModelBasedOnTrafficSplit(f.starcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
+		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
 	}
 
 	// PLG virtual model strings
@@ -161,12 +148,12 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		if body.Model == "starcoder-7b" || body.Model == fireworks.Starcoder7b {
 			multiTenantModel = fireworks.Starcoder7b
 		}
-		body.Model = pickModelBasedOnTrafficSplit(f.starcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
+		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
 	}
 }
 func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	// Check that this is a code completion request and that the actor is a PLG user
-	if feature == codygateway.FeatureCodeCompletions && f.logSelfServeCodeCompletionRequests && act.IsDotComActor() {
+	if feature == codygateway.FeatureCodeCompletions && f.config.LogSelfServeCodeCompletionRequests && act.IsDotComActor() {
 		// LogEvent is a channel send (not an external request), so should be ok here
 		if err := f.eventLogger.LogEvent(
 			ctx,
@@ -195,7 +182,7 @@ func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger
 }
 func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+f.accessToken)
+	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
 func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.

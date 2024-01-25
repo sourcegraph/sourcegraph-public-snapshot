@@ -26,6 +26,7 @@ import {
     type SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
@@ -98,7 +99,7 @@ const suspenseCache = new SuspenseCache()
  * Most of the dynamic values in the `SourcegraphWebApp` depend on this observable.
  */
 
-interface SourcegraphWebAppProps extends StaticAppConfig, AppShellInit {}
+interface SourcegraphWebAppProps extends StaticAppConfig, AppShellInit, TelemetryV2Props {}
 
 export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
     const { graphqlClient, temporarySettingsStorage } = props
@@ -284,6 +285,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                         ...dynamicContext,
                         ...props,
                     }}
+                    telemetryRecorder={props.telemetryRecorder}
                 />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}

@@ -3,9 +3,10 @@ package gitserver
 import (
 	"context"
 
+	"google.golang.org/grpc"
+
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
 )
 
 // automaticRetryClient is a convenience wrapper around a base proto.GitserverServiceClient that automatically retries
@@ -138,6 +139,11 @@ func (r *automaticRetryClient) IsPerforceSuperUser(ctx context.Context, in *prot
 func (r *automaticRetryClient) PerforceGetChangelist(ctx context.Context, in *proto.PerforceGetChangelistRequest, opts ...grpc.CallOption) (*proto.PerforceGetChangelistResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.PerforceGetChangelist(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) MergeBase(ctx context.Context, in *proto.MergeBaseRequest, opts ...grpc.CallOption) (*proto.MergeBaseResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.MergeBase(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

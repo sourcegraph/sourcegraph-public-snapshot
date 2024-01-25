@@ -132,7 +132,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		s.filters.Add(filter, string(repoName), lineMatchCount, "repo")
+		s.filters.Add(filter, string(repoName), lineMatchCount, FilterKindRepo)
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32) {
@@ -140,7 +140,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
-				s.filters.Add(ff.regexFilter, ff.label, lineMatchCount, "file")
+				s.filters.Add(ff.regexFilter, ff.label, lineMatchCount, FilterKindFile)
 			}
 		}
 	}
@@ -154,7 +154,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			language = strconv.Quote(language)
 		}
 		value := fmt.Sprintf(`lang:%s`, language)
-		s.filters.Add(value, rawLanguage, lineMatchCount, "lang")
+		s.filters.Add(value, rawLanguage, lineMatchCount, FilterKindLang)
 	}
 
 	addSymbolFilter := func(symbols []*result.SymbolMatch) {
@@ -166,13 +166,13 @@ func (s *SearchFilters) Update(event SearchEvent) {
 				continue
 			}
 			filter := fmt.Sprintf(`select:symbol.%s`, selectKind)
-			s.filters.Add(filter, cases.Title(language.English, cases.Compact).String(selectKind), 1, "symbol type")
+			s.filters.Add(filter, cases.Title(language.English, cases.Compact).String(selectKind), 1, FilterKindSymbolType)
 		}
 	}
 
 	addCommitAuthorFilter := func(commit gitdomain.Commit) {
 		filter := fmt.Sprintf(`author:%s`, regexp.QuoteMeta(commit.Author.Email))
-		s.filters.Add(filter, commit.Author.Name, 1, "author")
+		s.filters.Add(filter, commit.Author.Name, 1, FilterKindAuthor)
 	}
 
 	addCommitDateFilter := func(commit gitdomain.Commit) {
@@ -185,16 +185,16 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 		df := determineTimeframe(cd)
 		filter := fmt.Sprintf("%s:%s", df.Timeframe, df.Value)
-		s.filters.Add(filter, df.Label, 1, "commit date")
+		s.filters.Add(filter, df.Label, 1, FilterKindCommitDate)
 	}
 
 	if event.Stats.ExcludedForks > 0 {
-		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), "utility")
+		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), FilterKindUtility)
 		s.filters.MarkImportant("fork:yes")
 		s.Dirty = true
 	}
 	if event.Stats.ExcludedArchived > 0 {
-		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), "utility")
+		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), FilterKindUtility)
 		s.filters.MarkImportant("archived:yes")
 		s.Dirty = true
 	}

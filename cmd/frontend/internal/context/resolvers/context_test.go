@@ -1,7 +1,9 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"os"
 	"sort"
@@ -11,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,6 +42,8 @@ func TestContextResolver(t *testing.T) {
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
 	truePtr := true
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: &truePtr,
@@ -51,8 +56,9 @@ func TestContextResolver(t *testing.T) {
 		},
 	})
 
+	oldMock := licensing.MockCheckFeature
 	defer func() {
-		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
+		licensing.MockCheckFeature = oldMock
 	}()
 
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
@@ -117,9 +123,9 @@ func TestContextResolver(t *testing.T) {
 	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
 		return fakeFileInfo{path: fileName}, nil
 	})
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
+	mockGitserver.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, ci api.CommitID, fileName string) (io.ReadCloser, error) {
 		if content, ok := files[repo][fileName]; ok {
-			return content, nil
+			return io.NopCloser(bytes.NewReader(content)), nil
 		}
 		return nil, os.ErrNotExist
 	})

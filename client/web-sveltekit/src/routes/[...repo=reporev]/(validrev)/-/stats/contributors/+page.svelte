@@ -21,7 +21,7 @@
     ]
 
     const { pending, latestValue: contributorConnection, set } = createPromiseStore<ContributorConnection | null>()
-    $: set(data.deferred.contributors)
+    $: set(data.contributors)
 
     // We want to show stale contributors data when the user navigates to
     // the next or previous page for the current time period. When the user

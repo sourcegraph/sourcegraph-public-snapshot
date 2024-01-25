@@ -20,7 +20,14 @@ import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableF
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, QueryStateUpdate, QueryUpdate, SearchMode } from '@sourcegraph/shared/src/search'
+import {
+    QueryState,
+    QueryStateUpdate,
+    QueryUpdate,
+    SearchMode,
+    SearchPatternTypeMutationProps,
+    SearchPatternTypeProps,
+} from '@sourcegraph/shared/src/search'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import {
@@ -40,9 +47,8 @@ import { fetchBlob } from '../../../../repo/blob/backend'
 import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
 import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
-import { buildSearchURLQueryFromQueryState, setSearchMode } from '../../../../stores'
+import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
-import { submitSearch } from '../../../helpers'
 import { DidYouMean } from '../../../suggestion/DidYouMean'
 import { SmartSearch } from '../../../suggestion/SmartSearch'
 import { SearchFiltersSidebar } from '../../sidebar/SearchFiltersSidebar'
@@ -52,6 +58,8 @@ import { SearchResultsInfoBar } from '../search-results-info-bar/SearchResultsIn
 import { SearchAlert } from '../SearchAlert'
 import { UnownedResultsAlert } from '../UnownedResultsAlert'
 import { isSmartSearchAlert } from '../utils'
+
+import { useIsNewSearchFiltersEnabled } from './use-new-search-filters'
 
 import styles from './NewSearchContent.module.scss'
 
@@ -67,7 +75,9 @@ interface NewSearchContentProps
     extends TelemetryProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        SearchPatternTypeProps,
+        SearchPatternTypeMutationProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -75,7 +85,6 @@ interface NewSearchContentProps
     searchMode: SearchMode
     trace: boolean
     searchContextsEnabled: boolean
-    patternType: SearchPatternType
     results: AggregateStreamingSearchResults | undefined
     showAggregationPanel: boolean
     selectedSearchContextSpec: string | undefined
@@ -93,12 +102,12 @@ interface NewSearchContentProps
     onExpandAllResultsToggle: () => void
     onSearchAgain: (additionalFilters: string[]) => void
     onDisableSmartSearch: () => void
+    onTogglePatternType: (patternType: SearchPatternType) => void
     onLogSearchResultClick: (index: number, type: string, resultsLength: number) => void
 }
 
 export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const {
-        searchMode,
         submittedURLQuery,
         liveQuery,
         queryState,
@@ -127,6 +136,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onExpandAllResultsToggle,
         onSearchAgain,
         onDisableSmartSearch,
+        onTogglePatternType,
         onLogSearchResultClick,
     } = props
 
@@ -134,7 +144,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
 
-    const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
+    const newFiltersEnabled = useIsNewSearchFiltersEnabled()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
     useScrollManager('SearchResultsContainer', containerRef)
@@ -167,6 +177,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         },
         [onSearchSubmit]
     )
+
+    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
@@ -216,6 +228,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 className={styles.infobar}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onShowMobileFiltersChanged={setSidebarCollapsed}
+                showKeywordSearchToggle={!!showKeywordSearchToggle}
+                onTogglePatternType={onTogglePatternType}
                 stats={
                     <>
                         <StreamingProgress
@@ -227,7 +241,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             isSearchJobsEnabled={isSearchJobsEnabled()}
                             telemetryService={props.telemetryService}
                         />
-                        <SearchFiltersTabletButton />
+                        {newFiltersEnabled && <SearchFiltersTabletButton />}
                     </>
                 }
             />
@@ -302,13 +316,9 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             showQueryExamplesOnNoResultsPage={true}
                             queryState={queryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            searchMode={searchMode}
-                            setSearchMode={setSearchMode}
-                            submitSearch={submitSearch}
-                            caseSensitive={caseSensitive}
-                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             logSearchResultClicked={onLogSearchResultClick}
+                            queryExamplesPatternType={patternType}
                         />
                     </>
                 )}
@@ -338,7 +348,11 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     const { children, className, onClose, ...attributes } = props
 
     return (
-        <aside {...attributes} className={classNames(styles.filters, className)}>
+        <div
+            {...attributes}
+            aria-label="Search dynamic filters panel"
+            className={classNames(styles.filters, className)}
+        >
             <header className={styles.filtersHeader}>
                 <H4 as={H2} className="mb-0">
                     Filters
@@ -348,7 +362,7 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
                 </Button>
             </header>
             <div className={styles.filtersContent}>{children}</div>
-        </aside>
+        </div>
     )
 }
 

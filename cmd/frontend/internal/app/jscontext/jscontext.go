@@ -153,7 +153,10 @@ type JSContext struct {
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
-	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllow                 conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllowNoExpiration     bool                  `json:"accessTokensAllowNoExpiration"`
+	AccessTokensDefaultExpirationDays int                   `json:"accessTokensExpirationDaysDefault"`
+	AccessTokensExpirationDaysOptions []int                 `json:"accessTokensExpirationDaysOptions"`
 
 	AllowSignup bool `json:"allowSignup"`
 
@@ -311,12 +314,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
 	runningOnMacOS := runtime.GOOS == "darwin"
 
+	accessTokenDefaultExpirationDays, accessTokenExpirationDaysOptions := conf.AccessTokensExpirationOptions()
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
-	return JSContext{
+	context := JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
@@ -346,7 +351,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		// Experiments. We pass these through explicitly, so we can
 		// do the default behavior only in Go land.
-		AccessTokensAllow: conf.AccessTokensAllow(),
+		AccessTokensAllow:                 conf.AccessTokensAllow(),
+		AccessTokensAllowNoExpiration:     conf.AccessTokensAllowNoExpiration(),
+		AccessTokensDefaultExpirationDays: accessTokenDefaultExpirationDays,
+		AccessTokensExpirationDaysOptions: accessTokenExpirationDaysOptions,
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
@@ -399,6 +407,26 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		RunningOnMacOS: runningOnMacOS,
 	}
+
+	if licenseInfo != nil {
+		// If the license a Sourcegraph instance is running under does not support Code Search features
+		// we force disable related features (executors, batch-changes, executors, code-insights).
+		if licenseInfo.Features.CodeSearch {
+			context.BatchChangesEnabled = false
+			context.CodeInsightsEnabled = false
+			context.ExecutorsEnabled = false
+			context.CodeInsightsEnabled = false
+		}
+
+		// If the license a Sourcegraph instance is running under does not support Cody features
+		// we force disable related features (embeddings etc).
+		if !licenseInfo.Features.Cody {
+			context.CodyEnabled = false
+			context.CodyEnabledForCurrentUser = false
+			context.EmbeddingsEnabled = false
+		}
+	}
+	return context
 }
 
 // createCurrentUser creates CurrentUser object which contains of types.User

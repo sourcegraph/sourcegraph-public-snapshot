@@ -55,7 +55,7 @@ func newCompletionsHandler(
 	traceFamily string,
 	getModel func(context.Context, types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
 ) http.Handler {
-	responseHandler := newSwitchingResponseHandler(logger, feature)
+	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -159,8 +159,14 @@ func newCompletionsHandler(
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
-					respondRateLimited(w, unwrap, isDotcom, isProUser)
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
+					respondRateLimited(w, unwrap, isDotcom, subscription.ApplyProRateLimits)
 					return
 				}
 				l.Warn("Rate limit error", log.Error(err))
@@ -190,9 +196,9 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	nonStreamer := newNonStreamingResponseHandler(logger, feature)
-	streamer := newStreamingResponseHandler(logger, feature)
+func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+	nonStreamer := newNonStreamingResponseHandler(logger, db, feature)
+	streamer := newStreamingResponseHandler(logger, db, feature)
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore,
 	) {
 		if requestParams.IsStream(feature) {
@@ -205,7 +211,7 @@ func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFea
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
@@ -250,10 +256,17 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
+
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						l.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
 					if isDotcom {
-						if isProUser {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")
@@ -292,7 +305,7 @@ func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFea
 // newNonStreamingResponseHandler handles non-streaming requests to an LLM provider,
 // awaiting the complete response before writing it back in a structured JSON response
 // to the client.
-func newNonStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 		completion, err := cc.Complete(ctx, feature, requestParams)
 		if err != nil {
@@ -310,10 +323,16 @@ func newNonStreamingResponseHandler(logger log.Logger, feature types.Completions
 						http.Error(w, "Internal server error", http.StatusInternalServerError)
 						return
 					}
-					isProUser := user.CodyProEnabledAt != nil
+					subscription, err := cody.SubscriptionForUser(ctx, db, *user)
+					if err != nil {
+						logger.Error("Error while fetching user's cody subscription", log.Error(err))
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
+
 					isDotcom := envvar.SourcegraphDotComMode()
 					if isDotcom {
-						if isProUser {
+						if subscription.ApplyProRateLimits {
 							w.Header().Set("x-is-cody-pro-user", "true")
 						} else {
 							w.Header().Set("x-is-cody-pro-user", "false")

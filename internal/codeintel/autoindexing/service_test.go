@@ -1,8 +1,10 @@
 package autoindexing
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"testing"
@@ -259,7 +261,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
 	})
-	gitserverClient.ReadFileFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
+	gitserverClient.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader(yamlIndexConfiguration)), nil)
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
@@ -334,7 +336,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
 	})
-	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, os.ErrNotExist)
+	gitserverClient.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
@@ -407,7 +409,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		}
 		return "c42", nil
 	})
-	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, os.ErrNotExist)
+	gitserverClient.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
