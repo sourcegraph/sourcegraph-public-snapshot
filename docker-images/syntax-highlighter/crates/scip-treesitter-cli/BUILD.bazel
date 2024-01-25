@@ -110,12 +110,12 @@ oci_tarball(
 genrule(
     name = "scip_java_groundtruth_scip",
     srcs = [
-        "testdata/stuff.sh",
+        "testdata/scip-index.sh",
         ":scip_java_image_tarball",
     ] + glob(["testdata/java/**"]),
     outs = ["index.scip"],
     cmd = """\
-    $(location testdata/stuff.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java/build.gradle) $@
+    $(location testdata/scip-index.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java/build.gradle) 'scip-java index' $@
     """,
     tags = ["requires-network"],
 )
