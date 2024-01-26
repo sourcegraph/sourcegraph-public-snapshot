@@ -80,91 +80,91 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     return (
         <div className={styles.scrollWrapper}>
-            <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
+            <div className={styles.filters}>
+                <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
-            <SearchDynamicFilter
-                title="By symbol kind"
-                filterKind={FiltersType.SymbolKind}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={symbolFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By symbol kind"
+                    filterKind={FiltersType.SymbolKind}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={symbolFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="By language"
-                filterKind={FiltersType.Language}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={languageFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By language"
+                    filterKind={FiltersType.Language}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={languageFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="By author"
-                filterKind={FiltersType.Author}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={authorFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By author"
+                    filterKind={FiltersType.Author}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={authorFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="By repositories"
-                filterKind={FiltersType.Repository}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={repoFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By repositories"
+                    filterKind={FiltersType.Repository}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={repoFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="By commit date"
-                filterKind={FiltersType.CommitDate}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={commitDateFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By commit date"
+                    filterKind={FiltersType.CommitDate}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={commitDateFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="By file"
-                filterKind={FiltersType.File}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By file"
+                    filterKind={FiltersType.File}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="Utility"
-                filterKind={FiltersType.Utility}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={utilityFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="Utility"
+                    filterKind={FiltersType.Utility}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={utilityFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
-
-            <div className={styles.footerContent}>
-                <footer className={styles.actions}>
-                    {selectedFilters.length > 0 && (
-                        <Tooltip
-                            placement="right"
-                            content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
-                        >
-                            <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
-                                Move filters to the query
-                                <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {children}
-                </footer>
-
-                <FiltersDocFooter />
+                <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
             </div>
+
+            <footer className={styles.actions}>
+                {selectedFilters.length > 0 && (
+                    <Tooltip
+                        placement="right"
+                        content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
+                    >
+                        <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
+                            Move filters to the query
+                            <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
+                        </Button>
+                    </Tooltip>
+                )}
+
+                {children}
+            </footer>
+
+            <FiltersDocFooter className={styles.footerDoc} />
         </div>
     )
 }
