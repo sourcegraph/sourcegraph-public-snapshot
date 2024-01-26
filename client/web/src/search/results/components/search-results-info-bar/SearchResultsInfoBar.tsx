@@ -190,6 +190,10 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         setCodyFeedback(positive)
     }
 
+    const calculatePower = (base, exponent) => {
+        return base ** exponent
+    }
+
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
@@ -263,7 +267,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 data-testid="dropdown-toggle"
                                 data-test-tooltip-content="Learn more about the new search language."
                             >
-                                New search language
+                                Keyword search
                             </PopoverTrigger>
                             <PopoverContent
                                 position={Position.bottomStart}
@@ -272,10 +276,10 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 targetPadding={LANG_UPDATE_POPOVER_PADDING}
                             >
                                 <div>
-                                    <H3>New, improved search</H3>
+                                    <H3>About keyword search</H3>
                                     <Text>
-                                        The new search mode ANDs terms together instead of searching literally and
-                                        requires quotes to search specific strings.
+                                        The new search behavior ANDs terms together instead of searching literally by
+                                        default. To search literally, wrap the query in quotes.
                                     </Text>
                                     <Text>
                                         <Link
@@ -284,7 +288,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                         >
                                             Read the docs
                                         </Link>{' '}
-                                        to learn more.
+                                        to learn about other changes.
                                     </Text>
                                 </div>
                             </PopoverContent>
