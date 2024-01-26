@@ -1,0 +1,9 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, src)"
+---
+  using System;
+//^^^^^ Keyword
+//      ^^^^^^ IdentifierNamespace
+//            ^ PunctuationDelimiter
+

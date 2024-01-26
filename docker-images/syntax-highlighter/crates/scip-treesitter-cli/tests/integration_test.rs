@@ -12,9 +12,9 @@ use scip_treesitter_cli::io::read_index_from_file;
 
 lazy_static::lazy_static! {
     static ref BINARY_LOCATION: PathBuf = {
-        match std::env::var("SCIP_CLI_LOCATION") {
+        match std::env::var("SCIP_TREESITTER_PATH") {
             Ok(va) => std::env::current_dir().unwrap().join(va),
-            _ => cargo_bin("scip-treesitter-cli"),
+            _ => cargo_bin("scip-treesitter"),
         }
     };
 
@@ -34,7 +34,7 @@ lazy_static::lazy_static! {
 
 }
 
-use scip_syntax::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
+use syntax_analysis::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
 
 fn snapshot_syntax_document(doc: &scip::types::Document, source: &str) -> String {
     dump_document_with_config(

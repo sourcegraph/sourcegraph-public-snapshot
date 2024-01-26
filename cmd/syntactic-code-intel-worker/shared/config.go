@@ -33,7 +33,7 @@ func (c *Config) Load() {
 	c.WorkerBudget = int64(c.GetInt("SYNTACTIC_CODE_INTEL_WORKER_BUDGET", "0", "The amount of compressed input data (in bytes) a worker can process concurrently. Zero acts as an infinite budget."))
 	c.MaximumRuntimePerJob = c.GetInterval("SYNTACTIC_CODE_INTEL_WORKER_MAXIMUM_RUNTIME_PER_JOB", "25m", "The maximum time a single repository indexing job can take")
 
-	c.CliPath = c.Get("SCIP_TREESITTER_COMMAND", "scip-treesitter", "TODO: fill in description")
+	c.CliPath = c.Get("SCIP_TREESITTER_PATH", "scip-treesitter", "TODO: fill in description")
 
 	c.ListenAddress = c.GetOptional("SYNTACTIC_CODE_INTEL_WORKER_ADDR", "The address under which the syntactic codeintel worker API listens. Can include a port.")
 	// Fall back to a reasonable default.

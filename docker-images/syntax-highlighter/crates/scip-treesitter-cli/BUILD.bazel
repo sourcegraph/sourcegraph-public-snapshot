@@ -18,7 +18,7 @@ rust_binary(
 )
 
 WORKSPACE_DEPS = [
-    "//docker-images/syntax-highlighter/crates/scip-syntax",
+    "//docker-images/syntax-highlighter/crates/syntax-analysis",
     "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
 ]
 
@@ -84,8 +84,8 @@ rust_test(
     env = {
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
-        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter)",
         "SCIP_JAVA_INDEX": "$(rootpath :java_groundtruth_scip)",
+        "SCIP_TREESITTER_PATH": "$(rootpath :scip-treesitter)",
     },
     deps = all_crate_deps(
         normal = True,

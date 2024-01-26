@@ -51,8 +51,8 @@
             {progress.matchCount}
             {pluralize('result', progress.matchCount)}
             {#if progress.repositoriesCount !== undefined}
-                from {progress.repositoriesCount} {pluralize('repository', progress.repositoriesCount, 'repositories')}
-            {/if}.
+                from {progress.repositoriesCount} {pluralize('repository', progress.repositoriesCount, 'repositories')}.
+            {/if}
         </p>
         {#if hasSkippedItems}
             <h3>Some results skipped</h3>

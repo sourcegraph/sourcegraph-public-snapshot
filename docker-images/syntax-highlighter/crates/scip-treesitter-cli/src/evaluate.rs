@@ -10,9 +10,9 @@ use std::{
 use anyhow::*;
 use colored::{ColoredString, Colorize};
 use scip::types::Index;
-use scip_syntax::range::PackedRange;
 use serde::Serializer;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
+use syntax_analysis::range::PackedRange;
 
 use crate::{io::read_index_from_file, progress::*};
 
