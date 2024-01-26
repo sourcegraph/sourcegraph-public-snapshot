@@ -57,13 +57,20 @@ pub struct SourcegraphQuery {
 // NOTE: Keep in sync: internal/gosyntect/gosyntect.go
 #[derive(Deserialize, Default, Debug, PartialEq, Eq)]
 pub enum SyntaxEngine {
+    /// Returns highlighting data only via syntect in SCIP format
     #[default]
     #[serde(rename = "syntect")]
     Syntect,
 
+    /// Returns highlighting data only via Tree-sitter in SCIP format
     #[serde(rename = "tree-sitter")]
     TreeSitter,
 
+    /// Returns highlighting data and optionally locals data via Tree-sitter in SCIP format
+    ///
+    /// This name is preserved for backwards compatibility. The web client
+    /// makes use of locals data for code navigation, so it doesn't make
+    /// sense to omit locals data if it is available.
     #[serde(rename = "scip-syntax")]
     ScipSyntax,
 }
