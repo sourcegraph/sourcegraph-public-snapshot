@@ -78,7 +78,7 @@ rust_test(
     env = {
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
-        "SCIP_CLI_LOCATION": "$(rootpath :scip-treesitter)",
+        "SCIP_TREESITTER_PATH": "$(rootpath :scip-treesitter)",
     },
     deps = all_crate_deps(
         normal = True,
