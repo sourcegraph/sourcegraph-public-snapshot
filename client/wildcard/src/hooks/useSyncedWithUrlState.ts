@@ -18,7 +18,7 @@ export interface UpdateSearchQueryOptions {
 export type SetStateResult<State> = [
     state: State,
     dispatch: (state: State, options?: UpdateSearchQueryOptions) => UpdatedSearchQuery,
-    serilize: (state: State) => UpdatedSearchQuery
+    serialize: (state: State) => UpdatedSearchQuery
 ]
 
 /**

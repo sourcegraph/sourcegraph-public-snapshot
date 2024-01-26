@@ -44,7 +44,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     onQueryChange,
     children,
 }) => {
-    const [selectedFilters, setSelectedFilters, serilizeFiltersURL] = useUrlFilters()
+    const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)
@@ -71,11 +71,11 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         // extra entries with completely internal locations update,
         // Setting filters shouldn't be in the history since onQueryChange
         // changes URL itself.
-        onQueryChange(newQuery, serilizeFiltersURL(newSelectedFilters))
+        onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
     }
 
     const handleApplyButtonFilters = (): void => {
-        onQueryChange(mergeQueryAndFilters(query, selectedFilters), serilizeFiltersURL([]))
+        onQueryChange(mergeQueryAndFilters(query, selectedFilters), serializeFiltersURL([]))
     }
 
     return (
