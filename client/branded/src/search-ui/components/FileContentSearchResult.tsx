@@ -33,7 +33,7 @@ import { ResultContainer } from './ResultContainer'
 import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
 import resultContainerStyles from './ResultContainer.module.scss'
-import styles from './SearchResult.module.scss'
+import searchResultStyles from './SearchResult.module.scss'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
@@ -187,10 +187,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                             : undefined
                     }
-                    className={styles.titleInner}
+                    className={searchResultStyles.titleInner}
                 />
                 <CopyPathAction
-                    className={styles.copyButton}
+                    className={searchResultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
                 />
@@ -229,7 +229,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={classNames(styles.copyButtonContainer, containerClassName)}
+            className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
@@ -252,21 +252,22 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                         <button
                             type="button"
                             className={classNames(
-                                styles.toggleMatchesButton,
-                                expanded && styles.toggleMatchesButtonExpanded
+                                searchResultStyles.toggleMatchesButton,
+                                searchResultStyles.focusable,
+                                expanded && searchResultStyles.toggleMatchesButtonExpanded
                             )}
                             onClick={toggle}
                             data-testid="toggle-matches-container"
                         >
                             <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
-                            <span className={styles.toggleMatchesButtonText}>
+                            <span className={searchResultStyles.toggleMatchesButtonText}>
                                 {expanded
                                     ? 'Show less'
                                     : `Show ${hiddenMatchesCount} more ${pluralize(
-                                          'match',
-                                          hiddenMatchesCount,
-                                          'matches'
-                                      )}`}
+                                        'match',
+                                        hiddenMatchesCount,
+                                        'matches'
+                                    )}`}
                             </span>
                         </button>
                     )}
