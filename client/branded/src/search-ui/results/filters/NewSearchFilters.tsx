@@ -1,12 +1,24 @@
-import { FC, ReactNode, useMemo } from 'react'
+import { FC, ReactNode, useMemo } from 'react';
 
-import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { findFilters } from '@sourcegraph/shared/src/search/query/query'
-import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
-import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import type { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+
+
+import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters';
+import { findFilters } from '@sourcegraph/shared/src/search/query/query';
+import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner';
+import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token';
+import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer';
+import type { Filter } from '@sourcegraph/shared/src/search/stream';
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard';
+
+
+
+import { authorFilter, commitDateFilter, languageFilter, repoFilter, SearchDynamicFilter, symbolFilter, utilityFilter } from './components/dynamic-filter/SearchDynamicFilter';
+import { FilterTypeList, resolveFilterTypeValue, toSearchSyntaxTypeFilter } from './components/filter-type-list/FilterTypeList';
+import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter';
+import { ArrowBendIcon } from './components/Icons';
+import { mergeQueryAndFilters, useUrlFilters } from './hooks';
+import { SearchFilterType } from './types';
+
 
 import {
     authorFilter,
@@ -27,7 +39,11 @@ import { ArrowBendIcon } from './components/Icons'
 import { mergeQueryAndFilters, URLQueryFilter, useUrlFilters } from './hooks'
 import { FiltersType, SEARCH_TYPES_TO_FILTER_TYPES, SearchFilterType } from './types'
 
-import styles from './NewSearchFilters.module.scss'
+import styles from './NewSearchFilters.module.scss';
+
+
+
+
 
 interface NewSearchFiltersProps {
     query: string
@@ -80,9 +96,10 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     return (
         <div className={styles.scrollWrapper}>
-            <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
+            <div className={styles.filters}>
+                <FilterTypeList value={type} onSelect={handleFilterTypeChange}/>
 
-            <SearchDynamicFilter
+                <SearchDynamicFilter
                 title="By symbol kind"
                 filterKind={FiltersType.SymbolKind}
                 filters={filters}
@@ -91,16 +108,16 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <SearchDynamicFilter
-                title="By language"
-                filterKind={FiltersType.Language}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={languageFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By language"
+                    filterKind={FiltersType.Language}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={languageFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
+                <SearchDynamicFilter
                 title="By author"
                 filterKind={FiltersType.Author}
                 filters={filters}
@@ -109,16 +126,16 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <SearchDynamicFilter
-                title="By repositories"
-                filterKind={FiltersType.Repository}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={repoFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By repositories"
+                    filterKind={FiltersType.Repository}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={repoFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
+                <SearchDynamicFilter
                 title="By commit date"
                 filterKind={FiltersType.CommitDate}
                 filters={filters}
@@ -127,44 +144,43 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <SearchDynamicFilter
-                title="By file"
-                filterKind={FiltersType.File}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="By file"
+                    filterKind={FiltersType.File}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SearchDynamicFilter
-                title="Utility"
-                filterKind={FiltersType.Utility}
-                filters={filters}
-                selectedFilters={selectedFilters}
-                renderItem={utilityFilter}
-                onSelectedFilterChange={setSelectedFilters}
-            />
+                <SearchDynamicFilter
+                    title="Utility"
+                    filterKind={FiltersType.Utility}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={utilityFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
-            <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
-
-            <div className={styles.footerContent}>
-                <footer className={styles.actions}>
-                    {selectedFilters.length > 0 && (
-                        <Tooltip
-                            placement="right"
-                            content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
-                        >
-                            <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
-                                Move filters to the query
-                                <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {children}
-                </footer>
-
-                <FiltersDocFooter />
+                <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
             </div>
+
+            <footer className={styles.actions}>
+                {selectedFilters.length > 0 && (
+                    <Tooltip
+                        placement="right"
+                        content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
+                    >
+                        <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
+                            Move filters to the query
+                            <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon}/>
+                        </Button>
+                    </Tooltip>
+                )}
+
+                {children}
+            </footer>
+
+            <FiltersDocFooter className={styles.footerDoc}/>
         </div>
     )
 }
