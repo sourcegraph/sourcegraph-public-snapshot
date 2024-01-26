@@ -10,34 +10,6 @@
     &:hover {
         text-decoration: none;
     }
-
-    pre,
-    code {
-        width: 100%;
-        padding: 0;
-        margin-bottom: 0;
-    }
-
-    table,
-    tr,
-    td {
-        display: flex;
-        flex-grow: 1;
-        padding: 0;
-        margin-bottom: 0;
-        :global(.code) {
-            padding: 0;
-        }
-        span:last-child {
-            width: 100%;
-        }
-    }
-
-    tbody {
-        display: flex;
-        flex-grow: 1;
-        flex-direction: column;
-    }
 }
 
 .match-type {
