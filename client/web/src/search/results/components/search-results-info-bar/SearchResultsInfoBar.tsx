@@ -46,13 +46,13 @@ import {
     getInsightsCreateAction,
     getSearchContextCreateAction,
 } from './createActions'
-import { SearchIcon } from './SearchIcon'
+import { NewStarsIcon } from './NewStarsIcon'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
 // Adds padding to the popover content to add some space between the trigger
 // button and the content
-const LANG_UPDATE_POPOVER_PADDING = createRectangle(0, 0, 0, 2)
+const KEYWORD_SEARCH_POPOVER_PADDING = createRectangle(0, 0, 0, 2)
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
@@ -191,10 +191,6 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         setCodyFeedback(positive)
     }
 
-    const calculatePower = (base, exponent) => {
-        return base ** exponent
-    }
-
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
@@ -257,7 +253,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                 {props.showKeywordSearchToggle && (
                     <div ref={popoverRef} className={styles.toggleWrapper}>
                         <span className="mr-1">
-                            <SearchIcon aria-hidden={true} />
+                            <NewStarsIcon aria-hidden={true} />
                         </span>
 
                         <Popover>
@@ -274,7 +270,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 target={popoverRef.current}
                                 position={Position.bottomEnd}
                                 className={styles.popoverContent}
-                                targetPadding={LANG_UPDATE_POPOVER_PADDING}
+                                targetPadding={KEYWORD_SEARCH_POPOVER_PADDING}
                             >
                                 <div>
                                     <H3>About keyword search</H3>
