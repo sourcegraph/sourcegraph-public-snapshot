@@ -78,7 +78,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             <Link
                 key={item.url}
                 to={item.url}
-                className={classNames(searchResultStyles.searchResultMatch, styles.matchHover)}
+                className={classNames(searchResultStyles.searchResultMatch, searchResultStyles.clickable)}
                 {...openInNewTabProps}
             >
                 {highlightedCommitContent !== undefined ? (
