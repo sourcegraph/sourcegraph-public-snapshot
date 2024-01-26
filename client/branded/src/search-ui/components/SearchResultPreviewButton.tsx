@@ -26,7 +26,7 @@ export const SearchResultPreviewButton: FC<SearchResultPreviewButtonProps> = pro
     }
 
     return (
-        <Button variant="link" className="py-1 px-0 mr-2" onClick={handleClick}>
+        <Button variant="link" className="p-0 mr-2" onClick={handleClick}>
             {isActive ? 'Hide preview' : 'Preview'}
         </Button>
     )

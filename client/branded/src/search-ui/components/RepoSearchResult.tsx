@@ -101,7 +101,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             {(showExtraInfo || description || showRepoMetadata) && (
                 <div
                     data-testid="search-repo-result"
-                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-2 flex-column')}
+                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-3 flex-column')}
                 >
                     {showExtraInfo && (
                         <div className={classNames('d-flex', styles.dividerBetween)}>

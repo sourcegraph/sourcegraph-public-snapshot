@@ -98,8 +98,12 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		vars.Environment.Instances.Scaling = &spec.EnvironmentInstancesScalingSpec{}
 	}
 
+	name, err := vars.Name()
+	if err != nil {
+		return nil, err
+	}
 	svc := cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
-		Name:      pointers.Ptr(vars.Service.ID),
+		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
 

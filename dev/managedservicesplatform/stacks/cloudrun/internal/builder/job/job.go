@@ -87,9 +87,13 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 			Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
 		}
 	}
+	name, err := vars.Name()
+	if err != nil {
+		return nil, err
+	}
 
 	job := cloudrunv2job.NewCloudRunV2Job(stack, pointers.Ptr("cloudrun"), &cloudrunv2job.CloudRunV2JobConfig{
-		Name:      pointers.Ptr(vars.Service.ID),
+		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
 

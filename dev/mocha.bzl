@@ -64,10 +64,16 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         ":%s" % bundle_name,
     ]
 
-    # `--define` flags are used to set environment variables here because
-    # we use `js_run_binary` as a target and it doesn't work with `--test_env`.
+    # Some values are passed down from --action_env. Bazel unfortunately
+    # doesn't let us rename them without attempting to do analysis-time
+    # variable substitution, which causes analysis-time errors if the variables
+    # are not declared.
+    # - SOURCEGRAPH_BASE_URL
+    # - GH_TOKEN
+    # - DISPLAY
+    # - HEADLESS
+    # - PERCY_TOKEN
     env = dict(env, **{
-        "HEADLESS": "$(E2E_HEADLESS)",
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
         "MOCHA_FILE": "$$XML_OUTPUT_FILE",
@@ -75,8 +81,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         # TODO(bazel): e2e test environment
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
-        "SOURCEGRAPH_BASE_URL": "$(E2E_SOURCEGRAPH_BASE_URL)",
-        "GH_TOKEN": "$(GH_TOKEN)",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
         "KEEP_BROWSER": "false",
@@ -88,9 +92,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         # Enable findDom on CodeMirror
         "INTEGRATION_TESTS": "true",
-
-        # Puppeteer config
-        "DISPLAY": "$(DISPLAY)",
     })
 
     if is_percy_enabled:
@@ -109,8 +110,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             args = args,
             env = dict(env, **{
                 "PERCY_ON": "true",
-                "PERCY_TOKEN": "$(PERCY_TOKEN)",
             }),
+            use_default_shell_env = True,
             srcs = data,
             out_dirs = ["out"],
             silent_on_success = True,
@@ -134,5 +135,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             args = args,
             data = data,
             env = env,
+            use_default_shell_env = True,
             **kwargs
         )

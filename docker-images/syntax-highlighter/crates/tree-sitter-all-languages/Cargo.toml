@@ -1,5 +1,5 @@
 [package]
-name = "scip-treesitter-languages"
+name = "tree-sitter-all-languages"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,8 +8,6 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.0"
 paste = "1.0.6"
-
-scip-macros = { path = "../scip-macros" }
 
 scip.workspace = true
 tree-sitter.workspace = true

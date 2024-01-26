@@ -11,6 +11,7 @@ import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import type { OrgAreaOrganizationFields } from '../../graphql-operations'
 import type { RouteV6Descriptor } from '../../util/contributions'
+import { getLicenseFeatures } from '../../util/license'
 import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { OrgSettingsSidebar, type OrgSettingsSidebarItems } from './OrgSettingsSidebar'
@@ -34,15 +35,21 @@ export interface OrgSettingsAreaProps extends OrgAreaRouteContext {
 
 export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
     org: OrgAreaOrganizationFields
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
+const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
     const context: OrgSettingsAreaRouteContext = {
         ...props,
+        license: getLicenseFeatures(),
     }
 
     return (
