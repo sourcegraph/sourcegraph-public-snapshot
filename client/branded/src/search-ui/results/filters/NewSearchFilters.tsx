@@ -83,16 +83,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             <div className={styles.filters}>
                 <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
-
-                    <SearchDynamicFilter
-                        title="By symbol kind"
-                        filterKind={FiltersType.SymbolKind}
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={symbolFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-
+                <SearchDynamicFilter
+                    title="By symbol kind"
+                    filterKind={FiltersType.SymbolKind}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={symbolFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
                 <SearchDynamicFilter
                     title="By language"
@@ -103,16 +101,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     onSelectedFilterChange={setSelectedFilters}
                 />
 
-
-                    <SearchDynamicFilter
-                        title="By author"
-                        filterKind={FiltersType.Author}
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={authorFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-
+                <SearchDynamicFilter
+                    title="By author"
+                    filterKind={FiltersType.Author}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={authorFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
                 <SearchDynamicFilter
                     title="By repositories"
@@ -123,16 +119,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     onSelectedFilterChange={setSelectedFilters}
                 />
 
-
-                    <SearchDynamicFilter
-                        title="By commit date"
-                        filterKind={FiltersType.CommitDate}
-                        filters={filters}
-                        selectedFilters={selectedFilters}
-                        renderItem={commitDateFilter}
-                        onSelectedFilterChange={setSelectedFilters}
-                    />
-
+                <SearchDynamicFilter
+                    title="By commit date"
+                    filterKind={FiltersType.CommitDate}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    renderItem={commitDateFilter}
+                    onSelectedFilterChange={setSelectedFilters}
+                />
 
                 <SearchDynamicFilter
                     title="By file"
