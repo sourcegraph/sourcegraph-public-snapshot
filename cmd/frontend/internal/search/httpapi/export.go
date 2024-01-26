@@ -39,7 +39,7 @@ func ServeSearchJobDownload(logger log.Logger, svc *service.Service) http.Handle
 			return
 		}
 
-		filename := filenamePrefix(jobID) + ".json"
+		filename := filenamePrefix(jobID) + ".jsonl"
 		writeJSON(logger.With(log.Int("jobID", jobID)), w, filename, writerTo)
 	}
 }
