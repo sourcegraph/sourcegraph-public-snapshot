@@ -36,23 +36,26 @@ fn main() -> Result<(), std::io::Error> {
     let contents = fs::read_to_string(path)?;
     println!("  read {} bytes", contents.len());
 
-    let filetype = sg_syntax::determine_filetype(&sg_syntax::SourcegraphQuery {
-        extension: path
-            .extension()
-            .expect("extension")
-            .to_str()
-            .expect("valid utf-8 path")
-            .to_string(),
-        code: contents.clone(),
-        filepath: "".to_string(),
-        filetype: None,
-        line_length_limit: None,
-    });
+    let filetype = scip_syntax::highlighting::determine_filetype(
+        &scip_syntax::highlighting::SourcegraphQuery {
+            extension: path
+                .extension()
+                .expect("extension")
+                .to_str()
+                .expect("valid utf-8 path")
+                .to_string(),
+            code: contents.clone(),
+            filepath: "".to_string(),
+            filetype: None,
+            line_length_limit: None,
+        },
+    );
 
     println!("  filetype: {:?}", filetype);
 
-    let document = sg_syntax::treesitter_index(&filetype, &contents, args.include_locals)
-        .expect("parse document");
+    let document =
+        scip_syntax::highlighting::treesitter_index(&filetype, &contents, args.include_locals)
+            .expect("parse document");
     println!("  parsed document");
 
     scip::write_message_to_file(output, document).expect("writes document");

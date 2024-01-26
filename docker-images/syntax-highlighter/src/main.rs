@@ -7,8 +7,8 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
+use scip_syntax::highlighting::{ScipHighlightQuery, SourcegraphQuery};
 use serde::Deserialize;
-use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
 use tree_sitter_all_languages::parsers::BundledParser;
 
 #[post("/", format = "application/json", data = "<q>")]
@@ -17,7 +17,8 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
-    let result = std::panic::catch_unwind(|| sg_syntax::syntect_highlight(q.into_inner()));
+    let result =
+        std::panic::catch_unwind(|| scip_syntax::highlighting::syntect_highlight(q.into_inner()));
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
@@ -29,7 +30,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
 // for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    match sg_syntax::lsif_highlight(q.into_inner()) {
+    match scip_syntax::highlighting::lsif_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -37,7 +38,7 @@ fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
 
 #[post("/scip", format = "application/json", data = "<q>")]
 fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
-    match sg_syntax::scip_highlight(q.into_inner()) {
+    match scip_syntax::highlighting::scip_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -125,7 +126,7 @@ fn rocket() -> _ {
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
         Ok(v) if v == "true" => {}
-        _ => sg_syntax::list_features(),
+        _ => scip_syntax::highlighting::list_features(),
     };
 
     rocket::build()

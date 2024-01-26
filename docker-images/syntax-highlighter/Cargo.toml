@@ -20,7 +20,6 @@ protobuf.workspace = true
 rustyline = "9.1.2"
 base64 = "0.13.0"
 
-sg-syntax = { path = "./crates/sg-syntax" }
 tree-sitter-all-languages = { path = "./crates/tree-sitter-all-languages" }
 scip-syntax = { path = "./crates/scip-syntax" }
 # March 20, 2023 - Pinned explicitly with features that match the features
@@ -37,9 +36,6 @@ rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 
 [workspace]
 members = [
-    "crates/sg-syntax",
-
-    # later, these will be pulled out to a separate repo
     "crates/scip-syntax",
     "crates/tree-sitter-all-languages",
     "crates/scip-treesitter-cli",
@@ -62,6 +58,7 @@ walkdir = "2"
 
 scip = "0.3.2"
 protobuf = "3"
+insta = "1.11.0"
 
 [profile.release]
 # Enabled debug symbols in release build, so if we have a crash
