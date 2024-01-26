@@ -11,15 +11,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
-const USE_SSC_FOR_SUBSCRIPTION_FF = "use-ssc-for-cody-subscription"
+const (
+	// FeatureFlagCodyProTrialStillAvailable controls whether or not we grant users who have signed up for the "Cody Pro"
+	// free trial access to Pro features. The default for this is true, but we flip it to false on February 15, 2024.
+	// (And in a subsequent release, remove it and all references.)
+	FeatureFlagCodyProTrialStillAvailable = "ssc.cody-pro-trial-still-available"
 
-// cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
-// (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
-const CODY_PRO_TRIAL_ENDED_FF = "cody-pro-trial-ended"
-
-const SAMS_SERVICE_ID = "https://accounts.sgdev.org"
-const SAMS_SERVICE_TYPE = "openidconnect"
+	// FeatureFlagReadCodySubscriptionFromSSC controls whether or not we should attempt to read a user's Cody Pro
+	// subscription information from the SSC backend. Defaults to false while the SSC integration is in development.
+	FeatureFlagReadCodySubscriptionFromSSC = "ssc.read-cody-subscription-from-ssc"
+)
 
 type UserSubscriptionPlan string
 
@@ -48,100 +49,107 @@ type UserSubscription struct {
 	CurrentPeriodEndAt time.Time
 }
 
-// consolidateSubscriptionDetails merges the subscription data available on dotcom and SCC.
-// This is needed while transitioning to use SCC as the source of truth for all subscription data. (Which should happen ~Q1/2024.)
+// grantsProRateLimits returns whether or not a user should be given the Cody Pro limits based
+// on the provided subscription status.
+func grantsProRateLimits(status ssc.SubscriptionStatus) bool {
+	switch status {
+	case ssc.SubscriptionStatusActive:
+		return true
+	case ssc.SubscriptionStatusTrialing:
+		return true
+
+	case ssc.SubscriptionStatusPastDue:
+		// Subscriptions not in a payment-related error state are still
+		// given the Pro rate limits. However, depending on how things
+		// are configured, the subscription will automatically transition
+		// to a "canceled" state soon.
+		return true
+
+	default:
+		// All other states. e.g. "canceled", "unpaid", "incomplete", etc.
+		return false
+	}
+}
+
+// consolidateSubscriptionDetails merges the (optional) subscription data available on dotcom and SCC.
+// This is needed while transitioning to use SCC as the source of truth for all subscription data.
+// (Which should happen ~Q1/2024.)
 // TODO[sourcegraph#59785]: Update dotcom to use SSC as the source of truth for all subscription data.
 func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscription *ssc.Subscription) (*UserSubscription, error) {
 	// If subscription information is available from SSC, we use that.
-	// And just ignore what is stored in dotcom. (Since they've already
-	// been migrated so to speak.)
+	// And just ignore what is stored in dotcom.
 	if subscription != nil {
 		currentPeriodStart, err := time.Parse(time.RFC3339, subscription.CurrentPeriodStart)
 		if err != nil {
 			return nil, err
 		}
-
 		currentPeriodEnd, err := time.Parse(time.RFC3339, subscription.CurrentPeriodEnd)
 		if err != nil {
 			return nil, err
 		}
 
-		applyProRateLimits := subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue || subscription.Status == ssc.SubscriptionStatusTrialing
-
 		return &UserSubscription{
 			Status:               subscription.Status,
 			Plan:                 UserSubscriptionPlanPro,
-			ApplyProRateLimits:   applyProRateLimits,
+			ApplyProRateLimits:   grantsProRateLimits(subscription.Status),
 			CurrentPeriodStartAt: currentPeriodStart,
 			CurrentPeriodEndAt:   currentPeriodEnd,
 		}, nil
 	}
 
-	// If the user doesn't have a subscription in the SSC backend, then we need
-	// synthesize one using the data available on dotcom.
-	currentPeriodStartAt, currentPeriodEndAt := preSSCReleaseCurrentPeriodDateRange(ctx, user)
+	userSignedUpForFreeTrial := user.CodyProEnabledAt != nil
+	periodStart, periodEnd := fakeSubscriptionBillingCycle(userSignedUpForFreeTrial /* endOnFeb15, since that is when the trial will end */)
 
-	if user.CodyProEnabledAt != nil {
-		return &UserSubscription{
-			Status:               ssc.SubscriptionStatusPending,
-			Plan:                 UserSubscriptionPlanPro,
-			ApplyProRateLimits:   !featureflag.FromContext(ctx).GetBoolOr(CODY_PRO_TRIAL_ENDED_FF, false),
-			CurrentPeriodStartAt: currentPeriodStartAt,
-			CurrentPeriodEndAt:   currentPeriodEndAt,
-		}, nil
-	}
-
-	return &UserSubscription{
+	// Without subscription information from SCC, we synthetsize one.
+	fauxSubscription := UserSubscription{
 		Status:               ssc.SubscriptionStatusPending,
 		Plan:                 UserSubscriptionPlanFree,
 		ApplyProRateLimits:   false,
-		CurrentPeriodStartAt: currentPeriodStartAt,
-		CurrentPeriodEndAt:   currentPeriodEndAt,
-	}, nil
+		CurrentPeriodStartAt: periodStart,
+		CurrentPeriodEndAt:   periodEnd,
+	}
+
+	// Check if the user has signed up for the Cody Pro free trial.
+	// We'll give them the benefits of a Cody Pro subscription until we end the trial offer.
+	//
+	// At that time, we will be pulling all subscription information from the SSC backend.
+	coryProTrialStillAvailable := !featureflag.FromContext(ctx).GetBoolOr(FeatureFlagCodyProTrialStillAvailable, true)
+	if userSignedUpForFreeTrial && coryProTrialStillAvailable {
+		fauxSubscription.Plan = UserSubscriptionPlanPro
+		fauxSubscription.ApplyProRateLimits = true
+	}
+
+	return &fauxSubscription, nil
 }
 
-// getSAMSAccountIDForUser returns the user's SAMS account ID from users_external_accounts table.
-func getSAMSAccountIDForUser(ctx context.Context, db database.DB, user types.User) (string, error) {
-	// TODO(sourcegraph#59786): make service_id configurable between accounts.sourcegraph.com and accounts.sgdev.org using a feature flag for testing.
-	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-		UserID:      user.ID,
-		ServiceType: SAMS_SERVICE_TYPE,
-		ServiceID:   SAMS_SERVICE_ID,
-		LimitOffset: &database.LimitOffset{
-			Limit: 1,
-		},
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "error while fetching user's external account")
-	}
-
-	if len(accounts) > 0 {
-		return accounts[0].AccountID, nil
-	}
-
-	return "", nil
-}
-
-func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.Client, user types.User) (*UserSubscription, error) {
-	samsAccountID, err := getSAMSAccountIDForUser(ctx, db, user)
-	if err != nil {
-		return nil, err
-	}
-
+// SubscriptionForUser returns the user's Cody subscription information.
+// This will return a valid UserSubscription object, even if the user is on the Cody Free
+func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
 	var subscription *ssc.Subscription
 
-	// Fetch subscription from SSC only if the feature flag is enabled and the user has a SAMS account ID
-	if samsAccountID != "" && featureflag.FromContext(ctx).GetBoolOr(USE_SSC_FOR_SUBSCRIPTION_FF, false) {
-		subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(samsAccountID)
+	tryReadSSCSubscription := featureflag.FromContext(ctx).GetBoolOr(FeatureFlagReadCodySubscriptionFromSSC, false)
+	if tryReadSSCSubscription {
+		// The SSC client shouldn't be created on every call.
+		sscClient := ssc.NewClient()
+
+		// Lookup the SAMS account ID for this dotcom user. This isn't part of the SSC backend, but needs
+		// special care in order to have it match the targeted SSC API.
+		samsAccountID, err := sscClient.LookupDotcomUserSAMSAccountID(ctx, db, user.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "error while fetching user subscription from SSC")
+			return nil, errors.Wrap(err, "looking up SAMS account ID")
+		}
+		if samsAccountID == "" {
+			// Do nothing. If the user has never logged in via SAMS, they will not have a SAMS identity
+			// on their dotcom user account.
+		} else {
+			// If they have a SAMS ID, then fetch the subscription from the SSC backend.
+			// The returned subscription may be nil if the user has not subscribed yet.
+			subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
+			if err != nil {
+				return nil, errors.Wrap(err, "fetching subscription from SSC")
+			}
 		}
 	}
 
 	return consolidateSubscriptionDetails(ctx, user, subscription)
-}
-
-// SubscriptionForUser returns the user's Cody subscription details.
-func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
-	return getSubscriptionForUser(ctx, db, ssc.NewClient(), user)
 }
