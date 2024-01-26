@@ -24,20 +24,27 @@ import {
 } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { ArrowBendIcon } from './components/Icons'
-import { mergeQueryAndFilters, useUrlFilters } from './hooks'
-import { SearchFilterType } from './types'
+import { mergeQueryAndFilters, URLQueryFilter, useUrlFilters } from './hooks'
+import { FiltersType, SEARCH_TYPES_TO_FILTER_TYPES, SearchFilterType } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
 interface NewSearchFiltersProps {
     query: string
     filters?: Filter[]
-    onQueryChange: (nextQuery: string) => void
+    withCountAllFilter: boolean
+    onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
     children?: ReactNode
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange, children }) => {
-    const [selectedFilters, setSelectedFilters] = useUrlFilters()
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
+    query,
+    filters,
+    withCountAllFilter,
+    onQueryChange,
+    children,
+}) => {
+    const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
 
     const type = useMemo(() => {
         const tokens = scanSearchQuery(query)
@@ -57,85 +64,72 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
     }, [query])
 
     const handleFilterTypeChange = (filterType: SearchFilterType): void => {
-        switch (filterType) {
-            case SearchFilterType.Code: {
-                const filters = findFilters(succeedScan(query), FilterType.type)
+        const newQuery = changeSearchFilterType(query, filterType)
+        const newSelectedFilters = omitImpossibleFilters(selectedFilters, filterType)
 
-                const newQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
-                onQueryChange(newQuery)
-                break
-            }
-            default: {
-                const filters = findFilters(succeedScan(query), FilterType.type)
-                const newQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
-
-                onQueryChange(updateFilter(newQuery, FilterType.type, toSearchSyntaxTypeFilter(filterType)))
-            }
-        }
+        // Replace: true is needed here to avoid populating history with
+        // extra entries with completely internal locations update,
+        // Setting filters shouldn't be in the history since onQueryChange
+        // changes URL itself.
+        onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
     }
 
     const handleApplyButtonFilters = (): void => {
-        onQueryChange(mergeQueryAndFilters(query, selectedFilters))
+        onQueryChange(mergeQueryAndFilters(query, selectedFilters), serializeFiltersURL([]))
     }
 
     return (
         <div className={styles.scrollWrapper}>
             <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
 
-            {type === SearchFilterType.Symbols && (
-                <SearchDynamicFilter
-                    title="By symbol kind"
-                    filterKind="symbol type"
-                    filters={filters}
-                    selectedFilters={selectedFilters}
-                    renderItem={symbolFilter}
-                    onSelectedFilterChange={setSelectedFilters}
-                />
-            )}
+            <SearchDynamicFilter
+                title="By symbol kind"
+                filterKind={FiltersType.SymbolKind}
+                filters={filters}
+                selectedFilters={selectedFilters}
+                renderItem={symbolFilter}
+                onSelectedFilterChange={setSelectedFilters}
+            />
 
             <SearchDynamicFilter
                 title="By language"
-                filterKind="lang"
+                filterKind={FiltersType.Language}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 renderItem={languageFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <SearchDynamicFilter
-                    title="By author"
-                    filterKind="author"
-                    filters={filters}
-                    selectedFilters={selectedFilters}
-                    renderItem={authorFilter}
-                    onSelectedFilterChange={setSelectedFilters}
-                />
-            )}
+            <SearchDynamicFilter
+                title="By author"
+                filterKind={FiltersType.Author}
+                filters={filters}
+                selectedFilters={selectedFilters}
+                renderItem={authorFilter}
+                onSelectedFilterChange={setSelectedFilters}
+            />
 
             <SearchDynamicFilter
                 title="By repositories"
-                filterKind="repo"
+                filterKind={FiltersType.Repository}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 renderItem={repoFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            {(type === SearchFilterType.Commits || type === SearchFilterType.Diffs) && (
-                <SearchDynamicFilter
-                    title="By commit date"
-                    filterKind="commit date"
-                    filters={filters}
-                    selectedFilters={selectedFilters}
-                    renderItem={commitDateFilter}
-                    onSelectedFilterChange={setSelectedFilters}
-                />
-            )}
+            <SearchDynamicFilter
+                title="By commit date"
+                filterKind={FiltersType.CommitDate}
+                filters={filters}
+                selectedFilters={selectedFilters}
+                renderItem={commitDateFilter}
+                onSelectedFilterChange={setSelectedFilters}
+            />
 
             <SearchDynamicFilter
                 title="By file"
-                filterKind="file"
+                filterKind={FiltersType.File}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 onSelectedFilterChange={setSelectedFilters}
@@ -143,12 +137,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
 
             <SearchDynamicFilter
                 title="Utility"
-                filterKind="utility"
+                filterKind={FiltersType.Utility}
                 filters={filters}
                 selectedFilters={selectedFilters}
                 renderItem={utilityFilter}
                 onSelectedFilterChange={setSelectedFilters}
             />
+
+            <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
 
             <div className={styles.footerContent}>
                 <footer className={styles.actions}>
@@ -171,4 +167,101 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
             </div>
         </div>
     )
+}
+
+const STATIC_COUNT_FILTER: Filter[] = [
+    {
+        // Since backend filters don't support count filter
+        // this means that Filter type doesn't have this as possible kind value
+        // It's okay to cast it since it's handled in one place below in SyntheticCountFilter
+        kind: 'count' as any,
+        label: 'Show all matches',
+        count: 0,
+        exhaustive: true,
+        value: 'count:all',
+    },
+]
+
+interface SyntheticCountFilterProps {
+    query: string
+    isLimitHit: boolean
+    onQueryChange: (query: string) => void
+}
+
+/**
+ * Client-based count filter, usually filters are generated on the backend
+ * based on a given query and results, count filter isn't supported by our
+ * backend at the moment, so it's synthetically included on the client.
+ *
+ * It scans original search query and detects count filter if it catches
+ * count:all filter. As user enables this filter in the filter panel it
+ * changes the original query by adding count:all to the end.
+ */
+const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
+    const { query, isLimitHit, onQueryChange } = props
+
+    const selectedCountFilter = useMemo<Filter[]>(() => {
+        const tokens = scanSearchQuery(query)
+
+        if (tokens.type === 'success') {
+            const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
+            const countFilters = filters.filter(filter => resolveFilter(filter.field.value)?.type === 'count')
+
+            if (countFilters.length === 0 || countFilters.length > 1) {
+                return []
+            }
+
+            return STATIC_COUNT_FILTER
+        }
+
+        return []
+    }, [query])
+
+    const handleCountAllFilter = (countFilters: URLQueryFilter[]): void => {
+        if (countFilters.length > 0) {
+            onQueryChange(`${query} count:all`)
+        } else {
+            const filters = findFilters(succeedScan(query), FilterType.count)
+            const nextQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
+
+            onQueryChange(nextQuery)
+        }
+    }
+
+    // Hide count all filter if search is already exhaustive
+    if (selectedCountFilter.length === 0 && !isLimitHit) {
+        return null
+    }
+
+    return (
+        <SearchDynamicFilter
+            filterKind={FiltersType.Count as any}
+            filters={STATIC_COUNT_FILTER}
+            selectedFilters={selectedCountFilter}
+            renderItem={commitDateFilter}
+            onSelectedFilterChange={handleCountAllFilter}
+        />
+    )
+}
+
+function changeSearchFilterType(query: string, searchType: SearchFilterType): string {
+    switch (searchType) {
+        case SearchFilterType.Code: {
+            const filters = findFilters(succeedScan(query), FilterType.type)
+
+            return filters.reduce((query, filter) => omitFilter(query, filter), query)
+        }
+        default: {
+            const filters = findFilters(succeedScan(query), FilterType.type)
+            const newQuery = filters.reduce((query, filter) => omitFilter(query, filter), query)
+
+            return updateFilter(newQuery, FilterType.type, toSearchSyntaxTypeFilter(searchType))
+        }
+    }
+}
+
+function omitImpossibleFilters(filters: URLQueryFilter[], searchType: SearchFilterType): URLQueryFilter[] {
+    const searchTypePossibleFilters = SEARCH_TYPES_TO_FILTER_TYPES[searchType]
+
+    return filters.filter(filter => searchTypePossibleFilters.includes(filter.kind))
 }
