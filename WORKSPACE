@@ -338,7 +338,7 @@ crates_repository(
     # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
         "//docker-images/syntax-highlighter:Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/syntax-analysis/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/tree-sitter-all-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
     ],

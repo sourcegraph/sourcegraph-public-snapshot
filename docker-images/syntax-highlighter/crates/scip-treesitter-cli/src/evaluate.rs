@@ -10,7 +10,7 @@ use std::{
 use anyhow::*;
 use colored::Colorize;
 use scip::types::Index;
-use scip_syntax::range::PackedRange;
+use syntax_analysis::range::PackedRange;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
 
 use crate::{io::read_index_from_file, progress::*};

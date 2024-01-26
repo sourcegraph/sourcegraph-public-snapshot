@@ -1887,35 +1887,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "scip-syntax"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.13.1",
- "bitvec",
- "clap 4.3.23",
- "id-arena",
- "if_chain",
- "insta",
- "itertools 0.10.5",
- "once_cell",
- "pretty_assertions",
- "protobuf",
- "regex",
- "rocket",
- "rustc-hash",
- "scip",
- "serde",
- "serde_json",
- "string-interner",
- "syntect",
- "tree-sitter",
- "tree-sitter-all-languages",
- "tree-sitter-highlight",
- "walkdir",
-]
-
-[[package]]
 name = "scip-treesitter-cli"
 version = "0.1.0"
 dependencies = [
@@ -1930,10 +1901,10 @@ dependencies = [
  "predicates",
  "protobuf",
  "scip",
- "scip-syntax",
  "serde",
  "serde_json",
  "string-interner",
+ "syntax-analysis",
  "tree-sitter-all-languages",
  "walkdir",
 ]
@@ -2108,6 +2079,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "syntax-analysis"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.13.1",
+ "bitvec",
+ "clap 4.3.23",
+ "id-arena",
+ "if_chain",
+ "insta",
+ "itertools 0.10.5",
+ "once_cell",
+ "pretty_assertions",
+ "protobuf",
+ "regex",
+ "rocket",
+ "rustc-hash",
+ "scip",
+ "serde",
+ "serde_json",
+ "string-interner",
+ "syntect",
+ "tree-sitter",
+ "tree-sitter-all-languages",
+ "tree-sitter-highlight",
+ "walkdir",
+]
+
+[[package]]
 name = "syntect"
 version = "4.7.0"
 source = "git+https://github.com/sourcegraph/syntect?rev=7e02c5b4085e6d935b960b8106cdd85da04532d2#7e02c5b4085e6d935b960b8106cdd85da04532d2"
@@ -2143,9 +2143,9 @@ dependencies = [
  "rustix",
  "rustyline",
  "scip",
- "scip-syntax",
  "serde",
  "serde_json",
+ "syntax-analysis",
  "syntect",
  "tree-sitter-all-languages",
 ]

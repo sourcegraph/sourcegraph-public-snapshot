@@ -7,7 +7,7 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use scip_syntax::highlighting::{ScipHighlightQuery, SourcegraphQuery};
+use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
 use serde::Deserialize;
 use tree_sitter_all_languages::parsers::BundledParser;
 
@@ -18,7 +18,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
     let result =
-        std::panic::catch_unwind(|| scip_syntax::highlighting::syntect_highlight(q.into_inner()));
+        std::panic::catch_unwind(|| syntax_analysis::highlighting::syntect_highlight(q.into_inner()));
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
@@ -30,7 +30,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
 // for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    match scip_syntax::highlighting::lsif_highlight(q.into_inner()) {
+    match syntax_analysis::highlighting::lsif_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -38,7 +38,7 @@ fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
 
 #[post("/scip", format = "application/json", data = "<q>")]
 fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
-    match scip_syntax::highlighting::scip_highlight(q.into_inner()) {
+    match syntax_analysis::highlighting::scip_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -75,7 +75,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    let (mut scope, hint) = match scip_syntax::get_globals(parser, q.content.as_bytes()) {
+    let (mut scope, hint) = match syntax_analysis::get_globals(parser, q.content.as_bytes()) {
         Some(Ok(vals)) => vals,
         Some(Err(err)) => return jsonify_err(err),
         None => return json!({"error": "Failed to get globals"}),
@@ -126,7 +126,7 @@ fn rocket() -> _ {
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
         Ok(v) if v == "true" => {}
-        _ => scip_syntax::highlighting::list_features(),
+        _ => syntax_analysis::highlighting::list_features(),
     };
 
     rocket::build()
