@@ -8,12 +8,6 @@ repositories {
     mavenCentral()
 }
 
-
-dependencies {
-    // TODO: add dependencies
-}
-
-
 application {
     // Define the main class for the application.
     mainClass = 'com.sourcegraph.graph.twodwo.Main'
