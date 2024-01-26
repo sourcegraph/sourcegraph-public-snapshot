@@ -1397,6 +1397,7 @@ ts_project(
         "src/search/results/components/filters-panel/SearchFiltersPanel.tsx",
         "src/search/results/components/new-search-content/NewSearchContent.tsx",
         "src/search/results/components/new-search-content/use-new-search-filters.ts",
+        "src/search/results/components/search-results-info-bar/NewStarsIcon.tsx",
         "src/search/results/components/search-results-info-bar/SearchResultsInfoBar.tsx",
         "src/search/results/components/search-results-info-bar/createActions.ts",
         "src/search/results/components/utils.ts",
