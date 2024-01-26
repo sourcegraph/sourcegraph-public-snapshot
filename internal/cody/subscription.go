@@ -2,6 +2,7 @@ package cody
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -109,20 +110,23 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID int32) (string, error) {
 	// TODO(sourcegraph#59786): Support pulling a user's SAMS-dev identity so we can
 	// fetch subscription information from SSC-dev, for dogfooding.
-	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+	oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID:      dotcomUserID,
-		ServiceID:   "https://accounts.sgdev.org", // SAMS-prod
 		ServiceType: "openidconnect",
 		LimitOffset: &database.LimitOffset{
-			Limit: 1,
+			Limit: 3,
 		},
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "listing external accounts")
 	}
 
-	if len(accounts) > 0 {
-		return accounts[0].AccountID, nil
+	for _, account := range oidcAccounts {
+		// The ServiceID will be be something like "https://accounts.sourcegraph.com",
+		// reusing the constant from the ssc package to avoid duplication.
+		if strings.Contains(account.ServiceID, ssc.SAMSProdHostname) {
+			return account.AccountID, nil
+		}
 	}
 	return "", nil
 }
@@ -157,6 +161,10 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 // getSSCClient returns a self-service Cody API client. We only do this once so that the stateless client
 // can persist in memory longer, so we can benefit from the underlying HTTP client only needing to reissue
 // SAMS access tokens when needed, rather than minting a new token for every request.
+//
+// BUG: If the SAMS configuration is added or changed during the lifetime of the this process, the returned
+// client will be invalid. (As it would be using the original SAMS client configuration data.) The process
+// will need to be restarted to correct this situation.
 var getSSCClient = sync.OnceValue[ssc.Client](func() ssc.Client {
 	return ssc.NewClient()
 })

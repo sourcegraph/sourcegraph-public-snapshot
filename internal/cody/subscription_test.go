@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -12,8 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
 )
+
+// TODO: Update all of this.
 
 type mockSSCClient struct {
 	t                     *testing.T
@@ -277,7 +280,10 @@ func TestGetSubscriptionForUser(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(test.user.ID))
 			ctx = withCurrentTimeMock(ctx, test.today)
-			flags := map[string]bool{USE_SSC_FOR_SUBSCRIPTION_FF: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED_FF: test.codyProTrialEndedFeatureFlag}
+			flags := map[string]bool{
+				featureFlagUseSCCForSubscription: test.useSSCFeatureFlag,
+				featureFlagCodyProTrialEnded:     test.codyProTrialEndedFeatureFlag,
+			}
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
 
 			db := dbmocks.NewMockDB()
