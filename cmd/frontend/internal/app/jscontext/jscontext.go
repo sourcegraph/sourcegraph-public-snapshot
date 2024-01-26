@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -196,7 +197,13 @@ type JSContext struct {
 	CodeIntelAutoIndexingAllowGlobalPolicies       bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 	CodeIntelRankingDocumentReferenceCountsEnabled bool `json:"codeIntelRankingDocumentReferenceCountsEnabled"`
 
-	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+	CodeInsightsEnabled      bool `json:"codeInsightsEnabled"`
+	CodeIntelligenceEnabled  bool `json:"codeIntelligenceEnabled"`
+	SearchContextsEnabled    bool `json:"searchContextsEnabled"`
+	NotebooksEnabled         bool `json:"notebooksEnabled"`
+	CodeMonitoringEnabled    bool `json:"codeMonitoringEnabled"`
+	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
+	OwnEnabled               bool `json:"ownEnabled"`
 
 	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
 
@@ -321,7 +328,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// server. Including secret fields here is OK if it is based on the user's
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
-	return JSContext{
+	context := JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
@@ -385,6 +392,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		CodeInsightsEnabled: insights.IsEnabled(),
 
+		// This used to be hardcoded configuration on the frontend.
+		// https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@ec5cc97a11c3f78743388b85b9ae0f1bc5d43932/-/blob/client/web/src/enterprise/EnterpriseWebApp.tsx?L63-71
+		CodeIntelligenceEnabled:  true,
+		SearchContextsEnabled:    true,
+		NotebooksEnabled:         true,
+		CodeMonitoringEnabled:    true,
+		SearchAggregationEnabled: true,
+		OwnEnabled:               true,
+
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
@@ -407,6 +423,34 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		RunningOnMacOS: runningOnMacOS,
 	}
+
+	if licenseInfo != nil {
+		// If the license a Sourcegraph instance is running under does not support Code Search features
+		// we force disable related features (executors, batch-changes, executors, code-insights).
+		if !licenseInfo.Features.CodeSearch {
+			context.BatchChangesEnabled = false
+			context.CodeInsightsEnabled = false
+			context.ExecutorsEnabled = false
+			context.CodeMonitoringEnabled = false
+			context.CodeIntelligenceEnabled = false
+			context.SearchAggregationEnabled = false
+			context.SearchContextsEnabled = false
+			context.OwnEnabled = false
+			context.NotebooksEnabled = false
+
+			// experimental features
+			context.ExperimentalFeatures.SearchJobs = pointers.Ptr(false)
+		}
+
+		// If the license a Sourcegraph instance is running under does not support Cody features
+		// we force disable related features (embeddings etc).
+		if !licenseInfo.Features.Cody {
+			context.CodyEnabled = false
+			context.CodyEnabledForCurrentUser = false
+			context.EmbeddingsEnabled = false
+		}
+	}
+	return context
 }
 
 // createCurrentUser creates CurrentUser object which contains of types.User

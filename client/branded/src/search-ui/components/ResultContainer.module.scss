@@ -1,41 +1,28 @@
-.result-container {
-    &:last-child {
-        border-bottom-width: 1px;
-    }
-
-    &:not(:last-of-type) {
-        // Prevents the sticky items below from affecting
-        // anything outside of the result container.
-        isolation: isolate;
-        margin-bottom: 1rem;
-    }
-}
-
 .header {
-    padding: 0.5rem 0.5rem 0.25rem 0;
+    padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+
     position: sticky;
-    // With 0 value there is a rendering bug in Safari where this block
-    // doesn't fit tight enough and hence it's leaving a gap between sticky
-    // header and top of the scrolling block
-    top: -1px;
+    top: 0;
+
     z-index: 1; // Show on top of search result contents
-    background-color: var(--body-bg);
+
+    border-bottom: 1px solid var(--border-color);
+
+    // TODO(taiyab): this needs to be fit into the design system
+    :global(.theme-light) & {
+        background-color: #f5f8fa;
+    }
+    :global(.theme-dark) & {
+        background-color: #22283b;
+    }
 
     &-title {
         flex: 1 1 auto;
         display: flex;
         flex-wrap: wrap;
-    }
-
-    p {
-        margin-bottom: 0;
-    }
-
-    &:not(:only-of-type) {
-        border-bottom: none;
     }
 
     :global(.match-highlight) {
@@ -44,13 +31,7 @@
 }
 
 .result {
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    margin-top: 0.25rem;
-
-    &:hover {
-        border-color: var(--border-color-2);
-    }
+    border-bottom: 1px solid var(--border-color);
 }
 
 .header:focus-within + .highlight-result.result,

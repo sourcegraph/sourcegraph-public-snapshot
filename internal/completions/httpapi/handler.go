@@ -12,6 +12,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -50,6 +52,7 @@ func newCompletionsHandler(
 	userStore database.UserStore,
 	accessTokenStore database.AccessTokenStore,
 	events *telemetry.EventRecorder,
+	test guardrails.AttributionTest,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
@@ -175,7 +178,7 @@ func newCompletionsHandler(
 			}
 		}
 
-		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore)
+		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w, userStore, test)
 	})
 }
 
@@ -196,14 +199,14 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDot
 
 // newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
 // handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 	nonStreamer := newNonStreamingResponseHandler(logger, db, feature)
 	streamer := newStreamingResponseHandler(logger, db, feature)
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore,
-	) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		if requestParams.IsStream(feature) {
-			streamer(ctx, requestParams, cc, w, userStore)
+			streamer(ctx, requestParams, cc, w, userStore, test)
 		} else {
+			// TODO(#59832): Add attribution to non-streaming endpoint.
 			nonStreamer(ctx, requestParams, cc, w, userStore)
 		}
 	}
@@ -211,8 +214,8 @@ func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature type
 
 // newStreamingResponseHandler handles streaming requests to an LLM provider,
 // It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
+func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
@@ -232,16 +235,44 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 			}
 		}()
 		start := time.Now()
+		eventSink := func(e types.CompletionResponse) error {
+			if w := eventWriter(); w != nil {
+				return w.Event("completion", e)
+			}
+			return nil
+		}
+		attributionErrorLog := func(err error) {
+			l := trace.Logger(ctx, logger)
+			ev := eventWriter()
+			if ev != nil {
+				if err := ev.Event("attribution-error", map[string]string{"error": err.Error()}); err != nil {
+					l.Error("error reporting attribution error", log.Error(err))
+				} else {
+					return
+				}
+			}
+			l.Error("attribution error", log.Error(err))
+		}
+		f := guardrails.NoopCompletionsFilter(eventSink)
+		if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
+			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
+				Sink:             eventSink,
+				Test:             test,
+				AttributionError: attributionErrorLog,
+			})
+			if err != nil {
+				attributionErrorLog(err)
+			} else {
+				f = ff
+			}
+		}
 		err := cc.Stream(ctx, feature, requestParams,
 			func(event types.CompletionResponse) error {
 				if !firstEventObserved {
 					firstEventObserved = true
 					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
 				}
-				if ev := eventWriter(); ev != nil {
-					return ev.Event("completion", event)
-				}
-				return nil
+				return f.Send(ctx, event)
 			})
 		if err != nil {
 			l := trace.Logger(ctx, logger)
@@ -298,6 +329,16 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 				}
 			}
 			return
+		}
+		if f != nil { // if autocomplete-attribution enabled
+			if err := f.WaitDone(ctx); err != nil {
+				l := trace.Logger(ctx, logger)
+				if ev := eventWriter(); ev != nil {
+					if err := ev.Event("error", map[string]string{"error": err.Error()}); err != nil {
+						l.Error("error reporting streaming completion error", log.Error(err))
+					}
+				}
+			}
 		}
 	}
 }

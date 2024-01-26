@@ -1,6 +1,6 @@
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import type { TemporarySettingsResult } from './graphql-operations'
@@ -211,6 +211,24 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
+
+    /** Whether code intelliense is enabled on the Sourcegraph instance. */
+    codeIntelligenceEnabled: boolean
+
+    /** Whether search contexts are enabled on the Sourcegraph instance */
+    searchContextsEnabled: boolean
+
+    /** Whether notebooks is enabled on the Sourcegraph instance */
+    notebooksEnabled: boolean
+
+    /** Whether code monitoring is enabled on the Sourcegraph instance */
+    codeMonitoringEnabled: boolean
+
+    /** Whether search aggregation is enabled on the Sourcegraph instance */
+    searchAggregationEnabled: boolean
+
+    /** Whether the own API is enabled on the Sourcegraph instance */
+    ownEnabled: boolean
 
     /** Whether embeddings are enabled on this site. */
     embeddingsEnabled: boolean
