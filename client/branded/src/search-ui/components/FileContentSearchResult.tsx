@@ -32,8 +32,8 @@ import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
-import resultContainerStyles from './ResultContainer.module.scss'
-import searchResultStyles from './SearchResult.module.scss'
+import styles from './FileContentSearchResult.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
@@ -187,10 +187,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                             : undefined
                     }
-                    className={searchResultStyles.titleInner}
+                    className={resultStyles.titleInner}
                 />
                 <CopyPathAction
-                    className={searchResultStyles.copyButton}
+                    className={resultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
                 />
@@ -229,8 +229,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
-            resultClassName={resultContainerStyles.highlightResult}
+            className={classNames(resultStyles.copyButtonContainer, containerClassName)}
+            resultClassName={resultStyles.highlightResult}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
             actions={<SearchResultPreviewButton result={result} />}
@@ -252,15 +252,15 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                         <button
                             type="button"
                             className={classNames(
-                                searchResultStyles.toggleMatchesButton,
-                                resultContainerStyles.focusable,
-                                expanded && searchResultStyles.toggleMatchesButtonExpanded
+                                styles.toggleMatchesButton,
+                                resultStyles.focusable,
+                                expanded && resultStyles.toggleMatchesButtonExpanded
                             )}
                             onClick={toggle}
                             data-testid="toggle-matches-container"
                         >
                             <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
-                            <span className={searchResultStyles.toggleMatchesButtonText}>
+                            <span className={resultStyles.toggleMatchesButtonText}>
                                 {expanded
                                     ? 'Show less'
                                     : `Show ${hiddenMatchesCount} more ${pluralize(

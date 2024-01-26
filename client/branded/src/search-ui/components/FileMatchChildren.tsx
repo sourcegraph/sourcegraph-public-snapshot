@@ -15,7 +15,6 @@ import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from '.
 
 import styles from './FileMatchChildren.module.scss'
 import resultStyles from './ResultContainer.module.scss'
-import searchResultStyles from './SearchResult.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     result: ContentMatch

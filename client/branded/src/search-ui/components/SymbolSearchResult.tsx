@@ -22,7 +22,6 @@ import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
 import resultStyles from './ResultContainer.module.scss'
-import searchResultStyles from './SearchResult.module.scss'
 import styles from './SymbolSearchResult.module.scss'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
@@ -63,11 +62,11 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={searchResultStyles.titleInner}
+                className={resultStyles.titleInner}
             />
             <CopyPathAction
                 filePath={result.path}
-                className={searchResultStyles.copyButton}
+                className={resultStyles.copyButton}
                 telemetryService={telemetryService}
             />
         </span>
@@ -128,7 +127,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
+            className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             resultClassName={styles.symbolsOverride}
             repoLastFetched={result.repoLastFetched}
         >

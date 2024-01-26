@@ -14,7 +14,6 @@ import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
 
 import styles from './CommitSearchResultMatch.module.scss'
 import resultStyles from './ResultContainer.module.scss'
-import searchResultStyles from './SearchResult.module.scss'
 
 interface CommitSearchResultMatchProps extends PlatformContextProps<'requestGraphQL'> {
     item: CommitMatch
