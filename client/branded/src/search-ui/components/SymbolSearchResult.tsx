@@ -128,7 +128,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoName={result.repository}
             repoStars={result.repoStars}
             className={classNames(resultStyles.copyButtonContainer, containerClassName)}
-            resultClassName={styles.symbolsOverride}
             repoLastFetched={result.repoLastFetched}
         >
             <VisibilitySensor
