@@ -24,8 +24,8 @@ lazy_static::lazy_static! {
             _ => std::env::current_dir().unwrap()            }
     };
 
-    static ref SCIP_JAVA_INDEX: PathBuf = {
-        match std::env::var("SCIP_JAVA_INDEX") {
+    static ref JAVA_SCIP_INDEX: PathBuf = {
+        match std::env::var("JAVA_SCIP_INDEX") {
             Ok(va) => std::env::current_dir().unwrap().join(va),
             _ => BASE.join("testdata/java/index.scip")
         }
@@ -73,7 +73,7 @@ fn java_e2e_evaluation() {
     let mut str = vec![];
 
     Evaluator::default()
-        .evaluate_files(candidate, SCIP_JAVA_INDEX.to_path_buf())
+        .evaluate_files(candidate, JAVA_SCIP_INDEX.to_path_buf())
         .unwrap()
         .write_summary(
             &mut str,

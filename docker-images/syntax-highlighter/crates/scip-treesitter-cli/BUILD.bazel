@@ -84,7 +84,7 @@ rust_test(
     env = {
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
-        "SCIP_JAVA_INDEX": "$(rootpath :java_groundtruth_scip)",
+        "JAVA_SCIP_INDEX": "$(rootpath :java_groundtruth_scip)",
         "SCIP_TREESITTER_PATH": "$(rootpath :scip-treesitter)",
     },
     deps = all_crate_deps(
