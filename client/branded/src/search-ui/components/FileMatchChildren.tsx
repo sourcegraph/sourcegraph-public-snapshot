@@ -58,6 +58,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {grouped.length > 0 &&
                 grouped.map(group => (
                     <div
+                        key={`linematch:${getFileMatchUrl(result)}${group.startLine}:${group.endLine}`}
                         data-href={createCodeExcerptLink(group)}
                         className={classNames(
                             'test-file-match-children-item',
