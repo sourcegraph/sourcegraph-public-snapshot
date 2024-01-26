@@ -76,8 +76,8 @@ enum Commands {
         print_false_negatives: bool,
 
         /// Disable color output
-        #[arg(long, default_value_t = false)]
-        no_color: bool,
+        #[arg(long, default_value_t = false, long = "no-color")]
+        disable_colors: bool,
     },
 }
 
@@ -143,7 +143,7 @@ pub fn main() {
             print_true_positives,
             print_false_positives,
             print_false_negatives,
-            no_color,
+            disable_colors,
         } => scip_treesitter_cli::evaluate::evaluate_command(
             PathBuf::from(candidate),
             PathBuf::from(ground_truth),
@@ -152,7 +152,7 @@ pub fn main() {
                 print_true_positives,
                 print_false_positives,
                 print_false_negatives,
-                disable_colors: no_color,
+                disable_colors,
             },
         ),
     }
