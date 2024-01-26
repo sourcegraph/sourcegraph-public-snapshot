@@ -42,7 +42,6 @@
     border-bottom: 1px solid var(--border-color-2);
 }
 
-// TODO: merge this with result
 .search-result-match {
     text-decoration: none; /* don't use cascading link style */
     display: flex;
@@ -105,7 +104,6 @@
     margin: 0 0.5rem;
 }
 
-// Only used by RepoSearchResult. We should just give that its own class
 .gap-1 {
     gap: 0.5rem;
 }
