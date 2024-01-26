@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -52,13 +54,17 @@ func (c *client) Validate() error {
 }
 
 // sendRequest issues an HTTP request to SSC. If supplied, the response will be unmarshalled into outBody as JSON.
-func (c *client) sendRequest(ctx context.Context, method string, url string, outBody *Subscription) (code *int, err error) {
+func (c *client) sendRequest(ctx context.Context, method string, url string, outBody *Subscription) (*int, error) {
 	// Build and send the request.
 	req, err := http.NewRequest(method, url, nil /* body */)
 	if err != nil {
 		return nil, err
 	}
+
+	tr, _ := trace.New(ctx, "sendSSCRequest", attribute.String("url", url))
 	resp, err := c.httpClient.Do(req)
+	tr.SetError(err)
+	tr.End()
 	if err != nil {
 		return nil, errors.Wrap(err, "calling SSC")
 	}

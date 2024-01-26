@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/httpcli",
+        "//internal/trace",
         "//lib/errors",
     ],
 )
