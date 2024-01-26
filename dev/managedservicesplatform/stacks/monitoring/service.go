@@ -131,7 +131,7 @@ func createExternalHealthcheckAlert(
 			// there seems to be no way to change this. So we group by the check
 			// target anyway.
 			Trigger:       alertpolicy.TriggerKindAllInViolation,
-			GroupByFields: []string{"host"},
+			GroupByFields: []string{"metric.labels.host"},
 			Reducer:       alertpolicy.MonitoringReduceMean,
 		},
 		NotificationChannels: channels,
