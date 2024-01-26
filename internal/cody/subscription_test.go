@@ -16,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// TODO: Update all of this.
-
 type mockSSCClient struct {
 	t                     *testing.T
 	expectedSAMSAccountID *string
@@ -26,15 +24,16 @@ type mockSSCClient struct {
 	Called                bool
 }
 
-func (m mockSSCClient) FetchSubscriptionBySAMSAccountID(samsAccountID string) (*ssc.Subscription, error) {
+func (m *mockSSCClient) FetchSubscriptionBySAMSAccountID(
+	ctx context.Context, samsAccountID string) (*ssc.Subscription, error) {
 	if !m.shouldBeCalled {
 		m.t.Error("FetchSubscriptionBySAMSAccountID should not have be called")
 	}
+	assert.NotNil(m.t, ctx)
 	assert.NotNil(m.t, m.expectedSAMSAccountID)
 	assert.Equal(m.t, *m.expectedSAMSAccountID, samsAccountID)
 
 	m.Called = true
-
 	return m.mockSSCSubscription, nil
 }
 
@@ -299,11 +298,12 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			})
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccount)
 
-			sscClient := mockSSCClient{
+			expectToBeCalled := test.useSSCFeatureFlag && test.mockSAMSAccountID != nil
+			sscClient := &mockSSCClient{
 				t:                     t,
 				expectedSAMSAccountID: test.mockSAMSAccountID,
 				mockSSCSubscription:   test.mockSSCSubscription,
-				shouldBeCalled:        test.useSSCFeatureFlag && test.mockSAMSAccountID != nil,
+				shouldBeCalled:        expectToBeCalled,
 			}
 
 			actualSubscription, err := getSubscriptionForUser(ctx, db, sscClient, test.user)
