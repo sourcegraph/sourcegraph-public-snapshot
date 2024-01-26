@@ -14,8 +14,4 @@
     &:not(:first-child) {
         border-top: 1px solid var(--border-color);
     }
-
-    &:focus-visible {
-        box-shadow: inset 0px 0px 0px 1px red;
-    }
 }
