@@ -51,6 +51,12 @@
     position: relative;
 }
 
+.horizontal-divider-between {
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+    }
+}
+
 .focusable {
     &:focus-visible {
         box-shadow: inset 0px 0px 0px 1px var(--primary-2);

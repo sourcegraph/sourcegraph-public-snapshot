@@ -230,7 +230,6 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             repoName={result.repository}
             repoStars={result.repoStars}
             className={classNames(resultStyles.copyButtonContainer, containerClassName)}
-            resultClassName={resultStyles.highlightResult}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
             actions={<SearchResultPreviewButton result={result} />}
@@ -254,20 +253,21 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             className={classNames(
                                 styles.toggleMatchesButton,
                                 resultStyles.focusable,
-                                expanded && resultStyles.toggleMatchesButtonExpanded
+                                resultStyles.clickable,
+                                expanded && styles.toggleMatchesButtonExpanded
                             )}
                             onClick={toggle}
                             data-testid="toggle-matches-container"
                         >
                             <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
-                            <span className={resultStyles.toggleMatchesButtonText}>
+                            <span className={styles.toggleMatchesButtonText}>
                                 {expanded
                                     ? 'Show less'
                                     : `Show ${hiddenMatchesCount} more ${pluralize(
-                                        'match',
-                                        hiddenMatchesCount,
-                                        'matches'
-                                    )}`}
+                                          'match',
+                                          hiddenMatchesCount,
+                                          'matches'
+                                      )}`}
                             </span>
                         </button>
                     )}

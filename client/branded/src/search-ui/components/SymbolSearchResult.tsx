@@ -140,7 +140,12 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                     {result.symbols.map((symbol, i) => (
                         <div
                             key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
-                            className={classNames(styles.symbol, resultStyles.clickable, resultStyles.focusable)}
+                            className={classNames(
+                                styles.symbol,
+                                resultStyles.clickable,
+                                resultStyles.focusable,
+                                resultStyles.horizontalDividerBetween
+                            )}
                             data-href={symbol.url}
                             role="link"
                             data-testid="symbol-search-result"

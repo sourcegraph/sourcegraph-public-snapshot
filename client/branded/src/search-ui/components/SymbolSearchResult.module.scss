@@ -1,14 +1,8 @@
-.symbols-override {
-    border: none !important;
-    padding: 0 !important;
-}
-
 .symbols {
     position: relative;
     display: flex;
     flex-direction: column;
     background-color: var(--code-bg);
-    border-bottom: 1px solid var(--border-color-2);
 }
 
 .symbol {
@@ -16,10 +10,6 @@
     align-items: center;
     width: 100%;
     padding: 0.5rem;
-
-    &:not(:last-child) {
-        border-bottom: 1px solid var(--border-color);
-    }
 
     &-code-excerpt {
         :global(.code) {
