@@ -125,20 +125,17 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		inputs.Features.ZoektSearchOptionsOverride = args.ZoektSearchOptionsOverride
 	}
 
-	// Display is the number of results we send down. If display is < 0 we
-	// want to send everything we find before hitting a limit. Otherwise we
-	// can only send up to limit results.
-	displayLimit := args.Display
+	// displayFilter limits the matches we stream to the user. Once we have
+	// hit a display limit the search will continue, but we no longer stream
+	// the actual matches.
 	limit := inputs.MaxResults()
-	if displayLimit < 0 || displayLimit > limit {
-		displayLimit = limit
-	}
+	displayFilter := newDisplayFilter(args, limit)
 
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
 		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
-		DisplayLimit: displayLimit,
+		DisplayLimit: displayFilter.MatchLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
@@ -168,7 +165,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 			progress,
 			h.flushTickerInternal,
 			h.pingTickerInterval,
-			displayLimit,
+			displayFilter,
 			args.EnableChunkMatches,
 			logLatency,
 		)
@@ -362,7 +359,7 @@ func newEventHandler(
 	progress *streamclient.ProgressAggregator,
 	flushInterval time.Duration,
 	progressInterval time.Duration,
-	displayLimit int,
+	displayFilter *displayFilter,
 	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
@@ -383,7 +380,7 @@ func newEventHandler(
 		flushInterval:      flushInterval,
 		progress:           progress,
 		progressInterval:   progressInterval,
-		displayRemaining:   displayLimit,
+		displayFilter:      displayFilter,
 		enableChunkMatches: enableChunkMatches,
 		first:              true,
 		logLatency:         logLatency,
@@ -425,8 +422,8 @@ type eventHandler struct {
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
-	displayRemaining int
-	first            bool
+	displayFilter *displayFilter
+	first         bool
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
@@ -436,7 +433,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	h.progress.Update(event)
 	h.filters.Update(event)
 
-	h.displayRemaining = event.Results.Limit(h.displayRemaining)
+	// We have computed internal stats, so now we can drop/limit matches if we
+	// hit display limits.
+	h.displayFilter.Limit(&event.Results)
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
