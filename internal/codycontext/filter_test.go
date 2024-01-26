@@ -25,8 +25,7 @@ func TestNewFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
+		f := NewCodyIgnoreFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -55,8 +54,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, os.ErrNotExist
 		})
 
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
+		f := NewCodyIgnoreFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -100,8 +98,7 @@ func TestNewFilter(t *testing.T) {
 				return nil, os.ErrNotExist
 			}
 		})
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
+		f := NewCodyIgnoreFilter(client)
 
 		chunks := []FileChunkContext{
 			{
@@ -143,9 +140,8 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
-		_, err = f.GetFilter(repos)
+		f := NewCodyIgnoreFilter(client)
+		_, err := f.GetFilter(repos)
 		require.NoError(t, err)
 
 	})
@@ -158,9 +154,8 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
-		_, err = f.GetFilter(repos)
+		f := NewCodyIgnoreFilter(client)
+		_, err := f.GetFilter(repos)
 		require.Error(t, err)
 	})
 
@@ -171,9 +166,8 @@ func TestNewFilter(t *testing.T) {
 			return nil, errors.New("fail")
 		})
 
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
-		_, err = f.GetFilter(repos)
+		f := NewCodyIgnoreFilter(client)
+		_, err := f.GetFilter(repos)
 		require.Error(t, err)
 	})
 
@@ -181,8 +175,7 @@ func TestNewFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("**/file1.go")), nil)
-		f, err := NewCodyIgnoreFilter(context.Background(), client)
-		require.NoError(t, err)
+		f := NewCodyIgnoreFilter(client)
 
 		chunks := []FileChunkContext{
 			{
