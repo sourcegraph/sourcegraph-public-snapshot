@@ -531,9 +531,9 @@ describe('Search Notebook', () => {
 query
 \`\`\`
 
-${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
+${driver.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
 
-${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
+${driver.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
         await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
