@@ -6,9 +6,13 @@
     overflow-y: hidden;
     background-color: var(--code-bg);
     position: relative;
+}
 
+.clickable {
+    cursor: pointer;
     &:hover {
         text-decoration: none;
+        background-color: var(--subtle-bg-2);
     }
 }
 
