@@ -3,7 +3,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "scip-syntax",
-    srcs = glob(["src/**/*.rs"], exclude=["src/**/snapshots/**"], allow_empty=False),
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+        exclude = ["src/**/snapshots/**"],
+    ),
     aliases = aliases(),
     compile_data = glob(
         [
