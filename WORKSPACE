@@ -341,7 +341,6 @@ crates_repository(
         "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/tree-sitter-all-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
 )
 

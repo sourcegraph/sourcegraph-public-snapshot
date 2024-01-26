@@ -5,6 +5,7 @@ use tree_sitter_all_languages::parsers::BundledParser;
 pub mod ctags;
 pub mod globals;
 pub mod languages;
+pub mod highlighting;
 pub mod locals;
 pub mod range;
 pub mod snapshot;

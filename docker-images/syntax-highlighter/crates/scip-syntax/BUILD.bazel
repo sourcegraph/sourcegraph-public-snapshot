@@ -3,7 +3,11 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "scip-syntax",
-    srcs = glob(["src/*.rs"]),
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+        exclude = ["src/**/snapshots/**"],
+    ),
     aliases = aliases(),
     compile_data = glob(
         [
@@ -22,6 +26,7 @@ rust_library(
 )
 
 # gazelle:exclude testdata
+# gazelle:exclude src/**/snapshots
 rust_test(
     name = "unit_test",
     size = "small",
@@ -31,7 +36,7 @@ rust_test(
     ),
     crate = ":scip-syntax",
     data = glob(
-        ["src/snapshots/**"],
+        ["src/**/snapshots/**"],
         allow_empty = False,
     ),
     env = {

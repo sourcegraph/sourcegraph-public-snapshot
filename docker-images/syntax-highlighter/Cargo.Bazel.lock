@@ -1,5 +1,5 @@
 {
-  "checksum": "cb6fb8360952587a23bbece0f8c3299a82b055ed9c70fdcdfa7da0a236565015",
+  "checksum": "be8d08dffa6549f7c249023b1f3f8b43aebd8082d963496d74548b128ebb4936",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -5848,53 +5848,6 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "libloading 0.7.4": {
-      "name": "libloading",
-      "version": "0.7.4",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/libloading/0.7.4/download",
-          "sha256": "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "libloading",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "libloading",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [],
-          "selects": {
-            "cfg(unix)": [
-              {
-                "id": "cfg-if 1.0.0",
-                "target": "cfg_if"
-              }
-            ],
-            "cfg(windows)": [
-              {
-                "id": "winapi 0.3.9",
-                "target": "winapi"
-              }
-            ]
-          }
-        },
-        "edition": "2015",
-        "version": "0.7.4"
-      },
-      "license": "ISC"
-    },
     "line-wrap 0.1.1": {
       "name": "line-wrap",
       "version": "0.1.1",
@@ -10496,6 +10449,10 @@
               "target": "anyhow"
             },
             {
+              "id": "base64 0.13.1",
+              "target": "base64"
+            },
+            {
               "id": "bitvec 1.0.1",
               "target": "bitvec"
             },
@@ -10532,6 +10489,10 @@
               "target": "regex"
             },
             {
+              "id": "rocket 0.5.0-rc.3",
+              "target": "rocket"
+            },
+            {
               "id": "rustc-hash 1.1.0",
               "target": "rustc_hash"
             },
@@ -10552,12 +10513,29 @@
               "target": "string_interner"
             },
             {
+              "id": "syntect 4.7.0",
+              "target": "syntect"
+            },
+            {
               "id": "tree-sitter 0.20.10",
               "target": "tree_sitter"
             },
             {
+              "id": "tree-sitter-highlight 0.20.1",
+              "target": "tree_sitter_highlight"
+            },
+            {
               "id": "walkdir 2.3.3",
               "target": "walkdir"
+            }
+          ],
+          "selects": {}
+        },
+        "deps_dev": {
+          "common": [
+            {
+              "id": "pretty_assertions 1.4.0",
+              "target": "pretty_assertions"
             }
           ],
           "selects": {}
@@ -10980,110 +10958,6 @@
         "version": "0.6.3"
       },
       "license": "MIT OR Apache-2.0"
-    },
-    "sg-syntax 0.1.0": {
-      "name": "sg-syntax",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "sg_syntax",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "sg_syntax",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "anyhow 1.0.75",
-              "target": "anyhow"
-            },
-            {
-              "id": "base64 0.13.1",
-              "target": "base64"
-            },
-            {
-              "id": "lazy_static 1.4.0",
-              "target": "lazy_static"
-            },
-            {
-              "id": "libloading 0.7.4",
-              "target": "libloading"
-            },
-            {
-              "id": "once_cell 1.18.0",
-              "target": "once_cell"
-            },
-            {
-              "id": "protobuf 3.2.0",
-              "target": "protobuf"
-            },
-            {
-              "id": "rocket 0.5.0-rc.3",
-              "target": "rocket"
-            },
-            {
-              "id": "scip 0.3.2",
-              "target": "scip"
-            },
-            {
-              "id": "serde 1.0.194",
-              "target": "serde"
-            },
-            {
-              "id": "serde_json 1.0.99",
-              "target": "serde_json"
-            },
-            {
-              "id": "syntect 4.7.0",
-              "target": "syntect"
-            },
-            {
-              "id": "tree-sitter 0.20.10",
-              "target": "tree_sitter"
-            },
-            {
-              "id": "tree-sitter-highlight 0.20.1",
-              "target": "tree_sitter_highlight"
-            }
-          ],
-          "selects": {}
-        },
-        "deps_dev": {
-          "common": [
-            {
-              "id": "insta 1.34.0",
-              "target": "insta"
-            },
-            {
-              "id": "pretty_assertions 1.4.0",
-              "target": "pretty_assertions"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "proc_macro_deps": {
-          "common": [
-            {
-              "id": "paste 1.0.14",
-              "target": "paste"
-            }
-          ],
-          "selects": {}
-        },
-        "version": "0.1.0"
-      },
-      "license": "MIT"
     },
     "sharded-slab 0.1.4": {
       "name": "sharded-slab",
@@ -15736,7 +15610,6 @@
             "fileapi",
             "handleapi",
             "knownfolders",
-            "libloaderapi",
             "minwinbase",
             "minwindef",
             "objbase",
@@ -17208,7 +17081,6 @@
   "workspace_members": {
     "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
     "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
-    "sg-syntax 0.1.0": "docker-images/syntax-highlighter/crates/sg-syntax",
     "syntect_server 1.0.1": "docker-images/syntax-highlighter",
     "tree-sitter-all-languages 0.1.0": "docker-images/syntax-highlighter/crates/tree-sitter-all-languages"
   },
@@ -17725,7 +17597,6 @@
     "insta 1.34.0",
     "itertools 0.10.5",
     "lazy_static 1.4.0",
-    "libloading 0.7.4",
     "once_cell 1.18.0",
     "paste 1.0.14",
     "predicates 3.0.4",
