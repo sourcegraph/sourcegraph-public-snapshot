@@ -1,0 +1,22 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    gap: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+.card {
+    background-color: var(--color-bg-1);
+}
+
+.close-button {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+}
