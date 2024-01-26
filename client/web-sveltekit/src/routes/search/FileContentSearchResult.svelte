@@ -3,7 +3,7 @@
 <script lang="ts" context="module">
     const BY_LINE_RANKING = 'by-line-number'
     const DEFAULT_CONTEXT_LINES = 1
-    const DEFAULT_EXPANDED_MATCHES = 3
+    const DEFAULT_EXPANDED_MATCHES = 5
 </script>
 
 <script lang="ts">
@@ -75,6 +75,8 @@
     let visible = false
     let highlightedHTMLRows: Promise<string[][]> | undefined
     $: if (visible) {
+        // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+        // calls will not result in repeated network requests.
         highlightedHTMLRows = fetchFileRangeMatches({
             result,
             ranges: expandedMatchGroups.map(group => ({

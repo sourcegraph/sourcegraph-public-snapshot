@@ -22,6 +22,8 @@
     let visible = false
     let highlightedHTMLRows: Promise<string[][]> | undefined
     $: if (visible) {
+        // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+        // calls will not result in repeated network requests.
         highlightedHTMLRows = fetchFileRangeMatches({ result, ranges: ranges })
     }
 </script>
