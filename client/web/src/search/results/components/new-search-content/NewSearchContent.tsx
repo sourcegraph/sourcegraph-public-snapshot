@@ -186,8 +186,9 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 <SearchFiltersPanel
                     query={submittedURLQuery}
                     filters={results?.filters}
-                    onQueryChange={handleFilterPanelQueryChange}
+                    withCountAllFilter={isSearchLimitHit(results)}
                     className={styles.newFilters}
+                    onQueryChange={handleFilterPanelQueryChange}
                 />
             )}
 
@@ -338,6 +339,14 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
             )}
         </div>
     )
+}
+
+const isSearchLimitHit = (results?: AggregateStreamingSearchResults): boolean => {
+    if (results?.state !== 'complete') {
+        return false
+    }
+
+    return results?.progress.skipped.some(skipped => skipped.reason.includes('-limit'))
 }
 
 interface NewSearchSidebarWrapper extends HTMLAttributes<HTMLElement> {

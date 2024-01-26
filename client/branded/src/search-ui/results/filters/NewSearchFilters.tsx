@@ -32,11 +32,18 @@ import styles from './NewSearchFilters.module.scss'
 interface NewSearchFiltersProps {
     query: string
     filters?: Filter[]
+    withCountAllFilter: boolean
     onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
     children?: ReactNode
 }
 
-export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, onQueryChange, children }) => {
+export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
+    query,
+    filters,
+    withCountAllFilter,
+    onQueryChange,
+    children,
+}) => {
     const [selectedFilters, setSelectedFilters, serilizeFiltersURL] = useUrlFilters()
 
     const type = useMemo(() => {
@@ -137,7 +144,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
                 onSelectedFilterChange={setSelectedFilters}
             />
 
-            <SyntheticCountFilter query={query} onQueryChange={onQueryChange} />
+            <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
 
             <div className={styles.footerContent}>
                 <footer className={styles.actions}>
@@ -177,6 +184,7 @@ const STATIC_COUNT_FILTER: Filter[] = [
 
 interface SyntheticCountFilterProps {
     query: string
+    isLimitHit: boolean
     onQueryChange: (query: string) => void
 }
 
@@ -190,7 +198,7 @@ interface SyntheticCountFilterProps {
  * changes the original query by adding count:all to the end.
  */
 const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
-    const { query, onQueryChange } = props
+    const { query, isLimitHit, onQueryChange } = props
 
     const selectedCountFilter = useMemo<Filter[]>(() => {
         const tokens = scanSearchQuery(query)
@@ -218,6 +226,11 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
 
             onQueryChange(nextQuery)
         }
+    }
+
+    // Hide count all filter if search is already exhaustive
+    if (selectedCountFilter.length === 0 && !isLimitHit) {
+        return null
     }
 
     return (
