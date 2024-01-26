@@ -38,10 +38,7 @@
 }
 
 .result {
+    background-color: var(--code-bg);
+    border-bottom: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color-2);
-}
-
-.header:focus-within + .highlight-result.result,
-.highlight-result.result:focus-within {
-    box-shadow: 0 0 0 2px var(--border-color-2);
 }
