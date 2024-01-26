@@ -214,6 +214,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                     <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                         {inferredRepository && (
                                             <div className="d-flex flex-column py-1">
+                                                {/* TODO: ensure it's not rendered */}
                                                 {inferredFilePath && (
                                                     <button
                                                         type="button"

@@ -10,6 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
+import { useCodySidebar } from '../../sidebar/Provider'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
@@ -51,6 +52,17 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const reposStatusData = newReposStatusData || previousReposStatusData
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+
+    // TODO: it should probably be passed as a prop (https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3bc52d0a2451988f09e956341670489842c3ef77/-/blob/client/web/src/cody/components/ChatUI/ChatUi.tsx?L85-105)
+    const { ignores } = useCodySidebar()
+    const ignore = activeEditor?.filePath ? ignores(activeEditor.filePath) : false
+    const inferredFilePath = (!ignore && activeEditor?.filePath) || null
+    useEffect(() => {
+        if (ignore) {
+            // TODO: set includeInferredFile to false, something like setScope({ ...scope, includeInferredFile: false })
+            // TODO: ensure file not included in context (debug here: https://sourcegraph.com/npm/sourcegraph/cody-shared@4ca213aae5939157596393f83a8352a900ac4880/-/blob/src/chat/useClient.ts?L31)
+        }
+    }, [ignore])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
@@ -122,7 +134,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         includeInferredRepository={scope.includeInferredRepository}
                         includeInferredFile={scope.includeInferredFile}
                         inferredRepository={inferredRepository}
-                        inferredFilePath={activeEditor?.filePath || null}
+                        inferredFilePath={inferredFilePath}
                         additionalRepositories={additionalRepositories}
                         addRepository={addRepository}
                         resetScope={resetScope}
@@ -133,9 +145,11 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         transcriptHistory={transcriptHistory}
                         authenticatedUser={authenticatedUser}
                     />
-                    {scope.includeInferredFile && activeEditor?.filePath && (
+
+                    {/* TODO: ensure it's not rendered */}
+                    {scope.includeInferredFile && inferredFilePath && (
                         <Text size="small" className="ml-2 mb-0 align-self-center">
-                            {getFileName(activeEditor.filePath)}
+                            {getFileName(inferredFilePath)}
                         </Text>
                     )}
                 </div>
