@@ -15,13 +15,9 @@
     display: flex;
     align-items: center;
     width: 100%;
-    background-color: var(--code-bg);
     padding: 0.5rem;
-    cursor: pointer;
 
-    &:not(:first-child) {
-        border-top: 1px solid var(--border-color);
-    }
+    border-bottom: 1px solid var(--border-color);
 
     &-code-excerpt {
         :global(.code) {
