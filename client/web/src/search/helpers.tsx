@@ -1,4 +1,4 @@
-import { FILTERS_URL_KEY } from '@sourcegraph/branded'
+import { FILTERS_URL_KEY } from '@sourcegraph/branded/src/search-ui/results/filters/hooks'
 import { compatNavigate } from '@sourcegraph/common'
 import type { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
