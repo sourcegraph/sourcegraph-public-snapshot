@@ -1,3 +1,10 @@
+.result-container {
+    // Force the creation of a new stacking context
+    // so the z-index of the result header does not
+    // leak outside of the search results list.
+    isolation: isolate;
+}
+
 .header {
     padding: 0.5rem 0.75rem;
     display: flex;
