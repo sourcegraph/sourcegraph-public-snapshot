@@ -36,8 +36,8 @@ fn main() -> Result<(), std::io::Error> {
     let contents = fs::read_to_string(path)?;
     println!("  read {} bytes", contents.len());
 
-    let filetype = scip_syntax::highlighting::determine_filetype(
-        &scip_syntax::highlighting::SourcegraphQuery {
+    let filetype = syntax_analysis::highlighting::determine_filetype(
+        &syntax_analysis::highlighting::SourcegraphQuery {
             extension: path
                 .extension()
                 .expect("extension")
@@ -54,7 +54,7 @@ fn main() -> Result<(), std::io::Error> {
     println!("  filetype: {:?}", filetype);
 
     let document =
-        scip_syntax::highlighting::treesitter_index(&filetype, &contents, args.include_locals)
+        syntax_analysis::highlighting::treesitter_index(&filetype, &contents, args.include_locals)
             .expect("parse document");
     println!("  parsed document");
 

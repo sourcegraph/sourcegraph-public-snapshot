@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
-use scip_syntax::{get_globals, get_locals};
+use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::parsers::BundledParser;
 use walkdir::DirEntry;
 

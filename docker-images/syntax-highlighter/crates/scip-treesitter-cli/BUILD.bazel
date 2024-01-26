@@ -17,7 +17,7 @@ rust_binary(
 )
 
 WORKSPACE_DEPS = [
-    "//docker-images/syntax-highlighter/crates/scip-syntax",
+    "//docker-images/syntax-highlighter/crates/syntax-analysis",
     "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
 ]
 

@@ -21,7 +21,7 @@ rustyline = "9.1.2"
 base64 = "0.13.0"
 
 tree-sitter-all-languages = { path = "./crates/tree-sitter-all-languages" }
-scip-syntax = { path = "./crates/scip-syntax" }
+syntax-analysis = { path = "./crates/syntax-analysis" }
 # March 20, 2023 - Pinned explicitly with features that match the features
 # required by rocket. Once bazel rules correctly roll up all the features,
 # we can remove this, but until then, this works just fine for building
@@ -36,7 +36,7 @@ rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 
 [workspace]
 members = [
-    "crates/scip-syntax",
+    "crates/syntax-analysis",
     "crates/tree-sitter-all-languages",
     "crates/scip-treesitter-cli",
 ]

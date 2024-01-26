@@ -1,0 +1,19 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"Yay","path":"ctags-empty-scope.rs","language":"rust","line":11,"kind":"trait","scope":null}
+{"_type":"tag","name":"Arguments","path":"ctags-empty-scope.rs","language":"rust","line":15,"kind":"struct","scope":null}
+{"_type":"tag","name":"root_dir","path":"ctags-empty-scope.rs","language":"rust","line":17,"kind":"field","scope":"Arguments"}
+{"_type":"tag","name":"parse","path":"ctags-empty-scope.rs","language":"rust","line":21,"kind":"function","scope":"Arguments"}
+{"_type":"tag","name":"Arguments","path":"ctags-empty-scope.rs","language":"rust","line":24,"kind":"struct","scope":"Yay"}
+{"_type":"tag","name":"pog","path":"ctags-empty-scope.rs","language":"rust","line":25,"kind":"function","scope":"Yay.Arguments"}
+{"_type":"tag","name":"ParseTiming","path":"ctags-empty-scope.rs","language":"rust","line":28,"kind":"struct","scope":null}
+{"_type":"tag","name":"duration","path":"ctags-empty-scope.rs","language":"rust","line":30,"kind":"field","scope":"ParseTiming"}
+{"_type":"tag","name":"filepath","path":"ctags-empty-scope.rs","language":"rust","line":29,"kind":"field","scope":"ParseTiming"}
+{"_type":"tag","name":"main","path":"ctags-empty-scope.rs","language":"rust","line":41,"kind":"function","scope":null}
+{"_type":"tag","name":"measure_parsing","path":"ctags-empty-scope.rs","language":"rust","line":37,"kind":"function","scope":null}
+{"_type":"tag","name":"parse_files","path":"ctags-empty-scope.rs","language":"rust","line":33,"kind":"function","scope":null}
+{"_type":"tag","name":"THRESHOLD","path":"ctags-empty-scope.rs","language":"rust","line":9,"kind":"constant","scope":null}
+{"_type":"tag","name":"LANGUAGE","path":"ctags-empty-scope.rs","language":"rust","line":8,"kind":"variable","scope":null}
+

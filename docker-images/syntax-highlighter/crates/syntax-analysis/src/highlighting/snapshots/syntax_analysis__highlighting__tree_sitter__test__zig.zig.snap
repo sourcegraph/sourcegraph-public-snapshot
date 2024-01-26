@@ -1,0 +1,177 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  //! What a cool test file!
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 0:0..2:0
+  
+  const std = @import("std");
+//^^^^^ Keyword
+//      ^^^ Identifier
+//            ^^^^^^^ IdentifierBuiltin
+//                    ^^^^^ StringLiteral
+  
+  // let's add this random comment
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  pub fn main() void {
+//^^^ Keyword
+//    ^^ Keyword
+//       ^^^^ IdentifierFunction
+//              ^^^^ IdentifierBuiltinType
+      std.log.info("Business appropriate message!", .{});
+//    ^^^ Identifier
+//        ^^^ Identifier
+//            ^^^^ IdentifierFunction
+//                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      const T = switch (1) {
+//    ^^^^^ Keyword
+//          ^ Identifier
+//              ^^^^^^ Keyword
+//                      ^ NumericLiteral
+          1 => u8,
+//        ^ NumericLiteral
+//             ^^ IdentifierBuiltinType
+          2 => i16,
+//        ^ NumericLiteral
+//             ^^^ IdentifierBuiltinType
+          3 => f32,
+//        ^ NumericLiteral
+//             ^^^ IdentifierBuiltinType
+          4 => bool,
+//        ^ NumericLiteral
+//             ^^^^ IdentifierBuiltinType
+      };
+      _ = T;
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^ Identifier
+  
+      if (null == null) _ = error{
+//    ^^ Keyword
+//        ^^^^ IdentifierBuiltin
+//             ^^ IdentifierOperator
+//                ^^^^ IdentifierBuiltin
+//                      ^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^^^^ Keyword
+          Abc,
+//        ^^^ IdentifierConstant
+          Def,
+//        ^^^ IdentifierConstant
+          Ghi,
+//        ^^^ IdentifierConstant
+      };
+  }
+  
+  pub const MyStruct = struct {
+//^^^ Keyword
+//    ^^^^^ Keyword
+//          ^^^^^^^^ Identifier
+//                     ^^^^^^ Keyword
+      const bruh = 123;
+//    ^^^^^ Keyword
+//          ^^^^ Identifier
+//                 ^^^ NumericLiteral
+      bruh2: @TypeOf(@as(u8, 10)),
+//    ^^^^^ Identifier
+//           ^^^^^^^ IdentifierBuiltin
+//                   ^^^ IdentifierBuiltin
+//                       ^^ IdentifierBuiltinType
+//                           ^^ NumericLiteral
+  };
+  
+  pub const MyEnum = enum {
+//^^^ Keyword
+//    ^^^^^ Keyword
+//          ^^^^^^ Identifier
+//                   ^^^^ Keyword
+      const bruh = 0b0101010;
+//    ^^^^^ Keyword
+//          ^^^^ Identifier
+//                 ^^^^^^^^^ NumericLiteral
+      yass,
+//    ^^^^ Identifier
+      this_is_indeed_an_enum,
+//    ^^^^^^^^^^^^^^^^^^^^^^ Identifier
+  };
+  
+  pub const MyUnion = union {
+//^^^ Keyword
+//    ^^^^^ Keyword
+//          ^^^^^^^ Identifier
+//                    ^^^^^ Keyword
+      const bruh = 789;
+//    ^^^^^ Keyword
+//          ^^^^ Identifier
+//                 ^^^ NumericLiteral
+      /// Wow, such a normal field!
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 36:4..37:4
+      normal_field: u8,
+//    ^^^^^^^^^^^^ Identifier
+//                  ^^ IdentifierBuiltinType
+      abnormal_field: std.ArrayList(std.ArrayListUnmanaged(u8){}),
+//    ^^^^^^^^^^^^^^ Identifier
+//                    ^^^ Identifier
+//                        ^^^^^^^^^ IdentifierFunction
+//                                  ^^^ Identifier
+//                                      ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                         ^^ IdentifierBuiltinType
+  };
+  
+  pub const MyUnionEnum = union(enum) {
+//^^^ Keyword
+//    ^^^^^ Keyword
+//          ^^^^^^^^^^^ Identifier
+//                        ^^^^^ Keyword
+//                              ^^^^ Keyword
+      const bruh = 0x00;
+//    ^^^^^ Keyword
+//          ^^^^ Identifier
+//                 ^^^^ NumericLiteral
+      a: (for (0..10) |i| {
+//    ^ Identifier
+//        ^^^ Keyword
+//             ^ NumericLiteral
+//                ^^ NumericLiteral
+//                     ^ Identifier
+          if (i == 5)
+//        ^^ Keyword
+//            ^ Identifier
+//              ^^ IdentifierOperator
+//                 ^ NumericLiteral
+              break u8;
+//            ^^^^^ Keyword
+//                  ^^ IdentifierBuiltinType
+      } else u8),
+//      ^^^^ Keyword
+//           ^^ IdentifierBuiltinType
+      b: []const []const [*][*:0]const u123,
+//    ^ Identifier
+//         ^^^^^ Keyword
+//                 ^^^^^ Keyword
+//                        ^ IdentifierOperator
+//                           ^ IdentifierOperator
+//                             ^ NumericLiteral
+//                               ^^^^^ Keyword
+//                                     ^^^^ IdentifierBuiltinType
+  
+      fn extract(param: u8, param2: f32) void {
+//    ^^ Keyword
+//       ^^^^^^^ IdentifierFunction
+//               ^^^^^ IdentifierParameter
+//                      ^^ IdentifierBuiltinType
+//                          ^^^^^^ IdentifierParameter
+//                                  ^^^ IdentifierBuiltinType
+//                                       ^^^^ IdentifierBuiltinType
+          _ = param2;
+//        ^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^^ Identifier
+          _ = param;
+//        ^ Identifier
+//          ^ IdentifierOperator
+//            ^^^^^ Identifier
+      }
+  };
+
