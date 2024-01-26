@@ -7,9 +7,9 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
 use serde::Deserialize;
-use tree_sitter_all_languages::parsers::BundledParser;
+use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
+use tree_sitter_all_languages::BundledParser;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -17,8 +17,9 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
-    let result =
-        std::panic::catch_unwind(|| syntax_analysis::highlighting::syntect_highlight(q.into_inner()));
+    let result = std::panic::catch_unwind(|| {
+        syntax_analysis::highlighting::syntect_highlight(q.into_inner())
+    });
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
@@ -120,8 +121,8 @@ fn rocket() -> _ {
     // load configurations on-startup instead of on-first-request.
     // TODO: load individual languages lazily on-request instead, currently
     // CONFIGURATIONS.get will load every configured configuration together.
-    tree_sitter_all_languages::highlights::CONFIGURATIONS
-        .get(&tree_sitter_all_languages::parsers::BundledParser::Go);
+    syntax_analysis::highlighting::tree_sitter::CONFIGURATIONS
+        .get(&tree_sitter_all_languages::BundledParser::Go);
 
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
