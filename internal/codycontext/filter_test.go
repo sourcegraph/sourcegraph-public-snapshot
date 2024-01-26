@@ -25,7 +25,7 @@ func TestNewFilter(t *testing.T) {
 		client := gitserver.NewMockClient()
 		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
 		client.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
-		f, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
 		require.NoError(t, err)
 
 		chunks := []FileChunkContext{
@@ -40,8 +40,8 @@ func TestNewFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-
-		filtered := f.Filter(chunks)
+		filter, _ := f.GetFilter(repos)
+		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 	})
 
@@ -55,7 +55,7 @@ func TestNewFilter(t *testing.T) {
 			return nil, os.ErrNotExist
 		})
 
-		f, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
 		require.NoError(t, err)
 
 		chunks := []FileChunkContext{
@@ -81,7 +81,8 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		filtered := f.Filter(chunks)
+		filter, _ := f.GetFilter(repos)
+		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
 	})
@@ -99,7 +100,7 @@ func TestNewFilter(t *testing.T) {
 				return nil, os.ErrNotExist
 			}
 		})
-		f, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
 		require.NoError(t, err)
 
 		chunks := []FileChunkContext{
@@ -125,7 +126,8 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		filtered := f.Filter(chunks)
+		filter, _ := f.GetFilter(repos)
+		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
 		require.Equal(t, "src/file2.go", filtered[0].Path)
@@ -141,8 +143,11 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		_, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
 		require.NoError(t, err)
+		_, err = f.GetFilter(repos)
+		require.NoError(t, err)
+
 	})
 
 	t.Run("errors checking head do error", func(t *testing.T) {
@@ -153,7 +158,9 @@ func TestNewFilter(t *testing.T) {
 			return nil, nil
 		})
 
-		_, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
+		require.NoError(t, err)
+		_, err = f.GetFilter(repos)
 		require.Error(t, err)
 	})
 
@@ -164,7 +171,42 @@ func TestNewFilter(t *testing.T) {
 			return nil, errors.New("fail")
 		})
 
-		_, err := NewCodyIgnoreFilter(context.Background(), client, repos)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
+		require.NoError(t, err)
+		_, err = f.GetFilter(repos)
 		require.Error(t, err)
+	})
+
+	t.Run("uses cache", func(t *testing.T) {
+		client := gitserver.NewMockClient()
+		client.GetDefaultBranchFunc.SetDefaultReturn("main", api.CommitID("abc123"), nil)
+		client.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("**/file1.go")), nil)
+		f, err := NewCodyIgnoreFilter(context.Background(), client)
+		require.NoError(t, err)
+
+		chunks := []FileChunkContext{
+			{
+				RepoName: "repo1",
+				RepoID:   1,
+				Path:     "/file1.go",
+			},
+			{
+				RepoName: "repo2",
+				RepoID:   2,
+				Path:     "/file2.go",
+			},
+		}
+		// simulate 1st call
+		filter, _ := f.GetFilter(repos)
+		filtered := filter(chunks)
+		require.Equal(t, 1, len(filtered))
+
+		//simulate 2nd call
+		filter2, _ := f.GetFilter(repos)
+		filtered2 := filter2(chunks)
+		require.Equal(t, 1, len(filtered2))
+
+		// This should be called once for each repo
+		require.Equal(t, len(client.NewFileReaderFunc.History()), 2)
 	})
 }

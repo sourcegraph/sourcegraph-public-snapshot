@@ -20,7 +20,6 @@ import (
 	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -42,7 +41,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error), gitClient gitserver.Client) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error), contentFilter RepoContentFilter) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -65,7 +64,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 		embeddingsClient:  embeddingsClient,
 		searchClient:      searchClient,
 		getQdrantSearcher: getQdrantSearcher,
-		gitClient:         gitClient,
+		contentFilter:     contentFilter,
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -78,7 +77,7 @@ type CodyContextClient struct {
 	db                database.DB
 	embeddingsClient  embeddings.Client
 	searchClient      client.SearchClient
-	gitClient         gitserver.Client
+	contentFilter     RepoContentFilter
 	getQdrantSearcher func() (vdb.VectorSearcher, error)
 
 	obsCtx                 *observation.Context
@@ -128,7 +127,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		return nil, err
 	}
 
-	contextFilter, err := NewCodyIgnoreFilter(ctx, c.gitClient, append([]types.RepoIDName{}, args.Repos...))
+	contextFilter, err := c.contentFilter.GetFilter(args.Repos)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +195,7 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter RepoContentFilter) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -210,7 +209,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 		if err != nil {
 			return nil, err
 		}
-		return filter.Filter(results), nil
+		return filter(results), nil
 	}
 
 	repoNames := make([]api.RepoName, len(args.Repos))
@@ -247,7 +246,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 			EndLine:   result.EndLine,
 		})
 	}
-	return filter.Filter(res), nil
+	return filter(res), nil
 }
 
 var textFileFilter = func() string {
@@ -259,7 +258,7 @@ var textFileFilter = func() string {
 }()
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter RepoContentFilter) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -314,7 +313,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 			for _, res := range e.Results {
 				if fm, ok := res.(*result.FileMatch); ok {
-					collected = append(collected, filter.Filter(fileMatchToContextMatches(fm))...)
+					collected = append(collected, filter(fileMatchToContextMatches(fm))...)
 					if len(collected) >= limit {
 						cancel()
 						return
