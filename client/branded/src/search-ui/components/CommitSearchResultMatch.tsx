@@ -74,41 +74,39 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
     const openInNewTabProps = openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
-        <div className={styles.commitSearchResultMatch}>
-            <Link
-                key={item.url}
-                to={item.url}
-                className={classNames(resultStyles.searchResultMatch, resultStyles.clickable, resultStyles.focusable)}
-                {...openInNewTabProps}
-            >
-                {highlightedCommitContent !== undefined ? (
-                    <Code>
-                        <Markdown
-                            ref={containerElement}
-                            testId="search-result-match-code-excerpt"
-                            className={classNames(styles.markdown, styles.codeExcerpt)}
-                            dangerousInnerHTML={highlightedCommitContent}
-                        />
-                    </Code>
-                ) : (
-                    <>
-                        <LoadingSpinner className={styles.loader} />
-                        <table>
-                            <tbody>
-                                {range(numLines).map(index => (
-                                    <tr key={`${item.url}#${index}`}>
-                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                        <td className={styles.lineHidden}>
-                                            <Code>{index}</Code>
-                                        </td>
-                                        <td className="code"> </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </>
-                )}
-            </Link>
-        </div>
+        <Link
+            key={item.url}
+            to={item.url}
+            className={classNames(resultStyles.searchResultMatch, resultStyles.clickable, resultStyles.focusable)}
+            {...openInNewTabProps}
+        >
+            {highlightedCommitContent !== undefined ? (
+                <Code>
+                    <Markdown
+                        ref={containerElement}
+                        testId="search-result-match-code-excerpt"
+                        className={classNames(styles.markdown, styles.codeExcerpt)}
+                        dangerousInnerHTML={highlightedCommitContent}
+                    />
+                </Code>
+            ) : (
+                <>
+                    <LoadingSpinner className={styles.loader} />
+                    <table>
+                        <tbody>
+                            {range(numLines).map(index => (
+                                <tr key={`${item.url}#${index}`}>
+                                    {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                    <td className={styles.lineHidden}>
+                                        <Code>{index}</Code>
+                                    </td>
+                                    <td className="code"> </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </>
+            )}
+        </Link>
     )
 }
