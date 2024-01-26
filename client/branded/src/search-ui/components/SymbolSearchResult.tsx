@@ -142,7 +142,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                             className={classNames(
                                 styles.symbol,
                                 resultStyles.clickable,
-                                resultStyles.focusable,
+                                resultStyles.focusableBlock,
                                 resultStyles.horizontalDividerBetween
                             )}
                             data-href={symbol.url}

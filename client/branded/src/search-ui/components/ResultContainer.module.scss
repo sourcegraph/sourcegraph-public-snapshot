@@ -57,7 +57,7 @@
     }
 }
 
-.focusable {
+.focusable-block {
     &:focus-visible {
         box-shadow: inset 0px 0px 0px 1px var(--primary-2);
     }

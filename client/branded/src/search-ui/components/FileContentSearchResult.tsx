@@ -252,7 +252,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             type="button"
                             className={classNames(
                                 styles.toggleMatchesButton,
-                                resultStyles.focusable,
+                                resultStyles.focusableBlock,
                                 resultStyles.clickable,
                                 expanded && styles.toggleMatchesButtonExpanded
                             )}
@@ -264,10 +264,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                                 {expanded
                                     ? 'Show less'
                                     : `Show ${hiddenMatchesCount} more ${pluralize(
-                                          'match',
-                                          hiddenMatchesCount,
-                                          'matches'
-                                      )}`}
+                                        'match',
+                                        hiddenMatchesCount,
+                                        'matches'
+                                    )}`}
                             </span>
                         </button>
                     )}

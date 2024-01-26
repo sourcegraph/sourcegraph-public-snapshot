@@ -64,7 +64,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             'test-file-match-children-item',
                             styles.chunk,
                             resultStyles.clickable,
-                            resultStyles.focusable,
+                            resultStyles.focusableBlock,
                             resultStyles.horizontalDividerBetween
                         )}
                         onClick={navigateToFile}
