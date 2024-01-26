@@ -39,7 +39,7 @@ func TestNewFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		filter, _ := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 	})
@@ -79,7 +79,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		filter, _ := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -123,7 +123,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		filter, _ := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -141,9 +141,8 @@ func TestNewFilter(t *testing.T) {
 		})
 
 		f := NewCodyIgnoreFilter(client)
-		_, err := f.GetFilter(repos)
-		require.NoError(t, err)
-
+		filterableRepos, _ := f.GetFilter(repos)
+		require.Len(t, filterableRepos, 0)
 	})
 
 	t.Run("errors checking head do error", func(t *testing.T) {
@@ -155,8 +154,8 @@ func TestNewFilter(t *testing.T) {
 		})
 
 		f := NewCodyIgnoreFilter(client)
-		_, err := f.GetFilter(repos)
-		require.Error(t, err)
+		filterableRepos, _ := f.GetFilter(repos)
+		require.Len(t, filterableRepos, 0)
 	})
 
 	t.Run("error reading ignore file causes error", func(t *testing.T) {
@@ -167,8 +166,8 @@ func TestNewFilter(t *testing.T) {
 		})
 
 		f := NewCodyIgnoreFilter(client)
-		_, err := f.GetFilter(repos)
-		require.Error(t, err)
+		filterableRepos, _ := f.GetFilter(repos)
+		require.Len(t, filterableRepos, 0)
 	})
 
 	t.Run("uses cache", func(t *testing.T) {
@@ -190,12 +189,12 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 		// simulate 1st call
-		filter, _ := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 
 		//simulate 2nd call
-		filter2, _ := f.GetFilter(repos)
+		_, filter2 := f.GetFilter(repos)
 		filtered2 := filter2(chunks)
 		require.Equal(t, 1, len(filtered2))
 

@@ -70,16 +70,19 @@ type repoFilter struct {
 	client gitserver.Client
 }
 
-func (f *repoFilter) GetFilter(repos []types.RepoIDName) (FileChunkFilterFunc, error) {
+// GetFilter returns the list of repos that can be filtered
+// their .cody/ignore files (or don't have one). If an error
+// occurs that repo will be excluded.
+func (f *repoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc) {
 	filters := make(map[api.RepoName]filterFunc, len(repos))
-
+	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 	// use the internal actor to ensure access to repo and ignore files
 	ctx := actor.WithInternalActor(context.Background())
 	for _, repo := range repos {
 
 		_, commit, err := f.client.GetDefaultBranch(ctx, repo.Name, true)
 		if err != nil {
-			return nil, err
+			continue
 		}
 		// No commit signals an empty repo, should be nothing to filter
 		// Also we can't lookup the ignore file without a commit
@@ -88,13 +91,14 @@ func (f *repoFilter) GetFilter(repos []types.RepoIDName) (FileChunkFilterFunc, e
 		}
 		matcher, err := getIgnoreMatcher(ctx, f.cache, f.client, repo, commit)
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		filters[repo.Name] = matcher.Match
+		filterableRepos = append(filterableRepos, repo)
 	}
 
-	return func(fcc []FileChunkContext) []FileChunkContext {
+	return filterableRepos, func(fcc []FileChunkContext) []FileChunkContext {
 		filtered := make([]FileChunkContext, 0, len(fcc))
 		for _, fc := range fcc {
 			remove, ok := filters[fc.RepoName]
@@ -107,11 +111,11 @@ func (f *repoFilter) GetFilter(repos []types.RepoIDName) (FileChunkFilterFunc, e
 			}
 		}
 		return filtered
-	}, nil
+	}
 }
 
 type RepoContentFilter interface {
-	GetFilter(repos []types.RepoIDName) (FileChunkFilterFunc, error)
+	GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc)
 }
 
 // NewCodyIgnoreFilter creates a new RepoContentFilter that filters out

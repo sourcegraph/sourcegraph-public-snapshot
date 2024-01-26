@@ -122,12 +122,12 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		return nil, err
 	}
 
-	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
-	if err != nil {
-		return nil, err
-	}
+	// Generating the content filter removes any repos where the filter can not
+	// be determined
+	filterableRepos, contextFilter := c.contentFilter.GetFilter(args.Repos)
+	args.Repos = filterableRepos
 
-	contextFilter, err := c.contentFilter.GetFilter(args.Repos)
+	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	// to decide how many results out of our limit should be reserved for
 	// embeddings results. We can't easily compare the scores between embeddings
 	// and keyword search.
-	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(args.Repos))
+	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(filterableRepos))
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
