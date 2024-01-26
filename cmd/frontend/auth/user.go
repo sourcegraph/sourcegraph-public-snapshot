@@ -194,6 +194,14 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
 		user, err := users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		// We re-try creation with a different username with random suffix if the first one is taken.
+		if database.IsUsernameExists(err) {
+			op.UserProps.Username, err = AddRandomSuffix(op.UserProps.Username)
+			if err != nil {
+				return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
+			}
+			user, err = users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		}
 
 		switch {
 		case database.IsUsernameExists(err):

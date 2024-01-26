@@ -65,10 +65,6 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
             className={classNames(styles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
             actions={<SearchResultPreviewButton result={result} />}
-        >
-            <div className={classNames(styles.searchResultMatch, 'p-2')}>
-                <small>{result.pathMatches ? 'Path match' : 'File contains matching content'}</small>
-            </div>
-        </ResultContainer>
+        />
     )
 }

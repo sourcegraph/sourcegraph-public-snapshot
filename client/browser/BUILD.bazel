@@ -375,7 +375,6 @@ esbuild(
 build_code_intel_extensions(
     name = "code-intel-extensions",
     out = "build/extensions",
-    revision = "v5.0.1",
 )
 
 # Mirror `copyIntegrationAssets` from `client/browser/scripts/tasks.ts`

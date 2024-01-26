@@ -5,7 +5,11 @@
   - [Usage](#usage)
     - [Indexing](#indexing)
     - [Evaluation](#evaluation)
-  - [Contributing](#contributing)
+  - [Development](#development)
+    - [Running tests](#running-tests)
+      - [Generating local reference SCIP files](#generating-local-reference-scip-files)
+    - [Build the CLI for local testing](#build-the-cli-for-local-testing)
+    - [Run the locally built CLI](#run-the-locally-built-cli)
 <!--toc:end-->
 
 A command line tool that uses other scip-* crates to either
@@ -20,18 +24,18 @@ A command line tool that uses other scip-* crates to either
 Index a list of files:
 
 ```bash
-scip-treesitter-cli index --language java --out ./index.scip file1.java file2.java ...
+scip-treesitter index --language java --out ./index.scip file1.java file2.java ...
 ```
 
 Index a folder recursively:
 
 ```bash
-scip-treesitter-cli index --language java --out ./index.scip --workspace <some-folder>
+scip-treesitter index --language java --out ./index.scip --workspace <some-folder>
 ```
 ### Evaluation
 
 ```bash
-scip-treesitter-cli evaluate --candidate index-tree-sitter.scip --ground-truth index.scip
+scip-treesitter evaluate --candidate index-tree-sitter.scip --ground-truth index.scip
 ```
 
 ## Development
@@ -42,6 +46,45 @@ The CI uses Bazel for building and testing,
 but Cargo usage is also supported for convenience.
 
 ### Running tests
+
+#### Generating local reference SCIP files
+
+To run the tests locally (in particular evaluation tests) without Bazel, you first need to produce the reference SCIP files
+by using SCIP indexers.
+
+If you run tests through Bazel, then you don't need to do anything extra - the
+SCIP generation is wired as part of `integration_test` target.
+
+The setup for tests is required to work with both Bazel and Cargo, and so here's how we do it:
+
+1. The reference SCIP files are generated entirely by Bazel (see below)
+2. Each testdata language folder contains a symlink named `index.scip` that
+   points to a stable location where Bazel puts binary artifacts.
+
+   e.g.
+
+   ```
+   testdata/java/index.scip -> ../../../../../../bazel-bin/docker-images/syntax-highlighter/crates/scip-treesitter-cli/index-java.scip
+   ```
+3. The code is written in such a way to fallback to a local `index.scip` file unless
+   Bazel-specific environment variables are set up.
+
+To generate reference SCIP files locally, it's recommended to run the `integration_test` target
+once:
+
+```
+bazel test //docker-images/syntax-highlighter/crates/scip-treesitter-cli:integration_test
+```
+
+Or if you prefer, run individual tasks:
+
+```
+bazel build //docker-images/syntax-highlighter/crates/scip-treesitter-cli:java_groundtruth_scip
+```
+
+After that you can use `cargo test`, or continue to run tests through Bazel (which is what
+CI does).
+
 
 ```bash
 cargo test

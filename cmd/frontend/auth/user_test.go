@@ -70,6 +70,13 @@ func TestGetAndSaveUser(t *testing.T) {
 		CreateIfNotExist: true,
 	}
 
+	mockAddRandomSuffix = func(s string) (string, error) {
+		return fmt.Sprintf("%s-ubioa", s), nil
+	}
+	t.Cleanup(func() {
+		mockAddRandomSuffix = nil
+	})
+
 	mainCase := outerCase{
 		description: "no unexpected errors",
 		mock: mockParams{
@@ -156,15 +163,23 @@ func TestGetAndSaveUser(t *testing.T) {
 				expNewUserCreated:                false,
 			},
 			{
-				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
+				description: "ext acct doesn't exist, user with username exists but email doesn't exist, append random suffix",
 				// Note: if the email doesn't match, the user effectively doesn't exist from our POV
 				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s-new", "c1", "s-new/u1"),
 					UserProps:        userProps("u1", "doesnotmatch@example.com"),
 					CreateIfNotExist: true,
 				},
-				expSafeErr: "Username \"u1\" already exists, but no verified email matched \"doesnotmatch@example.com\"",
-				expErr:     database.MockCannotCreateUserUsernameExistsErr,
+				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+					10001: {ext("st1", "s-new", "c1", "s-new/u1")},
+				},
+				expCreatedUsers: map[int32]database.NewUser{
+					10001: userProps("u1-ubioa", "doesnotmatch@example.com"),
+				},
+				expNewUserCreated:                true,
+				expUserID:                        10001,
+				expCalledCreateUserSyncJob:       true,
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, user with email exists but username doesn't exist",

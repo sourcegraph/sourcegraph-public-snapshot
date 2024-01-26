@@ -159,6 +159,38 @@ func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
 }
 
+func (r *externalServiceResolver) Creator(ctx context.Context) (*UserResolver, error) {
+	if r.externalService.CreatorID == nil {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.CreatorID)
+	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
+func (r *externalServiceResolver) LastUpdater(ctx context.Context) (*UserResolver, error) {
+	if r.externalService.LastUpdaterID == nil {
+		return nil, nil
+	}
+
+	user, err := r.db.Users().GetByID(ctx, *r.externalService.LastUpdaterID)
+	if err != nil {
+		if database.IsUserNotFoundErr(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return NewUserResolver(ctx, r.db, user), nil
+}
+
 func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
 	r.webhookURLOnce.Do(func() {
 		parsed, err := extsvc.ParseEncryptableConfig(ctx, r.externalService.Kind, r.externalService.Config)
