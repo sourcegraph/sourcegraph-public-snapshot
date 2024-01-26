@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -104,6 +104,7 @@ export interface SearchResultsInfoBarProps
 export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
     const { query, patternType, authenticatedUser, results, options, sourcegraphURL, telemetryService } = props
 
+    const popoverRef = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
 
@@ -254,7 +255,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                 <div className={styles.expander} />
 
                 {props.showKeywordSearchToggle && (
-                    <div className={styles.toggleWrapper}>
+                    <div ref={popoverRef} className={styles.toggleWrapper}>
                         <span className="mr-1">
                             <SearchIcon aria-hidden={true} />
                         </span>
@@ -270,9 +271,9 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 Keyword search
                             </PopoverTrigger>
                             <PopoverContent
-                                position={Position.bottomStart}
+                                target={popoverRef.current}
+                                position={Position.bottomEnd}
                                 className={styles.popoverContent}
-                                data-testid="dropdown-content"
                                 targetPadding={LANG_UPDATE_POPOVER_PADDING}
                             >
                                 <div>
