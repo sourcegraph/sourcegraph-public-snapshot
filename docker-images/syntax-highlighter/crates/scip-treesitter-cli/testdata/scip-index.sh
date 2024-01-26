@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 tarball="$1"
 image_name="$2"
 project_root="$(dirname "$3")"
@@ -26,13 +28,19 @@ docker load --input="$tarball"
 # Therefore, until that setup changes, we tar the sources and pipe it into the container,
 # and then pipe the index back after indexing.
 
+temp_scip_path="$tmp_folder/index-piped.scip"
 tar_sources_command="tar -cv -C $tmp_folder ."
-write_scip_file_command="base64 -d > $tmp_folder/index-piped.scip"
+write_scip_file_command="base64 -d > $temp_scip_path"
 command_inside_container="(tar -xv >&2 && $scip_command >&2) && (cat ./index.scip | base64)"
 run_docker_command="docker run -i -a stdin -a stdout -a stderr $image_name bash -c '$command_inside_container'"
 
 eval "$tar_sources_command | $run_docker_command | $write_scip_file_command"
 
-
-# Copy the piped SCIP index to the destination expected by Bazel build
-cp "$tmp_folder"/index-piped.scip "$out"
+if [ -s $temp_scip_path ]
+then
+    # Copy the piped SCIP index to the destination expected by Bazel build
+    cp "$tmp_folder"/index-piped.scip "$out"
+else
+     echo "SCIP file produced by the container is empty"
+     exit 1
+fi
