@@ -142,7 +142,7 @@ describe('SignInPage', () => {
     })
 
     describe('with Sourcegraph accounts (dev) auth provider', () => {
-        const samsProviderName = "Sourcegraph Accounts (dev) [Testing Only]"
+        const samsProviderName = 'Sourcegraph Accounts (dev) [Testing Only]'
         const withSourcegraphAccountsDev: SourcegraphContext['authProviders'] = [
             ...authProviders,
             {
@@ -165,9 +165,7 @@ describe('SignInPage', () => {
 
         it('renders page with 3 providers (url-param present)', () => {
             const rendered = render('/sign-in?sourcegraph-accounts-dev', { authProviders: withSourcegraphAccountsDev })
-            expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes(samsProviderName))
-            ).toBeInTheDocument()
+            expect(within(rendered.baseElement).queryByText(txt => txt.includes(samsProviderName))).toBeInTheDocument()
             expect(rendered.asFragment()).toMatchSnapshot()
         })
     })

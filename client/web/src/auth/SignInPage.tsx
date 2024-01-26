@@ -60,7 +60,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             if (provider.serviceType !== 'openidconnect') {
                 return false
             }
-            if (provider.displayName.indexOf("Sourcegraph Accounts (dev)") == -1) {
+            if (!provider.displayName.includes('Sourcegraph Accounts (dev)')) {
                 return false
             }
             return true
