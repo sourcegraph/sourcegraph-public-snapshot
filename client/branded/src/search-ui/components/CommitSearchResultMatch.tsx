@@ -13,6 +13,7 @@ import type { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
 
 import styles from './CommitSearchResultMatch.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
 
 interface CommitSearchResultMatchProps extends PlatformContextProps<'requestGraphQL'> {
@@ -78,11 +79,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             <Link
                 key={item.url}
                 to={item.url}
-                className={classNames(
-                    searchResultStyles.searchResultMatch,
-                    searchResultStyles.clickable,
-                    searchResultStyles.focusable
-                )}
+                className={classNames(resultStyles.searchResultMatch, resultStyles.clickable, resultStyles.focusable)}
                 {...openInNewTabProps}
             >
                 {highlightedCommitContent !== undefined ? (

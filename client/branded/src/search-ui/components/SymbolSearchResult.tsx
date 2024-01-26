@@ -21,6 +21,7 @@ import { CopyPathAction } from './CopyPathAction'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
+import resultStyles from './ResultContainer.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
 import styles from './SymbolSearchResult.module.scss'
 
@@ -140,11 +141,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                     {result.symbols.map((symbol, i) => (
                         <div
                             key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
-                            className={classNames(
-                                styles.symbol,
-                                searchResultStyles.clickable,
-                                searchResultStyles.focusable
-                            )}
+                            className={classNames(styles.symbol, resultStyles.clickable, resultStyles.focusable)}
                             data-href={symbol.url}
                             role="link"
                             data-testid="symbol-search-result"

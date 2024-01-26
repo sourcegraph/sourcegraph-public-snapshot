@@ -42,3 +42,28 @@
     border-bottom: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color-2);
 }
+
+// TODO: merge this with result
+.search-result-match {
+    text-decoration: none; /* don't use cascading link style */
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: var(--code-bg);
+    position: relative;
+}
+
+.focusable {
+    &:focus-visible {
+        box-shadow: inset 0px 0px 0px 1px var(--primary-2);
+    }
+}
+
+.clickable {
+    cursor: pointer;
+    &:hover {
+        text-decoration: none;
+        background-color: var(--subtle-bg-2);
+    }
+}

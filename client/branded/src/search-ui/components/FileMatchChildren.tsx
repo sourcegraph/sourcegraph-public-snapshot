@@ -14,6 +14,7 @@ import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
 
 import styles from './FileMatchChildren.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
@@ -62,8 +63,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         className={classNames(
                             'test-file-match-children-item',
                             styles.chunk,
-                            searchResultStyles.clickable,
-                            searchResultStyles.focusable
+                            resultStyles.clickable,
+                            resultStyles.focusable
                         )}
                         onClick={navigateToFile}
                         onMouseUp={navigateToFileOnMiddleMouseButtonClick}
