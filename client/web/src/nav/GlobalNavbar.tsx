@@ -338,6 +338,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const searchNavigation =
         searchNavBarItems.length > 0 ? (
             <NavDropdown
+                key="search"
                 toggleItem={{
                     path: PageRoutes.Search,
                     altPath: PageRoutes.RepoContainer,
@@ -351,7 +352,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                 name="search"
             />
         ) : (
-            <NavItem icon={MagnifyIcon}>
+            <NavItem icon={MagnifyIcon} key="search">
                 <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
                     Code Search
                 </NavLink>
@@ -360,6 +361,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const codyNavigation = showCodyDropdown ? (
         <NavDropdown
+            key="cody"
             toggleItem={{
                 path: PageRoutes.CodyManagement,
                 icon: CodyLogo,
@@ -380,7 +382,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             name="cody"
         />
     ) : (
-        <NavItem icon={CodyLogo}>
+        <NavItem icon={CodyLogo} key="cody">
             <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
                 Cody AI
             </NavLink>

@@ -34,7 +34,6 @@ import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
 import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
-import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
@@ -133,10 +132,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 filePath={result.path}
                                 revision={getRevision(result.branches, result.commit)}
                                 repoName={result.repository}
-                                // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
-                                // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
-                                // child components than is worth doing right now for this experimental feature
-                                className={resultContainerStyles.resultContainer}
                                 as="li"
                             >
                                 {result.type === 'content' && (
@@ -267,7 +262,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
-                className={classNames('mt-2 mb-0', styles.list)}
+                className={classNames(styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}
