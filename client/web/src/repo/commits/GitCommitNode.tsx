@@ -371,7 +371,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                             {!extraCompact && <Link to={canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
-                        {commitMessageBody}
                     </div>
                 )}
             </>
