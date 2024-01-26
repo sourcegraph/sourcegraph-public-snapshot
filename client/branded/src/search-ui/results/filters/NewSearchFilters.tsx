@@ -68,7 +68,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({ query, filters, on
     }
 
     const handleApplyButtonFilters = (): void => {
-        onQueryChange(mergeQueryAndFilters(query, selectedFilters))
+        onQueryChange(mergeQueryAndFilters(query, selectedFilters), serilizeFiltersURL([]))
     }
 
     return (
