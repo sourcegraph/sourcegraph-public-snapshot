@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const SearchIcon: React.FunctionComponent = () => (
+export const KeywordSearchIcon: React.FunctionComponent = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21">
         <path
             fill="url(#paint0_linear_295_6722)"
