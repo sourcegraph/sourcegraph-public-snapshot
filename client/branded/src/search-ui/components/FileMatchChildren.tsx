@@ -62,7 +62,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         className={classNames(
                             'test-file-match-children-item',
                             styles.chunk,
-                            searchResultStyles.clickable
+                            searchResultStyles.clickable,
+                            searchResultStyles.focusable
                         )}
                         onClick={navigateToFile}
                         onMouseUp={navigateToFileOnMiddleMouseButtonClick}

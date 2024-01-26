@@ -8,6 +8,12 @@
     position: relative;
 }
 
+.focusable {
+    &:focus-visible {
+        box-shadow: inset 0px 0px 0px 1px var(--primary-2);
+    }
+}
+
 .clickable {
     cursor: pointer;
     &:hover {
