@@ -74,6 +74,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- The reference panel correctly shows definition and reference information instead of a "Could not find token" error for MATLAB. [#59636](https://github.com/sourcegraph/sourcegraph/pull/59636)
+- The auto-index configuration page correctly shows any auto-inference errors instead of a nil pointer exception. [#59756](https://github.com/sourcegraph/sourcegraph/pull/59756)
+
 ### Removed
 
 ### Changed
