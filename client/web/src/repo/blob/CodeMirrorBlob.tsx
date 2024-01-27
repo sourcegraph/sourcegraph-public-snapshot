@@ -90,11 +90,11 @@ interface CodeMirrorBlobProps {
 
 export interface BlobProps
     extends SettingsCascadeProps,
-    PlatformContextProps,
-    TelemetryProps,
-    HoverThresholdProps,
-    ExtensionsControllerProps,
-    CodeMirrorBlobProps {
+        PlatformContextProps,
+        TelemetryProps,
+        HoverThresholdProps,
+        ExtensionsControllerProps,
+        CodeMirrorBlobProps {
     className: string
 
     wrapCode: boolean
@@ -261,15 +261,15 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         () =>
             navigateToLineOnAnyClick
                 ? (line: number) =>
-                    navigate(
-                        toPrettyBlobURL({
-                            repoName: blobInfo.repoName,
-                            filePath: blobInfo.filePath,
-                            revision: blobInfo.revision,
-                            commitID: blobInfo.commitID,
-                            position: { line, character: 0 },
-                        })
-                    )
+                      navigate(
+                          toPrettyBlobURL({
+                              repoName: blobInfo.repoName,
+                              filePath: blobInfo.filePath,
+                              revision: blobInfo.revision,
+                              commitID: blobInfo.commitID,
+                              position: { line, character: 0 },
+                          })
+                      )
                 : undefined,
         [navigateToLineOnAnyClick, navigate, blobInfo.repoName, blobInfo.filePath, blobInfo.revision, blobInfo.commitID]
     )
@@ -367,26 +367,26 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             codeFoldingExtension(),
             isCodyEnabled()
                 ? codyWidgetExtension(
-                    editorRef.current
-                        ? new CodeMirrorEditor({
-                            view: editorRef.current,
-                            repo: props.blobInfo.repoName,
-                            revision: props.blobInfo.revision,
-                            filename: props.blobInfo.filePath,
-                            content: props.blobInfo.content,
-                        })
-                        : undefined
-                )
+                      editorRef.current
+                          ? new CodeMirrorEditor({
+                                view: editorRef.current,
+                                repo: props.blobInfo.repoName,
+                                revision: props.blobInfo.revision,
+                                filename: props.blobInfo.filePath,
+                                content: props.blobInfo.content,
+                            })
+                          : undefined
+                  )
                 : [],
             pinnedTooltip,
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
             syntaxHighlight.of(blobInfo),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
-                    blobInfo,
-                    initialSelection: position,
-                    extensionsController,
-                })
+                      blobInfo,
+                      initialSelection: position,
+                      extensionsController,
+                  })
                 : [],
             blobProps,
             blameDecorations,
@@ -500,12 +500,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             new CodeMirrorEditor(
                 view
                     ? {
-                        view,
-                        repo: props.blobInfo.repoName,
-                        revision: props.blobInfo.revision,
-                        filename: props.blobInfo.filePath,
-                        content: props.blobInfo.content,
-                    }
+                          view,
+                          repo: props.blobInfo.repoName,
+                          revision: props.blobInfo.revision,
+                          filename: props.blobInfo.filePath,
+                          content: props.blobInfo.content,
+                      }
                     : undefined
             )
         )
@@ -583,124 +583,124 @@ function useCodeIntelExtension(
             temporaryTooltip,
             api
                 ? createCodeIntelExtension({
-                    api: {
-                        api,
-                        documentInfo: { repoName, filePath, commitID, revision, languages },
-                        createTooltipView: ({ view, token, hovercardData }) =>
-                            new HovercardView(view, token, hovercardData),
-                        openImplementations(_view, documentInfo, occurrence) {
-                            navigate(
-                                toPrettyBlobURL({
-                                    ...documentInfo,
-                                    range: occurrence.range.withIncrementedValues(),
-                                    viewState: `implementations_${mode}` as BlobViewState,
-                                })
-                            )
-                        },
-                        openReferences(_view, documentInfo, occurrence) {
-                            navigate(
-                                toPrettyBlobURL({
-                                    ...documentInfo,
-                                    range: occurrence.range.withIncrementedValues(),
-                                    viewState: 'references',
-                                })
-                            )
-                        },
-                        goToDefinition(view, definition, options) {
-                            const documentInfo = { repoName, filePath, commitID, revision }
-                            const goto = options?.newWindow
-                                ? (url: string, _options?: unknown) => window.open(url, '_blank')
-                                : navigate
+                      api: {
+                          api,
+                          documentInfo: { repoName, filePath, commitID, revision, languages },
+                          createTooltipView: ({ view, token, hovercardData }) =>
+                              new HovercardView(view, token, hovercardData),
+                          openImplementations(_view, documentInfo, occurrence) {
+                              navigate(
+                                  toPrettyBlobURL({
+                                      ...documentInfo,
+                                      range: occurrence.range.withIncrementedValues(),
+                                      viewState: `implementations_${mode}` as BlobViewState,
+                                  })
+                              )
+                          },
+                          openReferences(_view, documentInfo, occurrence) {
+                              navigate(
+                                  toPrettyBlobURL({
+                                      ...documentInfo,
+                                      range: occurrence.range.withIncrementedValues(),
+                                      viewState: 'references',
+                                  })
+                              )
+                          },
+                          goToDefinition(view, definition, options) {
+                              const documentInfo = { repoName, filePath, commitID, revision }
+                              const goto = options?.newWindow
+                                  ? (url: string, _options?: unknown) => window.open(url, '_blank')
+                                  : navigate
 
-                            switch (definition.type) {
-                                case 'none': {
-                                    const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
-                                    if (offset) {
-                                        showTemporaryTooltip(view, 'No definition found', offset, 2000)
-                                    }
-                                    break
-                                }
-                                case 'at-definition': {
-                                    const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
-                                    if (offset) {
-                                        showTemporaryTooltip(view, 'You are at the definition', offset, 2000)
-                                    }
+                              switch (definition.type) {
+                                  case 'none': {
+                                      const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
+                                      if (offset) {
+                                          showTemporaryTooltip(view, 'No definition found', offset, 2000)
+                                      }
+                                      break
+                                  }
+                                  case 'at-definition': {
+                                      const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
+                                      if (offset) {
+                                          showTemporaryTooltip(view, 'You are at the definition', offset, 2000)
+                                      }
 
-                                    // Open reference panel
-                                    goto(locationToURL(documentInfo, definition.from, 'references'), {
-                                        replace: true,
-                                    })
-                                    break
-                                }
-                                case 'single': {
-                                    interface DefinitionState {
-                                        // The destination URL if we trigger `history.goBack()`.  We use this state
-                                        // to avoid inserting redundant 'A->B->A->B' entries when the user triggers
-                                        // "go to definition" twice in a row from the same location.
-                                        previousURL?: string
-                                    }
+                                      // Open reference panel
+                                      goto(locationToURL(documentInfo, definition.from, 'references'), {
+                                          replace: true,
+                                      })
+                                      break
+                                  }
+                                  case 'single': {
+                                      interface DefinitionState {
+                                          // The destination URL if we trigger `history.goBack()`.  We use this state
+                                          // to avoid inserting redundant 'A->B->A->B' entries when the user triggers
+                                          // "go to definition" twice in a row from the same location.
+                                          previousURL?: string
+                                      }
 
-                                    const locationState = locationRef.current.state as DefinitionState
-                                    const hrefFrom = locationToURL(documentInfo, definition.from)
-                                    // Don't push URLs into the history if the last goto-def
-                                    // action was from the same URL same as this action. This
-                                    // happens when the user repeatedly triggers goto-def, which
-                                    // is easy to do when the definition URL is close to
-                                    // where the action got triggered.
-                                    const shouldPushHistory = locationState?.previousURL !== hrefFrom
-                                    // Add browser history entry for reference location. This allows users
-                                    // to easily jump back to the location they triggered 'go to definition'
-                                    // from. Additionally this
-                                    navigate(hrefFrom, {
-                                        replace: !shouldPushHistory || createPath(locationRef.current) === hrefFrom,
-                                    })
+                                      const locationState = locationRef.current.state as DefinitionState
+                                      const hrefFrom = locationToURL(documentInfo, definition.from)
+                                      // Don't push URLs into the history if the last goto-def
+                                      // action was from the same URL same as this action. This
+                                      // happens when the user repeatedly triggers goto-def, which
+                                      // is easy to do when the definition URL is close to
+                                      // where the action got triggered.
+                                      const shouldPushHistory = locationState?.previousURL !== hrefFrom
+                                      // Add browser history entry for reference location. This allows users
+                                      // to easily jump back to the location they triggered 'go to definition'
+                                      // from. Additionally this
+                                      navigate(hrefFrom, {
+                                          replace: !shouldPushHistory || createPath(locationRef.current) === hrefFrom,
+                                      })
 
-                                    setTimeout(() => {
-                                        goto(locationToURL(documentInfo, definition.destination), {
-                                            replace: !shouldPushHistory,
-                                            state: { previousURL: hrefFrom },
-                                        })
-                                    }, MINIMUM_GO_TO_DEF_LATENCY_MILLIS)
-                                    break
-                                }
-                                case 'multiple': {
-                                    // Linking to the reference panel is a temporary workaround until we
-                                    // implement a component to resolve ambiguous results inside the blob
-                                    // view similar to how VS Code "Peek definition" works like.
-                                    goto(locationToURL(documentInfo, definition.destination, 'def'))
-                                    break
-                                }
-                            }
-                        },
-                    },
-                    pin: {
-                        onPin(position) {
-                            const search = new URLSearchParams(locationRef.current.search)
-                            search.set('popover', 'pinned')
+                                      setTimeout(() => {
+                                          goto(locationToURL(documentInfo, definition.destination), {
+                                              replace: !shouldPushHistory,
+                                              state: { previousURL: hrefFrom },
+                                          })
+                                      }, MINIMUM_GO_TO_DEF_LATENCY_MILLIS)
+                                      break
+                                  }
+                                  case 'multiple': {
+                                      // Linking to the reference panel is a temporary workaround until we
+                                      // implement a component to resolve ambiguous results inside the blob
+                                      // view similar to how VS Code "Peek definition" works like.
+                                      goto(locationToURL(documentInfo, definition.destination, 'def'))
+                                      break
+                                  }
+                              }
+                          },
+                      },
+                      pin: {
+                          onPin(position) {
+                              const search = new URLSearchParams(locationRef.current.search)
+                              search.set('popover', 'pinned')
 
-                            updateBrowserHistoryIfChanged(
-                                navigate,
-                                locationRef.current,
-                                // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
-                                addLineRangeQueryParameter(
-                                    search,
-                                    toPositionOrRangeQueryParameter({
-                                        position,
-                                        range: { start: position, end: position },
-                                    })
-                                )
-                            )
-                            void navigator.clipboard.writeText(window.location.href)
-                        },
-                        onUnpin() {
-                            const parameters = new URLSearchParams(locationRef.current.search)
-                            parameters.delete('popover')
+                              updateBrowserHistoryIfChanged(
+                                  navigate,
+                                  locationRef.current,
+                                  // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
+                                  addLineRangeQueryParameter(
+                                      search,
+                                      toPositionOrRangeQueryParameter({
+                                          position,
+                                          range: { start: position, end: position },
+                                      })
+                                  )
+                              )
+                              void navigator.clipboard.writeText(window.location.href)
+                          },
+                          onUnpin() {
+                              const parameters = new URLSearchParams(locationRef.current.search)
+                              parameters.delete('popover')
 
-                            updateBrowserHistoryIfChanged(navigate, locationRef.current, parameters)
-                        },
-                    },
-                    navigate,
-                })
+                              updateBrowserHistoryIfChanged(navigate, locationRef.current, parameters)
+                          },
+                      },
+                      navigate,
+                  })
                 : [],
         ],
         [repoName, filePath, commitID, revision, mode, api, navigate, locationRef, languages]
@@ -725,25 +725,25 @@ function useBlameDecoration(
             () =>
                 visible
                     ? showBlame({
-                        createBlameDecoration(container, { line, hunk, onSelect, onDeselect, externalURLs }) {
-                            const root = createRoot(container)
-                            root.render(
-                                <BlameDecoration
-                                    navigate={navigate}
-                                    line={line ?? 0}
-                                    blameHunk={hunk}
-                                    onSelect={onSelect}
-                                    onDeselect={onDeselect}
-                                    externalURLs={externalURLs}
-                                />
-                            )
-                            return {
-                                destroy() {
-                                    root.unmount()
-                                },
-                            }
-                        },
-                    })
+                          createBlameDecoration(container, { line, hunk, onSelect, onDeselect, externalURLs }) {
+                              const root = createRoot(container)
+                              root.render(
+                                  <BlameDecoration
+                                      navigate={navigate}
+                                      line={line ?? 0}
+                                      blameHunk={hunk}
+                                      onSelect={onSelect}
+                                      onDeselect={onDeselect}
+                                      externalURLs={externalURLs}
+                                  />
+                              )
+                              return {
+                                  destroy() {
+                                      root.unmount()
+                                  },
+                              }
+                          },
+                      })
                     : [],
             [visible, navigate]
         ),

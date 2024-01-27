@@ -108,7 +108,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
     }
 
     // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
-    console.log({searchPanelConfig})
+    console.log({ searchPanelConfig })
 
     return (
         <CodeMirrorBlob

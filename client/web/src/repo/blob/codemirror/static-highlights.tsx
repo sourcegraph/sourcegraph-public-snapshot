@@ -2,7 +2,7 @@
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
 import { type Extension, StateEffect, EditorState, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, showPanel, Panel, ViewUpdate, ViewPlugin } from '@codemirror/view'
+import { Decoration, EditorView, showPanel, Panel } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { createRoot, type Root } from 'react-dom/client'
@@ -29,33 +29,58 @@ export interface Location {
     column: number
 }
 
-const staticHighlightDecoration = Decoration.mark({ class: 'cm-sg-staticSelection' })
+const staticHighlightDecoration = Decoration.mark({ class: 'cm-sg-static-highlight' })
+const staticHighlightSelectedDecoration = Decoration.mark({ class: 'cm-sg-static-highlight-selected' })
+
+const staticHighlightState = StateField.define<{ from: number; to: number; selected: boolean }[]>({
+    create: () => [],
+    update: (ranges, tr) => {
+        // When the selection changes, update the selection
+        const selectedRange = tr.selection?.main
+        if (selectedRange === undefined) {
+            return ranges
+        }
+        return ranges.map(range => ({
+            from: range.from,
+            to: range.to,
+            selected: range.from === selectedRange.from && range.to === selectedRange.to,
+        }))
+    },
+    provide: f =>
+        EditorView.decorations.from(f, ranges =>
+            Decoration.set(
+                ranges.map(({ selected, from, to }) =>
+                    selected
+                        ? staticHighlightSelectedDecoration.range(from, to)
+                        : staticHighlightDecoration.range(from, to)
+                )
+            )
+        ),
+})
+
+const staticHighlightTheme = EditorView.theme({
+    '.cm-sg-static-highlight': {
+        backgroundColor: 'var(--mark-bg)',
+    },
+    '.cm-sg-static-highlight-selected': {
+        backgroundColor: 'var(--oc-orange-3)',
+    },
+})
 
 export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): Extension {
     const facet = Facet.define<Range[], Range[]>({
         combine: ranges => ranges.flat(),
-        enables: self => [
-            EditorView.decorations.compute([self], state => {
-                const ranges = state.facet(self)
-                return Decoration.set(
-                    ranges.map(range =>
-                        staticHighlightDecoration.range(
-                            toCodeMirrorLocation(state, range.start),
-                            toCodeMirrorLocation(state, range.end)
-                        )
-                    ),
-                    true
-                )
-            }),
-            EditorView.theme({
-                '.cm-sg-staticSelection': {
-                    backgroundColor: 'var(--mark-bg)',
-                },
-            }),
+        enables: () => [
+            staticHighlightTheme,
+            staticHighlightState.init(state =>
+                ranges.map(range => ({
+                    from: toCodeMirrorLocation(view.state, range.start),
+                    to: toCodeMirrorLocation(view.state, range.end),
+                }))
+            ),
             showPanel.of(view => new StaticHighlightsPanel(view, navigate, ranges)),
         ],
     })
-
     return facet.of(ranges)
 }
 
@@ -65,72 +90,71 @@ function toCodeMirrorLocation(state: EditorState, location: Location): number {
 }
 
 export const STATIC_HIGHLIGHTS_CONTAINER_ID = 'blob-search-container'
-const navigateSelection = StateEffect.define<number>()
 
 class StaticHighlightsPanel implements Panel {
     public dom: HTMLElement
     public top = true
-    private ranges: {from: number, to: number}[] = []
 
-    // Currently selected 0-based match index.
-    //private selected: number = 0
     private root: Root | null = null
 
-    constructor(private view: EditorView, private navigate: NavigateFunction, ranges: Range[]) {
-        this.ranges = ranges.map(range => ({
-            from: toCodeMirrorLocation(view.state, range.start),
-            to: toCodeMirrorLocation(view.state, range.end),
-        })),
+    constructor(private view: EditorView, private navigate: NavigateFunction) {
         this.dom = createElement('div', {
             className: classNames('cm-sg-search-container', styles.root),
             id: STATIC_HIGHLIGHTS_CONTAINER_ID,
         })
     }
 
-    public update(update: ViewUpdate): void {
+    private get ranges(): { from: number; to: number; selected: boolean }[] {
+        return this.view.state.field(staticHighlightState)
     }
+
+    public update(): void {}
 
     public mount(): void {
         this.render()
+        this.navigateTo(this.ranges[0])
     }
 
-    public destroy(): void { }
+    private navigateTo(target: { from: number; to: number }) {
+        this.view.dispatch({
+            selection: { anchor: target.from, head: target.to },
+            effects: [
+                EditorView.scrollIntoView(target.from, {
+                    y: 'nearest',
+                    yMargin: this.view.dom.getBoundingClientRect().height / 3,
+                }),
+            ],
+        })
+    }
 
     private navigatePrevious() {
         const currentSelection = this.view.state.selection.main
-        let previous: {from: number, to: number} | undefined
+        let previous: { from: number; to: number } | undefined
         for (const range of this.ranges) {
             previous = range
             if (range.from >= currentSelection.from) {
                 break
             }
         }
-        this.view.dispatch({
-            selection: {anchor: previous?.from ?? 0, head: previous?.to ?? 0},
-            scrollIntoView: true,
-        })
+        this.navigateTo(previous)
     }
 
     private navigateNext() {
         const currentSelection = this.view.state.selection.main
-        let next: {from: number, to: number} | undefined
+        let next: { from: number; to: number } | undefined
         for (const range of this.ranges) {
             next = range
             if (range.from > currentSelection.from) {
                 break
             }
         }
-        this.view.dispatch({
-            selection: {anchor: next?.from ?? 0, head: next?.to ?? 0},
-            scrollIntoView: true,
-        })
+        this.navigateTo(next)
     }
 
     private render(): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
-        const totalMatches = this.ranges.length
 
         this.root.render(
             <CodeMirrorContainer navigate={this.navigate}>
