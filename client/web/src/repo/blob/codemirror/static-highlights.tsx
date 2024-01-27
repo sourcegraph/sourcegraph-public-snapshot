@@ -1,10 +1,11 @@
 /**
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
-import { type Extension, StateEffect, EditorState, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, showPanel, Panel } from '@codemirror/view'
+import { type Extension, EditorState, StateField, Facet } from '@codemirror/state'
+import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
+import { sortedIndexBy } from 'lodash'
 import { createRoot, type Root } from 'react-dom/client'
 import type { NavigateFunction } from 'react-router-dom'
 
@@ -29,10 +30,16 @@ export interface Location {
     column: number
 }
 
+interface HighlightedRange {
+    from: number
+    to: number
+    selected: boolean
+}
+
 const staticHighlightDecoration = Decoration.mark({ class: 'cm-sg-static-highlight' })
 const staticHighlightSelectedDecoration = Decoration.mark({ class: 'cm-sg-static-highlight-selected' })
 
-const staticHighlightState = StateField.define<{ from: number; to: number; selected: boolean }[]>({
+const staticHighlightState = StateField.define<HighlightedRange[]>({
     create: () => [],
     update: (ranges, tr) => {
         // When the selection changes, update the selection
@@ -53,7 +60,8 @@ const staticHighlightState = StateField.define<{ from: number; to: number; selec
                     selected
                         ? staticHighlightSelectedDecoration.range(from, to)
                         : staticHighlightDecoration.range(from, to)
-                )
+                ),
+                true
             )
         ),
 })
@@ -68,20 +76,38 @@ const staticHighlightTheme = EditorView.theme({
 })
 
 export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): Extension {
+    if (!ranges) {
+        return []
+    }
     const facet = Facet.define<Range[], Range[]>({
         combine: ranges => ranges.flat(),
         enables: () => [
             staticHighlightTheme,
             staticHighlightState.init(state =>
-                ranges.map(range => ({
-                    from: toCodeMirrorLocation(view.state, range.start),
-                    to: toCodeMirrorLocation(view.state, range.end),
+                ranges.map((range, i) => ({
+                    selected: i === 0,
+                    from: toCodeMirrorLocation(state, range.start),
+                    to: toCodeMirrorLocation(state, range.end),
                 }))
             ),
-            showPanel.of(view => new StaticHighlightsPanel(view, navigate, ranges)),
+            EditorView.updateListener.of(update => {
+                if (update.docChanged) {
+                    const range = toCodeMirrorRange(update.state, ranges[0])
+                    console.log({ range })
+                    navigateTo(update.view, range)
+                }
+            }),
+            showPanel.of(view => new StaticHighlightsPanel(view, navigate)),
         ],
     })
     return facet.of(ranges)
+}
+
+function toCodeMirrorRange(state: EditorState, range: Range): { from: number; to: number } {
+    return {
+        from: toCodeMirrorLocation(state, range.start),
+        to: toCodeMirrorLocation(state, range.end),
+    }
 }
 
 function toCodeMirrorLocation(state: EditorState, location: Location): number {
@@ -89,7 +115,12 @@ function toCodeMirrorLocation(state: EditorState, location: Location): number {
     return state.doc.line(location.line + 1).from + location.column
 }
 
-export const STATIC_HIGHLIGHTS_CONTAINER_ID = 'blob-search-container'
+function findSelectedIdx(ranges: HighlightedRange[]): number | undefined {
+    const selectedIdx = ranges.findIndex(range => range.selected)
+    return selectedIdx === -1 ? undefined : selectedIdx
+}
+
+export const STATIC_HIGHLIGHTS_CONTAINER_ID = 'static-highlights-navigation-container'
 
 class StaticHighlightsPanel implements Panel {
     public dom: HTMLElement
@@ -102,59 +133,50 @@ class StaticHighlightsPanel implements Panel {
             className: classNames('cm-sg-search-container', styles.root),
             id: STATIC_HIGHLIGHTS_CONTAINER_ID,
         })
+        this.render(this.ranges)
     }
 
     private get ranges(): { from: number; to: number; selected: boolean }[] {
         return this.view.state.field(staticHighlightState)
     }
 
-    public update(): void {}
-
-    public mount(): void {
-        this.render()
-        this.navigateTo(this.ranges[0])
-    }
-
-    private navigateTo(target: { from: number; to: number }) {
-        this.view.dispatch({
-            selection: { anchor: target.from, head: target.to },
-            effects: [
-                EditorView.scrollIntoView(target.from, {
-                    y: 'nearest',
-                    yMargin: this.view.dom.getBoundingClientRect().height / 3,
-                }),
-            ],
-        })
+    public update(viewUpdate: ViewUpdate): void {
+        const oldSelectedIdx = findSelectedIdx(viewUpdate.startState.field(staticHighlightState))
+        const newSelectedIdx = findSelectedIdx(viewUpdate.state.field(staticHighlightState))
+        if (newSelectedIdx !== oldSelectedIdx) {
+            this.render(viewUpdate.state.field(staticHighlightState))
+        }
     }
 
     private navigatePrevious() {
         const currentSelection = this.view.state.selection.main
-        let previous: { from: number; to: number } | undefined
-        for (const range of this.ranges) {
-            previous = range
-            if (range.from >= currentSelection.from) {
-                break
-            }
-        }
-        this.navigateTo(previous)
+        const idx = sortedIndexBy(
+            this.ranges,
+            { from: currentSelection.from, to: 0, selected: false },
+            range => range.from
+        )
+        const previousRange = idx === 0 ? this.ranges[this.ranges.length - 1] : this.ranges[idx - 1]
+        navigateTo(this.view, previousRange)
     }
 
     private navigateNext() {
         const currentSelection = this.view.state.selection.main
-        let next: { from: number; to: number } | undefined
-        for (const range of this.ranges) {
-            next = range
-            if (range.from > currentSelection.from) {
-                break
-            }
-        }
-        this.navigateTo(next)
+        const idx = sortedIndexBy(
+            this.ranges,
+            { from: currentSelection.from + 1, to: 0, selected: false },
+            range => range.from
+        )
+        const nextRange = this.ranges[idx % this.ranges.length]
+        navigateTo(this.view, nextRange)
     }
 
-    private render(): void {
+    private render(ranges: HighlightedRange[]): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
+
+        const totalMatches = ranges.length
+        const selectedIdx = ranges.findIndex(range => range.selected)
 
         this.root.render(
             <CodeMirrorContainer navigate={this.navigate}>
@@ -188,9 +210,23 @@ class StaticHighlightsPanel implements Panel {
                     </div>
                 )}
                 <Text className="cm-search-results m-0 small">
+                    {selectedIdx === undefined ? '' : `${selectedIdx + 1} of `}
                     {totalMatches} {pluralize('result', totalMatches)}
                 </Text>
             </CodeMirrorContainer>
         )
     }
+}
+
+function navigateTo(view: EditorView, target: { from: number; to: number }) {
+    view.dispatch({
+        selection: { anchor: target.from, head: target.to },
+        effects: [
+            EditorView.scrollIntoView(target.from, {
+                y: 'nearest',
+                x: 'center',
+                yMargin: view.dom.getBoundingClientRect().height / 3,
+            }),
+        ],
+    })
 }

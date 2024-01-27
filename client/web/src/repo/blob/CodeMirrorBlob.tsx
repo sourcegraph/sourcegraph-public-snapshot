@@ -408,6 +408,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             onSelection,
+            staticHighlightRanges,
             navigate,
             blobInfo,
             extensionsController,
