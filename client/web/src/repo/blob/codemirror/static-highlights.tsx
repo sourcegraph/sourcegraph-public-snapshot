@@ -90,24 +90,10 @@ export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): E
                     to: toCodeMirrorLocation(state, range.end),
                 }))
             ),
-            EditorView.updateListener.of(update => {
-                if (update.docChanged) {
-                    const range = toCodeMirrorRange(update.state, ranges[0])
-                    console.log({ range })
-                    navigateTo(update.view, range)
-                }
-            }),
             showPanel.of(view => new StaticHighlightsPanel(view, navigate)),
         ],
     })
     return facet.of(ranges)
-}
-
-function toCodeMirrorRange(state: EditorState, range: Range): { from: number; to: number } {
-    return {
-        from: toCodeMirrorLocation(state, range.start),
-        to: toCodeMirrorLocation(state, range.end),
-    }
 }
 
 function toCodeMirrorLocation(state: EditorState, location: Location): number {
@@ -148,6 +134,19 @@ class StaticHighlightsPanel implements Panel {
         }
     }
 
+    private navigateTo(target: { from: number; to: number }) {
+        this.view.dispatch({
+            selection: { anchor: target.from, head: target.to },
+            effects: [
+                EditorView.scrollIntoView(target.from, {
+                    y: 'nearest',
+                    x: 'center',
+                    yMargin: this.view.dom.getBoundingClientRect().height / 3,
+                }),
+            ],
+        })
+    }
+
     private navigatePrevious() {
         const currentSelection = this.view.state.selection.main
         const idx = sortedIndexBy(
@@ -156,7 +155,7 @@ class StaticHighlightsPanel implements Panel {
             range => range.from
         )
         const previousRange = idx === 0 ? this.ranges[this.ranges.length - 1] : this.ranges[idx - 1]
-        navigateTo(this.view, previousRange)
+        this.navigateTo(previousRange)
     }
 
     private navigateNext() {
@@ -167,7 +166,7 @@ class StaticHighlightsPanel implements Panel {
             range => range.from
         )
         const nextRange = this.ranges[idx % this.ranges.length]
-        navigateTo(this.view, nextRange)
+        this.navigateTo(nextRange)
     }
 
     private render(ranges: HighlightedRange[]): void {
@@ -216,17 +215,4 @@ class StaticHighlightsPanel implements Panel {
             </CodeMirrorContainer>
         )
     }
-}
-
-function navigateTo(view: EditorView, target: { from: number; to: number }) {
-    view.dispatch({
-        selection: { anchor: target.from, head: target.to },
-        effects: [
-            EditorView.scrollIntoView(target.from, {
-                y: 'nearest',
-                x: 'center',
-                yMargin: view.dom.getBoundingClientRect().height / 3,
-            }),
-        ],
-    })
 }
