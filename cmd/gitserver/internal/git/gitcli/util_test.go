@@ -16,6 +16,13 @@ import (
 
 func BackendWithRepoCommands(t *testing.T, cmds ...string) git.GitBackend {
 	rcf := wrexec.NewNoOpRecordingCommandFactory()
+
+	dir := RepoWithCommands(t, cmds...)
+
+	return NewBackend(logtest.Scoped(t), rcf, dir, "repo")
+}
+
+func RepoWithCommands(t *testing.T, cmds ...string) common.GitDir {
 	reposDir := t.TempDir()
 
 	// Make a new bare repo on disk.
@@ -35,5 +42,5 @@ func BackendWithRepoCommands(t *testing.T, cmds ...string) git.GitBackend {
 		}
 	}
 
-	return NewBackend(logtest.Scoped(t), rcf, dir, "repo")
+	return dir
 }

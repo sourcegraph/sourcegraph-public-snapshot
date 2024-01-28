@@ -1318,10 +1318,7 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// NewFileReader returns an io.ReadCloser reading from the named file at commit.
-// The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request since we return a reader
 	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -1330,103 +1327,89 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 			attribute.String("name", name),
 		},
 	})
-	defer endObservation(1, observation.Args{})
 
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, name); err != nil {
-		return nil, err
-	} else if !hasAccess {
-		return nil, os.ErrNotExist
-	}
-
-	name = rel(name)
-	br, err := c.newBlobReader(ctx, repo, commit, name)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		return nil, err
-	}
-	return br, nil
-}
-
-var errIsSubmodule = errors.New("blob is a submodule")
-
-func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (string, error) {
-	// Note: when our git is new enough we can just use --object-only
-	out, err := c.gitCommand(repo, "ls-tree", string(commit), "--", name).Output(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to lookup blob OID")
-	}
-
-	out = bytes.TrimSpace(out)
-	if len(out) == 0 {
-		return "", &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
-	}
-
-	// 100644 blob 3bad331187e39c05c78a9b5e443689f78f4365a7	README.md
-	fields := bytes.Fields(out)
-	if len(fields) < 3 {
-		return "", errors.Newf("unexpected output while parsing blob OID: %q", string(out))
-	}
-	if string(fields[0]) == "160000" {
-		return "", errIsSubmodule
-	}
-	return string(fields[2]), nil
-}
-
-func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	blobOID, err := c.blobOID(ctx, repo, commit, name)
+	req := &proto.ReadFileRequest{
+		RepoName: string(repo),
+		Commit:   string(commit),
+		Path:     rel(name),
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	cli, err := client.ReadFile(ctx, req)
 	if err != nil {
-		if err == errIsSubmodule {
-			return io.NopCloser(bytes.NewReader(nil)), nil
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	// We start by reading the first message to early-exit on potential errors,
+	// ie. permission denied errors or invalid git command.
+	firstResp, firstRespErr := cli.Recv()
+	if firstRespErr != nil {
+		if s, ok := status.FromError(firstRespErr); ok {
+			// If sub repo permissions deny access to the file, we return os.ErrNotExist.
+			if s.Code() == codes.PermissionDenied {
+				cancel()
+				err = firstRespErr
+				endObservation(1, observation.Args{})
+				return nil, os.ErrNotExist
+			}
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						err = firstRespErr
+						endObservation(1, observation.Args{})
+						return nil, os.ErrNotExist
+					}
+				}
+			}
 		}
-		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "cat-file", "-p", blobOID)
-	stdout, err := cmd.StdoutReader(ctx)
-	if err != nil {
-		return nil, err
-	}
+	firstRespRead := false
+	r := streamio.NewReader(func() ([]byte, error) {
+		if !firstRespRead {
+			firstRespRead = true
+			if firstRespErr != nil {
+				return nil, firstRespErr
+			}
+			return firstResp.GetData(), nil
+		}
+
+		m, err := cli.Recv()
+		if err != nil {
+			return nil, err
+		}
+		return m.GetData(), nil
+	})
 
 	return &blobReader{
-		name: name,
-		cmd:  cmd,
-		rc:   stdout,
+		Reader: r,
+		cancel: cancel,
+		onClose: func() {
+			endObservation(1, observation.Args{})
+		},
 	}, nil
 }
 
-// blobReader, which should be created using newBlobReader, is a struct that allows
-// us to get a ReadCloser to a specific named file at a specific commit
 type blobReader struct {
-	name string
-	cmd  GitCommand
-	rc   io.ReadCloser
-}
-
-func (br *blobReader) Read(p []byte) (int, error) {
-	n, err := br.rc.Read(p)
-	if err != nil {
-		return n, br.convertError(err)
-	}
-	return n, nil
+	io.Reader
+	cancel  context.CancelFunc
+	onClose func()
 }
 
 func (br *blobReader) Close() error {
-	return br.rc.Close()
-}
-
-// convertError converts an error returned from 'git show' into a more appropriate error type
-func (br *blobReader) convertError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if err == io.EOF {
-		return err
-	}
-	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
+	br.cancel()
+	br.onClose()
+	return nil
 }
 
 // Stat returns a FileInfo describing the named file at commit.
