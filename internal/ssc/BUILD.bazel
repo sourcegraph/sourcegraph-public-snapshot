@@ -9,11 +9,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/ssc",
     visibility = ["//:__subpackages__"],
     deps = [
-        "go.opentelemetry.io/otel/attribute",
-        "golang.org/x/oauth2/clientcredentials",
         "//internal/conf",
         "//internal/httpcli",
         "//internal/trace",
         "//lib/errors",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_oauth2//clientcredentials",
     ],
 )
