@@ -46,7 +46,7 @@ func TestAddrForRepo(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				got := ga.AddrForRepo(ctx, "gitserver", tc.repo)
+				got := ga.AddrForRepo(ctx, tc.repo)
 				if got != tc.want {
 					t.Fatalf("Want %q, got %q", tc.want, got)
 				}

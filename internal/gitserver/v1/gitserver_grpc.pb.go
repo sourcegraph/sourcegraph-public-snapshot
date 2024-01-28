@@ -42,6 +42,7 @@ const (
 	GitserverService_IsPerforceSuperUser_FullMethodName         = "/gitserver.v1.GitserverService/IsPerforceSuperUser"
 	GitserverService_PerforceGetChangelist_FullMethodName       = "/gitserver.v1.GitserverService/PerforceGetChangelist"
 	GitserverService_MergeBase_FullMethodName                   = "/gitserver.v1.GitserverService/MergeBase"
+	GitserverService_Blame_FullMethodName                       = "/gitserver.v1.GitserverService/Blame"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -78,6 +79,16 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a NotFoundPayload in the details.
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
+	// Blame runs a blame operation on the specified file. It returns a stream of
+	// hunks as they are found. The --incremental flag is used on the git CLI level
+	// to achieve this behavior.
+	// The endpoint will verify that the user is allowed to blame the given file
+	// if subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a UnauthorizedPayload in the details is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a NotFoundPayload in the details.
+	Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -414,6 +425,38 @@ func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseReq
 	return out, nil
 }
 
+func (c *gitserverServiceClient) Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_Blame_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceBlameClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_BlameClient interface {
+	Recv() (*BlameResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceBlameClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceBlameClient) Recv() (*BlameResponse, error) {
+	m := new(BlameResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -448,6 +491,16 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a NotFoundPayload in the details.
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
+	// Blame runs a blame operation on the specified file. It returns a stream of
+	// hunks as they are found. The --incremental flag is used on the git CLI level
+	// to achieve this behavior.
+	// The endpoint will verify that the user is allowed to blame the given file
+	// if subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a UnauthorizedPayload in the details is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a NotFoundPayload in the details.
+	Blame(*BlameRequest, GitserverService_BlameServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -523,6 +576,9 @@ func (UnimplementedGitserverServiceServer) PerforceGetChangelist(context.Context
 }
 func (UnimplementedGitserverServiceServer) MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MergeBase not implemented")
+}
+func (UnimplementedGitserverServiceServer) Blame(*BlameRequest, GitserverService_BlameServer) error {
+	return status.Errorf(codes.Unimplemented, "method Blame not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -971,6 +1027,27 @@ func _GitserverService_MergeBase_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_Blame_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(BlameRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).Blame(m, &gitserverServiceBlameServer{stream})
+}
+
+type GitserverService_BlameServer interface {
+	Send(*BlameResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceBlameServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceBlameServer) Send(m *BlameResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1075,6 +1152,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "P4Exec",
 			Handler:       _GitserverService_P4Exec_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Blame",
+			Handler:       _GitserverService_Blame_Handler,
 			ServerStreams: true,
 		},
 	},

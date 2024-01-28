@@ -23,6 +23,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -40,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type DiffOptions struct {
@@ -787,35 +790,6 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }
 
-// BlameOptions configures a blame.
-type BlameOptions struct {
-	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
-	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
-	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
-}
-
-func (o *BlameOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.String("newestCommit", string(o.NewestCommit)),
-		attribute.Int("startLine", o.StartLine),
-		attribute.Int("endLine", o.EndLine),
-		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
-	}
-}
-
-// A Hunk is a contiguous portion of a file associated with a commit.
-type Hunk struct {
-	StartLine int // 1-indexed start line number
-	EndLine   int // 1-indexed end line number
-	StartByte int // 0-indexed start byte position (inclusive)
-	EndByte   int // 0-indexed end byte position (exclusive)
-	api.CommitID
-	Author   gitdomain.Signature
-	Message  string
-	Filename string
-}
-
 // StreamBlameFile returns Git blame information about a file.
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
 	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
@@ -825,9 +799,58 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 			attribute.String("path", path),
 		}, opt.Attrs()...),
 	})
-	defer endObservation(1, observation.Args{})
 
-	return streamBlameFileCmd(ctx, c.subRepoPermsChecker, repo, path, opt, c.gitserverGitCommandFunc(repo))
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	req := &proto.BlameRequest{
+		RepoName:         string(repo),
+		Path:             path,
+		IgnoreWhitespace: opt.IgnoreWhitespace,
+	}
+	if opt.NewestCommit != "" {
+		req.Commit = pointers.Ptr(string(opt.NewestCommit))
+	}
+	if opt.StartLine != 0 {
+		req.StartLine = pointers.Ptr(uint32(opt.StartLine))
+	}
+	if opt.EndLine != 0 {
+		req.EndLine = pointers.Ptr(uint32(opt.EndLine))
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	cli, err := client.Blame(ctx, req)
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
+	}
+
+	// We start by reading the first hunk to early-exit on potential errors,
+	// ie. permission denied errors or invalid git command.
+	firstHunkResp, err := cli.Recv()
+	if err != nil {
+		cancel()
+		endObservation(1, observation.Args{})
+
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.PermissionDenied {
+				return nil, errUnauthorizedStreamBlame{Repo: repo}
+			}
+		}
+
+		return nil, err
+	}
+
+	return &grpcBlameHunkReader{
+		firstHunk:      firstHunkResp.GetHunk(),
+		c:              cli,
+		cancel:         cancel,
+		endObservation: func() { endObservation(1, observation.Args{}) },
+	}, nil
 }
 
 type errUnauthorizedStreamBlame struct {
@@ -842,47 +865,31 @@ func (e errUnauthorizedStreamBlame) Error() string {
 	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
 }
 
-func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
-	a := actor.FromContext(ctx)
-	hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path)
+type grpcBlameHunkReader struct {
+	firstHunk      *proto.BlameHunk
+	firstHunkRead  bool
+	c              proto.GitserverService_BlameClient
+	cancel         context.CancelFunc
+	endObservation func()
+}
+
+func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
+	if !r.firstHunkRead {
+		r.firstHunkRead = true
+		return gitdomain.HunkFromBlameProto(r.firstHunk), nil
+	}
+	p, err := r.c.Recv()
 	if err != nil {
 		return nil, err
 	}
-	if !hasAccess {
-		return nil, errUnauthorizedStreamBlame{Repo: repo}
-	}
-	if opt == nil {
-		opt = &BlameOptions{}
-	}
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
-		return nil, err
-	}
-
-	args := []string{"blame", "--porcelain", "--incremental"}
-	if opt.IgnoreWhitespace {
-		args = append(args, "-w")
-	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
-	}
-	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
-
-	rc, err := command(args).StdoutReader(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
-	}
-
-	return newBlameHunkReader(rc), nil
+	return gitdomain.HunkFromBlameProto(p.GetHunk()), nil
 }
 
-func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
-	return func(args []string) GitCommand {
-		return c.gitCommand(repo, args...)
-	}
+func (r *grpcBlameHunkReader) Close() error {
+	r.cancel()
+	r.endObservation()
+	return nil
 }
-
-// gitCommandFunc is a func that creates a new executable Git command.
-type gitCommandFunc func(args []string) GitCommand
 
 // ResolveRevisionOptions configure how we resolve revisions.
 // The zero value should contain appropriate default values.
@@ -1238,7 +1245,7 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 	})
 	defer endObservation(1, observation.Args{})
 
-	client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -2282,7 +2289,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

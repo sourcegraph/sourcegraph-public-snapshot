@@ -1,42 +1,84 @@
-package gitserver
+package gitcli
 
 import (
 	"bufio"
+	"context"
+	"fmt"
 	"io"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (g *gitCLIBackend) Blame(ctx context.Context, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
+	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+		return nil, err
+	}
+
+	cmd, cancel, err := g.gitCommand(ctx, buildBlameArgs(path, opt)...)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	r, err := g.runGitCommand(ctx, cmd)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	return newBlameHunkReader(r, cancel), nil
+}
+
+func buildBlameArgs(path string, opt git.BlameOptions) []string {
+	args := []string{"blame", "--porcelain", "--incremental"}
+	if opt.IgnoreWhitespace {
+		args = append(args, "-w")
+	}
+	if opt.StartLine != 0 || opt.EndLine != 0 {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	}
+	if opt.NewestCommit != "" {
+		args = append(args, string(opt.NewestCommit))
+	}
+	args = append(args, "--", filepath.ToSlash(path))
+	return args
+}
+
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
-	rc io.ReadCloser
-	sc *bufio.Scanner
+	rc      io.ReadCloser
+	sc      *bufio.Scanner
+	onClose func()
 
-	cur *Hunk
+	cur *gitdomain.Hunk
 
 	// commits stores previously seen commits, so new hunks
 	// whose annotations are abbreviated by git can still be
 	// filled by the correct data even if the hunk entry doesn't
 	// repeat them.
-	commits map[api.CommitID]*Hunk
+	commits map[api.CommitID]*gitdomain.Hunk
 }
 
-func newBlameHunkReader(rc io.ReadCloser) HunkReader {
+func newBlameHunkReader(rc io.ReadCloser, onClose func()) git.BlameHunkReader {
 	return &blameHunkReader{
 		rc:      rc,
 		sc:      bufio.NewScanner(rc),
-		commits: make(map[api.CommitID]*Hunk),
+		commits: make(map[api.CommitID]*gitdomain.Hunk),
+		onClose: onClose,
 	}
 }
 
 // Read returns a slice of hunks, along with a done boolean indicating if there
 // is more to read. After the last hunk has been returned, Read() will return
 // an io.EOF error on success.
-func (br *blameHunkReader) Read() (_ *Hunk, err error) {
+func (br *blameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 	for {
 		// Do we have more to read?
 		if !br.sc.Scan() {
@@ -101,12 +143,14 @@ func (br *blameHunkReader) Read() (_ *Hunk, err error) {
 }
 
 func (br *blameHunkReader) Close() error {
-	return br.rc.Close()
+	err := br.rc.Close()
+	br.onClose()
+	return err
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
 // git blame into a hunk.
-func parseEntry(rev string, content string) (*Hunk, error) {
+func parseEntry(rev string, content string) (*gitdomain.Hunk, error) {
 	fields := strings.Split(content, " ")
 	if len(fields) != 3 {
 		return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s %s'", rev, content)
@@ -121,16 +165,16 @@ func parseEntry(rev string, content string) (*Hunk, error) {
 		return nil, err
 	}
 
-	return &Hunk{
+	return &gitdomain.Hunk{
 		CommitID:  api.CommitID(rev),
-		StartLine: resultLine,
-		EndLine:   resultLine + numLines,
+		StartLine: uint32(resultLine),
+		EndLine:   uint32(resultLine + numLines),
 	}, nil
 }
 
 // parseExtra updates a hunk with data parsed from the other annotations such as `author ...`,
 // `summary ...`.
-func parseExtra(hunk *Hunk, annotation string, content string) (ok bool, err error) {
+func parseExtra(hunk *gitdomain.Hunk, annotation string, content string) (ok bool, err error) {
 	ok = true
 	switch annotation {
 	case "author":
@@ -172,29 +216,3 @@ func splitLine(line string) (annotation string, content string) {
 	}
 	return line, ""
 }
-
-type mockHunkReader struct {
-	hunks []*Hunk
-	err   error
-}
-
-func NewMockHunkReader(hunks []*Hunk, err error) HunkReader {
-	return &mockHunkReader{
-		hunks: hunks,
-		err:   err,
-	}
-}
-
-func (mh *mockHunkReader) Read() (*Hunk, error) {
-	if mh.err != nil {
-		return nil, mh.err
-	}
-	if len(mh.hunks) > 0 {
-		next := mh.hunks[0]
-		mh.hunks = mh.hunks[1:]
-		return next, nil
-	}
-	return nil, io.EOF
-}
-
-func (mh *mockHunkReader) Close() error { return nil }

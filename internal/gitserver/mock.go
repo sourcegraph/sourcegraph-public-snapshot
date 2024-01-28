@@ -26,6 +26,9 @@ type MockGitserverServiceClient struct {
 	// BatchLogFunc is an instance of a mock function object controlling the
 	// behavior of the method BatchLog.
 	BatchLogFunc *GitserverServiceClientBatchLogFunc
+	// BlameFunc is an instance of a mock function object controlling the
+	// behavior of the method Blame.
+	BlameFunc *GitserverServiceClientBlameFunc
 	// CheckPerforceCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method CheckPerforceCredentials.
 	CheckPerforceCredentialsFunc *GitserverServiceClientCheckPerforceCredentialsFunc
@@ -104,6 +107,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		BatchLogFunc: &GitserverServiceClientBatchLogFunc{
 			defaultHook: func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (r0 *v1.BatchLogResponse, r1 error) {
+				return
+			},
+		},
+		BlameFunc: &GitserverServiceClientBlameFunc{
+			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (r0 v1.GitserverService_BlameClient, r1 error) {
 				return
 			},
 		},
@@ -230,6 +238,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.BatchLog")
 			},
 		},
+		BlameFunc: &GitserverServiceClientBlameFunc{
+			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.Blame")
+			},
+		},
 		CheckPerforceCredentialsFunc: &GitserverServiceClientCheckPerforceCredentialsFunc{
 			defaultHook: func(context.Context, *v1.CheckPerforceCredentialsRequest, ...grpc.CallOption) (*v1.CheckPerforceCredentialsResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.CheckPerforceCredentials")
@@ -348,6 +361,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		BatchLogFunc: &GitserverServiceClientBatchLogFunc{
 			defaultHook: i.BatchLog,
+		},
+		BlameFunc: &GitserverServiceClientBlameFunc{
+			defaultHook: i.Blame,
 		},
 		CheckPerforceCredentialsFunc: &GitserverServiceClientCheckPerforceCredentialsFunc{
 			defaultHook: i.CheckPerforceCredentials,
@@ -651,6 +667,124 @@ func (c GitserverServiceClientBatchLogFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientBatchLogFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientBlameFunc describes the behavior when the Blame
+// method of the parent MockGitserverServiceClient instance is invoked.
+type GitserverServiceClientBlameFunc struct {
+	defaultHook func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error)
+	hooks       []func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error)
+	history     []GitserverServiceClientBlameFuncCall
+	mutex       sync.Mutex
+}
+
+// Blame delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) Blame(v0 context.Context, v1 *v1.BlameRequest, v2 ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
+	r0, r1 := m.BlameFunc.nextHook()(v0, v1, v2...)
+	m.BlameFunc.appendCall(GitserverServiceClientBlameFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Blame method of the
+// parent MockGitserverServiceClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverServiceClientBlameFunc) SetDefaultHook(hook func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Blame method of the parent MockGitserverServiceClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverServiceClientBlameFunc) PushHook(hook func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientBlameFunc) SetDefaultReturn(r0 v1.GitserverService_BlameClient, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientBlameFunc) PushReturn(r0 v1.GitserverService_BlameClient, r1 error) {
+	f.PushHook(func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientBlameFunc) nextHook() func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientBlameFunc) appendCall(r0 GitserverServiceClientBlameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientBlameFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverServiceClientBlameFunc) History() []GitserverServiceClientBlameFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientBlameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientBlameFuncCall is an object that describes an
+// invocation of method Blame on an instance of MockGitserverServiceClient.
+type GitserverServiceClientBlameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.BlameRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.GitserverService_BlameClient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientBlameFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientBlameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3191,6 +3325,1751 @@ func (c GitserverServiceClientSearchFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverServiceClientSearchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockGitserverService_BlameClient is a mock implementation of the
+// GitserverService_BlameClient interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_BlameClient struct {
+	// CloseSendFunc is an instance of a mock function object controlling
+	// the behavior of the method CloseSend.
+	CloseSendFunc *GitserverService_BlameClientCloseSendFunc
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_BlameClientContextFunc
+	// HeaderFunc is an instance of a mock function object controlling the
+	// behavior of the method Header.
+	HeaderFunc *GitserverService_BlameClientHeaderFunc
+	// RecvFunc is an instance of a mock function object controlling the
+	// behavior of the method Recv.
+	RecvFunc *GitserverService_BlameClientRecvFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_BlameClientRecvMsgFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_BlameClientSendMsgFunc
+	// TrailerFunc is an instance of a mock function object controlling the
+	// behavior of the method Trailer.
+	TrailerFunc *GitserverService_BlameClientTrailerFunc
+}
+
+// NewMockGitserverService_BlameClient creates a new mock of the
+// GitserverService_BlameClient interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_BlameClient() *MockGitserverService_BlameClient {
+	return &MockGitserverService_BlameClient{
+		CloseSendFunc: &GitserverService_BlameClientCloseSendFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		ContextFunc: &GitserverService_BlameClientContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		HeaderFunc: &GitserverService_BlameClientHeaderFunc{
+			defaultHook: func() (r0 metadata.MD, r1 error) {
+				return
+			},
+		},
+		RecvFunc: &GitserverService_BlameClientRecvFunc{
+			defaultHook: func() (r0 *v1.BlameResponse, r1 error) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_BlameClientRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_BlameClientSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		TrailerFunc: &GitserverService_BlameClientTrailerFunc{
+			defaultHook: func() (r0 metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_BlameClient creates a new mock of the
+// GitserverService_BlameClient interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockGitserverService_BlameClient() *MockGitserverService_BlameClient {
+	return &MockGitserverService_BlameClient{
+		CloseSendFunc: &GitserverService_BlameClientCloseSendFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockGitserverService_BlameClient.CloseSend")
+			},
+		},
+		ContextFunc: &GitserverService_BlameClientContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_BlameClient.Context")
+			},
+		},
+		HeaderFunc: &GitserverService_BlameClientHeaderFunc{
+			defaultHook: func() (metadata.MD, error) {
+				panic("unexpected invocation of MockGitserverService_BlameClient.Header")
+			},
+		},
+		RecvFunc: &GitserverService_BlameClientRecvFunc{
+			defaultHook: func() (*v1.BlameResponse, error) {
+				panic("unexpected invocation of MockGitserverService_BlameClient.Recv")
+			},
+		},
+		RecvMsgFunc: &GitserverService_BlameClientRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_BlameClient.RecvMsg")
+			},
+		},
+		SendMsgFunc: &GitserverService_BlameClientSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_BlameClient.SendMsg")
+			},
+		},
+		TrailerFunc: &GitserverService_BlameClientTrailerFunc{
+			defaultHook: func() metadata.MD {
+				panic("unexpected invocation of MockGitserverService_BlameClient.Trailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_BlameClientFrom creates a new mock of the
+// MockGitserverService_BlameClient interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockGitserverService_BlameClientFrom(i v1.GitserverService_BlameClient) *MockGitserverService_BlameClient {
+	return &MockGitserverService_BlameClient{
+		CloseSendFunc: &GitserverService_BlameClientCloseSendFunc{
+			defaultHook: i.CloseSend,
+		},
+		ContextFunc: &GitserverService_BlameClientContextFunc{
+			defaultHook: i.Context,
+		},
+		HeaderFunc: &GitserverService_BlameClientHeaderFunc{
+			defaultHook: i.Header,
+		},
+		RecvFunc: &GitserverService_BlameClientRecvFunc{
+			defaultHook: i.Recv,
+		},
+		RecvMsgFunc: &GitserverService_BlameClientRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendMsgFunc: &GitserverService_BlameClientSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		TrailerFunc: &GitserverService_BlameClientTrailerFunc{
+			defaultHook: i.Trailer,
+		},
+	}
+}
+
+// GitserverService_BlameClientCloseSendFunc describes the behavior when the
+// CloseSend method of the parent MockGitserverService_BlameClient instance
+// is invoked.
+type GitserverService_BlameClientCloseSendFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []GitserverService_BlameClientCloseSendFuncCall
+	mutex       sync.Mutex
+}
+
+// CloseSend delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) CloseSend() error {
+	r0 := m.CloseSendFunc.nextHook()()
+	m.CloseSendFunc.appendCall(GitserverService_BlameClientCloseSendFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CloseSend method of
+// the parent MockGitserverService_BlameClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameClientCloseSendFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CloseSend method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientCloseSendFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientCloseSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientCloseSendFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameClientCloseSendFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientCloseSendFunc) appendCall(r0 GitserverService_BlameClientCloseSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_BlameClientCloseSendFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_BlameClientCloseSendFunc) History() []GitserverService_BlameClientCloseSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientCloseSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientCloseSendFuncCall is an object that describes
+// an invocation of method CloseSend on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientCloseSendFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientCloseSendFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientCloseSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameClientContextFunc describes the behavior when the
+// Context method of the parent MockGitserverService_BlameClient instance is
+// invoked.
+type GitserverService_BlameClientContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_BlameClientContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_BlameClientContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_BlameClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameClientContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameClientContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientContextFunc) appendCall(r0 GitserverService_BlameClientContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameClientContextFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameClientContextFunc) History() []GitserverService_BlameClientContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientContextFuncCall is an object that describes
+// an invocation of method Context on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameClientHeaderFunc describes the behavior when the
+// Header method of the parent MockGitserverService_BlameClient instance is
+// invoked.
+type GitserverService_BlameClientHeaderFunc struct {
+	defaultHook func() (metadata.MD, error)
+	hooks       []func() (metadata.MD, error)
+	history     []GitserverService_BlameClientHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// Header delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) Header() (metadata.MD, error) {
+	r0, r1 := m.HeaderFunc.nextHook()()
+	m.HeaderFunc.appendCall(GitserverService_BlameClientHeaderFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Header method of the
+// parent MockGitserverService_BlameClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverService_BlameClientHeaderFunc) SetDefaultHook(hook func() (metadata.MD, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Header method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientHeaderFunc) PushHook(hook func() (metadata.MD, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientHeaderFunc) SetDefaultReturn(r0 metadata.MD, r1 error) {
+	f.SetDefaultHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientHeaderFunc) PushReturn(r0 metadata.MD, r1 error) {
+	f.PushHook(func() (metadata.MD, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_BlameClientHeaderFunc) nextHook() func() (metadata.MD, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientHeaderFunc) appendCall(r0 GitserverService_BlameClientHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameClientHeaderFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameClientHeaderFunc) History() []GitserverService_BlameClientHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientHeaderFuncCall is an object that describes an
+// invocation of method Header on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientHeaderFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientHeaderFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_BlameClientRecvFunc describes the behavior when the Recv
+// method of the parent MockGitserverService_BlameClient instance is
+// invoked.
+type GitserverService_BlameClientRecvFunc struct {
+	defaultHook func() (*v1.BlameResponse, error)
+	hooks       []func() (*v1.BlameResponse, error)
+	history     []GitserverService_BlameClientRecvFuncCall
+	mutex       sync.Mutex
+}
+
+// Recv delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) Recv() (*v1.BlameResponse, error) {
+	r0, r1 := m.RecvFunc.nextHook()()
+	m.RecvFunc.appendCall(GitserverService_BlameClientRecvFuncCall{r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Recv method of the
+// parent MockGitserverService_BlameClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverService_BlameClientRecvFunc) SetDefaultHook(hook func() (*v1.BlameResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Recv method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientRecvFunc) PushHook(hook func() (*v1.BlameResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientRecvFunc) SetDefaultReturn(r0 *v1.BlameResponse, r1 error) {
+	f.SetDefaultHook(func() (*v1.BlameResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientRecvFunc) PushReturn(r0 *v1.BlameResponse, r1 error) {
+	f.PushHook(func() (*v1.BlameResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverService_BlameClientRecvFunc) nextHook() func() (*v1.BlameResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientRecvFunc) appendCall(r0 GitserverService_BlameClientRecvFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameClientRecvFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameClientRecvFunc) History() []GitserverService_BlameClientRecvFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientRecvFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientRecvFuncCall is an object that describes an
+// invocation of method Recv on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientRecvFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.BlameResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientRecvFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientRecvFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverService_BlameClientRecvMsgFunc describes the behavior when the
+// RecvMsg method of the parent MockGitserverService_BlameClient instance is
+// invoked.
+type GitserverService_BlameClientRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_BlameClientRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_BlameClientRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_BlameClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameClientRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameClientRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientRecvMsgFunc) appendCall(r0 GitserverService_BlameClientRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameClientRecvMsgFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameClientRecvMsgFunc) History() []GitserverService_BlameClientRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientRecvMsgFuncCall is an object that describes
+// an invocation of method RecvMsg on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameClientSendMsgFunc describes the behavior when the
+// SendMsg method of the parent MockGitserverService_BlameClient instance is
+// invoked.
+type GitserverService_BlameClientSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_BlameClientSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_BlameClientSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_BlameClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameClientSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameClientSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientSendMsgFunc) appendCall(r0 GitserverService_BlameClientSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameClientSendMsgFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameClientSendMsgFunc) History() []GitserverService_BlameClientSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientSendMsgFuncCall is an object that describes
+// an invocation of method SendMsg on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameClientTrailerFunc describes the behavior when the
+// Trailer method of the parent MockGitserverService_BlameClient instance is
+// invoked.
+type GitserverService_BlameClientTrailerFunc struct {
+	defaultHook func() metadata.MD
+	hooks       []func() metadata.MD
+	history     []GitserverService_BlameClientTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// Trailer delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameClient) Trailer() metadata.MD {
+	r0 := m.TrailerFunc.nextHook()()
+	m.TrailerFunc.appendCall(GitserverService_BlameClientTrailerFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Trailer method of
+// the parent MockGitserverService_BlameClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameClientTrailerFunc) SetDefaultHook(hook func() metadata.MD) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Trailer method of the parent MockGitserverService_BlameClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameClientTrailerFunc) PushHook(hook func() metadata.MD) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameClientTrailerFunc) SetDefaultReturn(r0 metadata.MD) {
+	f.SetDefaultHook(func() metadata.MD {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameClientTrailerFunc) PushReturn(r0 metadata.MD) {
+	f.PushHook(func() metadata.MD {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameClientTrailerFunc) nextHook() func() metadata.MD {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameClientTrailerFunc) appendCall(r0 GitserverService_BlameClientTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameClientTrailerFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameClientTrailerFunc) History() []GitserverService_BlameClientTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameClientTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameClientTrailerFuncCall is an object that describes
+// an invocation of method Trailer on an instance of
+// MockGitserverService_BlameClient.
+type GitserverService_BlameClientTrailerFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameClientTrailerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameClientTrailerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockGitserverService_BlameServer is a mock implementation of the
+// GitserverService_BlameServer interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/gitserver/v1) used for unit
+// testing.
+type MockGitserverService_BlameServer struct {
+	// ContextFunc is an instance of a mock function object controlling the
+	// behavior of the method Context.
+	ContextFunc *GitserverService_BlameServerContextFunc
+	// RecvMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method RecvMsg.
+	RecvMsgFunc *GitserverService_BlameServerRecvMsgFunc
+	// SendFunc is an instance of a mock function object controlling the
+	// behavior of the method Send.
+	SendFunc *GitserverService_BlameServerSendFunc
+	// SendHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SendHeader.
+	SendHeaderFunc *GitserverService_BlameServerSendHeaderFunc
+	// SendMsgFunc is an instance of a mock function object controlling the
+	// behavior of the method SendMsg.
+	SendMsgFunc *GitserverService_BlameServerSendMsgFunc
+	// SetHeaderFunc is an instance of a mock function object controlling
+	// the behavior of the method SetHeader.
+	SetHeaderFunc *GitserverService_BlameServerSetHeaderFunc
+	// SetTrailerFunc is an instance of a mock function object controlling
+	// the behavior of the method SetTrailer.
+	SetTrailerFunc *GitserverService_BlameServerSetTrailerFunc
+}
+
+// NewMockGitserverService_BlameServer creates a new mock of the
+// GitserverService_BlameServer interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockGitserverService_BlameServer() *MockGitserverService_BlameServer {
+	return &MockGitserverService_BlameServer{
+		ContextFunc: &GitserverService_BlameServerContextFunc{
+			defaultHook: func() (r0 context.Context) {
+				return
+			},
+		},
+		RecvMsgFunc: &GitserverService_BlameServerRecvMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SendFunc: &GitserverService_BlameServerSendFunc{
+			defaultHook: func(*v1.BlameResponse) (r0 error) {
+				return
+			},
+		},
+		SendHeaderFunc: &GitserverService_BlameServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SendMsgFunc: &GitserverService_BlameServerSendMsgFunc{
+			defaultHook: func(interface{}) (r0 error) {
+				return
+			},
+		},
+		SetHeaderFunc: &GitserverService_BlameServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) (r0 error) {
+				return
+			},
+		},
+		SetTrailerFunc: &GitserverService_BlameServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverService_BlameServer creates a new mock of the
+// GitserverService_BlameServer interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockGitserverService_BlameServer() *MockGitserverService_BlameServer {
+	return &MockGitserverService_BlameServer{
+		ContextFunc: &GitserverService_BlameServerContextFunc{
+			defaultHook: func() context.Context {
+				panic("unexpected invocation of MockGitserverService_BlameServer.Context")
+			},
+		},
+		RecvMsgFunc: &GitserverService_BlameServerRecvMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_BlameServer.RecvMsg")
+			},
+		},
+		SendFunc: &GitserverService_BlameServerSendFunc{
+			defaultHook: func(*v1.BlameResponse) error {
+				panic("unexpected invocation of MockGitserverService_BlameServer.Send")
+			},
+		},
+		SendHeaderFunc: &GitserverService_BlameServerSendHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_BlameServer.SendHeader")
+			},
+		},
+		SendMsgFunc: &GitserverService_BlameServerSendMsgFunc{
+			defaultHook: func(interface{}) error {
+				panic("unexpected invocation of MockGitserverService_BlameServer.SendMsg")
+			},
+		},
+		SetHeaderFunc: &GitserverService_BlameServerSetHeaderFunc{
+			defaultHook: func(metadata.MD) error {
+				panic("unexpected invocation of MockGitserverService_BlameServer.SetHeader")
+			},
+		},
+		SetTrailerFunc: &GitserverService_BlameServerSetTrailerFunc{
+			defaultHook: func(metadata.MD) {
+				panic("unexpected invocation of MockGitserverService_BlameServer.SetTrailer")
+			},
+		},
+	}
+}
+
+// NewMockGitserverService_BlameServerFrom creates a new mock of the
+// MockGitserverService_BlameServer interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockGitserverService_BlameServerFrom(i v1.GitserverService_BlameServer) *MockGitserverService_BlameServer {
+	return &MockGitserverService_BlameServer{
+		ContextFunc: &GitserverService_BlameServerContextFunc{
+			defaultHook: i.Context,
+		},
+		RecvMsgFunc: &GitserverService_BlameServerRecvMsgFunc{
+			defaultHook: i.RecvMsg,
+		},
+		SendFunc: &GitserverService_BlameServerSendFunc{
+			defaultHook: i.Send,
+		},
+		SendHeaderFunc: &GitserverService_BlameServerSendHeaderFunc{
+			defaultHook: i.SendHeader,
+		},
+		SendMsgFunc: &GitserverService_BlameServerSendMsgFunc{
+			defaultHook: i.SendMsg,
+		},
+		SetHeaderFunc: &GitserverService_BlameServerSetHeaderFunc{
+			defaultHook: i.SetHeader,
+		},
+		SetTrailerFunc: &GitserverService_BlameServerSetTrailerFunc{
+			defaultHook: i.SetTrailer,
+		},
+	}
+}
+
+// GitserverService_BlameServerContextFunc describes the behavior when the
+// Context method of the parent MockGitserverService_BlameServer instance is
+// invoked.
+type GitserverService_BlameServerContextFunc struct {
+	defaultHook func() context.Context
+	hooks       []func() context.Context
+	history     []GitserverService_BlameServerContextFuncCall
+	mutex       sync.Mutex
+}
+
+// Context delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) Context() context.Context {
+	r0 := m.ContextFunc.nextHook()()
+	m.ContextFunc.appendCall(GitserverService_BlameServerContextFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Context method of
+// the parent MockGitserverService_BlameServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameServerContextFunc) SetDefaultHook(hook func() context.Context) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Context method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerContextFunc) PushHook(hook func() context.Context) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerContextFunc) SetDefaultReturn(r0 context.Context) {
+	f.SetDefaultHook(func() context.Context {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerContextFunc) PushReturn(r0 context.Context) {
+	f.PushHook(func() context.Context {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameServerContextFunc) nextHook() func() context.Context {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerContextFunc) appendCall(r0 GitserverService_BlameServerContextFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameServerContextFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameServerContextFunc) History() []GitserverService_BlameServerContextFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerContextFuncCall is an object that describes
+// an invocation of method Context on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerContextFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 context.Context
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerContextFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameServerRecvMsgFunc describes the behavior when the
+// RecvMsg method of the parent MockGitserverService_BlameServer instance is
+// invoked.
+type GitserverService_BlameServerRecvMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_BlameServerRecvMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// RecvMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) RecvMsg(v0 interface{}) error {
+	r0 := m.RecvMsgFunc.nextHook()(v0)
+	m.RecvMsgFunc.appendCall(GitserverService_BlameServerRecvMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecvMsg method of
+// the parent MockGitserverService_BlameServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameServerRecvMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecvMsg method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerRecvMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerRecvMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerRecvMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameServerRecvMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerRecvMsgFunc) appendCall(r0 GitserverService_BlameServerRecvMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameServerRecvMsgFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameServerRecvMsgFunc) History() []GitserverService_BlameServerRecvMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerRecvMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerRecvMsgFuncCall is an object that describes
+// an invocation of method RecvMsg on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerRecvMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerRecvMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerRecvMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameServerSendFunc describes the behavior when the Send
+// method of the parent MockGitserverService_BlameServer instance is
+// invoked.
+type GitserverService_BlameServerSendFunc struct {
+	defaultHook func(*v1.BlameResponse) error
+	hooks       []func(*v1.BlameResponse) error
+	history     []GitserverService_BlameServerSendFuncCall
+	mutex       sync.Mutex
+}
+
+// Send delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) Send(v0 *v1.BlameResponse) error {
+	r0 := m.SendFunc.nextHook()(v0)
+	m.SendFunc.appendCall(GitserverService_BlameServerSendFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Send method of the
+// parent MockGitserverService_BlameServer instance is invoked and the hook
+// queue is empty.
+func (f *GitserverService_BlameServerSendFunc) SetDefaultHook(hook func(*v1.BlameResponse) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Send method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerSendFunc) PushHook(hook func(*v1.BlameResponse) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerSendFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(*v1.BlameResponse) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerSendFunc) PushReturn(r0 error) {
+	f.PushHook(func(*v1.BlameResponse) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameServerSendFunc) nextHook() func(*v1.BlameResponse) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerSendFunc) appendCall(r0 GitserverService_BlameServerSendFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameServerSendFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameServerSendFunc) History() []GitserverService_BlameServerSendFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerSendFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerSendFuncCall is an object that describes an
+// invocation of method Send on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerSendFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *v1.BlameResponse
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerSendFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerSendFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameServerSendHeaderFunc describes the behavior when
+// the SendHeader method of the parent MockGitserverService_BlameServer
+// instance is invoked.
+type GitserverService_BlameServerSendHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_BlameServerSendHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SendHeader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) SendHeader(v0 metadata.MD) error {
+	r0 := m.SendHeaderFunc.nextHook()(v0)
+	m.SendHeaderFunc.appendCall(GitserverService_BlameServerSendHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendHeader method of
+// the parent MockGitserverService_BlameServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameServerSendHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendHeader method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerSendHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerSendHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerSendHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameServerSendHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerSendHeaderFunc) appendCall(r0 GitserverService_BlameServerSendHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_BlameServerSendHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_BlameServerSendHeaderFunc) History() []GitserverService_BlameServerSendHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerSendHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerSendHeaderFuncCall is an object that
+// describes an invocation of method SendHeader on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerSendHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerSendHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerSendHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameServerSendMsgFunc describes the behavior when the
+// SendMsg method of the parent MockGitserverService_BlameServer instance is
+// invoked.
+type GitserverService_BlameServerSendMsgFunc struct {
+	defaultHook func(interface{}) error
+	hooks       []func(interface{}) error
+	history     []GitserverService_BlameServerSendMsgFuncCall
+	mutex       sync.Mutex
+}
+
+// SendMsg delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) SendMsg(v0 interface{}) error {
+	r0 := m.SendMsgFunc.nextHook()(v0)
+	m.SendMsgFunc.appendCall(GitserverService_BlameServerSendMsgFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SendMsg method of
+// the parent MockGitserverService_BlameServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameServerSendMsgFunc) SetDefaultHook(hook func(interface{}) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendMsg method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerSendMsgFunc) PushHook(hook func(interface{}) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerSendMsgFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(interface{}) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerSendMsgFunc) PushReturn(r0 error) {
+	f.PushHook(func(interface{}) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameServerSendMsgFunc) nextHook() func(interface{}) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerSendMsgFunc) appendCall(r0 GitserverService_BlameServerSendMsgFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverService_BlameServerSendMsgFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverService_BlameServerSendMsgFunc) History() []GitserverService_BlameServerSendMsgFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerSendMsgFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerSendMsgFuncCall is an object that describes
+// an invocation of method SendMsg on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerSendMsgFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerSendMsgFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerSendMsgFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameServerSetHeaderFunc describes the behavior when the
+// SetHeader method of the parent MockGitserverService_BlameServer instance
+// is invoked.
+type GitserverService_BlameServerSetHeaderFunc struct {
+	defaultHook func(metadata.MD) error
+	hooks       []func(metadata.MD) error
+	history     []GitserverService_BlameServerSetHeaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SetHeader delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) SetHeader(v0 metadata.MD) error {
+	r0 := m.SetHeaderFunc.nextHook()(v0)
+	m.SetHeaderFunc.appendCall(GitserverService_BlameServerSetHeaderFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetHeader method of
+// the parent MockGitserverService_BlameServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameServerSetHeaderFunc) SetDefaultHook(hook func(metadata.MD) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetHeader method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerSetHeaderFunc) PushHook(hook func(metadata.MD) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerSetHeaderFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerSetHeaderFunc) PushReturn(r0 error) {
+	f.PushHook(func(metadata.MD) error {
+		return r0
+	})
+}
+
+func (f *GitserverService_BlameServerSetHeaderFunc) nextHook() func(metadata.MD) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerSetHeaderFunc) appendCall(r0 GitserverService_BlameServerSetHeaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_BlameServerSetHeaderFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_BlameServerSetHeaderFunc) History() []GitserverService_BlameServerSetHeaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerSetHeaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerSetHeaderFuncCall is an object that describes
+// an invocation of method SetHeader on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerSetHeaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerSetHeaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerSetHeaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverService_BlameServerSetTrailerFunc describes the behavior when
+// the SetTrailer method of the parent MockGitserverService_BlameServer
+// instance is invoked.
+type GitserverService_BlameServerSetTrailerFunc struct {
+	defaultHook func(metadata.MD)
+	hooks       []func(metadata.MD)
+	history     []GitserverService_BlameServerSetTrailerFuncCall
+	mutex       sync.Mutex
+}
+
+// SetTrailer delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverService_BlameServer) SetTrailer(v0 metadata.MD) {
+	m.SetTrailerFunc.nextHook()(v0)
+	m.SetTrailerFunc.appendCall(GitserverService_BlameServerSetTrailerFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetTrailer method of
+// the parent MockGitserverService_BlameServer instance is invoked and the
+// hook queue is empty.
+func (f *GitserverService_BlameServerSetTrailerFunc) SetDefaultHook(hook func(metadata.MD)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetTrailer method of the parent MockGitserverService_BlameServer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverService_BlameServerSetTrailerFunc) PushHook(hook func(metadata.MD)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverService_BlameServerSetTrailerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(metadata.MD) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverService_BlameServerSetTrailerFunc) PushReturn() {
+	f.PushHook(func(metadata.MD) {
+		return
+	})
+}
+
+func (f *GitserverService_BlameServerSetTrailerFunc) nextHook() func(metadata.MD) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverService_BlameServerSetTrailerFunc) appendCall(r0 GitserverService_BlameServerSetTrailerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverService_BlameServerSetTrailerFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverService_BlameServerSetTrailerFunc) History() []GitserverService_BlameServerSetTrailerFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverService_BlameServerSetTrailerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverService_BlameServerSetTrailerFuncCall is an object that
+// describes an invocation of method SetTrailer on an instance of
+// MockGitserverService_BlameServer.
+type GitserverService_BlameServerSetTrailerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 metadata.MD
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverService_BlameServerSetTrailerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverService_BlameServerSetTrailerFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
 
 // MockGitserverService_ExecServer is a mock implementation of the

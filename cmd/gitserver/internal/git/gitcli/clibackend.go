@@ -41,7 +41,11 @@ type gitCLIBackend struct {
 	repoName api.RepoName
 }
 
-func commandFailedError(err error, cmd wrexec.Cmder, stderr []byte) error {
+func commandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr []byte) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	exitStatus := executil.UnsetExitStatus
 	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
@@ -84,7 +88,7 @@ func (g *gitCLIBackend) gitCommand(ctx context.Context, args ...string) (wrexec.
 		return nil, cancel, ErrBadGitCommand
 	}
 
-	cmd := exec.Command("git", args...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	g.dir.Set(cmd)
 
 	return g.rcf.WrapWithRepoName(ctx, g.logger, g.repoName, cmd), cancel, nil
@@ -92,6 +96,7 @@ func (g *gitCLIBackend) gitCommand(ctx context.Context, args ...string) (wrexec.
 
 const maxStderrCapture = 1024
 
+// make sure to pass the same context in here as was passed to gitCommand.
 func (g *gitCLIBackend) runGitCommand(ctx context.Context, cmd wrexec.Cmder) (io.ReadCloser, error) {
 	// Set up a limited buffer to capture stderr for error reporting.
 	stderrBuf := bytes.NewBuffer(make([]byte, 0, maxStderrCapture))
@@ -127,6 +132,7 @@ type cmdReader struct {
 	logger   log.Logger
 	git      git.GitBackend
 	repoName api.RepoName
+	closed   bool
 }
 
 func (rc *cmdReader) Read(p []byte) (n int, err error) {
@@ -134,18 +140,27 @@ func (rc *cmdReader) Read(p []byte) (n int, err error) {
 	writtenN, writeErr := rc.buf.Write(p[:n])
 	if err == io.EOF {
 		rc.ReadCloser.Close()
+		rc.closed = true
 
 		if err := rc.cmd.Wait(); err != nil {
 			if checkMaybeCorruptRepo(rc.ctx, rc.logger, rc.git, rc.repoName, rc.stderr.String()) {
 				return n, common.ErrRepoCorrupted{Reason: rc.stderr.String()}
 			}
-			return n, commandFailedError(err, rc.cmd, rc.stderr.Bytes())
+			return n, commandFailedError(rc.ctx, err, rc.cmd, rc.stderr.Bytes())
 		}
 	}
 	if err == nil && writeErr != nil {
 		return writtenN, writeErr
 	}
 	return n, err
+}
+
+func (rc *cmdReader) Close() error {
+	if rc.closed {
+		return nil
+	}
+
+	return rc.ReadCloser.Close()
 }
 
 // limitWriter is a io.Writer that writes to an W but discards after N bytes.

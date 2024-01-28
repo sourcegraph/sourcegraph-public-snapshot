@@ -22,6 +22,10 @@ type GitBackend interface {
 	// Returns an empty string and no error if no common merge-base was found.
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
 
+	// Blame returns a reader for the blame info of the given path.
+	// BlameHunkReader must always be closed.
+	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
+
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
@@ -38,4 +42,21 @@ type GitConfigBackend interface {
 	// Unset removes a config value of the given key. If the key wasn't present,
 	// no error is returned.
 	Unset(ctx context.Context, key string) error
+}
+
+// BlameOptions are options for git blame.
+type BlameOptions struct {
+	NewestCommit     api.CommitID
+	IgnoreWhitespace bool
+	// 1-indexed start line (or 0 for beginning of file)
+	StartLine int
+	// 1-indexed end line (or 0 for end of file)
+	EndLine int
+}
+
+// BlameHunkReader is a reader for git blame hunks.
+type BlameHunkReader interface {
+	// Consume the next hunk. io.EOF is returned at the end of the stream.
+	Read() (*gitdomain.Hunk, error)
+	Close() error
 }

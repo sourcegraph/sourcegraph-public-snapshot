@@ -74,7 +74,7 @@ func TestClone(t *testing.T) {
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
@@ -170,7 +170,7 @@ func TestClone_Fail(t *testing.T) {
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
