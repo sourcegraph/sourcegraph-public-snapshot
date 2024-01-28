@@ -2531,6 +2531,39 @@ func TestClient_GetDefaultBranch(t *testing.T) {
 	})
 }
 
+func TestClient_MergeBase(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.MergeBaseFunc.SetDefaultReturn(&proto.MergeBaseResponse{MergeBaseCommitSha: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.MergeBase(context.Background(), "repo", "master", "b2")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+	t.Run("returns empty for empty merge base", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.MergeBaseFunc.SetDefaultReturn(&proto.MergeBaseResponse{MergeBaseCommitSha: ""}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		sha, err := c.MergeBase(context.Background(), "repo", "master", "b2")
+		require.NoError(t, err)
+		require.Equal(t, api.CommitID(""), sha)
+	})
+}
+
 func Test_CommitLog(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
