@@ -56,15 +56,13 @@ func (c *client) Validate() error {
 // sendRequest issues an HTTP request to SSC. If supplied, the response will be unmarshalled into outBody as JSON.
 func (c *client) sendRequest(ctx context.Context, method string, url string, outBody *Subscription) (*int, error) {
 	// Build and send the request.
-	req, err := http.NewRequest(method, url, nil /* body */)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil /* body */)
 	if err != nil {
 		return nil, err
 	}
 
-	tr, _ := trace.New(ctx, "sendSSCRequest", attribute.String("url", url))
 	resp, err := c.httpClient.Do(req)
-	tr.SetError(err)
-	tr.End()
+
 	if err != nil {
 		return nil, errors.Wrap(err, "calling SSC")
 	}
@@ -92,10 +90,14 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 
 	var subscription Subscription
 	url := fmt.Sprintf("%s/rest/svc/subscription/%s", c.baseURL, samsAccountID)
-	code, err := c.sendRequest(ctx, http.MethodGet, url, &subscription)
+
+	tr, traceCtx := trace.New(ctx, "sccSendRequest", attribute.String("url", url))
+	code, err := c.sendRequest(traceCtx, http.MethodGet, url, &subscription)
 	if err != nil {
+		tr.EndWithErr(&err)
 		return nil, err
 	}
+	tr.End()
 
 	subscription.Status = SubscriptionStatus(strings.ToUpper(subscription.StatusRaw))
 
