@@ -73,7 +73,7 @@ service GitserverService {
   // If no common merge base exists, an empty string is returned.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-  // error will be returned, with a NotFoundPayload in the details.
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -85,8 +85,16 @@ service GitserverService {
   // with a UnauthorizedPayload in the details is returned.
   //
   // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-  // error will be returned, with a NotFoundPayload in the details.
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc Blame(BlameRequest) returns (stream BlameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // DefaultBranch resolves HEAD to ref name and current commit SHA it points to.
+  // If HEAD points to an empty branch, it returns an error with a RevisionNotFoundPayload.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc DefaultBranch(DefaultBranchRequest) returns (DefaultBranchResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -123,6 +131,18 @@ message BlameAuthor {
   string name = 1;
   string email = 2;
   google.protobuf.Timestamp date = 3;
+}
+
+message DefaultBranchRequest {
+  // repo_name is the name of the repo to get the default branch for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  bool short_ref = 3;
+}
+
+message DefaultBranchResponse {
+  string ref_name = 1;
+  string commit = 2;
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -276,10 +296,15 @@ message ExecResponse {
   bytes data = 1;
 }
 
-message NotFoundPayload {
+message RepoNotFoundPayload {
   string repo = 1;
   bool clone_in_progress = 2;
   string clone_progress = 3;
+}
+
+message RevisionNotFoundPayload {
+  string repo = 1;
+  string spec = 2;
 }
 
 message ExecStatusPayload {

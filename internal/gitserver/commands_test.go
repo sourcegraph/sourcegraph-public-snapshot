@@ -2485,6 +2485,52 @@ func TestClient_StreamBlameFile(t *testing.T) {
 	})
 }
 
+func TestClient_GetDefaultBranch(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				c.DefaultBranchFunc.SetDefaultReturn(&proto.DefaultBranchResponse{RefName: "refs/heads/master", Commit: "deadbeef"}, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		refName, sha, err := c.GetDefaultBranch(context.Background(), "repo", false)
+		require.NoError(t, err)
+		require.Equal(t, "refs/heads/master", refName)
+		require.Equal(t, api.CommitID("deadbeef"), sha)
+	})
+	t.Run("returns empty for common errors", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+				require.NoError(t, err)
+				c.DefaultBranchFunc.PushReturn(nil, s.Err())
+				s, err = status.New(codes.NotFound, "repo cloning").WithDetails(&proto.RepoNotFoundPayload{Repo: "repo", CloneInProgress: true})
+				require.NoError(t, err)
+				c.DefaultBranchFunc.PushReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		// First request fails with clone error
+		refName, sha, err := c.GetDefaultBranch(context.Background(), "repo", false)
+		require.NoError(t, err)
+		require.Equal(t, "", refName)
+		require.Equal(t, api.CommitID(""), sha)
+		// First request fails with bad rev error
+		refName, sha, err = c.GetDefaultBranch(context.Background(), "repo", false)
+		require.NoError(t, err)
+		require.Equal(t, "", refName)
+		require.Equal(t, api.CommitID(""), sha)
+	})
+}
+
 func Test_CommitLog(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()

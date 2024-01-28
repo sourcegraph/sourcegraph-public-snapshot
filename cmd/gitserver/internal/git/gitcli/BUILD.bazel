@@ -8,6 +8,7 @@ go_library(
         "clibackend.go",
         "config.go",
         "exec.go",
+        "head.go",
         "mergebase.go",
         "metrics.go",
         "object.go",
@@ -39,8 +40,10 @@ go_test(
         "blame_test.go",
         "config_test.go",
         "exec_test.go",
+        "head_test.go",
         "mergebase_test.go",
         "object_test.go",
+        "util_test.go",
     ],
     embed = [":gitcli"],
     deps = [

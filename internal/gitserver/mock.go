@@ -36,6 +36,9 @@ type MockGitserverServiceClient struct {
 	// object controlling the behavior of the method
 	// CreateCommitFromPatchBinary.
 	CreateCommitFromPatchBinaryFunc *GitserverServiceClientCreateCommitFromPatchBinaryFunc
+	// DefaultBranchFunc is an instance of a mock function object
+	// controlling the behavior of the method DefaultBranch.
+	DefaultBranchFunc *GitserverServiceClientDefaultBranchFunc
 	// DiskInfoFunc is an instance of a mock function object controlling the
 	// behavior of the method DiskInfo.
 	DiskInfoFunc *GitserverServiceClientDiskInfoFunc
@@ -122,6 +125,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		CreateCommitFromPatchBinaryFunc: &GitserverServiceClientCreateCommitFromPatchBinaryFunc{
 			defaultHook: func(context.Context, ...grpc.CallOption) (r0 v1.GitserverService_CreateCommitFromPatchBinaryClient, r1 error) {
+				return
+			},
+		},
+		DefaultBranchFunc: &GitserverServiceClientDefaultBranchFunc{
+			defaultHook: func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (r0 *v1.DefaultBranchResponse, r1 error) {
 				return
 			},
 		},
@@ -253,6 +261,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.CreateCommitFromPatchBinary")
 			},
 		},
+		DefaultBranchFunc: &GitserverServiceClientDefaultBranchFunc{
+			defaultHook: func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.DefaultBranch")
+			},
+		},
 		DiskInfoFunc: &GitserverServiceClientDiskInfoFunc{
 			defaultHook: func(context.Context, *v1.DiskInfoRequest, ...grpc.CallOption) (*v1.DiskInfoResponse, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.DiskInfo")
@@ -370,6 +383,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		CreateCommitFromPatchBinaryFunc: &GitserverServiceClientCreateCommitFromPatchBinaryFunc{
 			defaultHook: i.CreateCommitFromPatchBinary,
+		},
+		DefaultBranchFunc: &GitserverServiceClientDefaultBranchFunc{
+			defaultHook: i.DefaultBranch,
 		},
 		DiskInfoFunc: &GitserverServiceClientDiskInfoFunc{
 			defaultHook: i.DiskInfo,
@@ -1027,6 +1043,127 @@ func (c GitserverServiceClientCreateCommitFromPatchBinaryFuncCall) Args() []inte
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientCreateCommitFromPatchBinaryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientDefaultBranchFunc describes the behavior when the
+// DefaultBranch method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientDefaultBranchFunc struct {
+	defaultHook func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error)
+	hooks       []func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error)
+	history     []GitserverServiceClientDefaultBranchFuncCall
+	mutex       sync.Mutex
+}
+
+// DefaultBranch delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) DefaultBranch(v0 context.Context, v1 *v1.DefaultBranchRequest, v2 ...grpc.CallOption) (*v1.DefaultBranchResponse, error) {
+	r0, r1 := m.DefaultBranchFunc.nextHook()(v0, v1, v2...)
+	m.DefaultBranchFunc.appendCall(GitserverServiceClientDefaultBranchFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DefaultBranch method
+// of the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientDefaultBranchFunc) SetDefaultHook(hook func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DefaultBranch method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientDefaultBranchFunc) PushHook(hook func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientDefaultBranchFunc) SetDefaultReturn(r0 *v1.DefaultBranchResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientDefaultBranchFunc) PushReturn(r0 *v1.DefaultBranchResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientDefaultBranchFunc) nextHook() func(context.Context, *v1.DefaultBranchRequest, ...grpc.CallOption) (*v1.DefaultBranchResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientDefaultBranchFunc) appendCall(r0 GitserverServiceClientDefaultBranchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientDefaultBranchFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientDefaultBranchFunc) History() []GitserverServiceClientDefaultBranchFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientDefaultBranchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientDefaultBranchFuncCall is an object that describes
+// an invocation of method DefaultBranch on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientDefaultBranchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.DefaultBranchRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.DefaultBranchResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientDefaultBranchFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientDefaultBranchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
