@@ -96,7 +96,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		ObservationCtx: observationCtx,
 		ReposDir:       config.ReposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			return gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName)
+			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
 		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
