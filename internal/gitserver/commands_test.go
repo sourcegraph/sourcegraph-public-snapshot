@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -2338,7 +2337,7 @@ func TestClient_StreamBlameFile(t *testing.T) {
 
 		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
 		require.Error(t, err)
-		require.True(t, errcode.IsUnauthorized(err))
+		require.True(t, os.IsNotExist(err))
 	})
 }
 

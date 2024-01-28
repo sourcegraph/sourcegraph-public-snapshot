@@ -77,7 +77,6 @@ go_test(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database/dbmocks",
-        "//internal/errcode",
         "//internal/extsvc/gitolite",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
