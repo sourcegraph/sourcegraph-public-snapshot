@@ -617,3 +617,56 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 	}
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
 }
+
+// ExperimentalPhraseBoost appends a phrase query to the original query but only
+// if the original query consists of a single top-level AND expression. The
+// purpose is to improve ranking of exact matches by adding a phrase
+// query for the entire query string.
+//
+// Example:
+//
+//	foo bar -> (or (and foo bar) ("foo bar"))
+func ExperimentalPhraseBoost(node Node) Node {
+	if node == nil {
+		return nil
+	}
+
+	if n, ok := node.(Operator); ok && n.Kind == And {
+		// Gate on the number of operands. We don't want to add a phrase query for very
+		// short queries.
+		if len(n.Operands) < 3 {
+			return n
+		}
+
+		concat := ""
+		// Check if all operands are patterns and not negated.
+		for _, child := range n.Operands {
+			c, isPattern := child.(Pattern)
+			if !isPattern {
+				return n
+			}
+			// In practice, a user would probably catch this case because we highlight NOT
+			// in the input bar.
+			if c.Negated {
+				return n
+			}
+			// TODO: be smarter about spaces. The original query may have multiple spaces
+			// separating words.
+			concat += c.Value + " "
+		}
+		concat = strings.TrimSpace(concat)
+
+		return Operator{
+			Kind: Or,
+			Operands: []Node{
+				Pattern{
+					Value:      concat,
+					Annotation: Annotation{Labels: Boost},
+				},
+				n,
+			},
+		}
+	}
+
+	return node
+}
