@@ -35,6 +35,7 @@ func GetSyntectClient() *Client {
 	return client
 }
 
+// Keep in sync with 'enum SyntaxEngine' in Rust code
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"

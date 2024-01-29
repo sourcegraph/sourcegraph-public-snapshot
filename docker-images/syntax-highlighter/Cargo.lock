@@ -1073,16 +1073,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4668fb0ea861c1df094127ac5f1da3409a82116a4ba74fca2e58ef927159bb3"
 
 [[package]]
-name = "libloading"
-version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
-dependencies = [
- "cfg-if",
- "winapi",
-]
-
-[[package]]
 name = "line-wrap"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1897,30 +1887,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "scip-syntax"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bitvec",
- "clap 4.3.23",
- "id-arena",
- "if_chain",
- "insta",
- "itertools 0.10.5",
- "once_cell",
- "protobuf",
- "regex",
- "rustc-hash",
- "scip",
- "serde",
- "serde_json",
- "string-interner",
- "tree-sitter",
- "tree-sitter-all-languages",
- "walkdir",
-]
-
-[[package]]
 name = "scip-treesitter-cli"
 version = "0.1.0"
 dependencies = [
@@ -1935,10 +1901,10 @@ dependencies = [
  "predicates",
  "protobuf",
  "scip",
- "scip-syntax",
  "serde",
  "serde_json",
  "string-interner",
+ "syntax-analysis",
  "tree-sitter-all-languages",
  "walkdir",
 ]
@@ -1993,30 +1959,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96426c9936fd7a0124915f9185ea1d20aa9445cc9821142f0a73bc9207a2e186"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "sg-syntax"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.13.1",
- "insta",
- "lazy_static",
- "libloading",
- "once_cell",
- "paste",
- "pretty_assertions",
- "protobuf",
- "rocket",
- "scip",
- "scip-syntax",
- "serde",
- "serde_json",
- "syntect",
- "tree-sitter",
- "tree-sitter-all-languages",
- "tree-sitter-highlight",
 ]
 
 [[package]]
@@ -2137,6 +2079,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "syntax-analysis"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.13.1",
+ "bitvec",
+ "clap 4.3.23",
+ "id-arena",
+ "if_chain",
+ "insta",
+ "itertools 0.10.5",
+ "lazy_static",
+ "once_cell",
+ "paste",
+ "pretty_assertions",
+ "protobuf",
+ "regex",
+ "rocket",
+ "rustc-hash",
+ "scip",
+ "serde",
+ "serde_json",
+ "string-interner",
+ "syntect",
+ "tree-sitter",
+ "tree-sitter-all-languages",
+ "tree-sitter-highlight",
+ "walkdir",
+]
+
+[[package]]
 name = "syntect"
 version = "4.7.0"
 source = "git+https://github.com/sourcegraph/syntect?rev=7e02c5b4085e6d935b960b8106cdd85da04532d2#7e02c5b4085e6d935b960b8106cdd85da04532d2"
@@ -2172,10 +2145,9 @@ dependencies = [
  "rustix",
  "rustyline",
  "scip",
- "scip-syntax",
  "serde",
  "serde_json",
- "sg-syntax",
+ "syntax-analysis",
  "syntect",
  "tree-sitter-all-languages",
 ]
@@ -2450,15 +2422,11 @@ dependencies = [
 name = "tree-sitter-all-languages"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
- "paste",
- "scip",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-c-sharp",
  "tree-sitter-cpp",
  "tree-sitter-go",
- "tree-sitter-highlight",
  "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",

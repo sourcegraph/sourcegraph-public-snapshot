@@ -1,8 +1,9 @@
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Keyword } from '@sourcegraph/shared/src/search/query/token'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { useSyncedWithURLState } from '@sourcegraph/wildcard'
+import { SetStateResult, useSyncedWithURLState } from '@sourcegraph/wildcard'
 
+export const FILTERS_URL_KEY = 'filters'
 export type URLQueryFilter = Pick<Filter, 'kind' | 'label' | 'value'>
 
 export function serializeURLQueryFilters(filters: URLQueryFilter[]): string | null {
@@ -20,15 +21,13 @@ export function deserializeURLQueryFilters(serialized: string | null): URLQueryF
     return parsed.map(([kind, label, value]) => ({ kind, label, value }))
 }
 
-export function useUrlFilters(): [URLQueryFilter[], (newFilters: URLQueryFilter[]) => void] {
-    const [filterQuery, setFilterQuery] = useSyncedWithURLState<URLQueryFilter[], string>({
-        urlKey: 'filters',
+export function useUrlFilters(): SetStateResult<URLQueryFilter[]> {
+    return useSyncedWithURLState<URLQueryFilter[], string>({
+        urlKey: FILTERS_URL_KEY,
         serializer: serializeURLQueryFilters,
         deserializer: deserializeURLQueryFilters,
         replace: false,
     })
-
-    return [filterQuery, setFilterQuery]
 }
 
 export function mergeQueryAndFilters(query: string, filters: URLQueryFilter[]): string {

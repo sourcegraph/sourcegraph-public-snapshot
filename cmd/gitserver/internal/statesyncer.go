@@ -195,7 +195,7 @@ func syncRepoState(
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr := addrForRepo(ctx, repo.Name, gitServerAddrs)
+			addr := gitServerAddrs.AddrForRepo(ctx, repo.Name)
 			if !hostnameMatch(shardID, addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue

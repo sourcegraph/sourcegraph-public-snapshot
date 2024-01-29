@@ -2,6 +2,8 @@ package cody
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -11,15 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
-const USE_SSC_FOR_SUBSCRIPTION_FF = "use-ssc-for-cody-subscription"
+// featureFlagUseSCCForSubscription determines if we should attempt to lookup subscription data from SSC.
+const featureFlagUseSCCForSubscription = "use-ssc-for-cody-subscription"
 
-// cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
+// featureFlagCodyProTrialEnded indicates if the Cody Pro "Free Trial"  has ended.
 // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
-const CODY_PRO_TRIAL_ENDED_FF = "cody-pro-trial-ended"
-
-const SAMS_SERVICE_ID = "https://accounts.sgdev.org"
-const SAMS_SERVICE_TYPE = "openidconnect"
+const featureFlagCodyProTrialEnded = "cody-pro-trial-ended"
 
 type UserSubscriptionPlan string
 
@@ -81,11 +80,14 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 	// synthesize one using the data available on dotcom.
 	currentPeriodStartAt, currentPeriodEndAt := preSSCReleaseCurrentPeriodDateRange(ctx, user)
 
+	// Whether or not the Cody Pro free trial offer is still running.
+	codyProTrialEnded := featureflag.FromContext(ctx).GetBoolOr(featureFlagCodyProTrialEnded, false)
+
 	if user.CodyProEnabledAt != nil {
 		return &UserSubscription{
 			Status:               ssc.SubscriptionStatusPending,
 			Plan:                 UserSubscriptionPlanPro,
-			ApplyProRateLimits:   !featureflag.FromContext(ctx).GetBoolOr(CODY_PRO_TRIAL_ENDED_FF, false),
+			ApplyProRateLimits:   !codyProTrialEnded,
 			CurrentPeriodStartAt: currentPeriodStartAt,
 			CurrentPeriodEndAt:   currentPeriodEndAt,
 		}, nil
@@ -100,41 +102,49 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 	}, nil
 }
 
-// getSAMSAccountIDForUser returns the user's SAMS account ID from users_external_accounts table.
-func getSAMSAccountIDForUser(ctx context.Context, db database.DB, user types.User) (string, error) {
-	// TODO(sourcegraph#59786): make service_id configurable between accounts.sourcegraph.com and accounts.sgdev.org using a feature flag for testing.
-	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-		UserID:      user.ID,
-		ServiceType: SAMS_SERVICE_TYPE,
-		ServiceID:   SAMS_SERVICE_ID,
+// getSAMSAccountIDForUser returns the user's SAMS account ID if available.
+//
+// If the user has not associated a SAMS identity with their dotcom user account,
+// will return ("", nil). After we migrate all dotcom user accounts to SAMS, that
+// should no longer be possible.
+func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID int32) (string, error) {
+	// NOTE: We hard-code this to look for the SAMS-prod environment, meaning there isn't a way
+	// to test dotcom pulling subscription data from a local SAMS/SSC instance. To support that
+	// we'd need to make the SAMSHostname configurable. (Or somehow identify which OIDC provider
+	// is SAMS.)
+	oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		UserID:      dotcomUserID,
+		ServiceType: "openidconnect",
+		ServiceID:   fmt.Sprintf("https://%s", ssc.SAMSProdHostname),
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
 		},
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "error while fetching user's external account")
+		return "", errors.Wrap(err, "listing external accounts")
 	}
 
-	if len(accounts) > 0 {
-		return accounts[0].AccountID, nil
+	if len(oidcAccounts) > 0 {
+		return oidcAccounts[0].AccountID, nil
 	}
-
 	return "", nil
 }
 
+// Returns the subscription data for the given user. (And reconciling the data between both
+// the dotcom database and the SSC backend.
 func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.Client, user types.User) (*UserSubscription, error) {
-	samsAccountID, err := getSAMSAccountIDForUser(ctx, db, user)
+	samsAccountID, err := getSAMSAccountIDForUser(ctx, db, user.ID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "fetching user's SAMS account ID")
 	}
 
+	// While developing the SSC backend, we only fetch subscription data for users based on a flag.
 	var subscription *ssc.Subscription
-
-	// Fetch subscription from SSC only if the feature flag is enabled and the user has a SAMS account ID
-	if samsAccountID != "" && featureflag.FromContext(ctx).GetBoolOr(USE_SSC_FOR_SUBSCRIPTION_FF, false) {
-		subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(samsAccountID)
+	useSCCForSubscriptionData := featureflag.FromContext(ctx).GetBoolOr(featureFlagUseSCCForSubscription, false)
+	if samsAccountID != "" && useSCCForSubscriptionData {
+		subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
 		if err != nil {
-			return nil, errors.Wrap(err, "error while fetching user subscription from SSC")
+			return nil, errors.Wrap(err, "fetching subscription from SSC")
 		}
 	}
 
@@ -143,5 +153,17 @@ func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.C
 
 // SubscriptionForUser returns the user's Cody subscription details.
 func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
-	return getSubscriptionForUser(ctx, db, ssc.NewClient(), user)
+	sscClient := getSSCClient()
+	return getSubscriptionForUser(ctx, db, sscClient, user)
 }
+
+// getSSCClient returns a self-service Cody API client. We only do this once so that the stateless client
+// can persist in memory longer, so we can benefit from the underlying HTTP client only needing to reissue
+// SAMS access tokens when needed, rather than minting a new token for every request.
+//
+// BUG: If the SAMS configuration is added or changed during the lifetime of the this process, the returned
+// client will be invalid. (As it would be using the original SAMS client configuration data.) The process
+// will need to be restarted to correct this situation.
+var getSSCClient = sync.OnceValue[ssc.Client](func() ssc.Client {
+	return ssc.NewClient()
+})

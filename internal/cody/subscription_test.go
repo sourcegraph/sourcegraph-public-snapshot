@@ -2,8 +2,11 @@ package cody
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/ssc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
 )
 
 type mockSSCClient struct {
@@ -23,15 +25,16 @@ type mockSSCClient struct {
 	Called                bool
 }
 
-func (m mockSSCClient) FetchSubscriptionBySAMSAccountID(samsAccountID string) (*ssc.Subscription, error) {
+func (m *mockSSCClient) FetchSubscriptionBySAMSAccountID(
+	ctx context.Context, samsAccountID string) (*ssc.Subscription, error) {
 	if !m.shouldBeCalled {
 		m.t.Error("FetchSubscriptionBySAMSAccountID should not have be called")
 	}
+	assert.NotNil(m.t, ctx)
 	assert.NotNil(m.t, m.expectedSAMSAccountID)
 	assert.Equal(m.t, *m.expectedSAMSAccountID, samsAccountID)
 
 	m.Called = true
-
 	return m.mockSSCSubscription, nil
 }
 
@@ -91,7 +94,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			},
 		},
 		{
-			// possible when the user opted for Pro only after the feb release
+			// Possible when the user opted for Pro only after the Feb release.
 			name: "free user with SAMS account & SSC subscription",
 			user: types.User{
 				ID:               1,
@@ -277,32 +280,47 @@ func TestGetSubscriptionForUser(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(test.user.ID))
 			ctx = withCurrentTimeMock(ctx, test.today)
-			flags := map[string]bool{USE_SSC_FOR_SUBSCRIPTION_FF: test.useSSCFeatureFlag, CODY_PRO_TRIAL_ENDED_FF: test.codyProTrialEndedFeatureFlag}
+
+			// Mock out feature flags.
+			flags := map[string]bool{
+				featureFlagUseSCCForSubscription: test.useSSCFeatureFlag,
+				featureFlagCodyProTrialEnded:     test.codyProTrialEndedFeatureFlag,
+			}
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
 
+			// Mock out the lookup for the user's external identities, where we fetch their SAMS account ID.
 			db := dbmocks.NewMockDB()
 			userExternalAccount := dbmocks.NewMockUserExternalAccountsStore()
 			userExternalAccount.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 				assert.Equal(t, test.user.ID, opts.UserID)
-
 				if test.mockSAMSAccountID != nil {
-					return []*extsvc.Account{{AccountSpec: extsvc.AccountSpec{AccountID: *test.mockSAMSAccountID}}}, nil
+					// The code identifies the SAMS account by checking the service type and service ID.
+					// So we need to set these in the values returned from the mock.
+					samsAccountSpec := extsvc.AccountSpec{
+						AccountID:   *test.mockSAMSAccountID,
+						ServiceType: "openidconnect",
+						ServiceID:   fmt.Sprintf("https://%s/", ssc.SAMSProdHostname),
+					}
+					return []*extsvc.Account{
+						{
+							AccountSpec: samsAccountSpec,
+						},
+					}, nil
 				}
-
 				return []*extsvc.Account{}, nil
 			})
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccount)
 
-			sscClient := mockSSCClient{
+			expectToBeCalled := test.useSSCFeatureFlag && test.mockSAMSAccountID != nil
+			sscClient := &mockSSCClient{
 				t:                     t,
 				expectedSAMSAccountID: test.mockSAMSAccountID,
 				mockSSCSubscription:   test.mockSSCSubscription,
-				shouldBeCalled:        test.useSSCFeatureFlag && test.mockSAMSAccountID != nil,
+				shouldBeCalled:        expectToBeCalled,
 			}
 
 			actualSubscription, err := getSubscriptionForUser(ctx, db, sscClient, test.user)
-
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.NotNil(t, actualSubscription)
 			assert.Equal(t, test.expectedSubscription, *actualSubscription)
 		})

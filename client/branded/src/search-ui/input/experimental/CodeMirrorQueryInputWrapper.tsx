@@ -151,6 +151,7 @@ export interface CodeMirrorQueryInputWrapperProps {
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
+    autoFocus?: boolean
     suggestionSource?: Source
     extensions?: Extension
     visualMode?: QueryInputVisualMode | `${QueryInputVisualMode}`
@@ -168,6 +169,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             interpretComments,
             patternType,
             placeholder,
+            autoFocus,
             suggestionSource,
             extensions: externalExtensions,
             visualMode = QueryInputVisualMode.Standard,
@@ -191,6 +193,9 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
         // Local state
         const [mode, setMode, modeNotifierExtension] = useInputMode()
         const [suggestionsState, setSuggestionsState] = useState<ReturnType<typeof getSuggestionsState>>()
+        // If auto-focus is enabled we do not want to show suggestions until the user
+        // has interacted with the input.
+        const [showSuggestions, setShowSuggestions] = useState(!autoFocus)
 
         // Handlers
         const onSubmitRef = useMutableValue(onSubmit)
@@ -247,17 +252,22 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 }),
                 EditorView.updateListener.of(update => {
                     setSuggestionsState(getSuggestionsState(update.state))
+                    // Show suggestions after the user interacted with the input, either by
+                    // moving the cursor (via keyboard or mouse) or by entering text.
+                    if (update.transactions.some(tr => tr.isUserEvent('select') || tr.isUserEvent('input'))) {
+                        setShowSuggestions(true)
+                    }
                 }),
                 staticExtensions,
             ],
-            [popoverID, dynamicExtensions, externalExtensions, modeNotifierExtension]
+            [popoverID, dynamicExtensions, externalExtensions, modeNotifierExtension, setShowSuggestions]
         )
 
         // Position cursor at the end of the input when the input changes from external sources.
         // This is necessary because the initial value might be set asynchronously.
         useEffect(() => {
             const editor = editorRef.current
-            if (editor && !editor.hasFocus && queryState.changeSource !== QueryChangeSource.userInput) {
+            if (editor && queryState.changeSource !== QueryChangeSource.userInput) {
                 editor.dispatch({
                     selection: { anchor: editor.state.doc.length },
                 })
@@ -304,6 +314,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                         ref={editorRef}
                         className={styles.input}
                         value={queryState.query}
+                        autoFocus={autoFocus}
                         patternType={patternType}
                         interpretComments={interpretComments}
                         extension={allExtensions}
@@ -320,7 +331,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{ paddingTop: height }}
                 >
-                    {suggestionsState && (
+                    {showSuggestions && suggestionsState && (
                         <Suggestions
                             id={popoverID}
                             open={suggestionsState.open}
