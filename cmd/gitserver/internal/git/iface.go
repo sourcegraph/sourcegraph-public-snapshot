@@ -33,6 +33,11 @@ type GitBackend interface {
 	// to anything, a RevisionNotFoundError is returned. This can occur, for example,
 	// when the repository is empty (ie. has no commits).
 	RevParseHead(ctx context.Context) (api.CommitID, error)
+	// ReadFile returns a reader for the contents of the given file at the given commit.
+	// If the file does not exist, a os.PathError is returned.
+	// If the path points to a submodule, an empty reader is returned and no error.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	ReadFile(ctx context.Context, commit api.CommitID, path string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
