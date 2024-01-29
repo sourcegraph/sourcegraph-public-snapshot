@@ -632,6 +632,12 @@ func ExperimentalPhraseBoost(node Node) Node {
 	}
 
 	if n, ok := node.(Operator); ok && n.Kind == And {
+		// Gate on the number of operands. We don't want to add a phrase query for very
+		// short queries.
+		if len(n.Operands) < 3 {
+			return n
+		}
+
 		concat := ""
 		// Check if all operands are patterns and not negated.
 		for _, child := range n.Operands {
