@@ -47,14 +47,3 @@ func buildArchiveArgs(format, treeish string, pathspecs []string) []string {
 
 	return args
 }
-
-type closingFileReader struct {
-	io.ReadCloser
-	onClose func()
-}
-
-func (r *closingFileReader) Close() error {
-	err := r.ReadCloser.Close()
-	r.onClose()
-	return err
-}
