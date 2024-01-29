@@ -16,7 +16,7 @@
 
     z-index: 1; // Show on top of search result contents
 
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color-2);
 
     // TODO(taiyab): this needs to be fit into the design system
     :global(.theme-light) & {
@@ -38,7 +38,7 @@
 }
 
 .result {
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color-2);
 }
 
 .header:focus-within + .highlight-result.result,

@@ -8,6 +8,7 @@
     display: flex;
     flex-direction: column;
     background-color: var(--code-bg);
+    border-bottom: 1px solid var(--border-color-2);
 }
 
 .symbol {
@@ -17,7 +18,10 @@
     background-color: var(--code-bg);
     padding: 0.5rem;
     cursor: pointer;
-    border-bottom: 1px solid var(--border-color);
+
+    &:not(:first-child) {
+        border-top: 1px solid var(--border-color);
+    }
 
     &-code-excerpt {
         :global(.code) {
