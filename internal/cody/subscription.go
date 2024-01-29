@@ -2,7 +2,7 @@ package cody
 
 import (
 	"context"
-	"strings"
+	"fmt"
 	"sync"
 	"time"
 
@@ -108,25 +108,24 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 // will return ("", nil). After we migrate all dotcom user accounts to SAMS, that
 // should no longer be possible.
 func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID int32) (string, error) {
-	// TODO(sourcegraph#59786): Support pulling a user's SAMS-dev identity so we can
-	// fetch subscription information from SSC-dev, for dogfooding.
+	// NOTE: We hard-code this to look for the SAMS-prod environment, meaning there isn't a way
+	// to test dotcom pulling subscription data from a local SAMS/SSC instance. To support that
+	// we'd need to make the SAMSHostname configurable. (Or somehow identify which OIDC provider
+	// is SAMS.)
 	oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID:      dotcomUserID,
 		ServiceType: "openidconnect",
+		ServiceID:   fmt.Sprintf("https://%s", ssc.SAMSProdHostname),
 		LimitOffset: &database.LimitOffset{
-			Limit: 3,
+			Limit: 1,
 		},
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "listing external accounts")
 	}
 
-	for _, account := range oidcAccounts {
-		// The ServiceID will be be something like "https://accounts.sourcegraph.com",
-		// reusing the constant from the ssc package to avoid duplication.
-		if strings.Contains(account.ServiceID, ssc.SAMSProdHostname) {
-			return account.AccountID, nil
-		}
+	if len(oidcAccounts) > 0 {
+		return oidcAccounts[0].AccountID, nil
 	}
 	return "", nil
 }
