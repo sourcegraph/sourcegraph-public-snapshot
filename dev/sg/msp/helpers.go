@@ -191,10 +191,20 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 			if err != nil {
 				return err
 			}
+
+			const filename = "clouddeploy.yaml"
+			comment := fmt.Sprintf(`# This file defines additional Cloud Deploy configuration that is not yet available in Terraform.
+# Apply this using the following command:
+#
+# 	gcloud deploy apply --project=%s --file=%s --region=%s
+#
+# See go/msp-ops for more details.`,
+				env.ProjectID, filename, cloudrun.GCPRegion)
 			if err := os.WriteFile(
-				filepath.Join(filepath.Dir(serviceSpecPath), "clouddeploy.yaml"),
-				deploySpec.Bytes(),
-				0644); err != nil {
+				filepath.Join(filepath.Dir(serviceSpecPath), filename),
+				append([]byte(comment), deploySpec.Bytes()...),
+				0644,
+			); err != nil {
 				return err
 			}
 		}
