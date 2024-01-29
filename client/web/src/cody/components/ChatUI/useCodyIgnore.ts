@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import ignore from 'ignore'
+import type { Ignore } from 'ignore'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery, gql } from '@sourcegraph/http-client'
@@ -28,14 +28,19 @@ export const useCodyIgnore = (): { ignores: (path: string) => boolean } => {
     const { data } = useQuery<CodyIgnoreContentResult, CodyIgnoreContentVariables>(CODY_IGNORE_CONTENT, {
         variables: { repoName, repoRev: revision || '', filePath: CODY_IGNORE_PATH },
     })
+    const [ignoreManager, setIgnoreManager] = useState<Ignore>()
 
-    const ignoreManager = useMemo(() => {
-        const content = data?.repository?.commit?.blob?.content
-        if (content) {
-            return ignore().add(content)
+    const content = data?.repository?.commit?.blob?.content
+    useEffect(() => {
+        const loadIgnore = async (): Promise<void> => {
+            if (content) {
+                const ignore = (await import('ignore')).default
+                setIgnoreManager(ignore().add(content))
+            }
         }
-        return null
-    }, [data])
+
+        void loadIgnore()
+    }, [content])
 
     const ignores = useCallback(
         (path: string): boolean => {
@@ -46,5 +51,6 @@ export const useCodyIgnore = (): { ignores: (path: string) => boolean } => {
         },
         [ignoreManager]
     )
+
     return { ignores }
 }
