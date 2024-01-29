@@ -68,7 +68,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
 
     return (
         <Component
-            className={classNames('test-search-result', className)}
+            className={classNames('test-search-result', className, styles.resultContainer)}
             data-testid="result-container"
             data-result-type={resultType}
             onClick={trackReferencePanelClick}
