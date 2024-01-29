@@ -26,6 +26,8 @@ type GitBackend interface {
 	// BlameHunkReader must always be closed.
 	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
 
+	ArchiveReader(ctx context.Context, format, treeish string, pathspecs []string) (io.ReadCloser, error)
+
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.

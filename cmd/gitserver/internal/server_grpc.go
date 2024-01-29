@@ -18,9 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -190,21 +188,16 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return status.Error(codes.InvalidArgument, "empty repo or format")
 	}
 
-	execReq := &protocol.ExecRequest{
-		Repo: api.RepoName(req.GetRepo()),
-		Args: []string{
-			"archive",
-			"--worktree-attributes",
-			"--format=" + req.GetFormat(),
-		},
-	}
+	repoName := api.RepoName(req.GetRepo())
+	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
-	if req.GetFormat() == string(gitserver.ArchiveFormatZip) {
-		execReq.Args = append(execReq.Args, "-0")
-	}
+	backend := gs.getBackendFunc(repoDir, repoName)
 
-	execReq.Args = append(execReq.Args, req.GetTreeish(), "--")
-	execReq.Args = append(execReq.Args, req.GetPathspecs()...)
+	r, err := backend.ArchiveReader(ss.Context(), req.GetFormat(), req.GetTreeish(), req.GetPathspecs())
+	if err != nil {
+		return err
+	}
+	defer r.Close()
 
 	w := streamio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ArchiveResponse{
@@ -212,15 +205,8 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		})
 	})
 
-	// This is a long time, but this never blocks a user request for this
-	// long. Even repos that are not that large can take a long time, for
-	// example a search over all repos in an organization may have several
-	// large repos. All of those repos will be competing for IO => we need
-	// a larger timeout.
-	ctx, cancel := context.WithTimeout(ss.Context(), conf.GitLongCommandTimeout())
-	defer cancel()
-
-	return gs.doExec(ctx, execReq, w)
+	_, err = io.Copy(w, r)
+	return err
 }
 
 // doExec executes the given git command and streams the output to the given writer.
@@ -275,7 +261,6 @@ func (gs *grpcServer) doExec(ctx context.Context, req *protocol.ExecRequest, w i
 	}
 
 	return nil
-
 }
 
 func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
@@ -357,7 +342,6 @@ func (gs *grpcServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
 
 	if _, err := gs.svc.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
-
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
 
