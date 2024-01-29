@@ -207,6 +207,59 @@ func TestGRPCServer_DefaultBranch(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_MergeBase(t *testing.T) {
+	ctx := context.Background()
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		_, err := gs.MergeBase(ctx, &v1.MergeBaseRequest{RepoName: ""})
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		_, err = gs.MergeBase(ctx, &v1.MergeBaseRequest{RepoName: "therepo", Base: []byte{}})
+		require.ErrorContains(t, err, "base must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		_, err = gs.MergeBase(ctx, &v1.MergeBaseRequest{RepoName: "therepo", Base: []byte("master")})
+		require.ErrorContains(t, err, "head must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		svc := NewMockService()
+		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
+		gs := &grpcServer{svc: svc}
+		_, err := gs.MergeBase(ctx, &v1.MergeBaseRequest{RepoName: "therepo", Base: []byte("master"), Head: []byte("b2")})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not cloned")
+		mockassert.Called(t, svc.MaybeStartCloneFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		svc := NewMockService()
+		// Repo is cloned, proceed!
+		svc.MaybeStartCloneFunc.SetDefaultReturn(nil, true)
+		b := git.NewMockGitBackend()
+		b.MergeBaseFunc.SetDefaultReturn("deadbeef", nil)
+		gs := &grpcServer{
+			svc: svc,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		res, err := cli.MergeBase(ctx, &v1.MergeBaseRequest{
+			RepoName: "therepo",
+			Base:     []byte("master"),
+			Head:     []byte("b2"),
+		})
+		require.NoError(t, err)
+		if diff := cmp.Diff(&proto.MergeBaseResponse{
+			MergeBaseCommitSha: "deadbeef",
+		}, res, cmpopts.IgnoreUnexported(proto.MergeBaseResponse{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)

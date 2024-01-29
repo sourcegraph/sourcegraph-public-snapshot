@@ -22,6 +22,7 @@ func (g *gitCLIBackend) MergeBase(ctx context.Context, baseRevspec, headRevspec 
 	if err != nil {
 		return "", err
 	}
+	defer out.Close()
 
 	stdout, err := io.ReadAll(out)
 	if err != nil {
