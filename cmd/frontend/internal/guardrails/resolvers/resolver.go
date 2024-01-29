@@ -2,10 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 var _ graphqlbackend.GuardrailsResolver = &GuardrailsResolver{}
@@ -15,6 +19,13 @@ type GuardrailsResolver struct {
 }
 
 func (c *GuardrailsResolver) SnippetAttribution(ctx context.Context, args *graphqlbackend.SnippetAttributionArgs) (graphqlbackend.SnippetAttributionConnectionResolver, error) {
+	if envvar.SourcegraphDotComMode() {
+		a := actor.FromContext(ctx)
+		b, err := json.Marshal(a)
+		if err != nil {
+			fmt.Println("ACTOR", string(b))
+		}
+	}
 	limit := 5
 	if args.First != nil {
 		limit = int(*args.First)
