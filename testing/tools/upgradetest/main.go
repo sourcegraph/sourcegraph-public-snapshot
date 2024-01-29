@@ -197,6 +197,7 @@ func main() {
 							result := autoUpgradeTest(ctx, version, latestVersion)
 							result.Runtime = time.Since(start)
 							results.AddAutoTest(result)
+							result.DisplayLog() // DEBUG LOGGING
 							return nil
 						})
 					}
@@ -806,7 +807,8 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 	return nil
 }
 
-// startFrontend starts the frontend container in the CI test env.
+// startFrontend starts a frontend container and returns a cleanup function that will stop and remove the container.
+// Optionally sets the auto upgrade env var to true or false.
 func startFrontend(ctx context.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (cleanup func(), err error) {
 	hash, err := newContainerHash()
 	if err != nil {
@@ -814,6 +816,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 		return nil, err
 	}
 	test.AddLog(fmt.Sprintf("🐋 creating wg_frontend_%x", hash))
+	// define cleanup function to stop and remove the container
 	cleanup = func() {
 		test.AddLog("🧹 removing frontend container")
 		out, err := run.Cmd(ctx, "docker", "container", "stop",
@@ -847,7 +850,10 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	}
 	if auto {
 		envString = append(envString, "-e", "SRC_AUTOUPGRADE=true")
+		// envString = append(envString, "-e", "SG_DEV_MIGRATE_ON_APPLICATION_STARTUP=true") // This prevents a schema validation check when starting the frontend with an old database
 	}
+	// ERROR
+	// {"SeverityText":"FATAL","Timestamp":1706224238009644720,"InstrumentationScope":"sourcegraph","Caller":"svcmain/svcmain.go:167","Function":"github.com/sourcegraph/sourcegraph/internal/service/svcmain.run.func1","Body":"failed to start service","Resource":{"service.name":"frontend","service.version":"0.0.0+dev","service.instance.id":"79a3e3ca0bfc"},"Attributes":{"service":"frontend","error":"failed to connect to frontend database: database schema out of date"}}
 	cmdString := []string{
 		"--network", networkName,
 		fmt.Sprintf("%s:%s", image, version),
@@ -856,11 +862,13 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	cmdString = append(baseString, cmdString...)
 
 	// Start the frontend container
-	err = run.Cmd(ctx, cmdString...).Run().Wait()
+	fmt.Println(cmdString) // DEBUG
+	out, err := run.Cmd(ctx, cmdString...).Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
 		return cleanup, err
 	}
+	test.AddLog(fmt.Sprintf("frontend startup logs: %s", out))
 
 	// poll db until initial versions.version is set
 	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
@@ -1074,7 +1082,9 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 	}
 
 	// Induce test failure
-	// stdVersions = append(stdVersions, semver.MustParse("v6.6.6"))
+	// stdVersions = append(stdVersions, semver.MustParse("v6.6.6")) // DEBUG
+
+	autoVersions = []*semver.Version{semver.MustParse("v5.0.0")} // DEBUG
 
 	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, autoVersions, nil
 
