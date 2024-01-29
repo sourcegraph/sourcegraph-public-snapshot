@@ -826,7 +826,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	if err != nil {
 		cancel()
 		endObservation(1, observation.Args{})
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	// We start by reading the first hunk to early-exit on potential errors,
@@ -836,13 +836,11 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		cancel()
 		endObservation(1, observation.Args{})
 
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.PermissionDenied {
-				return nil, os.ErrNotExist
-			}
+		if s, ok := status.FromError(err); ok && s.Code() == codes.PermissionDenied {
+			return nil, os.ErrNotExist
 		}
 
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	return &grpcBlameHunkReader{
@@ -880,7 +878,7 @@ func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 	}
 	p, err := r.c.Recv()
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 	return gitdomain.HunkFromBlameProto(p.GetHunk()), nil
 }
@@ -1222,7 +1220,7 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 				}
 			}
 		}
-		return "", "", err
+		return "", "", convertGRPCErrorToGitDomainError(err)
 	}
 
 	return res.GetRefName(), api.CommitID(res.GetCommit()), nil
@@ -1249,7 +1247,7 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 		Head:     []byte(head),
 	})
 	if err != nil {
-		return "", err
+		return "", convertGRPCErrorToGitDomainError(err)
 	}
 
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
@@ -1345,7 +1343,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	if err != nil {
 		cancel()
 		endObservation(1, observation.Args{})
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	// We start by reading the first message to early-exit on potential errors,
@@ -1379,7 +1377,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 		if !firstRespRead {
 			firstRespRead = true
 			if firstRespErr != nil {
-				return nil, firstRespErr
+				return nil, convertGRPCErrorToGitDomainError(firstRespErr)
 			}
 			return firstResp.GetData(), nil
 		}
@@ -1709,7 +1707,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
+	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec, NoEnsureRevision: true}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -2277,7 +2275,7 @@ func (c *clientImplementor) ArchiveReader(
 	stream, err := client.Archive(ctx, req)
 	if err != nil {
 		cancel()
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	// first message from the gRPC stream needs to be read to check for errors before continuing
@@ -2319,7 +2317,7 @@ func (c *clientImplementor) ArchiveReader(
 			firstMessageRead = true
 
 			if firstError != nil {
-				return nil, firstError
+				return nil, convertGRPCErrorToGitDomainError(err)
 			}
 
 			return firstMessage.GetData(), nil

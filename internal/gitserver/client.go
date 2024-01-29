@@ -657,14 +657,12 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 
 	stream, err := client.Exec(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 	r := streamio.NewReader(func() ([]byte, error) {
 		msg, err := stream.Recv()
-		if status.Code(err) == codes.Canceled {
-			return nil, context.Canceled
-		} else if err != nil {
-			return nil, err
+		if err != nil {
+			return nil, convertGRPCErrorToGitDomainError(err)
 		}
 		return msg.GetData(), nil
 	})
@@ -713,15 +711,21 @@ func convertGRPCErrorToGitDomainError(err error) error {
 		case *proto.ExecStatusPayload:
 			return &CommandStatusError{
 				Message:    st.Message(),
-				Stderr:     payload.Stderr,
-				StatusCode: payload.StatusCode,
+				Stderr:     payload.GetStderr(),
+				StatusCode: payload.GetStatusCode(),
 			}
 
 		case *proto.RepoNotFoundPayload:
 			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(payload.Repo),
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
+				Repo:            api.RepoName(payload.GetRepo()),
+				CloneInProgress: payload.GetCloneInProgress(),
+				CloneProgress:   payload.GetCloneProgress(),
+			}
+
+		case *proto.RevisionNotFoundPayload:
+			return &gitdomain.RevisionNotFoundError{
+				Repo: api.RepoName(payload.GetRepo()),
+				Spec: payload.GetSpec(),
 			}
 		}
 	}
@@ -776,14 +780,17 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	cs, err := client.Search(ctx, args.ToProto())
 	if err != nil {
-		return false, convertGitserverError(err)
+		return false, convertGRPCErrorToGitDomainError(err)
 	}
 
 	limitHit := false
 	for {
 		msg, err := cs.Recv()
 		if err != nil {
-			return limitHit, convertGitserverError(err)
+			if errors.Is(err, io.EOF) {
+				return limitHit, nil
+			}
+			return limitHit, convertGRPCErrorToGitDomainError(err)
 		}
 
 		switch m := msg.Message.(type) {
@@ -795,37 +802,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 			return false, errors.Newf("unknown message type %T", m)
 		}
 	}
-}
-
-func convertGitserverError(err error) error {
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		if notFound, ok := detail.(*proto.RepoNotFoundPayload); ok {
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(notFound.GetRepo()),
-				CloneProgress:   notFound.GetCloneProgress(),
-				CloneInProgress: notFound.GetCloneInProgress(),
-			}
-		}
-	}
-
-	return err
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -872,7 +848,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 	resp, err := client.RepoUpdate(ctx, req.ToProto())
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	var info protocol.RepoUpdateResponse
@@ -902,7 +878,7 @@ func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoN
 
 	resp, err := client.RepoClone(ctx, &req)
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	var info protocol.RepoCloneResponse
@@ -939,7 +915,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 
 	r, err := client.IsRepoCloneable(ctx, req)
 	if err != nil {
-		return err
+		return convertGRPCErrorToGitDomainError(err)
 	}
 
 	resp.FromProto(r)
@@ -1016,7 +992,11 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		client := client
 		req := req
 		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
-			return client.RepoCloneProgress(ctx, req)
+			res, err := client.RepoCloneProgress(ctx, req)
+			if err != nil {
+				return nil, convertGRPCErrorToGitDomainError(err)
+			}
+			return res, nil
 		})
 	}
 
@@ -1059,7 +1039,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err 
 	_, err = client.RepoDelete(ctx, &proto.RepoDeleteRequest{
 		Repo: string(repo),
 	})
-	return err
+	return convertGRPCErrorToGitDomainError(err)
 }
 
 func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn protocol.PerforceConnectionDetails, depotPath string) (err error) {
@@ -1084,7 +1064,7 @@ func (c *clientImplementor) IsPerforcePathCloneable(ctx context.Context, conn pr
 		if s, ok := status.FromError(err); ok {
 			return errors.New(s.Message())
 		}
-		return err
+		return convertGRPCErrorToGitDomainError(err)
 	}
 
 	return nil
@@ -1111,7 +1091,7 @@ func (c *clientImplementor) CheckPerforceCredentials(ctx context.Context, conn p
 		if s, ok := status.FromError(err); ok {
 			return errors.New(s.Message())
 		}
-		return err
+		return convertGRPCErrorToGitDomainError(err)
 	}
 
 	return nil
@@ -1134,7 +1114,7 @@ func (c *clientImplementor) PerforceUsers(ctx context.Context, conn protocol.Per
 		ConnectionDetails: conn.ToProto(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	users := make([]*perforce.User, len(resp.GetUsers()))
@@ -1165,7 +1145,7 @@ func (c *clientImplementor) PerforceProtectsForUser(ctx context.Context, conn pr
 		Username:          username,
 	})
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	protects := make([]*perforce.Protect, len(resp.GetProtects()))
@@ -1196,7 +1176,7 @@ func (c *clientImplementor) PerforceProtectsForDepot(ctx context.Context, conn p
 		Depot:             depot,
 	})
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	protects := make([]*perforce.Protect, len(resp.GetProtects()))
@@ -1227,7 +1207,7 @@ func (c *clientImplementor) PerforceGroupMembers(ctx context.Context, conn proto
 		Group:             group,
 	})
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	return resp.GetUsernames(), nil
@@ -1249,7 +1229,7 @@ func (c *clientImplementor) IsPerforceSuperUser(ctx context.Context, conn protoc
 	_, err = client.IsPerforceSuperUser(ctx, &proto.IsPerforceSuperUserRequest{
 		ConnectionDetails: conn.ToProto(),
 	})
-	return err
+	return convertGRPCErrorToGitDomainError(err)
 }
 
 func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn protocol.PerforceConnectionDetails, changelist string) (_ *perforce.Changelist, err error) {
@@ -1273,7 +1253,7 @@ func (c *clientImplementor) PerforceGetChangelist(ctx context.Context, conn prot
 		ChangelistId:      changelist,
 	})
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	return perforce.ChangelistFromProto(resp.GetChangelist()), nil
@@ -1306,7 +1286,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 				}
 			}
 		}
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	// Send the metadata event first.
@@ -1383,7 +1363,7 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 	grpcResp, err := client.GetObject(ctx, req.ToProto())
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	var res protocol.GetObjectResponse
@@ -1484,7 +1464,7 @@ func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost 
 
 	grpcResp, err := client.ListGitolite(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, convertGRPCErrorToGitDomainError(err)
 	}
 
 	list = make([]*gitolite.Repo, len(grpcResp.Repos))
