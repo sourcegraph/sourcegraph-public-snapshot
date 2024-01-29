@@ -144,7 +144,6 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         authenticatedUser={authenticatedUser}
                     />
 
-                    {/* TODO: ensure it's not rendered */}
                     {scope.includeInferredFile && inferredFilePath && (
                         <Text size="small" className="ml-2 mb-0 align-self-center">
                             {getFileName(inferredFilePath)}
