@@ -9,6 +9,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAppendPhraseQuery(t *testing.T) {
+	test := func(input string, searchType SearchType) string {
+		query, _ := ParseSearchType(input, searchType)
+
+		for i, n := range query {
+			query[i] = AppendPhraseQuery(n)
+		}
+
+		json, _ := ToJSON(query)
+		return json
+	}
+
+	autogold.Expect(`[{"or":[{"value":"foo bar","negated":false,"labels":["None"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}}]}]}]`).Equal(t, test("foo bar", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"value":"foo bar","negated":false,"labels":["None"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]}]}]`).Equal(t, test("foo and bar", SearchTypeKeyword))
+	autogold.Expect(`[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":true,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":11}}}]`).Equal(t, test("foo not bar", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}}]}]`).Equal(t, test("foo or bar", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]},{"and":[{"value":"quz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":16},"end":{"line":0,"column":19}}},{"value":"biz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":24},"end":{"line":0,"column":27}}}]}]}]`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
+}
+
 func TestSubstituteAliases(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)

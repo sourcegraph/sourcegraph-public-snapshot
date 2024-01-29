@@ -617,3 +617,56 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 	}
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
 }
+
+// AppendPhraseQuery appends a phrase query to the query. The heuristic only
+// applies if the query consists of a single top-level AND expression. The
+// purpose is to improve ranking of exact matches by adding a phrase query for
+// the entire query string.
+//
+// Example:
+//
+//	foo bar -> (or (and foo bar) ("foo bar"))
+func AppendPhraseQuery(node Node) Node {
+	if node == nil {
+		return nil
+	}
+
+	switch n := node.(type) {
+	case Operator:
+		switch n.Kind {
+		case And:
+			original := node
+			concat := ""
+			// Check if all operands are patterns and not negated.
+			for _, child := range n.Operands {
+				c, isPattern := child.(Pattern)
+				if !isPattern {
+					return original
+				}
+				if c.Negated {
+					return original
+				}
+				// TODO: be smarter about spaces. The original query may have multiple spaces
+				// separating words.
+				concat += c.Value + " "
+			}
+			concat = strings.TrimSpace(concat)
+
+			return Operator{
+				Kind: Or,
+				Operands: []Node{
+					Pattern{
+						Value:      concat,
+						Annotation: Annotation{Labels: Boost},
+					},
+					n, // original query
+				},
+			}
+
+		case Or, Concat:
+			return node
+		}
+	}
+
+	return node
+}
