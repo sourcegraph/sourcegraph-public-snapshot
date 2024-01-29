@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/clouddeploytarget"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/cloudrunresource"
@@ -21,6 +22,8 @@ type Config struct {
 
 	RequireApproval bool
 
+	ExecutionServiceAccount *serviceaccount.Output
+
 	DependsOn []cdktf.ITerraformDependable
 }
 
@@ -31,13 +34,20 @@ type Output struct {
 // New provisions resources for a google_clouddeploy_target:
 // https://cloud.google.com/deploy/docs/overview
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
+	cloudRunServiceName := pointers.Ptr(cloudrunresource.NewName(
+		config.Service.ID, config.CloudRunEnvironmentID, config.CloudRunResourceLocation))
+
+	// TODO REMOVE THIS WHEN test IS UPDATED WITH NEW NAMING SCHEME
+	if config.CloudRunEnvironmentID == "test" {
+		cloudRunServiceName = &config.Service.ID
+	}
+
 	target := clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID("target"), &clouddeploytarget.ClouddeployTargetConfig{
 		Description: pointers.Stringf("%s - %s",
 			config.Service.GetName(), config.CloudRunEnvironmentID),
 
 		// Configure Cloud Run as the target
-		Name: pointers.Ptr(cloudrunresource.NewName(
-			config.Service.ID, config.CloudRunEnvironmentID, config.CloudRunResourceLocation)),
+		Name: cloudRunServiceName,
 
 		Location: &config.CloudRunResourceLocation,
 		Run: &clouddeploytarget.ClouddeployTargetRun{
@@ -53,6 +63,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				pointers.Ptr("DEPLOY"),
 			},
 			ExecutionTimeout: pointers.Ptr("3600s"),
+			ServiceAccount:   &config.ExecutionServiceAccount.Email,
 		}},
 
 		DependsOn: &config.DependsOn,

@@ -13,6 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganization"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryteam"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/key"
@@ -365,16 +366,18 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// stageTargets enumerate stages in order.
 		var stageTargets []*deliverytarget.Output
 		for _, stage := range vars.RolloutPipeline.Stages {
+			id := id.Group("stage").Group(stage.EnvironmentID)
 			target, err := deliverytarget.New(stack,
-				id.Group("stage").Group(stage.EnvironmentID),
+				id,
 				deliverytarget.Config{
-					Service:               vars.Service,
-					CloudRunEnvironmentID: stage.EnvironmentID,
-					CloudRunProjectID:     stage.ProjectID,
-
+					Service:                  vars.Service,
+					CloudRunEnvironmentID:    stage.EnvironmentID,
+					CloudRunProjectID:        stage.ProjectID,
 					CloudRunResourceLocation: rolloutLocation,
 
 					RequireApproval: pointers.DerefZero(stage.RequireApproval),
+
+					ExecutionServiceAccount: vars.IAM.CloudDeployExecutionServiceAccount,
 
 					// Make it so that our Cloud Run service is up before we
 					// configure the rollout pipeline
@@ -386,6 +389,23 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 				return nil, errors.Wrapf(err, "failed to render deploy target %q",
 					stage.EnvironmentID)
 			}
+
+			// Our execution service account needs access to this project's
+			// resources to deploy releases.
+			_ = projectiammember.NewProjectIamMember(stack,
+				id.Group("cloudrun_developer").TerraformID("member"),
+				&projectiammember.ProjectIamMemberConfig{
+					Project: &stage.ProjectID,
+					Role:    pointers.Ptr("roles/run.developer"),
+					Member:  &vars.IAM.CloudDeployExecutionServiceAccount.Member,
+				})
+			_ = projectiammember.NewProjectIamMember(stack,
+				id.Group("service_account_user").TerraformID("member"),
+				&projectiammember.ProjectIamMemberConfig{
+					Project: &stage.ProjectID,
+					Role:    pointers.Ptr("roles/iam.serviceAccountUser"),
+					Member:  &vars.IAM.CloudDeployExecutionServiceAccount.Member,
+				})
 
 			stageTargets = append(stageTargets, target)
 		}

@@ -29,6 +29,8 @@ import (
 type CrossStackOutput struct {
 	CloudRunWorkloadServiceAccount *serviceaccount.Output
 	OperatorAccessServiceAccount   *serviceaccount.Output
+
+	CloudDeployExecutionServiceAccount *serviceaccount.Output
 }
 
 type Variables struct {
@@ -152,6 +154,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		},
 	)
 
+	googleBeta := google_beta.NewGoogleBetaProvider(stack, pointers.Ptr("google_beta"), &google_beta.GoogleBetaProviderConfig{
+		Project: &vars.ProjectID,
+	})
+
 	// Provision the default Cloud Run robot account so that we can grant it
 	// access to prerequisite resources.
 	cloudRunIdentity := googleprojectserviceidentity.NewGoogleProjectServiceIdentity(stack,
@@ -161,9 +167,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			Service: pointers.Ptr("run.googleapis.com"),
 			// Only available via beta provider:
 			// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service_identity
-			Provider: google_beta.NewGoogleBetaProvider(stack, pointers.Ptr("google_beta"), &google_beta.GoogleBetaProviderConfig{
-				Project: &vars.ProjectID,
-			}),
+			Provider: googleBeta,
 		})
 	identityMember := pointers.Ptr(fmt.Sprintf("serviceAccount:%s", *cloudRunIdentity.Email()))
 
@@ -207,14 +211,34 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}
 	}
 
+	cloudDeployAccountID := random.New(stack, id.Group("clouddeploy_account_id"), random.Config{
+		Prefix:     "clouddeploy",
+		ByteLength: 3, // 6 chars
+	})
+	cloudDeployServiceAccount := serviceaccount.New(stack,
+		id.Group("clouddeploy"),
+		serviceaccount.Config{
+			ProjectID:   vars.ProjectID,
+			AccountID:   cloudDeployAccountID.HexValue,
+			DisplayName: fmt.Sprintf("%s Cloud Deploy Service Account", vars.Service.GetName()),
+			Roles: []serviceaccount.Role{
+				{
+					ID:   resourceid.New("role_clouddeploy_job_runner"),
+					Role: "roles/clouddeploy.jobRunner",
+				},
+			},
+		},
+	)
+
 	// Collect outputs
 	locals.Add(OutputCloudRunServiceAccount, workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
 	locals.Add(OutputOperatorServiceAccount, operatorAccessServiceAccount.Email,
 		"Service Account email used for operator access to other resources")
 	return &CrossStackOutput{
-		CloudRunWorkloadServiceAccount: workloadServiceAccount,
-		OperatorAccessServiceAccount:   operatorAccessServiceAccount,
+		CloudRunWorkloadServiceAccount:     workloadServiceAccount,
+		OperatorAccessServiceAccount:       operatorAccessServiceAccount,
+		CloudDeployExecutionServiceAccount: cloudDeployServiceAccount,
 	}, nil
 }
 
