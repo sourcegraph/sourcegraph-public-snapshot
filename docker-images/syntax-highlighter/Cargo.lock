@@ -2090,7 +2090,9 @@ dependencies = [
  "if_chain",
  "insta",
  "itertools 0.10.5",
+ "lazy_static",
  "once_cell",
+ "paste",
  "pretty_assertions",
  "protobuf",
  "regex",
@@ -2420,15 +2422,11 @@ dependencies = [
 name = "tree-sitter-all-languages"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
- "paste",
- "scip",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-c-sharp",
  "tree-sitter-cpp",
  "tree-sitter-go",
- "tree-sitter-highlight",
  "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",

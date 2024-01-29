@@ -46,6 +46,8 @@ anyhow = "1"
 # "cargo" feature is enabled for using the `crate_version` macro
 clap = { version = "4.1.11", features = ["derive", "cargo"] }
 itertools = "0.10.5"
+lazy_static = "1.0"
+paste = "1.0.6"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

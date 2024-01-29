@@ -314,7 +314,7 @@ pub fn parse_tree<'a>(
 pub mod test {
     use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
     use scip::types::Document;
-    use tree_sitter_all_languages::parsers::BundledParser;
+    use tree_sitter_all_languages::BundledParser;
 
     use super::*;
 
