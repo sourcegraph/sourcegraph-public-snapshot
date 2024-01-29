@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"container/list"
 	"context"
 	"fmt"
@@ -147,34 +146,28 @@ func TestExecRequest(t *testing.T) {
 		skipCloneForTests: true,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			backend := git.NewMockGitBackend()
-			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
+			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, w io.Writer, args ...string) error {
 				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args, gitserverfs.RepoDirFromName(reposDir, repoName)) {
-					return nil, gitcli.ErrBadGitCommand
+					return gitcli.ErrBadGitCommand
 				}
 
 				switch args[0] {
 				case "diff":
-					var stdout bytes.Buffer
-					stdout.Write([]byte("teststdout"))
-					return &errorReader{
-						ReadCloser: io.NopCloser(&stdout),
-						err: &gitcli.CommandFailedError{
-							Stderr:     []byte("teststderr"),
-							ExitStatus: 42,
-							Inner:      errors.New("teststderr"),
-						},
-					}, nil
+					_, err := w.Write([]byte("teststdout"))
+					require.NoError(t, err)
+					return &gitcli.CommandFailedError{
+						Stderr:     []byte("teststderr"),
+						ExitStatus: 42,
+						Inner:      errors.New("teststderr"),
+					}
 				case "merge-base":
-					return &errorReader{
-						ReadCloser: io.NopCloser(&bytes.Buffer{}),
-						err: &gitcli.CommandFailedError{
-							Stderr:     []byte("teststderr"),
-							ExitStatus: 1,
-							Inner:      errors.New("testerror"),
-						},
-					}, nil
+					return &gitcli.CommandFailedError{
+						Stderr:     []byte("teststderr"),
+						ExitStatus: 1,
+						Inner:      errors.New("testerror"),
+					}
 				}
-				return io.NopCloser(&bytes.Buffer{}), nil
+				return nil
 			})
 			return backend
 		},
@@ -247,23 +240,6 @@ func TestExecRequest(t *testing.T) {
 			}
 		})
 	}
-}
-
-type errorReader struct {
-	io.ReadCloser
-
-	err error
-}
-
-func (ec *errorReader) Read(p []byte) (int, error) {
-	n, err := ec.ReadCloser.Read(p)
-	if err == nil {
-		return n, nil
-	}
-	if err == io.EOF {
-		return n, ec.err
-	}
-	return n, err
 }
 
 // makeSingleCommitRepo make create a new repo with a single commit and returns

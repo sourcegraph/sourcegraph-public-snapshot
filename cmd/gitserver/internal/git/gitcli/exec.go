@@ -1,6 +1,7 @@
 package gitcli
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
@@ -15,31 +16,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 )
 
-func (g *gitCLIBackend) Exec(ctx context.Context, args ...string) (io.ReadCloser, error) {
+func (g *gitCLIBackend) Exec(ctx context.Context, stdoutWriter io.Writer, args ...string) error {
 	cmd, cancel, err := g.gitCommand(ctx, args...)
+	defer cancel()
 	if err != nil {
-		cancel()
-		return nil, err
+		return err
 	}
 
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		cancel()
-		return nil, err
+	// The following section is mostly a copy from (*gitCLIBackend).runGitCommand
+	// adjusted to write directly to the stdoutWriter so that we don't need to
+	// use io.Copy to forward the stdout of the git command to a writer.
+
+	// Set up a limited buffer to capture stderr for error reporting.
+	stderrBuf := bytes.NewBuffer(make([]byte, 0, maxStderrCapture))
+	stderr := &limitWriter{W: stderrBuf, N: maxStderrCapture}
+	cmd.Unwrap().Stderr = stderr
+
+	cmd.Unwrap().Stdout = stdoutWriter
+
+	if err := cmd.Start(); err != nil {
+		return err
 	}
 
-	return &cancelingCloser{ReadCloser: r, cancel: cancel}, nil
-}
+	if err := cmd.Wait(); err != nil {
+		if checkMaybeCorruptRepo(ctx, g.logger, g, g.repoName, stderrBuf.String()) {
+			return common.ErrRepoCorrupted{Reason: stderrBuf.String()}
+		}
+		return commandFailedError(ctx, err, cmd, stderrBuf.Bytes())
+	}
 
-type cancelingCloser struct {
-	io.ReadCloser
-	cancel context.CancelFunc
-}
-
-func (c *cancelingCloser) Close() error {
-	err := c.ReadCloser.Close()
-	c.cancel()
-	return err
+	return nil
 }
 
 var (

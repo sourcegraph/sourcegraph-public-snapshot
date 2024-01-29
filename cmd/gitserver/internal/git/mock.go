@@ -324,7 +324,7 @@ func NewMockGitBackend() *MockGitBackend {
 			},
 		},
 		ExecFunc: &GitBackendExecFunc{
-			defaultHook: func(context.Context, ...string) (r0 io.ReadCloser, r1 error) {
+			defaultHook: func(context.Context, io.Writer, ...string) (r0 error) {
 				return
 			},
 		},
@@ -371,7 +371,7 @@ func NewStrictMockGitBackend() *MockGitBackend {
 			},
 		},
 		ExecFunc: &GitBackendExecFunc{
-			defaultHook: func(context.Context, ...string) (io.ReadCloser, error) {
+			defaultHook: func(context.Context, io.Writer, ...string) error {
 				panic("unexpected invocation of MockGitBackend.Exec")
 			},
 		},
@@ -645,23 +645,23 @@ func (c GitBackendConfigFuncCall) Results() []interface{} {
 // GitBackendExecFunc describes the behavior when the Exec method of the
 // parent MockGitBackend instance is invoked.
 type GitBackendExecFunc struct {
-	defaultHook func(context.Context, ...string) (io.ReadCloser, error)
-	hooks       []func(context.Context, ...string) (io.ReadCloser, error)
+	defaultHook func(context.Context, io.Writer, ...string) error
+	hooks       []func(context.Context, io.Writer, ...string) error
 	history     []GitBackendExecFuncCall
 	mutex       sync.Mutex
 }
 
 // Exec delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBackend) Exec(v0 context.Context, v1 ...string) (io.ReadCloser, error) {
-	r0, r1 := m.ExecFunc.nextHook()(v0, v1...)
-	m.ExecFunc.appendCall(GitBackendExecFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockGitBackend) Exec(v0 context.Context, v1 io.Writer, v2 ...string) error {
+	r0 := m.ExecFunc.nextHook()(v0, v1, v2...)
+	m.ExecFunc.appendCall(GitBackendExecFuncCall{v0, v1, v2, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the Exec method of the
 // parent MockGitBackend instance is invoked and the hook queue is empty.
-func (f *GitBackendExecFunc) SetDefaultHook(hook func(context.Context, ...string) (io.ReadCloser, error)) {
+func (f *GitBackendExecFunc) SetDefaultHook(hook func(context.Context, io.Writer, ...string) error) {
 	f.defaultHook = hook
 }
 
@@ -669,7 +669,7 @@ func (f *GitBackendExecFunc) SetDefaultHook(hook func(context.Context, ...string
 // Exec method of the parent MockGitBackend instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *GitBackendExecFunc) PushHook(hook func(context.Context, ...string) (io.ReadCloser, error)) {
+func (f *GitBackendExecFunc) PushHook(hook func(context.Context, io.Writer, ...string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -677,20 +677,20 @@ func (f *GitBackendExecFunc) PushHook(hook func(context.Context, ...string) (io.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBackendExecFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...string) (io.ReadCloser, error) {
-		return r0, r1
+func (f *GitBackendExecFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, io.Writer, ...string) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBackendExecFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, ...string) (io.ReadCloser, error) {
-		return r0, r1
+func (f *GitBackendExecFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, io.Writer, ...string) error {
+		return r0
 	})
 }
 
-func (f *GitBackendExecFunc) nextHook() func(context.Context, ...string) (io.ReadCloser, error) {
+func (f *GitBackendExecFunc) nextHook() func(context.Context, io.Writer, ...string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -726,15 +726,15 @@ type GitBackendExecFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 io.Writer
+	// Arg2 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg1 []string
+	Arg2 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -743,17 +743,17 @@ type GitBackendExecFuncCall struct {
 // a slice of four, not two.
 func (c GitBackendExecFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
+	for _, val := range c.Arg2 {
 		trailing = append(trailing, val)
 	}
 
-	return append([]interface{}{c.Arg0}, trailing...)
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendExecFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // GitBackendGetObjectFunc describes the behavior when the GetObject method

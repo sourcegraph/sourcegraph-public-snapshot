@@ -42,7 +42,7 @@ type GitBackend interface {
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
 	// remove this method.
-	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
+	Exec(ctx context.Context, stdoutWriter io.Writer, args ...string) error
 }
 
 // GitConfigBackend provides methods for interacting with git configuration.

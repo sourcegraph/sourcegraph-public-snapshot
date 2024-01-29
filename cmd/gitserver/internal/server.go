@@ -677,13 +677,7 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 	}
 
 	cmdStart = time.Now()
-	stdout, err := backend.Exec(ctx, req.Args...)
-	if err != nil {
-		return execStatus{}, err
-	}
-	defer stdout.Close()
-
-	_, execErr = io.Copy(w, stdout)
+	execErr = backend.Exec(ctx, w, req.Args...)
 	if execErr != nil {
 		s.LogIfCorrupt(ctx, repoName, execErr)
 		commandFailedErr := &gitcli.CommandFailedError{}
