@@ -41,6 +41,7 @@ go_library(
 go_test(
     name = "gitcli_test",
     srcs = [
+        "archivereader_test.go",
         "blame_test.go",
         "config_test.go",
         "exec_test.go",
