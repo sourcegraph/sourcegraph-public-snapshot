@@ -90,6 +90,9 @@ var rbacSchema string
 //go:embed own.graphql
 var ownSchema string
 
+//go:embed codyignore.graphql
+var codyIgnoreSchema string
+
 // completionSchema is the Sourcegraph Completions raw graqhql schema.
 //
 //go:embed completions.graphql

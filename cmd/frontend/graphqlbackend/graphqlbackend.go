@@ -592,6 +592,8 @@ func NewSchema(
 			}
 		}
 
+		schemas = append(schemas, codyIgnoreSchema)
+
 		if completionsResolver := optional.CompletionsResolver; completionsResolver != nil {
 			EnterpriseResolvers.completionsResolver = completionsResolver
 			resolver.CompletionsResolver = completionsResolver
