@@ -87,7 +87,7 @@ type SearchEventDone struct {
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
 		var e gitdomain.RepoNotExistError
-		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
+		if err := json.Unmarshal([]byte(s.Error), &e); err == nil {
 			return &e
 		}
 		return errors.New(s.Error)
