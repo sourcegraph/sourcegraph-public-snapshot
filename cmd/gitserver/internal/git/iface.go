@@ -26,6 +26,9 @@ type GitBackend interface {
 	// BlameHunkReader must always be closed.
 	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
 
+	// ArchiveReader returns a reader for an archive in the given format.
+	// Treeish is the tree or commit to archive, and pathspecs is the list of
+	// pathspecs to include in the archive. If empty, all pathspecs are included.
 	ArchiveReader(ctx context.Context, format, treeish string, pathspecs []string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
