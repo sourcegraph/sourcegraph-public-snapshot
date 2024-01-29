@@ -151,4 +151,9 @@ func (r *automaticRetryClient) Blame(ctx context.Context, in *proto.BlameRequest
 	return r.base.Blame(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) DefaultBranch(ctx context.Context, in *proto.DefaultBranchRequest, opts ...grpc.CallOption) (*proto.DefaultBranchResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.DefaultBranch(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

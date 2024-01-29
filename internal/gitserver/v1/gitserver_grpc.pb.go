@@ -43,6 +43,7 @@ const (
 	GitserverService_PerforceGetChangelist_FullMethodName       = "/gitserver.v1.GitserverService/PerforceGetChangelist"
 	GitserverService_MergeBase_FullMethodName                   = "/gitserver.v1.GitserverService/MergeBase"
 	GitserverService_Blame_FullMethodName                       = "/gitserver.v1.GitserverService/Blame"
+	GitserverService_DefaultBranch_FullMethodName               = "/gitserver.v1.GitserverService/DefaultBranch"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -77,7 +78,7 @@ type GitserverServiceClient interface {
 	// If no common merge base exists, an empty string is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a NotFoundPayload in the details.
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
 	// hunks as they are found. The --incremental flag is used on the git CLI level
@@ -87,8 +88,14 @@ type GitserverServiceClient interface {
 	// with a UnauthorizedPayload in the details is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a NotFoundPayload in the details.
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error)
+	// DefaultBranch resolves HEAD to ref name and current commit SHA it points to.
+	// If HEAD points to an empty branch, it returns an error with a RevisionNotFoundPayload.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -457,6 +464,15 @@ func (x *gitserverServiceBlameClient) Recv() (*BlameResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error) {
+	out := new(DefaultBranchResponse)
+	err := c.cc.Invoke(ctx, GitserverService_DefaultBranch_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -489,7 +505,7 @@ type GitserverServiceServer interface {
 	// If no common merge base exists, an empty string is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a NotFoundPayload in the details.
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
 	// Blame runs a blame operation on the specified file. It returns a stream of
 	// hunks as they are found. The --incremental flag is used on the git CLI level
@@ -499,8 +515,14 @@ type GitserverServiceServer interface {
 	// with a UnauthorizedPayload in the details is returned.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
-	// error will be returned, with a NotFoundPayload in the details.
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Blame(*BlameRequest, GitserverService_BlameServer) error
+	// DefaultBranch resolves HEAD to ref name and current commit SHA it points to.
+	// If HEAD points to an empty branch, it returns an error with a RevisionNotFoundPayload.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -579,6 +601,9 @@ func (UnimplementedGitserverServiceServer) MergeBase(context.Context, *MergeBase
 }
 func (UnimplementedGitserverServiceServer) Blame(*BlameRequest, GitserverService_BlameServer) error {
 	return status.Errorf(codes.Unimplemented, "method Blame not implemented")
+}
+func (UnimplementedGitserverServiceServer) DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DefaultBranch not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1048,6 +1073,24 @@ func (x *gitserverServiceBlameServer) Send(m *BlameResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_DefaultBranch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DefaultBranchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).DefaultBranch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_DefaultBranch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).DefaultBranch(ctx, req.(*DefaultBranchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1126,6 +1169,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MergeBase",
 			Handler:    _GitserverService_MergeBase_Handler,
+		},
+		{
+			MethodName: "DefaultBranch",
+			Handler:    _GitserverService_DefaultBranch_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

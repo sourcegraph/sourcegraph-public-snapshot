@@ -717,7 +717,7 @@ func convertGRPCErrorToGitDomainError(err error) error {
 				StatusCode: payload.StatusCode,
 			}
 
-		case *proto.NotFoundPayload:
+		case *proto.RepoNotFoundPayload:
 			return &gitdomain.RepoNotExistError{
 				Repo:            api.RepoName(payload.Repo),
 				CloneInProgress: payload.CloneInProgress,
@@ -816,7 +816,7 @@ func convertGitserverError(err error) error {
 	}
 
 	for _, detail := range st.Details() {
-		if notFound, ok := detail.(*proto.NotFoundPayload); ok {
+		if notFound, ok := detail.(*proto.RepoNotFoundPayload); ok {
 			return &gitdomain.RepoNotExistError{
 				Repo:            api.RepoName(notFound.GetRepo()),
 				CloneProgress:   notFound.GetCloneProgress(),

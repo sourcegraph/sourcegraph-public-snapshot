@@ -1192,12 +1192,6 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 	return tags, nil
 }
 
-// GetDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository. If short is true, then `main` instead
-// of `refs/heads/main` would be returned.
-//
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	ctx, _, endObservation := c.operations.getDefaultBranch.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1207,32 +1201,31 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"symbolic-ref", "HEAD"}
-	if short {
-		args = append(args, "--short")
-	}
-	cmd := c.gitCommand(repo, args...)
-	refBytes, _, err := cmd.DividedOutput(ctx)
-	exitCode := cmd.ExitStatus()
-	if exitCode != 0 && err != nil {
-		err = nil // the error must just indicate that the exit code was nonzero
-	}
-	refName = string(bytes.TrimSpace(refBytes))
-
-	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
-		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
-	}
-
-	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
-		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			return "", "", nil
+		return "", "", err
+	}
+
+	res, err := client.DefaultBranch(ctx, &proto.DefaultBranchRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		s, ok := status.FromError(err)
+		if ok {
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					// If we fail to get the default branch due to cloning or being empty, we return nothing.
+					case *proto.RepoNotFoundPayload, *proto.RevisionNotFoundPayload:
+						return "", "", nil
+					}
+				}
+			}
 		}
 		return "", "", err
 	}
 
-	return refName, commit, nil
+	return res.GetRefName(), api.CommitID(res.GetCommit()), nil
 }
 
 func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, base, head string) (_ api.CommitID, err error) {

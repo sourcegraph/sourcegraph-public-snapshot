@@ -21,10 +21,18 @@ type GitBackend interface {
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
-
 	// Blame returns a reader for the blame info of the given path.
 	// BlameHunkReader must always be closed.
 	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
+	// SymbolicRefHead resolves what the HEAD symbolic ref points to. This is also
+	// commonly referred to as the default branch within Sourcegraph.
+	// If short is true, the returned ref name will be shortened when possible
+	// without ambiguity.
+	SymbolicRefHead(ctx context.Context, short bool) (string, error)
+	// RevParseHead resolves at what commit HEAD points to. If HEAD doesn't point
+	// to anything, a RevisionNotFoundError is returned. This can occur, for example,
+	// when the repository is empty (ie. has no commits).
+	RevParseHead(ctx context.Context) (api.CommitID, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
