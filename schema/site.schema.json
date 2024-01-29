@@ -2987,6 +2987,23 @@
       "!go": {
         "pointer": true
       }
+    },
+    "attribution.gateway": {
+      "description": "Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.",
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "description": "Endpoint where Cody gateway can be accessed for attribution.",
+          "type": "string"
+        },
+        "accessToken": {
+          "description": "Token for accessing Cody gateway for attribution.",
+          "type": "string"
+        }
+      },
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {

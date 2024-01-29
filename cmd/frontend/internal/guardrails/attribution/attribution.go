@@ -49,6 +49,13 @@ type SnippetAttributions struct {
 	LimitHit bool
 }
 
+type Uninitialized struct {
+	Err error
+}
+func (u Uninitialized) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+	return nil, u.Err
+}
+
 // gatewayProxy is a Service that proxies requests to cody gateway.
 type gatewayProxy struct {
 	client     codygateway.Client

@@ -888,6 +888,13 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 	return computedConfig
 }
 
+func GetAttributionGateway(siteConfig schema.SiteConfiguration) *schema.AttributionGateway {
+	if !codyEnabled(siteConfig) {
+		return nil
+	}
+	return siteConfig.AttributionGateway
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
