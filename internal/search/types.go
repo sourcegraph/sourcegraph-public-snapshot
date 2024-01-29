@@ -389,6 +389,7 @@ type Features struct {
 	// invalid JSON string or unknown fields will be ignored.
 	ZoektSearchOptionsOverride string
 
+	// PhraseBoost is a feature flag that enables boosting of exact matches.
 	PhraseBoost bool `json:"search-boost-phrase"`
 }
 
