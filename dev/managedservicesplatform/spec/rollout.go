@@ -22,9 +22,6 @@ type RolloutStageSpec struct {
 	// EnvironmentID is the ID of the environment to use in this stage.
 	// The specified environment MUST have 'deploy: { type: "rollout" }' configured.
 	EnvironmentID string `yaml:"environment"`
-	// RequireApproval, if true, requires manual approval before deploying to
-	// this stage.
-	RequireApproval *bool `yaml:"requireApproval,omitempty"`
 }
 
 // RolloutPipelineConfiguration is rendered from BuildPipelineConfiguration for use in

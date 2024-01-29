@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform",
+        "//dev/managedservicesplatform/clouddeploy",
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/operationdocs",
         "//dev/managedservicesplatform/spec",
