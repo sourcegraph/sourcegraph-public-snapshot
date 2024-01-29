@@ -196,6 +196,16 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	r, err := backend.ArchiveReader(ss.Context(), req.GetFormat(), req.GetTreeish(), req.GetPathspecs())
 	if err != nil {
+		if os.IsNotExist(err) {
+			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{
+				Repo: string(repoName),
+			})
+			if err != nil {
+				gs.logger.Error("failed to marshal status", log.Error(err))
+				return err
+			}
+			return s.Err()
+		}
 		return err
 	}
 	defer r.Close()

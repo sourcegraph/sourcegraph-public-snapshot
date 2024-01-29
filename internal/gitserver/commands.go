@@ -2292,7 +2292,7 @@ func (c *clientImplementor) ArchiveReader(
 	// handle any errors synchronously, similar to the HTTP implementation.
 
 	firstMessage, firstError := stream.Recv()
-	if firstError != nil {
+	if firstError != nil && !isRevisionNotFound(firstError.Error()) {
 		// Hack: The ArchiveReader.Read() implementation handles surfacing the
 		// any "revision not found" errors returned from the invoked git binary.
 		//
