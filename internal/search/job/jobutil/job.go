@@ -1,7 +1,6 @@
 package jobutil
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -72,11 +71,8 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 // NewBasicJob converts a query.Basic into its job tree representation.
 func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 
-	fmt.Printf("STEFAN in %s\n", b.Pattern.String())
-	// Heuristic: if the query is likely to be a phrase we append the
-	b.Pattern = query.AppendPhraseQuery(b.Pattern)
-	if b.Pattern != nil {
-		fmt.Printf("STEFAN out %s\n", b.Pattern.String())
+	if inputs.Features != nil && inputs.Features.PhraseBoost {
+		b.Pattern = query.ExperimentalPhraseBoost(b.Pattern)
 	}
 
 	var children []job.Job
