@@ -22,7 +22,7 @@ const CODY_IGNORE_CONTENT = gql`
 
 const CODY_IGNORE_PATH = '.cody/ignore'
 
-export const useCodyIgnore = (): { ignores: (path: string) => boolean } => {
+export const useIsFileIgnored = (): ((path: string) => boolean) => {
     const location = useLocation()
     const { repoName, revision } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
     const { data } = useQuery<CodyIgnoreContentResult, CodyIgnoreContentVariables>(CODY_IGNORE_CONTENT, {
@@ -42,7 +42,7 @@ export const useCodyIgnore = (): { ignores: (path: string) => boolean } => {
         void loadIgnore()
     }, [content])
 
-    const ignores = useCallback(
+    const isFileIgnored = useCallback(
         (path: string): boolean => {
             if (ignoreManager) {
                 return ignoreManager.ignores(path)
@@ -52,5 +52,5 @@ export const useCodyIgnore = (): { ignores: (path: string) => boolean } => {
         [ignoreManager]
     )
 
-    return { ignores }
+    return isFileIgnored
 }

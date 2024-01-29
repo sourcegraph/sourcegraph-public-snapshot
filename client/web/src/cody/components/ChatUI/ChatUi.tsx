@@ -34,7 +34,7 @@ import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
 import type { ScopeSelectorProps } from '../ScopeSelector/ScopeSelector'
 
-import { useCodyIgnore } from './useCodyIgnore'
+import { useIsFileIgnored } from './useIsFileIgnored'
 
 import styles from './ChatUi.module.scss'
 
@@ -84,7 +84,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
-    const { ignores: checkCodyIgnore } = useCodyIgnore()
+    const isFileIgnored = useIsFileIgnored()
 
     const scopeSelectorProps: ScopeSelectorProps = useMemo(
         () => ({
@@ -96,7 +96,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
             transcriptHistory,
             className: 'mt-2',
             authenticatedUser,
-            checkCodyIgnore,
+            isFileIgnored,
         }),
         [
             scope,
@@ -106,7 +106,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isCodyChatPage, 
             logTranscriptEvent,
             transcriptHistory,
             authenticatedUser,
-            checkCodyIgnore,
+            isFileIgnored,
         ]
     )
 

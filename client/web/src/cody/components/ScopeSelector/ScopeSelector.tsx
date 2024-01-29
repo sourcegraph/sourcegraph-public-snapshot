@@ -29,7 +29,7 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
-    checkCodyIgnore: (path: string) => boolean
+    isFileIgnored: (path: string) => boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -43,7 +43,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     renderHint,
     encourageOverlap,
     authenticatedUser,
-    checkCodyIgnore,
+    isFileIgnored,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -54,7 +54,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    const isCurrentFileIgnored = activeEditor?.filePath ? checkCodyIgnore(activeEditor.filePath) : false
+    const isCurrentFileIgnored = activeEditor?.filePath ? isFileIgnored(activeEditor.filePath) : false
     const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
     useEffect(() => {
         if (isCurrentFileIgnored && scope.includeInferredFile) {
