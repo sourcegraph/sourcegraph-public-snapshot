@@ -838,7 +838,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 		if s, ok := status.FromError(err); ok {
 			if s.Code() == codes.PermissionDenied {
-				return nil, errUnauthorizedStreamBlame{Repo: repo}
+				return nil, os.ErrNotExist
 			}
 		}
 
