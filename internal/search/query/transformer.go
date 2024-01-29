@@ -618,10 +618,10 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
 }
 
-// ExperimentalPhraseBoost appends a phrase query to the query. The heuristic only
-// applies if the query consists of a single top-level AND expression. The
-// purpose is to improve ranking of exact matches by adding a phrase query for
-// the entire query string.
+// ExperimentalPhraseBoost appends a phrase query to the original query but only
+// if the original query consists of a single top-level AND expression. The
+// purpose is to improve ranking of exact matches by adding a phrase
+// query for the entire query string.
 //
 // Example:
 //
@@ -639,6 +639,8 @@ func ExperimentalPhraseBoost(node Node) Node {
 			if !isPattern {
 				return n
 			}
+			// In practice, a user would probably catch this case because we highlight NOT
+			// in the input bar.
 			if c.Negated {
 				return n
 			}

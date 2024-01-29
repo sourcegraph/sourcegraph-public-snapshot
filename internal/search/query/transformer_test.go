@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAppendPhraseQuery(t *testing.T) {
+func TestExperimentalPhraseBoost(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)
 
