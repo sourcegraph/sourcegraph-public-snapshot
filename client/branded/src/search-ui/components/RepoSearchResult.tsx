@@ -12,7 +12,7 @@ import { Icon, Link, Text } from '@sourcegraph/wildcard'
 import { metadataToTag, TagList, topicToTag } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
-import styles from './SearchResult.module.scss'
+import styles from './ResultContainer.module.scss'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
@@ -101,7 +101,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             {(showExtraInfo || description || showRepoMetadata) && (
                 <div
                     data-testid="search-repo-result"
-                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-2 flex-column')}
+                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-3 flex-column')}
                 >
                     {showExtraInfo && (
                         <div className={classNames('d-flex', styles.dividerBetween)}>

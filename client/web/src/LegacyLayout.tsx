@@ -96,7 +96,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
-    const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
+    const isSiteInit = location.pathname === PageRoutes.SiteAdminInit.toString()
     const isSignInOrUp =
         routeMatch &&
         [
@@ -106,8 +106,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             PageRoutes.Welcome,
             PageRoutes.RequestAccess,
         ].includes(routeMatch as PageRoutes)
-    const isGetCodyPage = location.pathname === PageRoutes.GetCody
-    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
+    const isGetCodyPage = location.pathname === PageRoutes.GetCody.toString()
+    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp.toString()
 
     const [newSearchNavigation] = useNewSearchNavigation()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')

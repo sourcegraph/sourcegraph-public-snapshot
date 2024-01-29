@@ -133,6 +133,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     // TODO (#48103): Remove/simplify when new search input is released
     const input = v2QueryInput ? (
         <LazyV2SearchInput
+            autoFocus={!isTouchOnlyDevice}
             telemetryService={telemetryService}
             patternType={patternType}
             interpretComments={false}

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,8 +24,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
-	hunkReader := gitserver.NewMockHunkReader(hunks, returnErr)
+type mockHunkReader struct {
+	hunks []*gitdomain.Hunk
+	err   error
+}
+
+func newMockHunkReader(hunks []*gitdomain.Hunk, err error) gitserver.HunkReader {
+	return &mockHunkReader{
+		hunks: hunks,
+		err:   err,
+	}
+}
+
+func (mh *mockHunkReader) Read() (*gitdomain.Hunk, error) {
+	if mh.err != nil {
+		return nil, mh.err
+	}
+	if len(mh.hunks) > 0 {
+		next := mh.hunks[0]
+		mh.hunks = mh.hunks[1:]
+		return next, nil
+	}
+	return nil, io.EOF
+}
+
+func (mh *mockHunkReader) Close() error { return nil }
+
+func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitdomain.Hunk) gitserver.Client {
+	hunkReader := newMockHunkReader(hunks, returnErr)
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetCommitFunc.SetDefaultHook(
 		func(_ context.Context,
@@ -54,7 +81,7 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 func TestStreamBlame(t *testing.T) {
 	logger, _ := logtest.Captured(t)
 
-	hunks := []*gitserver.Hunk{
+	hunks := []*gitdomain.Hunk{
 		{
 			StartLine: 1,
 			EndLine:   2,
@@ -195,7 +222,7 @@ func TestStreamBlame(t *testing.T) {
 			"Repo": "github.com/bob/foo",
 			"path": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
+		gsClient := setupMockGSClient(t, "efgh", nil, []*gitdomain.Hunk{
 			{
 				StartLine: 1,
 				EndLine:   2,
@@ -244,7 +271,7 @@ func TestStreamBlame(t *testing.T) {
 			"Repo": "foo",
 			"path": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
+		gsClient := setupMockGSClient(t, "efgh", nil, []*gitdomain.Hunk{
 			{
 				StartLine: 1,
 				EndLine:   2,

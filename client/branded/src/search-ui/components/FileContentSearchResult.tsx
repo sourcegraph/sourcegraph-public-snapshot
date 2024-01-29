@@ -32,8 +32,8 @@ import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
-import resultContainerStyles from './ResultContainer.module.scss'
-import styles from './SearchResult.module.scss'
+import styles from './FileContentSearchResult.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
@@ -187,10 +187,10 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                             : undefined
                     }
-                    className={styles.titleInner}
+                    className={resultStyles.titleInner}
                 />
                 <CopyPathAction
-                    className={styles.copyButton}
+                    className={resultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
                 />
@@ -229,8 +229,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={classNames(styles.copyButtonContainer, containerClassName)}
-            resultClassName={resultContainerStyles.highlightResult}
+            className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
             actions={<SearchResultPreviewButton result={result} />}
@@ -253,6 +252,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             type="button"
                             className={classNames(
                                 styles.toggleMatchesButton,
+                                resultStyles.focusableBlock,
+                                resultStyles.clickable,
                                 expanded && styles.toggleMatchesButtonExpanded
                             )}
                             onClick={toggle}

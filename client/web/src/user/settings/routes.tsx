@@ -17,7 +17,7 @@ import type { UserEventLogsPageProps } from '../../enterprise/user/settings/User
 import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
-import type { UserSettingsAreaRoute } from './UserSettingsArea'
+import type { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
 
 const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
     () => import('../../enterprise/executors/ExecutorsUserArea'),
@@ -30,6 +30,13 @@ const UserSettingsSecurityPage = lazyComponent(
     () => import('./auth/UserSettingsSecurityPage'),
     'UserSettingsSecurityPage'
 )
+
+const shouldRenderBatchChangesPage = ({
+    batchChangesEnabled,
+    user: { viewerCanAdminister },
+    authenticatedUser,
+}: UserSettingsAreaRouteContext): boolean =>
+    batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser)
 
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
@@ -89,8 +96,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: 'executors/*',
         render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+        condition: shouldRenderBatchChangesPage,
     },
     {
         path: 'batch-changes',
@@ -98,8 +104,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             () => import('../../enterprise/batches/settings/BatchChangesSettingsArea'),
             'BatchChangesSettingsArea'
         ),
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
-            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+        condition: shouldRenderBatchChangesPage,
     },
     {
         path: 'subscriptions/:subscriptionUUID',

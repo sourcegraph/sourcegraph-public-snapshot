@@ -143,9 +143,9 @@ func TestInsertIndexes(t *testing.T) {
 			},
 			LocalSteps:  nil,
 			Root:        "/baz",
-			Indexer:     "sourcegraph/lsif-rust:15",
+			Indexer:     "sourcegraph/scip-rust:15",
 			IndexerArgs: []string{"-v"},
-			Outfile:     "dump.lsif",
+			Outfile:     "out.scip",
 			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
@@ -207,9 +207,9 @@ func TestInsertIndexes(t *testing.T) {
 			},
 			LocalSteps:  []string{},
 			Root:        "/baz",
-			Indexer:     "sourcegraph/lsif-rust:15",
+			Indexer:     "sourcegraph/scip-rust:15",
 			IndexerArgs: []string{"-v"},
-			Outfile:     "dump.lsif",
+			Outfile:     "out.scip",
 			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},

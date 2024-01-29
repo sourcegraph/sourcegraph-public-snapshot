@@ -208,6 +208,12 @@ def oci_deps():
         image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
     )
 
+    oci_pull(
+        name = "scip-java",
+        digest = "sha256:aa63f38a0dacfa1371ea701937f519347d4c0bca7628389aeb7173c042483ebb",
+        image = "index.docker.io/sourcegraph/scip-java",
+    )
+
     # The following image digests are from tag 252535_2023-11-28_5.2-82b5f4f5d73f. sg wolfi update-hashes DOES NOT update these digests.
     # To rebuild these legacy images using docker and outside of bazel you can either push a branch to:
     # - docker-images-candidates-notest/<your banch name here>

@@ -10,7 +10,16 @@ export interface URLStateOptions<State, SerializedState> {
 }
 
 export type UpdatedSearchQuery = string
-export type SetStateResult<State> = [state: State, dispatch: (state: State) => UpdatedSearchQuery]
+
+export interface UpdateSearchQueryOptions {
+    replace: boolean
+}
+
+export type SetStateResult<State> = [
+    state: State,
+    dispatch: (state: State, options?: UpdateSearchQueryOptions) => UpdatedSearchQuery,
+    serialize: (state: State) => UpdatedSearchQuery
+]
 
 /**
  * React hook analog standard react useState hook but with synced value with URL
@@ -30,7 +39,7 @@ export function useSyncedWithURLState<State, SerializedState>(
     )
 
     const setNextState = useCallback(
-        (nextState: State) => {
+        (nextState: State, options?: UpdateSearchQueryOptions) => {
             const serializedValue = serializer(nextState)
 
             if (serializedValue === null) {
@@ -40,12 +49,27 @@ export function useSyncedWithURLState<State, SerializedState>(
             }
 
             const search = `?${urlSearchParameters.toString()}`
-            navigate({ search }, { replace })
+            navigate({ search }, { replace: options?.replace ?? replace })
 
             return search
         },
         [navigate, serializer, urlKey, urlSearchParameters, replace]
     )
 
-    return [queryParameter, setNextState]
+    const serializeURL = useCallback(
+        (nextState: State) => {
+            const serializedValue = serializer(nextState)
+
+            if (serializedValue === null) {
+                urlSearchParameters.delete(urlKey)
+            } else {
+                urlSearchParameters.set(urlKey, serializedValue)
+            }
+
+            return `?${urlSearchParameters.toString()}`
+        },
+        [serializer, urlKey, urlSearchParameters]
+    )
+
+    return [queryParameter, setNextState, serializeURL]
 }
