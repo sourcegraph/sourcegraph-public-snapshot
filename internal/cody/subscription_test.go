@@ -2,6 +2,7 @@ package cody
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -93,7 +94,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			},
 		},
 		{
-			// possible when the user opted for Pro only after the feb release
+			// Possible when the user opted for Pro only after the Feb release.
 			name: "free user with SAMS account & SSC subscription",
 			user: types.User{
 				ID:               1,
@@ -279,21 +280,33 @@ func TestGetSubscriptionForUser(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(test.user.ID))
 			ctx = withCurrentTimeMock(ctx, test.today)
+
+			// Mock out feature flags.
 			flags := map[string]bool{
 				featureFlagUseSCCForSubscription: test.useSSCFeatureFlag,
 				featureFlagCodyProTrialEnded:     test.codyProTrialEndedFeatureFlag,
 			}
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
 
+			// Mock out the lookup for the user's external identities, where we fetch their SAMS account ID.
 			db := dbmocks.NewMockDB()
 			userExternalAccount := dbmocks.NewMockUserExternalAccountsStore()
 			userExternalAccount.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 				assert.Equal(t, test.user.ID, opts.UserID)
-
 				if test.mockSAMSAccountID != nil {
-					return []*extsvc.Account{{AccountSpec: extsvc.AccountSpec{AccountID: *test.mockSAMSAccountID}}}, nil
+					// The code identifies the SAMS account by checking the service type and service ID.
+					// So we need to set these in the values returned from the mock.
+					samsAccountSpec := extsvc.AccountSpec{
+						AccountID:   *test.mockSAMSAccountID,
+						ServiceType: "openidconnect",
+						ServiceID:   fmt.Sprintf("https://%s/", ssc.SAMSProdHostname),
+					}
+					return []*extsvc.Account{
+						{
+							AccountSpec: samsAccountSpec,
+						},
+					}, nil
 				}
-
 				return []*extsvc.Account{}, nil
 			})
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccount)
@@ -307,8 +320,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			}
 
 			actualSubscription, err := getSubscriptionForUser(ctx, db, sscClient, test.user)
-
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			assert.NotNil(t, actualSubscription)
 			assert.Equal(t, test.expectedSubscription, *actualSubscription)
 		})
