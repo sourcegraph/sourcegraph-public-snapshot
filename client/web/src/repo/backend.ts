@@ -229,3 +229,17 @@ export const fetchCommitMessage = memoizeObservable(
         ),
     makeRepoURI
 )
+
+export const FILE_CODY_IGNORE = gql`
+    query FileCodyIgnore($repo: String!, $revision: String!, $currentPath: String!) {
+        repository(name: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    blob(path: $currentPath) {
+                        allowedForCodyContext
+                    }
+                }
+            }
+        }
+    }
+`

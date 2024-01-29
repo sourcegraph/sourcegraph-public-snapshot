@@ -48,7 +48,7 @@ import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/side
 import type { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import type { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
+import type { ExternalLinkFields, FileCodyIgnoreResult, FileCodyIgnoreVariables, RepositoryFields } from '../graphql-operations'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
@@ -60,7 +60,7 @@ import type { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, type Repo } from './backend'
+import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, type Repo, FILE_CODY_IGNORE } from './backend'
 import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -76,6 +76,8 @@ import type { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { repoSettingsAreaPath } from './settings/routes'
 
 import styles from './RepoContainer.module.scss'
+import { useQuery } from '@sourcegraph/http-client'
+
 
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
 
@@ -492,6 +494,9 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 >
                     {() => (
                         <AskCodyButton
+                            repoName={repoName}
+                            revision={revision}
+                            currentPath={filePath}
                             onClick={() => {
                                 logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
                                 setIsCodySidebarOpen(true)

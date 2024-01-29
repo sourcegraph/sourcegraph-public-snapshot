@@ -14,3 +14,11 @@
     font-size: 0.75rem;
     overflow: hidden;
 }
+
+.cody-button-disabled {
+    color: var(--text-muted);
+}
+
+.cody-button-disabled:hover {
+    color: var(--text-muted);
+}
