@@ -6,7 +6,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -347,6 +349,79 @@ func TestIsRequiredOutOfBandMigration(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := isRequiredOutOfBandMigration(test.version, test.migration)
 			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func Test_allowEdit(t *testing.T) {
+	tests := []struct {
+		name      string
+		before    string
+		after     string
+		allowlist []string
+		want      autogold.Value
+		ok        bool
+	}{
+		{
+			name:      "allowed",
+			before:    `{}`,
+			after:     `{"externalURL": "https://sg.local.com"}`,
+			allowlist: []string{"externalURL"},
+			ok:        true,
+		},
+		{
+			name:   "not allowed",
+			before: `{}`,
+			after: `
+{
+  "observability.alerts": [
+    {
+      "level": "critical",
+      "notifier": {
+        "type": "slack",
+        "url": "some-url",
+        "username": "username"
+      }
+    },
+  ]
+}`,
+			allowlist: []string{"externalURL"},
+			want:      autogold.Expect([]string{"observability.alerts"}),
+			ok:        false,
+		},
+		{
+			name:   "nested and mixed",
+			before: `{}`,
+			after: `
+{
+  "experimentalFeatures": {
+    "searchJobs": true,
+  },
+  "auth.providers": [
+    {
+      "type": "builtin"
+    },
+  ],
+  "email.smtp": {
+    "authentication": "PLAIN",
+    "host": "smtp.company.local",
+    "password": "password",
+    "port": 587,
+    "username": "username",
+  },
+}`,
+			allowlist: []string{"auth.providers"},
+			want:      autogold.Expect([]string{"experimentalFeatures::searchJobs", "email.smtp"}),
+			ok:        false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := allowEdit(tt.before, tt.after, tt.allowlist)
+			require.Equal(t, tt.ok, ok)
+			if !ok {
+				tt.want.Equal(t, got)
+			}
 		})
 	}
 }
