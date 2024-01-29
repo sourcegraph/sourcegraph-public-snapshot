@@ -1,0 +1,6 @@
+extend type GitBlob {
+    """
+    Whether this file should be used for context in Cody.
+    """
+    allowedForCodyContext: Boolean!
+}

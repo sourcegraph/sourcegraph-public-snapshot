@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codyignore",
+    srcs = ["service.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codyignore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/paths",
+    ],
+)
