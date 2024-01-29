@@ -11,7 +11,7 @@ import (
 var _ graphqlbackend.GuardrailsResolver = &GuardrailsResolver{}
 
 type GuardrailsResolver struct {
-	AttributionService func () attribution.Service
+	AttributionService func() attribution.Service
 }
 
 func (c *GuardrailsResolver) SnippetAttribution(ctx context.Context, args *graphqlbackend.SnippetAttributionArgs) (graphqlbackend.SnippetAttributionConnectionResolver, error) {

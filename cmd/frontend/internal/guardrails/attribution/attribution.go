@@ -52,6 +52,7 @@ type SnippetAttributions struct {
 type Uninitialized struct {
 	Err error
 }
+
 func (u Uninitialized) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
 	return nil, u.Err
 }

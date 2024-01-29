@@ -32,12 +32,12 @@ func Init(
 		// On DotCom guardrails endpoint runs search, and is initialized at startup.
 		searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
 		service := attribution.NewLocalSearch(observationCtx, searchClient)
-		resolver.AttributionService = func () attribution.Service { return service }
+		resolver.AttributionService = func() attribution.Service { return service }
 	} else {
 		// On an Enterprise instance endpoint proxies to gateway, and is re-initialized
 		// in case site-config changes.
 		initLogic := &enterpriseInitialization{observationCtx: observationCtx}
-		resolver.AttributionService = func () attribution.Service { return initLogic.Service() }
+		resolver.AttributionService = func() attribution.Service { return initLogic.Service() }
 	}
 	enterpriseServices.GuardrailsResolver = resolver
 	return nil
@@ -45,13 +45,13 @@ func Init(
 
 type enterpriseInitialization struct {
 	observationCtx *observation.Context
-	mu sync.Mutex
-	client codygateway.Client
-	endpoint string
-	token string
+	mu             sync.Mutex
+	client         codygateway.Client
+	endpoint       string
+	token          string
 }
 
-func (e *enterpriseInitialization) Service() (attribution.Service) {
+func (e *enterpriseInitialization) Service() attribution.Service {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	endpoint, token := e.newConfig()
