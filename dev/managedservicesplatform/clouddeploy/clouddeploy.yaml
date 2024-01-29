@@ -1,0 +1,43 @@
+
+apiVersion: deploy.cloud.google.com/v1
+kind: CustomTargetType
+metadata:
+  name: cloud-run-service
+  labels:
+    msp: "true"
+description: "MSP Cloud Run Service"
+# customActions are defined in skaffold.yaml
+customActions:
+  renderAction: cloud-run-image-deploy-render
+  deployAction: cloud-run-image-deploy
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: test-us-central1
+customTarget:
+  customTargetType: cloud-run-service
+deployParameters:
+  customTarget/serviceID: msp-testbed
+  customTarget/image: us.gcr.io/sourcegraph-dev/msp-example
+  customTarget/projectID: msp-testbed-test-77589aae45d0
+  customTarget/tag: insiders
+executionConfigs:
+- usages: [RENDER, DEPLOY]
+  serviceAccount: clouddeploy-executor@msp-testbed-robert-7be9.iam.gserviceaccount.com
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: robert-us-central1
+customTarget:
+  customTargetType: cloud-run-service
+deployParameters:
+  customTarget/serviceID: msp-testbed
+  customTarget/image: us.gcr.io/sourcegraph-dev/msp-example
+  customTarget/projectID: msp-testbed-robert-7be9
+  customTarget/tag: insiders
+executionConfigs:
+- usages: [RENDER, DEPLOY]
+  # Stable naming
+  serviceAccount: clouddeploy-executor@msp-testbed-robert-7be9.iam.gserviceaccount.com

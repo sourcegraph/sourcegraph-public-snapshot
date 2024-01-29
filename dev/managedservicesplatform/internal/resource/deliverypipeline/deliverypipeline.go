@@ -2,10 +2,10 @@ package deliverypipeline
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/clouddeploydeliverypipeline"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverytarget"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -16,7 +16,10 @@ type Config struct {
 	Name        string
 	Description string
 
-	Stages []*deliverytarget.Output
+	// Stages lists target IDs in order.
+	Stages []string
+
+	DependsOn []cdktf.ITerraformDependable
 }
 
 type Output struct{}
@@ -35,6 +38,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			SerialPipeline: &clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipeline{
 				Stages: pointers.Ptr(newStages(config)),
 			},
+
+			DependsOn: &config.DependsOn,
 		})
 
 	return &Output{}, nil
@@ -44,7 +49,7 @@ func newStages(config Config) []*clouddeploydeliverypipeline.ClouddeployDelivery
 	var stages []*clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipelineStages
 	for _, target := range config.Stages {
 		stages = append(stages, &clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipelineStages{
-			TargetId: target.Target.Name(),
+			TargetId: pointers.Ptr(target),
 		})
 	}
 	return stages

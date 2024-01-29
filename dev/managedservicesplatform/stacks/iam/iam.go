@@ -211,15 +211,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}
 	}
 
-	cloudDeployAccountID := random.New(stack, id.Group("clouddeploy_account_id"), random.Config{
-		Prefix:     "clouddeploy",
-		ByteLength: 3, // 6 chars
-	})
 	cloudDeployServiceAccount := serviceaccount.New(stack,
 		id.Group("clouddeploy"),
 		serviceaccount.Config{
 			ProjectID:   vars.ProjectID,
-			AccountID:   cloudDeployAccountID.HexValue,
+			AccountID:   "clouddeploy-executor",
 			DisplayName: fmt.Sprintf("%s Cloud Deploy Service Account", vars.Service.GetName()),
 			Roles: []serviceaccount.Role{
 				{

@@ -11,7 +11,9 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
@@ -176,8 +178,29 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 		if err := cdktf.Synthesize(); err != nil {
 			return err
 		}
+
+		if rollout := service.BuildRolloutPipelineConfiguration(env); rollout != nil {
+			pending.Updatef("[%s] Building rollout pipeline configuration for environment %q...", serviceID, env.ID)
+
+			deploySpec, err := clouddeploy.RenderSpec(
+				service.Service,
+				service.Build,
+				*rollout,
+				// region is currently fixed
+				cloudrun.GCPRegion)
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(
+				filepath.Join(filepath.Dir(serviceSpecPath), "clouddeploy.yaml"),
+				deploySpec.Bytes(),
+				0644); err != nil {
+				return err
+			}
+		}
+
 		pending.Complete(output.Styledf(output.StyleSuccess,
-			"[%s] Terraform assets generated in %q!", serviceID, renderer.OutputDir))
+			"[%s] Infrastructure assets generated in %q!", serviceID, renderer.OutputDir))
 	}
 
 	return nil

@@ -14,16 +14,18 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketobject"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganization"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryteam"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/key"
 	sentryproject "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverypipeline"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverytarget"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
@@ -80,8 +82,8 @@ const (
 
 // Hardcoded variables.
 var (
-	// gcpRegion is currently hardcoded.
-	gcpRegion = "us-central1"
+	// GCPRegion is currently hardcoded.
+	GCPRegion = "us-central1"
 )
 
 const tfVarKeyResolvedImageTag = "resolved_image_tag"
@@ -166,7 +168,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return privatenetwork.New(stack, privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
-			Region:    gcpRegion,
+			Region:    GCPRegion,
 		})
 	})
 
@@ -186,7 +188,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			resourceid.New("redis"),
 			redis.Config{
 				ProjectID: vars.ProjectID,
-				Region:    gcpRegion,
+				Region:    GCPRegion,
 				Spec:      *vars.Environment.Resources.Redis,
 				Network:   privateNetwork().Network,
 			})
@@ -219,7 +221,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		pgSpec := *vars.Environment.Resources.PostgreSQL
 		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
 			ProjectID: vars.ProjectID,
-			Region:    gcpRegion,
+			Region:    GCPRegion,
 			Spec:      pgSpec,
 			Network:   privateNetwork().Network,
 
@@ -336,7 +338,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		ResolvedImageTag:  *imageTag.StringValue,
 		Environment:       vars.Environment,
 		GCPProjectID:      vars.ProjectID,
-		GCPRegion:         gcpRegion,
+		GCPRegion:         GCPRegion,
 		ServiceAccount:    vars.IAM.CloudRunWorkloadServiceAccount,
 		DiagnosticsSecret: diagnosticsSecret,
 		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
@@ -361,62 +363,72 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// pipelines for each. In particular, see https://registry.terraform.io/providers/hashicorp/google/5.10.0/docs/resources/clouddeploy_delivery_pipeline#target_id:
 		//
 		// > The location of the Target is inferred to be the same as the location of the DeliveryPipeline that contains this Stage.
-		var rolloutLocation = gcpRegion
+		var rolloutLocation = GCPRegion
 
-		// stageTargets enumerate stages in order.
-		var stageTargets []*deliverytarget.Output
+		// stageTargets enumerate stages in order. Cloud Deploy targets are
+		// created separately because the TF provider doesn't support Custom
+		// Targets yet - TODO document
+		var stageTargets []string
 		for _, stage := range vars.RolloutPipeline.Stages {
 			id := id.Group("stage").Group(stage.EnvironmentID)
-			target, err := deliverytarget.New(stack,
-				id,
-				deliverytarget.Config{
-					Service:                  vars.Service,
-					CloudRunEnvironmentID:    stage.EnvironmentID,
-					CloudRunProjectID:        stage.ProjectID,
-					CloudRunResourceLocation: rolloutLocation,
-
-					RequireApproval: pointers.DerefZero(stage.RequireApproval),
-
-					ExecutionServiceAccount: vars.IAM.CloudDeployExecutionServiceAccount,
-
-					// Make it so that our Cloud Run service is up before we
-					// configure the rollout pipeline
-					DependsOn: []cdktf.ITerraformDependable{
-						cloudRunResource,
-					},
-				})
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to render deploy target %q",
-					stage.EnvironmentID)
-			}
 
 			// Our execution service account needs access to this project's
 			// resources to deploy releases.
 			_ = projectiammember.NewProjectIamMember(stack,
 				id.Group("cloudrun_developer").TerraformID("member"),
 				&projectiammember.ProjectIamMemberConfig{
-					Project: &stage.ProjectID,
+					Project: pointers.Ptr(stage.ProjectID),
 					Role:    pointers.Ptr("roles/run.developer"),
 					Member:  &vars.IAM.CloudDeployExecutionServiceAccount.Member,
 				})
 			_ = projectiammember.NewProjectIamMember(stack,
 				id.Group("service_account_user").TerraformID("member"),
 				&projectiammember.ProjectIamMemberConfig{
-					Project: &stage.ProjectID,
+					Project: pointers.Ptr(stage.ProjectID),
 					Role:    pointers.Ptr("roles/iam.serviceAccountUser"),
 					Member:  &vars.IAM.CloudDeployExecutionServiceAccount.Member,
 				})
 
-			stageTargets = append(stageTargets, target)
+			// Name targets with environment+location - this is expected by
+			// our Cloud Deploy Custom Target
+			stageTargets = append(stageTargets,
+				fmt.Sprintf("%s-%s", stage.EnvironmentID, rolloutLocation))
 		}
 
-		// Now, apply each target in a rollout pipeline
+		// Now, apply each target in a rollout pipeline. The targets don't need
+		// to exist at this point yet, though attempting to use the pipeline
+		// before creating targets will fail.
 		_, _ = deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
 			Location: rolloutLocation,
 			Name:     fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
 			Description: fmt.Sprintf("Rollout delivery pipeline for %s",
 				vars.Service.GetName()),
 			Stages: stageTargets,
+
+			// Make it so that our Cloud Run service is up before we
+			// configure the rollout pipeline
+			DependsOn: []cdktf.ITerraformDependable{
+				cloudRunResource,
+			},
+		})
+
+		// We also need to synchronize the Skaffold configuration for our custom
+		// target, so that we can reference it easily without requiring operators
+		// to have the required Skaffold assets for 'gcloud deploy releases create'
+		// locally.
+		skaffoldBucket := storagebucket.NewStorageBucket(stack, id.Group("skaffold").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
+			Name:     pointers.Stringf("%s-cloudrun-skaffold", vars.ProjectID),
+			Location: &GCPRegion,
+		})
+		skaffoldObject, err := clouddeploy.NewCloudRunCustomTargetSkaffoldAssetsArchive()
+		if err != nil {
+			return nil, errors.Wrap(err, "create Cloud Deploy custom target skaffold YAML archive")
+		}
+		_ = storagebucketobject.NewStorageBucketObject(stack, id.Group("skaffold").TerraformID("object"), &storagebucketobject.StorageBucketObjectConfig{
+			Name:        pointers.Ptr("source.tar.gz"),
+			Bucket:      skaffoldBucket.Name(),
+			Content:     pointers.Ptr(skaffoldObject.String()),
+			ContentType: pointers.Ptr("application/x-gzip"),
 		})
 	}
 
