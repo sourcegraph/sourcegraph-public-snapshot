@@ -128,7 +128,6 @@ type cmdReader struct {
 	ctx      context.Context
 	cmd      wrexec.Cmder
 	stderr   *bytes.Buffer
-	buf      bytes.Buffer
 	logger   log.Logger
 	git      git.GitBackend
 	repoName api.RepoName
@@ -137,7 +136,6 @@ type cmdReader struct {
 
 func (rc *cmdReader) Read(p []byte) (n int, err error) {
 	n, err = rc.ReadCloser.Read(p)
-	writtenN, writeErr := rc.buf.Write(p[:n])
 	if err == io.EOF {
 		rc.ReadCloser.Close()
 		rc.closed = true
@@ -148,9 +146,6 @@ func (rc *cmdReader) Read(p []byte) (n int, err error) {
 			}
 			return n, commandFailedError(rc.ctx, err, rc.cmd, rc.stderr.Bytes())
 		}
-	}
-	if err == nil && writeErr != nil {
-		return writtenN, writeErr
 	}
 	return n, err
 }

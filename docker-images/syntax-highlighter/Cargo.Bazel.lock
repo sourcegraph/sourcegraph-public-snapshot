@@ -1,5 +1,5 @@
 {
-  "checksum": "1f506e89dbaa0975402053e16463ca1de53fe0fef1bc0e26c2071eb6f3e56bfd",
+  "checksum": "98ae077c1070b8536f3312447aab51ecb51b454dd723fb009d8651aa36b00fcc",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -11517,6 +11517,10 @@
               "target": "itertools"
             },
             {
+              "id": "lazy_static 1.4.0",
+              "target": "lazy_static"
+            },
+            {
               "id": "once_cell 1.18.0",
               "target": "once_cell"
             },
@@ -11581,6 +11585,15 @@
           "selects": {}
         },
         "edition": "2021",
+        "proc_macro_deps": {
+          "common": [
+            {
+              "id": "paste 1.0.14",
+              "target": "paste"
+            }
+          ],
+          "selects": {}
+        },
         "version": "0.1.0"
       },
       "license": null
@@ -13141,14 +13154,6 @@
         "deps": {
           "common": [
             {
-              "id": "lazy_static 1.4.0",
-              "target": "lazy_static"
-            },
-            {
-              "id": "scip 0.3.2",
-              "target": "scip"
-            },
-            {
               "id": "tree-sitter 0.20.10",
               "target": "tree_sitter"
             },
@@ -13167,10 +13172,6 @@
             {
               "id": "tree-sitter-go 0.20.0",
               "target": "tree_sitter_go"
-            },
-            {
-              "id": "tree-sitter-highlight 0.20.1",
-              "target": "tree_sitter_highlight"
             },
             {
               "id": "tree-sitter-java 0.20.2",
@@ -13240,15 +13241,6 @@
           "selects": {}
         },
         "edition": "2021",
-        "proc_macro_deps": {
-          "common": [
-            {
-              "id": "paste 1.0.14",
-              "target": "paste"
-            }
-          ],
-          "selects": {}
-        },
         "version": "0.1.0"
       },
       "license": null

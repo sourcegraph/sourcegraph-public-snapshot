@@ -20,6 +20,7 @@ const (
 	IsAlias
 	Standard
 	QuotesAsLiterals
+	Boost
 )
 
 var allLabels = map[labels]string{

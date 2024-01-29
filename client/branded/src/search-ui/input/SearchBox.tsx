@@ -188,6 +188,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
+                        enableJumpToSuggestion={true}
                     />
                     {showKeywordSearchToggle ? (
                         <Toggles

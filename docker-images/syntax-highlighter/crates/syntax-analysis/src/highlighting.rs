@@ -8,10 +8,10 @@ use syntect::{
     parsing::{SyntaxReference, SyntaxSet},
 };
 
-mod tree_sitter;
+pub mod tree_sitter;
 pub use tree_sitter::{
     index_language as treesitter_index, index_language_with_config as treesitter_index_with_config,
-    lsif_highlight, jsonify_err
+    jsonify_err, lsif_highlight,
 };
 
 mod syntect_html;

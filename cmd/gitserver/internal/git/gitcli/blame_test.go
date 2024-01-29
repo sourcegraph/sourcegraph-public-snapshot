@@ -3,8 +3,6 @@ package gitcli
 import (
 	"context"
 	"io"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -13,28 +11,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGitCLIBackend_Blame(t *testing.T) {
-	rcf := wrexec.NewNoOpRecordingCommandFactory()
-	reposDir := t.TempDir()
-
-	// Make a new bare repo on disk.
-	p := filepath.Join(reposDir, "repo")
-	require.NoError(t, os.MkdirAll(p, os.ModePerm))
-	dir := common.GitDir(filepath.Join(p, ".git"))
-
 	// Prepare repo state:
-	cmds := []string{
+	backend := BackendWithRepoCommands(t,
 		"echo 'hello\nworld\nfrom\nblame\n' > foo.txt",
 		"git add foo.txt",
 		"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
@@ -42,18 +27,7 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 		"echo 'hello\nworld\nfrom\nthe best blame\n' > foo.txt",
 		"git add foo.txt",
 		"git commit -m bar --author='Bar Author <bar@sourcegraph.com>'",
-
-		// Promote the repo to a bare repo.
-		"git config --bool core.bare true",
-	}
-	for _, cmd := range append([]string{"git init --initial-branch=master ."}, cmds...) {
-		out, err := gitserver.CreateGitCommand(p, "bash", "-c", cmd).CombinedOutput()
-		if err != nil {
-			t.Fatalf("Failed to run git command %v. Output was:\n\n%s", cmd, out)
-		}
-	}
-
-	backend := NewBackend(logtest.Scoped(t), rcf, dir, "repo")
+	)
 
 	ctx := context.Background()
 

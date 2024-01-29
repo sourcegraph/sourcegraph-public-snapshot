@@ -660,7 +660,7 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := git.QuickRevParseHead(dir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
+		if resolved, err := gitcli.QuickRevParseHead(dir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}
@@ -670,7 +670,7 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
-		if resolved, err := git.QuickSymbolicRefHead(dir); err == nil {
+		if resolved, err := gitcli.QuickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}

@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{get_globals, get_locals};
-use tree_sitter_all_languages::parsers::BundledParser;
+use tree_sitter_all_languages::BundledParser;
 use walkdir::DirEntry;
 
 use crate::{

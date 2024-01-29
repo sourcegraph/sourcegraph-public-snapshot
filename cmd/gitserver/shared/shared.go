@@ -237,12 +237,13 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	var additionalServerOptions []grpc.ServerOption
 
 	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog"),
-		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog"),
-		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog"),
-		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog"),
-		proto.GitserverService_MergeBase_FullMethodName: logger.Scoped("merge-base.accesslog"),
-		proto.GitserverService_Blame_FullMethodName:     logger.Scoped("blame.accesslog"),
+		proto.GitserverService_Exec_FullMethodName:          logger.Scoped("exec.accesslog"),
+		proto.GitserverService_Archive_FullMethodName:       logger.Scoped("archive.accesslog"),
+		proto.GitserverService_P4Exec_FullMethodName:        logger.Scoped("p4exec.accesslog"),
+		proto.GitserverService_GetObject_FullMethodName:     logger.Scoped("get-object.accesslog"),
+		proto.GitserverService_MergeBase_FullMethodName:     logger.Scoped("merge-base.accesslog"),
+		proto.GitserverService_Blame_FullMethodName:         logger.Scoped("blame.accesslog"),
+		proto.GitserverService_DefaultBranch_FullMethodName: logger.Scoped("default-branch.accesslog"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
