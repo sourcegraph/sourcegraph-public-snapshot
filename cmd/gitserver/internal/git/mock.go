@@ -301,6 +301,15 @@ type MockGitBackend struct {
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitBackendMergeBaseFunc
+	// ReadFileFunc is an instance of a mock function object controlling the
+	// behavior of the method ReadFile.
+	ReadFileFunc *GitBackendReadFileFunc
+	// RevParseHeadFunc is an instance of a mock function object controlling
+	// the behavior of the method RevParseHead.
+	RevParseHeadFunc *GitBackendRevParseHeadFunc
+	// SymbolicRefHeadFunc is an instance of a mock function object
+	// controlling the behavior of the method SymbolicRefHead.
+	SymbolicRefHeadFunc *GitBackendSymbolicRefHeadFunc
 }
 
 // NewMockGitBackend creates a new mock of the GitBackend interface. All
@@ -334,6 +343,21 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: func(context.Context, string, string) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
+		ReadFileFunc: &GitBackendReadFileFunc{
+			defaultHook: func(context.Context, api.CommitID, string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
+		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
+			defaultHook: func(context.Context) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
+		SymbolicRefHeadFunc: &GitBackendSymbolicRefHeadFunc{
+			defaultHook: func(context.Context, bool) (r0 string, r1 error) {
 				return
 			},
 		},
@@ -374,6 +398,21 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.MergeBase")
 			},
 		},
+		ReadFileFunc: &GitBackendReadFileFunc{
+			defaultHook: func(context.Context, api.CommitID, string) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockGitBackend.ReadFile")
+			},
+		},
+		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
+			defaultHook: func(context.Context) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitBackend.RevParseHead")
+			},
+		},
+		SymbolicRefHeadFunc: &GitBackendSymbolicRefHeadFunc{
+			defaultHook: func(context.Context, bool) (string, error) {
+				panic("unexpected invocation of MockGitBackend.SymbolicRefHead")
+			},
+		},
 	}
 }
 
@@ -398,6 +437,15 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		MergeBaseFunc: &GitBackendMergeBaseFunc{
 			defaultHook: i.MergeBase,
+		},
+		ReadFileFunc: &GitBackendReadFileFunc{
+			defaultHook: i.ReadFile,
+		},
+		RevParseHeadFunc: &GitBackendRevParseHeadFunc{
+			defaultHook: i.RevParseHead,
+		},
+		SymbolicRefHeadFunc: &GitBackendSymbolicRefHeadFunc{
+			defaultHook: i.SymbolicRefHead,
 		},
 	}
 }
@@ -1054,6 +1102,330 @@ func (c GitBackendMergeBaseFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendMergeBaseFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendReadFileFunc describes the behavior when the ReadFile method of
+// the parent MockGitBackend instance is invoked.
+type GitBackendReadFileFunc struct {
+	defaultHook func(context.Context, api.CommitID, string) (io.ReadCloser, error)
+	hooks       []func(context.Context, api.CommitID, string) (io.ReadCloser, error)
+	history     []GitBackendReadFileFuncCall
+	mutex       sync.Mutex
+}
+
+// ReadFile delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitBackend) ReadFile(v0 context.Context, v1 api.CommitID, v2 string) (io.ReadCloser, error) {
+	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2)
+	m.ReadFileFunc.appendCall(GitBackendReadFileFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ReadFile method of
+// the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendReadFileFunc) SetDefaultHook(hook func(context.Context, api.CommitID, string) (io.ReadCloser, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReadFile method of the parent MockGitBackend instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendReadFileFunc) PushHook(hook func(context.Context, api.CommitID, string) (io.ReadCloser, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendReadFileFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.CommitID, string) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendReadFileFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+	f.PushHook(func(context.Context, api.CommitID, string) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendReadFileFunc) nextHook() func(context.Context, api.CommitID, string) (io.ReadCloser, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendReadFileFunc) appendCall(r0 GitBackendReadFileFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendReadFileFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendReadFileFunc) History() []GitBackendReadFileFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendReadFileFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendReadFileFuncCall is an object that describes an invocation of
+// method ReadFile on an instance of MockGitBackend.
+type GitBackendReadFileFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.CommitID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 io.ReadCloser
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendReadFileFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendReadFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendRevParseHeadFunc describes the behavior when the RevParseHead
+// method of the parent MockGitBackend instance is invoked.
+type GitBackendRevParseHeadFunc struct {
+	defaultHook func(context.Context) (api.CommitID, error)
+	hooks       []func(context.Context) (api.CommitID, error)
+	history     []GitBackendRevParseHeadFuncCall
+	mutex       sync.Mutex
+}
+
+// RevParseHead delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitBackend) RevParseHead(v0 context.Context) (api.CommitID, error) {
+	r0, r1 := m.RevParseHeadFunc.nextHook()(v0)
+	m.RevParseHeadFunc.appendCall(GitBackendRevParseHeadFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RevParseHead method
+// of the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendRevParseHeadFunc) SetDefaultHook(hook func(context.Context) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevParseHead method of the parent MockGitBackend instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBackendRevParseHeadFunc) PushHook(hook func(context.Context) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendRevParseHeadFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendRevParseHeadFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendRevParseHeadFunc) nextHook() func(context.Context) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendRevParseHeadFunc) appendCall(r0 GitBackendRevParseHeadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendRevParseHeadFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendRevParseHeadFunc) History() []GitBackendRevParseHeadFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendRevParseHeadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendRevParseHeadFuncCall is an object that describes an invocation
+// of method RevParseHead on an instance of MockGitBackend.
+type GitBackendRevParseHeadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendRevParseHeadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendRevParseHeadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendSymbolicRefHeadFunc describes the behavior when the
+// SymbolicRefHead method of the parent MockGitBackend instance is invoked.
+type GitBackendSymbolicRefHeadFunc struct {
+	defaultHook func(context.Context, bool) (string, error)
+	hooks       []func(context.Context, bool) (string, error)
+	history     []GitBackendSymbolicRefHeadFuncCall
+	mutex       sync.Mutex
+}
+
+// SymbolicRefHead delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitBackend) SymbolicRefHead(v0 context.Context, v1 bool) (string, error) {
+	r0, r1 := m.SymbolicRefHeadFunc.nextHook()(v0, v1)
+	m.SymbolicRefHeadFunc.appendCall(GitBackendSymbolicRefHeadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SymbolicRefHead
+// method of the parent MockGitBackend instance is invoked and the hook
+// queue is empty.
+func (f *GitBackendSymbolicRefHeadFunc) SetDefaultHook(hook func(context.Context, bool) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SymbolicRefHead method of the parent MockGitBackend instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBackendSymbolicRefHeadFunc) PushHook(hook func(context.Context, bool) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendSymbolicRefHeadFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, bool) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendSymbolicRefHeadFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, bool) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendSymbolicRefHeadFunc) nextHook() func(context.Context, bool) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendSymbolicRefHeadFunc) appendCall(r0 GitBackendSymbolicRefHeadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendSymbolicRefHeadFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendSymbolicRefHeadFunc) History() []GitBackendSymbolicRefHeadFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendSymbolicRefHeadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendSymbolicRefHeadFuncCall is an object that describes an
+// invocation of method SymbolicRefHead on an instance of MockGitBackend.
+type GitBackendSymbolicRefHeadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendSymbolicRefHeadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendSymbolicRefHeadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

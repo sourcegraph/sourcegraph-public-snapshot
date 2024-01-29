@@ -21,10 +21,23 @@ type GitBackend interface {
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
-
 	// Blame returns a reader for the blame info of the given path.
 	// BlameHunkReader must always be closed.
 	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
+	// SymbolicRefHead resolves what the HEAD symbolic ref points to. This is also
+	// commonly referred to as the default branch within Sourcegraph.
+	// If short is true, the returned ref name will be shortened when possible
+	// without ambiguity.
+	SymbolicRefHead(ctx context.Context, short bool) (string, error)
+	// RevParseHead resolves at what commit HEAD points to. If HEAD doesn't point
+	// to anything, a RevisionNotFoundError is returned. This can occur, for example,
+	// when the repository is empty (ie. has no commits).
+	RevParseHead(ctx context.Context) (api.CommitID, error)
+	// ReadFile returns a reader for the contents of the given file at the given commit.
+	// If the file does not exist, a os.PathError is returned.
+	// If the path points to a submodule, an empty reader is returned and no error.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	ReadFile(ctx context.Context, commit api.CommitID, path string) (io.ReadCloser, error)
 
 	// ArchiveReader returns a reader for an archive in the given format.
 	// Treeish is the tree or commit to archive, and pathspecs is the list of
