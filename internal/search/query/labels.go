@@ -34,9 +34,6 @@ var allLabels = map[labels]string{
 	Structural:                "Structural",
 	IsPredicate:               "IsPredicate",
 	IsAlias:                   "IsAlias",
-	Standard:                  "Standard",
-	Boost:                     "Boost",
-	QuotesAsLiterals:          "QuotesAsLiterals",
 }
 
 func (l *labels) IsSet(label labels) bool {
