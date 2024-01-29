@@ -104,8 +104,8 @@ def go_dependencies():
         name = "com_github_acomagu_bufpipe",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/acomagu/bufpipe",
-        sum = "h1:e3H4WUzM3npvo5uv95QuJM3cQspFNtFBzvJ2oNjKIDQ=",
-        version = "v1.0.4",
+        sum = "h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=",
+        version = "v1.0.3",
     )
     go_repository(
         name = "com_github_adalogics_go_fuzz_headers",
@@ -5755,8 +5755,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:CumaleyciZzwsNOf1ewSC2hgKdFaBuO0yzTeIUcp64Y=",
-        version = "v0.0.0-20240122093209-b82a981f8240",
+        sum = "h1:xfQ+hpwxBMb4Dvy3djTCheq/kt7LGxhe3SywvebgPXY=",
+        version = "v0.0.0-20240129113324-340c5f85f0b7",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
