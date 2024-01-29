@@ -97,6 +97,18 @@ service GitserverService {
   rpc DefaultBranch(DefaultBranchRequest) returns (DefaultBranchResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ReadFile gets a file from the repo ODB and streams the contents back.
+  // The endpoint will verify that the user is allowed to view the given file
+  // if subrepo permissions are enabled for the repo. If access is denied, an error
+  // with a UnauthorizedPayload in the details is returned.
+  // If the path points to a submodule, no error is returned and an empty file is
+  // streamed back.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message BlameRequest {
@@ -143,6 +155,18 @@ message DefaultBranchRequest {
 message DefaultBranchResponse {
   string ref_name = 1;
   string commit = 2;
+}
+
+message ReadFileRequest {
+  // repo_name is the name of the repo to get the default branch for.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  string commit = 3;
+  string path = 4;
+}
+
+message ReadFileResponse {
+  bytes data = 1;
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -305,6 +329,12 @@ message RepoNotFoundPayload {
 message RevisionNotFoundPayload {
   string repo = 1;
   string spec = 2;
+}
+
+message FileNotFoundPayload {
+  string repo = 1;
+  string commit = 2;
+  string path = 3;
 }
 
 message ExecStatusPayload {

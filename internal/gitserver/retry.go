@@ -156,4 +156,9 @@ func (r *automaticRetryClient) DefaultBranch(ctx context.Context, in *proto.Defa
 	return r.base.DefaultBranch(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadFileClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadFile(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

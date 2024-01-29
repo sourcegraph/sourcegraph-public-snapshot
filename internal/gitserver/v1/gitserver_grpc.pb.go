@@ -44,6 +44,7 @@ const (
 	GitserverService_MergeBase_FullMethodName                   = "/gitserver.v1.GitserverService/MergeBase"
 	GitserverService_Blame_FullMethodName                       = "/gitserver.v1.GitserverService/Blame"
 	GitserverService_DefaultBranch_FullMethodName               = "/gitserver.v1.GitserverService/DefaultBranch"
+	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -96,6 +97,16 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(ctx context.Context, in *DefaultBranchRequest, opts ...grpc.CallOption) (*DefaultBranchResponse, error)
+	// ReadFile gets a file from the repo ODB and streams the contents back.
+	// The endpoint will verify that the user is allowed to view the given file
+	// if subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a UnauthorizedPayload in the details is returned.
+	// If the path points to a submodule, no error is returned and an empty file is
+	// streamed back.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -473,6 +484,38 @@ func (c *gitserverServiceClient) DefaultBranch(ctx context.Context, in *DefaultB
 	return out, nil
 }
 
+func (c *gitserverServiceClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_ReadFile_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceReadFileClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_ReadFileClient interface {
+	Recv() (*ReadFileResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceReadFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceReadFileClient) Recv() (*ReadFileResponse, error) {
+	m := new(ReadFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -523,6 +566,16 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error)
+	// ReadFile gets a file from the repo ODB and streams the contents back.
+	// The endpoint will verify that the user is allowed to view the given file
+	// if subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a UnauthorizedPayload in the details is returned.
+	// If the path points to a submodule, no error is returned and an empty file is
+	// streamed back.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -604,6 +657,9 @@ func (UnimplementedGitserverServiceServer) Blame(*BlameRequest, GitserverService
 }
 func (UnimplementedGitserverServiceServer) DefaultBranch(context.Context, *DefaultBranchRequest) (*DefaultBranchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DefaultBranch not implemented")
+}
+func (UnimplementedGitserverServiceServer) ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1091,6 +1147,27 @@ func _GitserverService_DefaultBranch_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_ReadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ReadFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).ReadFile(m, &gitserverServiceReadFileServer{stream})
+}
+
+type GitserverService_ReadFileServer interface {
+	Send(*ReadFileResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceReadFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceReadFileServer) Send(m *ReadFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1204,6 +1281,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Blame",
 			Handler:       _GitserverService_Blame_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ReadFile",
+			Handler:       _GitserverService_ReadFile_Handler,
 			ServerStreams: true,
 		},
 	},
