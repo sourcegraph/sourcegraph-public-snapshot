@@ -10,7 +10,6 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { EventName } from '../../../util/constants'
-import { useCodySidebar } from '../../sidebar/Provider'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
@@ -30,6 +29,7 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
+    checkCodyIgnore: (path: string) => boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -43,6 +43,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     renderHint,
     encourageOverlap,
     authenticatedUser,
+    checkCodyIgnore,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -53,16 +54,13 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
 
-    // TODO: it should probably be passed as a prop (https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3bc52d0a2451988f09e956341670489842c3ef77/-/blob/client/web/src/cody/components/ChatUI/ChatUi.tsx?L85-105)
-    const { ignores } = useCodySidebar()
-    const ignore = activeEditor?.filePath ? ignores(activeEditor.filePath) : false
-    const inferredFilePath = (!ignore && activeEditor?.filePath) || null
+    const isCurrentFileIgnored = activeEditor?.filePath ? checkCodyIgnore(activeEditor.filePath) : false
+    const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
     useEffect(() => {
-        if (ignore) {
-            // TODO: set includeInferredFile to false, something like setScope({ ...scope, includeInferredFile: false })
-            // TODO: ensure file not included in context (debug here: https://sourcegraph.com/npm/sourcegraph/cody-shared@4ca213aae5939157596393f83a8352a900ac4880/-/blob/src/chat/useClient.ts?L31)
+        if (isCurrentFileIgnored && scope.includeInferredFile) {
+            setScope({ ...scope, includeInferredFile: false })
         }
-    }, [ignore])
+    }, [isCurrentFileIgnored, scope, setScope])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
