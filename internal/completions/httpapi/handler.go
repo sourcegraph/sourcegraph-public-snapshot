@@ -36,8 +36,8 @@ import (
 )
 
 // maxRequestDuration is the maximum amount of time a request can take before
-// being cancelled.
-const maxRequestDuration = time.Minute
+// being cancelled as DeadlineExceeded.
+const maxRequestDuration = 2 * time.Minute
 
 var timeToFirstEventMetrics = metrics.NewREDMetrics(
 	prometheus.DefaultRegisterer,

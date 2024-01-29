@@ -742,7 +742,7 @@ impl<'a> LocalResolver<'a> {
 mod test {
     use crate::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use scip::types::Document;
-    use tree_sitter_all_languages::parsers::BundledParser;
+    use tree_sitter_all_languages::BundledParser;
 
     use super::*;
     use crate::languages::LocalConfiguration;

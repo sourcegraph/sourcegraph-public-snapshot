@@ -62,6 +62,10 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 		})
 		if err != nil {
 			tr.SetError(err)
+			if errcode.IsUnauthorized(err) {
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -167,8 +171,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 type BlameHunkResponse struct {
 	api.CommitID `json:"commitID"`
 
-	StartLine int                     `json:"startLine"` // 1-indexed start line number
-	EndLine   int                     `json:"endLine"`   // 1-indexed end line number
+	StartLine uint32                  `json:"startLine"` // 1-indexed start line number
+	EndLine   uint32                  `json:"endLine"`   // 1-indexed end line number
 	Author    gitdomain.Signature     `json:"author"`
 	Message   string                  `json:"message"`
 	Filename  string                  `json:"filename"`

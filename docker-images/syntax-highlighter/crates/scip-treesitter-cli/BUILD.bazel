@@ -1,5 +1,6 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 
 rust_binary(
     name = "scip-treesitter",
@@ -70,14 +71,20 @@ rust_test(
         ],
         allow_empty = False,
     ),
-    data = [":scip-treesitter"] +
-           glob(
-               ["tests/snapshots/**"],
-               allow_empty = False,
-           ),
+    data = [
+        ":java_groundtruth_scip",
+        ":scip-treesitter",
+    ] + glob(
+        ["tests/snapshots/**"],
+        allow_empty = False,
+    ) + glob(
+        ["testdata/**"],
+        allow_empty = False,
+    ),
     env = {
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
+        "JAVA_SCIP_INDEX": "$(rootpath :java_groundtruth_scip)",
         "SCIP_TREESITTER_PATH": "$(rootpath :scip-treesitter)",
     },
     deps = all_crate_deps(
@@ -86,4 +93,28 @@ rust_test(
         ":scip-treesitter",
         ":scip-treesitter-cli-lib",
     ] + WORKSPACE_DEPS,
+)
+
+oci_image(
+    name = "scip_java_image",
+    base = "@scip-java",
+)
+
+oci_tarball(
+    name = "scip_java_image_tarball",
+    image = ":scip_java_image",
+    repo_tags = ["scip-java:tmp"],
+)
+
+genrule(
+    name = "java_groundtruth_scip",
+    srcs = [
+        "testdata/scip-index.sh",
+        ":scip_java_image_tarball",
+    ] + glob(["testdata/java/**"]),
+    outs = ["index-java.scip"],
+    cmd = """\
+    $(location testdata/scip-index.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java/build.gradle) 'scip-java index' $@
+    """,
+    tags = ["requires-network"],
 )

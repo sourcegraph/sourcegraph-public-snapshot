@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{get_globals, get_locals};
-use tree_sitter_all_languages::parsers::BundledParser;
+use tree_sitter_all_languages::BundledParser;
 use walkdir::DirEntry;
 
 use crate::{
@@ -164,9 +164,10 @@ pub fn index_command(
 
         let mut evaluator = Evaluator::default();
         evaluator
-            .evaluate_indexes(&index, &ground_truth, Default::default())
+            .evaluate_indexes(&index, &ground_truth)
             .unwrap()
-            .print_summary();
+            .write_summary(&mut std::io::stdout(), Default::default())
+            .unwrap();
     }
 
     write_message_to_file(out, index).expect("to write the file");

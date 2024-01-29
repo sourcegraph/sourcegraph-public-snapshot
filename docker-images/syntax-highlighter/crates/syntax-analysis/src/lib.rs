@@ -1,11 +1,11 @@
 use anyhow::Result;
 use scip::types::Occurrence;
-use tree_sitter_all_languages::parsers::BundledParser;
+use tree_sitter_all_languages::BundledParser;
 
 pub mod ctags;
 pub mod globals;
-pub mod languages;
 pub mod highlighting;
+pub mod languages;
 pub mod locals;
 pub mod range;
 pub mod snapshot;
@@ -34,7 +34,7 @@ mod test {
     use std::{io::BufWriter, path::Path};
 
     use crate::snapshot::dump_document;
-    use tree_sitter_all_languages::parsers::BundledParser;
+    use tree_sitter_all_languages::BundledParser;
 
     use crate::ctags::generate_tags;
 
