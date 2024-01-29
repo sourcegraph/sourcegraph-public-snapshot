@@ -58,7 +58,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
     useEffect(() => {
         if (isCurrentFileIgnored && scope.includeInferredFile) {
-            setScope({ ...scope, includeInferredFile: false })
+            setScope({ ...scope, includeInferredFile: false, includeInferredRepository: true })
         }
     }, [isCurrentFileIgnored, scope, setScope])
 
