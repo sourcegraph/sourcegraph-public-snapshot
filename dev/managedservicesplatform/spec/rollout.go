@@ -1,0 +1,68 @@
+package spec
+
+type RolloutSpec struct {
+	// Stages specifies the order and environments through which releases
+	// progress.
+	Stages []RolloutStageSpec `yaml:"stages"`
+}
+
+func (r *RolloutSpec) GetStageByEnvironment(id string) *RolloutStageSpec {
+	if r == nil {
+		return nil
+	}
+	for _, stage := range r.Stages {
+		if stage.EnvironmentID == id {
+			return &stage
+		}
+	}
+	return nil
+}
+
+type RolloutStageSpec struct {
+	// EnvironmentID is the ID of the environment to use in this stage.
+	// The specified environment MUST have 'deploy: { type: "rollout" }' configured.
+	EnvironmentID string `yaml:"environment"`
+	// RequireApproval, if true, requires manual approval before deploying to
+	// this stage.
+	RequireApproval *bool `yaml:"requireApproval,omitempty"`
+}
+
+// RolloutPipelineConfiguration is rendered from BuildPipelineConfiguration for use in
+// stacks.
+type RolloutPipelineConfiguration struct {
+	Stages []rolloutPipelineTargetConfiguration
+}
+
+// rolloutPipelineTargetConfiguration is an internal type that extends
+// RolloutStageSpec with other top-level environment spec.
+type rolloutPipelineTargetConfiguration struct {
+	RolloutStageSpec
+	// ProjectID is the project the target environmet lives in.
+	ProjectID string
+}
+
+// BuildRolloutPipelineConfiguration evaluates a configuration for use in
+// configuring a Cloud Deploy pipeline in the final environment of a rollout
+// spec's stages.
+func (s Spec) BuildRolloutPipelineConfiguration(env EnvironmentSpec) *RolloutPipelineConfiguration {
+	if s.Rollout == nil {
+		return nil
+	}
+
+	// We only need the configuration
+	if s.Rollout.Stages[len(s.Rollout.Stages)-1].EnvironmentID != env.ID {
+		return nil
+	}
+
+	var targets []rolloutPipelineTargetConfiguration
+	for _, stage := range s.Rollout.Stages {
+		env := s.GetEnvironment(stage.EnvironmentID)
+		targets = append(targets, rolloutPipelineTargetConfiguration{
+			ProjectID:        env.ProjectID,
+			RolloutStageSpec: stage,
+		})
+	}
+	return &RolloutPipelineConfiguration{
+		Stages: targets,
+	}
+}

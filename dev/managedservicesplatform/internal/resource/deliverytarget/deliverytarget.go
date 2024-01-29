@@ -1,12 +1,14 @@
-package deploytarget
+package deliverytarget
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/clouddeploytarget"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/cloudrunresource"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -15,19 +17,28 @@ type Config struct {
 
 	CloudRunEnvironmentID    string
 	CloudRunProjectID        string
-	CloudRunResourceName     string
 	CloudRunResourceLocation string
+
+	RequireApproval bool
+
+	DependsOn []cdktf.ITerraformDependable
 }
 
-type Output struct{}
+type Output struct {
+	Target clouddeploytarget.ClouddeployTarget
+}
 
+// New provisions resources for a google_clouddeploy_target:
+// https://cloud.google.com/deploy/docs/overview
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	_ = clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID("target"), &clouddeploytarget.ClouddeployTargetConfig{
+	target := clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID("target"), &clouddeploytarget.ClouddeployTargetConfig{
 		Description: pointers.Stringf("%s - %s",
 			config.Service.GetName(), config.CloudRunEnvironmentID),
 
 		// Configure Cloud Run as the target
-		Name:     &config.CloudRunResourceName,
+		Name: pointers.Ptr(cloudrunresource.NewName(
+			config.Service.ID, config.CloudRunEnvironmentID, config.CloudRunResourceLocation)),
+
 		Location: &config.CloudRunResourceLocation,
 		Run: &clouddeploytarget.ClouddeployTargetRun{
 			Location: pointers.Stringf("projects/%s/locations/%s",
@@ -35,7 +46,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		},
 
 		// Target configuration
-		RequireApproval: nil, // TODO
+		RequireApproval: &config.RequireApproval, // TODO
 		ExecutionConfigs: &[]*clouddeploytarget.ClouddeployTargetExecutionConfigs{{
 			Usages: &[]*string{
 				pointers.Ptr("RENDER"),
@@ -43,6 +54,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			},
 			ExecutionTimeout: pointers.Ptr("3600s"),
 		}},
+
+		DependsOn: &config.DependsOn,
 	})
-	return nil, nil
+	return &Output{
+		Target: target,
+	}, nil
 }

@@ -166,7 +166,7 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 		}
 
 		// Render environment
-		cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, env, *service.Monitoring)
+		cdktf, err := renderer.RenderEnvironment(*service, env)
 		if err != nil {
 			return err
 		}

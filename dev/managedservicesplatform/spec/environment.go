@@ -177,11 +177,10 @@ type EnvironmentDeployType string
 const (
 	EnvironmentDeployTypeManual       = "manual"
 	EnvironmentDeployTypeSubscription = "subscription"
+	EnvironmentDeployTypeRollout      = "rollout"
 )
 
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
-//
-// TODO: Implement ability to resolve latest concrete tag from a source
 func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
@@ -200,8 +199,11 @@ func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
 		}
 		return tagAndDigest, nil
+	case EnvironmentDeployTypeRollout:
+		// Enforce convention
+		return "insiders", nil
 	default:
-		return "", errors.New("unable to resolve tag")
+		return "", errors.Newf("unable to resolve tag for unknown deploy type %q", d.Type)
 	}
 }
 

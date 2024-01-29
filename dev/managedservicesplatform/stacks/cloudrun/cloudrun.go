@@ -2,6 +2,7 @@ package cloudrun
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"strconv"
 	"strings"
@@ -20,7 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deploytarget"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverypipeline"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverytarget"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
@@ -58,6 +60,11 @@ type Variables struct {
 	Service     spec.ServiceSpec
 	Image       string
 	Environment spec.EnvironmentSpec
+
+	// RolloutPipeline is only non-nil if this environment is the final
+	// environment of a rollout spec - the final environment is where the Cloud
+	// Deploy pipeline lives.
+	RolloutPipeline *spec.RolloutPipelineConfiguration
 
 	StableGenerate bool
 
@@ -343,21 +350,55 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
 
-	// TODO
-	_, _ = deploytarget.New(stack, id.Group("target").Group(vars.Environment.ID), deploytarget.Config{
-		Service:                  vars.Service,
-		CloudRunEnvironmentID:    vars.Environment.ID,
-		CloudRunProjectID:        vars.ProjectID,
-		CloudRunResourceName:     *cloudRunResource.Name(),
-		CloudRunResourceLocation: *cloudRunResource.Location(),
-	})
-	_, _ = deploytarget.New(stack, id.Group("target").Group("test"), deploytarget.Config{
-		Service:                  vars.Service,
-		CloudRunEnvironmentID:    "test",
-		CloudRunProjectID:        "msp-testbed-test-77589aae45d0",
-		CloudRunResourceName:     "msp-testbed", // TODO
-		CloudRunResourceLocation: *cloudRunResource.Location(),
-	})
+	// We have a rollout pipeline to configure.
+	if vars.RolloutPipeline != nil {
+		id := id.Group("rolloutpipeline")
+
+		// For now, we only use 1 region everywhere, but also note that ALL
+		// deployment targets must be in the same location as the delivery
+		// pipeline, so if we ever do multi-region we'll need multiple delivery
+		// pipelines for each. In particular, see https://registry.terraform.io/providers/hashicorp/google/5.10.0/docs/resources/clouddeploy_delivery_pipeline#target_id:
+		//
+		// > The location of the Target is inferred to be the same as the location of the DeliveryPipeline that contains this Stage.
+		var rolloutLocation = gcpRegion
+
+		// stageTargets enumerate stages in order.
+		var stageTargets []*deliverytarget.Output
+		for _, stage := range vars.RolloutPipeline.Stages {
+			target, err := deliverytarget.New(stack,
+				id.Group("stage").Group(stage.EnvironmentID),
+				deliverytarget.Config{
+					Service:               vars.Service,
+					CloudRunEnvironmentID: stage.EnvironmentID,
+					CloudRunProjectID:     stage.ProjectID,
+
+					CloudRunResourceLocation: rolloutLocation,
+
+					RequireApproval: pointers.DerefZero(stage.RequireApproval),
+
+					// Make it so that our Cloud Run service is up before we
+					// configure the rollout pipeline
+					DependsOn: []cdktf.ITerraformDependable{
+						cloudRunResource,
+					},
+				})
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to render deploy target %q",
+					stage.EnvironmentID)
+			}
+
+			stageTargets = append(stageTargets, target)
+		}
+
+		// Now, apply each target in a rollout pipeline
+		_, _ = deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
+			Location: rolloutLocation,
+			Name:     fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
+			Description: fmt.Sprintf("Rollout delivery pipeline for %s",
+				vars.Service.GetName()),
+			Stages: stageTargets,
+		})
+	}
 
 	// Collect outputs
 	locals.Add("cloud_run_resource_name", *cloudRunResource.Name(),
