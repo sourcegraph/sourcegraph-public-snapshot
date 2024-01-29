@@ -16,7 +16,7 @@ type CodeIntelIndexer struct {
 // Two indexers with the same language key will be preferred according to the given order.
 var allIndexers = []CodeIntelIndexer{
 	// C++
-	makeInternalIndexer("C++", "scip-clang"),
+	makeIndexer("C++", "scip-clang", "github.com/sourcegraph/scip-clang"),
 	makeInternalIndexer("C++", "lsif-clang"),
 	makeInternalIndexer("C++", "lsif-cpp"),
 
