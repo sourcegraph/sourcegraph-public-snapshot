@@ -8862,10 +8862,6 @@ type MockLSIFStore struct {
 	// IDsWithMetaFunc is an instance of a mock function object controlling
 	// the behavior of the method IDsWithMeta.
 	IDsWithMetaFunc *LSIFStoreIDsWithMetaFunc
-	// InsertDefinitionsAndReferencesForDocumentFunc is an instance of a
-	// mock function object controlling the behavior of the method
-	// InsertDefinitionsAndReferencesForDocument.
-	InsertDefinitionsAndReferencesForDocumentFunc *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc
 	// InsertMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertMetadata.
 	InsertMetadataFunc *LSIFStoreInsertMetadataFunc
@@ -8905,11 +8901,6 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		IDsWithMetaFunc: &LSIFStoreIDsWithMetaFunc{
 			defaultHook: func(context.Context, []int) (r0 []int, r1 error) {
-				return
-			},
-		},
-		InsertDefinitionsAndReferencesForDocumentFunc: &LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc{
-			defaultHook: func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) (r0 error) {
 				return
 			},
 		},
@@ -8965,11 +8956,6 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.IDsWithMeta")
 			},
 		},
-		InsertDefinitionsAndReferencesForDocumentFunc: &LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc{
-			defaultHook: func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error {
-				panic("unexpected invocation of MockLSIFStore.InsertDefinitionsAndReferencesForDocument")
-			},
-		},
 		InsertMetadataFunc: &LSIFStoreInsertMetadataFunc{
 			defaultHook: func(context.Context, int, lsifstore.ProcessedMetadata) error {
 				panic("unexpected invocation of MockLSIFStore.InsertMetadata")
@@ -9013,9 +8999,6 @@ func NewMockLSIFStoreFrom(i lsifstore.Store) *MockLSIFStore {
 		},
 		IDsWithMetaFunc: &LSIFStoreIDsWithMetaFunc{
 			defaultHook: i.IDsWithMeta,
-		},
-		InsertDefinitionsAndReferencesForDocumentFunc: &LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc{
-			defaultHook: i.InsertDefinitionsAndReferencesForDocument,
 		},
 		InsertMetadataFunc: &LSIFStoreInsertMetadataFunc{
 			defaultHook: i.InsertMetadata,
@@ -9487,126 +9470,6 @@ func (c LSIFStoreIDsWithMetaFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreIDsWithMetaFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc describes the
-// behavior when the InsertDefinitionsAndReferencesForDocument method of the
-// parent MockLSIFStore instance is invoked.
-type LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc struct {
-	defaultHook func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error
-	hooks       []func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error
-	history     []LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall
-	mutex       sync.Mutex
-}
-
-// InsertDefinitionsAndReferencesForDocument delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockLSIFStore) InsertDefinitionsAndReferencesForDocument(v0 context.Context, v1 shared1.ExportedUpload, v2 string, v3 int, v4 func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error {
-	r0 := m.InsertDefinitionsAndReferencesForDocumentFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.InsertDefinitionsAndReferencesForDocumentFunc.appendCall(LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall{v0, v1, v2, v3, v4, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// InsertDefinitionsAndReferencesForDocument method of the parent
-// MockLSIFStore instance is invoked and the hook queue is empty.
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) SetDefaultHook(hook func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertDefinitionsAndReferencesForDocument method of the parent
-// MockLSIFStore instance invokes the hook at the front of the queue and
-// discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) PushHook(hook func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error {
-		return r0
-	})
-}
-
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) nextHook() func(context.Context, shared1.ExportedUpload, string, int, func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) appendCall(r0 LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreInsertDefinitionsAndReferencesForDocumentFunc) History() []LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall is an object
-// that describes an invocation of method
-// InsertDefinitionsAndReferencesForDocument on an instance of
-// MockLSIFStore.
-type LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 shared1.ExportedUpload
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 func(ctx context.Context, upload shared1.ExportedUpload, rankingBatchSize int, rankingGraphKey string, path string, document *scip.Document) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreInsertDefinitionsAndReferencesForDocumentFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // LSIFStoreInsertMetadataFunc describes the behavior when the
