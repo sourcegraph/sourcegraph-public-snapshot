@@ -88,7 +88,7 @@ const (
 	accessLoggingEnabledMessage = "access logging enabled"
 )
 
-func (a *accessLogger) maybeLog(ctx context.Context) {
+func (a *accessLogger) maybeLog(ctx context.Context, method string) {
 	// If access logging is not enabled, we are done
 	if !a.isEnabled() {
 		return
@@ -117,7 +117,7 @@ func (a *accessLogger) maybeLog(ctx context.Context) {
 		fields = append(fields, log.String("params", "nil"))
 	}
 
-	audit.Log(ctx, a.logger, audit.Record{
+	audit.Log(ctx, a.logger.Scoped(method), audit.Record{
 		Entity: "gitserver",
 		Action: "access",
 		Fields: fields,
@@ -164,8 +164,8 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 		// Call the next handler in the chain.
 		next(w, r)
 
-		// Log the access
-		a.maybeLog(ctx)
+		// Log the access. The logger is already scoped so we don't need to do that here.
+		a.maybeLog(ctx, "")
 	}
 }
 
@@ -178,7 +178,7 @@ func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteCo
 		ctx = withContext(ctx, &paramsContext{})
 		resp, err = handler(ctx, req)
 
-		a.maybeLog(ctx)
+		a.maybeLog(ctx, info.FullMethod)
 		return resp, err
 	}
 }
@@ -194,7 +194,7 @@ func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteC
 		ss = &wrappedServerStream{ServerStream: ss, ctx: ctx}
 		err := handler(srv, ss)
 
-		a.maybeLog(ctx)
+		a.maybeLog(ctx, info.FullMethod)
 		return err
 	}
 }
