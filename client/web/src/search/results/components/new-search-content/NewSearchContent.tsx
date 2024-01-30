@@ -71,11 +71,11 @@ type SearchResultPreview = ContentMatch | PathMatch
 
 interface NewSearchContentProps
     extends TelemetryProps,
-    SettingsCascadeProps,
-    PlatformContextProps,
-    ExtensionsControllerProps,
-    SearchPatternTypeProps,
-    SearchPatternTypeMutationProps {
+        SettingsCascadeProps,
+        PlatformContextProps,
+        ExtensionsControllerProps,
+        SearchPatternTypeProps,
+        SearchPatternTypeMutationProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string

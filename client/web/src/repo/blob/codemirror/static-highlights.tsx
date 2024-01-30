@@ -68,6 +68,7 @@ function scrollToFirstRange(): Extension {
         if (selectedRange) {
             scrolled = true
             update.view.dispatch({
+                selection: { anchor: selectedRange.from, head: selectedRange.to },
                 effects: EditorView.scrollIntoView(ranges[0].from, {
                     y: 'nearest',
                     x: 'center',
