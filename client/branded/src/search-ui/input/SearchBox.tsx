@@ -58,7 +58,7 @@ export interface SearchBoxProps
     showSearchHistory?: boolean
 
     recentSearches?: RecentSearch[]
-    showKeywordSearchToggle: boolean
+    showKeywordSearchToggle?: boolean
 }
 
 export const SearchBox: FC<SearchBoxProps> = props => {

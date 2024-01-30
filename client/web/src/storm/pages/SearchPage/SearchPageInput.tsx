@@ -50,7 +50,7 @@ interface SearchPageInputProps {
     setQueryState: (newState: QueryState) => void
     hardCodedSearchContextSpec?: string
     simpleSearch: boolean
-    showKeywordSearchToggle: boolean
+    showKeywordSearchToggle?: boolean
 }
 
 export const SearchPageInput: FC<SearchPageInputProps> = props => {
