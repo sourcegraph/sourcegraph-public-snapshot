@@ -96,6 +96,7 @@ oci_image(
     tags = ["manual"],
     tars = [
         ":tar_migrator",
+        ":tar_current_schema_descriptions",
         "//cmd/migrator/airgappedgen:tar_schema_descriptions",
     ],
     user = "sourcegraph",
