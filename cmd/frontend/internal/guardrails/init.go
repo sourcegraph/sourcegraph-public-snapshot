@@ -57,28 +57,14 @@ type enterpriseInitialization struct {
 func (e *enterpriseInitialization) Service() attribution.Service {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	endpoint, token := e.newConfig()
+	config := conf.Get().SiteConfig()
+	endpoint, token := conf.GetAttributionGateway(config)
 	if e.endpoint != endpoint || e.token != token {
 		e.endpoint = endpoint
 		e.token = token
 		e.client = codygateway.NewClient(httpcli.ExternalDoer, endpoint, token)
 	}
 	return attribution.NewGatewayProxy(e.observationCtx, e.client)
-}
-
-func (e *enterpriseInitialization) newConfig() (string, string) {
-	config := conf.Get().SiteConfig()
-	// Explicit attribution gateway config overrides autocomplete config (if used).
-	if gateway := conf.GetAttributionGateway(config); gateway != nil {
-		return gateway.Endpoint, gateway.AccessToken
-	}
-	// Fall back to autocomplete config if no explicit gateway config.
-	cc := conf.GetCompletionsConfig(config)
-	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
-	if ccUsingGateway {
-		return cc.Endpoint, cc.AccessToken
-	}
-	return "", ""
 }
 
 func alwaysAllowed(context.Context, string) (bool, error) {
