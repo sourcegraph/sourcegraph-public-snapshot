@@ -30,7 +30,6 @@ go_library(
         "//internal/own",
         "//internal/own/types",
         "//internal/ratelimit",
-        "//internal/rcache",
         "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",

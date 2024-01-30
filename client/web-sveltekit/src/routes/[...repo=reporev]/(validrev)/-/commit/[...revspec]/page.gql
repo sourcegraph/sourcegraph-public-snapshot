@@ -1,0 +1,38 @@
+query CommitPage_CommitQuery($repo: ID!, $revspec: String!) {
+    node(id: $repo) {
+        ... on Repository {
+            id
+            commit(rev: $revspec) {
+                id
+                oid
+                parents {
+                    id
+                    oid
+                    abbreviatedOID
+                    canonicalURL
+                }
+
+                ...Commit
+            }
+        }
+    }
+}
+
+query CommitPage_DiffQuery($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
+    node(id: $repo) {
+        ... on Repository {
+            id
+            comparison(base: $base, head: $head) {
+                fileDiffs(first: $first, after: $after) {
+                    nodes {
+                        ...FileDiff_Diff
+                    }
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                }
+            }
+        }
+    }
+}

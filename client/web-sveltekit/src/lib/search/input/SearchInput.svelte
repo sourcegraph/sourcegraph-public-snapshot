@@ -121,14 +121,12 @@
     let suggestionsPaddingTop = 0
     let suggestionsUI: Extension = []
 
-    $: patternType = $queryState.patternType
-    $: regularExpressionEnabled = patternType === SearchPatternType.regexp
-    $: structuralEnabled = patternType === SearchPatternType.structural
+    $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
+    $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
     $: extension = [
         suggestions({
             id: popoverID,
             source: createSuggestionsSource({
-                valueType: patternType === SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
                 graphqlQuery,
                 authenticatedUser: $user,
                 isSourcegraphDotCom: false,
@@ -323,19 +321,5 @@
         border: 0;
         background-color: transparent;
         cursor: pointer;
-    }
-
-    .popover-content {
-        input {
-            margin-left: 0;
-        }
-
-        label {
-            max-width: 17rem;
-            display: flex;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-top: 1px solid var(--border-color);
-        }
     }
 </style>

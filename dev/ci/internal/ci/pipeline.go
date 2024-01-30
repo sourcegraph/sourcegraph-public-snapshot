@@ -147,6 +147,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if !isAspectWorkflowBuild {
 			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(semgrepScan())
 			securityOps.Append(sonarcloudScan())
 			ops.Merge(securityOps)
 		}
@@ -297,9 +298,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
-		// Security scanning - sonarcloud
+		// Security scanning - sonarcloud & semgrep scan
+		// Sonarcloud scan will soon be phased out after semgrep scan is fully enabled
 		if isAspectWorkflowBuild {
 			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(semgrepScan())
 			securityOps.Append(sonarcloudScan())
 			ops.Merge(securityOps)
 		}

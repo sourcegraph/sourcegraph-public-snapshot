@@ -202,10 +202,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: () => <AnalyticsSearchPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/code-intel',
         render: () => <AnalyticsCodeIntelPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/extensions',
@@ -228,6 +230,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: () => <AnalyticsNotebooksPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/configuration',
@@ -456,11 +459,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/lsif-uploads/:id',

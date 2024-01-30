@@ -4,6 +4,8 @@ service:
   name: {{ .Name }}
   owners:
     - {{ .Owner }}
+  # TODO: Write a simple description of what this service is for and what it does.
+  description: "TODO"
 
 build:
   # TODO: Configure the correct image for your job here. If you use a private
@@ -17,7 +19,7 @@ build:
 
 environments:
   - id: {{ if .Dev }}dev{{ else }}prod{{ end }}
-    projectID: {{ if .Dev }}{{ newProjectID .ID "dev" .ProjectIDSuffixLength }}{{ else }}{{ newProjectID .ID "dev" .ProjectIDSuffixLength }}{{ end }}
+    projectID: {{ if .Dev }}{{ newProjectID .ID "dev" .ProjectIDSuffixLength }}{{ else }}{{ newProjectID .ID "prod" .ProjectIDSuffixLength }}{{ end }}
     # TODO: We initially provision in 'test' to make it easy to access the project
     # during setup. Once done, you should change this to 'external' or 'internal'.
     category: test

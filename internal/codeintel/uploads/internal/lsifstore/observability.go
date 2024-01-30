@@ -8,13 +8,12 @@ import (
 )
 
 type operations struct {
-	insertMetadata                            *observation.Operation
-	newSCIPWriter                             *observation.Operation
-	idsWithMeta                               *observation.Operation
-	reconcileCandidates                       *observation.Operation
-	deleteLsifDataByUploadIds                 *observation.Operation
-	deleteUnreferencedDocuments               *observation.Operation
-	insertDefinitionsAndReferencesForDocument *observation.Operation
+	insertMetadata              *observation.Operation
+	newSCIPWriter               *observation.Operation
+	idsWithMeta                 *observation.Operation
+	reconcileCandidates         *observation.Operation
+	deleteLsifDataByUploadIds   *observation.Operation
+	deleteUnreferencedDocuments *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -38,12 +37,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		insertMetadata:                            op("InsertMetadata"),
-		newSCIPWriter:                             op("NewSCIPWriter"),
-		idsWithMeta:                               op("IDsWithMeta"),
-		reconcileCandidates:                       op("ReconcileCandidates"),
-		deleteLsifDataByUploadIds:                 op("DeleteLsifDataByUploadIds"),
-		deleteUnreferencedDocuments:               op("DeleteUnreferencedDocuments"),
-		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
+		insertMetadata:              op("InsertMetadata"),
+		newSCIPWriter:               op("NewSCIPWriter"),
+		idsWithMeta:                 op("IDsWithMeta"),
+		reconcileCandidates:         op("ReconcileCandidates"),
+		deleteLsifDataByUploadIds:   op("DeleteLsifDataByUploadIds"),
+		deleteUnreferencedDocuments: op("DeleteUnreferencedDocuments"),
 	}
 }

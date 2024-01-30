@@ -2,7 +2,7 @@ package backend
 
 import (
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/zoekt"
 	"golang.org/x/exp/slices"
 

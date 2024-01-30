@@ -1,35 +1,29 @@
-import { getPaginationParams } from '$lib/Paginator'
-
 import type { PageLoad } from './$types'
-import { CommitsQuery } from './page.gql'
+import { CommitsPage_CommitsQuery } from './page.gql'
 
-const pageSize = 20
+const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ parent, url }) => {
+export const load: PageLoad = async ({ parent }) => {
     const { resolvedRevision, graphqlClient } = await parent()
-    const { first, after } = getPaginationParams(url.searchParams, pageSize)
+
+    const commitsQuery = graphqlClient.watchQuery({
+        query: CommitsPage_CommitsQuery,
+        variables: {
+            repo: resolvedRevision.repo.id,
+            revspec: resolvedRevision.commitID,
+            first: PAGE_SIZE,
+            afterCursor: null,
+        },
+        notifyOnNetworkStatusChange: true,
+    })
+
+    if (!graphqlClient.readQuery({ query: CommitsPage_CommitsQuery, variables: commitsQuery.variables })) {
+        // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
+        // as soon as possible, not only after the layout subscribes to the query.
+        commitsQuery.refetch()
+    }
 
     return {
-        deferred: {
-            commits: graphqlClient
-                .query({
-                    query: CommitsQuery,
-                    variables: {
-                        repo: resolvedRevision.repo.id,
-                        revspec: resolvedRevision.commitID,
-                        first,
-                        afterCursor: after,
-                    },
-                })
-                .then(result => {
-                    if (result.data.node?.__typename !== 'Repository') {
-                        throw new Error('Unable to find repository')
-                    }
-                    if (!result.data.node.commit) {
-                        throw new Error('Unable to find commit')
-                    }
-                    return result.data.node.commit.ancestors
-                }),
-        },
+        commitsQuery,
     }
 }

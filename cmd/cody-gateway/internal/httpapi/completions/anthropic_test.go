@@ -6,13 +6,10 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 )
 
@@ -115,36 +112,5 @@ func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
 		count2, err := newRequest.GetPromptTokenCount(tk)
 		require.NoError(t, err)
 		assert.Equal(t, originalRequest.promptTokens.count, count2, "token count should be unchanged")
-	})
-}
-
-func TestActor_IsDotComActor(t *testing.T) {
-	t.Run("with dotcom actor", func(t *testing.T) {
-		act := &actor.Actor{
-			ID:     "d3d2b638-d0a2-4539-a099-b36860b09819",
-			Source: actor.FakeSource{codygateway.ActorSourceProductSubscription},
-		}
-
-		isDotCom := act.IsDotComActor()
-
-		require.True(t, isDotCom)
-	})
-
-	t.Run("with nondotcom actor", func(t *testing.T) {
-		act := &actor.Actor{
-			ID: "NOT_DOTCOM",
-		}
-
-		isDotCom := act.IsDotComActor()
-
-		require.False(t, isDotCom)
-	})
-
-	t.Run("with nil actor", func(t *testing.T) {
-		var act *actor.Actor = nil
-
-		isDotCom := act.IsDotComActor()
-
-		require.False(t, isDotCom)
 	})
 }

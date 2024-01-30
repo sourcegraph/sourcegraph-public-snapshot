@@ -1,44 +1,44 @@
 package shared
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
-// gRPCWebUIDebugEndpoints returns debug points that serve the GRPCWebUI instances that target
-// this frontend instance.
-func gRPCWebUIDebugEndpoints() []debugserver.Endpoint {
-	addr := cli.GetInternalAddr()
+func createDebugServerEndpoints(ready chan struct{}, debugserverEndpoints *cli.LazyDebugserverEndpoint) []debugserver.Endpoint {
 	return []debugserver.Endpoint{
-		debugserver.NewGRPCWebUIEndpoint("frontend-internal", addr),
-	}
-}
-
-func CreateDebugServerEndpoints() []debugserver.Endpoint {
-	return append(
-		gRPCWebUIDebugEndpoints(),
+		debugserver.NewGRPCWebUIEndpoint("frontend-internal", cli.GetInternalAddr()),
 		debugserver.Endpoint{
 			Name: "Rate Limiter State",
 			Path: "/rate-limiter-state",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				info, err := ratelimit.GetGlobalLimiterState(r.Context())
-				if err != nil {
-					http.Error(w, fmt.Sprintf("failed to read rate limiter state: %q", err.Error()), http.StatusInternalServerError)
-					return
-				}
-				resp, err := json.MarshalIndent(info, "", "  ")
-				if err != nil {
-					http.Error(w, fmt.Sprintf("failed to marshal rate limiter state: %q", err.Error()), http.StatusInternalServerError)
-					return
-				}
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write(resp)
+				// wait until we're healthy to respond
+				<-ready
+				// globalRateLimiterState is guaranteed to be assigned now
+				debugserverEndpoints.GlobalRateLimiterState.ServeHTTP(w, r)
 			}),
 		},
-	)
+		{
+			Name: "Gitserver Repo Status",
+			Path: "/gitserver-repo-status",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// wait until we're healthy to respond
+				<-ready
+				// gitserverReposStatusEndpoint is guaranteed to be assigned now
+				debugserverEndpoints.GitserverReposStatusEndpoint.ServeHTTP(w, r)
+			}),
+		},
+		{
+			Name: "List Authz Providers",
+			Path: "/list-authz-providers",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// wait until we're healthy to respond
+				<-ready
+				// listAuthzProvidersEndpoint is guaranteed to be assigned now
+				debugserverEndpoints.ListAuthzProvidersEndpoint.ServeHTTP(w, r)
+			}),
+		},
+	}
 }

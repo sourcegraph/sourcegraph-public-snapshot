@@ -9,6 +9,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestExperimentalPhraseBoost(t *testing.T) {
+	test := func(input string, searchType SearchType) string {
+		query, _ := ParseSearchType(input, searchType)
+
+		for i, n := range query {
+			query[i] = ExperimentalPhraseBoost(n)
+		}
+
+		json, _ := ToJSON(query)
+		return json
+	}
+
+	// expect phrase query
+	autogold.Expect(`[{"or":[{"value":"foo bar bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]}]}]`).Equal(t, test("foo bar bas", SearchTypeKeyword))
+
+	// expect no phrase query
+	autogold.Expect(`[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}}]`).Equal(t, test("foo", SearchTypeKeyword))
+	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}}]}]`).Equal(t, test("foo bar", SearchTypeKeyword))
+	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]}]`).Equal(t, test("foo and bar", SearchTypeKeyword))
+	autogold.Expect(`[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":true,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":11}}}]`).Equal(t, test("foo not bar", SearchTypeKeyword))
+	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}}]},{"value":"bas","negated":true,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":15}}},{"value":"quz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":16},"end":{"line":0,"column":19}}}]`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":14},"end":{"line":0,"column":17}}}]}]`).Equal(t, test("foo or bar or bas", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]},{"and":[{"value":"quz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":16},"end":{"line":0,"column":19}}},{"value":"biz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":24},"end":{"line":0,"column":27}}}]}]}]`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
+}
+
 func TestSubstituteAliases(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)
@@ -28,11 +53,11 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Expect(`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
 		Equal(t, test("path:foo", SearchTypeLiteral))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"^repo$","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]`).
-		Equal(t, test("r:repo foo bar", SearchTypeNewStandardRC1))
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]`).
+		Equal(t, test("r:repo foo bar", SearchTypeKeyword))
 
 	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Regexp"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":13}}}]}]`).
-		Equal(t, test("foo bar /bas/", SearchTypeNewStandardRC1))
+		Equal(t, test("foo bar /bas/", SearchTypeKeyword))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -194,23 +219,23 @@ func TestConcat(t *testing.T) {
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("a b c d e f", SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test("a b c d e f", SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(a not b not c d)", SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test("(a not b not c d)", SearchTypeKeyword)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(((a b c))) and d", SearchTypeNewStandardRC1)))
+		autogold.ExpectFile(t, autogold.Raw(test("(((a b c))) and d", SearchTypeKeyword)))
 	})
 }
 

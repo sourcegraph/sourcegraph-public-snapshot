@@ -15,8 +15,17 @@ type ServiceSpec struct {
 	// e.g. "Cody Gateway".
 	Name *string `yaml:"name"`
 	// Owners denotes the teams or individuals primarily responsible for the
-	// service.
+	// service. Each owner MUST be a valid Opsgenie team name - this is validated
+	// in each environment's monitoring stack.
 	Owners []string `yaml:"owners"`
+	// Description briefly summarizing what the service does. Required.
+	//
+	// ❗ We do NOT include this description in generated docs today - while it
+	// might be helpful to include service descriptions, some services have
+	// sensitive details or descriptions that are difficult to put into words
+	// in a public-facing document. For now, this is used for reference in the
+	// private service spec and for internal integrations like Opsgenie.
+	Description string `yaml:"description"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
@@ -31,11 +40,38 @@ type ServiceSpec struct {
 	IAM *ServiceIAMSpec `yaml:"iam,omitempty"`
 }
 
+// GetName returns Name if configured, otherwise the ID.
+func (s ServiceSpec) GetName() string {
+	return pointers.Deref(s.Name, s.ID)
+}
+
+// GetKind returns Kind if configured, otherwise the default (ServiceKindService).
+func (s ServiceSpec) GetKind() ServiceKind {
+	return pointers.Deref(s.Kind, ServiceKindService)
+}
+
 func (s ServiceSpec) Validate() []error {
 	var errs []error
 
+	if s.ID == "" {
+		errs = append(errs, errors.New("id is required"))
+	}
 	if len(s.ID) > 20 {
 		errs = append(errs, errors.New("id must be at most 20 characters"))
+	}
+	if !regexp.MustCompile(`^[a-z0-9-]+$`).MatchString(s.ID) {
+		errs = append(errs, errors.New("id can only contain lowercase alphanumeric characters and hyphens"))
+	}
+	if len(s.Owners) == 0 {
+		errs = append(errs, errors.New("owners requires at least one value"))
+	}
+	for i, o := range s.Owners {
+		if o == "" {
+			errs = append(errs, errors.Newf("owners[%d] is invalid", i))
+		}
+	}
+	if len(s.Description) == 0 {
+		errs = append(errs, errors.New("description is required"))
 	}
 
 	if s.IAM != nil {

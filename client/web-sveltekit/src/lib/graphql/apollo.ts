@@ -1,3 +1,4 @@
+import type { KeyArgsFunction, KeySpecifier } from '@apollo/client/cache/inmemory/policies'
 import {
     gql,
     ApolloClient,
@@ -9,8 +10,8 @@ import {
     type OperationVariables,
     type QueryOptions,
     type DocumentNode,
-    type MutationOptions,
     type FetchPolicy,
+    type FieldPolicy,
 } from '@apollo/client/core/index'
 import { trimEnd, once } from 'lodash'
 
@@ -52,9 +53,59 @@ const customFetch: HttpOptions['fetch'] = (uri, options) => fetch(uri, options).
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
+/**
+ * Creates a field policy for a list-like forward connections. It concatenates the
+ * incoming nodes with the existing nodes, and updates the pageInfo.
+ */
+function listLikeForwardConnection({ keyArgs }: { keyArgs: KeySpecifier | KeyArgsFunction | false }): FieldPolicy {
+    return {
+        keyArgs,
+
+        merge(existing, incoming) {
+            if (!existing) {
+                return incoming
+            }
+
+            if (existing.pageInfo.endCursor === incoming.pageInfo.endCursor) {
+                // If the endCursor is the same, we assume that the incoming
+                // nodes are the same as the existing nodes. This can happen
+                // when the same query is executed multiple times in a row.
+                // In this case, we return the existing nodes to prevent
+                // incorrect cache updates.
+                return existing
+            }
+
+            return {
+                ...incoming,
+                nodes: [...existing.nodes, ...incoming.nodes],
+            }
+        },
+    }
+}
+
 export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
     const cache = new InMemoryCache({
         typePolicies: {
+            GitCommit: {
+                fields: {
+                    ancestors: listLikeForwardConnection({
+                        keyArgs: args => {
+                            // This key function treats an empty path the same as an
+                            // omitted path.
+                            // keyArgs: ['query', 'path', 'follow', 'after'],
+                            const keyArgs: Record<string, any> = {}
+                            if (args) {
+                                for (const key of ['query', 'path', 'follow', 'after']) {
+                                    if (key in args && (key !== 'path' || args[key] !== '')) {
+                                        keyArgs[key] = args[key]
+                                    }
+                                }
+                            }
+                            return JSON.stringify(keyArgs)
+                        },
+                    }),
+                },
+            },
             GitTree: {
                 // GitTree object's don't have an ID, but canonicalURL is unique
                 keyFields: ['canonicalURL'],
@@ -70,6 +121,23 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
             },
             GitBlobLSIFData: {
                 merge: true,
+            },
+            // Signature is not normalized. Data from multiple requests needs
+            // to be merged, not replaced, in order to not lose data.
+            Signature: {
+                merge: true,
+            },
+            // Person is not normalized. Data from multiple requests needs
+            // to be merged, not replaced, in order to not lose data.
+            Person: {
+                merge: true,
+            },
+            RepositoryComparison: {
+                fields: {
+                    fileDiffs: listLikeForwardConnection({
+                        keyArgs: ['paths'],
+                    }),
+                },
             },
         },
         possibleTypes: {
@@ -101,27 +169,6 @@ export async function query<T, V extends OperationVariables = OperationVariables
 ): Promise<T> {
     return (await getGraphQLClient()).query<T, V>({ query, variables, ...options }).then(result => {
         if (result.errors && result.errors.length > 0) {
-            throw createAggregateError(result.errors)
-        }
-        return result.data
-    })
-}
-
-export async function fromCache<T, V extends OperationVariables = OperationVariables>(
-    query: DocumentNode,
-    variables?: V,
-    options?: Omit<QueryOptions<T, V>, 'query' | 'variables'>
-): Promise<T | null> {
-    return (await getGraphQLClient()).readQuery<T, V>({ query, variables, ...options })
-}
-
-export async function mutation<T, V extends OperationVariables = OperationVariables>(
-    mutation: DocumentNode,
-    variables?: V,
-    options?: Omit<MutationOptions<T, V>, 'query' | 'variables'>
-): Promise<T | null | undefined> {
-    return (await getGraphQLClient()).mutate<T, V>({ mutation, variables, ...options }).then(result => {
-        if (result.errors?.length ?? 0 > 0) {
             throw createAggregateError(result.errors)
         }
         return result.data

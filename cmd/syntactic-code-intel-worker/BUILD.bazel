@@ -1,0 +1,77 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+go_library(
+    name = "syntactic-code-intel-worker_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/syntactic-code-intel-worker/shared",
+        "//internal/sanitycheck",
+        "//internal/service/svcmain",
+    ],
+)
+
+go_binary(
+    name = "syntactic-code-intel-worker",
+    embed = [":syntactic-code-intel-worker_lib"],
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+pkg_tar(
+    name = "tar_syntactic-code-intel-worker",
+    srcs = [":syntactic-code-intel-worker"],
+)
+
+pkg_tar(
+    name = "tar_scip-treesitter",
+    srcs = ["//docker-images/syntax-highlighter/crates/scip-treesitter-cli:scip-treesitter"],
+    package_dir = "/usr/local/bin",
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/syntactic-code-intel-worker",
+    ],
+    tars = [
+        ":tar_syntactic-code-intel-worker",
+        "tar_scip-treesitter",
+    ],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["syntactic-code-intel-worker:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("syntactic-code-intel-worker"),
+)

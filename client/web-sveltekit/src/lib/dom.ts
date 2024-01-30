@@ -128,6 +128,10 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
     }
 }
 
+interface ComputeFitAttributes {
+    'on:fit': (event: CustomEvent<{ itemCount: number }>) => void
+}
+
 /**
  * An action to compute the number of elements that fit inside the container.
  * This works by caching the position of the right hand of each child element,
@@ -136,9 +140,7 @@ export const restrictToViewport: Action<HTMLElement, { offset?: number }> = (nod
  * Because of this this action only works for static element lists,
  * i.e. on initial render the node needs to contain all possible child elements.
  */
-export const computeFit: Action<HTMLElement> = (
-    node
-): ActionReturn<void, { 'on:fit': (event: CustomEvent<{ itemCount: number }>) => void }> => {
+export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node => {
     // Holds the cumulative width of all elements up to element i.
     const widths: number[] = [0]
 

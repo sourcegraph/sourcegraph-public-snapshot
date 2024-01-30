@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alecthomas/units"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -28,8 +30,24 @@ type EnvironmentSpec struct {
 	// initialized!
 	ProjectID string `yaml:"projectID"`
 
-	// Category is either "test", "internal", or "external".
-	Category *EnvironmentCategory `yaml:"category,omitempty"`
+	// Category is either "test", "internal", or "external". It informs the
+	// which GCP project folder the environment lives in:
+	//
+	// - 'test': 'Engineering Projects' folder (liberal access)
+	// - 'internal': 'Internal Services' folder (restricted access)
+	// - 'external': 'Managed Services' folder (restricted access)
+	//
+	// It also informs what kind of notification channels are set up out-of-the-box:
+	//
+	// 1. 'test' services only generate Slack notifications.
+	// 2. 'internal' and 'external' services generate Slack and Opsgenie notifications.
+	//
+	// Slack channels are expected to be named '#alerts-<service>-<environmentName>'.
+	// Opsgenie teams are expected to correspond to service owners.
+	//
+	// Both Slack channels and Opsgenie teams are currently expected to be manually
+	// configured.
+	Category EnvironmentCategory `yaml:"category"`
 
 	// Deploy specifies how to deploy revisions.
 	Deploy EnvironmentDeploySpec `yaml:"deploy"`
@@ -63,7 +81,8 @@ type EnvironmentSpec struct {
 
 	// AllowDestroys, if false, configures Terraform lifecycle guards against
 	// deletion of potentially critical resources. This includes things like the
-	// environment project and databases.
+	// environment project and databases, and also guards against the deletion
+	// of Terraform Cloud workspaces as well.
 	// https://developer.hashicorp.com/terraform/tutorials/state/resource-lifecycle#prevent-resource-deletion
 	//
 	// To tear down an environment, or to apply a change that intentionally
@@ -75,19 +94,32 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 
+	// Validate basic configuration
+	if s.ID == "" {
+		errs = append(errs, errors.New("id is required"))
+	}
 	if s.ProjectID == "" {
 		errs = append(errs, errors.New("projectID is required"))
 	}
 	if len(s.ProjectID) > 30 {
-		errs = append(errs, errors.New("projectID must be less than 30 characters"))
+		errs = append(errs, errors.Newf("projectID %q must be less than 30 characters", s.ProjectID))
 	}
 	if !strings.Contains(s.ProjectID, fmt.Sprintf("-%s-", s.ID)) {
 		errs = append(errs, errors.Newf("projectID %q must contain environment ID: expecting format '$SERVICE_ID-$ENVIRONMENT_ID-$RANDOM_SUFFIX'",
 			s.ProjectID))
 	}
+	if err := s.Category.Validate(); err != nil {
+		return append(errs, errors.Wrap(err, "category"))
+	}
 
+	// Validate other shared sub-specs
 	errs = append(errs, s.Deploy.Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
+	errs = append(errs, s.Instances.Validate()...)
+
+	// Validate service-specific specs
+	errs = append(errs, s.EnvironmentServiceSpec.Validate()...)
+
 	return errs
 }
 
@@ -103,6 +135,19 @@ const (
 	EnvironmentCategoryExternal EnvironmentCategory = "external"
 )
 
+func (c EnvironmentCategory) Validate() error {
+	switch c {
+	case EnvironmentCategoryTest,
+		EnvironmentCategoryInternal,
+		EnvironmentCategoryExternal:
+	case "":
+		return errors.New("no category provided")
+	default:
+		return errors.Newf("invalid category %q", c)
+	}
+	return nil
+}
+
 type EnvironmentDeploySpec struct {
 	Type         EnvironmentDeployType                  `yaml:"type"`
 	Manual       *EnvironmentDeployManualSpec           `yaml:"manual,omitempty"`
@@ -112,11 +157,16 @@ type EnvironmentDeploySpec struct {
 func (s EnvironmentDeploySpec) Validate() []error {
 	var errs []error
 	if s.Type == EnvironmentDeployTypeSubscription {
-		if s.Subscription == nil {
+		if s.Manual != nil {
+			errs = append(errs, errors.New("manual deploy spec provided when type is subscription"))
+		} else if s.Subscription == nil {
 			errs = append(errs, errors.New("no subscription specified when deploy type is subscription"))
-		}
-		if s.Subscription.Tag == "" {
+		} else if s.Subscription.Tag == "" {
 			errs = append(errs, errors.New("no tag in image subscription specified"))
+		}
+	} else if s.Type == EnvironmentDeployTypeManual {
+		if s.Subscription != nil {
+			errs = append(errs, errors.New("subscription deploy spec provided when type is manual"))
 		}
 	}
 	return errs
@@ -171,17 +221,12 @@ type EnvironmentServiceSpec struct {
 	//
 	// Only supported for services of 'kind: service'.
 	Domain *EnvironmentServiceDomainSpec `yaml:"domain,omitempty"`
-	// StatupProbe is provisioned by default. It can be disabled with the
-	// 'disabled' field. Probes are made to the MSP-standard '/-/healthz'
-	// endpoint.
+	// HealthProbes configures both startup and continuous liveness probes.
+	// If nil or explicitly disabled, no MSP-standard '/-/healthz' probes will
+	// be configured.
 	//
 	// Only supported for services of 'kind: service'.
-	StatupProbe *EnvironmentServiceStartupProbeSpec `yaml:"startupProbe,omitempty"`
-	// LivenessProbe is only provisioned if this field is set. Probes are made
-	// to the MSP-standard '/-/healthz' endpoint.
-	//
-	// Only supported for services of 'kind: service'.
-	LivenessProbe *EnvironmentServiceLivenessProbeSpec `yaml:"livenessProbe,omitempty"`
+	HealthProbes *EnvironmentServiceHealthProbesSpec `yaml:"healthProbes,omitempty"`
 	// Authentication configures access to the service. By default, the service
 	// is publically available, and the service should handle any required
 	// authentication by itself. Set this field to an empty value to not
@@ -196,6 +241,15 @@ type EnvironmentServiceSpec struct {
 	//
 	// Only supported for services of 'kind: service'.
 	Authentication *EnvironmentServiceAuthenticationSpec `yaml:"authentication,omitempty"`
+}
+
+func (s *EnvironmentServiceSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	errs = append(errs, s.HealthProbes.Validate()...)
+	return errs
 }
 
 type EnvironmentServiceDomainSpec struct {
@@ -229,14 +283,25 @@ type EnvironmentDomainCloudflareSpec struct {
 
 	// Proxied configures whether Cloudflare should proxy all traffic to get
 	// WAF protection instead of only DNS resolution.
-	Proxied bool `yaml:"proxied,omitempty"`
+	//
+	// Default: true
+	Proxied *bool `yaml:"proxied,omitempty"`
 
 	// Required configures whether traffic can only be allowed through Cloudflare.
 	// TODO: Unimplemented.
 	Required bool `yaml:"required,omitempty"`
 }
 
+// ShouldProxy evaluates whether Cloudflare WAF proxying should be used.
+func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
+	if e == nil {
+		return false
+	}
+	return pointers.Deref(e.Proxied, true)
+}
+
 type EnvironmentInstancesSpec struct {
+	// Resources specifies the resources available to each service instance.
 	Resources EnvironmentInstancesResourcesSpec `yaml:"resources"`
 	// Scaling specifies the scaling behavior of the service.
 	//
@@ -244,9 +309,77 @@ type EnvironmentInstancesSpec struct {
 	Scaling *EnvironmentInstancesScalingSpec `yaml:"scaling,omitempty"`
 }
 
+func (s EnvironmentInstancesSpec) Validate() []error {
+	var errs []error
+	errs = append(errs, s.Resources.Validate()...)
+	return errs
+}
+
 type EnvironmentInstancesResourcesSpec struct {
-	CPU    int    `yaml:"cpu"`
+	// CPU specifies the CPU available to each instance. Must be a value
+	// bewteen 1 to 8.
+	CPU int `yaml:"cpu"`
+	// Memory specifies the memory available to each instance. Must be between
+	// 512MiB and 32GiB.
 	Memory string `yaml:"memory"`
+}
+
+func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+
+	// https://cloud.google.com/run/docs/configuring/services/cpu
+	if s.CPU < 1 {
+		errs = append(errs, errors.New("resources.cpu must be >= 1"))
+	} else if s.CPU > 8 {
+		errs = append(errs,
+			errors.New("resources.cpu > 8 not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+	}
+
+	// https://cloud.google.com/run/docs/configuring/services/memory-limits
+	// NOTE: Cloud Run documentation uses 'MiB' as the unit but the configuration
+	// only accepts 'Mi', 'Gi', etc. Make sure our errors are in terms of the
+	// format the configuration accepts to avoid confusion.
+	bytes, err := units.ParseUnit(s.Memory, units.MakeUnitMap("i", "B", 1024))
+	if err != nil {
+		errs = append(errs, errors.Wrap(err, "resources.memory is invalid"))
+
+		// Exit early - all following checks rely on knowing the memory that
+		// was configured, so there's not point continuing validation if we
+		// couldn't parse the memory field.
+		return errs
+	}
+	if units.Base2Bytes(bytes)/units.MiB < 512 {
+		errs = append(errs, errors.New("resources.memory must be >= 512Mi"))
+	}
+	gib := units.Base2Bytes(bytes) / units.GiB
+	if gib > 32 {
+		errs = append(errs,
+			errors.New("resources.memory > 32Gi not supported - consider decreasing scaling.maxRequestConcurrency and increasing scaling.maxCount instead"))
+	}
+
+	// Enforce min CPUs: https://cloud.google.com/run/docs/configuring/services/memory-limits#cpu-minimum
+	if gib > 24 && s.CPU < 8 {
+		errs = append(errs, errors.New("resources.memory > 24Gi requires resources.cpu >= 8"))
+	} else if gib > 16 && s.CPU < 6 {
+		errs = append(errs, errors.New("resources.memory > 16Gi requires resources.cpu >= 6"))
+	} else if gib > 8 && s.CPU < 4 {
+		errs = append(errs, errors.New("resources.memory > 8Gi requires resources.cpu >= 4"))
+	} else if gib > 4 && s.CPU < 2 {
+		errs = append(errs, errors.New("resources.memory > 4Gi requires resources.cpu >= 2"))
+	}
+
+	// Enforce min memory: https://cloud.google.com/run/docs/configuring/services/cpu#cpu-memory
+	if s.CPU > 6 && gib < 4 {
+		errs = append(errs, errors.New("resources.cpu > 6 requires resources.memory >= 4Gi"))
+	} else if s.CPU > 4 && gib < 2 {
+		errs = append(errs, errors.New("resources.cpu > 4 requires resources.memory >= 2Gi"))
+	}
+
+	return errs
 }
 
 type EnvironmentInstancesScalingSpec struct {
@@ -266,44 +399,121 @@ type EnvironmentInstancesScalingSpec struct {
 	MaxCount *int `yaml:"maxCount,omitempty"`
 }
 
-type EnvironmentServiceLivenessProbeSpec struct {
-	// Timeout configures the period of time after which the probe times out,
-	// in seconds.
-	//
-	// Defaults to 1 second.
-	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
-	// probe the deployed service.
-	//
-	// Defaults to 1 second.
-	Interval *int `yaml:"interval,omitempty"`
-}
-
 type EnvironmentServiceAuthenticationSpec struct {
 	// Sourcegraph enables access to everyone in the sourcegraph.com GSuite
 	// domain.
 	Sourcegraph *bool `yaml:"sourcegraph,omitempty"`
 }
 
-type EnvironmentServiceStartupProbeSpec struct {
-	// Disabled configures whether the startup probe should be disabled.
+type EnvironmentServiceHealthProbesSpec struct {
+	// HealthzProbes configures whether the MSP-standard '/-/healthz' service
+	// probes should be disabled. When disabling, you should explicitly set
+	// 'healthzProbes: false'.
+	//
+	// - When disabled, the default probe is a very generous one that waits 240s
+	//   for your service to respond with anything at all on '/'. If your service
+	//   is externally available, it MUST respond with status 200 on HTTP requests
+	//   to '/'.
+	// - When enabled, the MSP-standard '/-/healthz' diagnostic check is used
+	//   with a generated diagnostics secret enforcing Timeout and Interval.
+	//
 	// We recommend disabling it when creating a service, and re-enabling it
-	// once the service is healthy.
-	//
-	// This prevents the first Terraform apply from failing if your healthcheck
-	// is comprehensive.
-	Disabled *bool `yaml:"disabled,omitempty"`
+	// once the service is confirmed to be deployed and healthy. Disabling the
+	// probe on first startup prevents the first Terraform apply from failing if
+	// your healthcheck is comprehensive, or if you haven't implemented
+	// '/-/healthz' yet.
+	HealthzProbes *bool `yaml:"healthzProbes,omitempty"`
 
-	// Timeout configures the period of time after which the probe times out,
-	// in seconds.
+	// Timeout configures the period of time after which a health probe times
+	// out, in seconds.
 	//
-	// Defaults to 1 second.
+	// Defaults to 3 seconds.
 	Timeout *int `yaml:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
-	// probe the deployed service.
+
+	// StartupInterval configures the frequency, in seconds, at which to
+	// probe the deployed service on startup. Must be greater than or equal to
+	// timeout.
 	//
-	// Defaults to 1 second.
-	Interval *int `yaml:"interval,omitempty"`
+	// Defaults to timeout.
+	StartupInterval *int `yaml:"startupInterval,omitempty"`
+
+	// StartupInterval configures the frequency, in seconds, at which to
+	// probe the deployed service after startup to continuously check its health.
+	// Must be greater than or equal to timeout.
+	//
+	// Defaults to timeout * 10.
+	LivenessInterval *int `yaml:"livenessInterval,omitempty"`
+}
+
+func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if !s.UseHealthzProbes() {
+		if s.Timeout != nil || s.StartupInterval != nil || s.LivenessInterval != nil {
+			errs = append(errs,
+				errors.New("timeout, startupInterval and livenessInterval can only be configured when healthzProbes is enabled"))
+		}
+
+		// Nothing else to check
+		return errs
+	}
+
+	if s.GetTimeoutSeconds() > s.GetStartupIntervalSeconds() {
+		errs = append(errs, errors.New("startupInterval must be greater than or equal to timeout"))
+	}
+	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
+		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
+	}
+
+	return errs
+}
+
+// UseHealthzProbes indicates whether the MSP-standard '/-/healthz' probes
+// with diagnostics secrets should be used.
+func (s *EnvironmentServiceHealthProbesSpec) UseHealthzProbes() bool {
+	// No config == disabled
+	if s == nil {
+		return false
+	}
+	// If config is provided, must be explicitly disabled with 'enabled: false'
+	return pointers.Deref(s.HealthzProbes, true)
+}
+
+// MaximumStartupLatencySeconds infers the overal maximum latency for a
+// healthcheck to return healthy when the service is starting up.
+func (s *EnvironmentServiceHealthProbesSpec) MaximumStartupLatencySeconds() int {
+	if !s.UseHealthzProbes() {
+		return 240 // maximum Cloud Run timeout
+	}
+	// Maximum startup latency is retries x interval.
+	const maxRetries = 3
+	return maxRetries * s.GetStartupIntervalSeconds()
+}
+
+// GetStartupIntervalSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetStartupIntervalSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.StartupInterval, s.GetTimeoutSeconds())
+}
+
+// GetLivenessIntervalSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetLivenessIntervalSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.LivenessInterval, s.GetTimeoutSeconds()*10) // 10x timeout default
+}
+
+// GetTimeoutSeconds returns the configured value, the default, or 0 if the spec is nil.
+func (s *EnvironmentServiceHealthProbesSpec) GetTimeoutSeconds() int {
+	if s == nil {
+		return 0
+	}
+	return pointers.Deref(s.Timeout, 3)
 }
 
 type EnvironmentJobSpec struct {
@@ -348,6 +558,25 @@ type EnvironmentResourcesSpec struct {
 	BigQueryDataset *EnvironmentResourceBigQueryDatasetSpec `yaml:"bigQueryDataset,omitempty"`
 }
 
+// List collects a list of provisioned resources for human reference.
+func (s *EnvironmentResourcesSpec) List() []string {
+	if s == nil {
+		return nil
+	}
+
+	var resources []string
+	if s.Redis != nil {
+		resources = append(resources, s.Redis.ResourceKind())
+	}
+	if s.PostgreSQL != nil {
+		resources = append(resources, s.PostgreSQL.ResourceKind())
+	}
+	if s.BigQueryDataset != nil {
+		resources = append(resources, s.BigQueryDataset.ResourceKind())
+	}
+	return resources
+}
+
 func (s *EnvironmentResourcesSpec) Validate() []error {
 	if s == nil {
 		return nil
@@ -365,6 +594,8 @@ type EnvironmentResourceRedisSpec struct {
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
 }
 
+func (EnvironmentResourceRedisSpec) ResourceKind() string { return "Redis" }
+
 type EnvironmentResourcePostgreSQLSpec struct {
 	// Databases to provision - required.
 	Databases []string `yaml:"databases"`
@@ -374,6 +605,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
 }
+
+func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
 
 func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 	if s == nil {
@@ -421,7 +654,8 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	rawSchemaFiles map[string][]byte
 
 	// DatasetID, if provided, configures a custom dataset ID to place all tables
-	// into. By default, we use the service ID as the dataset ID.
+	// into. By default, we use the service ID as the dataset ID (with underscores
+	// replacing illegal characters).
 	//
 	// Dataset IDs must be alphanumeric (plus underscores).
 	DatasetID *string `yaml:"datasetID,omitempty"`
@@ -432,6 +666,14 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	// Location defaults to "US". Do not configure unless you know what you are
 	// doing, as BigQuery locations are not the same as standard GCP regions.
 	Location *string `yaml:"region,omitempty"`
+}
+
+func (EnvironmentResourceBigQueryDatasetSpec) ResourceKind() string { return "BigQuery dataset" }
+
+func (s *EnvironmentResourceBigQueryDatasetSpec) GetDatasetID(serviceID string) string {
+	return pointers.Deref(s.DatasetID,
+		// Dataset IDs must be alphanumeric (plus underscores)
+		strings.ReplaceAll(serviceID, "-", "_"))
 }
 
 func (s *EnvironmentResourceBigQueryDatasetSpec) Validate() []error {

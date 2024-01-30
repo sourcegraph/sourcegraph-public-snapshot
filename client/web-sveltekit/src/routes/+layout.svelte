@@ -16,13 +16,13 @@
     import { beforeNavigate } from '$app/navigation'
 
     import type { LayoutData, Snapshot } from './$types'
-    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
+    import { createFeatureFlagStore } from '$lib/featureflags'
     import InfoBanner from './InfoBanner.svelte'
 
     export let data: LayoutData
 
     const user = writable(data.user ?? null)
-    const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
+    const settings = writable(isErrorLike(data.settings) ? null : data.settings)
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
@@ -33,13 +33,13 @@
         user,
         settings,
         temporarySettingsStorage,
-        featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
+        featureFlags: createFeatureFlagStore(data.featureFlags, data.fetchEvaluatedFeatureFlags),
         client: readable(data.graphqlClient),
     })
 
     // Update stores when data changes
     $: $user = data.user ?? null
-    $: $settings = isErrorLike(data.settings) ? null : data.settings.final
+    $: $settings = isErrorLike(data.settings) ? null : data.settings
 
     // Set initial, user configured theme
     // TODO: This should be send be server in the HTML so that we don't flash the wrong theme

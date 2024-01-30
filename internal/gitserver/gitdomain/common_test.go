@@ -109,3 +109,20 @@ func TestIsAbsoluteRevision(t *testing.T) {
 		}
 	}
 }
+
+// TODO: Fails because a time.Time is embedded in the Hunk type.
+// func TestRoundTripBlameHunk(t *testing.T) {
+// 	diff := ""
+
+// 	err := quick.Check(func(original *Hunk) bool {
+// 		converted := HunkFromBlameProto(original.ToProto())
+// 		if diff = cmp.Diff(original, converted); diff != "" {
+// 			return false
+// 		}
+
+// 		return true
+// 	}, nil)
+// 	if err != nil {
+// 		t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+// 	}
+// }

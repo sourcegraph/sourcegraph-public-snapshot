@@ -4,7 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { SearchBox, Toggles } from '@sourcegraph/branded'
+import { SearchBox, LegacyToggles } from '@sourcegraph/branded'
+import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
     type CaseSensitivityProps,
@@ -15,6 +16,7 @@ import {
     type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Form } from '@sourcegraph/wildcard'
 
 import { Notices } from '../../../global/Notices'
@@ -126,9 +128,12 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [setQueryState]
     )
 
+    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
+
     // TODO (#48103): Remove/simplify when new search input is released
     const input = v2QueryInput ? (
         <LazyV2SearchInput
+            autoFocus={!isTouchOnlyDevice}
             telemetryService={telemetryService}
             patternType={patternType}
             interpretComments={false}
@@ -141,18 +146,32 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             className="flex-grow-1"
         >
-            <Toggles
-                patternType={patternType}
-                caseSensitive={caseSensitive}
-                setPatternType={setSearchPatternType}
-                setCaseSensitivity={setSearchCaseSensitivity}
-                searchMode={searchMode}
-                setSearchMode={setSearchMode}
-                navbarSearchQuery={queryState.query}
-                showSmartSearchButton={false}
-                showExtendedPicker={false}
-                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-            />
+            {showKeywordSearchToggle ? (
+                <Toggles
+                    patternType={patternType}
+                    caseSensitive={caseSensitive}
+                    setPatternType={setSearchPatternType}
+                    setCaseSensitivity={setSearchCaseSensitivity}
+                    searchMode={searchMode}
+                    setSearchMode={setSearchMode}
+                    navbarSearchQuery={queryState.query}
+                    submitSearch={submitSearchOnChange}
+                    structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
+                />
+            ) : (
+                <LegacyToggles
+                    patternType={patternType}
+                    caseSensitive={caseSensitive}
+                    setPatternType={setSearchPatternType}
+                    setCaseSensitivity={setSearchCaseSensitivity}
+                    searchMode={searchMode}
+                    setSearchMode={setSearchMode}
+                    navbarSearchQuery={queryState.query}
+                    submitSearch={submitSearchOnChange}
+                    showSmartSearchButton={false}
+                    structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
+                />
+            )}
         </LazyV2SearchInput>
     ) : (
         <SearchBox
@@ -177,7 +196,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             onChange={setQueryState}
             onSubmit={onSubmit}
             autoFocus={!isTouchOnlyDevice}
-            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
             showSearchHistory={true}
             recentSearches={recentSearches}
         />

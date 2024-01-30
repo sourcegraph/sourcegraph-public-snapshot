@@ -150,18 +150,18 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
-			searchResults: []result.Match{fileMatch("/testFile.ts")},
+			searchResults: []result.Match{fileMatch("/testFile.yml")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
+				`lang:yaml`:       1,
 			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
-			searchResults: []result.Match{fileMatch("/testFile.tsx")},
+			searchResults: []result.Match{fileMatch("/testFile.yaml")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
+				`lang:yaml`:       1,
 			},
 		},
 		{
@@ -641,7 +641,7 @@ func TestSubRepoFiltering(t *testing.T) {
 					}
 					return authz.Read, nil
 				})
-				checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+				checker.EnabledForRepoIDFunc.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
 					return true, nil
 				})
 				return checker

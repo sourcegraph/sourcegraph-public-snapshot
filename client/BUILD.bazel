@@ -3,6 +3,7 @@
 # Source files:
 # gazelle:js_files src/**/*.{ts,tsx}
 # gazelle:js_files globals.d.ts
+# gazelle:js_custom_files stories **/*.story.{ts,tsx}
 
 # Test files, snapshots etc:
 # gazelle:js_test_files **/*.test.{ts,tsx}
