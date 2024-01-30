@@ -1,5 +1,6 @@
 import { logger } from '@sourcegraph/common'
 import { getDocumentNode, gql, useQuery } from '@sourcegraph/http-client'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 
 import type { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
 
@@ -114,4 +115,10 @@ export function useFeatureFlag(
     const status = error ? 'error' : data ? 'loaded' : 'initial'
 
     return [value, status, error?.networkError]
+}
+
+export function useKeywordSearch(): boolean {
+    const [flagEnabled] = useFeatureFlag('search-keyword')
+    const settingEnabled = !!useExperimentalFeatures(features => features.keywordSearch)
+    return flagEnabled || settingEnabled
 }

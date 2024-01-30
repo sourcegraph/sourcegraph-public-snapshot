@@ -79,6 +79,9 @@ type EnvironmentSpec struct {
 	// Resources configures additional resources that a service may depend on.
 	Resources *EnvironmentResourcesSpec `yaml:"resources,omitempty"`
 
+	// Alerting configures alerting and notifications for the environment.
+	Alerting *EnvironmentAlertingSpec `yaml:"alerting,omitempty"`
+
 	// AllowDestroys, if false, configures Terraform lifecycle guards against
 	// deletion of potentially critical resources. This includes things like the
 	// environment project and databases, and also guards against the deletion
@@ -719,4 +722,9 @@ func (s *EnvironmentResourceBigQueryDatasetSpec) LoadSchemas(dir string) error {
 // LoadSchemas will ensure that each table has a corresponding schema file.
 func (s *EnvironmentResourceBigQueryDatasetSpec) GetSchema(tableID string) []byte {
 	return s.rawSchemaFiles[tableID]
+}
+
+type EnvironmentAlertingSpec struct {
+	// Opsgenie, if true, disables suppression of Opsgenie alerts.
+	Opsgenie *bool `yaml:"opsgenie,omitempty"`
 }

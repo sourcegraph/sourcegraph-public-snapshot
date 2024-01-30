@@ -85,7 +85,10 @@ type Variables struct {
 	EnvironmentCategory spec.EnvironmentCategory
 	// EnvironmentID is the name of the service environment.
 	EnvironmentID string
-	Monitoring    spec.MonitoringSpec
+	// Alerting configuration for the environment.
+	Alerting spec.EnvironmentAlertingSpec
+	// Monitoring spec.
+	Monitoring spec.MonitoringSpec
 	// MaxInstanceCount informs service scaling alerts.
 	MaxInstanceCount *int
 	// ExternalDomain informs external health checks on the service domain.
@@ -181,11 +184,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				// Let the team own the integration.
 				OwnerTeamId: team.Id(),
 
-				// Supress all notifications if opsgenieAlerts is disabled -
+				// Supress all notifications if Alerting.Opsgenie is false -
 				// this allows us to see the alerts, but not necessarily get
 				// paged by it.
-				// TODO: Enable after we dogfood the alerts for a while.
-				SuppressNotifications: pointers.Ptr(true),
+				SuppressNotifications: !pointers.DerefZero(vars.Alerting.Opsgenie),
 
 				// Point alerts sent through this integration at the Opsgenie team.
 				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
