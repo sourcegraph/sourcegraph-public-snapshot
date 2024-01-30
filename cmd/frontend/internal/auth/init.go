@@ -49,12 +49,12 @@ func Init(logger log.Logger, db database.DB) {
 		openidconnect.Middleware(db),
 		sourcegraphoperator.Middleware(db),
 		saml.Middleware(db),
-		httpheader.Middleware(db),
 		githuboauth.Middleware(db),
 		gitlaboauth.Middleware(db),
 		bitbucketcloudoauth.Middleware(db),
 		azureoauth.Middleware(db),
 		githubapp.Middleware(db),
+		httpheader.Middleware(db), // Middlewares are applied in reverse order since they are nested. http-header should be checked first.
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)

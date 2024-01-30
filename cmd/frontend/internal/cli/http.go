@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -95,6 +96,7 @@ func newExternalHTTPHandler(
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
 	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
 	appHandler = httpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
+	appHandler = httpheader.Middleware(db).App(appHandler)
 	appHandler = requestclient.ExternalHTTPMiddleware(appHandler)
 	appHandler = requestinteraction.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {
