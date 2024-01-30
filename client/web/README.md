@@ -29,6 +29,16 @@ To use a public API that doesn't require authentication for most of the function
 SOURCEGRAPH_API_URL=https://sourcegraph.com sg start web-standalone
 ```
 
+### Production server
+
+```sh
+sg start web-standalone-prod
+```
+
+Web app should be available at `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`. Build artifacts will be served from `<rootRepoPath>/client/web/dist`.
+
+Note: If you are unable to use the above commands (e.g. you can't install Caddy), you can use `sg run web-standalone-http` instead. This will start a development server using only Node, and will be available at `http://localhost:${SOURCEGRAPH_HTTP_PORT}`.
+
 ### API proxy
 
 In both environments, server proxies API requests to `SOURCEGRAPH_API_URL` provided as the `.env` variable.
