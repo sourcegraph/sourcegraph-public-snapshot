@@ -325,6 +325,10 @@ type EnvironmentInstancesResourcesSpec struct {
 	// Memory specifies the memory available to each instance. Must be between
 	// 512MiB and 32GiB.
 	Memory string `yaml:"memory"`
+	// CloudRunGeneration is either 1 or 2, corresponding to the generations
+	// outlined in https://cloud.google.com/run/docs/about-execution-environments.
+	// By default, we use the Cloud Run default.
+	CloudRunGeneration *int
 }
 
 func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
