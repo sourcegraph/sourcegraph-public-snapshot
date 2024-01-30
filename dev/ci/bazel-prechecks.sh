@@ -31,7 +31,11 @@ function generate_diff_artifact() {
 trap generate_diff_artifact EXIT
 
 echo "--- :bazel: Running bazel configure"
-bazel "${bazelrc[@]}" configure
+bazel "${bazelrc[@]}" configure || EXIT_CODE=$?
+if [[ $EXIT_CODE -ne 110 && $EXIT_CODE -ne 0 ]]; then
+  echo ":x: bazel configure exited unexpected exit code ${EXIT_CODE}! Please check the output or ask in #discuss-dev-infra"
+  exit "$EXIT_CODE"
+fi
 
 echo "--- Checking if BUILD.bazel files were updated"
 # Account for the possibility of a BUILD.bazel to be totally new, and thus untracked.
