@@ -132,6 +132,7 @@ func (r *Renderer) RenderEnvironment(
 		Service:             svc,
 		EnvironmentCategory: env.Category,
 		EnvironmentID:       env.ID,
+		Alerting:            pointers.DerefZero(env.Alerting),
 
 		Monitoring: monitoringSpec,
 		MaxInstanceCount: func() *int {
