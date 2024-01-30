@@ -23,6 +23,10 @@
 
     &-completion-image {
         justify-self: flex-end;
+
+        @media (--md-breakpoint-down) {
+            justify-self: flex-start;
+        }
     }
 
     &-headline {
