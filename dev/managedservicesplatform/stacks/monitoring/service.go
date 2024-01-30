@@ -36,6 +36,9 @@ func createServiceAlerts(
 				Aligner: alertpolicy.MonitoringAlignMax,
 				Reducer: alertpolicy.MonitoringReduceMax,
 				Period:  "60s",
+				// Fire when we are 1 instance away from hitting the limit.
+				Threshold:  float64(*vars.MaxInstanceCount - 1),
+				Comparison: alertpolicy.ComparisonGT,
 			},
 			NotificationChannels: channels,
 		}); err != nil {
