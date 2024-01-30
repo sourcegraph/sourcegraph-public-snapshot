@@ -15,30 +15,26 @@
     display: flex;
 }
 
-
 .card {
-    background:none;
-    border-radius: var(8px);
+    border-radius: var(.5rem);
     border: 1px solid var(--Semantic-Border-border-color, #E6EBF2);
     background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #F9FAFB;
     max-width: 738px;
     padding:2.5rem !important;
-    border-radius: .5rem;
 }
 
-.card H2{
+.card h2{
     margin-bottom:2.5rem;
 }
 
 .card ul{
-    padding-left:2em;
+    padding-left:2rem;
 }
 
 .card p:last-child{
     margin-top:2rem;
-    margin-left:1em;
+    margin-left:1rem;
 }
-
 
 .close-button {
     top: 0.5rem;

@@ -33,9 +33,7 @@ export const KeywordSearchCtaSection: React.FC<KeywordSearchCtaSection> = ({ cla
                 <H2>New keyword search</H2>
                 <div className="d-flex d-flex-column">
                     <div>
-                        <H2>
-                            <KeywordSearchStarsIcon aria-hidden={true} />
-                        </H2>
+                        <KeywordSearchStarsIcon aria-hidden={true} />
                     </div>
                     <div>
                         <Text>
