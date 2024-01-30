@@ -24,6 +24,7 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/auth/githubappauth",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/httpapi/releasecache",
         "//cmd/frontend/internal/httpapi/webhookhandlers",
