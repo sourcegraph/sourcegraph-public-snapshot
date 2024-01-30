@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .container {
     width: 100%;
 }
@@ -8,6 +10,11 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.875rem;
+
+    @media (--md-breakpoint-down) {
+        grid-template-columns: 1fr;
+        gap: 5rem;
+    }
 
     &-logo {
         width: 2.25rem;
@@ -97,6 +104,11 @@
     grid-template-columns: 40% 60%;
     gap: 2.5rem;
 
+    @media (--md-breakpoint-down) {
+        grid-template-columns: 1fr;
+        gap: 5rem;
+    }
+
     &-grid-one {
         background-color: var(--color-bg-1);
         border-radius: 1rem;
@@ -182,6 +194,10 @@
         grid-template-columns: 1fr 1fr 1fr;
         gap: 2rem;
         margin-bottom: 2rem;
+
+        @media (--md-breakpoint-down) {
+            grid-template-columns: 1fr;
+        }
     }
 
     &-header {
