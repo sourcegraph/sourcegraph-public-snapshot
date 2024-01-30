@@ -8,7 +8,7 @@
         justify-content: center;
     }
 
-    background:none;
+    background: none;
     margin-top: 4rem;
     margin-bottom: 1rem;
     justify-content: center;
@@ -16,24 +16,24 @@
 }
 
 .card {
-    border-radius: var(.5rem);
-    border: 1px solid var(--Semantic-Border-border-color, #E6EBF2);
-    background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #F9FAFB;
+    border-radius: var(0.5rem);
+    border: 1px solid var(--Semantic-Border-border-color, #e6ebf2);
+    background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #f9fafb;
     max-width: 738px;
-    padding:2.5rem !important;
+    padding: 2.5rem !important;
 }
 
-.card h2{
-    margin-bottom:2.5rem;
+.card h2 {
+    margin-bottom: 2.5rem;
 }
 
-.card ul{
-    padding-left:2rem;
+.card ul {
+    padding-left: 2rem;
 }
 
-.card p:last-child{
-    margin-top:2rem;
-    margin-left:1rem;
+.card p:last-child {
+    margin-top: 2rem;
+    margin-left: 1rem;
 }
 
 .close-button {
