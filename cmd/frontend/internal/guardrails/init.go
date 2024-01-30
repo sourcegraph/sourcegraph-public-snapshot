@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
 
+// MockHttpClient is used to inject a test double, since the external client used
+// by default is prevented from hitting localhost, which is useful in testing.
 var MockHttpClient httpcli.Doer
 
 func Init(
@@ -52,6 +54,8 @@ func Init(
 	return nil
 }
 
+// enterpriseInitialization is a factory for attribution.Service for an enterprise instance
+// as opposed to dotcom.
 type enterpriseInitialization struct {
 	observationCtx *observation.Context
 	mu             sync.Mutex
@@ -61,6 +65,9 @@ type enterpriseInitialization struct {
 	httpClient     httpcli.Doer
 }
 
+// Service creates an attribution.Service. It tries to get gateway endpoint from site config
+// and if possible, returns a configured gateway proxy implementation.
+// Otherwise it returns an uninitialized service that always returns an error.
 func (e *enterpriseInitialization) Service() attribution.Service {
 	e.mu.Lock()
 	defer e.mu.Unlock()

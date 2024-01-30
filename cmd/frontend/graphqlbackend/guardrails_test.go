@@ -144,9 +144,16 @@ func TestGuardrailsFeatureCodyDisabled(t *testing.T) {
 	})
 }
 
+// syncConfMocking is a helper to allow mocking site config in a syncronous manner.
+// Specifically, observers that are watching config changes will have been updated
+// by the time `Update`	returns.
 type syncConfMocking struct {
+	// cond is used to synchronize between the watchers and the update method.
 	cond *sync.Cond
+	// watching is true iff this instance of mocking has observers notified of config changes.
 	watching bool
+	// lastConfig seen is memoized so that `Update` can ensure the value of the config
+	// reaches the parameter before it returns.
 	lastConfig schema.SiteConfiguration
 }
 
@@ -158,11 +165,12 @@ func newSyncConfMocking(t *testing.T) *syncConfMocking {
 	m.cond.L.Lock()
 	m.watching = true
 	m.cond.L.Unlock()
-	conf.Watch(m.OnConfigChange)
+	conf.Watch(m.onConfigChange)
 	t.Cleanup(m.Cleanup)
 	return m
 }
 
+// Update the site config and await the new config to be propagated to the watchers.
 func (m *syncConfMocking) Update(c schema.SiteConfiguration) {
 	conf.Mock(&conf.Unified{SiteConfiguration: c})
     m.cond.L.Lock()
@@ -174,7 +182,9 @@ func (m *syncConfMocking) Update(c schema.SiteConfiguration) {
 	}
 }
 
-func (m *syncConfMocking) OnConfigChange() {
+// onConfigChange is used in `conf.Watch`, and wakes up `Update` which is waiting
+// on config change to propagate to watchers.
+func (m *syncConfMocking) onConfigChange() {
 	m.cond.L.Lock()
 	defer m.cond.L.Unlock()
 	if m.watching {
@@ -183,6 +193,7 @@ func (m *syncConfMocking) OnConfigChange() {
 	}
 }
 
+// Cleanup invalidates the watcher.
 func (m *syncConfMocking) Cleanup() {
 	m.cond.L.Lock()
 	defer m.cond.L.Unlock()
@@ -190,32 +201,46 @@ func (m *syncConfMocking) Cleanup() {
 	m.cond.Broadcast()  // ensure to wake up every waiting goroutine
 }
 
+// gatewayResponse that `makeGatewayEndpoint` responds with.
+const gatewayResponse = `{
+	"Repositories": [
+		{"name": "github.com/sourcegraph/sourcegraph"},
+		{"name": "npm/sourcegraph/basic-code-intel"}
+	],
+	"totalCount": 2,
+	"limitHit":true
+}`
+func makeGatewayEndpoint(t *testing.T) string {
+	t.Helper()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, gatewayResponse)
+	}))
+	t.Cleanup(ts.Close)
+	return ts.URL
+}
+
 func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
+	// Use a regular HTTP client as default external doer cannot hit localhost.
 	guardrails.MockHttpClient = http.DefaultClient
 	t.Cleanup(func () { guardrails.MockHttpClient = nil })
-	db := dbmocks.NewMockDB()
-	ctx := context.Background()
+	// Starting attribution configuration has no endpoints to use.
 	noAttributionConfigured := schema.SiteConfiguration{
 			CodyEnabled:        pointers.Ptr(true),
 			AttributionEnabled: pointers.Ptr(true),
-			Completions: &schema.Completions{
-				AccessToken: "1234",
-				Endpoint: "https://example.com",
-				Model: "testing-model",
-				ChatModel: "testing-model-turbo",
-				CompletionModel: "testing-model-turbo",
-				Provider: "hermetic-test",
-				PerUserDailyLimit: 1000,
-			},
 		}
 	confMock := newSyncConfMocking(t)
 	confMock.Update(noAttributionConfigured)
 	t.Cleanup(func() { confMock.Update(schema.SiteConfiguration{}) })
-	var enterpriseServices enterprise.Services
+	// Initialize graphQL schema with snippetAttribution.
+	db := dbmocks.NewMockDB()
+	ctx := context.Background()
 	g := gitserver.NewClient("graphql.test")
+	var enterpriseServices enterprise.Services
 	require.NoError(t, guardrails.Init(ctx, &observation.TestContext, db, codeintel.Services{}, nil, &enterpriseServices))
 	s, err := graphqlbackend.NewSchema(db, g, []graphqlbackend.OptionalResolver{{GuardrailsResolver: enterpriseServices.OptionalResolver.GuardrailsResolver}})
 	require.NoError(t, err)
+	// Same query runs in every test:
 	query := `query SnippetAttribution {
 		snippetAttribution(snippet: "sourcegraph.Location(new URL", first: 2) {
 			nodes {
@@ -223,23 +248,6 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 			}
 		}
 	}`
-	gatewayResponse := `{
-		"Repositories": [
-			{"name": "github.com/sourcegraph/sourcegraph"},
-			{"name": "npm/sourcegraph/basic-code-intel"}
-		],
-		"totalCount": 2,
-		"limitHit":true
-	}`
-	makeGatewayEndpoint := func (t *testing.T) string {
-		t.Helper()
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, gatewayResponse)
-		}))
-		t.Cleanup(ts.Close)
-		return ts.URL
-	}
 
 	t.Run("attribution endpoint not configured", func(t *testing.T) {
 		response := s.Exec(ctx, query, "", nil)
@@ -321,6 +329,10 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 	})
 }
 
+// mustParseGraphQLSchema is a copy of mustParseGraphQLSchema from graphql package.
+// This test needs to use a different package because of otherwise circular dependency
+// between guardrails and graphqlbackend.
+// TODO(#59995): Extract mustParseGraphQLSchema to a graphqlbackendtest package.
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 	gitserverClient := gitserver.NewClient("graphql.test")
