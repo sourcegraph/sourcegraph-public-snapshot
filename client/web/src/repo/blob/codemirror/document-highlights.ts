@@ -97,7 +97,10 @@ export const documentHighlightsSource = Facet.define<DocumentHighlightsSource>({
  * Together with {@link DocumentHighlightsManager} provides an extenion that
  * fetches document higlights from Sourcegraph extensions.
  */
-function documentHighlights(sources: Facet<DocumentHighlightsSource>, sink: Facet<DocumentHighlight[]>): Extension {
+function documentHighlights(
+    sources: Facet<DocumentHighlightsSource>,
+    sink: Facet<DocumentHighlight[], DocumentHighlight[]>
+): Extension {
     // This field is used to provide inputs for the documentHighlights facet.
     // The facet gets updated whenever the field changes. The view plugin
     // listens to mouse events, sents queries to the extensions host and
