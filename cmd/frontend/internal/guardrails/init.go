@@ -27,17 +27,20 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	resolver := &resolvers.GuardrailsResolver{}
+	var resolver *resolvers.GuardrailsResolver
 	if envvar.SourcegraphDotComMode() {
 		// On DotCom guardrails endpoint runs search, and is initialized at startup.
 		searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
 		service := attribution.NewLocalSearch(observationCtx, searchClient)
-		resolver.AttributionService = func() attribution.Service { return service }
+		resolver = resolvers.NewGuardrailsResolver(service)
 	} else {
 		// On an Enterprise instance endpoint proxies to gateway, and is re-initialized
 		// in case site-config changes.
 		initLogic := &enterpriseInitialization{observationCtx: observationCtx}
-		resolver.AttributionService = func() attribution.Service { return initLogic.Service() }
+		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
+		go conf.Watch(func () {
+			resolver.UpdateService(initLogic.Service())
+		})
 	}
 	enterpriseServices.GuardrailsResolver = resolver
 	return nil
