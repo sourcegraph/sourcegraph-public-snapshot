@@ -60,9 +60,12 @@ export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): E
 function scrollToFirstRange(): Extension {
     var scrolled = false
     return EditorView.updateListener.of((update: ViewUpdate) => {
+        if (scrolled) {
+            return
+        }
         const ranges = update.view.state.field(staticHighlightState)
         const selectedRange = ranges.find(range => range.selected)
-        if (selectedRange && !scrolled) {
+        if (selectedRange) {
             scrolled = true
             update.view.dispatch({
                 effects: EditorView.scrollIntoView(ranges[0].from, {
