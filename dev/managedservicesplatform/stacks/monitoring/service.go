@@ -19,8 +19,8 @@ func createServiceAlerts(
 	vars Variables,
 	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
 ) error {
-	// Only provision if MaxCount is specified strictly above 5 (the default)
-	if pointers.Deref(vars.MaxInstanceCount, 0) > 5 {
+	// Only provision if MaxCount is specified greater or equal 5 (the default)
+	if pointers.Deref(vars.MaxInstanceCount, 0) >= 5 {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			Service:       vars.Service,
 			EnvironmentID: vars.EnvironmentID,
