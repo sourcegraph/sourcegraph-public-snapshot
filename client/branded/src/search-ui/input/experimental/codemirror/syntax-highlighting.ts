@@ -16,8 +16,9 @@ function getDecorationForToken(token: Token): Decoration | null {
         case 'filter': {
             return filter
         }
-        case 'pattern':
+        case 'pattern': {
             return pattern
+        }
     }
     return null
 }
