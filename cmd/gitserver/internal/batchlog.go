@@ -16,7 +16,7 @@ import (
 // Note: The BatchLog endpoint has been deprecated. This file shall be removed after
 // the 5.3 release has been cut.
 
-func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req *proto.BatchLogRequest) (resp *proto.BatchLogResponse, err error) {
+func (s *Server) BatchGitLogInstrumentedHandler(ctx context.Context, req *proto.BatchLogRequest) (resp *proto.BatchLogResponse, err error) {
 	// Perform requests in each repository in the input batch. We perform these commands
 	// concurrently, but only allow for so many commands to be in-flight at a time so that
 	// we don't overwhelm a shard with either a large request or too many concurrent batch

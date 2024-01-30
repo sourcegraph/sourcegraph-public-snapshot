@@ -55,6 +55,25 @@
     align-self: center;
 }
 
+.toggle-wrapper {
+    border-radius: 3px;
+    background: linear-gradient(91deg, rgba(228, 211, 252, 0.2) -3.65%, #d7f0fd 117.44%);
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-wrapper button:hover {
+    color: var(--primary);
+}
+
+.popover-content {
+    padding: 1rem;
+    max-width: 20rem;
+}
+
 .cody-feedback-alert {
     overflow: unset;
 }

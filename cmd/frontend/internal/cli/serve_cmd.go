@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
@@ -25,7 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -34,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -42,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
@@ -84,10 +90,16 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 	return sqlDB, nil
 }
 
+type LazyDebugserverEndpoint struct {
+	GlobalRateLimiterState       http.Handler
+	ListAuthzProvidersEndpoint   http.Handler
+	GitserverReposStatusEndpoint http.Handler
+}
+
 type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 
 // Main is the main entrypoint for the frontend server program.
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
 
 	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
@@ -240,6 +252,71 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	oce.GlobalExporter = oce.NewDataExporter(db, logger)
+
+	debugserverEndpoints.GlobalRateLimiterState = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		info, err := ratelimit.GetGlobalLimiterState(r.Context())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to read rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		resp, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to marshal rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	})
+	debugserverEndpoints.GitserverReposStatusEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		repo := r.FormValue("repo")
+		if repo == "" {
+			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
+			return
+		}
+
+		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
+			return
+		}
+
+		resp, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	})
+	debugserverEndpoints.ListAuthzProvidersEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		type providerInfo struct {
+			ServiceType        string `json:"service_type"`
+			ServiceID          string `json:"service_id"`
+			ExternalServiceURL string `json:"external_service_url"`
+		}
+
+		_, providers := authz.GetProviders()
+		infos := make([]providerInfo, len(providers))
+		for i, p := range providers {
+			_, id := extsvc.DecodeURN(p.URN())
+
+			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
+			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
+			infos[i] = providerInfo{
+				ServiceType:        p.ServiceType(),
+				ServiceID:          p.ServiceID(),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+			}
+		}
+
+		resp, err := json.MarshalIndent(infos, "", "  ")
+		if err != nil {
+			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	})
 
 	if printLogo {
 		// This is not a log entry and is usually disabled

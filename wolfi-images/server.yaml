@@ -39,7 +39,7 @@ contents:
     - p4cli@sourcegraph
     - p4-fusion-sg@sourcegraph
     - s3proxy@sourcegraph
-    - grafana@chainguard
+    - grafana-7@chainguard
 
 accounts:
   groups:

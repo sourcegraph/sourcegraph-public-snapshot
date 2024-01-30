@@ -1,6 +1,7 @@
 <svelte:options immutable />
 
 <script context="module" lang="ts">
+    export type SearchResultsCapture = number
     interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
@@ -16,7 +17,6 @@
     import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { preserveScrollPosition } from '$lib/app'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
@@ -40,6 +40,16 @@
     export let queryFilters: string
     export let queryState: QueryStateStore
 
+    export function capture(): SearchResultsCapture {
+        return resultContainer?.scrollTop ?? 0
+    }
+
+    export function restore(capture?: SearchResultsCapture): void {
+        if (resultContainer) {
+            resultContainer.scrollTop = capture ?? 0
+        }
+    }
+
     let resultContainer: HTMLElement | null = null
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
@@ -60,14 +70,6 @@
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let scrollTop: number = 0
-    preserveScrollPosition(
-        position => (scrollTop = position ?? 0),
-        () => resultContainer?.scrollTop
-    )
-    $: if (resultContainer) {
-        resultContainer.scrollTop = scrollTop ?? 0
-    }
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)

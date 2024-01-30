@@ -22,8 +22,9 @@ export const useSearchFiltersStore = create<SearchFiltersStore>(set => ({
 export interface SearchFiltersPanelProps {
     query: string
     filters: Filter[] | undefined
+    withCountAllFilter: boolean
     className?: string
-    onQueryChange: (nextQuery: string) => void
+    onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
 }
 
 /**
@@ -35,7 +36,7 @@ export interface SearchFiltersPanelProps {
  * as it is, use consumer agnostic NewSearchFilters component instead.
  */
 export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
-    const { query, filters, className, onQueryChange } = props
+    const { query, filters, withCountAllFilter, className, onQueryChange } = props
 
     const { isOpen, setFiltersPanel } = useSearchFiltersStore()
     const uiMode = useSearchFiltersPanelUIMode()
@@ -50,7 +51,12 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                 ariaLabel="Filters sidebar"
                 className={className}
             >
-                <NewSearchFilters query={query} filters={filters} onQueryChange={onQueryChange} />
+                <NewSearchFilters
+                    query={query}
+                    filters={filters}
+                    withCountAllFilter={withCountAllFilter}
+                    onQueryChange={onQueryChange}
+                />
             </Panel>
         )
     }
@@ -62,7 +68,12 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
             className={styles.modal}
             onDismiss={() => setFiltersPanel(false)}
         >
-            <NewSearchFilters query={query} filters={filters} onQueryChange={onQueryChange}>
+            <NewSearchFilters
+                query={query}
+                filters={filters}
+                withCountAllFilter={withCountAllFilter}
+                onQueryChange={onQueryChange}
+            >
                 <Button variant="secondary" outline={true} onClick={() => setFiltersPanel(false)}>
                     <Icon as={DeleteIcon} width={14} height={14} aria-hidden={true} className={styles.closeIcon} />{' '}
                     Close filters

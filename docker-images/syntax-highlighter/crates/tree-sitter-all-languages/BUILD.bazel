@@ -5,10 +5,6 @@ rust_library(
     name = "tree-sitter-all-languages",
     srcs = glob(["src/*.rs"]),
     aliases = aliases(),
-    compile_data = glob(
-        ["queries/**"],
-        allow_empty = False,
-    ),
     proc_macro_deps = all_crate_deps(proc_macro = True),
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(

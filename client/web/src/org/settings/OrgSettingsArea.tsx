@@ -11,6 +11,7 @@ import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import type { OrgAreaOrganizationFields } from '../../graphql-operations'
 import type { RouteV6Descriptor } from '../../util/contributions'
+import { getLicenseFeatures } from '../../util/license'
 import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { OrgSettingsSidebar, type OrgSettingsSidebarItems } from './OrgSettingsSidebar'
@@ -48,10 +49,7 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
 const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
     const context: OrgSettingsAreaRouteContext = {
         ...props,
-        license: {
-            isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
-            isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
-        },
+        license: getLicenseFeatures(),
     }
 
     return (
