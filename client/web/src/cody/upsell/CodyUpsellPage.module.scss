@@ -8,7 +8,7 @@
     margin: 5rem;
     margin-right: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 60% 40%;
     gap: 1.875rem;
 
     @media (--md-breakpoint-down) {
@@ -19,6 +19,10 @@
     &-logo {
         width: 2.25rem;
         height: 2.25rem;
+    }
+
+    &-completion-image {
+        justify-self: flex-end;
     }
 
     &-headline {
@@ -184,7 +188,7 @@
     }
 }
 
-.comments {
+.testimonial {
     margin: 0 5rem;
     padding-bottom: 2rem;
 
@@ -206,9 +210,7 @@
         font-weight: 500;
         font-size: 2rem;
     }
-}
 
-.comment {
     &-container {
         background-color: transparent;
         border: 1px solid var(--border-color);
@@ -248,7 +250,7 @@
             }
 
             span {
-                color: var(--color-bg-3);
+                color: var(--text-muted);
             }
         }
     }

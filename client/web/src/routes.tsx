@@ -313,7 +313,7 @@ export const routes: RouteObject[] = [
               // this is the landing page to upsell Cody.
               {
                   path: PageRoutes.Cody,
-                  element: <LegacyRoute render={props => <CodyUpsellPage {...props} />} />,
+                  element: <LegacyRoute render={() => <CodyUpsellPage />} />,
               },
           ]
         : codyRoutes),

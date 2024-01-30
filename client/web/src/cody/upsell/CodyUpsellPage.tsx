@@ -6,7 +6,6 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { H1, Text, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
-import { NeovimIcon } from '../../get-cody/GetCodyPageIcon'
 import { CodyLogo } from '../components/CodyLogo'
 
 import { ChatBrandIcon } from './ChatBrandIcon'
@@ -35,24 +34,18 @@ const availableIDEsForCody: CodyIDEDetails[] = [
         icon: () => <IntelliJIcon className={styles.ideLogo} />,
     },
     {
-        maker: 'Neovim Team',
-        name: 'Neovim',
-        icon: () => <NeovimIcon className={styles.ideLogo} />,
-    },
-    {
-        name: 'Web',
+        name: 'Cody for Web',
         icon: () => <CodyLogo withColor={true} className={styles.ideLogo} />,
     },
 ]
 
-interface CodyComment {
+interface CodyTestimonial {
     author: string
     username: string
-    avatar?: string
     comment: string
 }
 
-const codyComments: CodyComment[] = [
+const codyTestimonials: CodyTestimonial[] = [
     {
         author: 'Joe Previte',
         username: '@jsjoeio',
@@ -73,9 +66,7 @@ const codyComments: CodyComment[] = [
     },
 ]
 
-interface CodyUpsellPageProps {}
-
-export const CodyUpsellPage: FC<CodyUpsellPageProps> = () => {
+export const CodyUpsellPage: FC = () => {
     const isLightTheme = useIsLightTheme()
     const contactSalesLink = 'https://sourcegraph.com/contact/request-info'
     return (
@@ -115,7 +106,9 @@ export const CodyUpsellPage: FC<CodyUpsellPageProps> = () => {
                     </div>
                 </div>
 
-                {isLightTheme ? <MultiLineCompletionLight /> : <MultiLineCompletionDark />}
+                <div className={styles.heroCompletionImage}>
+                    {isLightTheme ? <MultiLineCompletionLight /> : <MultiLineCompletionDark />}
+                </div>
             </section>
 
             <section className={styles.about}>
@@ -153,11 +146,11 @@ export const CodyUpsellPage: FC<CodyUpsellPageProps> = () => {
                 </div>
             </section>
 
-            <section className={styles.comments}>
-                <H1 className={classNames('text-muted', styles.commentsHeader)}>What people say about Cody...</H1>
-                <section className={styles.commentsGrid}>
-                    {codyComments.map((comment, index) => (
-                        <CodyComment key={index} comment={comment} />
+            <section className={styles.testimonial}>
+                <H1 className={classNames('text-muted', styles.testimonialHeader)}>What people say about Cody...</H1>
+                <section className={styles.testimonialGrid}>
+                    {codyTestimonials.map((testimonial, index) => (
+                        <Testimonial key={index} testimonial={testimonial} />
                     ))}
                 </section>
             </section>
@@ -165,23 +158,25 @@ export const CodyUpsellPage: FC<CodyUpsellPageProps> = () => {
     )
 }
 
-interface CodyCommentProps {
-    comment: CodyComment
+interface TestimonialProps {
+    testimonial: CodyTestimonial
 }
 
-const CodyComment: FC<CodyCommentProps> = ({ comment }) => (
-    <section className={styles.commentContainer}>
-        <div className={styles.commentMeta}>
+const Testimonial: FC<TestimonialProps> = ({ testimonial }) => (
+    <section className={styles.testimonialContainer}>
+        <div className={styles.testimonialMeta}>
             <UserAvatar
-                className={styles.commentAuthorAvatar}
+                className={styles.testimonialAuthorAvatar}
                 capitalizeInitials={true}
-                user={{ displayName: comment.author, username: comment.username, avatarURL: null }}
+                user={{ displayName: testimonial.author, username: testimonial.username, avatarURL: null }}
             />
-            <div className={styles.commentAuthorInfo}>
-                <span className={styles.commentAuthorName}>{comment.author}</span>
-                <span className={classNames('text-muted', styles.commentAuthorUsername)}>{comment.username}</span>
+            <div className={styles.testimonialAuthorInfo}>
+                <span className={styles.testimonialAuthorName}>{testimonial.author}</span>
+                <span className={classNames('text-muted', styles.testimonialAuthorUsername)}>
+                    {testimonial.username}
+                </span>
             </div>
         </div>
-        <Text className={styles.commentText}>{comment.comment}</Text>
+        <Text className={styles.testimonialText}>{testimonial.comment}</Text>
     </section>
 )
