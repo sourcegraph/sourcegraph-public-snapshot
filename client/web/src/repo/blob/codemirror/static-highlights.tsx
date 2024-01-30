@@ -5,7 +5,7 @@ import { Extension, EditorState, StateField, Facet } from '@codemirror/state'
 import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { sortedIndexBy } from 'lodash'
+import { sortedIndexBy, sortBy } from 'lodash'
 import { createRoot, type Root } from 'react-dom/client'
 import type { NavigateFunction } from 'react-router-dom'
 
@@ -40,7 +40,7 @@ export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): E
         enables: () => [
             staticHighlightTheme,
             staticHighlightState.init(state =>
-                ranges.map((range, i) => ({
+                sortBy(ranges, ['from']).map((range, i) => ({
                     selected: i === 0,
                     from: toCodeMirrorLocation(state, range.start),
                     to: toCodeMirrorLocation(state, range.end),
@@ -162,7 +162,7 @@ class StaticHighlightsPanel implements Panel {
         }
     }
 
-    private navigateTo(target: { from: number; to: number }) {
+    private navigateTo(target: { from: number; to: number }): void {
         this.view.dispatch({
             selection: { anchor: target.from, head: target.to },
             effects: [
@@ -175,7 +175,7 @@ class StaticHighlightsPanel implements Panel {
         })
     }
 
-    private navigatePrevious() {
+    private navigatePrevious(): void {
         const currentSelection = this.view.state.selection.main
         // Find the index of the first element before or equal to the selection
         const idx = sortedIndexBy(
@@ -187,7 +187,7 @@ class StaticHighlightsPanel implements Panel {
         this.navigateTo(previousRange)
     }
 
-    private navigateNext() {
+    private navigateNext(): void {
         const currentSelection = this.view.state.selection.main
         // Find the index of the first element after the selection
         const idx = sortedIndexBy(
@@ -199,7 +199,7 @@ class StaticHighlightsPanel implements Panel {
         this.navigateTo(nextRange)
     }
 
-    private render(ranges: HighlightedRange[]) {
+    private render(ranges: HighlightedRange[]): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
