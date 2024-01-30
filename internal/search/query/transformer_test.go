@@ -13,8 +13,10 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)
 
+		var err error
 		for i, n := range query {
-			query[i] = ExperimentalPhraseBoost(n)
+			query[i], err = ExperimentalPhraseBoost(n, input)
+			require.NoError(t, err)
 		}
 
 		json, _ := ToJSON(query)
@@ -23,6 +25,11 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 
 	// expect phrase query
 	autogold.Expect(`[{"or":[{"value":"foo bar bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]}]}]`).Equal(t, test("foo bar bas", SearchTypeKeyword))
+
+	// respect whitespace
+	autogold.Expect(`[{"or":[{"value":"foo   bar  bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":6},"end":{"line":0,"column":9}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]}]`).Equal(t, test("foo   bar  bas", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"value":"foo\tbar:  bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar:","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":8}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":10},"end":{"line":0,"column":13}}}]}]}]`).Equal(t, test("foo\tbar:  bas ", SearchTypeKeyword))
+	autogold.Expect(`[{"or":[{"value":"いい　お天気　です","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"いい","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"お天気","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":9},"end":{"line":0,"column":18}}},{"value":"です","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":21},"end":{"line":0,"column":27}}}]}]}]`).Equal(t, test("いい　お天気　です", SearchTypeKeyword))
 
 	// expect no phrase query
 	autogold.Expect(`[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}}]`).Equal(t, test("foo", SearchTypeKeyword))

@@ -1,6 +1,7 @@
 package query
 
 import (
+	"math"
 	"strconv"
 	"strings"
 
@@ -625,48 +626,54 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 //
 // Example:
 //
-//	foo bar -> (or (and foo bar) ("foo bar"))
-func ExperimentalPhraseBoost(node Node) Node {
+//	foo bar bas -> (or (and foo bar bas) ("foo bar bas"))
+func ExperimentalPhraseBoost(node Node, originalQuery string) (Node, error) {
 	if node == nil {
-		return nil
+		return nil, nil
 	}
 
 	if n, ok := node.(Operator); ok && n.Kind == And {
 		// Gate on the number of operands. We don't want to add a phrase query for very
 		// short queries.
 		if len(n.Operands) < 3 {
-			return n
+			return n, nil
 		}
 
-		concat := ""
+		first := math.MaxInt
+		last := math.MinInt
 		// Check if all operands are patterns and not negated.
 		for _, child := range n.Operands {
 			c, isPattern := child.(Pattern)
-			if !isPattern {
-				return n
+			if !isPattern || c.Negated {
+				return n, nil
 			}
-			// In practice, a user would probably catch this case because we highlight NOT
-			// in the input bar.
-			if c.Negated {
-				return n
+
+			if c.Annotation.Range.Start.Column < first {
+				first = c.Annotation.Range.Start.Column
 			}
-			// TODO: be smarter about spaces. The original query may have multiple spaces
-			// separating words.
-			concat += c.Value + " "
+
+			if c.Annotation.Range.End.Column > last {
+				last = c.Annotation.Range.End.Column
+			}
 		}
-		concat = strings.TrimSpace(concat)
+
+		// To get here, we must have found several non-negated patterns. Assuming the
+		// ranges are set correctly, this statement should always be false.
+		if first > last {
+			return n, errors.Errorf("phrase boost: invalid range %d > %d for query %s", first, last, originalQuery)
+		}
 
 		return Operator{
 			Kind: Or,
 			Operands: []Node{
 				Pattern{
-					Value:      concat,
+					Value:      originalQuery[first:last],
 					Annotation: Annotation{Labels: Boost},
 				},
 				n,
 			},
-		}
+		}, nil
 	}
 
-	return node
+	return node, nil
 }
