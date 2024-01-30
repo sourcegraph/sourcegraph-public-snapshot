@@ -3,10 +3,8 @@ package internal
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -30,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
+func (gs *grpcServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
 	arguments := byteSlicesToStrings(req.GetArgs()) //nolint:staticcheck
 
 	if len(arguments) < 1 {
@@ -52,7 +50,7 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", subCommand))
 	}
 
-	p4home, err := gitserverfs.MakeP4HomeDir(gs.Server.ReposDir)
+	p4home, err := gitserverfs.MakeP4HomeDir(gs.reposDir)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -86,11 +84,11 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	var r p4ExecRequest
 	r.FromProto(req)
 
-	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &r, "unknown-grpc-client", w)
+	return gs.doP4Exec(ss.Context(), &r, w)
 }
 
-func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, userAgent string, w io.Writer) error {
-	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
+func (gs *grpcServer) doP4Exec(ctx context.Context, req *p4ExecRequest, w io.Writer) error {
+	execStatus := gs.svc.P4Exec(ctx, gs.logger, req, w)
 
 	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -107,7 +105,7 @@ func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *p4Ex
 			Stderr:     execStatus.Stderr,
 		})
 		if err != nil {
-			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			gs.logger.Error("failed to marshal status", log.Error(err))
 			return err
 		}
 		return s.Err()
@@ -116,84 +114,7 @@ func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *p4Ex
 	return nil
 }
 
-func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
-	var req p4ExecRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if len(req.Args) < 1 {
-		http.Error(w, "args must be greater than or equal to 1", http.StatusBadRequest)
-		return
-	}
-
-	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group", "changes"}
-	allowed := false
-	for _, arg := range allowlist {
-		if req.Args[0] == arg {
-			allowed = true
-			break
-		}
-	}
-	if !allowed {
-		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
-		return
-	}
-
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Log which actor is accessing p4-exec.
-	//
-	// p4-exec is currently only used for fetching user based permissions information
-	// so, we don't have a repo name.
-	accesslog.Record(r.Context(), "<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-		log.Strings("args", req.Args),
-	)
-
-	// Make sure credentials are valid before heavier operation
-	err = perforce.P4TestWithTrust(r.Context(), p4home, req.P4Port, req.P4User, req.P4Passwd)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	s.p4execHTTP(w, r, &req)
-}
-
-func (s *Server) p4execHTTP(w http.ResponseWriter, r *http.Request, req *p4ExecRequest) {
-	logger := s.Logger.Scoped("p4exec")
-
-	// Flush writes more aggressively than standard net/http so that clients
-	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(logger, w); fw != nil {
-		w = fw
-		defer fw.Close()
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
-	defer cancel()
-
-	w.Header().Set("Trailer", "X-Exec-Error")
-	w.Header().Add("Trailer", "X-Exec-Exit-Status")
-	w.Header().Add("Trailer", "X-Exec-Stderr")
-	w.WriteHeader(http.StatusOK)
-
-	execStatus := s.p4Exec(ctx, logger, req, r.UserAgent(), w)
-	w.Header().Set("X-Exec-Error", errorString(execStatus.Err))
-	w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(execStatus.ExitStatus))
-	w.Header().Set("X-Exec-Stderr", execStatus.Stderr)
-
-}
-
-func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, userAgent string, w io.Writer) execStatus {
+func (s *Server) P4Exec(ctx context.Context, logger log.Logger, req *p4ExecRequest, w io.Writer) execStatus {
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
 	exitStatus := executil.UnsetExitStatus
@@ -242,7 +163,6 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *p4ExecReque
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", act.UIDString())
-				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
@@ -343,4 +263,41 @@ func stringsToByteSlices(in []string) [][]byte {
 		res[i] = []byte(s)
 	}
 	return res
+}
+
+// writeCounter wraps an io.Writer and keeps track of bytes written.
+type writeCounter struct {
+	w io.Writer
+	// n is the number of bytes written to w
+	n int64
+}
+
+func (c *writeCounter) Write(p []byte) (n int, err error) {
+	n, err = c.w.Write(p)
+	c.n += int64(n)
+	return
+}
+
+// limitWriter is a io.Writer that writes to an W but discards after N bytes.
+type limitWriter struct {
+	W io.Writer // underling writer
+	N int       // max bytes remaining
+}
+
+func (l *limitWriter) Write(p []byte) (int, error) {
+	if l.N <= 0 {
+		return len(p), nil
+	}
+	origLen := len(p)
+	if len(p) > l.N {
+		p = p[:l.N]
+	}
+	n, err := l.W.Write(p)
+	l.N -= n
+	if l.N <= 0 {
+		// If we have written limit bytes, then we can include the discarded
+		// part of p in the count.
+		n = origLen
+	}
+	return n, err
 }

@@ -21,7 +21,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 		events          []SearchEvent
 		wantFilterValue string
 		wantFilterCount int
-		wantFilterKind  string
+		wantFilterKind  FilterKind
 	}{
 		{
 			name: "CommitMatch",
@@ -92,6 +92,24 @@ func TestSearchFiltersUpdate(t *testing.T) {
 			},
 			wantFilterValue: "repo:^foo$",
 			wantFilterKind:  "repo",
+			wantFilterCount: 2,
+		},
+		{
+			name: "FileMatch, lang: filter",
+			events: []SearchEvent{
+				{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: "testing.yaml",
+							},
+							ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 2)}},
+						},
+					},
+				},
+			},
+			wantFilterValue: "lang:yaml",
+			wantFilterKind:  "lang",
 			wantFilterCount: 2,
 		},
 		{
@@ -205,25 +223,22 @@ func TestSymbolCounts(t *testing.T) {
 			},
 			wantFilters: map[string]*Filter{
 				"select:symbol.class": &Filter{
-					Value:      "select:symbol.class",
-					Label:      "class",
-					Count:      1,
-					IsLimitHit: false,
-					Kind:       "symbol type",
+					Value: "select:symbol.class",
+					Label: "Class",
+					Count: 1,
+					Kind:  "symbol type",
 				},
 				"select:symbol.variable": &Filter{
-					Value:      "select:symbol.variable",
-					Label:      "variable",
-					Count:      2,
-					IsLimitHit: false,
-					Kind:       "symbol type",
+					Value: "select:symbol.variable",
+					Label: "Variable",
+					Count: 2,
+					Kind:  "symbol type",
 				},
 				"select:symbol.constant": &Filter{
-					Value:      "select:symbol.constant",
-					Label:      "constant",
-					Count:      4,
-					IsLimitHit: false,
-					Kind:       "symbol type",
+					Value: "select:symbol.constant",
+					Label: "Constant",
+					Count: 4,
+					Kind:  "symbol type",
 				},
 			},
 		},

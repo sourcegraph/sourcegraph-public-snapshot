@@ -24,7 +24,7 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { CodySubscriptionStatus, CodySubscriptionPlan } from '../../graphql-operations'
 import type {
     ChangeCodyPlanResult,
     ChangeCodyPlanVariables,
@@ -71,18 +71,18 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
-    const [isEnabled] = useFeatureFlag('cody-pro', false)
-
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<number | null>(null)
 
     const enrollPro = parameters.get('pro') === 'true'
 
+    const subscription = data?.currentUser?.codySubscription
+
     useEffect(() => {
-        if (enrollPro && data?.currentUser && !data?.currentUser?.codyProEnabled) {
+        if (enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.PRO) {
             changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
         }
-    }, [data?.currentUser, changeCodyPlan, enrollPro])
+    }, [data?.currentUser, changeCodyPlan, enrollPro, subscription])
 
     const navigate = useNavigate()
 
@@ -92,16 +92,15 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser) {
+    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
         return null
     }
 
-    const { codyProEnabled } = data.currentUser
-
     const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0
+    const userIsOnProTier = subscription.plan === CodySubscriptionPlan.PRO
 
-    const showUpgradeBanner = !codyProEnabled && (codeLimitReached || chatLimitReached)
+    const showUpgradeBanner = !userIsOnProTier && (codeLimitReached || chatLimitReached)
 
     return (
         <>
@@ -143,10 +142,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div>
                             <H2>My subscription</H2>
                             <Text className="text-muted mb-0">
-                                You are on the {codyProEnabled ? 'Pro' : 'Free'} tier.
+                                You are on the {userIsOnProTier ? 'Pro' : 'Free'} tier.
                             </Text>
                         </div>
-                        {codyProEnabled ? (
+                        {userIsOnProTier ? (
                             <div>
                                 <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
                                     Manage subscription
@@ -163,7 +162,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </div>
                     <div className={classNames('d-flex align-items-center mt-3', styles.responsiveContainer)}>
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
-                            {codyProEnabled ? (
+                            {userIsOnProTier ? (
                                 <ProTierIcon />
                             ) : (
                                 <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
@@ -175,7 +174,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left border-right">
                             <AutocompletesIcon />
                             <div className="mb-2 mt-3">
-                                {codyProEnabled ? (
+                                {subscription.applyProRateLimits ? (
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
@@ -208,10 +207,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H4 className={classNames('mb-0', codeLimitReached ? 'text-danger' : 'text-muted')}>
                                 Autocomplete suggestions
                             </H4>
-                            {!codyProEnabled &&
-                                (codeLimitReached && usageData?.currentUser?.codyCurrentPeriodEndDate ? (
+                            {!subscription.applyProRateLimits &&
+                                (codeLimitReached && subscription.currentPeriodEndAt ? (
                                     <Text className="text-danger mb-0" size="small">
-                                        Renews in <Timestamp date={usageData?.currentUser?.codyCurrentPeriodEndDate} />
+                                        Renews in <Timestamp date={subscription.currentPeriodEndAt} />
                                     </Text>
                                 ) : (
                                     <Text className="text-muted mb-0" size="small">
@@ -222,7 +221,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div className="d-flex flex-column align-items-center flex-grow-1 p-3">
                             <ChatMessagesIcon />
                             <div className="mb-2 mt-3">
-                                {codyProEnabled ? (
+                                {subscription.applyProRateLimits ? (
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
@@ -255,10 +254,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             <H4 className={classNames('mb-0', chatLimitReached ? 'text-danger' : 'text-muted')}>
                                 Chat messages and commands
                             </H4>
-                            {!codyProEnabled &&
-                                (chatLimitReached && usageData?.currentUser?.codyCurrentPeriodEndDate ? (
+                            {!subscription.applyProRateLimits &&
+                                (chatLimitReached && subscription.currentPeriodEndAt ? (
                                     <Text className="text-danger mb-0" size="small">
-                                        Renews <Timestamp date={usageData?.currentUser?.codyCurrentPeriodEndDate} />
+                                        Renews <Timestamp date={subscription.currentPeriodEndAt} />
                                     </Text>
                                 ) : (
                                     <Text className="text-muted mb-0" size="small">
@@ -266,19 +265,41 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ))}
                         </div>
-                        {codyProEnabled && (
-                            <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
-                                <TrialPeriodIcon />
-                                <div className="mb-2 mt-4">
-                                    <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                                        Free trial
-                                    </Text>
+                        {userIsOnProTier &&
+                            (subscription.applyProRateLimits ? (
+                                <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
+                                    <TrialPeriodIcon />
+                                    <div className="mb-2 mt-4">
+                                        <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
+                                            {subscription.status === CodySubscriptionStatus.PENDING
+                                                ? 'Free trial'
+                                                : subscription.status}
+                                        </Text>
+                                    </div>
+                                    {subscription.status === CodySubscriptionStatus.PENDING ? (
+                                        <Text className="text-muted mb-0" size="small">
+                                            Until Feb 14, 2024
+                                        </Text>
+                                    ) : null}
                                 </div>
-                                <Text className="text-muted mb-0" size="small">
-                                    Until Feb 14, 2024
-                                </Text>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
+                                    <TrialPeriodIcon />
+                                    <div className="mb-2 mt-4">
+                                        <Text
+                                            weight="bold"
+                                            className={classNames('d-inline mb-0 text-danger', styles.counter)}
+                                        >
+                                            {subscription.status === CodySubscriptionStatus.PENDING
+                                                ? 'Free trial ended'
+                                                : subscription.status.toUpperCase()}
+                                        </Text>
+                                    </div>
+                                    <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
+                                        Manage subscription
+                                    </ButtonLink>
+                                </div>
+                            ))}
                     </div>
                 </div>
 

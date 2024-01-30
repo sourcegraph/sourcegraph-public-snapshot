@@ -5,6 +5,7 @@ import { useMutation } from '@sourcegraph/http-client'
 import { Button, H1, H2, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { ChangeCodyPlanResult, ChangeCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -27,7 +28,7 @@ export function UpgradeToProModal({
 
     return (
         <Modal isOpen={true} aria-label="Update to Cody Pro" className={styles.upgradeModal} position="center">
-            {data?.changeCodyPlan?.codyProEnabled ? (
+            {data?.changeCodyPlan?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
                 <div className="d-flex flex-column justify-content-between align-items-center mby-4 py-4">
                     <CodyColorIcon width={40} height={40} className="mb-4" />
                     <H2>Upgraded to Cody Pro 🎉</H2>

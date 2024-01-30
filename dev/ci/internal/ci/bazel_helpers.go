@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -105,44 +106,27 @@ func bazelStampedCmd(args ...string) string {
 	return strings.Join(cmd, " ")
 }
 
-// bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
-// are correct, but do not actually build anything.
-func bazelAnalysisPhase() func(*bk.Pipeline) {
-	cmd := bazelCmd(
-		"build",
-		"--nobuild", // this is the key flag to enable this.
-		"//...",
-	)
-
-	cmds := []bk.StepOpt{
-		bk.Key("bazel-analysis"),
-		bk.Agent("queue", "bazel"),
-		bk.Cmd(cmd),
-	}
-
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Analysis phase",
-			cmds...,
-		)
-	}
-}
-
 func bazelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-prechecks"),
 		bk.SoftFail(100),
 		bk.Agent("queue", "bazel"),
-		bk.ArtifactPaths("./bazel-configure.diff"),
+		bk.ArtifactPaths("./bazel-configure.diff", "./sg"),
 		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
 				Type:         bk.AnnotationTypeError,
 				IncludeNames: false,
 			},
 		}),
+		// We want to build sg on a bazel agent, but without the overhead
+		// of its own pipeline step. After pre-checks have passed seems
+		// the most natural, as we then know that the bazel files are
+		// up-to-date for building sg.
+		bk.Cmd("dev/ci/bazel-build-sg.sh"),
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Perform bazel prechecks",
+		pipeline.AddStep(":bazel: Bazel prechecks & build `sg`",
 			cmds...,
 		)
 	}
@@ -166,6 +150,8 @@ var allowedBazelFlags = map[string]struct{}{
 	"--test_tag_filters":     {},
 	"--test_timeout":         {},
 	"--config":               {},
+	"--test_output":          {},
+	"--verbose_failures":     {},
 }
 
 var bazelFlagsRe = regexp.MustCompile(`--\w+`)

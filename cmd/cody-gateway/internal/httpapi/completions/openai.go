@@ -8,6 +8,8 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,9 +30,7 @@ func NewOpenAIHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	orgID string,
-	allowedModels []string,
+	config config.OpenAIConfig,
 	autoFlushStreamingResponses bool,
 ) http.Handler {
 	return makeUpstreamHandler[openaiRequest](
@@ -41,8 +41,8 @@ func NewOpenAIHandler(
 		httpClient,
 		string(conftypes.CompletionsProviderNameOpenAI),
 		func(_ codygateway.Feature) string { return openAIURL },
-		allowedModels,
-		&OpenAIHandlerMethods{accessToken: accessToken, orgID: orgID},
+		config.AllowedModels,
+		&OpenAIHandlerMethods{config: config},
 
 		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
 		// in requests, so set a very high retry-after to discourage Sourcegraph
@@ -107,8 +107,7 @@ type openaiResponse struct {
 }
 
 type OpenAIHandlerMethods struct {
-	accessToken string
-	orgID       string
+	config config.OpenAIConfig
 }
 
 func (_ *OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ openaiRequest) (int, *flaggingResult, error) {
@@ -134,9 +133,9 @@ func (_ *OpenAIHandlerMethods) getRequestMetadata(_ context.Context, _ log.Logge
 
 func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+o.accessToken)
-	if o.orgID != "" {
-		r.Header.Set("OpenAI-Organization", o.orgID)
+	r.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
+	if o.config.OrgID != "" {
+		r.Header.Set("OpenAI-Organization", o.config.OrgID)
 	}
 }
 
@@ -190,6 +189,16 @@ func (_ *OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body ope
 		}
 		if len(event.Choices) > 0 {
 			completionUsage.characters += len(event.Choices[0].Delta.Content)
+		}
+		// These are only included in the last message, so we're not worried about overwriting
+		if event.Usage.PromptTokens > 0 {
+			promptUsage.tokens = event.Usage.PromptTokens
+		}
+		if event.Usage.CompletionTokens > 0 {
+			completionUsage.tokens = event.Usage.CompletionTokens
+		}
+		if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
+			logger.Warn("did not extract token counts from OpenAI streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 		}
 	}
 	if err := dec.Err(); err != nil {

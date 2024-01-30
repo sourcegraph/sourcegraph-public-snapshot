@@ -22,6 +22,7 @@ func testRedisConnection(ctx context.Context, c runtime.Contract) error {
 	}
 
 	client := goredis.NewClient(redisOpts)
+	defer client.Close()
 	pong := client.Ping(ctx)
 	return pong.Err()
 }

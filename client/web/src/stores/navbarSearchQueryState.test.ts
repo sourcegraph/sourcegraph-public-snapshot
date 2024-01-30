@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode } from '@sourcegraph/shared/src/search'
 
 import { parseSearchURL } from '../search'
 
@@ -121,6 +122,21 @@ describe('navbar query state', () => {
             })
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
+        })
+
+        it('chooses correct defaults when keyword search is enabled', () => {
+            setQueryStateFromURL(parseSearchURL(''))
+            setQueryStateFromSettings({
+                subjects: [],
+                final: {
+                    experimentalFeatures: {
+                        keywordSearch: true,
+                    },
+                },
+            })
+
+            expect(useNavbarQueryState.getState()).toHaveProperty('searchMode', SearchMode.Precise)
+            expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.keyword)
         })
     })
 })

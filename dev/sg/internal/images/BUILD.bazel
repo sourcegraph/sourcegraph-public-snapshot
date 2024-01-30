@@ -10,6 +10,7 @@ go_library(
         "helm.go",
         "images.go",
         "k8s.go",
+        "pure_docker.go",
         "registry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/images",
@@ -22,6 +23,7 @@ go_library(
         "//lib/output",
         "@com_github_distribution_distribution_v3//reference",
         "@com_github_docker_docker_credential_helpers//credentials",
+        "@com_github_grafana_regexp//:regexp",
         "@com_github_opencontainers_go_digest//:go-digest",
         "@com_github_sourcegraph_conc//pool",
         "@in_gopkg_yaml_v3//:yaml_v3",
@@ -34,7 +36,13 @@ go_library(
 go_test(
     name = "images_test",
     timeout = "short",
-    srcs = ["images_test.go"],
+    srcs = [
+        "images_test.go",
+        "pure_docker_test.go",
+    ],
     embed = [":images"],
-    deps = ["//dev/ci/images"],
+    deps = [
+        "//dev/ci/images",
+        "@com_github_opencontainers_go_digest//:go-digest",
+    ],
 )

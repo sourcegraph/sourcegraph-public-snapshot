@@ -33,6 +33,7 @@ ts_project(
         "src/types/utils.ts",
         "src/util/browserDetection.ts",
         "src/util/compatNavigate.ts",
+        "src/util/deviceDetection.ts",
         "src/util/fetchCache.ts",
         "src/util/hashCode.ts",
         "src/util/highlightNode.ts",

@@ -22,11 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -70,7 +70,7 @@ func TestHandler(t *testing.T) {
 	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
 	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), gitserverClient.ReadFile, nil, "")
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), func(ctx context.Context, rcp types.RepoCommitPath) ([]byte, error) { return nil, nil }, nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -81,7 +81,6 @@ func TestHandler(t *testing.T) {
 	client := symbolsclient.Client{
 		Endpoints:           endpoint.Static(server.URL),
 		GRPCConnectionCache: connectionCache,
-		HTTPClient:          httpcli.InternalDoer,
 	}
 
 	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}

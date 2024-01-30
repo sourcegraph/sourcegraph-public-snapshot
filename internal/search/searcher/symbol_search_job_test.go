@@ -11,19 +11,20 @@ import (
 
 func Test_symbolsToMatches(t *testing.T) {
 	type fileType struct {
-		Path    string
-		Symbols []string
+		Path     string
+		Language string
+		Symbols  []string
 	}
 
 	fixture := []fileType{
-		{Path: "path1", Symbols: []string{"sym1"}},
-		{Path: "path2", Symbols: []string{"sym1", "sym2"}},
+		{Path: "path1", Language: "Go", Symbols: []string{"sym1"}},
+		{Path: "path2", Language: "YAML", Symbols: []string{"sym1", "sym2"}},
 	}
 
 	input := []result.Symbol{}
 	for _, file := range fixture {
 		for _, symbol := range file.Symbols {
-			input = append(input, result.Symbol{Path: file.Path, Name: symbol})
+			input = append(input, result.Symbol{Path: file.Path, Name: symbol, Language: file.Language})
 		}
 	}
 
@@ -37,8 +38,9 @@ func Test_symbolsToMatches(t *testing.T) {
 			symbols = append(symbols, symbol.Symbol.Name)
 		}
 		got = append(got, fileType{
-			Path:    fileMatch.Path,
-			Symbols: symbols,
+			Path:     fileMatch.Path,
+			Language: fileMatch.PreciseLanguage,
+			Symbols:  symbols,
 		})
 	}
 

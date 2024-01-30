@@ -4,6 +4,8 @@ service:
   name: Msp Example
   owners:
     - core-services
+  # TODO: Write a simple description of what this service is for and what it does.
+  description: "TODO"
 
 build:
   # TODO: Configure the correct image for your job here. If you use a private

@@ -62,10 +62,16 @@ func NormalizeUsername(name string) (string, error) {
 	return userpasswd.NormalizeUsername(name)
 }
 
+var mockAddRandomSuffix func(string) (string, error)
+
 // AddRandomSuffix appends a random 5-character lowercase alphabetical suffix (like "-lbwwt")
 // to the username to avoid collisions. If the username already ends with a dash, it is not
 // added again.
 func AddRandomSuffix(username string) (string, error) {
+	if mockAddRandomSuffix != nil {
+		return mockAddRandomSuffix(username)
+	}
+
 	b := make([]byte, 5)
 	_, err := rand.Read(b)
 	if err != nil {

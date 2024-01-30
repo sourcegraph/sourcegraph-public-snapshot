@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -110,12 +111,19 @@ func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 
 func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	r.contentOnce.Do(func() {
-		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(
+		fr, err := r.gitserverClient.NewFileReader(
 			ctx,
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 		)
+		if err != nil {
+			r.contentErr = err
+			return
+		}
+		defer fr.Close()
+
+		r.fullContentBytes, r.contentErr = io.ReadAll(fr)
 	})
 
 	return string(pageContent(r.fullContentBytes, int32ToIntPtr(args.StartLine), int32ToIntPtr(args.EndLine))), r.contentErr
@@ -381,11 +389,11 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
+	linker, err := r.commit.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, r.gitserverClient, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return linker.FileOrDir(r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir()), nil
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -439,7 +447,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		toolName = *args.ToolName
 	}
 
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -454,7 +462,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 }
 
 func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +489,7 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		return nil, errors.New("expected arguments to symbolInfo")
 	}
 
-	repo, err := r.commit.repoResolver.repo(ctx)
+	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {
 		return nil, err
 	}

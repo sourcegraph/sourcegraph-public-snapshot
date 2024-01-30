@@ -6,7 +6,7 @@
 }
 
 .heading {
-    margin: 0;
+    margin: 0 0 0.25rem 0;
 }
 
 .list {
@@ -32,7 +32,7 @@
     }
 
     &:not(&-selected):hover {
-        background-color: var(--color-bg-2) !important;
+        background-color: var(--color-bg-3) !important;
     }
 
     &-text {
@@ -64,4 +64,9 @@
     &::after {
         display: none;
     }
+}
+
+.description {
+    margin: 0 0.65rem -0.25rem 0.65rem;
+    color: var(--text-muted);
 }

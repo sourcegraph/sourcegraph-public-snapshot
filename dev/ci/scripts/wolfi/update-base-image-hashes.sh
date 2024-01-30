@@ -5,7 +5,11 @@ set -eu -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # Update hashes for all base images
-bazel run //dev/sg -- wolfi update-hashes
+bazel \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  run //dev/sg -- wolfi update-hashes
 # Print diff
 git diff dev/oci_deps.bzl
 

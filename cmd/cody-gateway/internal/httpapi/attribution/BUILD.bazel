@@ -8,6 +8,7 @@ go_library(
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/dotcom",
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
         "//internal/trace",
@@ -21,9 +22,9 @@ go_test(
     name = "attribution_test",
     srcs = ["handler_test.go"],
     deps = [
-        ":attribution",
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/auth",
+        "//cmd/cody-gateway/internal/dotcom",
         "//cmd/cody-gateway/internal/events",
         "//cmd/cody-gateway/internal/httpapi",
         "//internal/codygateway",

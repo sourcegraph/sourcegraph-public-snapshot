@@ -430,5 +430,12 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)), http.StatusFound)
+	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState))
+	// Pass along the prompt_auth to OP for the specific type of authentication to
+	// use, e.g. "github", "gitlab", "google".
+	promptAuth := r.URL.Query().Get("prompt_auth")
+	if promptAuth != "" {
+		authURL += "&prompt_auth=" + promptAuth
+	}
+	http.Redirect(w, r, authURL, http.StatusFound)
 }

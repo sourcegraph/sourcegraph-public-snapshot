@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	gcptraceexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"go.opentelemetry.io/otel"
@@ -22,7 +23,7 @@ import (
 // and the use case is more niche as a standalone service.
 //
 // Based on https://cloud.google.com/trace/docs/setup/go-ot
-func maybeEnableTracing(ctx context.Context, logger log.Logger, config OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
+func maybeEnableTracing(ctx context.Context, logger log.Logger, config config.OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
 	// Set globals
 	policy.SetTracePolicy(config.TracePolicy)
 	otel.SetTextMapPropagator(oteldefaults.Propagator())

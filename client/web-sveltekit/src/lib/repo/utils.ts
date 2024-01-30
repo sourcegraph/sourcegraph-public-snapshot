@@ -1,6 +1,6 @@
-import { resolvePath } from '@sveltejs/kit'
+import { resolveRoute } from '$app/paths'
 
-import type { ResolvedRevision } from '$lib/repo/api/repo'
+import type { ResolvedRevision } from '../../routes/[...repo=reporev]/+layout'
 
 const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
 
@@ -23,7 +23,7 @@ export function navFromPath(path: string, repo: string): [string, string][] {
         .slice(0, -1)
         .map((part, index, all): [string, string] => [
             part,
-            resolvePath(TREE_ROUTE_ID, { repo, path: all.slice(0, index + 1).join('/') }),
+            resolveRoute(TREE_ROUTE_ID, { repo, path: all.slice(0, index + 1).join('/') }),
         ])
         .concat([[parts.at(-1) ?? '', '']])
 }

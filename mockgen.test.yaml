@@ -415,3 +415,9 @@
       interfaces:
         - RepositoryLocker
         - RepositoryLock
+- filename: cmd/gitserver/internal/mocks_test.go
+  package: internal
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
+      interfaces:
+        - service

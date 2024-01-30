@@ -48,6 +48,7 @@ export interface PathMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    language?: string
     debug?: string
 }
 
@@ -63,6 +64,7 @@ export interface ContentMatch {
     lineMatches?: LineMatch[]
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    language?: string
     debug?: string
 }
 
@@ -110,6 +112,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    language?: string
     debug?: string
 }
 
@@ -269,8 +272,8 @@ export interface Filter {
     value: string
     label: string
     count: number
-    limitHit: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility' | 'select' | 'after' | 'before' | 'author'
+    exhaustive: boolean
+    kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
@@ -501,7 +504,7 @@ function initiateSearchStream(
         zoektSearchOptions,
         featureOverrides,
         searchMode = SearchMode.Precise,
-        displayLimit = 1500,
+        displayLimit = 500,
         sourcegraphURL = '',
         chunkMatches = false,
     }: StreamSearchOptions,

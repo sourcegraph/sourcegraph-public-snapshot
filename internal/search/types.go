@@ -12,6 +12,7 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -107,7 +108,7 @@ type SymbolsParameters struct {
 	// Query is the search query.
 	Query string
 
-	// IsRegExp if true will treat the Pattern as a regular expression.
+	// IsRegExp if true will treat the Query as a regular expression.
 	IsRegExp bool
 
 	// IsCaseSensitive if false will ignore the case of query and file pattern
@@ -139,46 +140,6 @@ type SymbolsParameters struct {
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
 	Err     string         `json:"error,omitempty"`
-}
-
-// GlobalSearchMode designates code paths which optimize performance for global
-// searches, i.e., literal or regexp, indexed searches without repo: filter.
-type GlobalSearchMode int
-
-const (
-	DefaultMode GlobalSearchMode = iota
-
-	// ZoektGlobalSearch designates a performance optimised code path for indexed
-	// searches. For a global search we don't need to resolve repos before searching
-	// shards on Zoekt, instead we can resolve repos and call Zoekt concurrently.
-	//
-	// Note: Even for a global search we have to resolve repos to filter search results
-	// returned by Zoekt.
-	ZoektGlobalSearch
-
-	// SearcherOnly designated a code path on which we skip indexed search, even if
-	// the user specified index:yes. SearcherOnly is used in conjunction with
-	// ZoektGlobalSearch and designates the non-indexed part of the performance
-	// optimised code path.
-	SearcherOnly
-
-	// SkipUnindexed disables content, path, and symbol search. Used:
-	// (1) in conjunction with ZoektGlobalSearch on Sourcegraph.com.
-	// (2) when a query does not specify any patterns, include patterns, or exclude pattern.
-	SkipUnindexed
-)
-
-var globalSearchModeStrings = map[GlobalSearchMode]string{
-	ZoektGlobalSearch: "ZoektGlobalSearch",
-	SearcherOnly:      "SearcherOnly",
-	SkipUnindexed:     "SkipUnindexed",
-}
-
-func (m GlobalSearchMode) String() string {
-	if s, ok := globalSearchModeStrings[m]; ok {
-		return s
-	}
-	return "None"
 }
 
 type IndexedRequestType string
@@ -219,7 +180,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
+		UseKeywordScoring: o.PatternType == query.SearchTypeCodyContext,
 		NumContextLines:   o.NumContextLines,
 	}
 
@@ -231,7 +192,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 	// are evaluating to deliver a better keyword-based search experience. For now
 	// these are separate, but we might combine them in the future. Both profit from
 	// higher defaults.
-	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeNewStandardRC1 {
+	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeKeyword {
 		// Keyword searches tends to match much more broadly than code searches, so we need to
 		// consider more candidates to ensure we don't miss highly-ranked documents
 		searchOpts.ShardMaxMatchCount *= 10
@@ -297,12 +258,10 @@ type SearcherParameters struct {
 // TextPatternInfo defines the search request for unindexed and structural search
 // (the 'searcher' service). Keep it in sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
-	// Values dependent on pattern atom.
-	Pattern   string
-	IsNegated bool
-	IsRegExp  bool
+	// Query defines the search query
+	Query protocol.QueryNode
 
-	// Values dependent on parameters.
+	// Parameters for the search
 	IsStructuralPat bool
 	CombyRule       string
 	IsCaseSensitive bool
@@ -327,14 +286,8 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 		res = append(res, fs...)
 	}
 
-	add(attribute.String("pattern", p.Pattern))
+	add(attribute.Stringer("query", p.Query))
 
-	if p.IsNegated {
-		add(attribute.Bool("isNegated", p.IsNegated))
-	}
-	if p.IsRegExp {
-		add(attribute.Bool("isRegexp", p.IsRegExp))
-	}
 	if p.IsStructuralPat {
 		add(attribute.Bool("isStructural", p.IsStructuralPat))
 	}
@@ -371,10 +324,8 @@ func (p *TextPatternInfo) Fields() []attribute.KeyValue {
 }
 
 func (p *TextPatternInfo) String() string {
-	args := []string{fmt.Sprintf("%q", p.Pattern)}
-	if p.IsRegExp {
-		args = append(args, "re")
-	}
+	args := []string{p.Query.String()}
+
 	if p.IsStructuralPat {
 		if p.CombyRule != "" {
 			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))
@@ -437,6 +388,9 @@ type Features struct {
 	// options. This should be used for quick interactive experiments only. An
 	// invalid JSON string or unknown fields will be ignored.
 	ZoektSearchOptionsOverride string
+
+	// PhraseBoost is a feature flag that enables boosting of exact matches.
+	PhraseBoost bool `json:"search-boost-phrase"`
 }
 
 func (f *Features) String() string {

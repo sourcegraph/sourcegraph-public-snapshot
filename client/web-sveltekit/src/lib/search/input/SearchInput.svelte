@@ -121,14 +121,12 @@
     let suggestionsPaddingTop = 0
     let suggestionsUI: Extension = []
 
-    $: patternType = $queryState.patternType
-    $: regularExpressionEnabled = patternType === SearchPatternType.regexp
-    $: structuralEnabled = patternType === SearchPatternType.structural
+    $: regularExpressionEnabled = $queryState.patternType === SearchPatternType.regexp
+    $: structuralEnabled = $queryState.patternType === SearchPatternType.structural
     $: extension = [
         suggestions({
             id: popoverID,
             source: createSuggestionsSource({
-                valueType: patternType === SearchPatternType.newStandardRC1 ? 'glob' : 'regex',
                 graphqlQuery,
                 authenticatedUser: $user,
                 isSourcegraphDotCom: false,

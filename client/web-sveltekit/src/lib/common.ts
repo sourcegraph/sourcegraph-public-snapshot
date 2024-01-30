@@ -16,6 +16,7 @@ export { highlightNodeMultiline, highlightNode } from '@sourcegraph/common/src/u
 export { logger } from '@sourcegraph/common/src/util/logger'
 export { isSafari } from '@sourcegraph/common/src/util/browserDetection'
 export { isExternalLink, type LineOrPositionOrRange } from '@sourcegraph/common/src/util/url'
+export { parseJSONCOrError } from '@sourcegraph/common/src/util/jsonc'
 
 let highlightingLoaded = false
 

@@ -77,7 +77,8 @@ func Start[
 			return log.SinksConfig{
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
-						Dsn: *contract.internal.sentryDSN,
+						Dsn:         *contract.internal.sentryDSN,
+						Environment: contract.EnvironmentID,
 					},
 				},
 			}

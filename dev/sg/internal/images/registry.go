@@ -64,11 +64,11 @@ func ParseRepository(rawImg string) (*Repository, error) {
 	if nameTagged, ok := ref.(reference.NamedTagged); ok {
 		r.tag = nameTagged.Tag()
 		parts := strings.Split(reference.Path(nameTagged), "/")
-		if len(parts) != 2 {
+		if len(parts) < 2 {
 			return nil, errors.Newf("failed to parse org/name in %q", reference.Path(nameTagged))
 		}
-		r.org = parts[0]
-		r.name = parts[1]
+		r.org = strings.Join(parts[0:len(parts)-1], "/")
+		r.name = parts[len(parts)-1]
 		if canonical, ok := ref.(reference.Canonical); ok {
 			newNamed, err := reference.WithName(canonical.Name())
 			if err != nil {

@@ -1,0 +1,14 @@
+# Needed for search context suggestions for the current user
+fragment SearchInput_AuthenticatedUser on User {
+    id
+    organizations {
+        nodes {
+            __typename
+            id
+            name
+            displayName
+            url
+            settingsURL
+        }
+    }
+}

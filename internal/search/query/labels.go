@@ -20,7 +20,7 @@ const (
 	IsAlias
 	Standard
 	QuotesAsLiterals
-	GlobFilters
+	Boost
 )
 
 var allLabels = map[labels]string{

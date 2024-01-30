@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
-use scip_syntax::{get_locals, get_symbols};
-use scip_treesitter_languages::parsers::BundledParser;
+use syntax_analysis::{get_globals, get_locals};
+use tree_sitter_all_languages::BundledParser;
 use walkdir::DirEntry;
 
 use crate::{
@@ -164,9 +164,10 @@ pub fn index_command(
 
         let mut evaluator = Evaluator::default();
         evaluator
-            .evaluate_indexes(&index, &ground_truth, Default::default())
+            .evaluate_indexes(&index, &ground_truth)
             .unwrap()
-            .print_summary();
+            .write_summary(&mut std::io::stdout(), Default::default())
+            .unwrap();
     }
 
     write_message_to_file(out, index).expect("to write the file");
@@ -180,7 +181,8 @@ fn index_content(
     let mut document: Document;
 
     if options.analysis_mode.globals() {
-        document = get_symbols(parser, &contents).unwrap();
+        let (mut scope, hint) = get_globals(parser, &contents).unwrap().unwrap();
+        document = scope.into_document(hint, vec![]);
     } else {
         document = Document::new();
     }

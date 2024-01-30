@@ -1,0 +1,24 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "guardrails",
+    srcs = ["attribution_filter.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/guardrails",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/completions/types",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "guardrails_test",
+    srcs = ["attribution_filter_test.go"],
+    deps = [
+        ":guardrails",
+        "//internal/completions/types",
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
+    ],
+)

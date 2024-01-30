@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -18,13 +17,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/sshagent"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	internalperforce "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -35,27 +35,7 @@ import (
 
 var patchID uint64
 
-func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *http.Request) {
-	var req protocol.CreateCommitFromPatchRequest
-	var resp protocol.CreateCommitFromPatchResponse
-	var status int
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		resp := new(protocol.CreateCommitFromPatchResponse)
-		resp.SetError("", "", "", errors.Wrap(err, "decoding CreateCommitFromPatchRequest"))
-		status = http.StatusBadRequest
-	} else {
-		status, resp = s.createCommitFromPatch(r.Context(), req)
-	}
-
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
 	logger := s.Logger.Scoped("createCommitFromPatch").
 		With(
 			log.String("repo", string(req.Repo)),
@@ -148,7 +128,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
+		if !gitcli.IsAllowedGitCmd(logger, cmd.Args[1:], common.GitDir(tmpRepoDir)) {
 			return nil, errors.New("command not on allow list")
 		}
 
