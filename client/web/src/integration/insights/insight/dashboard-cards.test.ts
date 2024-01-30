@@ -79,7 +79,7 @@ describe('Code insights [Dashboard card]', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_CAPTURE_GROUP')
-        await driver.page.waitForSelector('[aria-label="Line chart"]')
+        await driver.page.waitForSelector('[aria-label="Line chart"] path')
 
         const numberOfLines = await driver.page.$$eval('[aria-label="Line chart"] path', elements => elements.length)
         const numberOfPointLinks = await driver.page.$$eval('[aria-label="Line chart"] a', elements => elements.length)

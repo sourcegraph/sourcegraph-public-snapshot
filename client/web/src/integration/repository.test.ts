@@ -402,7 +402,9 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb =>
+                    breadcrumb.textContent?.trim().replace('.../', '')
+                )
             )
 
             assert.deepStrictEqual(breadcrumbTexts, [

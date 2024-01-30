@@ -16,6 +16,7 @@ import puppeteer, {
     type Target,
     type BrowserLaunchArgumentOptions,
     type BrowserConnectOptions,
+    KeyInput,
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
@@ -369,13 +370,24 @@ export class Driver {
                 break
             }
             case 'keyboard': {
-                const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
+                const modifier = this.getModifier()
                 await this.page.keyboard.down(modifier)
                 await this.page.keyboard.press('a')
                 await this.page.keyboard.up(modifier)
                 break
             }
         }
+    }
+
+    public async openFindMenu(): Promise<void> {
+        const modifier = this.getModifier()
+        await this.page.keyboard.down(modifier)
+        await this.page.keyboard.press('f')
+        await this.page.keyboard.up(modifier)
+    }
+
+    private getModifier(): KeyInput {
+        return os.platform() === 'darwin' ? Key.Meta : Key.Control
     }
 
     public async enterText(method: EnterTextMethod = 'type', text: string): Promise<void> {

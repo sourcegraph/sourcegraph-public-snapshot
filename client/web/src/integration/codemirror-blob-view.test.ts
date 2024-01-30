@@ -272,12 +272,6 @@ describe('CodeMirror blob view', () => {
             return driver.page.evaluate<() => number>(() => document.querySelectorAll('.cm-searchMatch').length)
         }
 
-        async function pressCtrlF(): Promise<void> {
-            await driver.page.keyboard.down('Control')
-            await driver.page.keyboard.press('f')
-            await driver.page.keyboard.up('Control')
-        }
-
         function getSelectedMatch(): Promise<string | null | undefined> {
             return driver.page.evaluate<() => string | null | undefined>(
                 () => document.querySelector('.cm-searchMatch-selected')?.textContent
@@ -292,7 +286,7 @@ describe('CodeMirror blob view', () => {
 
             // Focus file view and trigger in-document search
             await driver.page.click(blobSelector)
-            await pressCtrlF()
+            await driver.openFindMenu()
             await driver.page.waitForSelector('.cm-sg-search-container')
 
             // Start searching (which implies that the search input has focus)
@@ -309,7 +303,7 @@ describe('CodeMirror blob view', () => {
 
             // Pressing CTRL+f again focuses the search input again and selects
             // the value so that it can be easily replaced.
-            await pressCtrlF()
+            await driver.openFindMenu()
             await driver.page.keyboard.type('line\\d')
             assert.strictEqual(
                 await driver.page.evaluate<() => string | null | undefined>(
@@ -339,7 +333,7 @@ describe('CodeMirror blob view', () => {
             )
         })
 
-        it('opens in-document when pressing ctrl-f anywhere on the page', async () => {
+        it('opens in-document when opening a find menu anywhere on the page', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
             await driver.page.waitForSelector(blobSelector)
             // Wait for page to "settle" so that focus management works better
@@ -347,7 +341,7 @@ describe('CodeMirror blob view', () => {
 
             // Focus file view and trigger in-document search
             await driver.page.click('body')
-            await pressCtrlF()
+            await driver.openFindMenu()
             await driver.page.waitForSelector('.cm-sg-search-container')
         })
     })
