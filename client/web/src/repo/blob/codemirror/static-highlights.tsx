@@ -2,7 +2,7 @@
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
 import { Extension, EditorState, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, showPanel, Panel, ViewUpdate, ViewPlugin } from '@codemirror/view'
+import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortedIndexBy } from 'lodash'
@@ -47,9 +47,32 @@ export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): E
                 }))
             ),
             showPanel.of(view => new StaticHighlightsPanel(view, navigate)),
+            scrollToFirstRange(),
         ],
     })
     return facet.of(ranges)
+}
+
+/**
+ * scrollToFirstRange is a small utility extension that just scrolls to
+ * the selected range on startup.
+ */
+function scrollToFirstRange(): Extension {
+    var scrolled = false
+    return EditorView.updateListener.of((update: ViewUpdate) => {
+        const ranges = update.view.state.field(staticHighlightState)
+        const selectedRange = ranges.find(range => range.selected)
+        if (selectedRange && !scrolled) {
+            scrolled = true
+            update.view.dispatch({
+                effects: EditorView.scrollIntoView(ranges[0].from, {
+                    y: 'nearest',
+                    x: 'center',
+                    yMargin: update.view.dom.getBoundingClientRect().height / 3,
+                }),
+            })
+        }
+    })
 }
 
 interface HighlightedRange {
