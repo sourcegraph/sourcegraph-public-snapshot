@@ -32,6 +32,7 @@ export const FEATURE_FLAGS = [
     'search-boost-phrase',
     'search-content-based-lang-detection',
     'search-debug',
+    'search-keyword',
     'search-input-show-history',
     'search-results-keyboard-navigation',
     'search-simple',

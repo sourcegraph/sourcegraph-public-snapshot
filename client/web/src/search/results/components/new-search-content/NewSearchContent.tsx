@@ -37,12 +37,13 @@ import {
     PathMatch,
     StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { useKeywordSearch } from '../../../../featureFlags/useFeatureFlag'
 import { fetchBlob } from '../../../../repo/blob/backend'
 import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
 import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
@@ -178,7 +179,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         [onSearchSubmit]
     )
 
-    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
+    const showKeywordSearchToggle = useKeywordSearch()
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>

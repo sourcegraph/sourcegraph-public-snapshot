@@ -120,6 +120,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     setQueryState={setQueryState}
                     hardCodedSearchContextSpec={props.communitySearchContextMetadata.spec}
                     simpleSearch={false}
+                    showKeywordSearchToggle={false}
                 />
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (
