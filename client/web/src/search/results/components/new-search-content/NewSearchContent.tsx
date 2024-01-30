@@ -28,8 +28,6 @@ import {
     SearchPatternTypeMutationProps,
     SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import {
     AggregateStreamingSearchResults,
     ContentMatch,
