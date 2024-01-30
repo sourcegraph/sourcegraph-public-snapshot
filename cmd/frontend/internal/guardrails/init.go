@@ -2,7 +2,6 @@ package guardrails
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -42,7 +41,6 @@ func Init(
 		initLogic := &enterpriseInitialization{observationCtx: observationCtx}
 		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
 		go conf.Watch(func () {
-			fmt.Println("UPDATE SERVICE")
 			resolver.UpdateService(initLogic.Service())
 		})
 	}
@@ -72,7 +70,6 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 		e.token = token
 		e.client = codygateway.NewClient(client, endpoint, token)
 	}
-	fmt.Printf("ATTRIBUTION GATEWAY: %q %q\n", e.endpoint, e.token)
 	if e.endpoint == "" || e.token == "" {
 		return attribution.Uninitialized{}
 	}
