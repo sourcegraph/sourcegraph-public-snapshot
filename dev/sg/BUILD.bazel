@@ -12,7 +12,7 @@ go_library(
         "os.go",
         "sg_analytics.go",
         "sg_audit.go",
-        "sg_bzlgen.go",
+        "sg_bazel.go",
         "sg_cloud.go",
         "sg_db.go",
         "sg_deploy.go",

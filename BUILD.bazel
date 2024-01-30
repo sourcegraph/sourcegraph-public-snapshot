@@ -205,7 +205,7 @@ buildifier(
 # Go
 
 gazelle_binary(
-    name = "gazelle-buf",
+    name = "gazelle-bin",
     languages = [
         # Loads the native proto extension
         "@bazel_gazelle//language/proto:go_default_library",
@@ -222,7 +222,7 @@ gazelle_binary(
 
 gazelle(
     name = "gazelle",
-    gazelle = ":gazelle-buf",
+    gazelle = ":gazelle-bin",
 )
 
 sh_binary(
