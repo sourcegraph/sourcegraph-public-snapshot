@@ -112,7 +112,7 @@ func NewConfig(now time.Time) Config {
 
 		Time:              now,
 		Branch:            branch,
-		Version:           versionFromTag(runType, tag, commit, buildNumber, branch, now),
+		Version:           inferVersion(runType, tag, commit, buildNumber, branch, now),
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
 		Diff:              diff,
@@ -129,23 +129,22 @@ func NewConfig(now time.Time) Config {
 	}
 }
 
-// versionFromTag constructs the Sourcegraph version from the given build state.
-func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+// inferVersion constructs the Sourcegraph version from the given build state.
+func inferVersion(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+	if runType.Is(runtype.RFC795InternalRelease) {
+		// TODO(RFC795)
+		return os.Getenv("VERSION")
+	}
+	if runType.Is(runtype.RFC795PromoteRelease) {
+		// TODO(RFC795)
+		return os.Getenv("VERSION")
+	}
+
 	if runType.Is(runtype.TaggedRelease) {
 		// This tag is used for publishing versioned releases.
 		//
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		return strings.TrimPrefix(tag, "v")
-	}
-	if runType.Is(runtype.RFC795InternalRelease) {
-		// TODO(RFC795)
-		// Hardcoded for now
-		return "5.3.0"
-	}
-	if runType.Is(runtype.RFC795PromoteRelease) {
-		// TODO(RFC795)
-		// Hardcoded for now
-		return "5.3.0"
 	}
 
 	// "main" branch is used for continuous deployment and has a special-case format
