@@ -64,6 +64,9 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 		e.token = token
 		e.client = codygateway.NewClient(httpcli.ExternalDoer, endpoint, token)
 	}
+	if e.endpoint == "" {
+		return attribution.Uninitialized{}
+	}
 	return attribution.NewGatewayProxy(e.observationCtx, e.client)
 }
 
