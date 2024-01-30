@@ -894,13 +894,13 @@ func GetAttributionGateway(siteConfig schema.SiteConfiguration) (string, string)
 	}
 	// Explicit attribution gateway config overrides autocomplete config (if used).
 	if g := siteConfig.AttributionGateway; g != nil {
-		return g.Endpoint, g.AccessToken
+		return g.Endpoint, getSourcegraphProviderAccessToken(g.AccessToken, siteConfig)
 	}
 	// Fall back to autocomplete config if no explicit gateway config.
 	cc := GetCompletionsConfig(siteConfig)
 	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
 	if ccUsingGateway {
-		return cc.Endpoint, cc.AccessToken
+		return cc.Endpoint, getSourcegraphProviderAccessToken(cc.AccessToken, siteConfig)
 	}
 	return "", ""
 }

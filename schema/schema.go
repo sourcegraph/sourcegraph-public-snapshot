@@ -68,7 +68,7 @@ type AnnotationsResult struct {
 
 // AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
 type AttributionGateway struct {
-	// AccessToken description: Token for accessing Cody gateway for attribution.
+	// AccessToken description: Only for use to override token for attribution gateway access. If 'licenseKey' is set, a default access token is generated.
 	AccessToken string `json:"accessToken,omitempty"`
 	// Endpoint description: Endpoint where Cody gateway can be accessed for attribution.
 	Endpoint string `json:"endpoint,omitempty"`

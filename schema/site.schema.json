@@ -2997,7 +2997,7 @@
           "type": "string"
         },
         "accessToken": {
-          "description": "Token for accessing Cody gateway for attribution.",
+          "description": "Only for use to override token for attribution gateway access. If 'licenseKey' is set, a default access token is generated.",
           "type": "string"
         }
       },
