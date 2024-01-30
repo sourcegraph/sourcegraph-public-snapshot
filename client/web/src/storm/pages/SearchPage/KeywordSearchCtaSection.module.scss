@@ -7,11 +7,34 @@
         flex-wrap: wrap;
         justify-content: center;
     }
+
+    background:none;
+    margin-top: 4rem;
+    margin-bottom: 4rem;
+    justify-content: center;
+    display: flex;
 }
 
+
+
 .card {
-    background-color: var(--color-bg-1);
+    background:none;
+    border-radius: var(8px);
+    border: 1px solid var(--Semantic-Border-border-color, #E6EBF2);
+    background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #F9FAFB;
+    max-width: 738px;
+    padding:2.5rem !important;
+    border-radius: .5rem;
 }
+
+.card H2{
+    margin-bottom:2rem;
+}
+
+.card p:first-child{
+    margin-bottom:2rem;
+}
+
 
 .close-button {
     top: 0.5rem;
