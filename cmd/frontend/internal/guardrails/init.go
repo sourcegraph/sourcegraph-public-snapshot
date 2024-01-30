@@ -38,7 +38,11 @@ func Init(
 	} else {
 		// On an Enterprise instance endpoint proxies to gateway, and is re-initialized
 		// in case site-config changes.
-		initLogic := &enterpriseInitialization{observationCtx: observationCtx}
+		client := httpcli.ExternalDoer
+		if MockHttpClient!= nil {
+			client = MockHttpClient
+		}
+		initLogic := &enterpriseInitialization{observationCtx: observationCtx, httpClient: client}
 		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
 		go conf.Watch(func () {
 			resolver.UpdateService(initLogic.Service())
@@ -54,6 +58,7 @@ type enterpriseInitialization struct {
 	client         codygateway.Client
 	endpoint       string
 	token          string
+	httpClient     httpcli.Doer
 }
 
 func (e *enterpriseInitialization) Service() attribution.Service {
@@ -61,14 +66,10 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 	defer e.mu.Unlock()
 	config := conf.Get().SiteConfig()
 	endpoint, token := conf.GetAttributionGateway(config)
-	client := httpcli.ExternalDoer
-	if MockHttpClient!= nil {
-		client = MockHttpClient
-	}
 	if e.endpoint != endpoint || e.token != token {
 		e.endpoint = endpoint
 		e.token = token
-		e.client = codygateway.NewClient(client, endpoint, token)
+		e.client = codygateway.NewClient(e.httpClient, endpoint, token)
 	}
 	if e.endpoint == "" || e.token == "" {
 		return attribution.Uninitialized{}

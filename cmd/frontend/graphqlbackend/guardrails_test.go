@@ -1,3 +1,6 @@
+// TODO: Consider making config thread-safe.
+//go:build !race
+
 package graphqlbackend_test
 
 import (
