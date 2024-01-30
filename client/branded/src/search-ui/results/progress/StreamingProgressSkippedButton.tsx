@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState, type FC } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
-import classNames from 'classnames'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
