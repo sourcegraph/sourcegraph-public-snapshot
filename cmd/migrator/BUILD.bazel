@@ -29,23 +29,6 @@ go_binary(
     },
 )
 
-# See tools/release/README.md for details.
-genrule(
-    name = "tar_schema_descriptions",
-    srcs = ["@schemas_archive//file"],
-    outs = ["schema_descriptions.tar"],
-    cmd = """\
-    mkdir -p schema-descriptions/
-    tar zxf $(location @schemas_archive//file:file) --no-same-owner -C schema-descriptions/
-
-    if tar --version | grep -q bsdtar; then
-        tar -cf $@ --uid=0 --gid=0 --numeric-owner schema-descriptions/
-    else
-        tar -cf $@ --owner=:0 --group=:0 --numeric-owner schema-descriptions/
-    fi
-    """,
-)
-
 # This rule builds a tarball of the database schema descriptions that only contains the current database schema
 # description. It's used by the normal variant of cmd/migrator, which is reaches out to the GitHub repository
 # to find the missing schema descriptions.
@@ -113,7 +96,8 @@ oci_image(
     tags = ["manual"],
     tars = [
         ":tar_migrator",
-        ":tar_schema_descriptions",
+        ":tar_current_schema_descriptions",
+        "//cmd/migrator/airgappedgen:tar_schema_descriptions",
     ],
     user = "sourcegraph",
 )
@@ -126,7 +110,7 @@ oci_tarball(
 
 oci_tarball(
     name = "image_airgapped_tarball",
-    image = ":image",
+    image = ":image_airgapped",
     repo_tags = ["migrator:candidate"],
 )
 
