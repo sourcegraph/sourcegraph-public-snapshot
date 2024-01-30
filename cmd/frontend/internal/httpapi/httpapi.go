@@ -62,7 +62,7 @@ type Handlers struct {
 	BatchesChangesFileUploadHandler http.Handler
 
 	// GitHub App
-	GitHubAppCreationHandler func(*mux.Router) http.Handler
+	GitHubAppCreationHandler func(database.DB, *mux.Router) http.Handler
 
 	// SCIM
 	SCIMHandler http.Handler
@@ -149,8 +149,9 @@ func NewHandler(
 	m.Path("/bitbucket-cloud-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
 
 	// GitHub App handler
-	subrouter := m.PathPrefix("/githubapp/").Subrouter()
-	m.Path("/githubapp/{Path:.*}").Methods("GET").Handler(trace.Route(handlers.GitHubAppCreationHandler(subrouter)))
+	gitHubAppRouter := m.PathPrefix("/githubapp/").Subrouter()
+	gitHubAppHandler := handlers.GitHubAppCreationHandler(db, gitHubAppRouter)
+	gitHubAppRouter.PathPrefix("/").Methods("GET").Handler(trace.Route(gitHubAppHandler))
 
 	// Other routes
 	m.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(trace.Route(handlers.BatchesChangesFileGetHandler))

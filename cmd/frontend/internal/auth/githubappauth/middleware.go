@@ -35,63 +35,60 @@ import (
 const cacheTTLSeconds = 60 * 60 // 1 hour
 
 type gitHubAppServer struct {
-	*mux.Router
+	router *mux.Router
 
 	cache *rcache.Cache
 	db    database.DB
 }
 
 func (srv *gitHubAppServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// 🚨 SECURITY: only site admins can create github apps
-	if err := checkSiteAdmin(srv.db, w, r); err != nil {
-		http.Error(w, "User must be site admin", http.StatusForbidden)
-		return
-	}
-
-	srv.Router.ServeHTTP(w, r)
+	srv.router.ServeHTTP(w, r)
 }
 
-func NewGitHubAppServer(db database.DB) func(router *mux.Router) http.Handler {
-	return func(router *mux.Router) http.Handler {
-		ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
-		appServer := &gitHubAppServer{
-			Router: router,
-			cache:  ghAppState,
-			db:     db,
+func (srv *gitHubAppServer) siteAdminMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 🚨 SECURITY: only site admins can create github apps
+		if err := checkSiteAdmin(srv.db, w, r); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
+			return
 		}
 
-		router.Path("/state").Methods("GET").HandlerFunc(appServer.stateHandler)
-		router.Path("/new-app-state").Methods("GET").HandlerFunc(appServer.newAppStateHandler)
-		router.Path("/redirect").Methods("GET").HandlerFunc(appServer.redirectHandler)
-		router.Path("/setup").Methods("GET").HandlerFunc(appServer.setupHandler)
-
-		return appServer
-	}
+		next.ServeHTTP(w, r)
+	})
 }
 
-func NewGitHubAppServerWithCache(db database.DB, cache *rcache.Cache) func(router *mux.Router) http.Handler {
-	return func(router *mux.Router) http.Handler {
-		appServer := &gitHubAppServer{
-			Router: router,
-			cache:  cache,
-			db:     db,
-		}
-
-		router.Path("/state").Methods("GET").HandlerFunc(appServer.stateHandler)
-		router.Path("/new-app-state").Methods("GET").HandlerFunc(appServer.newAppStateHandler)
-		router.Path("/redirect").Methods("GET").HandlerFunc(appServer.redirectHandler)
-		router.Path("/setup").Methods("GET").HandlerFunc(appServer.setupHandler)
-
-		return appServer
-	}
+func (srv *gitHubAppServer) registerRoutes() {
+	srv.router.Path("/state").Methods("GET").HandlerFunc(srv.stateHandler)
+	srv.router.Path("/new-app-state").Methods("GET").HandlerFunc(srv.newAppStateHandler)
+	srv.router.Path("/redirect").Methods("GET").HandlerFunc(srv.redirectHandler)
+	srv.router.Path("/setup").Methods("GET").HandlerFunc(srv.setupHandler)
 }
 
-func newMiddleware(db database.DB, authPrefix string) http.Handler {
+func SetupGitHubAppRoutes(db database.DB, router *mux.Router) http.Handler {
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	appServer := &gitHubAppServer{
-		cache: ghAppState,
-		db:    db,
+		router: router,
+		cache:  ghAppState,
+		db:     db,
 	}
+
+	appServer.registerRoutes()
+
+	router.Use(appServer.siteAdminMiddleware)
+
+	return appServer
+}
+
+func SetupGitHubAppRoutesWithCache(db database.DB, router *mux.Router, cache *rcache.Cache) http.Handler {
+	appServer := &gitHubAppServer{
+		router: router,
+		cache:  cache,
+		db:     db,
+	}
+
+	appServer.registerRoutes()
+
+	router.Use(appServer.siteAdminMiddleware)
 
 	return appServer
 }

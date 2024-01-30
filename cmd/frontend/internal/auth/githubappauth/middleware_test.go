@@ -134,10 +134,11 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	rcache.SetupForTest(t)
 	cache := rcache.NewWithTTL("test_cache", 200)
 
-	router := mux.NewRouter()
-	subrouter := router.PathPrefix("/githubapp/").Subrouter()
+	mux := mux.NewRouter()
+	subrouter := mux.PathPrefix("/githubapp/").Subrouter()
 
-	mux := NewGitHubAppServerWithCache(db, cache)(subrouter)
+	handler := SetupGitHubAppRoutesWithCache(db, subrouter, cache)
+	subrouter.PathPrefix("/").Handler(handler)
 
 	t.Run("/state", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/githubapp/state", nil)
