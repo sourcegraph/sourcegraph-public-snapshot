@@ -58,7 +58,7 @@ export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): E
  * the selected range on startup.
  */
 function scrollToFirstRange(): Extension {
-    var scrolled = false
+    let scrolled = false
     return EditorView.updateListener.of((update: ViewUpdate) => {
         if (scrolled) {
             return
