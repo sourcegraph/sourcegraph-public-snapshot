@@ -169,7 +169,7 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
                 {filter.count !== 0 && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className={classNames('ml-2', styles.countBadge)}>
                         {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
                     </Badge>
                 )}

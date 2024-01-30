@@ -80,9 +80,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     return (
         <div className={styles.scrollWrapper}>
-            <div className={styles.filters}>
-                <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
-
+            <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
+            <div className={styles.subfilters}>
                 <SearchDynamicFilter
                     title="By symbol kind"
                     filterKind={FiltersType.SymbolKind}
@@ -145,7 +144,11 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     onSelectedFilterChange={setSelectedFilters}
                 />
 
-                <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
+                <SyntheticCountFilterfilters
+                    query={query}
+                    isLimitHit={withCountAllFilter}
+                    onQueryChange={onQueryChange}
+                />
             </div>
 
             <footer className={styles.actions}>

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type FC } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
+import classNames from 'classnames'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -41,7 +42,7 @@ export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonPr
     return (
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <PopoverTrigger
-                className="mb-0 d-flex align-items-center text-decoration-none"
+                className={classNames('mb-0 d-flex align-items-center text-decoration-none', styles.streamingProgress)}
                 size="sm"
                 variant={skippedWithWarningOrError ? 'danger' : 'secondary'}
                 outline={true}

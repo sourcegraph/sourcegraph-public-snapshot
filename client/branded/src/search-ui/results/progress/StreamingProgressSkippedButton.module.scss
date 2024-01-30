@@ -2,3 +2,11 @@
     width: 22rem;
     padding: 0;
 }
+
+.streaming-progress {
+    border: none;
+    // TODO: fix spacing around button
+    &:hover {
+        background-color: var(--secondary-4) !important;
+    }
+}
