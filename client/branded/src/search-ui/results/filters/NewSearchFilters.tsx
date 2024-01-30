@@ -80,9 +80,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     return (
         <div className={styles.scrollWrapper}>
+            <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
             <div className={styles.filters}>
-                <FilterTypeList value={type} onSelect={handleFilterTypeChange} />
-
                 <SearchDynamicFilter
                     title="By symbol kind"
                     filterKind={FiltersType.SymbolKind}
