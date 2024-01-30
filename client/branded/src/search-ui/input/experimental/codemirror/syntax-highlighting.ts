@@ -25,22 +25,26 @@ function getDecorationForToken(token: Token): Decoration | null {
 export const filterDecoration = [
     EditorView.baseTheme({
         '.sg-query-token': {
-            borderRadius: '3px',
+            borderRadius: '4px',
             // We only apply little horizontal padding because it appears that
             // the padding interferes with the cursor position (CodeMirror will
             // place the cursor after the padding, not after the last character,
             // which is surprising to the user).
-            padding: '1px',
+            padding: '6px',
         },
         '.sg-query-token-pattern': {
-            backgroundColor: '#eff2f5a0', // --gray-02 with transparency to make text selection visible
+            backgroundColor: '#E6EBF295', // --gray-03 with transparency to make text selection visible
         },
-        '.theme-dark & .sg-query-token-pattern': {
-            backgroundColor: '#343a4da0', // --gray-08 with transparency to make text selection visible
+        '.sg-query-token-filter': {
+            backgroundColor: '#CCEDFFa0', // --oc-blue-1 with transparency to make text selection visible
         },
 
-        '.sg-query-token-filter': {
-            backgroundColor: '#e7f5ffa0', // --oc-blue-0 with transparency to make text selection visible
+        '.theme-dark & .sg-query-token-pattern': {
+            backgroundColor: '#5E6E8C80', // --gray-08 with transparency to make text selection visible
+        },
+
+        '.theme-dark & .sg-query-token-filter': {
+            backgroundColor: '#074884a0', // --oc-blue-9 with transparency to make text selection visible
         },
     }),
     EditorView.decorations.compute([queryTokens, 'selection'], state => {
