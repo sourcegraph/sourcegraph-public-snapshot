@@ -48,7 +48,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   BUILD.bazel files need to be updated to match the repository state. You should run the following command and commit the result
 
   ```
-  sg bzlgen
+  sg bazel configure
   ```
 
   #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
@@ -72,7 +72,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   `deps.bzl` needs to be updated to match the repository state. You should run the following command and commit the result
 
   ```
-  sg bzlgen godeps
+  sg bazel configure godeps
   ```
 
   #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
