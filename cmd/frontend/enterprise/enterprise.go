@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -34,6 +35,9 @@ type Services struct {
 	ReposGitLabWebhook          webhooks.Registerer
 	ReposBitbucketServerWebhook webhooks.Registerer
 	ReposBitbucketCloudWebhook  webhooks.Registerer
+
+	// GitHub App creation
+	GitHubAppCreationHandler func(*mux.Router) http.Handler
 
 	SCIMHandler http.Handler
 
@@ -110,6 +114,7 @@ func DefaultServices() Services {
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
+		GitHubAppCreationHandler:        func(*mux.Router) http.Handler { return makeNotFoundHandler("GitHub App creation handler") },
 		SCIMHandler:                     makeNotFoundHandler("SCIM handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		RankingService:                  stubRankingService{},

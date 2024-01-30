@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gerrit"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githuboauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gitlaboauth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
@@ -48,13 +47,12 @@ func Init(logger log.Logger, db database.DB) {
 		authutil.ConnectOrSignOutMiddleware(db),
 		openidconnect.Middleware(db),
 		sourcegraphoperator.Middleware(db),
+		httpheader.Middleware(db),
 		saml.Middleware(db),
 		githuboauth.Middleware(db),
 		gitlaboauth.Middleware(db),
 		bitbucketcloudoauth.Middleware(db),
 		azureoauth.Middleware(db),
-		githubapp.Middleware(db),
-		httpheader.Middleware(db), // Middlewares are applied in reverse order since they are nested. http-header should be checked first.
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)

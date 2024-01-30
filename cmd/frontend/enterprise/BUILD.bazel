@@ -14,5 +14,6 @@ go_library(
         "//internal/codeintel/types",
         "//internal/conf",
         "//internal/database",
+        "@com_github_gorilla_mux//:mux",
     ],
 )

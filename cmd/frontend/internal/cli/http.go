@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -46,7 +45,6 @@ func newExternalHTTPHandler(
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 	handlers *httpapi.Handlers,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
-	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
 ) (http.Handler, error) {
 	logger := log.Scoped("external")
 
@@ -82,10 +80,8 @@ func newExternalHTTPHandler(
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
 
-	githubAppSetupHandler := newGitHubAppSetupHandler()
-
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
+	appHandler := app.NewHandler(db, logger)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
@@ -96,7 +92,6 @@ func newExternalHTTPHandler(
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
 	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
 	appHandler = httpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
-	appHandler = httpheader.Middleware(db).App(appHandler)
 	appHandler = requestclient.ExternalHTTPMiddleware(appHandler)
 	appHandler = requestinteraction.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {

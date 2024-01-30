@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/google/uuid"
@@ -133,7 +134,10 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	rcache.SetupForTest(t)
 	cache := rcache.NewWithTTL("test_cache", 200)
 
-	mux := newServeMux(db, "/githubapp", cache)
+	router := mux.NewRouter()
+	subrouter := router.PathPrefix("/githubapp/").Subrouter()
+
+	mux := NewGitHubAppServerWithCache(db, cache)(subrouter)
 
 	t.Run("/state", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/githubapp/state", nil)
