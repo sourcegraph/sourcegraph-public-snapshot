@@ -396,7 +396,9 @@ type EnvironmentInstancesScalingSpec struct {
 	// times. Set this to >0 to avoid service warm-up delays.
 	MinCount int `yaml:"minCount"`
 	// MaxCount is the maximum number of instances that Cloud Run is allowed to
-	// scale up to.
+	// scale up to. When this value is above the default value of 5, then we also
+	// provision an alert that fires when Cloud Run scaling approaches the max
+	// instance count.
 	//
 	// If not provided, the default is 5.
 	MaxCount *int `yaml:"maxCount,omitempty"`
