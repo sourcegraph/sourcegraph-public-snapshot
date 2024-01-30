@@ -24,7 +24,7 @@ current_folder=$(pwd)
 # What's more, there doesn't seem to exist a set of flags that works on both Linux (CI) and MacOS (dev machines).
 # Therefore we use `tar`'s ability to exclude files AND dereference symlinks.
 
-cd $project_root && tar -cvf$tmp_folder/archive.tar -L --exclude '**/*.scip' . && cd $current_folder
+cd $project_root && tar -cvf$tmp_folder/archive.tar --dereference --exclude '**/*.scip' . && cd $current_folder
 
 # Delete temp folder on exit
 trap "rm -rf $tmp_folder" EXIT
