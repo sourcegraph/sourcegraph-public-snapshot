@@ -611,6 +611,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
+	// Defaults to whatever CloudSQL provides. Must be between 14 and 262143.
+	MaxConnections *int `yaml:"maxConnections,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
