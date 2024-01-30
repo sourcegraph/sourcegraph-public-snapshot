@@ -168,11 +168,9 @@ func (m *syncConfMocking) Update(c schema.SiteConfiguration) {
     m.cond.L.Lock()
 	defer m.cond.L.Unlock()
 	diff := cmp.Diff(m.lastConfig, c)
-	fmt.Println("DIFF:", diff)
 	for m.watching && diff != "" {
 		m.cond.Wait()
 		diff = cmp.Diff(m.lastConfig, c)
-		fmt.Println("DIFF:", diff)
 	}
 }
 
@@ -271,6 +269,55 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 				]
 			}
 		}`, string(response.Data))
+	})
+
+	t.Run("attribution endpoint defaults to gateway completions config", func(t *testing.T) {
+		confMock.Update(schema.SiteConfiguration{
+			CodyEnabled:        pointers.Ptr(true),
+			AttributionEnabled: pointers.Ptr(true),
+			Completions: &schema.Completions{
+				AccessToken: "1234",
+				Endpoint: makeGatewayEndpoint(t),
+				Model: "testing-model",
+				ChatModel: "testing-model-turbo",
+				CompletionModel: "testing-model-turbo",
+				Provider: "sourcegraph",
+				PerUserDailyLimit: 1000,
+			},
+		})
+		t.Cleanup(func() { confMock.Update(noAttributionConfigured) })
+		response := s.Exec(ctx, query, "", nil)
+		require.Empty(t, response.Errors)
+		require.JSONEq(t, `{
+			"snippetAttribution": {
+				"nodes": [
+					{"repositoryName": "github.com/sourcegraph/sourcegraph"},
+					{"repositoryName": "npm/sourcegraph/basic-code-intel"}
+				]
+			}
+		}`, string(response.Data))
+	})
+
+	t.Run("attribution not configured for non-sourcegraph completions", func(t *testing.T) {
+		confMock.Update(schema.SiteConfiguration{
+			CodyEnabled:        pointers.Ptr(true),
+			AttributionEnabled: pointers.Ptr(true),
+			Completions: &schema.Completions{
+				AccessToken: "1234",
+				Endpoint: makeGatewayEndpoint(t),
+				Model: "testing-model",
+				ChatModel: "testing-model-turbo",
+				CompletionModel: "testing-model-turbo",
+				Provider: "openai",
+				PerUserDailyLimit: 1000,
+			},
+		})
+		t.Cleanup(func() { confMock.Update(noAttributionConfigured) })
+		response := s.Exec(ctx, query, "", nil)
+		require.NotEmpty(t, response.Errors)
+		for _, e := range response.Errors {
+			require.Equal(t, "Attribution is not initialized. Please update site config.", e.Message)
+		}
 	})
 }
 
