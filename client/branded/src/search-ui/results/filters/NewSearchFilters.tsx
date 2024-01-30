@@ -65,19 +65,21 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         return SearchFilterType.Code
     }, [query])
 
-    const handleFilterTypeChange = useCallback(() => {
-        ;(filterType: SearchFilterType): void => {
-            const newQuery = changeSearchFilterType(query, filterType)
-            const newSelectedFilters = omitImpossibleFilters(selectedFilters, filterType)
+    const handleFilterTypeChange = useCallback(
+        () =>
+            (filterType: SearchFilterType): void => {
+                const newQuery = changeSearchFilterType(query, filterType)
+                const newSelectedFilters = omitImpossibleFilters(selectedFilters, filterType)
 
-            // Replace: true is needed here to avoid populating history with
-            // extra entries with completely internal locations update,
-            // Setting filters shouldn't be in the history since onQueryChange
-            // changes URL itself.
-            onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
-            telemetryService.log('SearchFiltersTypeClick', { filterType }, { filterType })
-        }
-    }, [onQueryChange, telemetryService])
+                // Replace: true is needed here to avoid populating history with
+                // extra entries with completely internal locations update,
+                // Setting filters shouldn't be in the history since onQueryChange
+                // changes URL itself.
+                onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
+                telemetryService.log('SearchFiltersTypeClick', { filterType }, { filterType })
+            },
+        [onQueryChange, telemetryService]
+    )
 
     const handleFilterChange = useCallback((filterKind: Filter['kind'], filters: URLQueryFilter[]) => {
         setSelectedFilters(filters)
