@@ -76,7 +76,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
-        telemetryService.log('ToggleRegexpPatternType', { currentStatus: patternType == SearchPatternType.regexp })
+        telemetryService.log('ToggleRegexpPatternType', { currentStatus: patternType === SearchPatternType.regexp })
     }, [patternType, setPatternType, submitOnToggle, telemetryService])
 
     const toggleStructuralSearch = useCallback((): void => {

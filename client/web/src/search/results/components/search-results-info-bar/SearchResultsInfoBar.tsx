@@ -206,7 +206,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
     }, [telemetryService])
 
     const handleKeywordSearchToggle = useCallback(() => {
-        telemetryService.log('ToggleKeywordPatternType', { currentStatus: patternType == SearchPatternType.keyword })
+        telemetryService.log('ToggleKeywordPatternType', { currentStatus: patternType === SearchPatternType.keyword })
         onTogglePatternType(patternType)
     }, [onTogglePatternType, patternType, telemetryService])
 
