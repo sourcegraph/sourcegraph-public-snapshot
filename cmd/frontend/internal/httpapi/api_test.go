@@ -40,7 +40,6 @@ func newTest(t *testing.T) *httptestutil.Client {
 			BatchesBitbucketServerWebhook:   enterpriseServices.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:    enterpriseServices.BatchesBitbucketCloudWebhook,
 			BatchesAzureDevOpsWebhook:       enterpriseServices.BatchesAzureDevOpsWebhook,
-			GitHubAppCreationHandler:        enterpriseServices.GitHubAppCreationHandler,
 			SCIMHandler:                     enterpriseServices.SCIMHandler,
 			NewCodeIntelUploadHandler:       enterpriseServices.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterpriseServices.NewComputeStreamHandler,

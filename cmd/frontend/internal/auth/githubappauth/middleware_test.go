@@ -137,8 +137,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	mux := mux.NewRouter()
 	subrouter := mux.PathPrefix("/githubapp/").Subrouter()
 
-	handler := SetupGitHubAppRoutesWithCache(db, subrouter, cache)
-	subrouter.PathPrefix("/").Handler(handler)
+	SetupGitHubAppRoutesWithCache(subrouter, db, cache)
 
 	t.Run("/state", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/githubapp/state", nil)

@@ -20,7 +20,6 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	s *enterprise.Services,
 ) error {
-	s.GitHubAppCreationHandler = SetupGitHubAppRoutes
 	s.GitHubAppsResolver = NewResolver(log.Scoped("GitHubAppsResolver"), db)
 	return nil
 }

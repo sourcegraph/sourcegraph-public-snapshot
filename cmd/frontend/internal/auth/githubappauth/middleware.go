@@ -35,14 +35,8 @@ import (
 const cacheTTLSeconds = 60 * 60 // 1 hour
 
 type gitHubAppServer struct {
-	router *mux.Router
-
 	cache *rcache.Cache
 	db    database.DB
-}
-
-func (srv *gitHubAppServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	srv.router.ServeHTTP(w, r)
 }
 
 func (srv *gitHubAppServer) siteAdminMiddleware(next http.Handler) http.Handler {
@@ -57,40 +51,34 @@ func (srv *gitHubAppServer) siteAdminMiddleware(next http.Handler) http.Handler 
 	})
 }
 
-func (srv *gitHubAppServer) registerRoutes() {
-	srv.router.Path("/state").Methods("GET").HandlerFunc(srv.stateHandler)
-	srv.router.Path("/new-app-state").Methods("GET").HandlerFunc(srv.newAppStateHandler)
-	srv.router.Path("/redirect").Methods("GET").HandlerFunc(srv.redirectHandler)
-	srv.router.Path("/setup").Methods("GET").HandlerFunc(srv.setupHandler)
+func (srv *gitHubAppServer) registerRoutes(router *mux.Router) {
+	router.Path("/state").Methods("GET").HandlerFunc(srv.stateHandler)
+	router.Path("/new-app-state").Methods("GET").HandlerFunc(srv.newAppStateHandler)
+	router.Path("/redirect").Methods("GET").HandlerFunc(srv.redirectHandler)
+	router.Path("/setup").Methods("GET").HandlerFunc(srv.setupHandler)
 }
 
-func SetupGitHubAppRoutes(db database.DB, router *mux.Router) http.Handler {
+func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	appServer := &gitHubAppServer{
-		router: router,
-		cache:  ghAppState,
-		db:     db,
+		cache: ghAppState,
+		db:    db,
 	}
 
-	appServer.registerRoutes()
+	appServer.registerRoutes(router)
 
 	router.Use(appServer.siteAdminMiddleware)
-
-	return appServer
 }
 
-func SetupGitHubAppRoutesWithCache(db database.DB, router *mux.Router, cache *rcache.Cache) http.Handler {
+func SetupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rcache.Cache) {
 	appServer := &gitHubAppServer{
-		router: router,
-		cache:  cache,
-		db:     db,
+		cache: cache,
+		db:    db,
 	}
 
-	appServer.registerRoutes()
+	appServer.registerRoutes(router)
 
 	router.Use(appServer.siteAdminMiddleware)
-
-	return appServer
 }
 
 // checkSiteAdmin checks if the current user is a site admin and sets http error if not
