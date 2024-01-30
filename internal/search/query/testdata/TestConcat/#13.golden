@@ -6,7 +6,9 @@
         "negated": false,
         "labels": [
           "HeuristicParensAsPatterns",
-          "Literal"
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {
@@ -23,7 +25,9 @@
         "value": "d",
         "negated": false,
         "labels": [
-          "Literal"
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {
