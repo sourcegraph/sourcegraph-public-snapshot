@@ -3,10 +3,11 @@
     padding: 0;
 }
 
-.streaming-progress {
-    border: none;
-    // TODO: fix spacing around button
+#streaming-progress-button {
+    // Transparent rather than none to keep spacing consistent
+    border-color: transparent;
     &:hover {
-        background-color: var(--secondary-4) !important;
+        border-color: var(--secondary-4);
+        background-color: var(--secondary-4);
     }
 }
