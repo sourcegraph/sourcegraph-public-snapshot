@@ -1584,6 +1584,7 @@ ts_project(
         "src/storm/pages/SearchPage/CodeSearchSimpleSearch.tsx",
         "src/storm/pages/SearchPage/FindChangesSimpleSearch.tsx",
         "src/storm/pages/SearchPage/KeywordSearchCtaSection.tsx",
+        "src/storm/pages/SearchPage/KeywordSearchStarsIcon.tsx",
         "src/storm/pages/SearchPage/RepoSearchSimpleSearch.tsx",
         "src/storm/pages/SearchPage/SearchPage.loader.ts",
         "src/storm/pages/SearchPage/SearchPage.tsx",
