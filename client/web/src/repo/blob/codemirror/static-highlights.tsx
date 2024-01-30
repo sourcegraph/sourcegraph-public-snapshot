@@ -2,7 +2,7 @@
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
 import { Extension, EditorState, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
+import { ViewPlugin, Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortedIndexBy, sortBy } from 'lodash'
@@ -35,17 +35,21 @@ export interface Location {
  * and opens a panel that allows navigation between these highlights.
  */
 export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): Extension {
+    if (ranges.length === 0) {
+        return []
+    }
     const facet = Facet.define<Range[], Range[]>({
         combine: ranges => ranges.flat(),
         enables: () => [
             staticHighlightTheme,
-            staticHighlightState.init(state =>
-                sortBy(ranges, ['from']).map((range, i) => ({
-                    selected: i === 0,
+            staticHighlightState.init(state => {
+                const codeMirrorRanges = ranges.map(range => ({
+                    selected: false,
                     from: toCodeMirrorLocation(state, range.start),
                     to: toCodeMirrorLocation(state, range.end),
                 }))
-            ),
+                return codeMirrorRanges.sort((a, b) => a.from - b.from)
+            }),
             showPanel.of(view => new StaticHighlightsPanel(view, navigate)),
             scrollToFirstRange(),
         ],
@@ -64,18 +68,15 @@ function scrollToFirstRange(): Extension {
             return
         }
         const ranges = update.view.state.field(staticHighlightState)
-        const selectedRange = ranges.find(range => range.selected)
-        if (selectedRange) {
-            scrolled = true
-            update.view.dispatch({
-                selection: { anchor: selectedRange.from, head: selectedRange.to },
-                effects: EditorView.scrollIntoView(ranges[0].from, {
-                    y: 'nearest',
-                    x: 'center',
-                    yMargin: update.view.dom.getBoundingClientRect().height / 3,
-                }),
-            })
-        }
+        scrolled = true
+        update.view.dispatch({
+            selection: { anchor: ranges[0].from, head: ranges[0].to },
+            effects: EditorView.scrollIntoView(ranges[0].from, {
+                y: 'nearest',
+                x: 'center',
+                yMargin: update.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     })
 }
 
@@ -205,9 +206,6 @@ class StaticHighlightsPanel implements Panel {
         }
 
         const totalMatches = ranges.length
-        if (totalMatches === 0) {
-            return
-        }
         const selectedIdx = ranges.findIndex(range => range.selected)
 
         this.root.render(
