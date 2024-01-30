@@ -1,8 +1,8 @@
 /**
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
-import { type Extension, EditorState, StateField, Facet } from '@codemirror/state'
-import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
+import { Extension, EditorState, StateField, Facet } from '@codemirror/state'
+import { Decoration, EditorView, showPanel, Panel, ViewUpdate, ViewPlugin } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortedIndexBy } from 'lodash'
@@ -28,6 +28,28 @@ export interface Location {
     line: number
     // A zero-based column number
     column: number
+}
+
+/**
+ * staticHighlights is an extension that highlights a static set of ranges
+ * and opens a panel that allows navigation between these highlights.
+ */
+export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): Extension {
+    const facet = Facet.define<Range[], Range[]>({
+        combine: ranges => ranges.flat(),
+        enables: () => [
+            staticHighlightTheme,
+            staticHighlightState.init(state =>
+                ranges.map((range, i) => ({
+                    selected: i === 0,
+                    from: toCodeMirrorLocation(state, range.start),
+                    to: toCodeMirrorLocation(state, range.end),
+                }))
+            ),
+            showPanel.of(view => new StaticHighlightsPanel(view, navigate)),
+        ],
+    })
+    return facet.of(ranges)
 }
 
 interface HighlightedRange {
@@ -75,27 +97,6 @@ const staticHighlightTheme = EditorView.theme({
     },
 })
 
-export function staticHighlights(navigate: NavigateFunction, ranges: Range[]): Extension {
-    if (!ranges) {
-        return []
-    }
-    const facet = Facet.define<Range[], Range[]>({
-        combine: ranges => ranges.flat(),
-        enables: () => [
-            staticHighlightTheme,
-            staticHighlightState.init(state =>
-                ranges.map((range, i) => ({
-                    selected: i === 0,
-                    from: toCodeMirrorLocation(state, range.start),
-                    to: toCodeMirrorLocation(state, range.end),
-                }))
-            ),
-            showPanel.of(view => new StaticHighlightsPanel(view, navigate)),
-        ],
-    })
-    return facet.of(ranges)
-}
-
 function toCodeMirrorLocation(state: EditorState, location: Location): number {
     // Codemirror expects 1-based line numbers
     return state.doc.line(location.line + 1).from + location.column
@@ -122,7 +123,7 @@ class StaticHighlightsPanel implements Panel {
         this.render(this.ranges)
     }
 
-    private get ranges(): { from: number; to: number; selected: boolean }[] {
+    private get ranges(): HighlightedRange[] {
         return this.view.state.field(staticHighlightState)
     }
 
@@ -149,17 +150,19 @@ class StaticHighlightsPanel implements Panel {
 
     private navigatePrevious() {
         const currentSelection = this.view.state.selection.main
+        // Find the index of the first element before or equal to the selection
         const idx = sortedIndexBy(
             this.ranges,
             { from: currentSelection.from, to: 0, selected: false },
             range => range.from
         )
-        const previousRange = idx === 0 ? this.ranges[this.ranges.length - 1] : this.ranges[idx - 1]
+        const previousRange = this.ranges[(this.ranges.length + idx - 1) % this.ranges.length]
         this.navigateTo(previousRange)
     }
 
     private navigateNext() {
         const currentSelection = this.view.state.selection.main
+        // Find the index of the first element after the selection
         const idx = sortedIndexBy(
             this.ranges,
             { from: currentSelection.from + 1, to: 0, selected: false },
@@ -169,12 +172,15 @@ class StaticHighlightsPanel implements Panel {
         this.navigateTo(nextRange)
     }
 
-    private render(ranges: HighlightedRange[]): void {
+    private render(ranges: HighlightedRange[]) {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
 
         const totalMatches = ranges.length
+        if (totalMatches === 0) {
+            return
+        }
         const selectedIdx = ranges.findIndex(range => range.selected)
 
         this.root.render(
@@ -209,7 +215,7 @@ class StaticHighlightsPanel implements Panel {
                     </div>
                 )}
                 <Text className="cm-search-results m-0 small">
-                    {selectedIdx === undefined ? '' : `${selectedIdx + 1} of `}
+                    {selectedIdx === -1 ? '' : `${selectedIdx + 1} of `}
                     {totalMatches} {pluralize('result', totalMatches)}
                 </Text>
             </CodeMirrorContainer>
