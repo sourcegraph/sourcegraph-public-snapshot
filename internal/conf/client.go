@@ -124,6 +124,7 @@ func Mock(mockery *Unified) {
 // Mock sets up mock data for the site configuration.
 func (c *client) Mock(mockery *Unified) {
 	c.store.Mock(mockery)
+	c.notifyWatchers()
 }
 
 // Watch calls the given function whenever the configuration has changed. The new configuration is

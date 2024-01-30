@@ -2,6 +2,7 @@ package guardrails
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -18,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
+
+var MockHttpClient httpcli.Doer
 
 func Init(
 	_ context.Context,
@@ -39,6 +42,7 @@ func Init(
 		initLogic := &enterpriseInitialization{observationCtx: observationCtx}
 		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
 		go conf.Watch(func () {
+			fmt.Println("UPDATE SERVICE")
 			resolver.UpdateService(initLogic.Service())
 		})
 	}
@@ -59,11 +63,16 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 	defer e.mu.Unlock()
 	config := conf.Get().SiteConfig()
 	endpoint, token := conf.GetAttributionGateway(config)
+	client := httpcli.ExternalDoer
+	if MockHttpClient!= nil {
+		client = MockHttpClient
+	}
 	if e.endpoint != endpoint || e.token != token {
 		e.endpoint = endpoint
 		e.token = token
-		e.client = codygateway.NewClient(httpcli.ExternalDoer, endpoint, token)
+		e.client = codygateway.NewClient(client, endpoint, token)
 	}
+	fmt.Printf("ATTRIBUTION GATEWAY: %q %q\n", e.endpoint, e.token)
 	if e.endpoint == "" || e.token == "" {
 		return attribution.Uninitialized{}
 	}
