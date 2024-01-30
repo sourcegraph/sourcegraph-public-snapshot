@@ -11,7 +11,6 @@ import shallow from 'zustand/shallow'
 import { LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text, Icon, Button, Modal, Link, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
@@ -22,7 +21,7 @@ import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { useFeatureFlag, useKeywordSearch } from '../../featureFlags/useFeatureFlag'
 import { PageRoutes } from '../../routes.constants'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { LazyV2SearchInput } from '../../search/input/LazyV2SearchInput'
@@ -184,7 +183,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
-    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
+    const showKeywordSearchToggle = useKeywordSearch()
 
     const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =

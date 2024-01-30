@@ -35,7 +35,7 @@ import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { useFeatureFlag, useKeywordSearch } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
@@ -175,6 +175,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const developerMode = useDeveloperSettings(settings => settings.enabled) || process.env.NODE_ENV === 'development'
 
+    const showKeywordSearchToggle = useKeywordSearch()
+
     return (
         <>
             <NavBar
@@ -268,6 +270,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}
                         isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        showKeywordSearchToggle={showKeywordSearchToggle}
                     />
                 </div>
             )}
