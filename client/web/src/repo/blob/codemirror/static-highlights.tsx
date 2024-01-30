@@ -2,10 +2,10 @@
  * This provides CodeMirror extension for highlighting a static set of ranges.
  */
 import { Extension, EditorState, StateField, Facet } from '@codemirror/state'
-import { ViewPlugin, Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
+import { Decoration, EditorView, showPanel, Panel, ViewUpdate } from '@codemirror/view'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { sortedIndexBy, sortBy } from 'lodash'
+import { sortedIndexBy } from 'lodash'
 import { createRoot, type Root } from 'react-dom/client'
 import type { NavigateFunction } from 'react-router-dom'
 
