@@ -66,7 +66,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 ])
             }
         },
-        [query, selectedFilters, serializeFiltersURL, onQueryChange, telemetryService]
+        [selectedFilters, telemetryService]
     )
 
     const handleFilterChange = useCallback(
@@ -79,7 +79,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     const handleApplyButtonFilters = (): void => {
         onQueryChange(mergeQueryAndFilters(query, selectedFilters), serializeFiltersURL([]))
-
         telemetryService.log('SearchFiltersApplyFiltersClick')
     }
 
