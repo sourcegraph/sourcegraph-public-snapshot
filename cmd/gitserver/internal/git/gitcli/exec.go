@@ -17,12 +17,29 @@ import (
 
 func (g *gitCLIBackend) Exec(ctx context.Context, args ...string) (io.ReadCloser, error) {
 	cmd, cancel, err := g.gitCommand(ctx, args...)
-	defer cancel()
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
-	return g.runGitCommand(ctx, cmd)
+	r, err := g.runGitCommand(ctx, cmd)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	return &cancelingCloser{ReadCloser: r, cancel: cancel}, nil
+}
+
+type cancelingCloser struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (c *cancelingCloser) Close() error {
+	err := c.ReadCloser.Close()
+	c.cancel()
+	return err
 }
 
 var (

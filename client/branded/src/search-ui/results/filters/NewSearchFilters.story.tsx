@@ -16,4 +16,6 @@ const config: Meta = {
 
 export default config
 
-export const FiltersStore = () => <NewSearchFilters query="" filters={[]} onQueryChange={() => {}} />
+export const FiltersStore = () => (
+    <NewSearchFilters query="" filters={[]} onQueryChange={() => {}} withCountAllFilter={false} />
+)

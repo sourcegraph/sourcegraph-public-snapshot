@@ -11,7 +11,6 @@ import {
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { type RouteObject, useLocation } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
@@ -29,13 +28,12 @@ import { Button, ButtonLink, Link, ProductStatusBadge } from '@sourcegraph/wildc
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import type { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { useFeatureFlag, useKeywordSearch } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
@@ -175,6 +173,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const developerMode = useDeveloperSettings(settings => settings.enabled) || process.env.NODE_ENV === 'development'
 
+    const showKeywordSearchToggle = useKeywordSearch()
+
     return (
         <>
             <NavBar
@@ -268,6 +268,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}
                         isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        showKeywordSearchToggle={showKeywordSearchToggle}
                     />
                 </div>
             )}
@@ -314,6 +315,10 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
+            showSearchNotebook && { path: PageRoutes.Notebooks, content: 'Notebooks' },
+            // We hardcode the code monitoring path here because PageRoutes.CodeMonitoring is a catch-all
+            // path for all code monitoring sub links.
+            showCodeMonitoring && { path: '/code-monitoring', content: 'Monitoring' },
             showOwn && { path: PageRoutes.Own, content: 'Code ownership' },
             showCodySearch && {
                 path: PageRoutes.CodySearch,
@@ -333,11 +338,12 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showOwn, showSearchContext, showCodySearch, showSearchJobs])
+    }, [showOwn, showSearchContext, showCodySearch, showSearchJobs, showCodeMonitoring, showSearchNotebook])
 
     const searchNavigation =
         searchNavBarItems.length > 0 ? (
             <NavDropdown
+                key="search"
                 toggleItem={{
                     path: PageRoutes.Search,
                     altPath: PageRoutes.RepoContainer,
@@ -351,7 +357,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                 name="search"
             />
         ) : (
-            <NavItem icon={MagnifyIcon}>
+            <NavItem icon={MagnifyIcon} key="search">
                 <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
                     Code Search
                 </NavLink>
@@ -360,6 +366,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const codyNavigation = showCodyDropdown ? (
         <NavDropdown
+            key="cody"
             toggleItem={{
                 path: PageRoutes.CodyManagement,
                 icon: CodyLogo,
@@ -380,7 +387,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             name="cody"
         />
     ) : (
-        <NavItem icon={CodyLogo}>
+        <NavItem icon={CodyLogo} key="cody">
             <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
                 Cody AI
             </NavLink>
@@ -397,21 +404,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     return (
         <NavGroup ref={navbarReference} className={classNames(className, styles.list)}>
             {prioritizedLinks}
-
-            {showSearchNotebook && (
-                <NavItem icon={BookOutlineIcon}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
-                        Notebooks
-                    </NavLink>
-                </NavItem>
-            )}
-            {showCodeMonitoring && (
-                <NavItem icon={CodeMonitoringLogo}>
-                    <NavLink variant={navLinkVariant} to="/code-monitoring">
-                        Monitoring
-                    </NavLink>
-                </NavItem>
-            )}
             {showBatchChanges && <BatchChangesNavItem variant={navLinkVariant} />}
             {showCodeInsights && (
                 <NavItem icon={BarChartIcon}>

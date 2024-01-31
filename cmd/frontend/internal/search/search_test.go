@@ -1,6 +1,7 @@
 package search
 
 import (
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -35,29 +36,65 @@ func TestServeStream_empty(t *testing.T) {
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
 
-	ts := httptest.NewServer(&streamHandler{
+	ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 		logger:              logtest.Scoped(t),
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
-	})
+	}))
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "?q=test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.StatusCode != 200 {
-		t.Errorf("expected status 200, got %d", res.StatusCode)
-	}
-	if testing.Verbose() {
-		t.Logf("GET:\n%s", b)
-	}
+	t.Run("plain", func(t *testing.T) {
+		res, err := http.Get(ts.URL + "?q=test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := io.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.StatusCode != 200 {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
+		}
+		if testing.Verbose() {
+			t.Logf("GET:\n%s", b)
+		}
+	})
+
+	t.Run("gzip", func(t *testing.T) {
+		req, err := http.NewRequest("GET", ts.URL+"?q=test", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Accept", "text/event-stream")
+		req.Header.Add("Accept-Encoding", "gzip")
+
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != 200 {
+			t.Errorf("expected status 200, got %d", res.StatusCode)
+		}
+
+		if got, want := res.Header.Get("Content-Encoding"), "gzip"; got != want {
+			t.Fatalf("unexpected Content-Encoding:\nwant: %q\ngot:  %q", want, got)
+		}
+		gr, err := gzip.NewReader(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := io.ReadAll(gr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if testing.Verbose() {
+			t.Logf("GET:\n%s", b)
+		}
+	})
 }
 
 func TestServeStream_chunkMatches(t *testing.T) {
@@ -94,13 +131,13 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 
-	ts := httptest.NewServer(&streamHandler{
+	ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 		logger:              logtest.Scoped(t),
 		db:                  db,
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
-	})
+	}))
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL + "?q=test&cm=t&display=1000")
@@ -212,13 +249,13 @@ func TestDisplayLimit(t *testing.T) {
 			db := dbmocks.NewStrictMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
-			ts := httptest.NewServer(&streamHandler{
+			ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 				logger:              logtest.Scoped(t),
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				searchClient:        mock,
-			})
+			}))
 			defer ts.Close()
 
 			req, _ := streamhttp.NewRequest(ts.URL, c.queryString)

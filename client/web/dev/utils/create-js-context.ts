@@ -1,3 +1,5 @@
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
@@ -39,8 +41,10 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         codyRequiresVerifiedEmail: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
+        codeIntelligenceEnabled: true,
         codeIntelRankingDocumentReferenceCountsEnabled: false,
         codeInsightsEnabled: true,
+        codeMonitoringEnabled: true,
         productResearchPageEnabled: true,
         assetsRoot: '/.assets',
         deployType: 'dev',
@@ -53,8 +57,12 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         needServerRestart: false,
         needsSiteInit: false,
         needsRepositoryConfiguration: false,
+        notebooksEnabled: true,
+        ownEnabled: true,
         resetPasswordEnabled: true,
         runningOnMacOS: true,
+        searchAggregationEnabled: true,
+        searchContextsEnabled: true,
         sentryDSN: null,
         site: {
             'update.channel': 'release',
@@ -76,6 +84,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         openTelemetry: {
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
+        telemetryRecorder: noOpTelemetryRecorder,
         embeddingsEnabled: false,
         primaryLoginProvidersCount: 5,
         // Site-config overrides default JS context

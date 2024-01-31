@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/ssc"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -79,7 +81,10 @@ type UserResolver struct {
 	// actor containing current user (derived from request context), which lets us
 	// skip fetching actor from context in every resolver function and save DB calls,
 	// because user is fetched in actor only once.
-	actor *actor.Actor
+	actor                      *actor.Actor
+	codySubscription           *cody.UserSubscription
+	fetchCodySubscriptionError error
+	fetchCodySubscriptionOnce  sync.Once
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
@@ -176,6 +181,57 @@ func (r *UserResolver) URL() string {
 
 func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
+type CodySubscriptionResolver struct {
+	subscription *cody.UserSubscription
+}
+
+func (r *CodySubscriptionResolver) Status() ssc.SubscriptionStatus {
+	return r.subscription.Status
+}
+
+func (r *CodySubscriptionResolver) Plan() cody.UserSubscriptionPlan {
+	return r.subscription.Plan
+}
+
+func (r *CodySubscriptionResolver) ApplyProRateLimits() bool {
+	return r.subscription.ApplyProRateLimits
+}
+
+func (r *CodySubscriptionResolver) CurrentPeriodStartAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.subscription.CurrentPeriodStartAt}
+}
+
+func (r *CodySubscriptionResolver) CurrentPeriodEndAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.subscription.CurrentPeriodEndAt}
+}
+
+func (r *UserResolver) fetchCodySubscription(ctx context.Context) (*cody.UserSubscription, error) {
+	r.fetchCodySubscriptionOnce.Do(func() {
+		subscription, err := cody.SubscriptionForUser(ctx, r.db, *r.user)
+		if err != nil {
+			r.fetchCodySubscriptionError = err
+			return
+		}
+
+		r.codySubscription = subscription
+	})
+
+	return r.codySubscription, r.fetchCodySubscriptionError
+}
+
+func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionResolver, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CodySubscriptionResolver{subscription: subscription}, nil
+}
+
 func (r *UserResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.user.CreatedAt}
 }
@@ -185,7 +241,7 @@ func (r *UserResolver) CodyProEnabled(ctx context.Context) (bool, error) {
 		return false, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	subscription, err := cody.SubscriptionForUser(ctx, r.db, *r.user)
+	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -198,7 +254,12 @@ func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (int32, e
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.user.CodyProEnabledAt != nil {
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if subscription.ApplyProRateLimits {
 		return 0, nil
 	}
 
@@ -214,7 +275,12 @@ func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, e
 		return 0, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if r.user.CodyProEnabledAt != nil {
+	subscription, err := r.fetchCodySubscription(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if subscription.ApplyProRateLimits {
 		return 0, nil
 	}
 
@@ -226,7 +292,11 @@ func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
-	currentPeriodStartDate, _, err := r.codyCurrentPeriodDateRange(ctx)
+	if !envvar.SourcegraphDotComMode() {
+		return 0, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -264,7 +334,7 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, e
 						)
 					)
 			)
-	`, r.user.ID, currentPeriodStartDate.Time)
+	`, r.user.ID, subscription.CurrentPeriodStartAt)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
@@ -272,7 +342,11 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, error) {
-	currentPeriodStartDate, _, err := r.codyCurrentPeriodDateRange(ctx)
+	if !envvar.SourcegraphDotComMode() {
+		return 0, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -284,40 +358,11 @@ func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (int32, e
 			AND timestamp <= NOW()
 			AND source = 'IDEEXTENSION'
 			AND name LIKE '%%completion:suggested%%'
-	`, r.user.ID, currentPeriodStartDate.Time)
+	`, r.user.ID, subscription.CurrentPeriodStartAt)
 
 	count, err := r.db.EventLogs().CountBySQL(ctx, query)
 
 	return int32(count), err
-}
-
-func (r *UserResolver) CodyCurrentPeriodStartDate(ctx context.Context) (*gqlutil.DateTime, error) {
-	startDate, _, err := r.codyCurrentPeriodDateRange(ctx)
-
-	return startDate, err
-}
-
-func (r *UserResolver) CodyCurrentPeriodEndDate(ctx context.Context) (*gqlutil.DateTime, error) {
-	_, endDate, err := r.codyCurrentPeriodDateRange(ctx)
-
-	return endDate, err
-}
-
-func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil.DateTime, *gqlutil.DateTime, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return nil, nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return nil, nil, err
-	}
-
-	// TODO(naman): integrate this with cody.SubscriptionForUser
-	startDate, endDate := cody.PreSSCReleaseCurrentPeriodDateRange(ctx, *r.user)
-
-	return &gqlutil.DateTime{Time: startDate}, &gqlutil.DateTime{Time: endDate}, nil
 }
 
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {

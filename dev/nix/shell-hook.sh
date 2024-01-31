@@ -28,6 +28,11 @@ build --extra_toolchains=@zig_sdk//toolchain:linux_amd64_gnu.2.34
 EOF
 fi
 
+# without this, zig cc is forced to rebuild on every sandboxed GoLink action, which
+# adds ~1m of time to GoLink actions. The reason it's on _every_ GoLink action is
+# because sandboxes are ephemeral and don't persist non-mounted paths between actions.
+mkdir -p /tmp/zig-cache
+
 # We run this check afterwards so we can read the values exported by the
 # start-*.sh scripts. We need to smuggle in these envvars for tests on both
 # linux and darwin.
@@ -39,4 +44,5 @@ build --action_env=PGDATA
 build --action_env=PGDATABASE
 build --action_env=PGDATASOURCE
 build --action_env=PGUSER
+build --sandbox_add_mount_pair=/tmp/zig-cache
 EOF

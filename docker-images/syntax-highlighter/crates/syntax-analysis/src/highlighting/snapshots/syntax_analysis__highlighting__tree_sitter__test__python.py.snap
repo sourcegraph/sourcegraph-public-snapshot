@@ -1,0 +1,480 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  import random
+//^^^^^^ Keyword
+//       ^^^^^^ Identifier
+  import asyncio
+//^^^^^^ Keyword
+//       ^^^^^^^ Identifier
+  
+  class MyClass:
+//^^^^^ Keyword
+//      ^^^^^^^ Identifier
+      def method(self):
+//    ^^^ Keyword
+//        ^^^^^^ IdentifierFunction
+//               ^^^^ Identifier
+          return "Hello from a method!"
+//        ^^^^^^ Keyword
+//               ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  def foo():
+//^^^ Keyword
+//    ^^^ IdentifierFunction
+      """This is a docstring"""
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      x = 5
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^ NumericLiteral
+      y = 10
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^^ NumericLiteral
+      if x > y:
+//    ^^ Keyword
+//       ^ Identifier
+//         ^ IdentifierOperator
+//           ^ Identifier
+          print("x is greater than y")
+//        ^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      else:
+//    ^^^^ Keyword
+          print("y is greater than x")
+//        ^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      for i in range(5):
+//    ^^^ Keyword
+//        ^ Identifier
+//          ^^ Keyword
+//             ^^^^^ IdentifierFunction
+//                   ^ NumericLiteral
+          print(i)
+//        ^^^^^ IdentifierFunction
+//              ^ Identifier
+      while True:
+//    ^^^^^ Keyword
+//          ^^^^ IdentifierBuiltin
+          response = input("Continue? (y/n)")
+//        ^^^^^^^^ Identifier
+//                 ^ IdentifierOperator
+//                   ^^^^^ IdentifierFunction
+//                         ^^^^^^^^^^^^^^^^^ StringLiteral
+          if response == 'n':
+//        ^^ Keyword
+//           ^^^^^^^^ Identifier
+//                    ^^ IdentifierOperator
+//                       ^^^ StringLiteral
+              break
+//            ^^^^^ Keyword
+      try:
+//    ^^^ Keyword
+          num = int(input("Enter a number: "))
+//        ^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^ IdentifierFunction
+//                  ^^^^^ IdentifierFunction
+//                        ^^^^^^^^^^^^^^^^^^ StringLiteral
+      except ValueError:
+//    ^^^^^^ Keyword
+//           ^^^^^^^^^^ Identifier
+          print("That was not a number!")
+//        ^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      instance = MyClass()
+//    ^^^^^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^^^^^^^ IdentifierFunction
+      print(instance.method())
+//    ^^^^^ IdentifierFunction
+//          ^^^^^^^^ Identifier
+//                   ^^^^^^ IdentifierFunction
+  print(random.randint(1, 100))
+//^^^^^ IdentifierFunction
+//      ^^^^^^ Identifier
+//             ^^^^^^^ IdentifierFunction
+//                     ^ NumericLiteral
+//                        ^^^ NumericLiteral
+  [foo() for _ in range(3)]  # Call foo 3 times using a list comprehension
+// ^^^ IdentifierFunction
+//       ^^^ Keyword
+//           ^ Identifier
+//             ^^ Keyword
+//                ^^^^^ IdentifierFunction
+//                      ^ NumericLiteral
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  def decorator(func):
+//^^^ Keyword
+//    ^^^^^^^^^ IdentifierFunction
+//              ^^^^ Identifier
+      def wrapper():
+//    ^^^ Keyword
+//        ^^^^^^^ IdentifierFunction
+          print("Something is happening before the function is called.")
+//        ^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+          func()
+//        ^^^^ IdentifierFunction
+          print("Something is happening after the function is called.")
+//        ^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      return wrapper
+//    ^^^^^^ Keyword
+//           ^^^^^^^ Identifier
+  
+  @decorator
+//^ IdentifierFunction
+// ^^^^^^^^^ Identifier
+  def foo():
+//^^^ Keyword
+//    ^^^ IdentifierFunction
+      print(" Foo is executed!")
+//    ^^^^^ IdentifierFunction
+//          ^^^^^^^^^^^^^^^^^^^ StringLiteral
+  foo()
+//^^^ IdentifierFunction
+  
+  def __init__(self, name):
+//^^^ Keyword
+//    ^^^^^^^^ IdentifierFunction
+//             ^^^^ Identifier
+//                   ^^^^ Identifier
+      self.name = name
+//    ^^^^ Identifier
+//         ^^^^ Identifier
+//              ^ IdentifierOperator
+//                ^^^^ Identifier
+  
+  
+  # Inheritance
+//^^^^^^^^^^^^^ Comment
+  class Animal:
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
+      def __init__(self, name):
+//    ^^^ Keyword
+//        ^^^^^^^^ IdentifierFunction
+//                 ^^^^ Identifier
+//                       ^^^^ Identifier
+          self.name = name
+//        ^^^^ Identifier
+//             ^^^^ Identifier
+//                  ^ IdentifierOperator
+//                    ^^^^ Identifier
+      def eat(self):
+//    ^^^ Keyword
+//        ^^^ IdentifierFunction
+//            ^^^^ Identifier
+          print(f"{self.name} is eating.")
+//        ^^^^^ IdentifierFunction
+//              ^^ StringLiteral
+//                ^ StringLiteralEscape
+//                 ^^^^ Identifier
+//                     ^ StringLiteral
+//                      ^^^^ Identifier
+//                          ^ StringLiteralEscape
+//                           ^^^^^^^^^^^^ StringLiteral
+  class Dog(Animal):
+//^^^^^ Keyword
+//      ^^^ Identifier
+//          ^^^^^^ Identifier
+      def bark(self):
+//    ^^^ Keyword
+//        ^^^^ IdentifierFunction
+//             ^^^^ Identifier
+          print(f"{self.name} says woof!")
+//        ^^^^^ IdentifierFunction
+//              ^^ StringLiteral
+//                ^ StringLiteralEscape
+//                 ^^^^ Identifier
+//                     ^ StringLiteral
+//                      ^^^^ Identifier
+//                          ^ StringLiteralEscape
+//                           ^^^^^^^^^^^^ StringLiteral
+  dog = Dog("Rover")
+//^^^ Identifier
+//    ^ IdentifierOperator
+//      ^^^ IdentifierFunction
+//          ^^^^^^^ StringLiteral
+  dog.eat()  # Rover is eating.
+//^^^ Identifier
+//    ^^^ IdentifierFunction
+//           ^^^^^^^^^^^^^^^^^^ Comment
+  dog.bark()  # Rover says woof!
+//^^^ Identifier
+//    ^^^^ IdentifierFunction
+//            ^^^^^^^^^^^^^^^^^^ Comment
+  
+  # For else
+//^^^^^^^^^^ Comment
+  def for_else():
+//^^^ Keyword
+//    ^^^^^^^^ IdentifierFunction
+     for num in range(10):
+//   ^^^ Keyword
+//       ^^^ Identifier
+//           ^^ Keyword
+//              ^^^^^ IdentifierFunction
+//                    ^^ NumericLiteral
+          if num == 5:
+//        ^^ Keyword
+//           ^^^ Identifier
+//               ^^ IdentifierOperator
+//                  ^ NumericLiteral
+              continue  # Else block will be triggered
+//            ^^^^^^^^ Keyword
+//                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      else:
+//    ^^^^ Keyword
+          print("Loop completed normally")
+//        ^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  async def async_await():
+//^^^^^ Keyword
+//      ^^^ Keyword
+//          ^^^^^^^^^^^ IdentifierFunction
+      print("Hello")
+//    ^^^^^ IdentifierFunction
+//          ^^^^^^^ StringLiteral
+      await asyncio.sleep(1)  # Pauses for 1 second
+//    ^^^^^ Keyword
+//          ^^^^^^^ Identifier
+//                  ^^^^^ IdentifierFunction
+//                        ^ NumericLiteral
+//                            ^^^^^^^^^^^^^^^^^^^^^ Comment
+      print("World")
+//    ^^^^^ IdentifierFunction
+//          ^^^^^^^ StringLiteral
+  asyncio.run(async_await())
+//^^^^^^^ Identifier
+//        ^^^ IdentifierFunction
+//            ^^^^^^^^^^^ IdentifierFunction
+  
+  
+  # structural pattern matching
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  match = (1, 2, 3)
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//         ^ NumericLiteral
+//            ^ NumericLiteral
+//               ^ NumericLiteral
+  a, b, c = match  # Equivalent to the current tuple unpacking
+//^ Identifier
+//   ^ Identifier
+//      ^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^^ Identifier
+//                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  match = {'foo': 42, 'bar': 3.14}
+//^^^^^ Identifier
+//      ^ IdentifierOperator
+//         ^^^^^ StringLiteral
+//                ^^ NumericLiteral
+//                    ^^^^^ StringLiteral
+//                           ^^^^ NumericLiteral
+  {k: v for k, v in match if k == 'foo'}  # Using a expression + pattern match
+// ^ Identifier
+//    ^ Identifier
+//      ^^^ Keyword
+//          ^ Identifier
+//             ^ Identifier
+//               ^^ Keyword
+//                  ^^^^^ Identifier
+//                        ^^ Keyword
+//                           ^ Identifier
+//                             ^^ IdentifierOperator
+//                                ^^^^^ StringLiteral
+//                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  
+  def as_keyword():
+//^^^ Keyword
+//    ^^^^^^^^^^ IdentifierFunction
+      with open('file.txt') as f:
+//    ^^^^ Keyword
+//         ^^^^ IdentifierFunction
+//              ^^^^^^^^^^ StringLiteral
+//                          ^^ Keyword
+//                             ^ Identifier
+          text = f.read()
+//        ^^^^ Identifier
+//             ^ IdentifierOperator
+//               ^ Identifier
+//                 ^^^^ IdentifierFunction
+      x = 5
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^ NumericLiteral
+      y = x as z  # y is now also an alias for 5, as z
+//    ^ Identifier
+//      ^ IdentifierOperator
+//        ^ Identifier
+//          ^^ Keyword
+//             ^ Identifier
+//                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      try:
+//    ^^^ Keyword
+          raise ValueError('foo')
+//        ^^^^^ Keyword
+//              ^^^^^^^^^^ IdentifierFunction
+//                         ^^^^^ StringLiteral
+      except ValueError as err:
+//    ^^^^^^ Keyword
+//           ^^^^^^^^^^ Identifier
+//                      ^^ Keyword
+//                         ^^^ Identifier
+          print(err)  # Prints 'foo'
+//        ^^^^^ IdentifierFunction
+//              ^^^ Identifier
+//                    ^^^^^^^^^^^^^^ Comment
+      match = {'foo': 42}
+//    ^^^^^ Identifier
+//          ^ IdentifierOperator
+//             ^^^^^ StringLiteral
+//                    ^^ NumericLiteral
+      {k as bar: v as baz for k, v in match}  # {'bar': 42}
+//     ^ Identifier
+//       ^^ Keyword
+//          ^^^ Identifier
+//               ^ Identifier
+//                 ^^ Keyword
+//                    ^^^ Identifier
+//                        ^^^ Keyword
+//                            ^ Identifier
+//                               ^ Identifier
+//                                 ^^ Keyword
+//                                    ^^^^^ Identifier
+//                                            ^^^^^^^^^^^^^ Comment
+  
+  # Generators:
+//^^^^^^^^^^^^^ Comment
+  def count_to_ten():
+//^^^ Keyword
+//    ^^^^^^^^^^^^ IdentifierFunction
+      for i in range(1, 11):
+//    ^^^ Keyword
+//        ^ Identifier
+//          ^^ Keyword
+//             ^^^^^ IdentifierFunction
+//                   ^ NumericLiteral
+//                      ^^ NumericLiteral
+          yield i
+//        ^^^^^ Keyword
+//              ^ Identifier
+  counter = count_to_ten()
+//^^^^^^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^^^^^^^^^^ IdentifierFunction
+  for num in counter:
+//^^^ Keyword
+//    ^^^ Identifier
+//        ^^ Keyword
+//           ^^^^^^^ Identifier
+      print(num)  # Prints 1-10
+//    ^^^^^ IdentifierFunction
+//          ^^^ Identifier
+//                ^^^^^^^^^^^^^ Comment
+  
+  # Properties:
+//^^^^^^^^^^^^^ Comment
+  class Person:
+//^^^^^ Keyword
+//      ^^^^^^ Identifier
+      def __init__(self, first, last):
+//    ^^^ Keyword
+//        ^^^^^^^^ IdentifierFunction
+//                 ^^^^ Identifier
+//                       ^^^^^ Identifier
+//                              ^^^^ Identifier
+          self.firstname = first
+//        ^^^^ Identifier
+//             ^^^^^^^^^ Identifier
+//                       ^ IdentifierOperator
+//                         ^^^^^ Identifier
+          self.lastname = last
+//        ^^^^ Identifier
+//             ^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^ Identifier
+      @property
+//    ^ IdentifierFunction
+//     ^^^^^^^^ Identifier
+      def name(self):
+//    ^^^ Keyword
+//        ^^^^ IdentifierFunction
+//             ^^^^ Identifier
+          return f'{self.firstname} {self.lastname}'
+//        ^^^^^^ Keyword
+//               ^^ StringLiteral
+//                 ^ StringLiteralEscape
+//                  ^^^^ Identifier
+//                      ^ StringLiteral
+//                       ^^^^^^^^^ Identifier
+//                                ^ StringLiteralEscape
+//                                 ^ StringLiteral
+//                                  ^ StringLiteralEscape
+//                                   ^^^^ Identifier
+//                                       ^ StringLiteral
+//                                        ^^^^^^^^ Identifier
+//                                                ^ StringLiteralEscape
+//                                                 ^ StringLiteral
+  
+  p = Person('John', 'Doe')
+//^ Identifier
+//  ^ IdentifierOperator
+//    ^^^^^^ IdentifierFunction
+//           ^^^^^^ StringLiteral
+//                   ^^^^^ StringLiteral
+  p.name  # Calls the getter
+//^ Identifier
+//  ^^^^ Identifier
+//        ^^^^^^^^^^^^^^^^^^ Comment
+  # Magic methods:
+//^^^^^^^^^^^^^^^^ Comment
+  class Adder:
+//^^^^^ Keyword
+//      ^^^^^ Identifier
+      def __init__(self, n):
+//    ^^^ Keyword
+//        ^^^^^^^^ IdentifierFunction
+//                 ^^^^ Identifier
+//                       ^ Identifier
+          self.n = n
+//        ^^^^ Identifier
+//             ^ Identifier
+//               ^ IdentifierOperator
+//                 ^ Identifier
+      def __add__(self, other):
+//    ^^^ Keyword
+//        ^^^^^^^ IdentifierFunction
+//                ^^^^ Identifier
+//                      ^^^^^ Identifier
+          return self.n + other.n
+//        ^^^^^^ Keyword
+//               ^^^^ Identifier
+//                    ^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^ Identifier
+//                              ^ Identifier
+  a = Adder(10)
+//^ Identifier
+//  ^ IdentifierOperator
+//    ^^^^^ IdentifierFunction
+//          ^^ NumericLiteral
+  b = Adder(5)
+//^ Identifier
+//  ^ IdentifierOperator
+//    ^^^^^ IdentifierFunction
+//          ^ NumericLiteral
+  a + b  # 15
+//^ Identifier
+//  ^ IdentifierOperator
+//    ^ Identifier
+//       ^^^^ Comment
+

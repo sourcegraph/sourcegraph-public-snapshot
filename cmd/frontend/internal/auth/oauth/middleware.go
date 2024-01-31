@@ -83,9 +83,8 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 		id := r.URL.Query().Get("pc")
 		p := GetProvider(serviceType, id)
 		if p == nil {
-			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
-			msg := fmt.Sprintf("Misconfigured %s auth provider.", serviceType)
-			http.Error(w, msg, http.StatusInternalServerError)
+			log15.Warn("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
+			http.Redirect(w, r, "/sign-in?returnTo="+r.URL.Query().Get("returnTo"), http.StatusFound)
 			return
 		}
 		p.Login(p.OAuth2Config()).ServeHTTP(w, r)

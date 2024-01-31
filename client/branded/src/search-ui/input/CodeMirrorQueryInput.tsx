@@ -40,6 +40,13 @@ export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
      * search history.
      */
     onSelectSearchFromHistory?: () => void
+
+    /**
+     * When enabled, eligible suggestions will become "jump targets" which means
+     * when a suggestion is selected, pressing enter will navigate to the suggestion
+     * instead of inserting it into the query input.
+     */
+    enableJumpToSuggestion?: boolean
 }
 
 /**
@@ -78,6 +85,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
+    enableJumpToSuggestion = false,
 }) => {
     const editorRef = useRef<EditorView | null>(null)
     const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
@@ -130,9 +138,16 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
                     fetchSuggestions: query =>
                         fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpecRef.current)),
                     isSourcegraphDotCom,
+                    enableJumpToSuggestion,
                     navigate,
                 }),
-            [isSourcegraphDotCom, navigate, fetchStreamSuggestions, selectedSearchContextSpecRef]
+            [
+                isSourcegraphDotCom,
+                enableJumpToSuggestion,
+                navigate,
+                fetchStreamSuggestions,
+                selectedSearchContextSpecRef,
+            ]
         )
     )
 
