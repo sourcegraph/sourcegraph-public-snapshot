@@ -328,7 +328,7 @@ type EnvironmentInstancesResourcesSpec struct {
 	// CloudRunGeneration is either 1 or 2, corresponding to the generations
 	// outlined in https://cloud.google.com/run/docs/about-execution-environments.
 	// By default, we use the Cloud Run default.
-	CloudRunGeneration *int
+	CloudRunGeneration *int `yaml:"cloudRunGeneration,omitempty"`
 }
 
 func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
