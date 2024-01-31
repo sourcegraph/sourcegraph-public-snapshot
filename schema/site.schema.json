@@ -175,6 +175,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "codyContextIgnore": {
+          "description": "Enabled filtering of remote Cody context based on repositories ./cody/ignore file",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "searchJobs": {
           "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
           "type": "boolean",
