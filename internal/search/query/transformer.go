@@ -644,7 +644,7 @@ func ExperimentalPhraseBoost(logger sglog.Logger, originalQuery string) BasicPas
 			phrase := ""
 			for _, child := range n.Operands {
 				c, isPattern := child.(Pattern)
-				if !isPattern || c.Negated {
+				if !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
 					return basic
 				}
 
