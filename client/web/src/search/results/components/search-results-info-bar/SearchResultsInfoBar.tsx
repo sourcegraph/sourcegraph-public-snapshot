@@ -102,7 +102,16 @@ export interface SearchResultsInfoBarProps
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
-    const { query, patternType, authenticatedUser, results, options, sourcegraphURL, telemetryService } = props
+    const {
+        query,
+        patternType,
+        authenticatedUser,
+        results,
+        options,
+        sourcegraphURL,
+        onTogglePatternType,
+        telemetryService,
+    } = props
 
     const popoverRef = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
@@ -195,6 +204,11 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
+
+    const handleKeywordSearchToggle = useCallback(() => {
+        telemetryService.log('ToggleKeywordPatternType', { currentStatus: patternType === SearchPatternType.keyword })
+        onTogglePatternType(patternType)
+    }, [onTogglePatternType, patternType, telemetryService])
 
     return (
         <aside
@@ -294,7 +308,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
 
                         <Toggle
                             value={props.patternType === SearchPatternType.keyword}
-                            onToggle={() => props.onTogglePatternType(props.patternType)}
+                            onToggle={handleKeywordSearchToggle}
                             title="Enable search language update"
                             className="mr-2"
                         />
