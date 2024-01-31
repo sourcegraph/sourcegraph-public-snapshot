@@ -1,3 +1,6 @@
+# See https://cloud.google.com/deploy/docs/custom-targets for guidance on how
+# to build custom targets and the conventions that are expected.
+
 apiVersion: skaffold/v4beta7
 kind: Config
 metadata:
