@@ -18,26 +18,25 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 
 		plan = MapPlan(plan, ExperimentalPhraseBoost(sglog.NoOp(), input))
 
-		json, _ := ToJSON(plan.ToQ())
-		return json
+		return plan.ToQ().String()
 	}
 
 	// expect phrase query
-	autogold.Expect(`[{"or":[{"value":"foo bar bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]}]}]`).Equal(t, test("foo bar bas", SearchTypeKeyword))
+	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
 
 	// respect whitespace
-	autogold.Expect(`[{"or":[{"value":"foo   bar  bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":6},"end":{"line":0,"column":9}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]}]`).Equal(t, test("foo   bar  bas", SearchTypeKeyword))
-	autogold.Expect(`[{"or":[{"value":"foo\tbar:  bas","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar:","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":8}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":10},"end":{"line":0,"column":13}}}]}]}]`).Equal(t, test("foo\tbar:  bas ", SearchTypeKeyword))
-	autogold.Expect(`[{"or":[{"value":"いい　お天気　です","negated":false,"labels":null,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}},{"and":[{"value":"いい","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"お天気","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":9},"end":{"line":0,"column":18}}},{"value":"です","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":21},"end":{"line":0,"column":27}}}]}]}]`).Equal(t, test("いい　お天気　です", SearchTypeKeyword))
+	autogold.Expect(`(or "foo   bar  bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo   bar  bas", SearchTypeKeyword))
+	autogold.Expect(`(or "foo\tbar:  bas" (and "foo" "bar:" "bas"))`).Equal(t, test("foo\tbar:  bas ", SearchTypeKeyword))
+	autogold.Expect(`(or "いい お天気 です" (and "いい" "お天気" "です"))`).Equal(t, test("いい お天気 です", SearchTypeKeyword))
 
 	// expect no phrase query
-	autogold.Expect(`[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}}]`).Equal(t, test("foo", SearchTypeKeyword))
-	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}}]}]`).Equal(t, test("foo bar", SearchTypeKeyword))
-	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]}]`).Equal(t, test("foo and bar", SearchTypeKeyword))
-	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":true,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":11}}}]}]`).Equal(t, test("foo not bar", SearchTypeKeyword))
-	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":true,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":15}}},{"value":"quz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":16},"end":{"line":0,"column":19}}}]}]`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
-	autogold.Expect(`[{"or":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bas","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":14},"end":{"line":0,"column":17}}}]}]`).Equal(t, test("foo or bar or bas", SearchTypeKeyword))
-	autogold.Expect(`[{"or":[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":11}}}]},{"and":[{"value":"quz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":16},"end":{"line":0,"column":19}}},{"value":"biz","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":24},"end":{"line":0,"column":27}}}]}]}]`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
+	autogold.Expect(`"foo"`).Equal(t, test("foo", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo bar", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo and bar", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo not bar", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar" (not "bas") "quz")`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
+	autogold.Expect(`(or "foo" "bar" "bas")`).Equal(t, test("foo or bar or bas", SearchTypeKeyword))
+	autogold.Expect(`(or (and "foo" "bar") (and "quz" "biz"))`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
 }
 
 func TestSubstituteAliases(t *testing.T) {
