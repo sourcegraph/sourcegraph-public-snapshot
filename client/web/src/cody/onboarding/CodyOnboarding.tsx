@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -114,10 +114,12 @@ export const editorGroups: IEditor[][] = [
     ],
 ]
 
-function formatUseCase(action: { work: boolean; personal: boolean }) {
+function formatUseCase(action: { work: boolean; personal: boolean }): string {
     const useCases = []
     for (const [key, value] of Object.entries(action)) {
-        if (value) useCases.push(key)
+        if (value) {
+            useCases.push(key)
+        }
     }
     return useCases.length === 0 ? 'none' : useCases.join(',')
 }
@@ -263,7 +265,7 @@ function PurposeStep({
 
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
 
-    const handleFormSubmit = (form: HTMLFormElement) => {
+    const handleFormSubmit = (form: HTMLFormElement): void => {
         const workInput = form[0].querySelector('input[name="using_cody_for_work"]') as HTMLInputElement
         const personalInput = form[0].querySelector('input[name="using_cody_for_personal"]') as HTMLInputElement
 

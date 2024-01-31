@@ -270,7 +270,17 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
 
             setFormCreated(true)
         }
-    }, [formId, onFormSubmitted, inlineMessage, formCreated, masterFormName, onFormReady, userId, userEmail])
+    }, [
+        formId,
+        onFormSubmitted,
+        inlineMessage,
+        formCreated,
+        masterFormName,
+        onFormReady,
+        userId,
+        userEmail,
+        onFormSubmit,
+    ])
 
     return <div id="form-target" data-testid="hubspot-form-container" className={classNames(styles.container)} />
 }
