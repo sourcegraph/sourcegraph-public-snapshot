@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/key"
 	sentryproject "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/project"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
@@ -78,6 +77,12 @@ const StackName = "cloudrun"
 
 const (
 	OutputCloudSQLConnectionName = "cloudsql_connection_name"
+
+	// ScaffoldSourceFile is the file to place in the cloudrun Terraform stack
+	// directory for upload. We expect this to be generated into the TF dir -
+	// it's weird but unfortunately placing the file into bucket object 'content'
+	// directly in Terraform seems to mangle it terribly.
+	ScaffoldSourceFile = "skaffoldsource.tar.gz"
 )
 
 // Hardcoded variables.
@@ -420,14 +425,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Name:     pointers.Stringf("%s-cloudrun-skaffold", vars.ProjectID),
 			Location: &GCPRegion,
 		})
-		skaffoldObject, err := clouddeploy.NewCloudRunCustomTargetSkaffoldAssetsArchive()
-		if err != nil {
-			return nil, errors.Wrap(err, "create Cloud Deploy custom target skaffold YAML archive")
-		}
 		_ = storagebucketobject.NewStorageBucketObject(stack, id.Group("skaffold").TerraformID("object"), &storagebucketobject.StorageBucketObjectConfig{
 			Name:        pointers.Ptr("source.tar.gz"),
 			Bucket:      skaffoldBucket.Name(),
-			Content:     pointers.Ptr(skaffoldObject.String()),
+			Source:      pointers.Ptr(ScaffoldSourceFile), // see docstring for hack
 			ContentType: pointers.Ptr("application/gzip"),
 		})
 	}

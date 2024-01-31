@@ -1,11 +1,11 @@
 ```
-gcloud deploy apply --project=msp-testbed-robert-7be9 --region=us-central1 --file=clouddeploy.yaml
+gcloud deploy apply --project=msp-testbed-robert-7be9 --region=us-central1 --file=rollout.clouddeploy.yaml
 ```
 
 https://cloud.google.com/sdk/gcloud/reference/deploy/releases/create
 
 ```
-gcloud deploy releases create manual-test-02-2024-01-31 \
+gcloud deploy releases create manual-test-04-2024-01-31 \
     --project=msp-testbed-robert-7be9 \
     --region=us-central1 \
     --delivery-pipeline=msp-testbed-us-central1-rollout \

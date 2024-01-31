@@ -137,6 +137,9 @@ func (s Spec) Validate() []error {
 			if e.EnvironmentServiceSpec != nil {
 				errs = append(errs, errors.New("service specifications are not supported for 'kind: job'"))
 			}
+			if e.Deploy.Type == EnvironmentDeployTypeRollout {
+				errs = append(errs, errors.New("'deploy { type: \"rollout\" }' not supported for 'kind: job'"))
+			}
 			if e.Instances.Scaling != nil {
 				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
 			}
