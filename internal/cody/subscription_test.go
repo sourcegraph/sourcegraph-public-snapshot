@@ -299,7 +299,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 					samsAccountSpec := extsvc.AccountSpec{
 						AccountID:   *test.mockSAMSAccountID,
 						ServiceType: "openidconnect",
-						ServiceID:   fmt.Sprintf("https://%s/", ssc.SAMSProdHostname),
+						ServiceID:   fmt.Sprintf("https://%s/", ssc.GetSAMSHostName()),
 					}
 					return []*extsvc.Account{
 						{
