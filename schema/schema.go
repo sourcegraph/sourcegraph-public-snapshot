@@ -2915,8 +2915,8 @@ type SiteConfiguration struct {
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
 	// SscApiBaseUrl description: The base URL of the Self-Serve Cody API.
 	SscApiBaseUrl string `json:"ssc.apiBaseUrl,omitempty"`
-	// SscApiSecret description: The Bearer token for the Self-Serve Cody API.
-	SscApiSecret string `json:"ssc.apiSecret,omitempty"`
+	// SscSamsHostName description: The hostname of SAMS instance to connect.
+	SscSamsHostName string `json:"ssc.samsHostName,omitempty"`
 	// SyntaxHighlighting description: Syntax highlighting configuration
 	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
@@ -3090,7 +3090,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")
 	delete(m, "ssc.apiBaseUrl")
-	delete(m, "ssc.apiSecret")
+	delete(m, "ssc.samsHostName")
 	delete(m, "syntaxHighlighting")
 	delete(m, "update.channel")
 	delete(m, "webhook.logging")

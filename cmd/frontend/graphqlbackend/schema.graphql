@@ -6417,6 +6417,10 @@ type CodySubscription {
     subscription is in a canceled state.
     """
     currentPeriodEndAt: DateTime!
+    """
+    Whether the subscription will be canceled at the end of the current billing period. (Or automatically renew, if true.)
+    """
+    cancelAtPeriodEnd: Boolean!
 }
 
 """
