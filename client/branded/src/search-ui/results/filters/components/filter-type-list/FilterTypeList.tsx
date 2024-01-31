@@ -100,7 +100,7 @@ const FilterTypeButton: FC<FilterTypeButtonProps> = props => {
     const { filter, selected, forceCount, disabled, onClick } = props
 
     return (
-        <Tooltip content={disabled ? 'Cannot override type in search query' : ''}>
+        <Tooltip placement="right" content={disabled ? 'Cannot override type if specified in search query' : ''}>
             <Button
                 variant={selected ? 'primary' : 'secondary'}
                 outline={!selected}
