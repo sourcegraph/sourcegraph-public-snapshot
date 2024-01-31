@@ -83,7 +83,7 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 			Before: func(ctx *cli.Context) error {
 				for _, arg := range ctx.Args().Slice() {
 					if _, ok := bzlgenTargets[arg]; !ok && arg != "all" {
-						cli.HandleExitCoder(errors.Errorf("category doesn't exist %q, run `sg bazel configure -help` for full info.", arg))
+						cli.HandleExitCoder(errors.Errorf("category doesn't exist %q, run `sg bazel configure --help` for full info.", arg))
 						cli.ShowSubcommandHelpAndExit(ctx, 1)
 						return nil
 					}
