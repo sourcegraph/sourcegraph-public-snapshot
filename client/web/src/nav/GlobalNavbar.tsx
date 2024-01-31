@@ -45,7 +45,7 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
 import { SvelteKitNavItem } from '../sveltekit/SvelteKitNavItem'
-import { isCodyOnlyLicense } from '../util/license'
+import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from '../util/license'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -188,10 +188,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 }
             >
                 <InlineNavigationPanel
+                    authenticatedUser={props.authenticatedUser}
                     showSearchContext={showSearchContext}
                     showOwn={showOwn}
                     showCodySearch={codySearchEnabled}
-                    showCodyDropdown={isSourcegraphDotCom && !!props.authenticatedUser}
                     showSearchJobs={showSearchJobs}
                     showSearchNotebook={showSearchNotebook}
                     showCodeMonitoring={showCodeMonitoring}
@@ -280,13 +280,13 @@ export interface InlineNavigationPanelProps {
     showSearchContext: boolean
     showOwn: boolean
     showCodySearch: boolean
-    showCodyDropdown: boolean
     showSearchJobs: boolean
     showSearchNotebook: boolean
     showCodeMonitoring: boolean
     showBatchChanges: boolean
     showCodeInsights: boolean
     isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
 
     /** A current react router route match */
     routeMatch?: string
@@ -298,7 +298,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         showSearchContext,
         showOwn,
         showCodySearch,
-        showCodyDropdown,
         showSearchJobs,
         showSearchNotebook,
         showBatchChanges,
@@ -311,6 +310,8 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference)
+    const disableCodyFeatures = isCodeSearchOnlyLicense()
+    const disableCodeSearchFeatures = isCodyOnlyLicense()
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
@@ -364,19 +365,26 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             </NavItem>
         )
 
-    const codyNavigation = showCodyDropdown ? (
+    const hideCodyDropdown = disableCodyFeatures || !props.authenticatedUser
+    const codyNavigation = hideCodyDropdown ? (
+        <NavItem icon={CodyLogo} key="cody">
+            <NavLink variant={navLinkVariant} to={disableCodyFeatures ? PageRoutes.Cody : PageRoutes.CodyChat}>
+                Cody AI
+            </NavLink>
+        </NavItem>
+    ) : (
         <NavDropdown
             key="cody"
             toggleItem={{
-                path: PageRoutes.CodyManagement,
+                path: isSourcegraphDotCom ? PageRoutes.CodyManagement : PageRoutes.Cody,
                 icon: CodyLogo,
-                content: 'Cody',
+                content: 'Cody AI',
                 variant: navLinkVariant,
             }}
             routeMatch={routeMatch}
             items={[
                 {
-                    path: PageRoutes.CodyManagement,
+                    path: isSourcegraphDotCom ? PageRoutes.CodyManagement : PageRoutes.Cody,
                     content: 'Dashboard',
                 },
                 {
@@ -386,17 +394,11 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             ]}
             name="cody"
         />
-    ) : (
-        <NavItem icon={CodyLogo} key="cody">
-            <NavLink variant={navLinkVariant} to={PageRoutes.CodyChat}>
-                Cody AI
-            </NavLink>
-        </NavItem>
     )
 
     let prioritizedLinks: JSX.Element[] = [searchNavigation, codyNavigation]
 
-    if (isCodyOnlyLicense()) {
+    if (disableCodeSearchFeatures) {
         // This should be cheap considering there will only be two items in the array.
         prioritizedLinks = prioritizedLinks.reverse()
     }
