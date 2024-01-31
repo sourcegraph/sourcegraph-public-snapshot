@@ -122,6 +122,12 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
+
+	if searchType == query.SearchTypeKeyword {
+		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost(s.runtimeClients.Logger, searchQuery))
+		tr.AddEvent("applied phrase boost")
+	}
+
 	tr.AddEvent("parsing done")
 
 	var finalContextLines int32
