@@ -107,16 +107,16 @@ ts_project(
 mocha_test(
     name = "integration-tests",
     timeout = "moderate",
-    # args = [
-    #     "--parallel",
-    #     "--jobs 16",
-    # ],
+    args = [
+        "--parallel",
+        "--jobs 16",
+    ],
     data = ["//client/web:app"],
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     flaky = True,
-    is_percy_enabled = False,
+    is_percy_enabled = True,
     tags = [
         "no-sandbox",
         "requires-network",
