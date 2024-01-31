@@ -266,6 +266,7 @@ var sg = &cli.App{
 		testCommand,
 		lintCommand,
 		generateCommand,
+		bazelCommand,
 		dbCommand,
 		migrationCommand,
 		insightsCommand,

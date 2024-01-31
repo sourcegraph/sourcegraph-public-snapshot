@@ -742,7 +742,7 @@ impl<'a> LocalResolver<'a> {
 mod test {
     use crate::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use scip::types::Document;
-    use tree_sitter_all_languages::BundledParser;
+    use tree_sitter_all_languages::ParserId;
 
     use super::*;
     use crate::languages::LocalConfiguration;
@@ -784,7 +784,7 @@ mod test {
 
     #[test]
     fn go() {
-        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(ParserId::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
@@ -794,7 +794,7 @@ mod test {
 
     #[test]
     fn perl() {
-        let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
+        let config = crate::languages::get_local_configuration(ParserId::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
@@ -804,7 +804,7 @@ mod test {
 
     #[test]
     fn matlab() {
-        let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
+        let config = crate::languages::get_local_configuration(ParserId::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);
@@ -814,7 +814,7 @@ mod test {
 
     #[test]
     fn java() {
-        let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
+        let config = crate::languages::get_local_configuration(ParserId::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
         let (doc, scope_tree) = parse_file_for_lang(config, source_code);
         let dumped = snapshot_syntax_document(&doc, source_code);

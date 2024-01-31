@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use clap::Parser;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{languages::LocalConfiguration, locals::find_locals};
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
 // TODO: Could probably add some filters here for managing/enabling/disabling
@@ -91,7 +91,7 @@ fn main() {
         ..Default::default()
     };
 
-    let config = syntax_analysis::languages::get_local_configuration(BundledParser::Go).unwrap();
+    let config = syntax_analysis::languages::get_local_configuration(ParserId::Go).unwrap();
     index
         .documents
         .extend(parse_files(config, directory, directory));

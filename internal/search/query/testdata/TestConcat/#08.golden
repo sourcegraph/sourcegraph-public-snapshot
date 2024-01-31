@@ -3,7 +3,8 @@
     "value": "alsace",
     "negated": false,
     "labels": [
-      "Literal"
+      "Literal",
+      "Standard"
     ],
     "range": {
       "start": {
@@ -37,7 +38,8 @@
     "value": "bordeaux",
     "negated": false,
     "labels": [
-      "Literal"
+      "Literal",
+      "Standard"
     ],
     "range": {
       "start": {

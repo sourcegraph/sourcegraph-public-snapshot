@@ -141,6 +141,16 @@ http_archive(
     urls = ["https://github.com/keith/buildifier-prebuilt/archive/6.1.0.tar.gz"],
 )
 
+http_archive(
+    name = "aspect_cli",
+    repo_mapping = {
+        "@com_github_smacker_go_tree_sitter": "@aspectcli-com_github_smacker_go_tree_sitter",
+    },
+    sha256 = "045f0186edb25706dfe77d9c4916eec630a2b2736f9abb59e37eaac122d4b771",
+    strip_prefix = "aspect-cli-5.8.20",
+    url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
+)
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.2.1"
 
@@ -271,9 +281,9 @@ go_repository(
     name = "org_golang_google_protobuf",
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
-    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
-    version = "v1.31.1",
-)  # keep
+    sum = "h1:pPC6BG5ex8PDFnkbrGU3EixyhKcQ2aDuBS36lqK/C7I=",
+    version = "v1.32.0",
+)
 
 # Pin protoc-gen-go-grpc to 1.3.0
 # See also //:gen-go-grpc
@@ -284,6 +294,20 @@ go_repository(
     sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
     version = "v1.3.0",
 )  # keep
+
+# Pin specific version for aspect-cli's gazelle rules, with versions
+# that it requires but that our codebase doesnt support.
+go_repository(
+    name = "aspectcli-com_github_smacker_go_tree_sitter",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/smacker/go-tree-sitter",
+    sum = "h1:DxgjlvWYsb80WEN2Zv3WqJFAg2DKjUQJO6URGdf1x6Y=",
+    version = "v0.0.0-20230720070738-0d0a9f78d8f8",
+)  # keep
+
+load("@aspect_cli//:go.bzl", aspect_cli_deps = "deps")
+
+aspect_cli_deps()
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()

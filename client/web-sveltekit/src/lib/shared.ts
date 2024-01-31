@@ -56,6 +56,8 @@ export {
     truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+export { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'

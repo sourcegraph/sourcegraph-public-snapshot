@@ -322,7 +322,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ctx:                     ctx,
 		Locker:                  NewRepositoryLocker(),
 		cloneLimiter:            limiter.NewMutable(1),
-		cloneableLimiter:        limiter.NewMutable(1),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
