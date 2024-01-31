@@ -300,7 +300,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                         >
                                             Read the docs
                                         </Link>{' '}
-                                        to learn about other changes.
+                                        to learn more.
                                     </Text>
                                 </div>
                             </PopoverContent>

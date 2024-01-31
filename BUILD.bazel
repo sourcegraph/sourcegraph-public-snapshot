@@ -205,22 +205,24 @@ buildifier(
 # Go
 
 gazelle_binary(
-    name = "gazelle-buf",
+    name = "gazelle-bin",
     languages = [
         # Loads the native proto extension
         "@bazel_gazelle//language/proto:go_default_library",
         # Gazelle-buf does not include the Go plugin by default, so we have to add it
         # ourselves.
         "@bazel_gazelle//language/go:go_default_library",
+        # Bundled with aspect-cli, but we're missing out on buf that way
+        "@aspect_cli//gazelle/js:js",
         # Loads the Buf extension
-        "@rules_buf//gazelle/buf:buf",
         # NOTE: This needs to be loaded after the proto language
+        "@rules_buf//gazelle/buf:buf",
     ],
 )
 
 gazelle(
     name = "gazelle",
-    gazelle = ":gazelle-buf",
+    gazelle = ":gazelle-bin",
 )
 
 sh_binary(

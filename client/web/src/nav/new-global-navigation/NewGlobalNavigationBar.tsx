@@ -193,10 +193,8 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
-
     const showKeywordSearchToggle = useKeywordSearch()
 
-    const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
         useNavbarQueryState(selectQueryState, shallow)
 
@@ -213,65 +211,51 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
         [submitSearch, navigate, location, selectedSearchContextSpec]
     )
 
-    const handleFocus = useCallback(() => {
-        setFocused(true)
-    }, [])
-
-    const handleBlur = useCallback(() => {
-        setFocused(false)
-    }, [])
-
     // TODO: Move this check outside of navigation component and share it via context
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
 
     return (
-        <>
-            <LazyV2SearchInput
-                visualMode="compact"
-                patternType={searchPatternType}
-                interpretComments={false}
-                queryState={queryState}
-                submitSearch={submitSearchOnChange}
-                isSourcegraphDotCom={isSourcegraphDotCom}
-                authenticatedUser={authenticatedUser}
-                selectedSearchContextSpec={selectedSearchContextSpec}
-                telemetryService={telemetryService}
-                className={classNames(styles.searchBar, { [styles.searchBarFocused]: isFocused })}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                onChange={setQueryState}
-                onSubmit={submitSearchOnChange}
-            >
-                {showKeywordSearchToggle ? (
-                    <Toggles
-                        searchMode={searchMode}
-                        patternType={searchPatternType}
-                        caseSensitive={searchCaseSensitivity}
-                        navbarSearchQuery={queryState.query}
-                        structuralSearchDisabled={structuralSearchDisabled}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        setSearchMode={setSearchMode}
-                        submitSearch={submitSearchOnChange}
-                        telemetryService={telemetryService}
-                    />
-                ) : (
-                    <LegacyToggles
-                        searchMode={searchMode}
-                        patternType={searchPatternType}
-                        caseSensitive={searchCaseSensitivity}
-                        navbarSearchQuery={queryState.query}
-                        structuralSearchDisabled={structuralSearchDisabled}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        setSearchMode={setSearchMode}
-                        submitSearch={submitSearchOnChange}
-                    />
-                )}
-            </LazyV2SearchInput>
-
-            {isFocused && <div className={styles.overlay} />}
-        </>
+        <LazyV2SearchInput
+            visualMode="compact"
+            patternType={searchPatternType}
+            interpretComments={false}
+            queryState={queryState}
+            submitSearch={submitSearchOnChange}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+            authenticatedUser={authenticatedUser}
+            selectedSearchContextSpec={selectedSearchContextSpec}
+            telemetryService={telemetryService}
+            className={styles.searchBar}
+            onChange={setQueryState}
+            onSubmit={submitSearchOnChange}
+        >
+            {showKeywordSearchToggle ? (
+                <Toggles
+                    searchMode={searchMode}
+                    patternType={searchPatternType}
+                    caseSensitive={searchCaseSensitivity}
+                    navbarSearchQuery={queryState.query}
+                    structuralSearchDisabled={structuralSearchDisabled}
+                    setPatternType={setSearchPatternType}
+                    setCaseSensitivity={setSearchCaseSensitivity}
+                    setSearchMode={setSearchMode}
+                    submitSearch={submitSearchOnChange}
+                    telemetryService={telemetryService}
+                />
+            ) : (
+                <LegacyToggles
+                    searchMode={searchMode}
+                    patternType={searchPatternType}
+                    caseSensitive={searchCaseSensitivity}
+                    navbarSearchQuery={queryState.query}
+                    structuralSearchDisabled={structuralSearchDisabled}
+                    setPatternType={setSearchPatternType}
+                    setCaseSensitivity={setSearchCaseSensitivity}
+                    setSearchMode={setSearchMode}
+                    submitSearch={submitSearchOnChange}
+                />
+            )}
+        </LazyV2SearchInput>
     )
 }
 
