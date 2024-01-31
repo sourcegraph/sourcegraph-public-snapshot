@@ -41,12 +41,12 @@ func Init(
 		// On an Enterprise instance endpoint proxies to gateway, and is re-initialized
 		// in case site-config changes.
 		client := httpcli.ExternalDoer
-		if MockHttpClient!= nil {
+		if MockHttpClient != nil {
 			client = MockHttpClient
 		}
 		initLogic := &enterpriseInitialization{observationCtx: observationCtx, httpClient: client}
 		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
-		go conf.Watch(func () {
+		go conf.Watch(func() {
 			resolver.UpdateService(initLogic.Service())
 		})
 	}

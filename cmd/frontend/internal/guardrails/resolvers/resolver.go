@@ -12,7 +12,7 @@ import (
 var _ graphqlbackend.GuardrailsResolver = &GuardrailsResolver{}
 
 type GuardrailsResolver struct {
-	mu sync.Mutex
+	mu                 sync.Mutex
 	attributionService attribution.Service
 }
 

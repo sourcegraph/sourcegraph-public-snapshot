@@ -49,7 +49,7 @@ type SnippetAttributions struct {
 	LimitHit bool
 }
 
-type Uninitialized struct {}
+type Uninitialized struct{}
 
 func (_ Uninitialized) SnippetAttribution(context.Context, string, int) (result *SnippetAttributions, err error) {
 	return nil, errors.New("Attribution is not initialized. Please update site config.")

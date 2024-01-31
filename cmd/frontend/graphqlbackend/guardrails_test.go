@@ -173,7 +173,7 @@ func newSyncConfMocking(t *testing.T) *syncConfMocking {
 // Update the site config and await the new config to be propagated to the watchers.
 func (m *syncConfMocking) Update(c schema.SiteConfiguration) {
 	conf.Mock(&conf.Unified{SiteConfiguration: c})
-    m.cond.L.Lock()
+	m.cond.L.Lock()
 	defer m.cond.L.Unlock()
 	diff := cmp.Diff(m.lastConfig, c)
 	for m.watching && diff != "" {
@@ -198,7 +198,7 @@ func (m *syncConfMocking) Cleanup() {
 	m.cond.L.Lock()
 	defer m.cond.L.Unlock()
 	m.watching = false
-	m.cond.Broadcast()  // ensure to wake up every waiting goroutine
+	m.cond.Broadcast() // ensure to wake up every waiting goroutine
 }
 
 // gatewayResponse that `makeGatewayEndpoint` responds with.
@@ -210,6 +210,7 @@ const gatewayResponse = `{
 	"totalCount": 2,
 	"limitHit":true
 }`
+
 func makeGatewayEndpoint(t *testing.T) string {
 	t.Helper()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -223,12 +224,12 @@ func makeGatewayEndpoint(t *testing.T) string {
 func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 	// Use a regular HTTP client as default external doer cannot hit localhost.
 	guardrails.MockHttpClient = http.DefaultClient
-	t.Cleanup(func () { guardrails.MockHttpClient = nil })
+	t.Cleanup(func() { guardrails.MockHttpClient = nil })
 	// Starting attribution configuration has no endpoints to use.
 	noAttributionConfigured := schema.SiteConfiguration{
-			CodyEnabled:        pointers.Ptr(true),
-			AttributionEnabled: pointers.Ptr(true),
-		}
+		CodyEnabled:        pointers.Ptr(true),
+		AttributionEnabled: pointers.Ptr(true),
+	}
 	confMock := newSyncConfMocking(t)
 	confMock.Update(noAttributionConfigured)
 	t.Cleanup(func() { confMock.Update(schema.SiteConfiguration{}) })
@@ -262,7 +263,7 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 			CodyEnabled:        pointers.Ptr(true),
 			AttributionEnabled: pointers.Ptr(true),
 			AttributionGateway: &schema.AttributionGateway{
-				Endpoint: makeGatewayEndpoint(t),
+				Endpoint:    makeGatewayEndpoint(t),
 				AccessToken: "1234",
 			},
 		})
@@ -284,12 +285,12 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 			CodyEnabled:        pointers.Ptr(true),
 			AttributionEnabled: pointers.Ptr(true),
 			Completions: &schema.Completions{
-				AccessToken: "1234",
-				Endpoint: makeGatewayEndpoint(t),
-				Model: "testing-model",
-				ChatModel: "testing-model-turbo",
-				CompletionModel: "testing-model-turbo",
-				Provider: "sourcegraph",
+				AccessToken:       "1234",
+				Endpoint:          makeGatewayEndpoint(t),
+				Model:             "testing-model",
+				ChatModel:         "testing-model-turbo",
+				CompletionModel:   "testing-model-turbo",
+				Provider:          "sourcegraph",
 				PerUserDailyLimit: 1000,
 			},
 		})
@@ -311,12 +312,12 @@ func TestSnippetAttributionReactsToSiteConfigChanges(t *testing.T) {
 			CodyEnabled:        pointers.Ptr(true),
 			AttributionEnabled: pointers.Ptr(true),
 			Completions: &schema.Completions{
-				AccessToken: "1234",
-				Endpoint: makeGatewayEndpoint(t),
-				Model: "testing-model",
-				ChatModel: "testing-model-turbo",
-				CompletionModel: "testing-model-turbo",
-				Provider: "openai",
+				AccessToken:       "1234",
+				Endpoint:          makeGatewayEndpoint(t),
+				Model:             "testing-model",
+				ChatModel:         "testing-model-turbo",
+				CompletionModel:   "testing-model-turbo",
+				Provider:          "openai",
 				PerUserDailyLimit: 1000,
 			},
 		})
