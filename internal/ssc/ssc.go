@@ -61,6 +61,10 @@ func (c *client) sendRequest(ctx context.Context, method string, url string, out
 		return nil, err
 	}
 
+	if c.httpClient == nil {
+		return nil, errors.New("no SSC HTTP client provided")
+	}
+
 	resp, err := c.httpClient.Do(req)
 
 	if err != nil {
@@ -113,6 +117,16 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 	}
 }
 
+func GetSAMSHostName() string {
+	sgconf := conf.Get().SiteConfig()
+
+	if sgconf.SscSamsHostName == "" {
+		return SAMSProdHostname
+	}
+
+	return sgconf.SscSamsHostName // [sic] generated code
+}
+
 // NewClient returns a new SSC API client. It is important to avoid creating new
 // API clients if possible, so that it can reuse SAMS access tokens when making
 // requests to SSC. (Otherwise every request would need to create a new token,
@@ -120,7 +134,7 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 //
 // If no SAMS authorization provider is configured, this function will not panic,
 // but instead will return an error on every call.
-func NewClient() Client {
+func NewClient() (Client, error) {
 	sgconf := conf.Get().SiteConfig()
 
 	// Fetch the SAMS configuration data.
@@ -131,7 +145,7 @@ func NewClient() Client {
 			continue
 		}
 
-		if strings.Contains(oidcInfo.Issuer, SAMSProdHostname) {
+		if strings.Contains(oidcInfo.Issuer, GetSAMSHostName()) {
 			samsConfig = &clientcredentials.Config{
 				ClientID:     oidcInfo.ClientID,
 				ClientSecret: oidcInfo.ClientSecret,
@@ -142,6 +156,10 @@ func NewClient() Client {
 		}
 	}
 
+	if samsConfig == nil {
+		return &client{}, errors.New("no SAMS authorization provider configured")
+	}
+
 	// Create a long-lived HTTP client for all dotcom<->SSC requests, using
 	// the samsConfig credentials as needed.
 	httpClient := samsConfig.Client(context.Background())
@@ -149,5 +167,5 @@ func NewClient() Client {
 	return &client{
 		baseURL:    sgconf.SscApiBaseUrl, // [sic] generated code
 		httpClient: httpClient,
-	}
+	}, nil
 }

@@ -11,7 +11,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import { useFeatureFlag, useKeywordSearch } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useV2QueryInput } from '../../../search/useV2QueryInput'
 import { useNavbarQueryState } from '../../../stores'
@@ -19,10 +19,9 @@ import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
+import { KeywordSearchCtaSection } from './KeywordSearchCtaSection'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
-import { TryCodyCtaSection } from './TryCodyCtaSection'
-import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
@@ -68,9 +67,9 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
 
     const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
-    const showCodyCTA = !showOnboardingTour
-
     const patternType = useNavbarQueryState.getState().searchPatternType
+
+    const showKeywordSearchToggle = useKeywordSearch()
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -110,6 +109,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                     simpleSearch={false}
                                     queryState={queryState}
                                     setQueryState={setQueryState}
+                                    showKeywordSearchToggle={showKeywordSearchToggle}
                                 />
                             </div>
                         </Tooltip>
@@ -121,6 +121,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             simpleSearch={simpleSearch && simpleSearchEnabled}
                             queryState={queryState}
                             setQueryState={setQueryState}
+                            showKeywordSearchToggle={showKeywordSearchToggle}
                         />
                         {authenticatedUser && showOnboardingTour && (
                             <GettingStartedTour
@@ -130,17 +131,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                 authenticatedUser={authenticatedUser}
                             />
                         )}
-                        {showCodyCTA ? (
-                            authenticatedUser ? (
-                                <TryCodyCtaSection
-                                    className="mx-auto my-5"
-                                    telemetryService={telemetryService}
-                                    isSourcegraphDotCom={isSourcegraphDotCom}
-                                />
-                            ) : (
-                                <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
-                            )
-                        ) : null}
+                        <KeywordSearchCtaSection />
                     </>
                 )}
             </div>

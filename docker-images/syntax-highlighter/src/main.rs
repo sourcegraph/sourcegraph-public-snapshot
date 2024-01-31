@@ -3,13 +3,8 @@
 #[macro_use]
 extern crate rocket;
 
-use std::path;
-
-use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use serde::Deserialize;
 use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
-use tree_sitter_all_languages::BundledParser;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -45,52 +40,8 @@ fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
     }
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct SymbolQuery {
-    filename: String,
-    content: String,
-}
-
 pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
-}
-
-#[post("/symbols", format = "application/json", data = "<q>")]
-fn symbols(q: Json<SymbolQuery>) -> JsonValue {
-    let path = path::Path::new(&q.filename);
-    let extension = match match path.extension() {
-        Some(vals) => vals,
-        None => {
-            return json!({"error": "Extensionless file"});
-        }
-    }
-    .to_str()
-    {
-        Some(vals) => vals,
-        None => {
-            return json!({"error": "Invalid codepoint"});
-        }
-    };
-    let parser = match BundledParser::get_parser_from_extension(extension) {
-        Some(parser) => parser,
-        None => return json!({"error": "Could not infer parser from extension"}),
-    };
-
-    let (mut scope, hint) = match syntax_analysis::get_globals(parser, q.content.as_bytes()) {
-        Some(Ok(vals)) => vals,
-        Some(Err(err)) => return jsonify_err(err),
-        None => return json!({"error": "Failed to get globals"}),
-    };
-
-    let document = scope.into_document(hint, vec![]);
-
-    let encoded = match document.write_to_bytes() {
-        Ok(vals) => vals,
-        Err(err) => {
-            return jsonify_err(err);
-        }
-    };
-    json!({"scip": base64::encode(encoded), "plaintext": false})
 }
 
 #[get("/health")]
@@ -122,7 +73,7 @@ fn rocket() -> _ {
     // TODO: load individual languages lazily on-request instead, currently
     // CONFIGURATIONS.get will load every configured configuration together.
     syntax_analysis::highlighting::tree_sitter::CONFIGURATIONS
-        .get(&tree_sitter_all_languages::BundledParser::Go);
+        .get(&tree_sitter_all_languages::ParserId::Go);
 
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
@@ -131,6 +82,6 @@ fn rocket() -> _ {
     };
 
     rocket::build()
-        .mount("/", routes![syntect, lsif, scip, symbols, health])
+        .mount("/", routes![syntect, lsif, scip, health])
         .register("/", catchers![not_found])
 }

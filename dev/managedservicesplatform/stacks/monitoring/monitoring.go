@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/nobl9provider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/opsgenieprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/sentryprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/slackprovider"
@@ -85,7 +86,10 @@ type Variables struct {
 	EnvironmentCategory spec.EnvironmentCategory
 	// EnvironmentID is the name of the service environment.
 	EnvironmentID string
-	Monitoring    spec.MonitoringSpec
+	// Alerting configuration for the environment.
+	Alerting spec.EnvironmentAlertingSpec
+	// Monitoring spec.
+	Monitoring spec.MonitoringSpec
 	// MaxInstanceCount informs service scaling alerts.
 	MaxInstanceCount *int
 	// ExternalDomain informs external health checks on the service domain.
@@ -110,6 +114,10 @@ const StackName = "monitoring"
 
 const sharedAlertsSlackChannel = "#alerts-msp"
 
+// nobl9ClientID user account (@jac) for trial
+const nobl9ClientID = "0oab428uphKZbY1jy417"
+const nobl9OrganizationID = "sourcegraph-n8JWJzlFjsCw"
+
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, _, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
@@ -124,6 +132,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		sentryprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretSentryAuthToken,
 			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+		}),
+		nobl9provider.With(nobl9provider.Config{
+			ClientID:     nobl9ClientID,
+			Organization: nobl9OrganizationID,
+			Nobl9Token: gsmsecret.DataConfig{
+				Secret:    googlesecretsmanager.SecretNobl9ClientSecret,
+				ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+			},
 		}))
 	if err != nil {
 		return nil, err
@@ -181,11 +197,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				// Let the team own the integration.
 				OwnerTeamId: team.Id(),
 
-				// Supress all notifications if opsgenieAlerts is disabled -
+				// Supress all notifications if Alerting.Opsgenie is false -
 				// this allows us to see the alerts, but not necessarily get
 				// paged by it.
-				// TODO: Enable after we dogfood the alerts for a while.
-				SuppressNotifications: pointers.Ptr(true),
+				SuppressNotifications: !pointers.DerefZero(vars.Alerting.Opsgenie),
 
 				// Point alerts sent through this integration at the Opsgenie team.
 				Responders: []*opsgenieintegration.ApiIntegrationResponders{{
@@ -333,6 +348,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		if err := createCloudSQLAlerts(stack, id.Group("cloudsql"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create CloudSQL alerts")
 		}
+	}
+
+	if vars.Monitoring.Nobl9 {
+		createNobl9Project(stack, id.Group("nobl9"), vars)
 	}
 
 	return &CrossStackOutput{}, nil

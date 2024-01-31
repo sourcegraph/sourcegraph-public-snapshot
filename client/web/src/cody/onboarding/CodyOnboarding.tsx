@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -113,6 +113,16 @@ export const editorGroups: IEditor[][] = [
         },
     ],
 ]
+
+function formatUseCase(action: { work: boolean; personal: boolean }): string {
+    const useCases = []
+    for (const [key, value] of Object.entries(action)) {
+        if (value) {
+            useCases.push(key)
+        }
+    }
+    return useCases.length === 0 ? 'none' : useCases.join(',')
+}
 
 export function CodyOnboarding({
     authenticatedUser,
@@ -245,8 +255,6 @@ function PurposeStep({
     pro: boolean
     authenticatedUser: AuthenticatedUser
 }): JSX.Element {
-    const [useCase, setUseCase] = useState<'work' | 'personal' | null>(null)
-
     useEffect(() => {
         eventLogger.log(
             EventName.CODY_ONBOARDING_PURPOSE_VIEWED,
@@ -257,32 +265,16 @@ function PurposeStep({
 
     const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
 
-    const handleFormReady = useCallback((form: HTMLFormElement) => {
-        const workInput = form.querySelector('input[name="using_cody_for_work"]')
-        const personalInput = form.querySelector('input[name="using_cody_for_personal"]')
+    const handleFormSubmit = (form: HTMLFormElement): void => {
+        const workInput = form[0].querySelector('input[name="using_cody_for_work"]') as HTMLInputElement
+        const personalInput = form[0].querySelector('input[name="using_cody_for_personal"]') as HTMLInputElement
 
-        const handleChange = (e: Event): void => {
-            const target = e.target as HTMLInputElement
-            const isChecked = target.checked
-            const name = target.name
-
-            if (name === 'using_cody_for_work' && isChecked) {
-                setUseCase('work')
-            } else if (name === 'using_cody_for_personal' && isChecked) {
-                setUseCase('personal')
-            } else {
-                setUseCase(null)
-            }
-        }
-
-        workInput?.addEventListener('change', handleChange)
-        personalInput?.addEventListener('change', handleChange)
-
-        return () => {
-            workInput?.removeEventListener('change', handleChange)
-            personalInput?.removeEventListener('change', handleChange)
-        }
-    }, [])
+        const useCase = formatUseCase({
+            work: workInput.checked,
+            personal: personalInput.checked,
+        })
+        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase }, { useCase })
+    }
 
     return (
         <>
@@ -296,15 +288,12 @@ function PurposeStep({
                 <HubSpotForm
                     formId="85548efc-a879-4553-9ef0-a8da8fdcf541"
                     onFormSubmitted={() => {
-                        if (useCase) {
-                            eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase }, { useCase })
-                        }
                         onNext()
                     }}
                     userId={authenticatedUser.id}
                     userEmail={primaryEmail}
                     masterFormName="qualificationSurvey"
-                    onFormReady={handleFormReady}
+                    onFormSubmit={handleFormSubmit}
                 />
             </div>
         </>
