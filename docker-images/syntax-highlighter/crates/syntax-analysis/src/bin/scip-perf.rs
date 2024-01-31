@@ -2,7 +2,7 @@ use std::{path::Path, time::Instant};
 
 use clap::Parser;
 use syntax_analysis::locals;
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
 #[derive(Parser)]
@@ -31,15 +31,15 @@ struct ParseTiming {
 fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
     let (config, extension) = match language {
         Language::Go => (
-            syntax_analysis::languages::get_local_configuration(BundledParser::Go).unwrap(),
+            syntax_analysis::languages::get_local_configuration(ParserId::Go).unwrap(),
             "go",
         ),
         Language::Java => (
-            syntax_analysis::languages::get_local_configuration(BundledParser::Java).unwrap(),
+            syntax_analysis::languages::get_local_configuration(ParserId::Java).unwrap(),
             "java",
         ),
         Language::Matlab => (
-            syntax_analysis::languages::get_local_configuration(BundledParser::Matlab).unwrap(),
+            syntax_analysis::languages::get_local_configuration(ParserId::Matlab).unwrap(),
             "m",
         ),
     };

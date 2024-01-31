@@ -98,6 +98,16 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		vars.Environment.Instances.Scaling = &spec.EnvironmentInstancesScalingSpec{}
 	}
 
+	var executionEnvironment *string
+	if generation := vars.Environment.Instances.Resources.CloudRunGeneration; generation != nil {
+		switch *generation {
+		case 1:
+			executionEnvironment = pointers.Ptr("EXECUTION_ENVIRONMENT_GEN1")
+		case 2:
+			executionEnvironment = pointers.Ptr("EXECUTION_ENVIRONMENT_GEN2")
+		}
+	}
+
 	name, err := vars.Name()
 	if err != nil {
 		return nil, err
@@ -144,6 +154,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 				MaxInstanceCount: pointers.Float64(
 					pointers.Deref(vars.Environment.Instances.Scaling.MaxCount, builder.DefaultMaxInstances)),
 			},
+			ExecutionEnvironment: executionEnvironment,
 
 			// Configuration for the single service container.
 			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
