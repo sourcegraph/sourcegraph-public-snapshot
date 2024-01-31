@@ -5,33 +5,37 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // P4GroupMembers returns all usernames that are members of the given group.
 func P4GroupMembers(ctx context.Context, p4home, p4port, p4user, p4passwd, group string) ([]string, error) {
-	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "group", "-o", group)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+	options := []P4OptionFunc{
+		WithAuthentication(p4user, p4passwd),
+		WithHost(p4port),
+		WithAlternateHomeDir(p4home),
+	}
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	options = append(options, WithArguments("-Mj", "-ztag", "group", "-o", group))
+	options = append(options, WithEnvironment(os.Environ()...))
+
+	scratchDir, err := os.MkdirTemp(p4home, "p4-group-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 group'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, scratchDir, options...)
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 group context error")
 		}
 
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 group" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 group" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 
 		return nil, err

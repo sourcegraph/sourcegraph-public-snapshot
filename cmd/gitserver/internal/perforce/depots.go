@@ -6,13 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -64,26 +60,35 @@ func P4Depots(ctx context.Context, p4home, p4port, p4user, p4passwd, nameFilter 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var cmd *exec.Cmd
-	if nameFilter == "" {
-		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots")
-	} else {
-		cmd = exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "depots", "-e", nameFilter)
+	options := []P4OptionFunc{
+		WithAuthentication(p4user, p4passwd),
+		WithHost(p4port),
+		WithAlternateHomeDir(p4home),
 	}
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	if nameFilter == "" {
+		options = append(options, WithArguments("-Mj", "-ztag", "depots"))
+	} else {
+		options = append(options, WithArguments("-Mj", "-ztag", "depots", "-e", nameFilter))
+	}
+
+	options = append(options, WithEnvironment(os.Environ()...))
+
+	scratchDir, err := os.MkdirTemp(p4home, "p4-depots-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 depots'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, scratchDir, options...)
+
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 depots context error")
 		}
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 		return nil, err
 	}

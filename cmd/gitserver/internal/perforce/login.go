@@ -3,14 +3,10 @@ package perforce
 import (
 	"context"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -48,16 +44,25 @@ func P4UserIsSuperUser(ctx context.Context, p4home, p4port, p4user, p4passwd str
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
-	cmd := exec.CommandContext(ctx, "p4", "protects", "-u", p4user)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+	options := []P4OptionFunc{
+		WithAuthentication(p4user, p4passwd),
+		WithHost(p4port),
+		WithAlternateHomeDir(p4home),
+	}
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
+	options = append(options, WithArguments("protects", "-u", p4user))
+
+	options = append(options, WithEnvironment(os.Environ()...))
+
+	scratchDir, err := os.MkdirTemp(p4home, "p4-protects-")
+	if err != nil {
+		return errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, scratchDir, options...)
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -84,13 +89,23 @@ func P4Trust(ctx context.Context, p4home, host string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "p4", "trust", "-y", "-f")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"HOME="+p4home,
-	)
+	options := []P4OptionFunc{
+		WithHost(host),
+		WithAlternateHomeDir(p4home),
+	}
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	options = append(options, WithArguments("trust", "-y", "-f"))
+	options = append(options, WithEnvironment(os.Environ()...))
+
+	scratchDir, err := os.MkdirTemp(p4home, "p4-trust-")
+	if err != nil {
+		return errors.Wrap(err, "could not create temp dir to invoke 'p4 trust'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, scratchDir, options...)
+
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -110,25 +125,34 @@ func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error 
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
+		options := []P4OptionFunc{
+			WithAuthentication(p4user, p4passwd),
+			WithHost(p4port),
+			WithAlternateHomeDir(p4home),
+		}
+
 		// `p4 ping` requires extra-special access, so we want to avoid using it
 		//
 		// p4 login -s checks the connection and the credentials,
 		// so it seems like the perfect alternative to `p4 ping`.
-		cmd := exec.CommandContext(ctx, "p4", "login", "-s")
-		cmd.Env = append(os.Environ(),
-			"P4PORT="+p4port,
-			"P4USER="+p4user,
-			"P4PASSWD="+p4passwd,
-			"HOME="+p4home,
-		)
+		options = append(options, WithArguments("login", "-s"))
+		options = append(options, WithEnvironment(os.Environ()...))
 
-		out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+		scratchDir, err := os.MkdirTemp(p4home, "p4-login-")
+		if err != nil {
+			return errors.Wrap(err, "could not create temp dir to invoke 'p4 login'")
+		}
+		defer os.Remove(scratchDir)
+
+		cmd := NewBaseCommand(ctx, scratchDir, options...)
+
+		out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 		if err != nil {
 			if ctxerr := ctx.Err(); ctxerr != nil {
 				err = errors.Wrap(ctxerr, "p4 login context error")
 			}
 			if len(out) > 0 {
-				err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
+				err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 			}
 			return err
 		}
