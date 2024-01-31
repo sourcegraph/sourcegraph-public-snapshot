@@ -56,7 +56,6 @@
 }
 
 .toggle-wrapper {
-    box-sizing: border-box;
     border-radius: 3px;
     :global(.theme-dark) & {
         background: var(--marketing-gradient-25);
