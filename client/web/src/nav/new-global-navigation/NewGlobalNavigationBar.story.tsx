@@ -52,5 +52,6 @@ export const NewGlobalNavigationBarDemo: StoryFn = () => (
         }
         selectedSearchContextSpec=""
         telemetryService={NOOP_TELEMETRY_SERVICE}
+        showFeedbackModal={() => {}}
     />
 )
