@@ -9,7 +9,7 @@ use anyhow::{Context, Result};
 use itertools::intersperse;
 use scip::types::{descriptor::Suffix, symbol_information, Descriptor};
 use serde::{Deserialize, Serialize};
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 
 use crate::{get_globals, globals::Scope};
 
@@ -193,7 +193,7 @@ pub fn generate_tags<W: std::io::Write>(
     let extension = path.extension()?.to_str()?;
     let filepath = path.file_name()?.to_str()?;
 
-    let parser = BundledParser::get_parser_from_extension(extension)?;
+    let parser = ParserId::get_parser_from_extension(extension)?;
     let (root_scope, _) = match get_globals(parser, file_data)? {
         Ok(vals) => vals,
         Err(err) => {
