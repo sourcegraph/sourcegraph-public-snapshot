@@ -4,14 +4,16 @@ import classNames from 'classnames'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { H1, Text, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { H1, H2, Text, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { CodyLogo } from '../components/CodyLogo'
 
 import { ChatBrandIcon } from './ChatBrandIcon'
 import { CompletionsBrandIcon } from './CompletionsBrandIcon'
+import { ContextDiagram } from './ContextDiagram'
+import { ContextExample } from './ContextExample'
 import { IntelliJIcon } from './IntelliJ'
-import { MultiLineCompletionLight, MultiLineCompletionDark } from './MultilineCompletion'
+import { MultiLineCompletion } from './MultilineCompletion'
 import { VSCodeIcon } from './vs-code'
 
 import styles from './CodyUpsellPage.module.scss'
@@ -106,9 +108,7 @@ export const CodyUpsellPage: FC = () => {
                     </div>
                 </div>
 
-                <div className={styles.heroCompletionImage}>
-                    {isLightTheme ? <MultiLineCompletionLight /> : <MultiLineCompletionDark />}
-                </div>
+                <MultiLineCompletion isLightTheme={isLightTheme} className={styles.heroCompletionImage} />
             </section>
 
             <section className={styles.about}>
@@ -154,6 +154,19 @@ export const CodyUpsellPage: FC = () => {
                     ))}
                 </section>
             </section>
+
+            <section className={styles.context}>
+                <div>
+                    <SearchIcon />
+                    <H2 className={styles.contextHeader}>Sourcegraph powered context</H2>
+                    <Text className={styles.contextDescription}>
+                        Sourcegraph’s code graph and analysis tools allows Cody to autocomplete, explain, and edit your
+                        code with additional context.
+                    </Text>
+                    <ContextExample isLightTheme={isLightTheme} />
+                </div>
+                <ContextDiagram isLightTheme={isLightTheme} />
+            </section>
         </section>
     )
 }
@@ -179,4 +192,28 @@ const Testimonial: FC<TestimonialProps> = ({ testimonial }) => (
         </div>
         <Text className={styles.testimonialText}>{testimonial.comment}</Text>
     </section>
+)
+
+const SearchIcon: FC = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="37" height="40" fill="none" viewBox="0 0 37 40">
+        <path
+            fill="url(#paint0_linear_571_94711)"
+            fillRule="evenodd"
+            d="M18.067 4.53c-7.441 0-13.5 6.029-13.5 13.5 0 7.47 6.059 13.5 13.5 13.5a2.274 2.274 0 012.284 2.264 2.274 2.274 0 01-2.284 2.265C8.074 36.059 0 27.972 0 18.029 0 8.087 8.074 0 18.067 0c9.994 0 18.068 8.087 18.068 18.03 0 4.964-2.013 9.463-5.268 12.724l5.393 5.386a2.251 2.251 0 01-.011 3.202 2.296 2.296 0 01-3.23-.01l-7.101-7.094a2.254 2.254 0 01.243-3.402 13.476 13.476 0 005.408-10.807c0-7.47-6.06-13.5-13.502-13.5z"
+            clipRule="evenodd"
+        />
+        <defs>
+            <linearGradient
+                id="paint0_linear_571_94711"
+                x1="0.885"
+                x2="30.949"
+                y1="26.786"
+                y2="27.094"
+                gradientUnits="userSpaceOnUse"
+            >
+                <stop stopColor="#FF5543" />
+                <stop offset="1" stopColor="#A112FF" />
+            </linearGradient>
+        </defs>
+    </svg>
 )

@@ -1,7 +1,26 @@
-import React, { type FC } from 'react'
+import type { FC } from 'react'
 
-export const MultiLineCompletionLight: FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="710" height="421" fill="none" viewBox="0 0 710 421">
+interface MultiLineCompletionProps {
+    isLightTheme: boolean
+    className: string
+}
+
+export const MultiLineCompletion: FC<MultiLineCompletionProps> = ({ isLightTheme, className }) =>
+    isLightTheme ? (
+        <MultiLineCompletionLight className={className} />
+    ) : (
+        <MultiLineCompletionDark className={className} />
+    )
+
+const MultiLineCompletionLight: FC<{ className: string }> = ({ className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="710"
+        height="421"
+        fill="none"
+        viewBox="0 0 710 421"
+        className={className}
+    >
         <rect width="727" height="420" x="56.5" y="0.5" fill="#fff" rx="9.5" />
         <rect width="727" height="420" x="56.5" y="0.5" stroke="#343A4D" rx="9.5" />
         <path
@@ -98,8 +117,15 @@ export const MultiLineCompletionLight: FC = () => (
     </svg>
 )
 
-export const MultiLineCompletionDark: FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="710" height="412" fill="none" viewBox="0 0 710 412">
+const MultiLineCompletionDark: FC<{ className: string }> = ({ className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="710"
+        height="412"
+        fill="none"
+        viewBox="0 0 710 412"
+        className={className}
+    >
         <rect width="727" height="411" x="56.5" y="0.5" fill="#191B21" rx="9.5" />
         <rect width="727" height="411" x="56.5" y="0.5" stroke="#343A4D" rx="9.5" />
         <path
