@@ -310,7 +310,6 @@ export const routes: RouteObject[] = [
     ...communitySearchContextsRoutes,
     ...(disableCodyFeatures
         ? [
-              // this is the landing page to upsell Cody.
               {
                   path: PageRoutes.Cody,
                   element: <LegacyRoute render={() => <CodyUpsellPage />} />,
