@@ -193,10 +193,8 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
-
     const showKeywordSearchToggle = useKeywordSearch()
 
-    const [isFocused, setFocused] = useState(false)
     const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
         useNavbarQueryState(selectQueryState, shallow)
 
@@ -213,14 +211,6 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
         [submitSearch, navigate, location, selectedSearchContextSpec]
     )
 
-    const handleFocus = useCallback(() => {
-        setFocused(true)
-    }, [])
-
-    const handleBlur = useCallback(() => {
-        setFocused(false)
-    }, [])
-
     // TODO: Move this check outside of navigation component and share it via context
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
 
@@ -235,9 +225,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
             authenticatedUser={authenticatedUser}
             selectedSearchContextSpec={selectedSearchContextSpec}
             telemetryService={telemetryService}
-            className={classNames(styles.searchBar, { [styles.searchBarFocused]: isFocused })}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            className={styles.searchBar}
             onChange={setQueryState}
             onSubmit={submitSearchOnChange}
         >
