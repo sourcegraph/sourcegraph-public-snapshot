@@ -56,6 +56,7 @@ export interface TemporarySettingsSchema {
         repositoryName: string
         filePath: string
     }
+    'search.homepage.keywordCta.dismissed': boolean
     'search.results.collapseSmartSearch': boolean
     'search.results.collapseUnownedResultsAlert': boolean
     'search.input.recentSearches': RecentSearch[]
@@ -78,7 +79,6 @@ export interface TemporarySettingsSchema {
     'own.panelExplanationHidden': boolean
     'cody.showSidebar': boolean
     'cody.blobPageCta.dismissed': boolean
-    'cody.searchPageCta.dismissed': boolean
     'cody.chatPageCta.dismissed': boolean
     'cody.survey.submitted': boolean
     'app.codyStandalonePage.selectedRepo': string
@@ -126,6 +126,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'onboarding.userconfig': null,
     'characterKeyShortcuts.enabled': null,
     'search.homepage.queryExamplesContent': null,
+    'search.homepage.keywordCta.dismissed': null,
     'search.results.collapseSmartSearch': null,
     'search.results.collapseUnownedResultsAlert': null,
     'search.input.recentSearches': null,
@@ -145,7 +146,6 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'own.panelExplanationHidden': null,
     'cody.showSidebar': null,
     'cody.blobPageCta.dismissed': null,
-    'cody.searchPageCta.dismissed': null,
     'cody.chatPageCta.dismissed': null,
     'cody.survey.submitted': null,
     'app.codyStandalonePage.selectedRepo': null,

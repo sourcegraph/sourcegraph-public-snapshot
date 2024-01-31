@@ -1,7 +1,10 @@
 import React from 'react'
 
-export const NewStarsIcon: React.FunctionComponent = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21">
+export const NewStarsIcon: React.FunctionComponent<{ width?: number; height?: number }> = ({
+    width = 21,
+    height = 21,
+}) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={width} height={height} fill="none" viewBox="0 0 21 21">
         <path
             fill="url(#paint0_linear_295_6722)"
             fillRule="evenodd"
