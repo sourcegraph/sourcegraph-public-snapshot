@@ -9,7 +9,6 @@ go_library(
         "//dev/sg/msp:__pkg__",
     ],
     deps = [
-        "//dev/managedservicesplatform/clouddeploy",
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/bigquery",
         "//dev/managedservicesplatform/internal/resource/cloudsql",

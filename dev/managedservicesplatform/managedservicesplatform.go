@@ -74,6 +74,9 @@ func (r *Renderer) RenderEnvironment(
 	// destroys.
 	preventDestroys := !pointers.DerefZero(env.AllowDestroys)
 
+	// Only non-nil if this is the last stage in a rollout spec.
+	rolloutPipeline := svc.BuildRolloutPipelineConfiguration(env)
+
 	// Render all required CDKTF stacks for this environment.
 	//
 	// This MUST line up with managedservicesplatform.StackNames() in this
@@ -106,6 +109,8 @@ func (r *Renderer) RenderEnvironment(
 		Service:         svc.Service,
 		SecretEnv:       env.SecretEnv,
 		PreventDestroys: preventDestroys,
+
+		IsFinalStageOfRollout: rolloutPipeline != nil,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")
@@ -114,10 +119,11 @@ func (r *Renderer) RenderEnvironment(
 		ProjectID: *projectOutput.Project.ProjectId(),
 		IAM:       *iamOutput,
 
-		Service:         svc.Service,
-		Image:           svc.Build.Image,
-		Environment:     env,
-		RolloutPipeline: svc.BuildRolloutPipelineConfiguration(env),
+		Service:     svc.Service,
+		Image:       svc.Build.Image,
+		Environment: env,
+
+		RolloutPipeline: rolloutPipeline,
 
 		StableGenerate: r.StableGenerate,
 

@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -34,4 +35,11 @@ go_library(
         "@com_github_urfave_cli_v2//:cli",
         "@org_golang_x_exp//maps",
     ],
+)
+
+go_test(
+    name = "msp_test",
+    srcs = ["helpers_test.go"],
+    embed = [":msp"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

@@ -29,7 +29,8 @@ import (
 type CrossStackOutput struct {
 	CloudRunWorkloadServiceAccount *serviceaccount.Output
 	OperatorAccessServiceAccount   *serviceaccount.Output
-
+	// CloudDeployExecutionServiceAccount is only provisioned if
+	// IsFinalStageOfRollout is true for this environment.
 	CloudDeployExecutionServiceAccount *serviceaccount.Output
 }
 
@@ -41,6 +42,10 @@ type Variables struct {
 	// SecretEnv should be the environment config that sources from secrets.
 	SecretEnv map[string]string
 
+	// IsFinalStageOfRollout should be true if BuildRolloutPipelineConfiguration
+	// provides a non-nil configuration for an environment.
+	IsFinalStageOfRollout bool
+
 	// PreventDestroys indicates if destroys should be allowed on core components of
 	// this resource.
 	PreventDestroys bool
@@ -51,6 +56,8 @@ const StackName = "iam"
 const (
 	OutputCloudRunServiceAccount = "cloud_run_service_account"
 	OutputOperatorServiceAccount = "operator_access_service_account"
+
+	OutputCloudDeployReleaserServiceAccountID = "cloud_deploy_releaser_service_account_id"
 )
 
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
@@ -211,30 +218,58 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}
 	}
 
-	cloudDeployServiceAccount := serviceaccount.New(stack,
-		id.Group("clouddeploy"),
-		serviceaccount.Config{
-			ProjectID:   vars.ProjectID,
-			AccountID:   "clouddeploy-executor",
-			DisplayName: fmt.Sprintf("%s Cloud Deploy Service Account", vars.Service.GetName()),
-			Roles: []serviceaccount.Role{
-				{
-					ID:   resourceid.New("role_clouddeploy_job_runner"),
-					Role: "roles/clouddeploy.jobRunner",
+	// Only referenced if vars.IsFinalStageOfRollout is true anyway, so safe
+	// to leave as nil.
+	var cloudDeployExecutorServiceAccount *serviceaccount.Output
+	if vars.IsFinalStageOfRollout {
+		cloudDeployExecutorServiceAccount = serviceaccount.New(stack,
+			id.Group("clouddeploy-executor"),
+			serviceaccount.Config{
+				ProjectID:   vars.ProjectID,
+				AccountID:   "clouddeploy-executor",
+				DisplayName: fmt.Sprintf("%s Cloud Deploy Executor Service Account", vars.Service.GetName()),
+				Roles: []serviceaccount.Role{
+					{
+						ID:   resourceid.New("role_clouddeploy_job_runner"),
+						Role: "roles/clouddeploy.jobRunner",
+					},
 				},
 			},
-		},
-	)
+		)
+
+		cloudDeployReleaserServiceAccount := serviceaccount.New(stack,
+			id.Group("clouddeploy-releaser"),
+			serviceaccount.Config{
+				ProjectID:   vars.ProjectID,
+				AccountID:   "clouddeploy-releaser",
+				DisplayName: fmt.Sprintf("%s Cloud Deploy Releases Service Account", vars.Service.GetName()),
+				Roles: []serviceaccount.Role{
+					{
+						ID:   resourceid.New("role_clouddeploy_releaser"),
+						Role: "roles/clouddeploy.releaser",
+					},
+				},
+			},
+		)
+
+		// For use in e.g. https://sourcegraph.sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/managed-services/continuous-deployment-pipeline/main.tf?L5-20
+		// For now, just provide the ID and ask users to configure the GH action
+		// workload identity pool elsewhere. This can be referenced directly from
+		// GSM of the environment secrets.
+		locals.Add(OutputCloudDeployReleaserServiceAccountID, cloudDeployReleaserServiceAccount.Email,
+			"Service Account ID for Cloud Deploy release creation - intended for workload identity federation in CI")
+	}
 
 	// Collect outputs
 	locals.Add(OutputCloudRunServiceAccount, workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
 	locals.Add(OutputOperatorServiceAccount, operatorAccessServiceAccount.Email,
 		"Service Account email used for operator access to other resources")
+
 	return &CrossStackOutput{
 		CloudRunWorkloadServiceAccount:     workloadServiceAccount,
 		OperatorAccessServiceAccount:       operatorAccessServiceAccount,
-		CloudDeployExecutionServiceAccount: cloudDeployServiceAccount,
+		CloudDeployExecutionServiceAccount: cloudDeployExecutorServiceAccount,
 	}, nil
 }
 
