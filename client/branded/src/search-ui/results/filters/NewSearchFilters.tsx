@@ -1,5 +1,7 @@
 import { FC, ReactNode, useEffect, useCallback, useMemo } from 'react'
 
+import { mdiRefresh } from '@mdi/js'
+
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
@@ -8,7 +10,6 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
-import { mdiRefresh } from '@mdi/js'
 
 import {
     authorFilter,
@@ -206,16 +207,16 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                                 className="pr-1 pt-1"
                                 svgPath={mdiRefresh}
                                 inline={true}
-                                aria-label='Reset all filters'
+                                aria-hidden={true}
                             />
                             Reset all filters
                         </Button>
                     </>
                 )}
 
-
                 {children}
             </footer>
+            <FiltersDocFooter className={styles.footerDoc} />
         </div>
     )
 }
