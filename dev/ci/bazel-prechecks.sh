@@ -15,7 +15,6 @@ function generate_diff_artifact() {
   if [[ $SKIP_GEN_DIFF -eq 1 ]]; then
     exit $EXIT_CODE
   fi
-  # only generate the diff if we have a non-zero exit code and the exit code does not indicate a critical failure
   if [[ $EXIT_CODE -ne 0 ]]; then
     temp=$(mktemp -d -t "buildkite-$BUILDKITE_BUILD_NUMBER-XXXXXXXX")
     trap 'rm -rf -- "$temp"' EXIT
