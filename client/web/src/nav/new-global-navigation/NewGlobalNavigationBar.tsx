@@ -42,6 +42,7 @@ interface NewGlobalNavigationBar extends TelemetryProps {
     codeInsightsEnabled: boolean
     showSearchBox: boolean
     selectedSearchContextSpec?: string
+    showFeedbackModal: () => void
 }
 
 /**
@@ -60,6 +61,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         authenticatedUser,
         selectedSearchContextSpec,
         showSearchBox,
+        showFeedbackModal,
         telemetryService,
     } = props
 
@@ -120,7 +122,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                     <UserNavItem
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         authenticatedUser={authenticatedUser}
-                        showFeedbackModal={() => {}}
+                        showFeedbackModal={showFeedbackModal}
                         className="ml-auto"
                         showKeyboardShortcutsHelp={() => {}}
                         telemetryService={telemetryService}

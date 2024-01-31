@@ -314,7 +314,7 @@ pub fn parse_tree<'a>(
 pub mod test {
     use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
     use scip::types::Document;
-    use tree_sitter_all_languages::BundledParser;
+    use tree_sitter_all_languages::ParserId;
 
     use super::*;
 
@@ -329,8 +329,7 @@ pub mod test {
 
     #[test]
     fn test_enclosing_range() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(BundledParser::Go).expect("to have parser");
+        let config = crate::languages::get_tag_configuration(ParserId::Go).expect("to have parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 

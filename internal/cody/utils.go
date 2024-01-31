@@ -2,8 +2,10 @@ package cody
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/ssc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type currentTimeCtxKey int
@@ -22,15 +24,23 @@ func withCurrentTimeMock(ctx context.Context, t time.Time) context.Context {
 	return context.WithValue(ctx, mockCurrentTimeKey, &t)
 }
 
-func preSSCReleaseCurrentPeriodDateRange(ctx context.Context, user types.User) (time.Time, time.Time) {
+// TODO(sourcegraph#59990): Remove this function and get current period end date
+// from Cody Gateway usage cache ttl for free users to show usage reset at timestamp.
+// The period end date is only used to show the usage limit reset timestamp in the UI,
+// when free users hit their limits.
+func preSSCReleaseCurrentPeriodDateRange(ctx context.Context, user types.User, subscription *ssc.Subscription) (*time.Time, *time.Time, error) {
 	// to allow mocking current time during tests
 	currentDate := currentTimeFromCtx(ctx)
 
 	subscriptionStartDate := user.CreatedAt
-	gaReleaseDate := time.Date(2023, 12, 14, 0, 0, 0, 0, subscriptionStartDate.Location())
 
-	if !currentDate.Before(gaReleaseDate) && subscriptionStartDate.Before(gaReleaseDate) {
-		subscriptionStartDate = gaReleaseDate
+	// If the subscription is canceled, use the end date of the cancelled period as the start date of the current period.
+	if subscription != nil && subscription.Status == ssc.SubscriptionStatusCanceled {
+		cancelledPeriodEndDate, err := time.Parse(time.RFC3339, subscription.CurrentPeriodEnd)
+		if err != nil {
+			return nil, nil, err
+		}
+		subscriptionStartDate = cancelledPeriodEndDate
 	}
 
 	codyProEnabledAt := user.CodyProEnabledAt
@@ -65,5 +75,5 @@ func preSSCReleaseCurrentPeriodDateRange(ctx context.Context, user types.User) (
 	startDate := time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())
 	endDate := time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 23, 59, 59, 59, endMonth.Location())
 
-	return startDate, endDate
+	return &startDate, &endDate, nil
 }

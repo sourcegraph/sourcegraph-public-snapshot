@@ -235,6 +235,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             codeMonitoringEnabled={props.codeMonitoringEnabled}
                             batchChangesEnabled={props.batchChangesEnabled}
                             codeInsightsEnabled={props.codeInsightsEnabled ?? false}
+                            showFeedbackModal={showFeedbackModal}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
                         />

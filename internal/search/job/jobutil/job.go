@@ -71,10 +71,6 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 // NewBasicJob converts a query.Basic into its job tree representation.
 func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 
-	if inputs.Features != nil && inputs.Features.PhraseBoost {
-		b.Pattern = query.ExperimentalPhraseBoost(b.Pattern)
-	}
-
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
