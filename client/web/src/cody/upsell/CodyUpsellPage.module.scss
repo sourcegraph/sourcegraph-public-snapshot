@@ -48,10 +48,10 @@
         }
 
         &-text {
+            background: linear-gradient(90.64deg, var(--logo-orange) 3.11%, var(--violet-04) 83.64%);
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
-            background: linear-gradient(90.64deg, #ff5543 3.11%, #a112ff 83.64%);
             font-size: 3rem;
             margin-top: 1.5rem;
         }
@@ -171,9 +171,9 @@
 
         &-container {
             margin-top: 2rem;
-            background: linear-gradient(90.64deg, #ff5543 3.11%, #a112ff 83.64%);
+            background: linear-gradient(90.64deg, var(--logo-orange) 3.11%, var(--violet-04) 83.64%);
             border-radius: 1rem;
-            padding: 1px;
+            padding: 0.0625rem;
         }
 
         &-text {
