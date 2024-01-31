@@ -40,6 +40,7 @@ export const FEATURE_FLAGS = [
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
     'use-ssc-for-cody-subscription',
+    'cody-pro-trial-ended',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
