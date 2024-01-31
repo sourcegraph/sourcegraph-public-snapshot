@@ -81,7 +81,7 @@ func TestGenerateRedirectURL(t *testing.T) {
 	}
 }
 
-func TestGithubAppAuthMiddleware(t *testing.T) {
+func TestGithubAppHTTPAPI(t *testing.T) {
 	t.Cleanup(func() {
 		MockCreateGitHubApp = nil
 	})
