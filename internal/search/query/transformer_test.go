@@ -23,11 +23,8 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 
 	// expect phrase query
 	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
-
-	// respect whitespace
-	autogold.Expect(`(or "foo   bar  bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo   bar  bas", SearchTypeKeyword))
-	autogold.Expect(`(or "foo\tbar:  bas" (and "foo" "bar:" "bas"))`).Equal(t, test("foo\tbar:  bas ", SearchTypeKeyword))
-	autogold.Expect(`(or "いい お天気 です" (and "いい" "お天気" "です"))`).Equal(t, test("いい お天気 です", SearchTypeKeyword))
+	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
+	autogold.Expect(`(or "* int func(" (and "*" "int" "func("))`).Equal(t, test("* int func(", SearchTypeKeyword))
 
 	// expect no phrase query
 	autogold.Expect(`"foo"`).Equal(t, test("foo", SearchTypeKeyword))
