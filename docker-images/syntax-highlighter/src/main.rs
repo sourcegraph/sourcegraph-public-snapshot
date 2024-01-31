@@ -3,13 +3,8 @@
 #[macro_use]
 extern crate rocket;
 
-use std::path;
-
-use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use serde::Deserialize;
 use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
-use tree_sitter_all_languages::ParserId;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -43,12 +38,6 @@ fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
         Ok(v) => v,
         Err(err) => err,
     }
-}
-
-#[derive(Deserialize, Default, Debug)]
-pub struct SymbolQuery {
-    filename: String,
-    content: String,
 }
 
 pub fn jsonify_err(e: impl ToString) -> JsonValue {
