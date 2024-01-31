@@ -260,7 +260,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 	t.Run("/redirect", func(t *testing.T) {
 		baseURL := "/githubapp/redirect"
 		code := "2644896245sasdsf6dsd"
-		state, err := randomState(128)
+		state, err := randomState()
 		if err != nil {
 			t.Fatalf("unexpected error generating random state: %s", err.Error())
 		}
@@ -337,7 +337,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 
 	t.Run("/setup", func(t *testing.T) {
 		baseURL := "/githubapp/setup"
-		state, err := randomState(128)
+		state, err := randomState()
 		if err != nil {
 			t.Fatalf("unexpected error generating random state: %s", err.Error())
 		}

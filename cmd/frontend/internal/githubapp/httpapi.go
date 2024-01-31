@@ -94,8 +94,8 @@ func setupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rc
 
 // randomState returns a random sha256 hash that can be used as a state parameter. It is only
 // exported for testing purposes.
-func randomState(n int) (string, error) {
-	data := make([]byte, n)
+func randomState() (string, error) {
+	data := make([]byte, 128)
 	if _, err := io.ReadFull(rand.Reader, data); err != nil {
 		return "", err
 	}
@@ -126,7 +126,7 @@ type gitHubAppStateDetails struct {
 }
 
 func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request) {
-	s, err := randomState(128)
+	s, err := randomState()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -185,7 +185,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		webhookUUID = hook.UUID.String()
 	}
 
-	s, err := randomState(128)
+	s, err := randomState()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -296,7 +296,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	state, err = randomState(128)
+	state, err = randomState()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when creating state param: %s", err.Error()), http.StatusInternalServerError)
 		return
