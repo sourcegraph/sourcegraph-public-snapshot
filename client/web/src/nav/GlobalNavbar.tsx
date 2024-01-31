@@ -11,7 +11,6 @@ import {
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { type RouteObject, useLocation } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
@@ -29,7 +28,6 @@ import { Button, ButtonLink, Link, ProductStatusBadge } from '@sourcegraph/wildc
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import type { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -317,6 +315,10 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
+            showSearchNotebook && { path: PageRoutes.Notebooks, content: 'Notebooks' },
+            // We hardcode the code monitoring path here because PageRoutes.CodeMonitoring is a catch-all
+            // path for all code monitoring sub links.
+            showCodeMonitoring && { path: '/code-monitoring', content: 'Monitoring' },
             showOwn && { path: PageRoutes.Own, content: 'Code ownership' },
             showCodySearch && {
                 path: PageRoutes.CodySearch,
@@ -336,7 +338,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showOwn, showSearchContext, showCodySearch, showSearchJobs])
+    }, [showOwn, showSearchContext, showCodySearch, showSearchJobs, showCodeMonitoring, showSearchNotebook])
 
     const searchNavigation =
         searchNavBarItems.length > 0 ? (
@@ -402,21 +404,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     return (
         <NavGroup ref={navbarReference} className={classNames(className, styles.list)}>
             {prioritizedLinks}
-
-            {showSearchNotebook && (
-                <NavItem icon={BookOutlineIcon}>
-                    <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
-                        Notebooks
-                    </NavLink>
-                </NavItem>
-            )}
-            {showCodeMonitoring && (
-                <NavItem icon={CodeMonitoringLogo}>
-                    <NavLink variant={navLinkVariant} to="/code-monitoring">
-                        Monitoring
-                    </NavLink>
-                </NavItem>
-            )}
             {showBatchChanges && <BatchChangesNavItem variant={navLinkVariant} />}
             {showCodeInsights && (
                 <NavItem icon={BarChartIcon}>

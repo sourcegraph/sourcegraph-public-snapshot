@@ -6,8 +6,8 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
-    useMemo,
     useRef,
+    useMemo,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -28,8 +28,6 @@ import {
     SearchPatternTypeMutationProps,
     SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import {
     AggregateStreamingSearchResults,
     ContentMatch,
@@ -45,8 +43,6 @@ import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } 
 import { AuthenticatedUser } from '../../../../auth'
 import { useKeywordSearch } from '../../../../featureFlags/useFeatureFlag'
 import { fetchBlob } from '../../../../repo/blob/backend'
-import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
-import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
@@ -329,9 +325,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
             {previewBlob && (
                 <FilePreviewPanel
                     blobInfo={previewBlob}
-                    caseSensitive={caseSensitive}
-                    patternType={patternType}
-                    submittedURLQuery={submittedURLQuery}
                     platformContext={platformContext}
                     extensionsController={extensionsController}
                     settingsCascade={settingsCascade}
@@ -378,33 +371,18 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
 
 interface FilePreviewPanelProps extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
     blobInfo: SearchResultPreview
-    submittedURLQuery: string
-    patternType: SearchPatternType
-    caseSensitive: boolean
     onClose: () => void
 }
 
 const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
-    const {
-        blobInfo,
-        submittedURLQuery,
-        patternType,
-        caseSensitive,
-        onClose,
-        platformContext,
-        settingsCascade,
-        extensionsController,
-    } = props
+    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController } = props
 
-    const searchPanelConfig = useMemo<SearchPanelConfig>(
-        () => ({
-            caseSensitive,
-            regexp: patternType === SearchPatternType.regexp,
-            searchValue: getLiteralQueryPart(submittedURLQuery),
-            mode: SearchPanelViewMode.MatchesOnly,
-        }),
-        [caseSensitive, patternType, submittedURLQuery]
-    )
+    const staticHighlights = useMemo(() => {
+        if (blobInfo.type === 'path') {
+            return []
+        }
+        return blobInfo.chunkMatches?.flatMap(chunkMatch => chunkMatch.ranges)
+    }, [blobInfo])
 
     return (
         <Panel
@@ -435,26 +413,14 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
                     commitID={blobInfo.commit ?? ''}
                     wrapLines={false}
                     navigateToLineOnAnyClick={false}
-                    searchPanelConfig={searchPanelConfig}
                     className={styles.previewContent}
                     platformContext={platformContext}
                     settingsCascade={settingsCascade}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     extensionsController={extensionsController}
+                    staticHighlightRanges={staticHighlights}
                 />
             </Suspense>
         </Panel>
     )
-}
-
-function getLiteralQueryPart(searchQuery: string): string {
-    const tokens = scanSearchQuery(searchQuery)
-
-    if (tokens.type === 'success') {
-        const literals = tokens.term.filter(token => token.type !== 'filter' && token.type !== 'comment')
-
-        return stringHuman(literals).trim()
-    }
-
-    return searchQuery.trim()
 }
