@@ -115,6 +115,10 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 				// This will be managed by Cloud Deploy releases issued by
 				// the service owner, e.g. via their CI.
 				pointers.Ptr("template.containers.0.image"),
+				// These will be set when a revision is created via our Cloud
+				// Deploy custom target when a release is deployed.
+				pointers.Ptr("client"),
+				pointers.Ptr("client_version"),
 			},
 		}
 	}
