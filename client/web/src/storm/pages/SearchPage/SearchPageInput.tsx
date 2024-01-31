@@ -16,7 +16,6 @@ import {
     type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Form } from '@sourcegraph/wildcard'
 
 import { Notices } from '../../../global/Notices'
@@ -51,6 +50,7 @@ interface SearchPageInputProps {
     setQueryState: (newState: QueryState) => void
     hardCodedSearchContextSpec?: string
     simpleSearch: boolean
+    showKeywordSearchToggle?: boolean
 }
 
 export const SearchPageInput: FC<SearchPageInputProps> = props => {
@@ -128,8 +128,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [setQueryState]
     )
 
-    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
-
     // TODO (#48103): Remove/simplify when new search input is released
     const input = v2QueryInput ? (
         <LazyV2SearchInput
@@ -146,7 +144,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             selectedSearchContextSpec={selectedSearchContextSpec}
             className="flex-grow-1"
         >
-            {showKeywordSearchToggle ? (
+            {props.showKeywordSearchToggle ? (
                 <Toggles
                     patternType={patternType}
                     caseSensitive={caseSensitive}
@@ -199,6 +197,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
             showSearchHistory={true}
             recentSearches={recentSearches}
+            showKeywordSearchToggle={props.showKeywordSearchToggle}
         />
     )
     return (

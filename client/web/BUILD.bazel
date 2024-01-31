@@ -1282,6 +1282,7 @@ ts_project(
         "src/repo/blob/codemirror/scip-snapshot.ts",
         "src/repo/blob/codemirror/search.tsx",
         "src/repo/blob/codemirror/sourcegraph-extensions.ts",
+        "src/repo/blob/codemirror/static-highlights.tsx",
         "src/repo/blob/codemirror/tooltips/CodyTooltip.tsx",
         "src/repo/blob/codemirror/tooltips/HovercardView.tsx",
         "src/repo/blob/codemirror/tooltips/LoadingTooltip.ts",

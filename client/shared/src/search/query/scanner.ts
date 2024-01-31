@@ -131,7 +131,7 @@ const quoted =
         return {
             type: 'success',
             // end + 1 as `end` is currently the index of the quote in the string.
-            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true),
+            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true, delimiter),
         }
     }
 
@@ -424,7 +424,8 @@ const createPattern = (
     value: string,
     range: CharacterRange,
     kind: PatternKind,
-    delimited?: boolean
+    delimited?: boolean,
+    delimiter?: string
 ): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
@@ -433,6 +434,7 @@ const createPattern = (
         kind,
         value,
         delimited,
+        delimiter,
     },
 })
 
@@ -446,11 +448,11 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
 export const toPatternResult =
-    (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> =>
+    (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> =>
     (input, start) => {
         const result = scanner(input, start)
         if (result.type === 'success') {
-            return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
+            return createPattern(result.term.value, result.term.range, kind, result.term.quoted, result.term.quotes)
         }
         return result
     }
