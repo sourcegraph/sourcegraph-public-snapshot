@@ -232,7 +232,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
-            actions={<SearchResultPreviewButton result={result} />}
+            actions={<SearchResultPreviewButton result={result} telemetryService={telemetryService} />}
         >
             <VisibilitySensor
                 onChange={(visible: boolean) => visible && onVisible()}

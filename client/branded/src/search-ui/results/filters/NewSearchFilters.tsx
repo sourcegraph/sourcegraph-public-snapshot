@@ -1,4 +1,4 @@
-import { FC, ReactNode, useMemo } from 'react'
+import { FC, ReactNode, useCallback, useMemo } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -6,6 +6,7 @@ import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/que
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
@@ -29,7 +30,7 @@ import { FiltersType, SEARCH_TYPES_TO_FILTER_TYPES, SearchFilterType } from './t
 
 import styles from './NewSearchFilters.module.scss'
 
-interface NewSearchFiltersProps {
+interface NewSearchFiltersProps extends TelemetryProps {
     query: string
     filters?: Filter[]
     withCountAllFilter: boolean
@@ -43,6 +44,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     withCountAllFilter,
     onQueryChange,
     children,
+    telemetryService,
 }) => {
     const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
 
@@ -63,19 +65,34 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         return SearchFilterType.Code
     }, [query])
 
-    const handleFilterTypeChange = (filterType: SearchFilterType): void => {
-        const newQuery = changeSearchFilterType(query, filterType)
-        const newSelectedFilters = omitImpossibleFilters(selectedFilters, filterType)
+    const handleFilterTypeChange = useCallback(
+        () =>
+            (filterType: SearchFilterType): void => {
+                const newQuery = changeSearchFilterType(query, filterType)
+                const newSelectedFilters = omitImpossibleFilters(selectedFilters, filterType)
 
-        // Replace: true is needed here to avoid populating history with
-        // extra entries with completely internal locations update,
-        // Setting filters shouldn't be in the history since onQueryChange
-        // changes URL itself.
-        onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
-    }
+                // Replace: true is needed here to avoid populating history with
+                // extra entries with completely internal locations update,
+                // Setting filters shouldn't be in the history since onQueryChange
+                // changes URL itself.
+                onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
+                telemetryService.log('SearchFiltersTypeClick', { filterType }, { filterType })
+            },
+        [query, selectedFilters, serializeFiltersURL, onQueryChange, telemetryService]
+    )
+
+    const handleFilterChange = useCallback(
+        (filterKind: Filter['kind'], filters: URLQueryFilter[]) => {
+            setSelectedFilters(filters)
+            telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
+        },
+        [setSelectedFilters, telemetryService]
+    )
 
     const handleApplyButtonFilters = (): void => {
         onQueryChange(mergeQueryAndFilters(query, selectedFilters), serializeFiltersURL([]))
+
+        telemetryService.log('SearchFiltersApplyFiltersClick')
     }
 
     return (
@@ -88,7 +105,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     renderItem={repoFilter}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
                 <SearchDynamicFilter
@@ -97,7 +114,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     renderItem={languageFilter}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
                 <SearchDynamicFilter
@@ -106,7 +123,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     renderItem={symbolFilter}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
                 <SearchDynamicFilter
@@ -115,7 +132,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     renderItem={authorFilter}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
                 <SearchDynamicFilter
@@ -124,7 +141,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     renderItem={commitDateFilter}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
                 <SearchDynamicFilter
@@ -132,7 +149,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filterKind={FiltersType.File}
                     filters={filters}
                     selectedFilters={selectedFilters}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
                 <SearchDynamicFilter
@@ -141,10 +158,15 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     renderItem={utilityFilter}
-                    onSelectedFilterChange={setSelectedFilters}
+                    onSelectedFilterChange={handleFilterChange}
                 />
 
-                <SyntheticCountFilter query={query} isLimitHit={withCountAllFilter} onQueryChange={onQueryChange} />
+                <SyntheticCountFilter
+                    query={query}
+                    isLimitHit={withCountAllFilter}
+                    onQueryChange={onQueryChange}
+                    telemetryService={telemetryService}
+                />
             </div>
 
             <footer className={styles.actions}>
@@ -181,7 +203,7 @@ const STATIC_COUNT_FILTER: Filter[] = [
     },
 ]
 
-interface SyntheticCountFilterProps {
+interface SyntheticCountFilterProps extends TelemetryProps {
     query: string
     isLimitHit: boolean
     onQueryChange: (query: string) => void
@@ -197,7 +219,7 @@ interface SyntheticCountFilterProps {
  * changes the original query by adding count:all to the end.
  */
 const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
-    const { query, isLimitHit, onQueryChange } = props
+    const { query, isLimitHit, onQueryChange, telemetryService } = props
 
     const selectedCountFilter = useMemo<Filter[]>(() => {
         const tokens = scanSearchQuery(query)
@@ -216,7 +238,9 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
         return []
     }, [query])
 
-    const handleCountAllFilter = (countFilters: URLQueryFilter[]): void => {
+    const handleCountAllFilter = (filterKind: Filter['kind'], countFilters: URLQueryFilter[]): void => {
+        telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
+
         if (countFilters.length > 0) {
             onQueryChange(`${query} count:all`)
         } else {
