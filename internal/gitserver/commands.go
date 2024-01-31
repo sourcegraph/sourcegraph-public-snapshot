@@ -826,7 +826,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	if err != nil {
 		cancel()
 		endObservation(1, observation.Args{})
-		return nil, convertGRPCErrorToGitDomainError(err)
+		return nil, err
 	}
 
 	// We start by reading the first hunk to early-exit on potential errors,
@@ -840,7 +840,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 			return nil, os.ErrNotExist
 		}
 
-		return nil, convertGRPCErrorToGitDomainError(err)
+		return nil, err
 	}
 
 	return &grpcBlameHunkReader{
@@ -878,7 +878,7 @@ func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 	}
 	p, err := r.c.Recv()
 	if err != nil {
-		return nil, convertGRPCErrorToGitDomainError(err)
+		return nil, err
 	}
 	return gitdomain.HunkFromBlameProto(p.GetHunk()), nil
 }
@@ -1208,19 +1208,14 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 		RepoName: string(repo),
 	})
 	if err != nil {
-		s, ok := status.FromError(err)
-		if ok {
-			if s.Code() == codes.NotFound {
-				for _, d := range s.Details() {
-					switch d.(type) {
-					// If we fail to get the default branch due to cloning or being empty, we return nothing.
-					case *proto.RepoNotFoundPayload, *proto.RevisionNotFoundPayload:
-						return "", "", nil
-					}
-				}
-			}
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if errors.HasType(err, &gitdomain.RepoNotExistError{}) {
+			return "", "", nil
 		}
-		return "", "", convertGRPCErrorToGitDomainError(err)
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
+		}
+		return "", "", err
 	}
 
 	return res.GetRefName(), api.CommitID(res.GetCommit()), nil
@@ -1247,7 +1242,7 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 		Head:     []byte(head),
 	})
 	if err != nil {
-		return "", convertGRPCErrorToGitDomainError(err)
+		return "", err
 	}
 
 	return api.CommitID(res.GetMergeBaseCommitSha()), nil
@@ -1343,7 +1338,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	if err != nil {
 		cancel()
 		endObservation(1, observation.Args{})
-		return nil, convertGRPCErrorToGitDomainError(err)
+		return nil, err
 	}
 
 	// We start by reading the first message to early-exit on potential errors,
@@ -1377,7 +1372,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 		if !firstRespRead {
 			firstRespRead = true
 			if firstRespErr != nil {
-				return nil, convertGRPCErrorToGitDomainError(firstRespErr)
+				return nil, firstRespErr
 			}
 			return firstResp.GetData(), nil
 		}
@@ -2275,7 +2270,7 @@ func (c *clientImplementor) ArchiveReader(
 	stream, err := client.Archive(ctx, req)
 	if err != nil {
 		cancel()
-		return nil, convertGRPCErrorToGitDomainError(err)
+		return nil, err
 	}
 
 	// first message from the gRPC stream needs to be read to check for errors before continuing
@@ -2299,12 +2294,12 @@ func (c *clientImplementor) ArchiveReader(
 
 		// We return early only if this isn't a revision not found error.
 
-		err := convertGRPCErrorToGitDomainError(firstError)
+		err := firstError
 
 		var cse *CommandStatusError
 		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 			cancel()
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 	}
 
@@ -2317,7 +2312,7 @@ func (c *clientImplementor) ArchiveReader(
 			firstMessageRead = true
 
 			if firstError != nil {
-				return nil, convertGRPCErrorToGitDomainError(err)
+				return nil, firstError
 			}
 
 			return firstMessage.GetData(), nil
@@ -2326,7 +2321,7 @@ func (c *clientImplementor) ArchiveReader(
 		// Receive the next message from the stream.
 		msg, err := stream.Recv()
 		if err != nil {
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 
 		// Return the data from the received message.
