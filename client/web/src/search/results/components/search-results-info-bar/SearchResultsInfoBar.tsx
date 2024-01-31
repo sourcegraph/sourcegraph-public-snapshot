@@ -328,7 +328,12 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                         </Link>{' '}
                                         to learn more.
                                     </Text>
-                                    <Button onClick={() => setFeedbackModalOpen(true)}>Send feedback</Button>
+                                    <Button
+                                        className={styles.feedbackButton}
+                                        onClick={() => setFeedbackModalOpen(true)}
+                                    >
+                                        Send feedback
+                                    </Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
