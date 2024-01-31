@@ -131,14 +131,10 @@ func (r *Renderer) RenderEnvironment(
 		Service:             svc.Service,
 		EnvironmentCategory: env.Category,
 		EnvironmentID:       env.ID,
+		Alerting:            pointers.DerefZero(env.Alerting),
 
-		Monitoring: *svc.Monitoring,
-		MaxInstanceCount: func() *int {
-			if env.Instances.Scaling != nil {
-				return env.Instances.Scaling.MaxCount
-			}
-			return nil
-		}(),
+		Monitoring:            *svc.Monitoring,
+		MaxInstanceCount:      env.Instances.Scaling.GetMaxCount(), // returns nil if not relevant
 		ExternalDomain:        pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
 		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,
 		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,

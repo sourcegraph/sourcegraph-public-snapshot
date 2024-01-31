@@ -32,6 +32,7 @@ export const FEATURE_FLAGS = [
     'search-boost-phrase',
     'search-content-based-lang-detection',
     'search-debug',
+    'search-keyword',
     'search-input-show-history',
     'search-results-keyboard-navigation',
     'search-simple',
@@ -39,6 +40,7 @@ export const FEATURE_FLAGS = [
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
     'use-ssc-for-cody-subscription',
+    'cody-pro-trial-ended',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

@@ -62,6 +62,7 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { staticHighlights, type Range } from './codemirror/static-highlights'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
 import { showTemporaryTooltip, temporaryTooltip } from './codemirror/tooltips/TemporaryTooltip'
@@ -95,6 +96,7 @@ export interface BlobProps
         ExtensionsControllerProps,
         CodeMirrorBlobProps {
     className: string
+
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
@@ -119,6 +121,7 @@ export interface BlobProps
 
     activeURL?: string
     searchPanelConfig?: SearchPanelConfig
+    staticHighlightRanges?: Range[]
 }
 
 export interface BlobPropsFacet extends BlobProps {
@@ -219,6 +222,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
         overrideBrowserSearchKeybinding,
         searchPanelConfig,
+        staticHighlightRanges,
         'data-testid': dataTestId,
     } = props
 
@@ -352,6 +356,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const extensions = useMemo(
         () => [
             staticExtensions,
+            staticHighlights(navigate, staticHighlightRanges ?? []),
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
@@ -403,6 +408,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             onSelection,
+            staticHighlightRanges,
             navigate,
             blobInfo,
             extensionsController,

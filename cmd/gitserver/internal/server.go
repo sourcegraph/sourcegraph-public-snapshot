@@ -170,11 +170,9 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
-	// cloneLimiter and cloneableLimiter limits the number of concurrent
-	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
-	// s.acquireCloneableLimiter() instead of using these directly.
-	cloneLimiter     *limiter.MutableLimiter
-	cloneableLimiter *limiter.MutableLimiter
+	// cloneLimiter limits the number of concurrent
+	// clones. Use s.acquireCloneLimiter() and instead of using it directly.
+	cloneLimiter *limiter.MutableLimiter
 
 	// RPSLimiter limits the remote code host git operations done per second
 	// per gitserver instance
@@ -235,13 +233,11 @@ func (s *Server) Handler() http.Handler {
 	// Max concurrent clones also means repo updates.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
 	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
-	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
 	// TODO: Remove side-effects from this Handler method.
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
-		s.cloneableLimiter.SetLimit(limit)
 	})
 
 	mux := http.NewServeMux()
@@ -431,12 +427,6 @@ func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, cont
 	pendingClones.Inc()
 	defer pendingClones.Dec()
 	return s.cloneLimiter.Acquire(ctx)
-}
-
-func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	lsRemoteQueue.Inc()
-	defer lsRemoteQueue.Dec()
-	return s.cloneableLimiter.Acquire(ctx)
 }
 
 func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
@@ -793,17 +783,6 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	if err != nil {
 		return "", err
 	}
-
-	// isCloneable causes a network request, so we limit the number that can
-	// run at one time. We use a separate semaphore to cloning since these
-	// checks being blocked by a few slow clones will lead to poor feedback to
-	// users. We can defer since the rest of the function does not block this
-	// goroutine.
-	ctx, cancel, err := s.acquireCloneableLimiter(ctx)
-	if err != nil {
-		return "", err // err will be a context error
-	}
-	defer cancel()
 
 	if err = s.RPSLimiter.Wait(ctx); err != nil {
 		return "", err
@@ -1208,10 +1187,6 @@ var (
 	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
-	})
-	lsRemoteQueue = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_lsremote_queue",
-		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
 	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
