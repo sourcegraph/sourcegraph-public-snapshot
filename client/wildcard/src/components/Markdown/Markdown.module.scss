@@ -1,4 +1,5 @@
 @use 'wildcard/src/global-styles/ansi';
+@use 'wildcard/src/global-styles/jupyter';
 
 .markdown {
     // marked wraps all content in <p>, even if there is only one child.

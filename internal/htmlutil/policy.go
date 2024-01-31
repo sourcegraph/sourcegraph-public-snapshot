@@ -33,6 +33,7 @@ func policy() *bluemonday.Policy {
 		p.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
 		p.AllowAttrs("class").Matching(chromaOnly).OnElements("pre", "code")
 		p.AllowAttrs("class").Matching(chromaOrAnsi).OnElements("span")
+		p.AllowAttrs("class").Matching(regexp.MustCompile(`^jp-[a-zA-Z0-9\-]+`)).OnElements("div")
 		p.AllowAttrs("align").OnElements("img", "p")
 		p.AllowElements("picture", "video", "track", "source")
 		p.AllowAttrs("srcset", "src", "type", "media", "width", "height", "sizes").OnElements("source")
