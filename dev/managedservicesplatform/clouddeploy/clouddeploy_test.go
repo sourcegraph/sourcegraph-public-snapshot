@@ -10,5 +10,6 @@ import (
 func TestArchive(t *testing.T) {
 	data, err := NewCloudRunCustomTargetSkaffoldAssetsArchive()
 	require.NoError(t, err)
+	// TODO Remove
 	_ = os.WriteFile("source.tar.gz", data.Bytes(), os.ModePerm)
 }

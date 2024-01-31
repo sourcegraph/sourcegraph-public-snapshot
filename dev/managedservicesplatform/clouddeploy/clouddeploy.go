@@ -9,6 +9,8 @@ import (
 	"html/template"
 	"io"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
@@ -31,7 +33,7 @@ func NewCloudRunCustomTargetSkaffoldAssetsArchive() (*bytes.Buffer, error) {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			continue
+			return nil, errors.New("unexpected dir")
 		}
 		info, err := file.Info()
 		if err != nil {

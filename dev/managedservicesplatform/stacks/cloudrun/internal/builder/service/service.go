@@ -114,7 +114,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			IgnoreChanges: &[]*string{
 				// This will be managed by Cloud Deploy releases issued by
 				// the service owner, e.g. via their CI.
-				pointers.Ptr("template.containers.0.image"),
+				pointers.Ptr("template[0].containers[0].image"),
 				// These will be set when a revision is created via our Cloud
 				// Deploy custom target when a release is deployed.
 				pointers.Ptr("client"),

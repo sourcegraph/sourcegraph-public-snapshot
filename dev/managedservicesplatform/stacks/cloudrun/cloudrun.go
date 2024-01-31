@@ -428,7 +428,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Name:        pointers.Ptr("source.tar.gz"),
 			Bucket:      skaffoldBucket.Name(),
 			Content:     pointers.Ptr(skaffoldObject.String()),
-			ContentType: pointers.Ptr("application/x-gzip"),
+			ContentType: pointers.Ptr("application/gzip"),
 		})
 	}
 
