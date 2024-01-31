@@ -8,6 +8,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { mdiRefresh } from '@mdi/js'
 
 import {
     authorFilter,
@@ -189,16 +190,29 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
             <footer className={styles.actions}>
                 {selectedFilters.length > 0 && (
-                    <Tooltip
-                        placement="right"
-                        content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
-                    >
-                        <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
-                            Move filters to the query
-                            <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
+                    <>
+                        <Tooltip
+                            placement="right"
+                            content="Moves all your applied filters from this panel into the query bar at the top and resets selected options from this panel."
+                        >
+                            <Button variant="secondary" outline={true} onClick={handleApplyButtonFilters}>
+                                Move filters to the query
+                                <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
+                            </Button>
+                        </Tooltip>
+                        <Button variant="link" onClick={() => setSelectedFilters([])}>
+                            <Icon
+                                size="md"
+                                className="pr-1 pt-1"
+                                svgPath={mdiRefresh}
+                                inline={true}
+                                aria-label='Reset all filters'
+                            />
+                            Reset all filters
                         </Button>
-                    </Tooltip>
+                    </>
                 )}
+
 
                 {children}
             </footer>
