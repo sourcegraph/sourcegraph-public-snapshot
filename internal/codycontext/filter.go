@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt/ignore"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -69,19 +70,19 @@ func (f *repoFilter) GetEnabled() bool {
 	return f.enabled
 }
 
-func (f *repoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *repoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
 	if !f.enabled {
 		return repos, func(fcc []FileChunkContext) []FileChunkContext {
 			return fcc
 		}
 	}
-	return f.getFilter(repos)
+	return f.getFilter(repos, logger)
 }
 
 // getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *repoFilter) getFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *repoFilter) getFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
 	filters := make(map[api.RepoName]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 	// use the internal actor to ensure access to repo and ignore files
@@ -90,15 +91,18 @@ func (f *repoFilter) getFilter(repos []types.RepoIDName) ([]types.RepoIDName, Fi
 
 		_, commit, err := f.client.GetDefaultBranch(ctx, repo.Name, true)
 		if err != nil {
+			logger.Warn("repoContextFilter: couldn't get default branch, removing repo", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
 		}
 		// No commit signals an empty repo, should be nothing to filter
 		// Also we can't lookup the ignore file without a commit
 		if commit == "" {
+			logger.Info("repoContextFilter: empty repo removing", log.Int32("repo", int32(repo.ID)))
 			continue
 		}
 		matcher, err := getIgnoreMatcher(ctx, f.cache, f.client, repo, commit)
 		if err != nil {
+			logger.Warn("repoContextFilter: unable to process ignore file", log.Int32("repo", int32(repo.ID)), log.Error(err))
 			continue
 		}
 
@@ -123,7 +127,7 @@ func (f *repoFilter) getFilter(repos []types.RepoIDName) ([]types.RepoIDName, Fi
 }
 
 type RepoContentFilter interface {
-	GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc)
+	GetFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc)
 }
 
 // NewCodyIgnoreFilter creates a new RepoContentFilter that filters out

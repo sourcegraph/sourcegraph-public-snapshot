@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -30,6 +32,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		},
 	})
+	logger := logtest.Scoped(t)
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	t.Run("no ignore files", func(t *testing.T) {
@@ -50,7 +53,7 @@ func TestNewFilter(t *testing.T) {
 				Path:     "/file2.go",
 			},
 		}
-		_, filter := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 	})
@@ -90,7 +93,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -134,7 +137,7 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 
-		_, filter := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 2, len(filtered))
 		require.Equal(t, api.RepoName("repo1"), filtered[0].RepoName)
@@ -152,7 +155,7 @@ func TestNewFilter(t *testing.T) {
 		})
 
 		f := NewCodyIgnoreFilter(client)
-		filterableRepos, _ := f.GetFilter(repos)
+		filterableRepos, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -165,7 +168,7 @@ func TestNewFilter(t *testing.T) {
 		})
 
 		f := NewCodyIgnoreFilter(client)
-		filterableRepos, _ := f.GetFilter(repos)
+		filterableRepos, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -177,7 +180,7 @@ func TestNewFilter(t *testing.T) {
 		})
 
 		f := NewCodyIgnoreFilter(client)
-		filterableRepos, _ := f.GetFilter(repos)
+		filterableRepos, _ := f.GetFilter(repos, logger)
 		require.Len(t, filterableRepos, 0)
 	})
 
@@ -200,16 +203,70 @@ func TestNewFilter(t *testing.T) {
 			},
 		}
 		// simulate 1st call
-		_, filter := f.GetFilter(repos)
+		_, filter := f.GetFilter(repos, logger)
 		filtered := filter(chunks)
 		require.Equal(t, 1, len(filtered))
 
 		//simulate 2nd call
-		_, filter2 := f.GetFilter(repos)
+		_, filter2 := f.GetFilter(repos, logger)
 		filtered2 := filter2(chunks)
 		require.Equal(t, 1, len(filtered2))
 
 		// This should be called once for each repo
 		require.Equal(t, len(client.NewFileReaderFunc.History()), 2)
 	})
+}
+
+func TestFilterDisabled(t *testing.T) {
+	repos := []types.RepoIDName{
+		{ID: 1, Name: "repo1"},
+		{ID: 2, Name: "repo2"},
+	}
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{},
+	})
+	logger := logtest.Scoped(t)
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	t.Run("Does not exclude files when disabled", func(t *testing.T) {
+		client := gitserver.NewMockClient()
+		client.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, b bool) (string, api.CommitID, error) {
+			t.Fatalf("filter should be disabled no git commands should be called")
+			return "", api.CommitID(""), errors.New("should not be called")
+		})
+		client.NewFileReaderFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID, s string) (io.ReadCloser, error) {
+			t.Fatalf("filter should be disabled no git commands should be called")
+			return nil, errors.New("should not be called")
+		})
+
+		f := NewCodyIgnoreFilter(client)
+
+		chunks := []FileChunkContext{
+			{
+				RepoName: "repo1",
+				RepoID:   1,
+				Path:     "file1.go",
+			},
+			{
+				RepoName: "repo2",
+				RepoID:   2,
+				Path:     "folder1/file1.go",
+			},
+			{
+				RepoName: "repo2",
+				RepoID:   2,
+				Path:     "folder1/folder2/file1.go",
+			},
+			{
+				RepoName: "repo2",
+				RepoID:   2,
+				Path:     "secret.txt",
+			},
+		}
+
+		_, filter := f.GetFilter(repos, logger)
+		filtered := filter(chunks)
+		require.Equal(t, 4, len(filtered))
+	})
+
 }
