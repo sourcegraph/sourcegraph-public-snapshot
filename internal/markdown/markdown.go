@@ -5,8 +5,7 @@ import (
 	"fmt" //nolint:depguard // bluemonday requires this pkg
 	"sync"
 
-	"github.com/alecthomas/chroma/v2"
-	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
+	jupyter "github.com/bevzzz/nb/extension/extra/goldmark-jupyter"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
@@ -20,36 +19,34 @@ import (
 )
 
 var (
-	once     sync.Once
-	renderer goldmark.Markdown
+	once sync.Once
+	md   goldmark.Markdown
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
 func Render(content string) (string, error) {
+	var buf bytes.Buffer
+	if err := Goldmark().Convert([]byte(content), &buf); err != nil {
+		return "", fmt.Errorf("markdown.Render: %w", err)
+	}
+	return htmlutil.SanitizeReader(&buf).String(), nil
+}
+
+// Goldmark returns a preconfigured Markdown renderer.
+func Goldmark() goldmark.Markdown {
 	once.Do(func() {
 		html.LinkAttributeFilter.Add([]byte("aria-hidden"))
 		html.LinkAttributeFilter.Add([]byte("name"))
 
-		origTypes := chroma.StandardTypes
-		sourcegraphTypes := map[chroma.TokenType]string{}
-		for k, v := range origTypes {
-			if k == chroma.PreWrapper {
-				sourcegraphTypes[k] = v
-			} else {
-				sourcegraphTypes[k] = fmt.Sprintf("chroma-%s", v)
-			}
-		}
-		chroma.StandardTypes = sourcegraphTypes
-
-		renderer = goldmark.New(
+		md = goldmark.New(
 			goldmark.WithExtensions(
 				extension.GFM,
 				highlighting.NewHighlighting(
 					highlighting.WithFormatOptions(
-						chromahtml.WithClasses(true),
-						chromahtml.WithLineNumbers(false),
+						htmlutil.SyntaxHighlightingOptions()...,
 					),
 				),
+				jupyter.Attachments(),
 			),
 			goldmark.WithParserOptions(
 				parser.WithAutoHeadingID(),
@@ -62,14 +59,12 @@ func Render(content string) (string, error) {
 		)
 	})
 
-	var buf bytes.Buffer
-	if err := renderer.Convert([]byte(content), &buf); err != nil {
-		return "", fmt.Errorf("markdown.Render: %w", err)
-	}
-	return htmlutil.SanitizeReader(&buf).String(), nil
+	return md
 }
 
 type mdTransformFunc func(*ast.Document, text.Reader, parser.Context)
+
+var _ parser.ASTTransformer = new(mdTransformFunc)
 
 func (f mdTransformFunc) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
 	f(node, reader, pc)

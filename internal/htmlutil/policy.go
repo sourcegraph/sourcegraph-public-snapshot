@@ -16,6 +16,9 @@ import (
 var (
 	once sync.Once
 	p    *bluemonday.Policy
+
+	chromaOnly   = regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma$`)
+	chromaOrAnsi = regexp.MustCompile(`^(?:(chroma|ansi)-[a-zA-Z0-9\-]+)|chroma$`)
 )
 
 // policy configures a standard HTML sanitization policy.
@@ -28,7 +31,8 @@ func policy() *bluemonday.Policy {
 		p.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
 		p.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
 		p.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-		p.AllowAttrs("class").Matching(regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma$`)).OnElements("pre", "code", "span")
+		p.AllowAttrs("class").Matching(chromaOnly).OnElements("pre", "code")
+		p.AllowAttrs("class").Matching(chromaOrAnsi).OnElements("span")
 		p.AllowAttrs("align").OnElements("img", "p")
 		p.AllowElements("picture", "video", "track", "source")
 		p.AllowAttrs("srcset", "src", "type", "media", "width", "height", "sizes").OnElements("source")

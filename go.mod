@@ -311,7 +311,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
-	github.com/bevzzz/nb v0.1.0 // indirect
+	github.com/bevzzz/nb v0.2.1 // indirect
+	github.com/bevzzz/nb-synth v0.0.0-20240128164931-35fdda0583a0 // indirect
+	github.com/bevzzz/nb/extension/extra/goldmark-jupyter v0.0.0-20240131001330-e69229bd9da4 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
@@ -366,6 +368,7 @@ require (
 	github.com/prometheus/prometheus v0.40.5 // indirect
 	github.com/rickb777/date v1.14.3 // indirect
 	github.com/rickb777/plural v1.2.2 // indirect
+	github.com/robert-nix/ansihtml v1.0.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
@@ -407,7 +410,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/alecthomas/chroma/v2 v2.4.0
+	github.com/alecthomas/chroma/v2 v2.12.0
 	github.com/alecthomas/kingpin v2.2.6+incompatible // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137
@@ -584,7 +587,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	github.com/yuin/goldmark v1.5.2
+	github.com/yuin/goldmark v1.6.0
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
 	go.bobheadxi.dev/streamline v1.2.2
