@@ -146,5 +146,5 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
   USE_BAZEL_VERSION = if hostPlatform.isMacOS then "" else pkgs.bazel_7.version;
 
-  LIBTOOL = if hostPlatform.isMacOS then "${pkgs.libtool}" else "";
+  LIBTOOL = if hostPlatform.isMacOS then "/usr/bin/libtool" else "";
 }

@@ -325,6 +325,10 @@ type EnvironmentInstancesResourcesSpec struct {
 	// Memory specifies the memory available to each instance. Must be between
 	// 512MiB and 32GiB.
 	Memory string `yaml:"memory"`
+	// CloudRunGeneration is either 1 or 2, corresponding to the generations
+	// outlined in https://cloud.google.com/run/docs/about-execution-environments.
+	// By default, we use the Cloud Run default.
+	CloudRunGeneration *int `yaml:"cloudRunGeneration,omitempty"`
 }
 
 func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
@@ -607,6 +611,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
+	// Defaults to whatever CloudSQL provides. Must be between 14 and 262143.
+	MaxConnections *int `yaml:"maxConnections,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
