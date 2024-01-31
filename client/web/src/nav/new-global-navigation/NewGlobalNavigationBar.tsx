@@ -253,6 +253,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                         setCaseSensitivity={setSearchCaseSensitivity}
                         setSearchMode={setSearchMode}
                         submitSearch={submitSearchOnChange}
+                        telemetryService={telemetryService}
                     />
                 ) : (
                     <LegacyToggles
