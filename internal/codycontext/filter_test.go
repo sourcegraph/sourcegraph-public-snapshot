@@ -8,9 +8,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +23,14 @@ func TestNewFilter(t *testing.T) {
 		{ID: 1, Name: "repo1"},
 		{ID: 2, Name: "repo2"},
 	}
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				CodyContextIgnore: pointers.Ptr(true),
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	t.Run("no ignore files", func(t *testing.T) {
 		client := gitserver.NewMockClient()

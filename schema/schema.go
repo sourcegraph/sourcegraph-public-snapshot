@@ -911,6 +911,8 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// BatchChangesEnablePerforce description: When enabled, batch changes will be executable on Perforce depots.
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
+	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
+	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -1006,6 +1008,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "batchChanges.enablePerforce")
+	delete(m, "codyContextIgnore")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGithubInternalRepoVisibility")

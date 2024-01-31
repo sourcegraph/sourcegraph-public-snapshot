@@ -5,14 +5,14 @@ import (
 	"context"
 	"io"
 	"os"
+	"sync"
 
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt/ignore"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,15 +21,6 @@ const codyIgnoreFile = ".cody/ignore"
 
 var (
 	emptyMatcher ignore.Matcher = ignore.Matcher{}
-
-	ignoreFileCacheHitCount = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "cody_ignore_file_cache_hit_count",
-	})
-	ignoreFileCacheMissCount = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "cody_ignore_file_cache_miss_count",
-	})
 )
 
 type repoRevision struct {
@@ -52,28 +43,45 @@ func (c *safeCache) Add(key repoRevision, value ignore.Matcher) (evicted bool) {
 
 func (c *safeCache) Get(key repoRevision) (ignore.Matcher, bool) {
 	if c.cache != nil {
-		v, ok := c.cache.Get(key)
-		if ok {
-			ignoreFileCacheHitCount.Inc()
-		} else {
-			ignoreFileCacheMissCount.Inc()
-		}
-		return v, ok
-	}
+		return c.cache.Get(key)
 
-	ignoreFileCacheMissCount.Inc()
+	}
 	return ignore.Matcher{}, false
 }
 
 type repoFilter struct {
 	cache  safeCache
 	client gitserver.Client
+
+	mu      sync.RWMutex
+	enabled bool
 }
 
-// GetFilter returns the list of repos that can be filtered
+func (f *repoFilter) SetEnabled(enabled bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.enabled = enabled
+}
+
+func (f *repoFilter) GetEnabled() bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.enabled
+}
+
+func (f *repoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc) {
+	if !f.enabled {
+		return repos, func(fcc []FileChunkContext) []FileChunkContext {
+			return fcc
+		}
+	}
+	return f.getFilter(repos)
+}
+
+// getFilter returns the list of repos that can be filtered
 // their .cody/ignore files (or don't have one). If an error
 // occurs that repo will be excluded.
-func (f *repoFilter) GetFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc) {
+func (f *repoFilter) getFilter(repos []types.RepoIDName) ([]types.RepoIDName, FileChunkFilterFunc) {
 	filters := make(map[api.RepoName]filterFunc, len(repos))
 	filterableRepos := make([]types.RepoIDName, 0, len(repos))
 	// use the internal actor to ensure access to repo and ignore files
@@ -122,11 +130,26 @@ type RepoContentFilter interface {
 // content based on the .cody/ignore file at the head of the default branch
 // for the given repositories.
 func NewCodyIgnoreFilter(client gitserver.Client) RepoContentFilter {
+	enabled := isEnabled(conf.Get())
 	c, _ := lru.New[repoRevision, ignore.Matcher](128)
-	return &repoFilter{
-		cache:  safeCache{c},
-		client: client,
+	ignoreFilter := &repoFilter{
+		cache:   safeCache{c},
+		client:  client,
+		enabled: enabled,
 	}
+
+	go conf.Watch(func() {
+		ignoreFilter.SetEnabled(isEnabled(conf.Get()))
+	})
+
+	return ignoreFilter
+}
+
+func isEnabled(c *conf.Unified) bool {
+	if c != nil && c.ExperimentalFeatures != nil && c.ExperimentalFeatures.CodyContextIgnore != nil {
+		return *c.ExperimentalFeatures.CodyContextIgnore
+	}
+	return false
 }
 
 func getIgnoreMatcher(ctx context.Context, cache safeCache, client gitserver.Client, repo types.RepoIDName, commit api.CommitID) (*ignore.Matcher, error) {

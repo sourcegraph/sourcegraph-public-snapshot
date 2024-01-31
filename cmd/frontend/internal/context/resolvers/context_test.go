@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -45,8 +46,12 @@ func TestContextResolver(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: &truePtr,
 			LicenseKey:  "asdf",
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				CodyContextIgnore: pointers.Ptr(true),
+			},
 		},
 	})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	oldMock := licensing.MockCheckFeature
 	defer func() {
