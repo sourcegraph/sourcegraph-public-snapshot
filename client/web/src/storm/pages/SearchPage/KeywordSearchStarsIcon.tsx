@@ -34,18 +34,6 @@ export const KeywordSearchStarsIcon: React.FunctionComponent = () => (
                 <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_365_8617" />
                 <feBlend in="SourceGraphic" in2="effect1_dropShadow_365_8617" result="shape" />
             </filter>
-            <radialGradient
-                id="paint0_radial_365_8617"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientTransform="rotate(69.092 -7.278 39.801) scale(32.2253)"
-                gradientUnits="userSpaceOnUse"
-            >
-                <stop stopColor="#fff" stopOpacity="0.57" />
-                <stop offset="0.542" stopColor="#fff" stopOpacity="0.39" />
-                <stop offset="1" stopColor="#FCFCFC" stopOpacity="0" />
-            </radialGradient>
             <linearGradient
                 id="paint1_linear_365_8617"
                 x1="12.248"

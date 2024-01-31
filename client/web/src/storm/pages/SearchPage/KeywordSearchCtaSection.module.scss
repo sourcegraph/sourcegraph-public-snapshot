@@ -16,11 +16,19 @@
 }
 
 .card {
-    border-radius: var(.5rem);
-    border: 1px solid var(--Semantic-Border-border-color, #E6EBF2);
-    background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #F9FAFB;
+    border-radius: .5rem;
     max-width: 738px;
     padding:2.5rem !important;
+
+    :global(.theme-dark) & {
+        border: 1px solid var(--Semantic-border-color-Dark, #262B38);
+        background: linear-gradient(92deg, rgba(23, 29, 56, 0.24) 40%, #21132F 89.59%);
+    }
+    :global(.theme-light) & {
+        background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #F9FAFB;
+        border: 1px solid var(--Semantic-Border-border-color, #E6EBF2);
+    }
+
 }
 
 .card h2{
