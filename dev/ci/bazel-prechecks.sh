@@ -2,6 +2,8 @@
 
 set -eu
 EXIT_CODE=0
+# Setting SKIP_GEN_DIFF to 1 will cause the generate_diff_artifact function to exit early and not generate the diff artifacts
+SKIP_GEN_DIFF=0
 
 bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
@@ -10,6 +12,10 @@ bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspe
 # in a single buildkite artifact, to be applied by subsequent
 # buildkite steps.
 function generate_diff_artifact() {
+  if [[ $SKIP_GEN_DIFF -eq 1 ]]; then
+    exit $EXIT_CODE
+  fi
+  # only generate the diff if we have a non-zero exit code and the exit code does not indicate a critical failure
   if [[ $EXIT_CODE -ne 0 ]]; then
     temp=$(mktemp -d -t "buildkite-$BUILDKITE_BUILD_NUMBER-XXXXXXXX")
     trap 'rm -rf -- "$temp"' EXIT
@@ -32,9 +38,15 @@ trap generate_diff_artifact EXIT
 
 echo "--- :bazel: Running bazel configure"
 bazel "${bazelrc[@]}" configure || EXIT_CODE=$?
-if [[ $EXIT_CODE -ne 110 && $EXIT_CODE -ne 0 ]]; then
-  echo ":x: bazel configure exited with unexpected exit code ${EXIT_CODE}! Please check the output or ask in #discuss-dev-infra"
-  exit "$EXIT_CODE"
+
+# bazel configure currently exits with 110 even though it executed successfully. This is because currently the aspect
+# tooling does not handle go 1.21 on the host which is why it is exiting with 110
+if [[ $EXIT_CODE -eq 110 ]]; then
+  echo "[WARN] bazel configure exited with code 110 which we are ignoring for now as it is due to the host go version."
+else if [[ $EXIT_CODE -ne 0 ]]; then
+  echo ":x: bazel configure exited with code $EXIT_CODE - please look at the output above for more information or reach out to #discuss-dev-infra"
+  SKIP_GEN_DIFF=1
+  exit "$EXIT_CODE
 fi
 
 echo "--- Checking if BUILD.bazel files were updated"
