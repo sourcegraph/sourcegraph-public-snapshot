@@ -39,6 +39,10 @@
             width: 100%;
             margin-right: -3rem;
         }
+
+        @media (--sm-breakpoint-down) {
+            margin: -1rem;
+        }
     }
 
     &-headline {
