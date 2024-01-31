@@ -108,6 +108,17 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		}
 	}
 
+	var lifecycle *cdktf.TerraformResourceLifecycle
+	if vars.Environment.Deploy.Type == spec.EnvironmentDeployTypeRollout {
+		lifecycle = &cdktf.TerraformResourceLifecycle{
+			IgnoreChanges: &[]*string{
+				// This will be managed by Cloud Deploy releases issued by
+				// the service owner, e.g. via their CI.
+				pointers.Ptr("template.containers.0.image"),
+			},
+		}
+	}
+
 	name, err := vars.Name()
 	if err != nil {
 		return nil, err
@@ -116,6 +127,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
+		Lifecycle: lifecycle,
 
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
