@@ -43,7 +43,17 @@ func (srv *gitHubAppServer) siteAdminMiddleware(next http.Handler) http.Handler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := authcheck.CheckCurrentUserIsSiteAdmin(r.Context(), srv.db); err != nil {
-			http.Error(w, "User must be site admin", http.StatusForbidden)
+			if errors.Is(err, authcheck.ErrMustBeSiteAdmin) {
+				http.Error(w, "User must be site admin", http.StatusForbidden)
+				return
+			}
+
+			if errors.Is(err, authcheck.ErrNotAuthenticated) {
+				http.Error(w, "User must be authenticated", http.StatusUnauthorized)
+				return
+			}
+
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
@@ -60,6 +70,7 @@ func (srv *gitHubAppServer) registerRoutes(router *mux.Router) {
 	router.Use(srv.siteAdminMiddleware)
 }
 
+// SetupGitHubAppRoutes registers the routes for the GitHub App setup API.
 func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	appServer := &gitHubAppServer{
@@ -70,7 +81,9 @@ func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
 	appServer.registerRoutes(router)
 }
 
-func SetupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rcache.Cache) {
+// setupGitHubAppRoutesWithCache is the same as SetupGitHubAppRoutes but allows to pass a cache.
+// Useful for testing.
+func setupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rcache.Cache) {
 	appServer := &gitHubAppServer{
 		cache: cache,
 		db:    db,
@@ -79,9 +92,9 @@ func SetupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rc
 	appServer.registerRoutes(router)
 }
 
-// RandomState returns a random sha256 hash that can be used as a state parameter. It is only
+// randomState returns a random sha256 hash that can be used as a state parameter. It is only
 // exported for testing purposes.
-func RandomState(n int) (string, error) {
+func randomState(n int) (string, error) {
 	data := make([]byte, n)
 	if _, err := io.ReadFull(rand.Reader, data); err != nil {
 		return "", err
@@ -113,7 +126,7 @@ type gitHubAppStateDetails struct {
 }
 
 func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request) {
-	s, err := RandomState(128)
+	s, err := randomState(128)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -172,7 +185,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		webhookUUID = hook.UUID.String()
 	}
 
-	s, err := RandomState(128)
+	s, err := randomState(128)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -283,7 +296,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	state, err = RandomState(128)
+	state, err = randomState(128)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when creating state param: %s", err.Error()), http.StatusInternalServerError)
 		return
