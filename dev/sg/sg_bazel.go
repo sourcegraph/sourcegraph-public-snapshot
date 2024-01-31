@@ -46,6 +46,7 @@ var bzlgenTargets = map[string]bzlgenTarget{
 var bazelCommand = &cli.Command{
 	Name:            "bazel",
 	SkipFlagParsing: true,
+	Usage:           "placeholder, handled in top-level Action below",
 	Category:        category.Dev,
 	Action: func(ctx *cli.Context) error {
 		root, err := root.RepositoryRoot()
