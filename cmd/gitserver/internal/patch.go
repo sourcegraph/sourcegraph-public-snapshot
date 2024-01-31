@@ -444,8 +444,14 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 
 	p4Cmd := p4Command{
 		ctx:        ctx,
+		homeDir:    p4home,
 		workingDir: tmpClientDir,
-		env:        commonEnv,
+		commonOptions: []perforce.P4OptionFunc{
+			perforce.WithHost(p4port),
+			perforce.WithAuthentication(p4user, p4passwd),
+			perforce.WithClient(p4client),
+			perforce.WithEnvironment(commonEnv...),
+		},
 	}
 
 	// check to see if there's a changelist for this target branch already
@@ -634,16 +640,10 @@ func (g gitCommand) getListOfFilesInCommit(patchCommit string) ([]string, error)
 }
 
 type p4Command struct {
-	ctx        context.Context
-	workingDir string
-	env        []string
-}
-
-func (p p4Command) commandContext(args ...string) *exec.Cmd {
-	cmd := exec.CommandContext(p.ctx, "p4", args...)
-	cmd.Dir = p.workingDir
-	cmd.Env = p.env
-	return cmd
+	ctx           context.Context
+	homeDir       string
+	workingDir    string
+	commonOptions []perforce.P4OptionFunc
 }
 
 const clientSpecForm = `Client:	%s
@@ -662,6 +662,10 @@ View:	%s... //%s/...
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 client`
 func (p p4Command) createClientSpec(p4depot, p4client, p4user, description string) error {
+	options := append(p.commonOptions,
+		perforce.WithArguments("client", "-i"),
+	)
+
 	clientSpec := fmt.Sprintf(
 		clientSpecForm,
 		p4client,
@@ -671,12 +675,16 @@ func (p p4Command) createClientSpec(p4depot, p4client, p4user, description strin
 		p4depot,
 		p4client,
 	)
-	cmd := p.commandContext("client", "-i")
-	cmd.Stdin = bytes.NewReader([]byte(clientSpec))
+	options = append(options,
+		perforce.WithStdin(bytes.NewReader([]byte(clientSpec))),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, string(out))
 	}
+
 	return nil
 }
 
@@ -705,8 +713,11 @@ func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string)
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 sync`
 func (p p4Command) cloneFiles(filesWithCid []string) error {
-	cmd := p.commandContext("sync")
-	cmd.Args = append(cmd.Args, filesWithCid...)
+	options := append(p.commonOptions,
+		perforce.WithArguments(append([]string{"sync"}, filesWithCid...)...),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, string(out))
@@ -719,8 +730,11 @@ func (p p4Command) cloneFiles(filesWithCid []string) error {
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 edit`
 func (p p4Command) editFiles(fileList []string) error {
-	cmd := p.commandContext("edit")
-	cmd.Args = append(cmd.Args, fileList...)
+	options := append(p.commonOptions,
+		perforce.WithArguments(append([]string{"edit"}, fileList...)...),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, string(out))
@@ -736,10 +750,11 @@ func (p p4Command) editFiles(fileList []string) error {
 // __|- error -> combined output from `p4 diff`
 func (p p4Command) areThereChangedFiles() (bool, error) {
 	// use p4 diff to list the changes
-	diffCmd := p.commandContext("diff", "-f", "-sa")
+	options := append(p.commonOptions,
+		perforce.WithArguments("diff", "-f", "-sa"),
+	)
 
-	// capture the output of `p4 diff` and count the lines
-	// so that the output can be returned in an error message
+	diffCmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := diffCmd.CombinedOutput()
 	if err != nil {
 		return false, errors.Wrap(err, string(out))
@@ -754,7 +769,10 @@ func (p p4Command) areThereChangedFiles() (bool, error) {
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 change`
 func (p p4Command) generateChangeForm(description string) (string, error) {
-	cmd := p.commandContext("change", "-o")
+	options := append(p.commonOptions,
+		perforce.WithArguments("change", "-o"),
+	)
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrap(err, string(out))
@@ -773,10 +791,17 @@ var cidPattern = lazyregexp.New(`Change (\d+) files shelved`)
 // error -> "p4 shelve output does not contain a changelist id"
 // __|- error -> combined output from `p4 shelve`
 func (p p4Command) shelveChangelist(changeForm string) (string, error) {
-	cmd := p.commandContext("shelve", "-i")
+	options := append(p.commonOptions,
+		perforce.WithArguments("shelve", "-i"),
+	)
+
 	changeBuffer := bytes.Buffer{}
 	changeBuffer.Write([]byte(changeForm))
-	cmd.Stdin = &changeBuffer
+	options = append(options,
+		perforce.WithStdin(&changeBuffer),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrap(err, string(out))
