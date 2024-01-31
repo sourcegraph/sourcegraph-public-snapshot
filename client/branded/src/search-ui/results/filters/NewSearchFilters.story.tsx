@@ -1,5 +1,6 @@
 import { Decorator, Meta } from '@storybook/react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { NewSearchFilters } from './NewSearchFilters'
@@ -17,5 +18,11 @@ const config: Meta = {
 export default config
 
 export const FiltersStore = () => (
-    <NewSearchFilters query="" filters={[]} onQueryChange={() => {}} withCountAllFilter={false} />
+    <NewSearchFilters
+        query=""
+        filters={[]}
+        onQueryChange={() => {}}
+        withCountAllFilter={false}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
+    />
 )

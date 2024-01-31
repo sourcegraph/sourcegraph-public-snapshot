@@ -46,8 +46,8 @@ func TestPreSSCReleaseCurrentPeriodDateRange(t *testing.T) {
 			name:      "after release for community user created before december 14th",
 			createdAt: time.Date(2023, 11, 5, 0, 0, 0, 0, now.Location()),
 			today:     time.Date(2023, 12, 25, 0, 0, 0, 0, now.Location()),
-			start:     time.Date(2023, 12, 14, 0, 0, 0, 0, now.Location()),
-			end:       time.Date(2024, 1, 13, 23, 59, 59, 59, now.Location()),
+			start:     time.Date(2023, 12, 5, 0, 0, 0, 0, now.Location()),
+			end:       time.Date(2024, 1, 4, 23, 59, 59, 59, now.Location()),
 		},
 		{
 			name:      "community user created before current day",
@@ -125,9 +125,12 @@ func TestPreSSCReleaseCurrentPeriodDateRange(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
 			ctx = withCurrentTimeMock(ctx, test.today)
 
-			startDate, endDate := preSSCReleaseCurrentPeriodDateRange(ctx, *user)
-			assert.Equal(t, test.start, startDate, "startDate")
-			assert.Equal(t, test.end, endDate, "endDate")
+			startDate, endDate, err := preSSCReleaseCurrentPeriodDateRange(ctx, *user, nil)
+			assert.NoError(t, err, "preSSCReleaseCurrentPeriodDateRange")
+			assert.NotNil(t, startDate, "not nil startDate")
+			assert.NotNil(t, endDate, "not nil endDate")
+			assert.Equal(t, test.start, *startDate, "startDate")
+			assert.Equal(t, test.end, *endDate, "endDate")
 		})
 	}
 }

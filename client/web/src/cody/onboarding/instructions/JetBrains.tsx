@@ -34,7 +34,7 @@ export function JetBrainsInstructions({
                                 <div>
                                     <Text className="mb-1" weight="bold">
                                         Open the Plugins Page (or via the{' '}
-                                        <Link to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+                                        <Link to="https://plugins.jetbrains.com/plugin/9682-sourcegraph-cody--code-search">
                                             JetBrains Marketplace
                                         </Link>
                                         )

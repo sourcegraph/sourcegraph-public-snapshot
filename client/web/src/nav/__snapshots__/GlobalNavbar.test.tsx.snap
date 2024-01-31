@@ -86,7 +86,7 @@ exports[`GlobalNavbar > code search only license 1`] = `
         >
           <a
             class="link"
-            href="/cody/chat"
+            href="/cody"
           >
             <span
               class="linkContent"
@@ -235,7 +235,7 @@ exports[`GlobalNavbar > cody only license 1`] = `
         >
           <a
             class="link"
-            href="/cody/chat"
+            href="/cody"
           >
             <span
               class="linkContent"
@@ -384,7 +384,7 @@ exports[`GlobalNavbar > default 1`] = `
         >
           <a
             class="link"
-            href="/cody/chat"
+            href="/cody"
           >
             <span
               class="linkContent"

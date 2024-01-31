@@ -22,12 +22,12 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
+import { useArePaymentsEnabled, useHasTrialEnded } from '../featurFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
 
 import { CancelProModal } from './CancelProModal'
@@ -50,7 +50,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
 
-    const [sscEnabled] = useFeatureFlag('use-ssc-for-cody-subscription', false)
+    const arePaymentsEnabled = useArePaymentsEnabled()
+    const hasTrialEnded = useHasTrialEnded()
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
@@ -191,9 +192,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
-                                <Text className="mb-3 text-muted" size="small">
-                                    Free until Feb 2024, <strong>no credit card needed</strong>
-                                </Text>
+                                {!hasTrialEnded && (
+                                    <Text className="mb-3 text-muted" size="small">
+                                        Free until Feb 2024,{' '}
+                                        {!arePaymentsEnabled && <strong>no credit card needed</strong>}
+                                    </Text>
+                                )}
                                 {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
                                     <div>
                                         <Text
@@ -209,7 +213,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                         tier: 'free',
                                                     }
                                                 )
-                                                if (sscEnabled) {
+                                                if (arePaymentsEnabled) {
                                                     window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
                                                     return
                                                 }
@@ -217,7 +221,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 setShowCancelPro(true)
                                             }}
                                         >
-                                            {sscEnabled ? 'Manage' : 'Cancel'} subscription
+                                            {arePaymentsEnabled ? 'Manage' : 'Cancel'} subscription
                                         </Text>
                                     </div>
                                 ) : (
@@ -230,7 +234,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' },
                                                 { tier: 'pro' }
                                             )
-                                            if (sscEnabled) {
+                                            if (arePaymentsEnabled) {
                                                 window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
                                                 return
                                             }
@@ -239,7 +243,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        {sscEnabled ? 'Get Pro' : 'Get Pro trial'}
+                                        {arePaymentsEnabled ? 'Get Pro' : 'Get Pro trial'}
                                     </Button>
                                 )}
                             </div>

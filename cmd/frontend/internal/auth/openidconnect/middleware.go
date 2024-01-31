@@ -124,7 +124,11 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
 			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
-			if err != nil {
+			if errors.Is(err, errNoSuchProvider) {
+				log15.Warn("Failed to get provider.", "error", err)
+				http.Redirect(w, r, "/sign-in?returnTo="+r.URL.Query().Get("returnTo"), http.StatusFound)
+				return
+			} else if err != nil {
 				log15.Error("Failed to get provider.", "error", err)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return

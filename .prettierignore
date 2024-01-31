@@ -48,7 +48,9 @@ node_modules/
 client/web-sveltekit/.svelte-kit
 client/web-sveltekit/build
 client/web-sveltekit/**/*.gql.ts
-client/web-sveltekit/**/graphql-{operations,types,mock-types}.ts
+client/web-sveltekit/**/graphql-operations.ts
+client/web-sveltekit/**/graphql-types.ts
+client/web-sveltekit/**/graphql-type-mocks.ts
 *.module.scss.d.ts
 .vscode-test
 

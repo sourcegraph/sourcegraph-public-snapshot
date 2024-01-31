@@ -123,13 +123,13 @@
                 {#each resultTypeFilter as filter}
                     <li class:selected={filter.isSelected(queryFromURL)}>
                         <a
-                            href={getQueryURL({
+                            href="{getQueryURL({
                                 searchMode: $queryState.searchMode,
                                 patternType: $queryState.patternType,
                                 caseSensitive: $queryState.caseSensitive,
                                 searchContext: $queryState.searchContext,
                                 query: filter.getQuery($queryState.query),
-                            })}
+                            }, true)}"
                         >
                             <Icon svgPath={filter.icon} inline aria-hidden="true" />
                             {filter.label}
