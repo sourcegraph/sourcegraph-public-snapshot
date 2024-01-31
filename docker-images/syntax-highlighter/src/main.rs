@@ -9,7 +9,7 @@ use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
 use serde::Deserialize;
 use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -71,7 +71,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
             return json!({"error": "Invalid codepoint"});
         }
     };
-    let parser = match BundledParser::get_parser_from_extension(extension) {
+    let parser = match ParserId::from_file_extension(extension) {
         Some(parser) => parser,
         None => return json!({"error": "Could not infer parser from extension"}),
     };
@@ -122,7 +122,7 @@ fn rocket() -> _ {
     // TODO: load individual languages lazily on-request instead, currently
     // CONFIGURATIONS.get will load every configured configuration together.
     syntax_analysis::highlighting::tree_sitter::CONFIGURATIONS
-        .get(&tree_sitter_all_languages::BundledParser::Go);
+        .get(&tree_sitter_all_languages::ParserId::Go);
 
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {

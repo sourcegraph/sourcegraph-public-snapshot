@@ -2,7 +2,7 @@ use std::{path::Path, time::Instant};
 
 use clap::Parser;
 use syntax_analysis::locals::parse_tree;
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
 static LANGUAGE: &str = "Rust";
