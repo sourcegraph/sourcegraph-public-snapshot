@@ -404,6 +404,15 @@ type EnvironmentInstancesScalingSpec struct {
 	MaxCount *int `yaml:"maxCount,omitempty"`
 }
 
+// GetMaxCount returns nil if no scaling options are relevant, or the default,
+// or the max value.
+func (e *EnvironmentInstancesScalingSpec) GetMaxCount() *int {
+	if e == nil {
+		return nil
+	}
+	return pointers.Ptr(pointers.Deref(e.MaxCount, 5)) // builder.DefaultMaxInstances
+}
+
 type EnvironmentServiceAuthenticationSpec struct {
 	// Sourcegraph enables access to everyone in the sourcegraph.com GSuite
 	// domain.
