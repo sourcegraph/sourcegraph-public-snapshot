@@ -78,13 +78,16 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 onQueryChange(newQuery, serializeFiltersURL(newSelectedFilters))
                 telemetryService.log('SearchFiltersTypeClick', { filterType }, { filterType })
             },
-        [onQueryChange, telemetryService]
+        [query, selectedFilters, serializeFiltersURL, onQueryChange, telemetryService]
     )
 
-    const handleFilterChange = useCallback((filterKind: Filter['kind'], filters: URLQueryFilter[]) => {
-        setSelectedFilters(filters)
-        telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
-    }, [])
+    const handleFilterChange = useCallback(
+        (filterKind: Filter['kind'], filters: URLQueryFilter[]) => {
+            setSelectedFilters(filters)
+            telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
+        },
+        [setSelectedFilters, telemetryService]
+    )
 
     const handleApplyButtonFilters = (): void => {
         onQueryChange(mergeQueryAndFilters(query, selectedFilters), serializeFiltersURL([]))

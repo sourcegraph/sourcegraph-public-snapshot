@@ -385,7 +385,7 @@ interface FilePreviewPanelProps
 }
 
 const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
-    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController, telemetryService, } = props
+    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController, telemetryService } = props
 
     const staticHighlights = useMemo(() => {
         if (blobInfo.type === 'path') {
