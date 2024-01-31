@@ -7,13 +7,9 @@ import { Badge } from '@sourcegraph/wildcard'
 import styles from './DynamicFilterBadge.module.scss'
 
 export const DynamicFilterBadge: FC<{ exhaustive: boolean; count: number }> = ({ exhaustive, count }) => (
-    <>
-        {count !== 0 && (
-            <Badge variant="secondary" className={classNames('ml-2', styles.countBadge)}>
-                {exhaustive ? count : `${roundCount(count)}+`}
-            </Badge>
-        )}
-    </>
+    <Badge variant="secondary" className={classNames('ml-2', styles.countBadge)}>
+        {exhaustive ? count : `${roundCount(count)}+`}
+    </Badge>
 )
 
 function roundCount(count: number): number {

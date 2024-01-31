@@ -20,6 +20,10 @@
             margin-right: auto;
         }
 
+        &-disabled {
+            cursor: not-allowed !important;
+        }
+
         &:not(&-selected):hover {
             background-color: var(--color-bg-3) !important;
         }

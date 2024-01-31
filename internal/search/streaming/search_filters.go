@@ -216,7 +216,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addLangFilter(v.MostLikelyLanguage(), lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
-			addTypeFilter("type:file", "Content", int32(v.ChunkMatches.MatchCount()))
+			addTypeFilter("type:file", "Code", int32(v.ChunkMatches.MatchCount()))
 			addTypeFilter("type:symbol", "Symbols", int32(len(v.Symbols)))
 			if len(v.Symbols) == 0 && len(v.ChunkMatches) == 0 && len(v.PathMatches) == 0 {
 				// If we have no highlights, we still have a match on the file itself,
@@ -225,9 +225,13 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			} else {
 				addTypeFilter("type:path", "Paths", int32(len(v.PathMatches)))
 			}
+			s.filters.MarkImportant("type:file")
+			s.filters.MarkImportant("type:symbol")
+			s.filters.MarkImportant("type:path")
 			s.Dirty = true
 		case *result.RepoMatch:
-			addTypeFilter("type:repo", "Repos", 1)
+			addTypeFilter("type:repo", "Repositories", 1)
+			s.filters.MarkImportant("type:repo")
 			s.Dirty = true
 		case *result.CommitMatch:
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
@@ -237,8 +241,10 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addCommitDateFilter(v.Commit)
 			if v.DiffPreview != nil {
 				addTypeFilter("type:diff", "Diffs", int32(v.ResultCount()))
+				s.filters.MarkImportant("type:diff")
 			} else {
 				addTypeFilter("type:commit", "Commits", int32(v.ResultCount()))
+				s.filters.MarkImportant("type:commit")
 			}
 			s.Dirty = true
 

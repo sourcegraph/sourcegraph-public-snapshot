@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { FC, ReactNode, useCallback, useMemo } from 'react'
+=======
+import { FC, ReactNode, useMemo, useEffect } from 'react'
+>>>>>>> b2ccd2440c4 (show tooltip on disabled)
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -44,14 +48,19 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 }) => {
     const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
 
+    useEffect(() => {
+        if (queryHasTypeFilter(query) && selectedFilters.some(filter => filter.kind === 'type')) {
+            setSelectedFilters(selectedFilters.filter(filter => filter.kind !== 'type'))
+        }
+    }, [selectedFilters, query])
+
     const onClickFilterType = useCallback(
         (filter: Filter, remove: boolean): void => {
             telemetryService.log('SearchFiltersTypeClick', { filterType }, { filterType })
             if (remove) {
-                setSelectedFilters(
-                    selectedFilters.filter(
-                        selectedFilter => selectedFilter.kind !== 'type' || selectedFilter.label != filter.label
-                    )
+                setSelectedFilters(selectedFilters.filter(
+                    selectedFilter => selectedFilter.kind !== 'type' || selectedFilter.label != filter.label
+                )
                 )
             } else {
                 setSelectedFilters([
@@ -81,6 +90,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         <div className={styles.scrollWrapper}>
             <FilterTypeList
                 backendFilters={filters ?? []}
+                disabled={queryHasTypeFilter(query)}
                 selectedFilters={selectedFilters}
                 onClick={onClickFilterType}
             />
@@ -174,6 +184,15 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             <FiltersDocFooter className={styles.footerDoc} />
         </div>
     )
+}
+
+function queryHasTypeFilter(query: string): boolean {
+    const tokens = scanSearchQuery(query)
+    if (tokens.type !== 'success') {
+        return false
+    }
+    const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
+    return filters.some(filter => filter.field.value === 'type')
 }
 
 const STATIC_COUNT_FILTER: Filter[] = [
