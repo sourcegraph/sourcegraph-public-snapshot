@@ -38,7 +38,7 @@ func createCloudSQLAlerts(
 				},
 				Aligner:   alertpolicy.MonitoringAlignMean,
 				Reducer:   alertpolicy.MonitoringReduceNone,
-				Period:    "300s",
+				Period:    "60s",
 				Threshold: 0.8,
 			},
 		},
@@ -52,8 +52,9 @@ func createCloudSQLAlerts(
 				},
 				Aligner:   alertpolicy.MonitoringAlignMean,
 				Reducer:   alertpolicy.MonitoringReduceNone,
-				Period:    "300s",
+				Period:    "60s",
 				Threshold: 0.9,
+				Duration:  "180s", // pegged at high usage
 			},
 		},
 		{
@@ -116,9 +117,29 @@ func createCloudSQLAlerts(
 		ThresholdAggregation *alertpolicy.ThresholdAggregation
 	}{
 		{
-			ID:          "per_query_lock_time",
-			Name:        "Cloud SQL - Per-Query Lock Time",
-			Description: "Cloud SQL database queries are encountering lock times above acceptable thresholds.",
+			ID:          "per_query_lock_time_sustained",
+			Name:        "Cloud SQL - Sustained Per-Query Lock Times",
+			Description: "Cloud SQL database queries are encountering lock times above acceptable thresholds over a window.",
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+				Filters: map[string]string{
+					"metric.type": "cloudsql.googleapis.com/database/postgresql/insights/perquery/lock_time",
+				},
+				GroupByFields: []string{
+					"metric.label.querystring",
+					"metric.label.user",
+				},
+				Aligner: alertpolicy.MonitoringAlignRate,
+				Reducer: alertpolicy.MonitoringReduceMean,
+				Period:  "60s",
+				// Threshold of 0.2 seconds
+				Threshold: 0.2 * 1_000_000, // metric is in microseconds (us)
+				Duration:  "180s",
+			},
+		},
+		{
+			ID:          "per_query_lock_time_spike",
+			Name:        "Cloud SQL - Spike in Per-Query Lock Time",
+			Description: "Cloud SQL database queries encountered lock times well above acceptable thresholds.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{
 					"metric.type": "cloudsql.googleapis.com/database/postgresql/insights/perquery/lock_time",
@@ -130,8 +151,8 @@ func createCloudSQLAlerts(
 				Aligner: alertpolicy.MonitoringAlignRate,
 				Reducer: alertpolicy.MonitoringReduceMean,
 				Period:  "120s",
-				// Threshold of 0.2 seconds
-				Threshold: 0.2 * 1_000_000, // metric is in microseconds (us)
+				// Threshold of 1 seconds - this is _very_ high
+				Threshold: 1 * 1_000_000, // metric is in microseconds (us)
 			},
 		},
 	} {
