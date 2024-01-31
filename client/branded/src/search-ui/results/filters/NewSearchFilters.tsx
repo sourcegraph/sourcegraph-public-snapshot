@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { FC, ReactNode, useCallback, useMemo } from 'react'
-=======
-import { FC, ReactNode, useMemo, useEffect } from 'react'
->>>>>>> b2ccd2440c4 (show tooltip on disabled)
+import { FC, ReactNode, useEffect, useCallback, useMemo } from 'react'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -55,12 +51,13 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     }, [selectedFilters, query])
 
     const onClickFilterType = useCallback(
-        (filter: Filter, remove: boolean): void => {
-            telemetryService.log('SearchFiltersTypeClick', { filterType }, { filterType })
+        (filter: URLQueryFilter, remove: boolean): void => {
+            telemetryService.log('SearchFiltersTypeClick', { filterType: filter.label }, { filterType: filter.label })
             if (remove) {
-                setSelectedFilters(selectedFilters.filter(
-                    selectedFilter => selectedFilter.kind !== 'type' || selectedFilter.label != filter.label
-                )
+                setSelectedFilters(
+                    selectedFilters.filter(
+                        selectedFilter => selectedFilter.kind !== 'type' || selectedFilter.label != filter.label
+                    )
                 )
             } else {
                 setSelectedFilters([
