@@ -52,8 +52,7 @@ mod test {
                     .expect("to have extension")
                     .to_str()
                     .expect("to have valid utf8 string");
-                let parser =
-                    ParserId::get_parser_from_extension(extension).expect("to have parser");
+                let parser = ParserId::from_file_extension(extension).expect("to have parser");
                 let config =
                     crate::languages::get_tag_configuration(parser).expect("to have rust parser");
                 let doc = crate::globals::test::parse_file_for_lang(config, &source_code)

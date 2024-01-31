@@ -40,7 +40,7 @@ impl TagConfiguration {
                     line.split_once(";;include").expect("must have ;; include");
                 let included_lang = included_lang.trim();
 
-                let parser = ParserId::get_parser(included_lang).expect("valid language");
+                let parser = ParserId::from_name(included_lang).expect("valid language");
                 let configuration = get_tag_configuration(parser).expect("valid config");
 
                 format!("{}\n{}", configuration.query_text, query_text)
@@ -193,12 +193,12 @@ mod tags {
     use super::*;
 
     macro_rules! create_tags_configuration {
-        ($name:tt, $parser:path, $file:tt) => {
+        ($name:tt, $parser_id:path, $file:tt) => {
             pub fn $name() -> &'static TagConfiguration {
                 static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
                 INSTANCE.get_or_init(|| {
-                    let language = $parser.get_language();
+                    let language = $parser_id.language();
                     let query = include_scip_query!($file, "scip-tags");
                     TagConfiguration::new(language, query)
                 })
@@ -244,12 +244,12 @@ mod locals {
     use super::*;
 
     macro_rules! create_locals_configuration {
-        ($name:tt, $parser:path, $file:tt) => {
+        ($name:tt, $parser_id:path, $file:tt) => {
             pub fn $name() -> &'static LocalConfiguration {
                 static INSTANCE: OnceCell<LocalConfiguration> = OnceCell::new();
 
                 INSTANCE.get_or_init(|| {
-                    let language = $parser.get_language();
+                    let language = $parser_id.language();
                     let query = include_scip_query!($file, "scip-locals");
 
                     LocalConfiguration {

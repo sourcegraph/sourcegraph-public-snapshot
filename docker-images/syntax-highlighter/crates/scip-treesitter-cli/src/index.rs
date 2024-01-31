@@ -56,7 +56,7 @@ pub fn index_command(
     evaluate_against: Option<PathBuf>,
     options: IndexOptions,
 ) {
-    let p = ParserId::get_parser(&language).unwrap();
+    let p = ParserId::from_name(&language).unwrap();
     let project_root = {
         match index_mode {
             IndexMode::Files { .. } => project_root,
@@ -118,7 +118,7 @@ pub fn index_command(
             bar.finish();
         }
         IndexMode::Workspace { location } => {
-            let extensions = ParserId::get_language_extensions(&p);
+            let extensions = ParserId::language_extensions(&p);
             let is_valid = |entry: &DirEntry| {
                 entry.file_type().is_dir()
                     || entry

@@ -31,7 +31,7 @@ pub enum ParserId {
 }
 
 impl ParserId {
-    pub fn get_language(self) -> Language {
+    pub fn language(self) -> Language {
         match self {
             ParserId::C => tree_sitter_c::language(),
             ParserId::Cpp => tree_sitter_cpp::language(),
@@ -57,7 +57,7 @@ impl ParserId {
         }
     }
 
-    pub fn get_parser(name: &str) -> Option<Self> {
+    pub fn from_name(name: &str) -> Option<Self> {
         match name {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
@@ -84,7 +84,7 @@ impl ParserId {
         }
     }
 
-    pub fn get_language_name(&self) -> &str {
+    pub fn name(&self) -> &str {
         match self {
             ParserId::C => "c",
             ParserId::Cpp => "cpp",
@@ -110,7 +110,7 @@ impl ParserId {
         }
     }
 
-    pub fn get_language_extensions(&self) -> HashSet<&str> {
+    pub fn language_extensions(&self) -> HashSet<&str> {
         let ar = {
             match self {
                 ParserId::Go => vec!["go"],
@@ -126,8 +126,8 @@ impl ParserId {
     }
 
     // TODO(SuperAuguste): language detection library
-    pub fn get_parser_from_extension(name: &str) -> Option<Self> {
-        match name {
+    pub fn from_file_extension(extension: &str) -> Option<Self> {
+        match extension {
             "c" => Some(ParserId::C),
             "cpp" => Some(ParserId::Cpp),
             "cs" => Some(ParserId::C_Sharp),

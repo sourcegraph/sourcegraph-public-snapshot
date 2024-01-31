@@ -71,7 +71,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
             return json!({"error": "Invalid codepoint"});
         }
     };
-    let parser = match ParserId::get_parser_from_extension(extension) {
+    let parser = match ParserId::from_file_extension(extension) {
         Some(parser) => parser,
         None => return json!({"error": "Could not infer parser from extension"}),
     };

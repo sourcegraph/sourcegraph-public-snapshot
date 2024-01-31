@@ -106,7 +106,7 @@ macro_rules! create_configurations {
             {
                 // Create HighlightConfiguration language
                 let mut lang = HighlightConfiguration::new(
-                    paste! { ParserId::$name.get_language() },
+                    paste! { ParserId::$name.language() },
                     include_scip_query!($dirname, "highlights"),
                     include_scip_query!($dirname, "injections"),
                     include_scip_query!($dirname, "locals"),
@@ -126,7 +126,7 @@ macro_rules! create_configurations {
                 include_scip_query!("javascript", "highlights"),
             ];
             let mut lang = HighlightConfiguration::new(
-                ParserId::Typescript.get_language(),
+                ParserId::Typescript.language(),
                 &highlights.join("\n"),
                 include_scip_query!("typescript", "injections"),
                 include_scip_query!("typescript", "locals"),
@@ -141,7 +141,7 @@ macro_rules! create_configurations {
                 include_scip_query!("javascript", "highlights"),
             ];
             let mut lang = HighlightConfiguration::new(
-                ParserId::Tsx.get_language(),
+                ParserId::Tsx.language(),
                 &highlights.join("\n"),
                 include_scip_query!("tsx", "injections"),
                 include_scip_query!("tsx", "locals"),
@@ -184,7 +184,7 @@ lazy_static::lazy_static! {
 }
 
 fn get_highlighting_configuration(filetype: &str) -> Option<&'static HighlightConfiguration> {
-    ParserId::get_parser(filetype).and_then(|parser| CONFIGURATIONS.get(&parser))
+    ParserId::from_name(filetype).and_then(|parser| CONFIGURATIONS.get(&parser))
 }
 
 fn get_syntax_kind_for_hl(hl: Highlight) -> SyntaxKind {
@@ -259,7 +259,7 @@ pub fn index_language_with_config(
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
     if include_locals {
-        let parser = tree_sitter_all_languages::ParserId::get_parser(filetype);
+        let parser = tree_sitter_all_languages::ParserId::from_name(filetype);
         if let Some(parser) = parser {
             // TODO: Could probably write this in a much better way.
             let mut local_occs = crate::get_locals(parser, code.as_bytes()).unwrap_or_default();

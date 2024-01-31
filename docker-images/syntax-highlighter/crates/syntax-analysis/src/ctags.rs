@@ -193,7 +193,7 @@ pub fn generate_tags<W: std::io::Write>(
     let extension = path.extension()?.to_str()?;
     let filepath = path.file_name()?.to_str()?;
 
-    let parser = ParserId::get_parser_from_extension(extension)?;
+    let parser = ParserId::from_file_extension(extension)?;
     let (root_scope, _) = match get_globals(parser, file_data)? {
         Ok(vals) => vals,
         Err(err) => {
@@ -217,7 +217,7 @@ pub fn generate_tags<W: std::io::Write>(
         &root_scope,
         // I don't believe the language name is actually used anywhere but we'll
         // keep it to be compliant with the ctags spec
-        parser.get_language_name(),
+        parser.name(),
         &mut scope_deduplicator,
     );
     Some(())
