@@ -1,10 +1,10 @@
-import { FC, useCallback, useState, ComponentType, PropsWithChildren } from 'react'
+import { type FC, useCallback, useState, type ComponentType, type PropsWithChildren } from 'react'
 
 import { mdiClose, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { NavLink, RouteObject, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { NavLink, type RouteObject, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
 import { LegacyToggles } from '@sourcegraph/branded'
@@ -66,7 +66,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
     } = props
 
     const isLightTheme = useIsLightTheme()
-    const location = useLocation()
     const [params] = useSearchParams()
     const [isSideMenuOpen, setSideMenuOpen] = useState(false)
     const routeMatch = useRoutesMatch(props.routes)
