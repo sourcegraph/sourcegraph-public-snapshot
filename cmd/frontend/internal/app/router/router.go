@@ -45,6 +45,8 @@ const (
 
 	Editor = "editor"
 
+	GitHubApp = "githubapp"
+
 	Debug        = "debug"
 	DebugHeaders = "debug.headers"
 

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
@@ -146,10 +145,6 @@ func NewHandler(
 	m.Path("/gitlab-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook))
 	m.Path("/bitbucket-server-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook))
 	m.Path("/bitbucket-cloud-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook))
-
-	// GitHub App handler
-	gitHubAppRouter := m.PathPrefix("/githubapp/").Subrouter()
-	githubapp.SetupGitHubAppRoutes(gitHubAppRouter, db)
 
 	// Other routes
 	m.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(handlers.BatchesChangesFileGetHandler)
