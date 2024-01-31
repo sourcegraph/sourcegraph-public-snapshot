@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "changelist.go",
         "cloneable.go",
+        "command.go",
         "depots.go",
         "groups.go",
         "login.go",
@@ -40,6 +41,7 @@ go_test(
     name = "perforce_test",
     srcs = [
         "changelist_test.go",
+        "command_test.go",
         "groups_test.go",
         "perforce_test.go",
         "protects_test.go",
