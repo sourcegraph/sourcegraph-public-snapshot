@@ -258,6 +258,9 @@ func generateCloudDeployDocstring(projectID, gcpRegion, cloudDeployFilename stri
 # Releases can be created using the following command, which can be added to CI pipelines:
 #
 #   gcloud deploy releases create $RELEASE_NAME --labels="commit=$COMMIT,author=$AUTHOR" --deploy-parameters="customTarget/tag=$TAG" --project=%[1]s --region=%[2]s --delivery-pipeline=%[1]s-%[2]s-rollout --source='gs://%[1]s-cloudrun-skaffold/source.tar.gz'
-`,
+#
+# The secret 'cloud_deploy_releaser_service_account_id' provides the ID of a service account
+# that can be used to provision workload auth, for example https://sourcegraph.sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/managed-services/continuous-deployment-pipeline/main.tf?L5-20
+`, // TODO improve the releases DX
 		projectID, gcpRegion, cloudDeployFilename)
 }
