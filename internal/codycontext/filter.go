@@ -71,7 +71,7 @@ func (f *repoFilter) GetEnabled() bool {
 }
 
 func (f *repoFilter) GetFilter(repos []types.RepoIDName, logger log.Logger) ([]types.RepoIDName, FileChunkFilterFunc) {
-	if !f.enabled {
+	if !f.GetEnabled() {
 		return repos, func(fcc []FileChunkContext) []FileChunkContext {
 			return fcc
 		}
