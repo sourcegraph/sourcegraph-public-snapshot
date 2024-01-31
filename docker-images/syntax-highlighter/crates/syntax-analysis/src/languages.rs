@@ -5,7 +5,7 @@ use once_cell::sync::OnceCell;
 use regex::Regex;
 use scip::types::Descriptor;
 use tree_sitter::{Language, Parser, Query};
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 
 #[derive(Debug)]
 pub struct Transform {
@@ -40,7 +40,7 @@ impl TagConfiguration {
                     line.split_once(";;include").expect("must have ;; include");
                 let included_lang = included_lang.trim();
 
-                let parser = BundledParser::get_parser(included_lang).expect("valid language");
+                let parser = ParserId::from_name(included_lang).expect("valid language");
                 let configuration = get_tag_configuration(parser).expect("valid config");
 
                 format!("{}\n{}", configuration.query_text, query_text)
@@ -193,12 +193,12 @@ mod tags {
     use super::*;
 
     macro_rules! create_tags_configuration {
-        ($name:tt, $parser:path, $file:tt) => {
+        ($name:tt, $parser_id:path, $file:tt) => {
             pub fn $name() -> &'static TagConfiguration {
                 static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
                 INSTANCE.get_or_init(|| {
-                    let language = $parser.get_language();
+                    let language = $parser_id.language();
                     let query = include_scip_query!($file, "scip-tags");
                     TagConfiguration::new(language, query)
                 })
@@ -206,35 +206,35 @@ mod tags {
         };
     }
 
-    create_tags_configuration!(c, BundledParser::C, "c");
-    create_tags_configuration!(javascript, BundledParser::Javascript, "javascript");
-    create_tags_configuration!(kotlin, BundledParser::Kotlin, "kotlin");
-    create_tags_configuration!(ruby, BundledParser::Ruby, "ruby");
-    create_tags_configuration!(python, BundledParser::Python, "python");
-    create_tags_configuration!(cpp, BundledParser::Cpp, "cpp");
-    create_tags_configuration!(typescript, BundledParser::Typescript, "typescript");
-    create_tags_configuration!(scala, BundledParser::Scala, "scala");
-    create_tags_configuration!(c_sharp, BundledParser::C_Sharp, "c_sharp");
-    create_tags_configuration!(java, BundledParser::Java, "java");
-    create_tags_configuration!(rust, BundledParser::Rust, "rust");
-    create_tags_configuration!(go, BundledParser::Go, "go");
-    create_tags_configuration!(zig, BundledParser::Zig, "zig");
+    create_tags_configuration!(c, ParserId::C, "c");
+    create_tags_configuration!(javascript, ParserId::Javascript, "javascript");
+    create_tags_configuration!(kotlin, ParserId::Kotlin, "kotlin");
+    create_tags_configuration!(ruby, ParserId::Ruby, "ruby");
+    create_tags_configuration!(python, ParserId::Python, "python");
+    create_tags_configuration!(cpp, ParserId::Cpp, "cpp");
+    create_tags_configuration!(typescript, ParserId::Typescript, "typescript");
+    create_tags_configuration!(scala, ParserId::Scala, "scala");
+    create_tags_configuration!(c_sharp, ParserId::C_Sharp, "c_sharp");
+    create_tags_configuration!(java, ParserId::Java, "java");
+    create_tags_configuration!(rust, ParserId::Rust, "rust");
+    create_tags_configuration!(go, ParserId::Go, "go");
+    create_tags_configuration!(zig, ParserId::Zig, "zig");
 
-    pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static TagConfiguration> {
+    pub fn get_tag_configuration(parser: ParserId) -> Option<&'static TagConfiguration> {
         match parser {
-            BundledParser::C => Some(c()),
-            BundledParser::Javascript => Some(javascript()),
-            BundledParser::Kotlin => Some(kotlin()),
-            BundledParser::Ruby => Some(ruby()),
-            BundledParser::Python => Some(python()),
-            BundledParser::Cpp => Some(cpp()),
-            BundledParser::Typescript => Some(typescript()),
-            BundledParser::Scala => Some(scala()),
-            BundledParser::C_Sharp => Some(c_sharp()),
-            BundledParser::Java => Some(java()),
-            BundledParser::Rust => Some(rust()),
-            BundledParser::Go => Some(go()),
-            BundledParser::Zig => Some(zig()),
+            ParserId::C => Some(c()),
+            ParserId::Javascript => Some(javascript()),
+            ParserId::Kotlin => Some(kotlin()),
+            ParserId::Ruby => Some(ruby()),
+            ParserId::Python => Some(python()),
+            ParserId::Cpp => Some(cpp()),
+            ParserId::Typescript => Some(typescript()),
+            ParserId::Scala => Some(scala()),
+            ParserId::C_Sharp => Some(c_sharp()),
+            ParserId::Java => Some(java()),
+            ParserId::Rust => Some(rust()),
+            ParserId::Go => Some(go()),
+            ParserId::Zig => Some(zig()),
             _ => None,
         }
     }
@@ -244,12 +244,12 @@ mod locals {
     use super::*;
 
     macro_rules! create_locals_configuration {
-        ($name:tt, $parser:path, $file:tt) => {
+        ($name:tt, $parser_id:path, $file:tt) => {
             pub fn $name() -> &'static LocalConfiguration {
                 static INSTANCE: OnceCell<LocalConfiguration> = OnceCell::new();
 
                 INSTANCE.get_or_init(|| {
-                    let language = $parser.get_language();
+                    let language = $parser_id.language();
                     let query = include_scip_query!($file, "scip-locals");
 
                     LocalConfiguration {
@@ -261,17 +261,17 @@ mod locals {
         };
     }
 
-    create_locals_configuration!(go, BundledParser::Go, "go");
-    create_locals_configuration!(perl, BundledParser::Perl, "perl");
-    create_locals_configuration!(matlab, BundledParser::Matlab, "matlab");
-    create_locals_configuration!(java, BundledParser::Java, "java");
+    create_locals_configuration!(go, ParserId::Go, "go");
+    create_locals_configuration!(perl, ParserId::Perl, "perl");
+    create_locals_configuration!(matlab, ParserId::Matlab, "matlab");
+    create_locals_configuration!(java, ParserId::Java, "java");
 
-    pub fn get_local_configuration(parser: BundledParser) -> Option<&'static LocalConfiguration> {
+    pub fn get_local_configuration(parser: ParserId) -> Option<&'static LocalConfiguration> {
         match parser {
-            BundledParser::Go => Some(go()),
-            BundledParser::Perl => Some(perl()),
-            BundledParser::Matlab => Some(matlab()),
-            BundledParser::Java => Some(java()),
+            ParserId::Go => Some(go()),
+            ParserId::Perl => Some(perl()),
+            ParserId::Matlab => Some(matlab()),
+            ParserId::Java => Some(java()),
             _ => None,
         }
     }

@@ -38,8 +38,9 @@ func createCommonAlerts(
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
 				Aligner:   alertpolicy.MonitoringAlignPercentile99,
 				Reducer:   alertpolicy.MonitoringReduceMax,
-				Period:    "300s",
-				Threshold: 0.8,
+				Period:    "60s",
+				Duration:  "600s",
+				Threshold: 0.9,
 			},
 		},
 		{

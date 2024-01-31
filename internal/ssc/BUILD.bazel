@@ -10,7 +10,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
-        "//internal/httpcli",
+        "//internal/trace",
         "//lib/errors",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_oauth2//clientcredentials",
     ],
 )

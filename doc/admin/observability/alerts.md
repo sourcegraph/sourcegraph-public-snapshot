@@ -1474,39 +1474,6 @@ Generated query for warning alert: `max((sum(src_gitserver_clone_queue)) >= 25)`
 
 <br />
 
-## gitserver: repository_existence_check_queue_size
-
-<p class="subtitle">repository existence check queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> gitserver: 25+ repository existence check queue size
-
-**Next steps**
-
-- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-- **Check the gitserver logs for more information.**
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-repository-existence-check-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_repository_existence_check_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 25)`
-
-</details>
-
-<br />
-
 ## gitserver: gitserver_site_configuration_duration_since_last_successful_update_by_instance
 
 <p class="subtitle">maximum duration since last successful site configuration update (all "gitserver" instances)</p>

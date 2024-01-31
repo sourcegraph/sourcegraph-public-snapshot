@@ -7,7 +7,7 @@ import { SearchBox, LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Form } from '@sourcegraph/wildcard'
 
@@ -28,6 +28,7 @@ interface Props
     isSourcegraphDotCom: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    showKeywordSearchToggle?: boolean
 }
 
 const selectQueryState = ({
@@ -78,8 +79,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef.current()
     }, [])
 
-    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
-
     // TODO (#48103): Remove/simplify when new search input is released
     if (v2QueryInput) {
         return (
@@ -101,7 +100,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
                     className="flex-grow-1"
                 >
-                    {showKeywordSearchToggle ? (
+                    {props.showKeywordSearchToggle ? (
                         <Toggles
                             patternType={searchPatternType}
                             caseSensitive={searchCaseSensitivity}
@@ -160,6 +159,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 hideHelpButton={false}
                 showSearchHistory={true}
                 recentSearches={recentSearches}
+                showKeywordSearchToggle={props.showKeywordSearchToggle}
             />
         </Form>
     )

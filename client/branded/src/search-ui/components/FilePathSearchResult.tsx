@@ -11,7 +11,7 @@ import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
-import styles from './SearchResult.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 
 export interface FilePathSearchResult extends SettingsCascadeProps {
     result: PathMatch
@@ -46,10 +46,14 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={styles.titleInner}
+                className={resultStyles.titleInner}
                 isKeyboardSelectable={true}
             />
-            <CopyPathAction filePath={result.path} className={styles.copyButton} telemetryService={telemetryService} />
+            <CopyPathAction
+                filePath={result.path}
+                className={resultStyles.copyButton}
+                telemetryService={telemetryService}
+            />
         </span>
     )
 
@@ -62,7 +66,7 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
             repoName={result.repository}
             repoStars={result.repoStars}
             rankingDebug={result.debug}
-            className={classNames(styles.copyButtonContainer, containerClassName)}
+            className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
             actions={<SearchResultPreviewButton result={result} />}
         />

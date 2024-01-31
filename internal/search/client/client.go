@@ -262,10 +262,8 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeLiteral
 		case "V3":
 			searchType = query.SearchTypeStandard
-		case "V4-rc1":
-			searchType = query.SearchTypeKeyword
 		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got %q", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
 		}
 	}
 	return searchType, nil
@@ -312,6 +310,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
+		PhraseBoost:             flagSet.GetBoolOr("search-boost-phrase", false),
 	}
 }
 
