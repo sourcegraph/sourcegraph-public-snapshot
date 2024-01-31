@@ -45,6 +45,9 @@ type UserSubscription struct {
 	// IMPORTANT: This may be IN THE PAST. e.g. if the subscription was
 	// canceled, this will be when the subscription ended.
 	CurrentPeriodEndAt time.Time
+	// CancelAtPeriodEnd flags whether or not a subscription will automatically cancel at the end
+	// of the current billing cycle, or if it will renew.
+	CancelAtPeriodEnd bool
 }
 
 // consolidateSubscriptionDetails merges the subscription data available on dotcom and SCC.
@@ -54,7 +57,7 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 	// If subscription information is available from SSC, we use that.
 	// And just ignore what is stored in dotcom. (Since they've already
 	// been migrated so to speak.)
-	if subscription != nil {
+	if subscription != nil && subscription.Status != ssc.SubscriptionStatusCanceled {
 		currentPeriodStart, err := time.Parse(time.RFC3339, subscription.CurrentPeriodStart)
 		if err != nil {
 			return nil, err
@@ -65,7 +68,7 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 			return nil, err
 		}
 
-		applyProRateLimits := subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue || subscription.Status == ssc.SubscriptionStatusTrialing
+		applyProRateLimits := subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue || (subscription.Status == ssc.SubscriptionStatusTrialing && !subscription.CancelAtPeriodEnd)
 
 		return &UserSubscription{
 			Status:               subscription.Status,
@@ -73,12 +76,27 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 			ApplyProRateLimits:   applyProRateLimits,
 			CurrentPeriodStartAt: currentPeriodStart,
 			CurrentPeriodEndAt:   currentPeriodEnd,
+			CancelAtPeriodEnd:    subscription.CancelAtPeriodEnd,
 		}, nil
 	}
 
-	// If the user doesn't have a subscription in the SSC backend, then we need
+	// If the user doesn't have a subscription in the SSC backend or it is cancelled, then we need
 	// synthesize one using the data available on dotcom.
-	currentPeriodStartAt, currentPeriodEndAt := preSSCReleaseCurrentPeriodDateRange(ctx, user)
+	currentPeriodStartAt, currentPeriodEndAt, err := preSSCReleaseCurrentPeriodDateRange(ctx, user, subscription)
+	if err != nil {
+		return nil, err
+	}
+
+	if subscription != nil && subscription.Status == ssc.SubscriptionStatusCanceled {
+		return &UserSubscription{
+			Status:               ssc.SubscriptionStatusActive,
+			Plan:                 UserSubscriptionPlanFree,
+			ApplyProRateLimits:   false,
+			CurrentPeriodStartAt: *currentPeriodStartAt,
+			CurrentPeriodEndAt:   *currentPeriodEndAt,
+			CancelAtPeriodEnd:    false,
+		}, nil
+	}
 
 	// Whether or not the Cody Pro free trial offer is still running.
 	codyProTrialEnded := featureflag.FromContext(ctx).GetBoolOr(featureFlagCodyProTrialEnded, false)
@@ -88,8 +106,9 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 			Status:               ssc.SubscriptionStatusPending,
 			Plan:                 UserSubscriptionPlanPro,
 			ApplyProRateLimits:   !codyProTrialEnded,
-			CurrentPeriodStartAt: currentPeriodStartAt,
-			CurrentPeriodEndAt:   currentPeriodEndAt,
+			CurrentPeriodStartAt: *currentPeriodStartAt,
+			CurrentPeriodEndAt:   *currentPeriodEndAt,
+			CancelAtPeriodEnd:    false,
 		}, nil
 	}
 
@@ -97,8 +116,9 @@ func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscr
 		Status:               ssc.SubscriptionStatusPending,
 		Plan:                 UserSubscriptionPlanFree,
 		ApplyProRateLimits:   false,
-		CurrentPeriodStartAt: currentPeriodStartAt,
-		CurrentPeriodEndAt:   currentPeriodEndAt,
+		CurrentPeriodStartAt: *currentPeriodStartAt,
+		CurrentPeriodEndAt:   *currentPeriodEndAt,
+		CancelAtPeriodEnd:    false,
 	}, nil
 }
 
@@ -130,9 +150,8 @@ func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID i
 	return "", nil
 }
 
-// Returns the subscription data for the given user. (And reconciling the data between both
-// the dotcom database and the SSC backend.
-func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.Client, user types.User) (*UserSubscription, error) {
+// SubscriptionForUser returns the user's Cody subscription details.
+func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
 	samsAccountID, err := getSAMSAccountIDForUser(ctx, db, user.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching user's SAMS account ID")
@@ -142,6 +161,11 @@ func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.C
 	var subscription *ssc.Subscription
 	useSCCForSubscriptionData := featureflag.FromContext(ctx).GetBoolOr(featureFlagUseSCCForSubscription, false)
 	if samsAccountID != "" && useSCCForSubscriptionData {
+		sscClient, err := getSSCClient()
+		if err != nil {
+			return nil, err
+		}
+
 		subscription, err = sscClient.FetchSubscriptionBySAMSAccountID(ctx, samsAccountID)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching subscription from SSC")
@@ -151,12 +175,6 @@ func getSubscriptionForUser(ctx context.Context, db database.DB, sscClient ssc.C
 	return consolidateSubscriptionDetails(ctx, user, subscription)
 }
 
-// SubscriptionForUser returns the user's Cody subscription details.
-func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (*UserSubscription, error) {
-	sscClient := getSSCClient()
-	return getSubscriptionForUser(ctx, db, sscClient, user)
-}
-
 // getSSCClient returns a self-service Cody API client. We only do this once so that the stateless client
 // can persist in memory longer, so we can benefit from the underlying HTTP client only needing to reissue
 // SAMS access tokens when needed, rather than minting a new token for every request.
@@ -164,6 +182,6 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 // BUG: If the SAMS configuration is added or changed during the lifetime of the this process, the returned
 // client will be invalid. (As it would be using the original SAMS client configuration data.) The process
 // will need to be restarted to correct this situation.
-var getSSCClient = sync.OnceValue[ssc.Client](func() ssc.Client {
+var getSSCClient = sync.OnceValues[ssc.Client, error](func() (ssc.Client, error) {
 	return ssc.NewClient()
 })
