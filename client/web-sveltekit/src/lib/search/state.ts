@@ -5,6 +5,8 @@ import { SearchPatternType } from '$lib/graphql-operations'
 import { buildSearchURLQuery, type Settings } from '$lib/shared'
 import { defaultSearchModeFromSettings } from '$lib/web'
 
+import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
+
 // Defined in @sourcegraph/shared/src/search/searchQueryState.tsx
 export enum SearchMode {
     Precise = 0,
@@ -139,8 +141,16 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
     }
 }
 
+/**
+ * getQueryURL builds a /search URL from the given query state.
+ * If enforceCache is true the in-memory query cache will be used when available.
+ *
+ * @param queryState The query state to build the URL from.
+ * @param enforceCache Whether to enforce the use of the in-memory query cache.
+ */
 export function getQueryURL(
-    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>
+    queryState: Pick<QueryState, 'searchMode' | 'query' | 'caseSensitive' | 'patternType' | 'searchContext'>,
+    enforceCache = false
 ): string {
     const searchQueryParameter = buildSearchURLQuery(
         queryState.query,
@@ -150,7 +160,11 @@ export function getQueryURL(
         queryState.searchMode
     )
 
-    return '/search?' + searchQueryParameter
+    let url = '/search?' + searchQueryParameter
+    if (enforceCache) {
+        url += `&${USE_CLIENT_CACHE_QUERY_PARAMETER}`
+    }
+    return url
 }
 
 export function submitSearch(

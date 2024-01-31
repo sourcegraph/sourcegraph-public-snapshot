@@ -5,6 +5,7 @@ import { browser } from '$app/environment'
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
 import { parseExtendedSearchURL, type ExtendedParsedSearchURL } from '$lib/search'
+import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -17,7 +18,6 @@ import {
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
-import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
 
 interface SearchStreamCacheEntry {
     searchStream: Observable<AggregateStreamingSearchResults | undefined>
