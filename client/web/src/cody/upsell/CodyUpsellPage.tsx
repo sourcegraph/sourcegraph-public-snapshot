@@ -165,7 +165,7 @@ export const CodyUpsellPage: FC = () => {
                     </Text>
                     <ContextExample isLightTheme={isLightTheme} />
                 </div>
-                <ContextDiagram isLightTheme={isLightTheme} />
+                <ContextDiagram isLightTheme={isLightTheme} className={styles.contextDiagram} />
             </section>
         </section>
     )

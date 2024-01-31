@@ -2,13 +2,21 @@ import type { FC } from 'react'
 
 interface ContextDiagramProps {
     isLightTheme: boolean
+    className: string
 }
 
-export const ContextDiagram: FC<ContextDiagramProps> = ({ isLightTheme }) =>
-    isLightTheme ? <ContextDiagramLight /> : <ContextDiagramDark />
+export const ContextDiagram: FC<ContextDiagramProps> = ({ isLightTheme, className }) =>
+    isLightTheme ? <ContextDiagramLight className={className} /> : <ContextDiagramDark className={className} />
 
-const ContextDiagramDark: FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="492" height="329" fill="none" viewBox="0 0 492 329">
+const ContextDiagramDark: FC<Pick<ContextDiagramProps, 'className'>> = ({ className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="492"
+        height="329"
+        fill="none"
+        viewBox="0 0 492 329"
+        className={className}
+    >
         <g clipPath="url(#clip0_571_94747)">
             <mask id="mask0_571_94747" width="492" height="281" x="0" y="24" maskUnits="userSpaceOnUse">
                 <path fill="#fff" d="M491.946 24.5H.054v280h491.892v-280z" />
@@ -474,8 +482,15 @@ const ContextDiagramDark: FC = () => (
     </svg>
 )
 
-const ContextDiagramLight: FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="492" height="329" fill="none" viewBox="0 0 492 329">
+const ContextDiagramLight: FC<Pick<ContextDiagramProps, 'className'>> = ({ className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="492"
+        height="329"
+        fill="none"
+        viewBox="0 0 492 329"
+        className={className}
+    >
         <g clipPath="url(#clip0_701_6419)">
             <mask id="mask0_701_6419" width="492" height="281" x="0" y="24" maskUnits="userSpaceOnUse">
                 <path fill="#fff" d="M491.946 24.5H.054v280h491.892v-280z" />

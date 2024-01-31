@@ -313,9 +313,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const disableCodyFeatures = isCodeSearchOnlyLicense()
     const disableCodeSearchFeatures = isCodyOnlyLicense()
 
-    const disableCodyFeatures = isCodeSearchOnlyLicense()
-    const disableCodeSearchFeatures = isCodyOnlyLicense()
-
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
