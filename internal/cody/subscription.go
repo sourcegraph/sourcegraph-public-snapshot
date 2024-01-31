@@ -135,7 +135,7 @@ func getSAMSAccountIDForUser(ctx context.Context, db database.DB, dotcomUserID i
 	oidcAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		UserID:      dotcomUserID,
 		ServiceType: "openidconnect",
-		ServiceID:   fmt.Sprintf("https://%s", ssc.SAMSProdHostname),
+		ServiceID:   fmt.Sprintf("https://%s", ssc.GetSAMSHostName()),
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
 		},

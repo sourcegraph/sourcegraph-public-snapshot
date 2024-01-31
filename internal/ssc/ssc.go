@@ -117,6 +117,16 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 	}
 }
 
+func GetSAMSHostName() string {
+	sgconf := conf.Get().SiteConfig()
+
+	if sgconf.SscSamsHostName == "" {
+		return SAMSProdHostname
+	}
+
+	return sgconf.SscSamsHostName // [sic] generated code
+}
+
 // NewClient returns a new SSC API client. It is important to avoid creating new
 // API clients if possible, so that it can reuse SAMS access tokens when making
 // requests to SSC. (Otherwise every request would need to create a new token,
@@ -135,7 +145,7 @@ func NewClient() (Client, error) {
 			continue
 		}
 
-		if strings.Contains(oidcInfo.Issuer, SAMSProdHostname) {
+		if strings.Contains(oidcInfo.Issuer, GetSAMSHostName()) {
 			samsConfig = &clientcredentials.Config{
 				ClientID:     oidcInfo.ClientID,
 				ClientSecret: oidcInfo.ClientSecret,
