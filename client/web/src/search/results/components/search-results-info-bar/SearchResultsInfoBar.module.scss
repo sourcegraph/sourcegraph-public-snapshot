@@ -57,7 +57,12 @@
 
 .toggle-wrapper {
     border-radius: 3px;
-    background: linear-gradient(91deg, rgba(228, 211, 252, 0.2) -3.65%, #d7f0fd 117.44%);
+    :global(.theme-dark) & {
+        background: var(--marketing-gradient-25);
+    }
+    :global(.theme-light) & {
+        background: linear-gradient(91deg, rgba(228, 211, 252, 0.3) -3.65%, #d7f0fd 117.44%);
+    }
     padding: 0.25rem 0.5rem;
     display: flex;
     justify-content: flex-end;

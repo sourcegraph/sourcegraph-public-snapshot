@@ -411,7 +411,7 @@ func Test_allowEdit(t *testing.T) {
   },
 }`,
 			allowlist: []string{"auth.providers"},
-			want:      autogold.Expect([]string{"experimentalFeatures::searchJobs", "email.smtp"}),
+			want:      autogold.Expect([]string{"email.smtp", "experimentalFeatures::searchJobs"}),
 			ok:        false,
 		},
 	}

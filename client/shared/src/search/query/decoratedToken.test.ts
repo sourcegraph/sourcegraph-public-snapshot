@@ -31,6 +31,7 @@ const getTokens = (tokens: Token[]): { startIndex: number; scopes: string }[] =>
                         scopes: token.type,
                     }
                 }
+                case 'metaKeyword':
                 case 'metaPath':
                 case 'metaRevision':
                 case 'metaRegexp':
@@ -1825,31 +1826,88 @@ describe('scanSearchQuery() and decorate()', () => {
         `)
     })
 
-    test('Do not highlight keywords inside quotes for keyword pattern type', () => {
+    test('do not decorate keywords inside quotes for keyword pattern type', () => {
         expect(getTokens(toSuccess(scanSearchQuery('"foo and bar" and bas', false, SearchPatternType.keyword))))
             .toMatchInlineSnapshot(`
-              [
-                {
-                  "startIndex": 0,
-                  "scopes": "identifier"
-                },
-                {
-                  "startIndex": 13,
-                  "scopes": "whitespace"
-                },
-                {
-                  "startIndex": 14,
-                  "scopes": "keyword"
-                },
-                {
-                  "startIndex": 17,
-                  "scopes": "whitespace"
-                },
-                {
-                  "startIndex": 18,
-                  "scopes": "identifier"
-                }
-              ]
-            `)
+          [
+            {
+              "startIndex": 0,
+              "scopes": "identifier"
+            },
+            {
+              "startIndex": 13,
+              "scopes": "whitespace"
+            },
+            {
+              "startIndex": 14,
+              "scopes": "keyword"
+            },
+            {
+              "startIndex": 17,
+              "scopes": "whitespace"
+            },
+            {
+              "startIndex": 18,
+              "scopes": "identifier"
+            }
+          ]
+        `)
+    })
+
+    test('decorate escaped quotes inside quoted patterns', () => {
+        expect(getTokens(toSuccess(scanSearchQuery(String.raw`"foo\"\'bar\""`, false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+          [
+            {
+              "startIndex": 0,
+              "scopes": "identifier"
+            },
+            {
+              "startIndex": 4,
+              "scopes": "metaKeywordEscapedCharacter"
+            },
+            {
+              "startIndex": 11,
+              "scopes": "metaKeywordEscapedCharacter"
+            }
+          ]
+        `)
+        expect(getTokens(toSuccess(scanSearchQuery(String.raw`'foo\"\'bar\''`, false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+                    [
+                      {
+                        "startIndex": 0,
+                        "scopes": "identifier"
+                      },
+                      {
+                        "startIndex": 6,
+                        "scopes": "metaKeywordEscapedCharacter"
+                      },
+                      {
+                        "startIndex": 11,
+                        "scopes": "metaKeywordEscapedCharacter"
+                      }
+                    ]
+                  `)
+    })
+
+    test('do not decorate quotes inside quoted filter values', () => {
+        expect(getTokens(toSuccess(scanSearchQuery(String.raw`file:"foo\"bar"`, false, SearchPatternType.keyword))))
+            .toMatchInlineSnapshot(`
+  [
+    {
+      "startIndex": 0,
+      "scopes": "field"
+    },
+    {
+      "startIndex": 4,
+      "scopes": "metaFilterSeparator"
+    },
+    {
+      "startIndex": 5,
+      "scopes": "identifier"
+    }
+  ]
+`)
     })
 })

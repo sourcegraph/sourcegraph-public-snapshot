@@ -299,7 +299,7 @@ func TestGetSubscriptionForUser(t *testing.T) {
 					samsAccountSpec := extsvc.AccountSpec{
 						AccountID:   *test.mockSAMSAccountID,
 						ServiceType: "openidconnect",
-						ServiceID:   fmt.Sprintf("https://%s/", ssc.SAMSProdHostname),
+						ServiceID:   fmt.Sprintf("https://%s/", ssc.GetSAMSHostName()),
 					}
 					return []*extsvc.Account{
 						{
@@ -312,14 +312,17 @@ func TestGetSubscriptionForUser(t *testing.T) {
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccount)
 
 			expectToBeCalled := test.useSSCFeatureFlag && test.mockSAMSAccountID != nil
-			sscClient := &mockSSCClient{
-				t:                     t,
-				expectedSAMSAccountID: test.mockSAMSAccountID,
-				mockSSCSubscription:   test.mockSSCSubscription,
-				shouldBeCalled:        expectToBeCalled,
+
+			getSSCClient = func() (ssc.Client, error) {
+				return &mockSSCClient{
+					t:                     t,
+					expectedSAMSAccountID: test.mockSAMSAccountID,
+					mockSSCSubscription:   test.mockSSCSubscription,
+					shouldBeCalled:        expectToBeCalled,
+				}, nil
 			}
 
-			actualSubscription, err := getSubscriptionForUser(ctx, db, sscClient, test.user)
+			actualSubscription, err := SubscriptionForUser(ctx, db, test.user)
 			assert.NoError(t, err)
 			assert.NotNil(t, actualSubscription)
 			assert.Equal(t, test.expectedSubscription, *actualSubscription)
