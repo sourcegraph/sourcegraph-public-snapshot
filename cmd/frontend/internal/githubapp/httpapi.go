@@ -42,7 +42,7 @@ type gitHubAppServer struct {
 func (srv *gitHubAppServer) siteAdminMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
-		if err := checkSiteAdmin(srv.db, w, r); err != nil {
+		if err := authcheck.CheckCurrentUserIsSiteAdmin(r.Context(), srv.db); err != nil {
 			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
@@ -56,6 +56,8 @@ func (srv *gitHubAppServer) registerRoutes(router *mux.Router) {
 	router.Path("/new-app-state").Methods("GET").HandlerFunc(srv.newAppStateHandler)
 	router.Path("/redirect").Methods("GET").HandlerFunc(srv.redirectHandler)
 	router.Path("/setup").Methods("GET").HandlerFunc(srv.setupHandler)
+
+	router.Use(srv.siteAdminMiddleware)
 }
 
 func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
@@ -66,8 +68,6 @@ func SetupGitHubAppRoutes(router *mux.Router, db database.DB) {
 	}
 
 	appServer.registerRoutes(router)
-
-	router.Use(appServer.siteAdminMiddleware)
 }
 
 func SetupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rcache.Cache) {
@@ -77,22 +77,6 @@ func SetupGitHubAppRoutesWithCache(router *mux.Router, db database.DB, cache *rc
 	}
 
 	appServer.registerRoutes(router)
-
-	router.Use(appServer.siteAdminMiddleware)
-}
-
-// checkSiteAdmin checks if the current user is a site admin and sets http error if not
-func checkSiteAdmin(db database.DB, w http.ResponseWriter, req *http.Request) error {
-	err := authcheck.CheckCurrentUserIsSiteAdmin(req.Context(), db)
-	if err == nil {
-		return nil
-	}
-	status := http.StatusForbidden
-	if err == authcheck.ErrNotAuthenticated {
-		status = http.StatusUnauthorized
-	}
-	http.Error(w, "Bad request, user must be a site admin", status)
-	return err
 }
 
 // RandomState returns a random sha256 hash that can be used as a state parameter. It is only
