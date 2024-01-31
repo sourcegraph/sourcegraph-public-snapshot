@@ -56,8 +56,8 @@ const KEYWORD_SEARCH_POPOVER_PADDING = createRectangle(0, 0, 0, 2)
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
-        SearchPatternTypeProps,
-        Pick<CaseSensitivityProps, 'caseSensitive'> {
+    SearchPatternTypeProps,
+    Pick<CaseSensitivityProps, 'caseSensitive'> {
     /** The currently authenticated user or null */
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -261,6 +261,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 as={Button}
                                 type="button"
                                 className="p-0"
+                                outline={true}
                                 data-testid="dropdown-toggle"
                                 data-test-tooltip-content="Learn more about the new search language."
                             >

@@ -42,7 +42,6 @@ export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonPr
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <PopoverTrigger
                 className="mb-0 d-flex align-items-center text-decoration-none"
-                id={styles.streamingProgressButton}
                 size="sm"
                 variant={skippedWithWarningOrError ? 'danger' : 'secondary'}
                 outline={true}
