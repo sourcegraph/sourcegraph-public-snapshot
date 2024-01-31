@@ -61,6 +61,10 @@ func (c *client) sendRequest(ctx context.Context, method string, url string, out
 		return nil, err
 	}
 
+	if c.httpClient == nil {
+		return nil, errors.New("no SSC HTTP client provided")
+	}
+
 	resp, err := c.httpClient.Do(req)
 
 	if err != nil {
@@ -120,7 +124,7 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 //
 // If no SAMS authorization provider is configured, this function will not panic,
 // but instead will return an error on every call.
-func NewClient() Client {
+func NewClient() (Client, error) {
 	sgconf := conf.Get().SiteConfig()
 
 	// Fetch the SAMS configuration data.
@@ -142,6 +146,10 @@ func NewClient() Client {
 		}
 	}
 
+	if samsConfig == nil {
+		return &client{}, errors.New("no SAMS authorization provider configured")
+	}
+
 	// Create a long-lived HTTP client for all dotcom<->SSC requests, using
 	// the samsConfig credentials as needed.
 	httpClient := samsConfig.Client(context.Background())
@@ -149,5 +157,5 @@ func NewClient() Client {
 	return &client{
 		baseURL:    sgconf.SscApiBaseUrl, // [sic] generated code
 		httpClient: httpClient,
-	}
+	}, nil
 }
