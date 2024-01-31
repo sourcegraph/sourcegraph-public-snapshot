@@ -13,6 +13,10 @@ import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from './util/license'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
+const LicenseManagementArea = lazyComponent(
+    () => import('./productSubscription/LicenseManagementArea'),
+    'LicenseManagementArea'
+)
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
@@ -273,6 +277,10 @@ export const routes: RouteObject[] = [
                 )}
             />
         ),
+    },
+    {
+        path: PageRoutes.LicenseManagement,
+        element: <LegacyRoute render={props => <LicenseManagementArea {...props} />} />,
     },
     {
         path: PageRoutes.PasswordReset,

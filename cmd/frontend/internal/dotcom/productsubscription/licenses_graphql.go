@@ -143,10 +143,11 @@ func generateProductLicenseForSubscription(ctx context.Context, db database.DB, 
 }
 
 func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscription(ctx context.Context, args *graphqlbackend.GenerateProductLicenseForSubscriptionArgs) (graphqlbackend.ProductLicense, error) {
-	// 🚨 SECURITY: Only site admins may generate product licenses.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	// 🚨 SECURITY: Only license managers may generate product licenses.
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.DB, rbac.LicenseManagerWritePermission); err != nil {
 		return nil, err
 	}
+
 	sub, err := productSubscriptionByID(ctx, r.Logger, r.DB, args.ProductSubscriptionID, "generate-license")
 	if err != nil {
 		return nil, err
@@ -159,8 +160,8 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 }
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
-	// 🚨 SECURITY: Only site admins may list product licenses.
-	if _, err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
+	// 🚨 SECURITY: Only license managers may list product licenses.
+	if _, err := serviceAccountOrLicenseManager(ctx, r.DB, false); err != nil {
 		return nil, err
 	}
 
@@ -189,8 +190,8 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 }
 
 func (r ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may revoke product licenses.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	// 🚨 SECURITY: Only license managers may revoke product licenses.
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.DB, rbac.LicenseManagerWritePermission); err != nil {
 		return nil, err
 	}
 
