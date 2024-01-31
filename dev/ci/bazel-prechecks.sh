@@ -42,10 +42,10 @@ bazel "${bazelrc[@]}" configure || EXIT_CODE=$?
 # tooling does not handle go 1.21 on the host which is why it is exiting with 110
 if [[ $EXIT_CODE -eq 110 ]]; then
   echo "[WARN] bazel configure exited with code 110 which we are ignoring for now as it is due to the host go version."
-else if [[ $EXIT_CODE -ne 0 ]]; then
+elif [[ $EXIT_CODE -ne 0 ]]; then
   echo ":x: bazel configure exited with code $EXIT_CODE - please look at the output above for more information or reach out to #discuss-dev-infra"
   SKIP_GEN_DIFF=1
-  exit "$EXIT_CODE
+  exit "$EXIT_CODE"
 fi
 
 echo "--- Checking if BUILD.bazel files were updated"
