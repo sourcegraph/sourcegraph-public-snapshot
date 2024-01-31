@@ -1,11 +1,11 @@
-import { Decorator, Meta, StoryFn } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { GlobalNavbar, GlobalNavbarProps } from '../GlobalNavbar'
+import type { GlobalNavbar, GlobalNavbarProps } from '../GlobalNavbar'
 
 import { NewGlobalNavigationBar } from './NewGlobalNavigationBar'
 
@@ -24,6 +24,7 @@ export default config
 
 export const NewGlobalNavigationBarDemo: StoryFn = () => (
     <NewGlobalNavigationBar
+        routes={[]}
         isSourcegraphDotCom={true}
         ownEnabled={true}
         notebooksEnabled={true}
