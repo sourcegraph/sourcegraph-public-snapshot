@@ -1,10 +1,12 @@
 package query
 
 import (
+	"math"
 	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -618,55 +620,70 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
 }
 
-// ExperimentalPhraseBoost appends a phrase query to the original query but only
-// if the original query consists of a single top-level AND expression. The
-// purpose is to improve ranking of exact matches by adding a phrase
-// query for the entire query string.
+// ExperimentalPhraseBoost returns a transformation on basic queries that
+// appends a phrase query to the original query but only if the original query
+// consists of a single top-level AND expression. The purpose is to improve
+// ranking of exact matches by adding a phrase query for the entire query
+// string.
 //
 // Example:
 //
-//	foo bar -> (or (and foo bar) ("foo bar"))
-func ExperimentalPhraseBoost(node Node) Node {
-	if node == nil {
-		return nil
-	}
-
-	if n, ok := node.(Operator); ok && n.Kind == And {
-		// Gate on the number of operands. We don't want to add a phrase query for very
-		// short queries.
-		if len(n.Operands) < 3 {
-			return n
+//	foo bar bas -> (or (and foo bar bas) ("foo bar bas"))
+func ExperimentalPhraseBoost(logger sglog.Logger, originalQuery string) BasicPass {
+	return func(basic Basic) Basic {
+		if basic.Pattern == nil {
+			return basic
 		}
 
-		concat := ""
-		// Check if all operands are patterns and not negated.
-		for _, child := range n.Operands {
-			c, isPattern := child.(Pattern)
-			if !isPattern {
-				return n
+		if n, ok := basic.Pattern.(Operator); ok && n.Kind == And {
+			// Gate on the number of operands. We don't want to add a phrase query for very
+			// short queries.
+			if len(n.Operands) < 3 {
+				return basic
 			}
-			// In practice, a user would probably catch this case because we highlight NOT
-			// in the input bar.
-			if c.Negated {
-				return n
-			}
-			// TODO: be smarter about spaces. The original query may have multiple spaces
-			// separating words.
-			concat += c.Value + " "
-		}
-		concat = strings.TrimSpace(concat)
 
-		return Operator{
-			Kind: Or,
-			Operands: []Node{
-				Pattern{
-					Value:      concat,
-					Annotation: Annotation{Labels: Boost},
+			first := math.MaxInt
+			last := math.MinInt
+			// Check if all operands are patterns and not negated.
+			for _, child := range n.Operands {
+				c, isPattern := child.(Pattern)
+				if !isPattern || c.Negated {
+					return basic
+				}
+
+				if c.Annotation.Range.Start.Column < first {
+					first = c.Annotation.Range.Start.Column
+				}
+
+				if c.Annotation.Range.End.Column > last {
+					last = c.Annotation.Range.End.Column
+				}
+			}
+
+			// To get here, we must have found several non-negated patterns. Assuming the
+			// ranges are set correctly, this statement should always be false.
+			if first > last {
+				logger.Error(
+					"encountered invalid range during phrase boost",
+					sglog.Int("first", first),
+					sglog.Int("last", last),
+					sglog.String("query", originalQuery),
+				)
+				return basic
+			}
+
+			basic.Pattern = Operator{
+				Kind: Or,
+				Operands: []Node{
+					Pattern{
+						Value:      originalQuery[first:last],
+						Annotation: Annotation{Labels: Boost},
+					},
+					n,
 				},
-				n,
-			},
+			}
 		}
-	}
 
-	return node
+		return basic
+	}
 }
