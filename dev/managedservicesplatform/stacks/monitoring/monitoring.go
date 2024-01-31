@@ -351,9 +351,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	if vars.Monitoring.Nobl9 {
-		if err := createNobl9Project(stack, id.Group("nobl9"), vars); err != nil {
-			return nil, errors.Wrap(err, "failed to create Nobl9 project")
-		}
+		createNobl9Project(stack, id.Group("nobl9"), vars)
 	}
 
 	return &CrossStackOutput{}, nil

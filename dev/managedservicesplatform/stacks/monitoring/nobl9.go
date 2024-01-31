@@ -18,7 +18,7 @@ func createNobl9Project(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-) error {
+) {
 	// GCP Setup
 	sa := serviceaccount.New(stack, id.Group("nobl9-sa"), serviceaccount.Config{
 		ProjectID:   vars.ProjectID,
@@ -68,6 +68,4 @@ func createNobl9Project(
 			},
 		},
 	})
-
-	return nil
 }
