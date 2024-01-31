@@ -4,6 +4,7 @@
 package search
 
 import (
+	"compress/gzip"
 	"context"
 	"net/http"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -41,13 +43,34 @@ import (
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db database.DB) http.Handler {
 	logger := log.Scoped("searchStreamHandler")
-	return &streamHandler{
+	return gzipMiddleware(&streamHandler{
 		logger:              logger,
 		db:                  db,
 		searchClient:        client.New(logger, db, gitserver.NewClient("http.search.stream")),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+	})
+}
+
+func gzipMiddleware(h *streamHandler) http.Handler {
+	// Always compress response since we can have large responses which are
+	// plain text inside of JSON. Setting a minimum size of 0 ensures the gzip
+	// handler won't buffer and respect calls to http flush. Additionally the
+	// stdlib default gzip compressor is quite slow. In our testing
+	// gzip.BestSpeed provides good enough compression on our plain text
+	// responses with minimal CPU overhead.
+	m, err := gziphandler.GzipHandlerWithOpts(
+		gziphandler.MinSize(0),
+		gziphandler.CompressionLevel(gzip.BestSpeed),
+	)
+	if err != nil {
+		// This should never happen since we have hardcoded options which
+		// work. If we update gziphandler and it doesn't like our options then
+		// our unit tests will catch this.
+		panic("gziphandler fatal error on creation of middleware: " + err.Error())
 	}
+
+	return m(h)
 }
 
 type streamHandler struct {
@@ -125,20 +148,17 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		inputs.Features.ZoektSearchOptionsOverride = args.ZoektSearchOptionsOverride
 	}
 
-	// Display is the number of results we send down. If display is < 0 we
-	// want to send everything we find before hitting a limit. Otherwise we
-	// can only send up to limit results.
-	displayLimit := args.Display
+	// displayFilter limits the matches we stream to the user. Once we have
+	// hit a display limit the search will continue, but we no longer stream
+	// the actual matches.
 	limit := inputs.MaxResults()
-	if displayLimit < 0 || displayLimit > limit {
-		displayLimit = limit
-	}
+	displayFilter := newDisplayFilter(args, limit)
 
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
 		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
-		DisplayLimit: displayLimit,
+		DisplayLimit: displayFilter.MatchLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
@@ -168,7 +188,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 			progress,
 			h.flushTickerInternal,
 			h.pingTickerInterval,
-			displayLimit,
+			displayFilter,
 			args.EnableChunkMatches,
 			logLatency,
 		)
@@ -362,7 +382,7 @@ func newEventHandler(
 	progress *streamclient.ProgressAggregator,
 	flushInterval time.Duration,
 	progressInterval time.Duration,
-	displayLimit int,
+	displayFilter *displayFilter,
 	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
@@ -383,7 +403,7 @@ func newEventHandler(
 		flushInterval:      flushInterval,
 		progress:           progress,
 		progressInterval:   progressInterval,
-		displayRemaining:   displayLimit,
+		displayFilter:      displayFilter,
 		enableChunkMatches: enableChunkMatches,
 		first:              true,
 		logLatency:         logLatency,
@@ -425,8 +445,8 @@ type eventHandler struct {
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
-	displayRemaining int
-	first            bool
+	displayFilter *displayFilter
+	first         bool
 }
 
 func (h *eventHandler) Send(event streaming.SearchEvent) {
@@ -436,7 +456,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	h.progress.Update(event)
 	h.filters.Update(event)
 
-	h.displayRemaining = event.Results.Limit(h.displayRemaining)
+	// We have computed internal stats, so now we can drop/limit matches if we
+	// hit display limits.
+	h.displayFilter.Limit(&event.Results)
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {

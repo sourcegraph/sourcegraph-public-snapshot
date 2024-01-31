@@ -3,13 +3,8 @@
 #[macro_use]
 extern crate rocket;
 
-use std::path;
-
-use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
 use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
-use serde::Deserialize;
-use tree_sitter_all_languages::parsers::BundledParser;
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -17,8 +12,9 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
-    let result =
-        std::panic::catch_unwind(|| syntax_analysis::highlighting::syntect_highlight(q.into_inner()));
+    let result = std::panic::catch_unwind(|| {
+        syntax_analysis::highlighting::syntect_highlight(q.into_inner())
+    });
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
@@ -44,52 +40,8 @@ fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
     }
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct SymbolQuery {
-    filename: String,
-    content: String,
-}
-
 pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
-}
-
-#[post("/symbols", format = "application/json", data = "<q>")]
-fn symbols(q: Json<SymbolQuery>) -> JsonValue {
-    let path = path::Path::new(&q.filename);
-    let extension = match match path.extension() {
-        Some(vals) => vals,
-        None => {
-            return json!({"error": "Extensionless file"});
-        }
-    }
-    .to_str()
-    {
-        Some(vals) => vals,
-        None => {
-            return json!({"error": "Invalid codepoint"});
-        }
-    };
-    let parser = match BundledParser::get_parser_from_extension(extension) {
-        Some(parser) => parser,
-        None => return json!({"error": "Could not infer parser from extension"}),
-    };
-
-    let (mut scope, hint) = match syntax_analysis::get_globals(parser, q.content.as_bytes()) {
-        Some(Ok(vals)) => vals,
-        Some(Err(err)) => return jsonify_err(err),
-        None => return json!({"error": "Failed to get globals"}),
-    };
-
-    let document = scope.into_document(hint, vec![]);
-
-    let encoded = match document.write_to_bytes() {
-        Ok(vals) => vals,
-        Err(err) => {
-            return jsonify_err(err);
-        }
-    };
-    json!({"scip": base64::encode(encoded), "plaintext": false})
 }
 
 #[get("/health")]
@@ -120,8 +72,8 @@ fn rocket() -> _ {
     // load configurations on-startup instead of on-first-request.
     // TODO: load individual languages lazily on-request instead, currently
     // CONFIGURATIONS.get will load every configured configuration together.
-    tree_sitter_all_languages::highlights::CONFIGURATIONS
-        .get(&tree_sitter_all_languages::parsers::BundledParser::Go);
+    syntax_analysis::highlighting::tree_sitter::CONFIGURATIONS
+        .get(&tree_sitter_all_languages::ParserId::Go);
 
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
@@ -130,6 +82,6 @@ fn rocket() -> _ {
     };
 
     rocket::build()
-        .mount("/", routes![syntect, lsif, scip, symbols, health])
+        .mount("/", routes![syntect, lsif, scip, health])
         .register("/", catchers![not_found])
 }

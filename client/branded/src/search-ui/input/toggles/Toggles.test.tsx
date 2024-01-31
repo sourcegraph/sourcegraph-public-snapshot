@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { Toggles } from './Toggles'
@@ -19,6 +20,7 @@ describe('Toggles', () => {
                     setCaseSensitivity={() => undefined}
                     searchMode={SearchMode.Precise}
                     setSearchMode={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )
 
@@ -35,6 +37,7 @@ describe('Toggles', () => {
                     setCaseSensitivity={() => undefined}
                     searchMode={SearchMode.Precise}
                     setSearchMode={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )
             expect(screen.getAllByRole('checkbox', { name: 'Case sensitivity toggle' })).toMatchSnapshot()
@@ -50,6 +53,7 @@ describe('Toggles', () => {
                     setCaseSensitivity={() => undefined}
                     searchMode={SearchMode.Precise}
                     setSearchMode={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )
             expect(screen.getAllByRole('checkbox', { name: 'Regular expression toggle' })).toMatchSnapshot()

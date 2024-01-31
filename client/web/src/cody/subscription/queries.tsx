@@ -10,6 +10,7 @@ export const USER_CODY_PLAN = gql`
                 applyProRateLimits
                 currentPeriodStartAt
                 currentPeriodEndAt
+                cancelAtPeriodEnd
             }
         }
     }
@@ -29,6 +30,7 @@ export const USER_CODY_USAGE = gql`
                 applyProRateLimits
                 currentPeriodStartAt
                 currentPeriodEndAt
+                cancelAtPeriodEnd
             }
         }
     }
@@ -44,6 +46,7 @@ export const CHANGE_CODY_PLAN = gql`
                 applyProRateLimits
                 currentPeriodStartAt
                 currentPeriodEndAt
+                cancelAtPeriodEnd
             }
         }
     }

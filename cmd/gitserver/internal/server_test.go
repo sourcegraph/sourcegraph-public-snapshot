@@ -86,7 +86,7 @@ func TestExecRequest(t *testing.T) {
 			},
 			ExpectedCode:  codes.NotFound,
 			ExpectedError: "repo not found",
-			ExpectedDetails: []any{&v1.NotFoundPayload{
+			ExpectedDetails: []any{&v1.RepoNotFoundPayload{
 				Repo:            "github.com/gorilla/doesnotexist",
 				CloneInProgress: false,
 			}},
@@ -99,7 +99,7 @@ func TestExecRequest(t *testing.T) {
 			},
 			ExpectedCode:  codes.NotFound,
 			ExpectedError: "repo not found",
-			ExpectedDetails: []any{&v1.NotFoundPayload{
+			ExpectedDetails: []any{&v1.RepoNotFoundPayload{
 				Repo:            "github.com/nicksnyder/go-i18n",
 				CloneInProgress: true,
 			}},
@@ -192,7 +192,7 @@ func TestExecRequest(t *testing.T) {
 	// Initialize side-effects.
 	_ = s.Handler()
 
-	gs := &GRPCServer{Server: s}
+	gs := NewGRPCServer(s)
 
 	origRepoCloned := repoCloned
 	repoCloned = func(dir common.GitDir) bool {
@@ -232,7 +232,7 @@ func TestExecRequest(t *testing.T) {
 				require.Equal(t, test.ExpectedCode, s.Code(), "wrong error code: expected %v, got %v %v", test.ExpectedCode, s.Code(), err)
 
 				if len(test.ExpectedDetails) > 0 {
-					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.NotFoundPayload{})); diff != "" {
+					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.RepoNotFoundPayload{})); diff != "" {
 						t.Fatalf("unexpected error details (-want +got):\n%s", diff)
 					}
 				}
@@ -322,7 +322,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ctx:                     ctx,
 		Locker:                  NewRepositoryLocker(),
 		cloneLimiter:            limiter.NewMutable(1),
-		cloneableLimiter:        limiter.NewMutable(1),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
@@ -569,7 +568,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	s.repoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -600,7 +599,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.GetRemoteURLFunc = oldRemoveURLFunc
-	s.repoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -629,7 +628,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	s.repoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -654,7 +653,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	s.repoUpdate(&protocol.RepoUpdateRequest{
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
@@ -1045,7 +1044,7 @@ func TestHandleBatchLog(t *testing.T) {
 			// Initialize side-effects.
 			_ = server.Handler()
 
-			gs := &GRPCServer{Server: server}
+			gs := NewGRPCServer(server)
 
 			res, err := gs.BatchLog(context.Background(), test.Request)
 
@@ -1101,7 +1100,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, common.ErrRepoCorrupted{
+		s.LogIfCorrupt(ctx, repoName, common.ErrRepoCorrupted{
 			Reason: stdErr,
 		})
 
@@ -1127,7 +1126,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		s.logIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
+		s.LogIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)

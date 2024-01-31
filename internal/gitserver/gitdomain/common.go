@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 
@@ -179,6 +180,60 @@ func (m Message) Body() string {
 		return ""
 	}
 	return strings.TrimSpace(message[i:])
+}
+
+// A Hunk is a contiguous portion of a file associated with a commit.
+type Hunk struct {
+	StartLine uint32 // 1-indexed start line number
+	EndLine   uint32 // 1-indexed end line number
+	StartByte uint32 // 0-indexed start byte position (inclusive)
+	EndByte   uint32 // 0-indexed end byte position (exclusive)
+	CommitID  api.CommitID
+	Author    Signature
+	Message   string
+	Filename  string
+}
+
+func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
+	if h == nil {
+		return nil
+	}
+
+	return &Hunk{
+		StartLine: h.GetStartLine(),
+		EndLine:   h.GetEndLine(),
+		StartByte: h.GetStartByte(),
+		EndByte:   h.GetEndByte(),
+		CommitID:  api.CommitID(h.GetCommit()),
+		Message:   h.GetMessage(),
+		Filename:  h.GetFilename(),
+		Author: Signature{
+			Name:  h.GetAuthor().GetName(),
+			Email: h.GetAuthor().GetEmail(),
+			Date:  h.GetAuthor().GetDate().AsTime(),
+		},
+	}
+}
+
+func (h *Hunk) ToProto() *proto.BlameHunk {
+	if h == nil {
+		return nil
+	}
+
+	return &proto.BlameHunk{
+		StartLine: uint32(h.StartLine),
+		EndLine:   uint32(h.EndLine),
+		StartByte: uint32(h.StartByte),
+		EndByte:   uint32(h.EndByte),
+		Commit:    string(h.CommitID),
+		Message:   h.Message,
+		Filename:  h.Filename,
+		Author: &proto.BlameAuthor{
+			Name:  h.Author.Name,
+			Email: h.Author.Email,
+			Date:  timestamppb.New(h.Author.Date),
+		},
+	}
 }
 
 // Signature represents a commit signature

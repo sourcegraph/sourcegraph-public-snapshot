@@ -39,7 +39,7 @@ func ServeSearchJobDownload(logger log.Logger, svc *service.Service) http.Handle
 			return
 		}
 
-		filename := filenamePrefix(jobID) + ".json"
+		filename := filenamePrefix(jobID) + ".jsonl"
 		writeJSON(logger.With(log.Int("jobID", jobID)), w, filename, writerTo)
 	}
 }
@@ -77,7 +77,7 @@ func writeCSV(logger log.Logger, w http.ResponseWriter, filenameNoQuotes string,
 }
 
 func writeJSON(logger log.Logger, w http.ResponseWriter, filenameNoQuotes string, writerTo io.WriterTo) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/jsonlines")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filenameNoQuotes))
 	w.WriteHeader(200)
 	n, err := writerTo.WriteTo(w)
