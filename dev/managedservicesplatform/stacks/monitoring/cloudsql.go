@@ -88,9 +88,12 @@ func createCloudSQLAlerts(
 			},
 		},
 		{
-			ID:          "cloud_sql_connections",
-			Name:        "Cloud SQL - Connections",
-			Description: "Cloud SQL connections is approaching the maximum number of connections.",
+			ID:   "cloud_sql_connections",
+			Name: "Cloud SQL - Connections",
+			Description: `The number of Cloud SQL connections are approaching the maximum number of connections.
+This can be caused by an increase in the number of active service instances.
+
+Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.`,
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{
 					// Despite the name, the metric is titled 'PostgreSQL Connections'
