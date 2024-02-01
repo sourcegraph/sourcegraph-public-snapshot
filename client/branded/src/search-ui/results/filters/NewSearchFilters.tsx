@@ -162,6 +162,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 />
             </div>
 
+            <FiltersDocFooter className={styles.footerDoc} />
+
             <footer className={styles.actions}>
                 {selectedFilters.length > 0 && (
                     <Tooltip
@@ -177,8 +179,6 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
                 {children}
             </footer>
-
-            <FiltersDocFooter className={styles.footerDoc} />
         </div>
     )
 }
