@@ -182,10 +182,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			lastSignature = signature
 		}
 		return info, signature, nil
-	} else {
-		// If no license key, default to free tier
-		return GetFreeLicenseInfo(), "", nil
 	}
+
+	// If no license key, default to free tier
+	return GetFreeLicenseInfo(), "", nil
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for

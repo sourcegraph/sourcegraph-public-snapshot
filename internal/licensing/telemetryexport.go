@@ -85,7 +85,7 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 		return TelemetryEventsExportAll // without a valid license key
 	}
 
-	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped) {
+	if (&Info{Info: *key}).HasTag(FeatureAllowAirGapped.FeatureName()) {
 		return TelemetryEventsExportDisabled // this is the only way to disable export entirely
 	}
 

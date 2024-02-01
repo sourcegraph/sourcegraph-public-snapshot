@@ -26,7 +26,6 @@ import type {
     ArchiveProductSubscriptionVariables,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
@@ -158,14 +157,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 <td className="w-100">
                                     <AccountName account={productSubscription.account} /> &mdash;{' '}
                                     <Link to={productSubscription.url}>View as user</Link>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th className="text-nowrap">Account emails</th>
-                                <td className="w-100">
-                                    {productSubscription.account && (
-                                        <AccountEmailAddresses emails={productSubscription.account.emails} />
-                                    )}
                                 </td>
                             </tr>
                             <tr>
