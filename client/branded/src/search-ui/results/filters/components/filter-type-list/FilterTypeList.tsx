@@ -37,7 +37,7 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
         }
         return {
             filter,
-            forceCount: !disabled && selectedFilters.length === 0 && DEFAULT_SEARCH_TYPES.includes(staticFilter.label),
+            forceCount: !disabled && selectedFilters.length === 0 && DEFAULT_SEARCH_TYPES.has(staticFilter.label),
             selected: selectedFilter !== undefined && !disabled,
         }
     })
@@ -45,7 +45,7 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
     return (
         <ul className={styles.typeList}>
             {mergedFilters.map(({ filter, selected, forceCount }) => (
-                <li>
+                <li key={filter.value}>
                     <FilterTypeButton
                         filter={filter}
                         disabled={disabled}
@@ -68,7 +68,11 @@ enum SearchTypeLabel {
     Diffs = 'Diffs',
 }
 
-const DEFAULT_SEARCH_TYPES: string[] = [SearchTypeLabel.Code, SearchTypeLabel.Repositories, SearchTypeLabel.Paths]
+const DEFAULT_SEARCH_TYPES: Set<string> = new Set([
+    SearchTypeLabel.Code,
+    SearchTypeLabel.Repositories,
+    SearchTypeLabel.Paths,
+])
 
 export const STATIC_TYPE_FILTERS: URLQueryFilter[] = [
     { kind: 'type', label: SearchTypeLabel.Code, value: 'type:file' },

@@ -48,7 +48,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         if (queryHasTypeFilter(query) && selectedFilters.some(filter => filter.kind === 'type')) {
             setSelectedFilters(selectedFilters.filter(filter => filter.kind !== 'type'))
         }
-    }, [selectedFilters, query])
+    }, [selectedFilters, query, setSelectedFilters])
 
     const onClickFilterType = useCallback(
         (filter: URLQueryFilter, remove: boolean): void => {
@@ -56,7 +56,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             if (remove) {
                 setSelectedFilters(
                     selectedFilters.filter(
-                        selectedFilter => selectedFilter.kind !== 'type' || selectedFilter.label != filter.label
+                        selectedFilter => selectedFilter.kind !== 'type' || selectedFilter.label !== filter.label
                     )
                 )
             } else {
@@ -66,7 +66,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 ])
             }
         },
-        [selectedFilters, telemetryService]
+        [selectedFilters, setSelectedFilters, telemetryService]
     )
 
     const handleFilterChange = useCallback(
