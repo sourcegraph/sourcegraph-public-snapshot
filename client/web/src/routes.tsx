@@ -68,6 +68,7 @@ const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
     'CodySubscriptionPage'
 )
+const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
@@ -80,6 +81,9 @@ const PassThroughToServer: React.FC = () => {
     })
     return null
 }
+
+const disableCodeSearchFeatures = isCodyOnlyLicense()
+const disableCodyFeatures = isCodeSearchOnlyLicense()
 
 const codeSearchRoutes: readonly RouteObject[] = [
     {
@@ -304,12 +308,19 @@ export const routes: RouteObject[] = [
         element: <PassThroughToServer />,
     },
     ...communitySearchContextsRoutes,
-    ...(isCodeSearchOnlyLicense() ? [] : codyRoutes),
-    ...(isCodyOnlyLicense() ? [] : codeSearchRoutes),
+    ...(disableCodyFeatures
+        ? [
+              {
+                  path: PageRoutes.Cody,
+                  element: <LegacyRoute render={() => <CodyUpsellPage />} />,
+              },
+          ]
+        : codyRoutes),
+    ...(disableCodeSearchFeatures ? [] : codeSearchRoutes),
 
     // this should be the last route to be regustered because it's a catch all route
     // when the instance has the code search feature.
-    ...(isCodyOnlyLicense()
+    ...(disableCodeSearchFeatures
         ? []
         : [
               {

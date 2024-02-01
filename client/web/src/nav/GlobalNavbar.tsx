@@ -365,9 +365,10 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             </NavItem>
         )
 
+    const CodyLogoWrapper = (): JSX.Element => <CodyLogo withColor={true} />
     const hideCodyDropdown = disableCodyFeatures || !props.authenticatedUser
     const codyNavigation = hideCodyDropdown ? (
-        <NavItem icon={CodyLogo} key="cody">
+        <NavItem icon={() => <CodyLogoWrapper />} key="cody">
             <NavLink variant={navLinkVariant} to={disableCodyFeatures ? PageRoutes.Cody : PageRoutes.CodyChat}>
                 Cody AI
             </NavLink>
@@ -377,7 +378,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             key="cody"
             toggleItem={{
                 path: isSourcegraphDotCom ? PageRoutes.CodyManagement : PageRoutes.Cody,
-                icon: CodyLogo,
+                icon: () => <CodyLogoWrapper />,
                 content: 'Cody AI',
                 variant: navLinkVariant,
             }}
