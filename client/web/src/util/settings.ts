@@ -37,7 +37,7 @@ export function viewerSubjectFromSettings(
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
     // When the 'keyword search' language update is enabled, make sure to disable smart search
     const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
-    if (features?.keywordSearch) {
+    if (features?.keywordSearch !== false) {
         return SearchMode.Precise
     }
 
@@ -59,7 +59,7 @@ export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOr
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
     // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype
     const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
-    if (features?.keywordSearch) {
+    if (features?.keywordSearch !== false) {
         return SearchPatternType.keyword
     }
 
