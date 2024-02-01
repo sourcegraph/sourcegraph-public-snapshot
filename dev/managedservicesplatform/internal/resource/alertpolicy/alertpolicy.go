@@ -129,6 +129,15 @@ const (
 	TriggerKindAllInViolation
 )
 
+type ServerityLevel string
+
+const (
+	SeverityLevelWarning  = "WARNING"
+	SeverityLevelCritical = "CRITICAL"
+)
+
+type NotificationChannels map[ServerityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
+
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
@@ -144,14 +153,18 @@ type Config struct {
 	// unified context will be included as well, including links to the service
 	// handbook page and so on.
 	Description string
-
+	// Severity is the desired level for this alert. It is used to choose from
+	// the provided set of NotificationChannels.
+	//
+	// If not provided, SeverityLevelWarning is used.
+	Severity ServerityLevel
 	// ResourceKind identifies what is being monitored.
 	ResourceKind ResourceKind
 	// ResourceName is the identifier for the monitored resource of ResourceKind.
 	ResourceName string
 
-	// NotificationChannels to subscribe on this alert
-	NotificationChannels []monitoringnotificationchannel.MonitoringNotificationChannel
+	// NotificationChannels to choose from for subscribing on this alert
+	NotificationChannels NotificationChannels
 
 	ThresholdAggregation *ThresholdAggregation
 	ResponseCodeMetric   *ResponseCodeMetric
@@ -185,6 +198,11 @@ See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s
 If you need additional assistance, reach out to #discuss-core-services.`,
 			config.Description,
 			config.getDocsSlug())
+	}
+
+	// Set default
+	if config.Severity == "" {
+		config.Severity = SeverityLevelWarning
 	}
 
 	if config.ThresholdAggregation != nil {
@@ -253,7 +271,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("86400s"), // 24 hours
 			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
 			// For now, set all MSP alerts as WARNING. In the future, we should
 			// have different severity levels.
 			// https://github.com/sourcegraph/managed-services/issues/385
@@ -379,7 +397,7 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("604800s"),
 			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
 		})
 	return &Output{}, nil
 }

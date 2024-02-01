@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
@@ -17,7 +16,7 @@ func createServiceAlerts(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	// Only provision if MaxCount is specified greater or equal 5 (the default).
 	// If nil, it doesn't matter
@@ -61,7 +60,7 @@ func createExternalHealthcheckAlert(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	var (
 		healthcheckPath    = "/"

@@ -16,6 +16,7 @@ import (
 	slackconversation "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack/conversation"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -149,7 +150,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Prepare GCP monitoring channels on which to notify on when an alert goes
 	// off.
-	var channels []monitoringnotificationchannel.MonitoringNotificationChannel
+	channels := make(map[alertpolicy.ServerityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
+	addChannel := func(level alertpolicy.ServerityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
+		channels[level] = append(channels[level], c)
+	}
 
 	// Configure opsgenie channels
 	// TODO: Enable after we dogfood the alerts for a while.
@@ -211,7 +215,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}},
 			})
 
-		channels = append(channels,
+		addChannel(alertpolicy.SeverityLevelCritical,
 			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
 				id.TerraformID("notification_channel"),
 				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
@@ -291,26 +295,28 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			}
 		}
 
-		channels = append(channels,
-			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
-				id.TerraformID("notification_channel"),
-				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
-					Project:     &vars.ProjectID,
-					DisplayName: pointers.Stringf("Slack - %s", channel.Name),
-					Type:        pointers.Ptr("slack"),
-					Labels: &map[string]*string{
-						"channel_name": &channel.Name,
-					},
-					SensitiveLabels: &monitoringnotificationchannel.MonitoringNotificationChannelSensitiveLabels{
-						AuthToken: &slackToken.Value,
-					},
-					DependsOn: func() *[]cdktf.ITerraformDependable {
-						if slackChannel != nil {
-							return pointers.Ptr([]cdktf.ITerraformDependable{slackChannel})
-						}
-						return nil
-					}(),
-				}))
+		slackNotifications := monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
+			id.TerraformID("notification_channel"),
+			&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
+				Project:     &vars.ProjectID,
+				DisplayName: pointers.Stringf("Slack - %s", channel.Name),
+				Type:        pointers.Ptr("slack"),
+				Labels: &map[string]*string{
+					"channel_name": &channel.Name,
+				},
+				SensitiveLabels: &monitoringnotificationchannel.MonitoringNotificationChannelSensitiveLabels{
+					AuthToken: &slackToken.Value,
+				},
+				DependsOn: func() *[]cdktf.ITerraformDependable {
+					if slackChannel != nil {
+						return pointers.Ptr([]cdktf.ITerraformDependable{slackChannel})
+					}
+					return nil
+				}(),
+			})
+
+		addChannel(alertpolicy.SeverityLevelWarning, slackNotifications)
+		addChannel(alertpolicy.SeverityLevelCritical, slackNotifications)
 	}
 
 	// Set up alerts, configuring each with all our notification channels
