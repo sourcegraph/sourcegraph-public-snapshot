@@ -142,7 +142,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     // change its value accordingly.
     const freeTrialEndString = 'Until Feb 14, 2024'
     if (!hasTrialEnded && userIsOnProTier) {
-        codyProSubscriptionEndTime = new Date(2024, 2, 14, 12, 0, 0)
+        codyProSubscriptionEndTime = (new Date(2024, 2, 14, 12, 0, 0)).toISOString()
     }
 
     return (
