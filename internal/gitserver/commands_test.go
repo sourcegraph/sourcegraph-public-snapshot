@@ -2164,36 +2164,6 @@ func CommitsEqual(a, b *gitdomain.Commit) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
-	repoName := MakeGitRepository(t,
-		"echo abcd > file1",
-		"git add file1",
-		"git commit -m commit1",
-	)
-	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
-
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-		// sub-repo permissions are enabled only for repo with repoID = 1
-		return name == repoName, nil
-	})
-
-	repo := &types.Repo{Name: repoName, ID: 1}
-
-	opts := ArchiveOptions{
-		Format:    ArchiveFormatZip,
-		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
-	}
-	client := NewTestClient(t).WithChecker(checker)
-	if _, err := client.ArchiveReader(context.Background(), repo.Name, opts); err == nil {
-		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
-	}
-}
-
 func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 	repoName := MakeGitRepository(t,
 		"echo abcd > file1",

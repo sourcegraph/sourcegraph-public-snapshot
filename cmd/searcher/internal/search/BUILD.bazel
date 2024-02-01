@@ -131,6 +131,9 @@ go_test(
         "zoekt_search_test.go",
     ],
     embed = [":search"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",
