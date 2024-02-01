@@ -110,11 +110,14 @@ func createExternalHealthcheckAlert(
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
+		ProjectID:     vars.ProjectID,
 
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
 		Description: fmt.Sprintf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
-		ProjectID:   vars.ProjectID,
+
+		// If a service is not reachable, it's definitely a problem.
+		Severity: alertpolicy.SeverityLevelCritical,
 
 		ResourceKind: alertpolicy.URLUptime,
 		ResourceName: *uptimeCheck.UptimeCheckId(),
