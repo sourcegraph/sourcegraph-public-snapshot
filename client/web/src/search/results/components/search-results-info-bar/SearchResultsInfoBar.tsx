@@ -2,7 +2,7 @@ import { FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation, useMatches, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -214,9 +214,8 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
 
     const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
 
-    const routeMatches = useMatches()
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch: routeMatches && routeMatches.length > 0 ? routeMatches.at(-1)!.pathname : undefined,
+        routeMatch: location.pathname,
         textPrefix: '[Source: keyword search] ',
     })
 
