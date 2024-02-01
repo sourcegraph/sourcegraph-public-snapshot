@@ -50,7 +50,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         }
     }, [selectedFilters, query, setSelectedFilters])
 
-    const onClickFilterType = useCallback(
+    const handleFilterTypeClick = useCallback(
         (filter: URLQueryFilter, remove: boolean): void => {
             telemetryService.log('SearchFiltersTypeClick', { filterType: filter.label }, { filterType: filter.label })
             if (remove) {
@@ -88,7 +88,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 backendFilters={filters ?? []}
                 disabled={queryHasTypeFilter(query)}
                 selectedFilters={selectedFilters}
-                onClick={onClickFilterType}
+                onClick={handleFilterTypeClick}
             />
             <div className={styles.filters}>
                 <SearchDynamicFilter
