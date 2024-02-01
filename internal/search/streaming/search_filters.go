@@ -190,6 +190,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 	addTypeFilter := func(value, label string, count int32) {
 		s.filters.Add(value, label, count, FilterKindType)
+		s.filters.MarkImportant(value)
 	}
 
 	if event.Stats.ExcludedForks > 0 {
@@ -225,13 +226,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			} else {
 				addTypeFilter("type:path", "Paths", int32(len(v.PathMatches)))
 			}
-			s.filters.MarkImportant("type:file")
-			s.filters.MarkImportant("type:symbol")
-			s.filters.MarkImportant("type:path")
 			s.Dirty = true
 		case *result.RepoMatch:
 			addTypeFilter("type:repo", "Repositories", 1)
-			s.filters.MarkImportant("type:repo")
 			s.Dirty = true
 		case *result.CommitMatch:
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
@@ -241,10 +238,8 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addCommitDateFilter(v.Commit)
 			if v.DiffPreview != nil {
 				addTypeFilter("type:diff", "Diffs", int32(v.ResultCount()))
-				s.filters.MarkImportant("type:diff")
 			} else {
 				addTypeFilter("type:commit", "Commits", int32(v.ResultCount()))
-				s.filters.MarkImportant("type:commit")
 			}
 			s.Dirty = true
 
