@@ -26,7 +26,6 @@ go_library(
     deps = [
         "//cmd/searcher/diff",
         "//cmd/searcher/protocol",
-        "//internal/actor",
         "//internal/api",
         "//internal/comby",
         "//internal/conf",
