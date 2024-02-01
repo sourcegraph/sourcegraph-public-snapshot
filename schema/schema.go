@@ -66,6 +66,14 @@ type AnnotationsResult struct {
 	Items []*OpenCodeGraphItem `json:"items"`
 }
 
+// AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
+type AttributionGateway struct {
+	// AccessToken description: Only for use to override token for attribution gateway access. If 'licenseKey' is set, a default access token is generated.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Endpoint description: Endpoint where Cody gateway can be accessed for attribution.
+	Endpoint string `json:"endpoint,omitempty"`
+}
+
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
@@ -2642,6 +2650,8 @@ type SiteConfiguration struct {
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// AttributionEnabled description: Enable/Disable attribution search for Cody-generated snippets
 	AttributionEnabled *bool `json:"attribution.enabled,omitempty"`
+	// AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
+	AttributionGateway *AttributionGateway `json:"attribution.gateway,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -2961,6 +2971,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "attribution.enabled")
+	delete(m, "attribution.gateway")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.allowedIpAddress")
