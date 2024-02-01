@@ -851,18 +851,6 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	}, nil
 }
 
-type errUnauthorizedStreamBlame struct {
-	Repo api.RepoName
-}
-
-func (e errUnauthorizedStreamBlame) Unauthorized() bool {
-	return true
-}
-
-func (e errUnauthorizedStreamBlame) Error() string {
-	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
-}
-
 type grpcBlameHunkReader struct {
 	firstHunk      *proto.BlameHunk
 	firstHunkRead  bool
