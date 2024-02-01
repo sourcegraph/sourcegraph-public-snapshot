@@ -182,36 +182,42 @@
         cursor: text;
     }
 
-    .cm-editor {
-        line-height: 1.3077;
-        font-size: 13px;
+    .jp-Cell {
+        pre.chroma {
+            padding: 0 5px;
+            margin-bottom: 0rem !important;
+
+            code {
+                min-width: 100%;
+            }
+        }
+    }
+
+    .cm-editor.cm-s-jupyter {
         font-family: menlo, consolas, 'DejaVu Sans Mono', monospace;
         border: 0;
         border-radius: 0;
         height: auto;
-    }
 
-    .cm-editor pre {
-        padding: 0 5px;
-    }
+        pre {
+            padding: 0 5px;
+            margin: 0.1rem !important;
 
-    pre.chroma {
-        padding: 0 5px;
-        margin-bottom: 0rem !important;
-
-        code {
-            min-width: 100%;
+            code {
+                min-width: 100%;
+            }
         }
-    }
 
-    .cm-editor.cm-s-jupyter .highlight pre {
-        padding: 5px 4px;
-        margin: 0;
+        .highlight pre {
+            padding: 5px 4px;
+            margin: 0;
 
-        font-family: inherit;
-        font-size: inherit;
-        line-height: inherit;
-        color: inherit;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
+        }
+
     }
 
     /*-----------------------------------------------------------------------------
