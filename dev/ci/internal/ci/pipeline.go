@@ -167,11 +167,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			))
 		}
 
-		// Publish candidate images to dev registry
-		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
-		ops.Merge(publishOpsDev)
-
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
