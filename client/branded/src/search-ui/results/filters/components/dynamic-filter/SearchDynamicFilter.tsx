@@ -153,14 +153,14 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     )
 }
 
-export interface DynamicFilterItemProps {
+interface DynamicFilterItemProps {
     filter: Filter
     selected: boolean
     renderItem?: (filter: Filter, selected: boolean) => ReactNode
     onClick: (filter: URLQueryFilter, remove?: boolean) => void
 }
 
-export const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
+const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
     const { filter, selected, renderItem, onClick } = props
 
     return (
