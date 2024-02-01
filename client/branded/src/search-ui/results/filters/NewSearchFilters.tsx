@@ -22,7 +22,7 @@ import { FilterTypeList } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { ArrowBendIcon } from './components/Icons'
 import { mergeQueryAndFilters, URLQueryFilter, useUrlFilters } from './hooks'
-import { FilterKind } from './types'
+import { FilterKind, SearchTypeLabel, SEARCH_TYPES_TO_FILTER_TYPES } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
@@ -60,8 +60,9 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     )
                 )
             } else {
+                const relevantFilters = omitImpossibleFilters(selectedFilters, filter.label as SearchTypeLabel)
                 setSelectedFilters([
-                    ...selectedFilters.filter(selectedFilter => selectedFilter.kind !== 'type'),
+                    ...relevantFilters.filter(relevantFilters => relevantFilters.kind !== 'type'),
                     filter,
                 ])
             }
@@ -266,4 +267,9 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
             onSelectedFilterChange={handleCountAllFilter}
         />
     )
+}
+
+function omitImpossibleFilters(filters: URLQueryFilter[], searchType: SearchTypeLabel): URLQueryFilter[] {
+    const searchTypePossibleFilters = SEARCH_TYPES_TO_FILTER_TYPES[searchType]
+    return filters.filter(filter => searchTypePossibleFilters.includes(filter.kind))
 }
