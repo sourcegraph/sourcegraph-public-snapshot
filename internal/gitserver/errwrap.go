@@ -84,7 +84,7 @@ type errorTranslatingClient struct {
 }
 
 func (r *errorTranslatingClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
-	cc, err := r.base.P4Exec(ctx, in, opts...)
+	cc, err := r.base.P4Exec(ctx, in, opts...) //nolint:SA1019
 	if err != nil {
 		return nil, convertGRPCErrorToGitDomainError(err)
 	}
@@ -145,7 +145,7 @@ func (r *errorTranslatingExecClient) Recv() (*proto.ExecResponse, error) {
 }
 
 func (r *errorTranslatingClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	res, err := r.base.BatchLog(ctx, in, opts...)
+	res, err := r.base.BatchLog(ctx, in, opts...) //nolint:SA1019
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
