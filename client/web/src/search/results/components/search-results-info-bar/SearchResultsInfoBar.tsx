@@ -33,7 +33,7 @@ import {
     NO_ACCESS_BATCH_CHANGES_WRITE,
     NO_ACCESS_SOURCEGRAPH_COM,
 } from '../../../../batches/utils'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../../../../hooks'
+import { useHandleSubmitFeedback } from '../../../../hooks'
 import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../../../tracking/util'
