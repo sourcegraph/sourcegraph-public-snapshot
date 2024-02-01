@@ -103,7 +103,8 @@ type Variables struct {
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
 	// If CloudSQL is enabled we configure alerts for it
-	CloudSQLInstanceID *string
+	CloudSQLInstanceID    *string
+	CloudSQLMaxConections *int
 	// ServiceHealthProbes is used to determine the threshold for service
 	// startup latency alerts.
 	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func createCloudSQLAlerts(
@@ -28,7 +29,7 @@ func createCloudSQLAlerts(
 		ThresholdAggregation *alertpolicy.ThresholdAggregation
 	}{
 		{
-			ID:          "memory",
+			ID:          "cloud_sql_memory",
 			Name:        "Cloud SQL - Memory Utilization",
 			Description: "Cloud SQL instance memory utilization is above acceptable threshold.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -42,7 +43,7 @@ func createCloudSQLAlerts(
 			},
 		},
 		{
-			ID:          "cpu",
+			ID:          "cloud_sql_cpu",
 			Name:        "Cloud SQL - CPU Utilization",
 			Description: "Cloud SQL instance CPU utilization is above acceptable threshold.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -57,7 +58,7 @@ func createCloudSQLAlerts(
 			},
 		},
 		{
-			ID:          "server_up",
+			ID:          "cloud_sql_server_up",
 			Name:        "Cloud SQL - Server Availability",
 			Description: "Cloud SQL instance is down.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -73,7 +74,7 @@ func createCloudSQLAlerts(
 			},
 		},
 		{
-			ID:          "disk_utilization",
+			ID:          "cloud_sql_disk_utilization",
 			Name:        "Cloud SQL - Disk Utilization",
 			Description: "Cloud SQL instance disk utilization is above acceptable threshold.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -84,6 +85,25 @@ func createCloudSQLAlerts(
 				Reducer:   alertpolicy.MonitoringReduceNone,
 				Period:    "300s",
 				Threshold: 0.95,
+			},
+		},
+		{
+			ID:   "cloud_sql_connections",
+			Name: "Cloud SQL - Connections",
+			Description: `The number of Cloud SQL connections are approaching the maximum number of connections.
+This can be caused by an increase in the number of active service instances.
+
+Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.`,
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+				Filters: map[string]string{
+					// Despite the name, the metric is titled 'PostgreSQL Connections'
+					"metric.type": "cloudsql.googleapis.com/database/postgresql/num_backends",
+				},
+				Aligner: alertpolicy.MonitoringAlignMax,
+				Reducer: alertpolicy.MonitoringReduceSum, // count across all
+				Period:  "120s",
+				Threshold: 0.9 * float64(pointers.Deref(vars.CloudSQLMaxConections,
+					100)), // 100 seems to be the Cloud SQL default
 			},
 		},
 	} {
