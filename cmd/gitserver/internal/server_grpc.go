@@ -208,10 +208,12 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return s.Err()
 	}
 
-	if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
-		return errors.Wrap(err, "sub-repo permissions check")
-	} else if enabled {
-		return errors.New("archiveReader invoked for a repo with sub-repo permissions")
+	if !actor.FromContext(ctx).IsInternal() {
+		if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
+			return errors.Wrap(err, "sub-repo permissions check")
+		} else if enabled {
+			return errors.New("archiveReader invoked for a repo with sub-repo permissions")
+		}
 	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)

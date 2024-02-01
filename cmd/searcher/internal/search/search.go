@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -123,11 +122,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
 		}
 
-		// 🚨 SECURITY: We use an internal actor so that the archive is fetched
-		// even if sub-repo perms are enabled. Permissions filtering is done
-		// afterwards.
-		internalCtx := actor.WithInternalActor(ctx)
-		zipPath, zf, err := s.getZipFile(internalCtx, tr, p, nil)
+		zipPath, zf, err := s.getZipFile(ctx, tr, p, nil)
 		if err != nil {
 			return errors.Wrap(err, "failed to get archive")
 		}
@@ -169,11 +164,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		paths = unsearched
 	}
 
-	// 🚨 SECURITY: We use an internal actor so that the archive is fetched
-	// even if sub-repo perms are enabled. Permissions filtering is done
-	// afterwards.
-	internalCtx := actor.WithInternalActor(ctx)
-	_, zf, err := s.getZipFile(internalCtx, tr, p, paths)
+	_, zf, err := s.getZipFile(ctx, tr, p, paths)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
 	}
