@@ -211,7 +211,7 @@ interface SyntheticCountFilterProps extends TelemetryProps {
 }
 
 /**
- * Client-based count fi/ter, usually filters are generated on the backend
+ * Client-based count filter, usually filters are generated on the backend
  * based on a given query and results, count filter isn't supported by our
  * backend at the moment, so it's synthetically included on the client.
  *
