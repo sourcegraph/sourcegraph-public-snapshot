@@ -402,13 +402,6 @@ commands:
     env:
       CADDY_VERSION: 2.7.3
 
-  vite-assets:
-    description: Starts a vite server for assets
-    cmd: pnpm --filter @sourcegraph/web run dev --clearScreen=false
-    install: |
-      pnpm install
-      pnpm run generate
-
   web:
     description: Enterprise version of the web app
     cmd: pnpm --filter @sourcegraph/web run dev --clearScreen=false
@@ -420,22 +413,14 @@ commands:
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web serve:dev --color
+    cmd: pnpm --filter @sourcegraph/web serve --color
+    preamble: |
+      Ensure that you have run `pnpm build-web` before running this target
     install: |
       pnpm install
-      pnpm run generate
+      pnpm generate
     env:
-      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
-
-  web-standalone-http-prod:
-    description: Standalone web frontend (production) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web serve:prod
-    install: pnpm --filter @sourcegraph/web run build
-    env:
-      NODE_ENV: production
-      WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
     description: Build development web application for integration tests
@@ -606,8 +591,6 @@ commands:
       .bin/syntactic-code-intel-worker
     env:
       SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6076
-
-
 
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
@@ -1256,7 +1239,6 @@ commandsets:
       - syntactic-code-intel-worker-0
       - syntactic-code-intel-worker-1
 
-
   codeintel:
     requiresDevPrivate: true
     checks:
@@ -1529,7 +1511,7 @@ commandsets:
   web-standalone:
     commands:
       - web-standalone-http
-      - vite-assets
+      - web
       - caddy
 
   web-sveltekit-standalone:
@@ -1541,8 +1523,11 @@ commandsets:
 
   web-standalone-prod:
     commands:
-      - web-standalone-http-prod
+      - web-standalone-http
+      - web
       - caddy
+    env:
+      NODE_ENV: production
 
   # For testing our OpenTelemetry stack
   otel:
@@ -1558,6 +1543,7 @@ commandsets:
       - git
     commands:
       - web
+      - web-standalone-http
       - caddy
     env:
       DISABLE_CODE_INSIGHTS: false
@@ -1686,7 +1672,7 @@ tests:
 
   web-e2e:
     preamble: |
-      A Sourcegraph isntance must be already running for these tests to work, most
+      A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests
