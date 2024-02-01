@@ -5,7 +5,10 @@ def _schema_migrations(rctx):
             "linux": "linux",
         }[rctx.os.name], {
             "aarch64": "arm64",
+            "arm64": "arm64",
+            "amd64": "amd64",
             "x86_64": "amd64",
+            "x86": "amd64",
         }[rctx.os.arch])),
     )
 
