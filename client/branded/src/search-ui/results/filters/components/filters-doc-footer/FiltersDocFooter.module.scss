@@ -1,11 +1,8 @@
-.footer {
-    padding: 1rem 0.75rem;
-}
-
 .link {
     display: flex;
     gap: 0.5rem;
     color: var(--text-muted);
+    padding: 1rem 0.75rem;
 
     &-text {
         display: flex;
