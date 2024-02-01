@@ -9,15 +9,13 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// SAMSProdHostname is the hostname for the SAMS production instance.
-const SAMSProdHostname = "accounts.sourcegraph.com"
 
 // Client is the interface for making requests to the Self-Service Cody backend.
 // This uses a REST API exposed from the service, and not the GraphQL API (which is
@@ -35,11 +33,8 @@ type Client interface {
 }
 
 type client struct {
-	baseURL string
-
-	// httpClient to use for making requests to SSC. It will have a transport configured
-	// to automatically issue or reuse SAMS access tokens as needed.
-	httpClient *http.Client
+	baseURL         string
+	samsTokenSource oauth2.TokenSource
 }
 
 // Validate inspects the client configuration and ensures it is valid.
@@ -47,8 +42,8 @@ func (c *client) Validate() error {
 	if c.baseURL == "" {
 		return errors.New("no SCC base URL provided")
 	}
-	if c.httpClient == nil {
-		return errors.New("no HTTP client found")
+	if c.samsTokenSource == nil {
+		return errors.New("no SAMS token source available")
 	}
 	return nil
 }
@@ -61,12 +56,10 @@ func (c *client) sendRequest(ctx context.Context, method string, url string, out
 		return nil, err
 	}
 
-	if c.httpClient == nil {
-		return nil, errors.New("no SSC HTTP client provided")
-	}
-
-	resp, err := c.httpClient.Do(req)
-
+	// Create the OAuth2 HTTP client. This will handle setting up the HTTP headers based on the token source.
+	// (And potentially issue a new token as needed.)
+	httpClient := oauth2.NewClient(ctx, c.samsTokenSource)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "calling SSC")
 	}
@@ -119,12 +112,11 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 
 func GetSAMSHostName() string {
 	sgconf := conf.Get().SiteConfig()
-
 	if sgconf.SscSamsHostName == "" {
-		return SAMSProdHostname
+		// If unset, default to the production hostname.
+		return "accounts.sourcegraph.com"
 	}
-
-	return sgconf.SscSamsHostName // [sic] generated code
+	return sgconf.SscSamsHostName
 }
 
 // NewClient returns a new SSC API client. It is important to avoid creating new
@@ -160,12 +152,12 @@ func NewClient() (Client, error) {
 		return &client{}, errors.New("no SAMS authorization provider configured")
 	}
 
-	// Create a long-lived HTTP client for all dotcom<->SSC requests, using
-	// the samsConfig credentials as needed.
-	httpClient := samsConfig.Client(context.Background())
-
+	// We want this tokenSource to be long lived, so we benefit from reusing existing
+	// SAMS tokens if repeated requests are made within the token's lifetime. (Under
+	// the hood it returns an oauth2.ReuseTokenSource.)
+	tokenSource := samsConfig.TokenSource(context.Background())
 	return &client{
-		baseURL:    sgconf.SscApiBaseUrl, // [sic] generated code
-		httpClient: httpClient,
+		baseURL:         sgconf.SscApiBaseUrl,
+		samsTokenSource: tokenSource,
 	}, nil
 }
