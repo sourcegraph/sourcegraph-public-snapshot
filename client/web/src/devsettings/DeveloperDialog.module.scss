@@ -1,9 +1,9 @@
 .dialog {
     top: 3rem;
+    transform: translate(-50%, 0);
     max-height: calc(100vh - 6rem);
-    width: 48rem;
-    max-width: 95%;
     overflow: hidden;
+    width: auto;
     display: flex;
     flex-direction: column;
 }
