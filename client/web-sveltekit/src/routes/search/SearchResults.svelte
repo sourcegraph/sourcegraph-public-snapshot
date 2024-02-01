@@ -232,11 +232,16 @@
         </aside>
         {#if resultsToShow}
             <ol>
-                {#each resultsToShow as result}
+                {#each resultsToShow as result, i}
                     {@const component = getSearchResultComponent(result)}
-                    <li><svelte:component this={component} {result} /></li>
+                    {#if i === resultsToShow.length - 1}
+                        <li use:observeIntersection on:intersecting={loadMore}>
+                            <svelte:component this={component} {result} />
+                        </li>
+                    {:else}
+                        <li><svelte:component this={component} {result} /></li>
+                    {/if}
                 {/each}
-                <div use:observeIntersection on:intersecting={loadMore} />
             </ol>
             {#if resultsToShow.length === 0 && !loading}
                 <div class="no-result">
