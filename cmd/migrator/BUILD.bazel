@@ -93,7 +93,7 @@ oci_image(
         "--",
         "/migrator",
     ],
-    tags = ["manual"],
+    # tags = ["manual"],
     tars = [
         ":tar_migrator",
         ":tar_current_schema_descriptions",
