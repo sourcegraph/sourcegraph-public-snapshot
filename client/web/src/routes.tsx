@@ -287,7 +287,6 @@ export const routes: RouteObject[] = [
         path: PageRoutes.ApiConsole,
         element: <ApiConsole />,
     },
-    // TODO(BolajiOlajide): render landing page instead of SearchPageWrapper when on Cody-only license
     {
         path: PageRoutes.Search,
         element: <LegacyRoute render={props => <SearchPageOrUpsellPage {...props} />} />,
@@ -354,10 +353,8 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
     )
 }
 
-const toShow = true
-
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
-    if (toShow) {
+    if (disableCodeSearchFeatures) {
         return <SearchUpsellPage />
     }
     return <SearchPageWrapper {...props} />
