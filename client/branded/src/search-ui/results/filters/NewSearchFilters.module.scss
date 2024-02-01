@@ -69,3 +69,33 @@
     fill: none !important;
     transform: rotateX(-180deg);
 }
+
+.filter-panel-header {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-content: center;
+}
+
+.reset-button {
+    color: var(--oc-gray-6);
+    display: flex;
+    flex-flow: row nowrap;
+    jusitfy-content: space-between;
+    align-items: center;
+}
+
+.reset-icon {
+    background-color: var(--oc-gray-1);
+    border: 1px solid lightgray;
+    border-radius: 0.2rem;
+    box-shadow: inset 1px -1px lightgray;
+
+    color: gray;
+    padding-right: 0.4rem;
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+    padding-left: 0.4rem;
+    margin-left: 0.4rem;
+}
+

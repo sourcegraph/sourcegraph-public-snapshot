@@ -1,6 +1,6 @@
 import { FC, ReactNode, useEffect, useCallback, useMemo } from 'react'
 
-import { mdiRefresh } from '@mdi/js'
+import { mdiAppleKeyboardOption, mdiBackspaceOutline } from '@mdi/js'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
@@ -107,7 +107,33 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 selectedFilters={selectedFilters}
                 onClick={handleFilterTypeClick}
             />
-
+            <div className={styles.filterPanelHeader}>
+                <h4 className="ml-2 mt-2">
+                    Filter results
+                </h4>
+                {selectedFilters.length !== 0 && (
+                    <div>
+                        <Button className={styles.resetButton} variant='link' size='sm' onClick={() => setSelectedFilters([])}>
+                            Reset all
+                            <div>
+                                <Icon
+                                    className="mr-1"
+                                    svgPath={mdiAppleKeyboardOption}
+                                    size="sm"
+                                    inline={true}
+                                    aria-hidden={true}
+                                />
+                                <Icon
+                                    svgPath={mdiBackspaceOutline}
+                                    size="sm"
+                                    inline={true}
+                                    aria-hidden={true}
+                                />
+                            </div>
+                        </Button>
+                    </div>
+                )}
+            </div>
             <div className={styles.filters}>
                 {hasNoFilters && !isFilterLoadingComplete && (
                     <>
@@ -201,23 +227,13 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                                 <Icon as={ArrowBendIcon} aria-hidden={true} className={styles.moveIcon} />
                             </Button>
                         </Tooltip>
-                        <Button variant="link" onClick={() => setSelectedFilters([])}>
-                            <Icon
-                                size="md"
-                                className="pr-1 pt-1"
-                                svgPath={mdiRefresh}
-                                inline={true}
-                                aria-hidden={true}
-                            />
-                            Reset all filters
-                        </Button>
                     </>
                 )}
 
                 {children}
             </footer>
             <FiltersDocFooter className={styles.footerDoc} />
-        </div>
+        </div >
     )
 }
 
