@@ -47,6 +47,10 @@ go_test(
         "resolver_test.go",
     ],
     embed = [":githubapp"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
