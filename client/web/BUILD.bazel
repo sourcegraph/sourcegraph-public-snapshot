@@ -2054,6 +2054,11 @@ vitest_test(
         ":snapshots",
         ":web_tests",
     ],
+    # as per the size these tests are expensive, so lets ensure we don't OOM the machine with other jobs running
+    # simultaneously
+    tags = [
+        "exclusive",
+    ],
 )
 
 # esbuild dev environment -------------------
