@@ -2,6 +2,7 @@ package guardrails
 
 import (
 	"context"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -18,6 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
 
+// MockHttpClient is used to inject a test double, since the external client used
+// by default is prevented from hitting localhost, which is useful in testing.
+var MockHttpClient httpcli.Doer
+
 func Init(
 	_ context.Context,
 	observationCtx *observation.Context,
@@ -26,30 +31,57 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	resolver := &resolvers.GuardrailsResolver{}
+	var resolver *resolvers.GuardrailsResolver
 	if envvar.SourcegraphDotComMode() {
-		// On DotCom guardrails endpoint runs search.
-		resolver.AttributionService = initDotcomAttributionService(observationCtx, db)
+		// On DotCom guardrails endpoint runs search, and is initialized at startup.
+		searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
+		service := attribution.NewLocalSearch(observationCtx, searchClient)
+		resolver = resolvers.NewGuardrailsResolver(service)
 	} else {
-		// On an Enterprise instance endpoint proxies to gateway.
-		resolver.AttributionService = initEnterpriseAttributionService(observationCtx)
+		// On an Enterprise instance endpoint proxies to gateway, and is re-initialized
+		// in case site-config changes.
+		client := httpcli.ExternalDoer
+		if MockHttpClient != nil {
+			client = MockHttpClient
+		}
+		initLogic := &enterpriseInitialization{observationCtx: observationCtx, httpClient: client}
+		resolver = resolvers.NewGuardrailsResolver(initLogic.Service())
+		go conf.Watch(func() {
+			resolver.UpdateService(initLogic.Service())
+		})
 	}
 	enterpriseServices.GuardrailsResolver = resolver
 	return nil
 }
 
-func initEnterpriseAttributionService(observationCtx *observation.Context) attribution.Service {
-	client, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
-	if !ok {
-		// TODO(#59701) handle error
-		return nil
-	}
-	return attribution.NewGatewayProxy(observationCtx, client)
+// enterpriseInitialization is a factory for attribution.Service for an enterprise instance
+// as opposed to dotcom.
+type enterpriseInitialization struct {
+	observationCtx *observation.Context
+	mu             sync.Mutex
+	client         codygateway.Client
+	endpoint       string
+	token          string
+	httpClient     httpcli.Doer
 }
 
-func initDotcomAttributionService(observationCtx *observation.Context, db database.DB) attribution.Service {
-	searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
-	return attribution.NewLocalSearch(observationCtx, searchClient)
+// Service creates an attribution.Service. It tries to get gateway endpoint from site config
+// and if possible, returns a configured gateway proxy implementation.
+// Otherwise it returns an uninitialized service that always returns an error.
+func (e *enterpriseInitialization) Service() attribution.Service {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	config := conf.Get().SiteConfig()
+	endpoint, token := conf.GetAttributionGateway(config)
+	if e.endpoint != endpoint || e.token != token {
+		e.endpoint = endpoint
+		e.token = token
+		e.client = codygateway.NewClient(e.httpClient, endpoint, token)
+	}
+	if e.endpoint == "" || e.token == "" {
+		return attribution.Uninitialized{}
+	}
+	return attribution.NewGatewayProxy(e.observationCtx, e.client)
 }
 
 func alwaysAllowed(context.Context, string) (bool, error) {
@@ -57,24 +89,19 @@ func alwaysAllowed(context.Context, string) (bool, error) {
 }
 
 func NewAttributionTest(observationCtx *observation.Context) func(context.Context, string) (bool, error) {
-	// TODO(#59701): Re-initialize attribution service. So that changes
-	// in site-config are reflected immediately for subsequent GraphQL
-	// calls and code completions calls.
-	service := initEnterpriseAttributionService(observationCtx)
-	if service == nil {
-		return alwaysAllowed
-	}
 	// Attribution is only-enterprise, dotcom lets everything through.
 	if envvar.SourcegraphDotComMode() {
 		return alwaysAllowed
 	}
+	initLogic := &enterpriseInitialization{observationCtx: observationCtx}
 	return func(ctx context.Context, snippet string) (bool, error) {
 		// Check if attribution is on, permit everything if it's off.
 		c := conf.GetConfigFeatures(conf.Get().SiteConfig())
 		if !c.Attribution {
 			return true, nil
 		}
-		attribution, err := service.SnippetAttribution(ctx, snippet, 1)
+		// Attribution not available. Mode is permissive.
+		attribution, err := initLogic.Service().SnippetAttribution(ctx, snippet, 1)
 		// Attribution not available. Mode is permissive.
 		if err != nil {
 			return true, err

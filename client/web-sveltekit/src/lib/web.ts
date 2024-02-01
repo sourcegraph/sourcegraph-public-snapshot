@@ -1,7 +1,7 @@
 // We want to limit the number of imported modules as much as possible
 /* eslint-disable no-restricted-imports */
 
-export { parseSearchURL } from '@sourcegraph/web/src/search/index'
+export { parseSearchURL, type ParsedSearchURL } from '@sourcegraph/web/src/search/index'
 export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/suggestions'
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 

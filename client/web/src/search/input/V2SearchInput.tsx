@@ -185,6 +185,7 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
 
     return (
         <CodeMirrorQueryInputWrapper
+            autoFocus={inputProps.autoFocus}
             interpretComments={false}
             placeholder="Search for code or files..."
             patternType={inputProps.patternType}

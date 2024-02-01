@@ -11,11 +11,23 @@ out="$5"
 # We can't directly mount $project_root, because those are symbolic links created by the sandboxing mechansim. So instead, we copy everything over.
 
 tmp_folder=$(mktemp -d)
-cp -R -L "$project_root"/* $tmp_folder/
+current_folder=$(pwd)
+
+
+# Inside the testdata folder we have placed a `index.scip` - a symlink that points
+# to a Bazel location. Problem is, without running the Bazel task that produces it,
+# the symlink is dangling.
+# Additionally, Bazel makes every file in the folder a symlink.
+# To copy them as files (before creating a tar archive) we have to use special
+# flags for cp/rsync, to dereference the symlinks before copying.
+# But if one of those symlinks is broken, then cp/rsync cannot complete.
+# What's more, there doesn't seem to exist a set of flags that works on both Linux (CI) and MacOS (dev machines).
+# Therefore we use `tar`'s ability to exclude files AND dereference symlinks.
+
+cd $project_root && tar -cvf$tmp_folder/archive.tar --dereference --exclude '**/*.scip' . && cd $current_folder
 
 # Delete temp folder on exit
-trap "rm -Rf $tmp_folder" EXIT
-
+trap "rm -rf $tmp_folder" EXIT
 
 docker load --input="$tarball"
 
@@ -29,10 +41,10 @@ docker load --input="$tarball"
 # and then pipe the index back after indexing.
 
 temp_scip_path="$tmp_folder/index-piped.scip"
-tar_sources_command="tar -cv -C $tmp_folder ."
+tar_sources_command="cat $tmp_folder/archive.tar"
 write_scip_file_command="base64 -d > $temp_scip_path"
 command_inside_container="(tar -xv >&2 && $scip_command >&2) && (cat ./index.scip | base64)"
-run_docker_command="docker run -i -a stdin -a stdout -a stderr $image_name bash -c '$command_inside_container'"
+run_docker_command="docker run --rm -i -a stdin -a stdout -a stderr $image_name bash -c '$command_inside_container'"
 
 eval "$tar_sources_command | $run_docker_command | $write_scip_file_command"
 

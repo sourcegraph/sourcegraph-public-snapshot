@@ -5681,6 +5681,13 @@ def go_dependencies():
         version = "v0.0.0-20231222002716-51aa712b9bcc",
     )
     go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_nobl9",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9",
+        sum = "h1:kzWUr3tOgSaWLH6tRre+nQWaIspel2Adh07xlstYKrA=",
+        version = "v0.0.0-20240131130226-cb88836e6df8",
+    )
+    go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_opsgenie",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie",
@@ -5755,8 +5762,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:xfQ+hpwxBMb4Dvy3djTCheq/kt7LGxhe3SywvebgPXY=",
-        version = "v0.0.0-20240129113324-340c5f85f0b7",
+        sum = "h1:tVSzsnax+PF5rrWj91qVZyTR8YGGbtu0BW48t+1PizY=",
+        version = "v0.0.0-20240129144758-19fa44cea9eb",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

@@ -1,4 +1,4 @@
-package context
+package codycontext
 
 import (
 	"context"
@@ -41,7 +41,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error)) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error), contentFilter RepoContentFilter) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -64,6 +64,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 		embeddingsClient:  embeddingsClient,
 		searchClient:      searchClient,
 		getQdrantSearcher: getQdrantSearcher,
+		contentFilter:     contentFilter,
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -76,6 +77,7 @@ type CodyContextClient struct {
 	db                database.DB
 	embeddingsClient  embeddings.Client
 	searchClient      client.SearchClient
+	contentFilter     RepoContentFilter
 	getQdrantSearcher func() (vdb.VectorSearcher, error)
 
 	obsCtx                 *observation.Context
@@ -120,6 +122,11 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		return nil, err
 	}
 
+	// Generating the content filter removes any repos where the filter can not
+	// be determined
+	filterableRepos, contextFilter := c.contentFilter.GetFilter(args.Repos, c.obsCtx.Logger)
+	args.Repos = filterableRepos
+
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
 	if err != nil {
 		return nil, err
@@ -130,7 +137,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	// to decide how many results out of our limit should be reserved for
 	// embeddings results. We can't easily compare the scores between embeddings
 	// and keyword search.
-	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(args.Repos))
+	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(filterableRepos))
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
@@ -151,11 +158,11 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	// Fetch keyword results and embeddings results concurrently
 	p := pool.New().WithErrors()
 	p.Go(func() (err error) {
-		embeddingsResults, err = c.getEmbeddingsContext(ctx, embeddingsArgs)
+		embeddingsResults, err = c.getEmbeddingsContext(ctx, embeddingsArgs, contextFilter)
 		return err
 	})
 	p.Go(func() (err error) {
-		keywordResults, err = c.getKeywordContext(ctx, keywordArgs)
+		keywordResults, err = c.getKeywordContext(ctx, keywordArgs, contextFilter)
 		return err
 	})
 
@@ -188,7 +195,7 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -198,7 +205,11 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
-		return c.getEmbeddingsContextFromQdrant(ctx, args)
+		results, err := c.getEmbeddingsContextFromQdrant(ctx, args)
+		if err != nil {
+			return nil, err
+		}
+		return filter(results), nil
 	}
 
 	repoNames := make([]api.RepoName, len(args.Repos))
@@ -235,7 +246,7 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 			EndLine:   result.EndLine,
 		})
 	}
-	return res, nil
+	return filter(res), nil
 }
 
 var textFileFilter = func() string {
@@ -247,7 +258,7 @@ var textFileFilter = func() string {
 }()
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, filter FileChunkFilterFunc) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -302,7 +313,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 			for _, res := range e.Results {
 				if fm, ok := res.(*result.FileMatch); ok {
-					collected = append(collected, fileMatchToContextMatches(fm)...)
+					collected = append(collected, filter(fileMatchToContextMatches(fm))...)
 					if len(collected) >= limit {
 						cancel()
 						return
