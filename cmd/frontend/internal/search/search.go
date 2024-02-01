@@ -480,7 +480,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 		eventMatch := search.FromMatch(match, repoMetadata, search.FromMatchOptions{
 			ChunkMatches:         h.enableChunkMatches,
-			MaxContentLineLength: 10,
+			MaxContentLineLength: 50,
 		})
 		h.matchesBuf.Append(eventMatch)
 	}

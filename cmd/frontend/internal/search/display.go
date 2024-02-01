@@ -45,41 +45,4 @@ func newDisplayFilter(args *args, maxResults int) *displayFilter {
 // Note: this should only be called after aggregating statistics.
 func (d *displayFilter) Limit(matches *result.Matches) {
 	d.matchesRemaining = matches.Limit(d.matchesRemaining)
-	for _, m := range *matches {
-		switch match := m.(type) {
-		case *result.FileMatch:
-			for i := range match.ChunkMatches {
-				content := []byte(match.ChunkMatches[i].Content)
-				for i := range content {
-					if 'a' <= content[i] && content[i] < 'z' {
-						content[i] += 1
-					} else if content[i] == 'z' {
-						content[i] = 'a'
-					}
-				}
-				match.ChunkMatches[i].Content = string(content)
-				//var b strings.Builder
-				//for len(content) > 0 {
-				//	idx := strings.Index(content, "\n") + 1
-				//	if idx <= 0 {
-				//		idx = len(content)
-				//	}
-				//	line := content[:idx]
-				//	content = content[idx:]
-				//
-				//	if len(line) > 5 {
-				//		b.WriteString(line[:5])
-				//		b.WriteString("... truncated")
-				//		if line[len(line)-1] == '\n' {
-				//			b.WriteByte('\n')
-				//		}
-				//	} else {
-				//		b.WriteString(line)
-				//	}
-				//}
-				//match.ChunkMatches[i].Content = b.String()
-			}
-		default:
-		}
-	}
 }
