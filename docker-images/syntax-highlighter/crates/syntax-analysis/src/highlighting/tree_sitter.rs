@@ -10,7 +10,7 @@ use tree_sitter_highlight::{
 };
 
 use crate::highlighting::SourcegraphQuery;
-use crate::range::PackedRange;
+use crate::range::Range;
 
 macro_rules! include_scip_query {
     ($lang: expr, $query: literal) => {
@@ -277,7 +277,7 @@ pub fn index_language_with_config(
                 // certain builds fail or something to test this out better (but
                 // not have syntax highlighting completely fall apart from one
                 // bad range)
-                let local_range = match PackedRange::from_vec(&local.range) {
+                let local_range = match Range::from_vec(&local.range) {
                     Some(range) => range,
                     None => continue,
                 };

@@ -1,4 +1,4 @@
-use crate::range::PackedRange;
+use crate::range::Range;
 use anyhow::Result;
 use bitvec::prelude::*;
 use protobuf::Enum;
@@ -8,8 +8,8 @@ use crate::languages::TagConfiguration;
 
 #[derive(Debug)]
 pub struct Scope {
-    pub ident_range: PackedRange,
-    pub scope_range: PackedRange,
+    pub ident_range: Range,
+    pub scope_range: Range,
     pub globals: Vec<Global>,
     pub children: Vec<Scope>,
     pub descriptors: Vec<Descriptor>,
@@ -18,8 +18,8 @@ pub struct Scope {
 
 #[derive(Debug)]
 pub struct Global {
-    pub range: PackedRange,
-    pub enclosing: Option<PackedRange>,
+    pub range: Range,
+    pub enclosing: Option<Range>,
     pub descriptors: Vec<Descriptor>,
     pub kind: symbol_information::Kind,
 }

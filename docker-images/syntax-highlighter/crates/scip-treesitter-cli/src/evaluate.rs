@@ -12,7 +12,7 @@ use colored::{ColoredString, Colorize};
 use scip::types::Index;
 use serde::Serializer;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
-use syntax_analysis::range::PackedRange;
+use syntax_analysis::range::Range;
 
 use crate::{io::read_index_from_file, progress::*};
 
@@ -86,7 +86,7 @@ struct SymbolPair {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 struct LocationInFile {
-    rng: PackedRange,
+    rng: Range,
     path_id: PathId,
 }
 
@@ -97,7 +97,7 @@ pub struct SymbolOccurrence {
 }
 
 impl SymbolOccurrence {
-    fn range(&self) -> &PackedRange {
+    fn range(&self) -> &Range {
         &self.location.rng
     }
 }
@@ -751,7 +751,7 @@ impl Evaluator {
             let path_id = self.path_formatter.make_path_id(&doc.relative_path);
             out.reserve(doc.occurrences.len());
             for occ in &doc.occurrences {
-                let rng = PackedRange::from_vec(&occ.range).unwrap();
+                let rng = Range::from_vec(&occ.range).unwrap();
                 let sym_id: SymbolId<T>;
                 if let Some(prefix) = occ.symbol.strip_prefix("local ") {
                     sym_id = self.symbol_formatter.make_symbol_id(&format!(
