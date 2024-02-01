@@ -15,6 +15,7 @@ import {
     Alert,
     Button,
     createRectangle,
+    FeedbackPrompt,
     H3,
     Icon,
     Link,
@@ -32,6 +33,7 @@ import {
     NO_ACCESS_BATCH_CHANGES_WRITE,
     NO_ACCESS_SOURCEGRAPH_COM,
 } from '../../../../batches/utils'
+import { useHandleSubmitFeedback } from '../../../../hooks'
 import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../../../tracking/util'
@@ -210,6 +212,13 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         onTogglePatternType(patternType)
     }, [onTogglePatternType, patternType, telemetryService])
 
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch: location.pathname,
+        textPrefix: '[Source: keyword search] ',
+    })
+
     return (
         <aside
             role="region"
@@ -217,6 +226,22 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
             className={classNames(props.className, styles.searchResultsInfoBar)}
             data-testid="results-info-bar"
         >
+            {feedbackModalOpen ? (
+                <FeedbackPrompt
+                    onSubmit={handleSubmitFeedback}
+                    modal={true}
+                    openByDefault={true}
+                    authenticatedUser={
+                        props.authenticatedUser
+                            ? {
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
+                            : null
+                    }
+                    onClose={() => setFeedbackModalOpen(false)}
+                />
+            ) : null}
             {refFromCodySearch && codySearchInput.input && codySearchInput.translatedQuery === props.query ? (
                 <Alert variant="info" className={styles.codyFeedbackAlert}>
                     Sourcegraph converted "<strong>{codySearchInput.input}</strong>" to "
@@ -302,6 +327,12 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                         </Link>{' '}
                                         to learn more.
                                     </Text>
+                                    <Button
+                                        className={styles.feedbackButton}
+                                        onClick={() => setFeedbackModalOpen(true)}
+                                    >
+                                        Send feedback
+                                    </Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
