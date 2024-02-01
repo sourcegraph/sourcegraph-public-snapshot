@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -124,6 +125,9 @@ var highlightHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
 })
 
 func (r *VirtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
+	fmt.Println("delaying highlight of ", r.stat.Name())
+	time.Sleep(5 * time.Second)
+	fmt.Println("DONE", r.stat.Name())
 	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: args.StartLine, EndLine: args.EndLine})
 	if err != nil {
 		return nil, err

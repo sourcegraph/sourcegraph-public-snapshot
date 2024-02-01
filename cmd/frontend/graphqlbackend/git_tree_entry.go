@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/url"
@@ -246,6 +247,10 @@ var (
 )
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
+	fmt.Println("delaying highlight of ", r.stat.Name())
+	time.Sleep(5 * time.Second)
+	fmt.Println("DONE", r.stat.Name())
+
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
 	if (args.StartLine != nil || args.EndLine != nil) && args.Format != "HTML_PLAINTEXT" {
 		return nil, errors.New("pagination is not supported with formats other than HTML_PLAINTEXT, don't " +

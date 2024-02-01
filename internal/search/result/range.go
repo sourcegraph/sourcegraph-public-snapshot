@@ -61,7 +61,11 @@ func rangeToHighlights(s string, r Range) []HighlightedRange {
 
 // Location represents the location of a character in some UTF-8 encoded content.
 type Location struct {
-	// Offset is the number of bytes preceding this character in the content
+	// Offset is the number of bytes preceding this character in the content.
+	//
+	// ^^^ @camden content is a bit confusing, since in a chunkmatch we call
+	// the preview content. But from what I can tell this is the offset in the
+	// document.
 	Offset int
 
 	// Line is the count of newlines before the offset in the matched text
