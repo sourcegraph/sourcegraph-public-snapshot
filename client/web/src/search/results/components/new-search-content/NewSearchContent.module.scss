@@ -41,7 +41,8 @@
 
 .new-filters {
     grid-area: new-filters;
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color-2);
+    background-color: var(--color-bg-1);
 }
 
 .filters {
@@ -119,6 +120,7 @@
     padding: 0.3rem 0.5rem;
     border-bottom: 1px solid var(--border-color-2);
     min-height: 41px;
+    background-color: var(--result-header-bg);
 }
 
 .content {
