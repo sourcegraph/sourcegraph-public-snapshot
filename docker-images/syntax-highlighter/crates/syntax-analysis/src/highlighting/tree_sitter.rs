@@ -255,7 +255,7 @@ pub fn index_language_with_config(
     })?;
 
     let mut emitter = ScipEmitter::new();
-    let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
+    let mut doc = emitter.render(highlights, &code)?;
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
     if include_locals {
@@ -311,12 +311,9 @@ struct OffsetManager {
 }
 
 impl OffsetManager {
-    fn new(s: &str) -> Result<Self, Error> {
-        if s.is_empty() {
-            // TODO: Make an error here
-            // Error(
-        }
-
+    // Pre-condition: Input string is non-empty
+    fn new(s: &str) -> Self {
+        debug_assert!(!s.is_empty());
         let source = s.to_string();
 
         let mut offsets = Vec::new();
@@ -330,7 +327,7 @@ impl OffsetManager {
             pos += line.len() + 1;
         }
 
-        Ok(Self { source, offsets })
+        Self { source, offsets }
     }
 
     fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
@@ -377,7 +374,6 @@ impl OffsetManager {
     }
 }
 
-/// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
 pub(crate) struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
@@ -388,19 +384,17 @@ impl ScipEmitter {
         ScipEmitter {}
     }
 
-    pub fn render<F>(
+    pub fn render(
         &mut self,
-        highlighter: impl Iterator<Item = Result<HighlightEvent, Error>>,
+        highlighter: impl Iterator<Item = Result<HighlightEvent, tree_sitter_highlight::Error>>,
         source: &str,
-        _attribute_callback: &F,
-    ) -> Result<Document, Error>
-    where
-        F: Fn(Highlight) -> SyntaxKind,
-    {
+    ) -> Result<Document, tree_sitter_highlight::Error> {
         let mut doc = Document::new();
+        if source.is_empty() {
+            return Ok(doc);
+        }
 
-        let line_manager = OffsetManager::new(source)?;
-
+        let line_manager = OffsetManager::new(source);
         let mut highlights = vec![];
         for event in highlighter {
             match event? {
