@@ -4,8 +4,8 @@
     import { mdiFlaskRemoveOutline, mdiInformation } from '@mdi/js'
 
     // A hard referesh will only load the React version if the URL does not explicitly
-    // include the `feat=enable-sveltekit` query parameter.
-    $: urlHasFeatureFlag = $page.url.searchParams.getAll('feat').includes('enable-sveltekit')
+    // include the `feat=enable-ewp` query parameter.
+    $: urlHasFeatureFlag = $page.url.searchParams.getAll('feat').includes('enable-ewp')
 </script>
 
 <div>

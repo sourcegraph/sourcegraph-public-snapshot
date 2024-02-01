@@ -9,11 +9,17 @@ import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import { isSvelteKitSupportedURL, reload } from './util'
 
+function useIsSvelteKitToggleEnabled(): boolean {
+    const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
+    const [isExperimentalWebAppToggleEnabled] = useFeatureFlag('enable-ewp-toggle')
+    return isSvelteKitToggleEnabled || isExperimentalWebAppToggleEnabled
+}
+
 export const SvelteKitNavItem: FC = () => {
     const location = useLocation()
-    const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
+    const isEnabled = useIsSvelteKitToggleEnabled()
 
-    if (!isSvelteKitToggleEnabled || !isSvelteKitSupportedURL(location.pathname)) {
+    if (!isEnabled || !isSvelteKitSupportedURL(location.pathname)) {
         return null
     }
 

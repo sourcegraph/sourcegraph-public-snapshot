@@ -1,7 +1,7 @@
 <script lang="ts">
     import { mdiBookOutline, mdiChartBar, mdiFlaskOutline, mdiMagnify } from '@mdi/js'
 
-    import { mark, svelteLogoEnabled } from '$lib/images'
+    import { mark } from '$lib/images'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
     import { Button } from '$lib/wildcard'
@@ -20,11 +20,11 @@
         const urlCopy = new URL(url)
         urlCopy.searchParams.delete('feat')
         for (let feature of urlCopy.searchParams.getAll('feat')) {
-            if (feature !== 'enable-sveltekit') {
+            if (feature !== 'enable-ewp') {
                 urlCopy.searchParams.append('feat', feature)
             }
         }
-        urlCopy.searchParams.append('feat', '-enable-sveltekit')
+        urlCopy.searchParams.append('feat', '-enable-ewp')
         return urlCopy.toString()
     })($page.url)
 </script>
