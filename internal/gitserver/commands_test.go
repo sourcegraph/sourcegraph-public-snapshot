@@ -2180,11 +2180,6 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		// sub-repo permissions are enabled only for repo with repoID = 1
 		return name == repoName, nil
 	})
-	ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (io.ReadCloser, error) {
-		stringReader := strings.NewReader("1337")
-		return io.NopCloser(stringReader), nil
-	}
-	defer ResetClientMocks()
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 

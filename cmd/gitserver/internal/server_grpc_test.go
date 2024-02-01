@@ -396,6 +396,123 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_Archive(t *testing.T) {
+	mockSS := gitserver.NewMockGitserverService_ArchiveServer()
+	// Add an actor to the context.
+	a := actor.FromUser(1)
+	mockSS.ContextFunc.SetDefaultReturn(actor.WithActor(context.Background(), a))
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		err := gs.Archive(&v1.ArchiveRequest{Repo: ""}, mockSS)
+		require.ErrorContains(t, err, "empty repo or format")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo"}, mockSS)
+		require.ErrorContains(t, err, "empty repo or format")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		svc := NewMockService()
+		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
+		gs := &grpcServer{svc: svc}
+		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: "zip"}, mockSS)
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not cloned")
+		mockassert.Called(t, svc.MaybeStartCloneFunc)
+	})
+	t.Run("checks if sub-repo perms are enabled for repo", func(t *testing.T) {
+		srp := authz.NewMockSubRepoPermissionChecker()
+		svc := NewMockService()
+		// Repo is cloned, proceed!
+		svc.MaybeStartCloneFunc.SetDefaultReturn(nil, true)
+		gs := &grpcServer{
+			subRepoChecker: srp,
+			svc:            svc,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("filecontent"))), nil)
+				return b
+			},
+		}
+
+		t.Run("subrepo perms are not enabled", func(t *testing.T) {
+			srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: "zip"}, mockSS)
+			assert.NoError(t, err)
+			mockassert.Called(t, srp.EnabledForRepoFunc)
+		})
+
+		t.Run("subrepo perms are enabled, returns error", func(t *testing.T) {
+			srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: "zip"}, mockSS)
+			assert.Error(t, err)
+			require.Contains(t, err.Error(), "archiveReader invoked for a repo with sub-repo permissions")
+			mockassert.Called(t, srp.EnabledForRepoFunc)
+		})
+	})
+	t.Run("e2e", func(t *testing.T) {
+		srp := authz.NewMockSubRepoPermissionChecker()
+		// Skip subrepo perms checks.
+		srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
+		svc := NewMockService()
+		// Repo is cloned, proceed!
+		svc.MaybeStartCloneFunc.SetDefaultReturn(nil, true)
+		b := git.NewMockGitBackend()
+		b.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("filecontent"))), nil)
+		gs := &grpcServer{
+			subRepoChecker: srp,
+			svc:            svc,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		r, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
+			Repo:   "therepo",
+			Format: "zip",
+		})
+		require.NoError(t, err)
+		for {
+			msg, err := r.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+			}
+			if diff := cmp.Diff(&proto.ArchiveResponse{
+				Data: []byte("filecontent"),
+			}, msg, cmpopts.IgnoreUnexported(proto.ArchiveResponse{})); diff != "" {
+				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			}
+		}
+
+		b.ArchiveReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
+		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
+			Repo:   "therepo",
+			Format: "zip",
+		})
+		require.NoError(t, err)
+		_, err = cc.Recv()
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+
+		b.ArchiveReaderFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		cc, err = cli.Archive(context.Background(), &v1.ArchiveRequest{
+			Repo:   "therepo",
+			Format: "zip",
+		})
+		require.NoError(t, err)
+		_, err = cc.Recv()
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)

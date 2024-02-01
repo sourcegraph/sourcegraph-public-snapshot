@@ -228,6 +228,19 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 			}
 			return s.Err()
 		}
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepo(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
