@@ -2247,14 +2247,6 @@ func (c *clientImplementor) ArchiveReader(
 	})
 	defer endObservation(1, observation.Args{})
 
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
-			return nil, errors.Wrap(err, "sub-repo permissions check:")
-		} else if enabled {
-			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
-		}
-	}
-
 	if ClientMocks.Archive != nil {
 		return ClientMocks.Archive(ctx, repo, options)
 	}

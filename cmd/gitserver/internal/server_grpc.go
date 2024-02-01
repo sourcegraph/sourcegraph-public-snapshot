@@ -174,6 +174,8 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 }
 
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
+	ctx := ss.Context()
+
 	// Log which which actor is accessing the repo.
 	accesslog.Record(ss.Context(), req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
@@ -191,6 +193,26 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+
+	// Ensure that the repo is cloned and if not start a background clone, then
+	// return a well-known NotFound payload error.
+	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
+		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
+			CloneInProgress: notFoundPayload.CloneInProgress,
+			CloneProgress:   notFoundPayload.CloneProgress,
+			Repo:            req.GetRepo(),
+		})
+		if err != nil {
+			return err
+		}
+		return s.Err()
+	}
+
+	if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
+		return errors.Wrap(err, "sub-repo permissions check")
+	} else if enabled {
+		return errors.New("archiveReader invoked for a repo with sub-repo permissions")
+	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
