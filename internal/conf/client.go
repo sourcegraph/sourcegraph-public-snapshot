@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type client struct {
@@ -121,10 +122,15 @@ func Mock(mockery *Unified) {
 	DefaultClient().Mock(mockery)
 }
 
+// MockAndNotifyWatchers sets up mock data and notifies all the watcher of the change.
+func MockAndNotifyWatchers(mockery *Unified) {
+	DefaultClient().Mock(mockery)
+	DefaultClient().notifyWatchers()
+}
+
 // Mock sets up mock data for the site configuration.
 func (c *client) Mock(mockery *Unified) {
 	c.store.Mock(mockery)
-	c.notifyWatchers()
 }
 
 // Watch calls the given function whenever the configuration has changed. The new configuration is

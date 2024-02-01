@@ -172,7 +172,7 @@ func newSyncConfMocking(t *testing.T) *syncConfMocking {
 
 // Update the site config and await the new config to be propagated to the watchers.
 func (m *syncConfMocking) Update(c schema.SiteConfiguration) {
-	conf.Mock(&conf.Unified{SiteConfiguration: c})
+	conf.MockAndNotifyWatchers(&conf.Unified{SiteConfiguration: c})
 	m.cond.L.Lock()
 	defer m.cond.L.Unlock()
 	diff := cmp.Diff(m.lastConfig, c)
