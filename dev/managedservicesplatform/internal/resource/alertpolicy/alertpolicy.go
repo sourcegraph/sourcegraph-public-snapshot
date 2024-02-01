@@ -103,6 +103,14 @@ type ResponseCodeMetric struct {
 	Duration     *string
 }
 
+// PromQL allows defining alerts using Prometheus Query Language (PromQL).
+type PromQL struct {
+	Query              string
+	Threshold          float64
+	Duration           string // defaults to '0s'
+	EvaluationInterval string // defaults to 1m
+}
+
 type ResourceKind string
 
 const (
@@ -166,8 +174,10 @@ type Config struct {
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
 
+	// Only one of the below may be set.
 	ThresholdAggregation *ThresholdAggregation
 	ResponseCodeMetric   *ResponseCodeMetric
+	PromQL               *PromQL
 }
 
 func (c Config) getDocsSlug() string {
