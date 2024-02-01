@@ -109,7 +109,7 @@ go_library(
 
 go_test(
     name = "search_test",
-    timeout = "moderate",
+    timeout = "short",
     srcs = [
         "chunk_test.go",
         "filter_test.go",
