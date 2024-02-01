@@ -6,8 +6,8 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
-    useMemo,
     useRef,
+    useMemo,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -20,9 +20,14 @@ import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableF
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, QueryStateUpdate, QueryUpdate, SearchMode } from '@sourcegraph/shared/src/search'
-import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import {
+    QueryState,
+    QueryStateUpdate,
+    QueryUpdate,
+    SearchMode,
+    SearchPatternTypeMutationProps,
+    SearchPatternTypeProps,
+} from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     ContentMatch,
@@ -36,9 +41,8 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { useKeywordSearch } from '../../../../featureFlags/useFeatureFlag'
 import { fetchBlob } from '../../../../repo/blob/backend'
-import type { SearchPanelConfig } from '../../../../repo/blob/codemirror/search'
-import { SearchPanelViewMode } from '../../../../repo/blob/codemirror/types'
 import { isSearchJobsEnabled } from '../../../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState } from '../../../../stores'
 import { GettingStartedTour } from '../../../../tour/GettingStartedTour'
@@ -68,7 +72,9 @@ interface NewSearchContentProps
     extends TelemetryProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        SearchPatternTypeProps,
+        SearchPatternTypeMutationProps {
     submittedURLQuery: string
     queryState: QueryState
     liveQuery: string
@@ -76,7 +82,6 @@ interface NewSearchContentProps
     searchMode: SearchMode
     trace: boolean
     searchContextsEnabled: boolean
-    patternType: SearchPatternType
     results: AggregateStreamingSearchResults | undefined
     showAggregationPanel: boolean
     selectedSearchContextSpec: string | undefined
@@ -94,6 +99,7 @@ interface NewSearchContentProps
     onExpandAllResultsToggle: () => void
     onSearchAgain: (additionalFilters: string[]) => void
     onDisableSmartSearch: () => void
+    onTogglePatternType: (patternType: SearchPatternType) => void
     onLogSearchResultClick: (index: number, type: string, resultsLength: number) => void
 }
 
@@ -127,6 +133,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
         onExpandAllResultsToggle,
         onSearchAgain,
         onDisableSmartSearch,
+        onTogglePatternType,
         onLogSearchResultClick,
     } = props
 
@@ -134,6 +141,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     const containerRef = useRef<HTMLDivElement>(null)
     const { previewBlob, clearPreview } = useSearchResultState()
 
+    const showKeywordSearchToggle = useKeywordSearch()
     const newFiltersEnabled = useIsNewSearchFiltersEnabled()
     const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('search.sidebar.collapsed', true)
 
@@ -162,11 +170,16 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
     )
 
     const handleFilterPanelQueryChange = useCallback(
-        (updatedQuery: string): void => {
-            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }])
+        (updatedQuery: string, updatedSearchURLQuery?: string): void => {
+            onSearchSubmit([{ type: 'replaceQuery', value: updatedQuery }], updatedSearchURLQuery)
         },
         [onSearchSubmit]
     )
+
+    const handleFilterPanelClose = useCallback(() => {
+        clearPreview()
+        telemetryService.log('SearchFilePreviewClose', {}, {})
+    }, [telemetryService, clearPreview])
 
     return (
         <div className={classNames(styles.root, { [styles.rootWithNewFilters]: newFiltersEnabled })}>
@@ -174,8 +187,10 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 <SearchFiltersPanel
                     query={submittedURLQuery}
                     filters={results?.filters}
-                    onQueryChange={handleFilterPanelQueryChange}
+                    withCountAllFilter={isSearchLimitHit(results)}
                     className={styles.newFilters}
+                    onQueryChange={handleFilterPanelQueryChange}
+                    telemetryService={telemetryService}
                 />
             )}
 
@@ -216,6 +231,8 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                 className={styles.infobar}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onShowMobileFiltersChanged={setSidebarCollapsed}
+                showKeywordSearchToggle={!!showKeywordSearchToggle}
+                onTogglePatternType={onTogglePatternType}
                 stats={
                     <>
                         <StreamingProgress
@@ -313,17 +330,23 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
             {previewBlob && (
                 <FilePreviewPanel
                     blobInfo={previewBlob}
-                    caseSensitive={caseSensitive}
-                    patternType={patternType}
-                    submittedURLQuery={submittedURLQuery}
                     platformContext={platformContext}
                     extensionsController={extensionsController}
                     settingsCascade={settingsCascade}
-                    onClose={clearPreview}
+                    telemetryService={telemetryService}
+                    onClose={handleFilterPanelClose}
                 />
             )}
         </div>
     )
+}
+
+const isSearchLimitHit = (results?: AggregateStreamingSearchResults): boolean => {
+    if (results?.state !== 'complete') {
+        return false
+    }
+
+    return results?.progress.skipped.some(skipped => skipped.reason.includes('-limit'))
 }
 
 interface NewSearchSidebarWrapper extends HTMLAttributes<HTMLElement> {
@@ -352,35 +375,28 @@ const NewSearchSidebarWrapper: FC<PropsWithChildren<NewSearchSidebarWrapper>> = 
     )
 }
 
-interface FilePreviewPanelProps extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
+interface FilePreviewPanelProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        ExtensionsControllerProps,
+        TelemetryProps {
     blobInfo: SearchResultPreview
-    submittedURLQuery: string
-    patternType: SearchPatternType
-    caseSensitive: boolean
     onClose: () => void
 }
 
 const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
-    const {
-        blobInfo,
-        submittedURLQuery,
-        patternType,
-        caseSensitive,
-        onClose,
-        platformContext,
-        settingsCascade,
-        extensionsController,
-    } = props
+    const { blobInfo, onClose, platformContext, settingsCascade, extensionsController, telemetryService } = props
 
-    const searchPanelConfig = useMemo<SearchPanelConfig>(
-        () => ({
-            caseSensitive,
-            regexp: patternType === SearchPatternType.regexp,
-            searchValue: getLiteralQueryPart(submittedURLQuery),
-            mode: SearchPanelViewMode.MatchesOnly,
-        }),
-        [caseSensitive, patternType, submittedURLQuery]
-    )
+    const staticHighlights = useMemo(() => {
+        if (blobInfo.type === 'path') {
+            return []
+        }
+        return blobInfo.chunkMatches?.flatMap(chunkMatch => chunkMatch.ranges)
+    }, [blobInfo])
+
+    useEffect(() => {
+        telemetryService.logViewEvent('SearchFilePreview')
+    }, [telemetryService])
 
     return (
         <Panel
@@ -411,26 +427,14 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
                     commitID={blobInfo.commit ?? ''}
                     wrapLines={false}
                     navigateToLineOnAnyClick={false}
-                    searchPanelConfig={searchPanelConfig}
                     className={styles.previewContent}
                     platformContext={platformContext}
                     settingsCascade={settingsCascade}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     extensionsController={extensionsController}
+                    staticHighlightRanges={staticHighlights}
                 />
             </Suspense>
         </Panel>
     )
-}
-
-function getLiteralQueryPart(searchQuery: string): string {
-    const tokens = scanSearchQuery(searchQuery)
-
-    if (tokens.type === 'success') {
-        const literals = tokens.term.filter(token => token.type !== 'filter' && token.type !== 'comment')
-
-        return stringHuman(literals).trim()
-    }
-
-    return searchQuery.trim()
 }

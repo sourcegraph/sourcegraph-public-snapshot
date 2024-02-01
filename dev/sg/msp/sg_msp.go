@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/run"
 
@@ -724,6 +726,47 @@ Supports completions on services and environments.`,
 						return nil
 					},
 				},
+			},
+		},
+		{
+			Name:   "fleet",
+			Usage:  "Summarize aspects of the MSP fleet",
+			Before: msprepo.UseManagedServicesRepo,
+			Action: func(c *cli.Context) error {
+				services, err := msprepo.ListServices()
+				if err != nil {
+					return err
+				}
+
+				var environmentCount int
+				categories := make(map[spec.EnvironmentCategory]int)
+				teams := make(map[string]int)
+				for _, s := range services {
+					svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
+					if err != nil {
+						return err
+					}
+					for _, t := range svc.Service.Owners {
+						teams[t] += 1
+					}
+					for _, e := range svc.Environments {
+						environmentCount += 1
+						categories[e.Category] += 1
+					}
+				}
+
+				teamNames := maps.Keys(teams)
+				sort.Strings(teamNames)
+				summary := fmt.Sprintf(`Managed Services Platform fleet summary:
+
+- %d services
+- %d teams (%s)
+- %d environments
+`, len(services), len(teams), strings.Join(teamNames, ", "), environmentCount)
+				for category, count := range categories {
+					summary += fmt.Sprintf("\t- %s environments: %d\n", category, count)
+				}
+				return std.Out.WriteMarkdown(summary)
 			},
 		},
 		{

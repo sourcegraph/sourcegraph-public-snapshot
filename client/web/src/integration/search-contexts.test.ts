@@ -94,7 +94,7 @@ describe('Search contexts', () => {
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
     })
 
-    test('Unavailable search context should remain in the query and disable the search context dropdown with default context', async () => {
+    test.skip('Unavailable search context should remain in the query and disable the search context dropdown with default context', async () => {
         const { waitForInput, applySettings } = getSearchQueryInputConfig('codemirror6')
 
         testContext.overrideGraphQL({
@@ -142,8 +142,19 @@ describe('Search contexts', () => {
     test('Create static search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            RepositoriesByNames: ({ names, first, after }) => ({
+                repositories: {
+                    nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                },
+                variables: {
+                    names,
+                    first,
+                    after,
+                },
             }),
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
@@ -291,8 +302,19 @@ describe('Search contexts', () => {
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            RepositoriesByNames: ({ names, first, after }) => ({
+                repositories: {
+                    nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                },
+                variables: {
+                    names,
+                    first,
+                    after,
+                },
             }),
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {

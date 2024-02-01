@@ -781,6 +781,68 @@ func TestNewPlanJob(t *testing.T) {
             (patternInfo.isStructural . true)
             (patternInfo.fileMatchLimit . 2000)))))))`),
 		},
+		// The next two queries show an unexpected way that a query is
+		// translated into a global zoekt query, all depending on if context:
+		// is specified (which it normally is). We expect to just have one
+		// global zoekt query, but with context we do not. Recording this test
+		// to capture the current inefficiency.
+		{
+			query:      `context:global (foo AND bar AND baz) OR "foo bar baz"`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeKeyword,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . keyword)
+    (OR
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 2000)
+          (PARALLEL
+            (ZOEKTGLOBALTEXTSEARCH
+              (query . (and substr:"foo" substr:"bar" substr:"baz"))
+              (type . text)
+              (repoOpts.searchContextSpec . global))
+            (REPOSCOMPUTEEXCLUDED
+              (repoOpts.searchContextSpec . global))
+            (AND
+              (LIMIT
+                (limit . 40000)
+                (REPOSEARCH
+                  (repoOpts.repoFilters . [foo])
+                  (repoOpts.searchContextSpec . global)
+                  (repoNamePatterns . [(?i)foo])))
+              (LIMIT
+                (limit . 40000)
+                (REPOSEARCH
+                  (repoOpts.repoFilters . [bar])
+                  (repoOpts.searchContextSpec . global)
+                  (repoNamePatterns . [(?i)bar])))
+              (LIMIT
+                (limit . 40000)
+                (REPOSEARCH
+                  (repoOpts.repoFilters . [baz])
+                  (repoOpts.searchContextSpec . global)
+                  (repoNamePatterns . [(?i)baz])))))))
+      (TIMEOUT
+        (timeout . 20s)
+        (LIMIT
+          (limit . 2000)
+          (PARALLEL
+            (SEQUENTIAL
+              (ensureUnique . false)
+              (ZOEKTGLOBALTEXTSEARCH
+                (query . substr:"foo bar baz")
+                (type . text))
+              (REPOSEARCH
+                (repoOpts.repoFilters . [foo bar baz])
+                (repoNamePatterns . [(?i)foo bar baz])))
+            REPOSCOMPUTEEXCLUDED
+            NOOP))))))`),
+		},
 	}
 
 	for _, tc := range cases {
@@ -1156,7 +1218,6 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if err != nil {
@@ -1186,7 +1247,6 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -1259,7 +1319,6 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if err != nil {
@@ -1331,7 +1390,6 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		q,
 		zoekt,
 		endpoint.Static("test"),
-		search.DefaultMode,
 		false,
 	)
 	if err != nil {
@@ -1474,10 +1532,8 @@ func runRepoSubsetTextSearch(
 	q query.Q,
 	zoekt *searchbackend.FakeStreamer,
 	searcherURLs *endpoint.Map,
-	mode search.GlobalSearchMode,
 	useFullDeadline bool,
 ) ([]*result.FileMatch, streaming.Stats, error) {
-	notSearcherOnly := mode != search.SearcherOnly
 	searcherArgs := &search.SearcherParameters{
 		PatternInfo:     patternInfo,
 		UseFullDeadline: useFullDeadline,
@@ -1500,51 +1556,49 @@ func runRepoSubsetTextSearch(
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	if notSearcherOnly {
-		b, err := query.ToBasicQuery(q)
-		if err != nil {
-			return nil, streaming.Stats{}, err
-		}
-
-		fieldTypes, _ := q.StringValues(query.FieldType)
-		var resultTypes result.Types
-		if len(fieldTypes) == 0 {
-			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, t := range fieldTypes {
-				resultTypes = resultTypes.With(result.TypeFromString[t])
-			}
-		}
-
-		typ := search.TextRequest
-		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &search.Features{}, typ)
-		if err != nil {
-			return nil, streaming.Stats{}, err
-		}
-
-		zoektParams := &search.ZoektParameters{
-			FileMatchLimit:  patternInfo.FileMatchLimit,
-			Select:          patternInfo.Select,
-			NumContextLines: 0,
-		}
-
-		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
-			Repos:       indexed,
-			Query:       zoektQuery,
-			Typ:         search.TextRequest,
-			ZoektParams: zoektParams,
-			Since:       nil,
-		}
-
-		// Run literal and regexp searches on indexed repositories.
-		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, job.RuntimeClients{
-				Logger: logger,
-				Zoekt:  zoekt,
-			}, agg)
-			return err
-		})
+	b, err := query.ToBasicQuery(q)
+	if err != nil {
+		return nil, streaming.Stats{}, err
 	}
+
+	fieldTypes, _ := q.StringValues(query.FieldType)
+	var resultTypes result.Types
+	if len(fieldTypes) == 0 {
+		resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+	} else {
+		for _, t := range fieldTypes {
+			resultTypes = resultTypes.With(result.TypeFromString[t])
+		}
+	}
+
+	typ := search.TextRequest
+	zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &search.Features{}, typ)
+	if err != nil {
+		return nil, streaming.Stats{}, err
+	}
+
+	zoektParams := &search.ZoektParameters{
+		FileMatchLimit:  patternInfo.FileMatchLimit,
+		Select:          patternInfo.Select,
+		NumContextLines: 0,
+	}
+
+	zoektJob := &zoektutil.RepoSubsetTextSearchJob{
+		Repos:       indexed,
+		Query:       zoektQuery,
+		Typ:         search.TextRequest,
+		ZoektParams: zoektParams,
+		Since:       nil,
+	}
+
+	// Run literal and regexp searches on indexed repositories.
+	g.Go(func() error {
+		_, err := zoektJob.Run(ctx, job.RuntimeClients{
+			Logger: logger,
+			Zoekt:  zoekt,
+		}, agg)
+		return err
+	})
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {

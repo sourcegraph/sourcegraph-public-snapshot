@@ -30,10 +30,12 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Users',
@@ -52,6 +54,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Extensions',
@@ -60,6 +63,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code ownership',
             to: '/site-admin/analytics/own',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Feedback survey',
@@ -269,6 +273,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/own-signal-page',
         },
     ],
+    condition: ({ license }) => license.isCodeSearchEnabled,
 }
 
 export const codyGroup: SiteAdminSideBarGroup = {
@@ -286,7 +291,7 @@ export const codyGroup: SiteAdminSideBarGroup = {
             condition: () => window.context?.embeddingsEnabled,
         },
     ],
-    condition: () => window.context?.codyEnabled,
+    condition: () => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled),
 }
 
 const usersGroup: SiteAdminSideBarGroup = {

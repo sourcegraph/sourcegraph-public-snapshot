@@ -92,7 +92,7 @@ const USER_SETTINGS_AREA_USER_PROFILE = gql`
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export const AuthenticatedUserSettingsArea: React.FunctionComponent<
+const AuthenticatedUserSettingsArea: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsAreaProps>
 > = props => {
     const { authenticatedUser, sideBarItems } = props

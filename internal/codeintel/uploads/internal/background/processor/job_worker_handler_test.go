@@ -74,7 +74,14 @@ func TestHandle(t *testing.T) {
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
-	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		return &gitdomain.Commit{
+			ID: "deadbeef",
+			Committer: &gitdomain.Signature{
+				Date: expectedCommitDate,
+			},
+		}, nil
+	})
 
 	svc := &handler{
 		store:           mockDBStore,
@@ -296,7 +303,14 @@ func TestHandleError(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
 
 	// Supply non-nil commit date
-	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
+	gitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		return &gitdomain.Commit{
+			ID: "deadbeef",
+			Committer: &gitdomain.Signature{
+				Date: time.Now(),
+			},
+		}, nil
+	})
 
 	// Set a different tip commit
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))

@@ -3,7 +3,9 @@
     "value": "a",
     "negated": false,
     "labels": [
-      "Literal"
+      "Literal",
+      "QuotesAsLiterals",
+      "Standard"
     ],
     "range": {
       "start": {
@@ -20,7 +22,9 @@
     "value": "b",
     "negated": true,
     "labels": [
-      "Literal"
+      "Literal",
+      "QuotesAsLiterals",
+      "Standard"
     ],
     "range": {
       "start": {
@@ -37,7 +41,9 @@
     "value": "c",
     "negated": true,
     "labels": [
-      "Literal"
+      "Literal",
+      "QuotesAsLiterals",
+      "Standard"
     ],
     "range": {
       "start": {
@@ -54,7 +60,9 @@
     "value": "d",
     "negated": false,
     "labels": [
-      "Literal"
+      "Literal",
+      "QuotesAsLiterals",
+      "Standard"
     ],
     "range": {
       "start": {

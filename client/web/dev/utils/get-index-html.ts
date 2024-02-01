@@ -36,8 +36,7 @@ interface GetHTMLPageOptions {
  * between our development server and the actual production server.
  */
 export function getIndexHTML({ manifest, jsContext, jsContextScript }: GetHTMLPageOptions): string {
-    const toFullURL = (asset: string) => (manifest.url ? path.join(manifest.url, asset) : assetPathPrefix + asset)
-
+    const toFullURL = (asset: string) => path.join(manifest.url ?? assetPathPrefix, asset)
     if (!manifest.assets['src/enterprise/main']) {
         throw new Error('entrypoint asset not found')
     }

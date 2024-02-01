@@ -1,7 +1,8 @@
 import { startCase } from 'lodash'
 
 import { isErrorLike } from '@sourcegraph/common'
-import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
@@ -34,6 +35,12 @@ export function viewerSubjectFromSettings(
  * configured by the user.
  */
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
+    // When the 'keyword search' language update is enabled, make sure to disable smart search
+    const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
+    if (features?.keywordSearch) {
+        return SearchMode.Precise
+    }
+
     switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
         case 'precise': {
             return SearchMode.Precise
@@ -50,6 +57,12 @@ export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOr
  * configured by the user.
  */
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
+    // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype
+    const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
+    if (features?.keywordSearch) {
+        return SearchPatternType.keyword
+    }
+
     return getFromSettings(settingsCascade, 'search.defaultPatternType')
 }
 

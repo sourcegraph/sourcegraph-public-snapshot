@@ -1,14 +1,17 @@
 package background
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -34,7 +37,7 @@ func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, s
 	return api.CommitID(""), nil
 }
 
-func (f fakeGitServer) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+func (f fakeGitServer) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 	if f.fileContents == nil {
 		return nil, os.ErrNotExist
 	}
@@ -42,7 +45,7 @@ func (f fakeGitServer) ReadFile(ctx context.Context, repo api.RepoName, commit a
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	return []byte(contents), nil
+	return io.NopCloser(bytes.NewReader([]byte(contents))), nil
 }
 
 func TestAnalyticsIndexerSuccess(t *testing.T) {

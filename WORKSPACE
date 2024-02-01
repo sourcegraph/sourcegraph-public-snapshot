@@ -15,6 +15,10 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/bazel_lib:use_default_shell_env.patch",
+    ],
     sha256 = "4d6010ca5e3bb4d7045b071205afa8db06ec11eb24de3f023d74d77cca765f66",
     strip_prefix = "bazel-lib-1.39.0",
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.39.0/bazel-lib-v1.39.0.tar.gz",
@@ -30,6 +34,10 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party/rules_js:use_default_shell_env.patch",
+    ],
     sha256 = "76a04ef2120ee00231d85d1ff012ede23963733339ad8db81f590791a031f643",
     strip_prefix = "rules_js-1.34.1",
     url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.1/rules_js-v1.34.1.tar.gz",
@@ -131,6 +139,16 @@ http_archive(
     sha256 = "e46c16180bc49487bfd0f1ffa7345364718c57334fa0b5b67cb5f27eba10f309",
     strip_prefix = "buildifier-prebuilt-6.1.0",
     urls = ["https://github.com/keith/buildifier-prebuilt/archive/6.1.0.tar.gz"],
+)
+
+http_archive(
+    name = "aspect_cli",
+    repo_mapping = {
+        "@com_github_smacker_go_tree_sitter": "@aspectcli-com_github_smacker_go_tree_sitter",
+    },
+    sha256 = "045f0186edb25706dfe77d9c4916eec630a2b2736f9abb59e37eaac122d4b771",
+    strip_prefix = "aspect-cli-5.8.20",
+    url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
 # hermetic_cc_toolchain setup ================================
@@ -263,9 +281,9 @@ go_repository(
     name = "org_golang_google_protobuf",
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
-    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
-    version = "v1.31.1",
-)  # keep
+    sum = "h1:pPC6BG5ex8PDFnkbrGU3EixyhKcQ2aDuBS36lqK/C7I=",
+    version = "v1.32.0",
+)
 
 # Pin protoc-gen-go-grpc to 1.3.0
 # See also //:gen-go-grpc
@@ -276,6 +294,20 @@ go_repository(
     sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
     version = "v1.3.0",
 )  # keep
+
+# Pin specific version for aspect-cli's gazelle rules, with versions
+# that it requires but that our codebase doesnt support.
+go_repository(
+    name = "aspectcli-com_github_smacker_go_tree_sitter",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/smacker/go-tree-sitter",
+    sum = "h1:DxgjlvWYsb80WEN2Zv3WqJFAg2DKjUQJO6URGdf1x6Y=",
+    version = "v0.0.0-20230720070738-0d0a9f78d8f8",
+)  # keep
+
+load("@aspect_cli//:go.bzl", aspect_cli_deps = "deps")
+
+aspect_cli_deps()
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
@@ -330,12 +362,9 @@ crates_repository(
     # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
         "//docker-images/syntax-highlighter:Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/syntax-analysis/Cargo.toml",
+        "//docker-images/syntax-highlighter:crates/tree-sitter-all-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
 )
 
@@ -426,3 +455,23 @@ gazelle_buf_dependencies()
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
+
+# keep revision up-to-date with client/browser/scripts/build-inline-extensions.js
+http_archive(
+    name = "sourcegraph_extensions_bundle",
+    add_prefix = "bundle",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["bundle"])
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"]
+)
+    """,
+    integrity = "sha256-Spx8LyM7k+dsGOlZ4TdAq+CNk5EzvYB/oxnY4zGpqPg=",
+    strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
+    url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
+)

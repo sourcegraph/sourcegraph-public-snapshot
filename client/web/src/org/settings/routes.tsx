@@ -32,7 +32,7 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     {
         path: '/executors/secrets',
         render: props => <OrgExecutorSecretsListPage {...props} orgID={props.org.id} />,
-        condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ org: { viewerCanAdminister }, license }) => license.isCodeSearchEnabled && viewerCanAdminister,
     },
 ]
 

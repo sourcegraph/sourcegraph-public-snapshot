@@ -161,7 +161,7 @@ func NewHandler(
 	m.Path("/src-cli/{rest:.*}").Methods("GET").Handler(trace.Route(newSrcCliVersionHandler(logger)))
 	m.Path("/insights/export/{id}").Methods("GET").Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
 	m.Path("/search/stream").Methods("GET").Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Path("/search/export/{id}.json").Methods("GET").Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Path("/search/export/{id}.jsonl").Methods("GET").Handler(trace.Route(handlers.SearchJobsDataExportHandler))
 	m.Path("/search/export/{id}.log").Methods("GET").Handler(trace.Route(handlers.SearchJobsLogsHandler))
 
 	m.Path("/completions/stream").Methods("POST").Handler(trace.Route(handlers.NewChatCompletionsStreamHandler()))

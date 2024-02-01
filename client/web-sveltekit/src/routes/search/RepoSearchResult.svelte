@@ -13,6 +13,7 @@
     import CodeHostIcon from './CodeHostIcon.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
+    import RepoStars from './RepoStars.svelte'
 
     export let result: RepositoryMatch
 
@@ -62,6 +63,11 @@
             </span>
         {/if}
     </div>
+    <svelte:fragment slot="info">
+        {#if result.repoStars}
+            <RepoStars repoStars={result.repoStars} />
+        {/if}
+    </svelte:fragment>
     {#if description}
         <!-- #key is needed here to recreate the paragraph because use:highlightRanges changes the DOM -->
         {#key description}

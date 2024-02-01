@@ -1,7 +1,9 @@
 package codenav
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"testing"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -28,7 +30,7 @@ func TestSnapshotForDocument(t *testing.T) {
 
 	mockUploadSvc.GetDumpsByIDsFunc.SetDefaultReturn([]shared.Dump{{}}, nil)
 	mockRepoStore.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
-	mockGitserverClient.ReadFileFunc.SetDefaultReturn([]byte(sampleFile1), nil)
+	mockGitserverClient.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte(sampleFile1))), nil)
 	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{
 		RelativePath: "burger.go",
 		Occurrences: []*scip.Occurrence{{

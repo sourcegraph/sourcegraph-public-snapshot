@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [{ "path": "../.." }, { "path": "../../../shared/src/testing" }],
+  "references": [{ "path": "../.." }, { "path": "../../../shared/src/testing" }, { "path": "../../dev" }],
   "compilerOptions": {
     "types": ["node"],
     "module": "commonjs",

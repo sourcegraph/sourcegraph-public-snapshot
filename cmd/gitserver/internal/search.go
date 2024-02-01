@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()

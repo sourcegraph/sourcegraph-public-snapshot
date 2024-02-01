@@ -50,7 +50,7 @@ export const load: LayoutLoad = async ({ parent, params, url, depends }) => {
         // Let revision errors be handled by the nested layout so that we can
         // still render the main repo navigation and header
         if (!isRevisionNotFoundErrorLike(repoError)) {
-            throw error(400, asError(repoError))
+            error(400, asError(repoError))
         }
 
         resolvedRevisionOrError = asError(repoError)

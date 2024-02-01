@@ -20,7 +20,7 @@ const MAX_FILTERS_NUMBER = 10
 
 interface SearchDynamicFilterProps {
     /** Name title of the filter section */
-    title: string
+    title?: string
 
     /**
      * Specifies which type filter we want to render in this particular
@@ -46,7 +46,7 @@ interface SearchDynamicFilterProps {
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
      * @param nextQuery
      */
-    onSelectedFilterChange: (filters: URLQueryFilter[]) => void
+    onSelectedFilterChange: (filterKind: Filter['kind'], filters: URLQueryFilter[]) => void
 }
 
 /**
@@ -64,25 +64,31 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
-    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
+    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
+
     const isSelected = (filter: Filter): boolean =>
         relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
 
     const mergedFilters = [
-        // Selected filters come first, but we want to map them to the backend filters to get the relevant count and exhaustiveness
+        // Selected filters come first, but we want to map them to the backend filters
+        // to get the relevant count and exhaustiveness
         ...relevantSelectedFilters.map(
             sf => filters?.find(f => filtersEqual(f, sf)) ?? { ...sf, count: 0, exhaustive: true }
         ),
-        // Followed by filters from the backend, but excluding the ones we already listed
+        // Followed by filters from the backend, but excluding the ones we
+        // already listed
         ...relevantFilters.filter(f => relevantSelectedFilters.find(sf => filtersEqual(f, sf)) === undefined),
     ]
 
     const handleFilterClick = (filter: URLQueryFilter, remove?: boolean): void => {
         if (remove) {
-            onSelectedFilterChange(selectedFilters.filter(f => !filtersEqual(f, filter)))
+            onSelectedFilterChange(
+                filterKind,
+                selectedFilters.filter(f => !filtersEqual(f, filter))
+            )
         } else {
-            onSelectedFilterChange([...selectedFilters, filter])
+            onSelectedFilterChange(filterKind, [...selectedFilters, filter])
         }
     }
 
@@ -98,9 +104,11 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     return (
         <div className={styles.root}>
-            <H4 as={H2} className={styles.heading}>
-                {title}
-            </H4>
+            {title && (
+                <H4 as={H2} className={styles.heading}>
+                    {title}
+                </H4>
+            )}
 
             {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
@@ -164,7 +172,7 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
                 {filter.count !== 0 && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className={classNames('ml-2', styles.countBadge)}>
                         {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
                     </Badge>
                 )}
@@ -208,6 +216,13 @@ export const repoFilter = (filter: Filter): ReactNode => {
 }
 
 export const commitDateFilter = (filter: Filter, selected: boolean): ReactNode => (
+    <span className={styles.commitDate}>
+        {filter.label}
+        <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
+    </span>
+)
+
+export const countAllFilter = (filter: Filter, selected: boolean): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
         <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>

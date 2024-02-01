@@ -222,7 +222,6 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-04, 0.5)};
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
-    --collapse-results-color: var(--gray-08);
     // Chroma rules, for rendered markdown blocks
     --chroma-error-fg: #a61717;
     --chroma-error-bg: #e3d2d2;
@@ -307,6 +306,9 @@ $theme-colors: (
     --blame-recency-7: var(--oc-violet-2);
     --blame-recency-8: var(--oc-violet-1);
     --blame-recency-9: var(--oc-violet-0);
+
+    // Header colors
+    --result-header-bg: #f5f8fa;
 }
 
 .theme-dark {
@@ -318,7 +320,7 @@ $theme-colors: (
     --secondary: var(--gray-08);
     --secondary-2: #242936;
     --secondary-3: #1f232e;
-    --secondary-4: #545967;
+    --secondary-4: #1e222f;
     --success-2: #156724;
     --success-3: #237332;
     --success-4: #054410;
@@ -482,6 +484,9 @@ $theme-colors: (
     --blame-recency-7: var(--oc-violet-7);
     --blame-recency-8: var(--oc-violet-8);
     --blame-recency-9: var(--oc-violet-9);
+
+    // Header colors
+    --result-header-bg: #22283b;
 }
 
 // Additional colors global colors.

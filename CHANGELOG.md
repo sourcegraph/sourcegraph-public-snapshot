@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.3.0 (planned release date: February, 2024)
+## Unreleased 5.3.0 (planned release date: 15th February, 2024)
 
 ### Added
 
@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Topics synced from GitHub and GitLab are now displayed for repository matches in the search results and on the repository tree page. [#58927](https://github.com/sourcegraph/sourcegraph/pull/58927)
 - Added a new column "Repository metadata JSON" to the CSV export of repository search results, which includes the JSON encoded object of metadata key-value pairs. [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
 - Expiry to access tokens. Users can now select a maximum timespan for which a token is valid. Tokens will automatically lose access after this period. Default timeframes and an override to allow access tokens without expiration can be configured in the `auth.accessTokens` section of the site configuration. [#59565](https://github.com/sourcegraph/sourcegraph/pull/59565)
+- Gerrit code host connections now support an 'exclude' field that prevents repos in this list from being synced. [#59739](https://github.com/sourcegraph/sourcegraph/pull/59739)
 - Limit the number of active access tokens for a user. By default users are able to have 25 active access tokens. This limit can be configured using the `maxTokensPerUser` setting in the `auth.accessTokens` section of the site configuration. [#59731](https://github.com/sourcegraph/sourcegraph/pull/59731)
 
 ### Changed
@@ -40,6 +41,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Structural Search is now disabled by default. To enable it, set `experimentalFeatures.structuralSearch: "enabled"` in the site configuration. [#57584](https://github.com/sourcegraph/sourcegraph/pull/57584)
 - Search Jobs switches the format of downloaded results from CSV to JSON. [#59619](https://github.com/sourcegraph/sourcegraph/pull/59619)
 - [Search Jobs](https://docs.sourcegraph.com/code_search/how-to/search-jobs) is now in beta and enabled by default. It can be disabled in the site configuration by setting `experimentalFeatures.searchJobs: false`.
+- The search input on the search homepage is now automatically focused when the page loads.
 
 ### Fixed
 
@@ -51,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Long lines now wrap correctly in the diff view. [#58138](https://github.com/sourcegraph/sourcegraph/pull/58138)
 - Fixed an issue in the search input where pressing Enter after selecting a suggestion would sometimes insert another suggestions instead of submitting the query. [#58186](https://github.com/sourcegraph/sourcegraph/pull/58186)
 - Fixed an issue where having sub-repo permissions enabled could cause repositories with a large number of files in directories to become unviewable. [#59420](https://github.com/sourcegraph/sourcegraph/pull/59420)
+- On the search context, code monitoring, code insights, saved searches or notebook pages, when selecting a repository or file suggestion in the query input with Enter the suggestion is now properly appended to the query instead of navigating away to the corresponding repository or file page. [#59941](https://github.com/sourcegraph/sourcegraph/pull/59941)
 
 ### Removed
 
@@ -65,8 +68,22 @@ All notable changes to Sourcegraph are documented in this file.
 - The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 - The experimental `indexRepositoryName` option for the rust packages code host connection has been removed. [#59176](https://github.com/sourcegraph/sourcegraph/pull/59176)
 - The column "Repository metadata" in the CSV export of repository search results is now deprecated and will be removed in a future release. Use "Repository metadata JSON" instead [#59334](https://github.com/sourcegraph/sourcegraph/pull/59334)
+- Remote embeddings as context source for Cody has been removed. [#59493](https://github.com/sourcegraph/sourcegraph/pull/59493)
 
-## Unreleased 5.2.6
+## 5.2.7
+
+### Added
+
+### Fixed
+
+- The reference panel correctly shows definition and reference information instead of a "Could not find token" error for MATLAB. [#59636](https://github.com/sourcegraph/sourcegraph/pull/59636)
+- The auto-index configuration page correctly shows any auto-inference errors instead of a nil pointer exception. [#59756](https://github.com/sourcegraph/sourcegraph/pull/59756)
+
+### Removed
+
+### Changed
+
+## 5.2.6
 
 ### Added
 
@@ -76,10 +93,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix executors auth header `installSrc` [#59391](https://github.com/sourcegraph/sourcegraph/pull/59391)
 - Avoid constantly rerunning failed embeddings jobs. [#58980](https://github.com/sourcegraph/sourcegraph/pull/58980)
-
-### Changed
-
-### Removed
 
 ## 5.2.5
 
