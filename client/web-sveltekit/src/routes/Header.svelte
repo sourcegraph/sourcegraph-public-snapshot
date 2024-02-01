@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
+    import { mdiBookOutline, mdiChartBar, mdiFlaskOutline, mdiMagnify } from '@mdi/js'
 
     import { mark, svelteLogoEnabled } from '$lib/images'
 
@@ -12,6 +12,7 @@
     import CodeMonitoringIcon from '$lib/icons/CodeMonitoring.svelte'
     import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
     import type { Header_User } from './Header.gql'
+    import Icon from '$lib/Icon.svelte'
 
     export let authenticatedUser: Header_User | null | undefined
 
@@ -51,9 +52,9 @@
             <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
-    <Tooltip tooltip="Disable SvelteKit (go to React)">
+    <Tooltip tooltip="Leave experimental web app">
         <a href={reactURL} data-sveltekit-reload>
-            <img src={svelteLogoEnabled} alt="Svelte logo" width="20" height="20" />
+            <Icon svgPath={mdiFlaskOutline} --color="var(--oc-green-6)" />
         </a>
     </Tooltip>
     <div>
