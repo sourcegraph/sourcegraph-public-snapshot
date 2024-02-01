@@ -170,8 +170,17 @@ type Config struct {
 	ResponseCodeMetric   *ResponseCodeMetric
 }
 
+// getDocsSlug points to the service page and environment anchor expected to be
+// generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
 func (c Config) getDocsSlug() string {
 	return fmt.Sprintf("%s#%s", c.Service.ID, c.EnvironmentID)
+}
+
+// makeDocsSubject prefixes the name with the service and environment for ease
+// of reading in various feeds.
+func (c Config) makeDocsSubject() string {
+	return fmt.Sprintf("%s (%s): %s",
+		c.Service.GetName(), c.EnvironmentID, c.Name)
 }
 
 type Output struct{}
@@ -252,9 +261,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Subject: pointers.Stringf("%s (%s): %s",
-					config.Service.GetName(), config.EnvironmentID, config.Name),
-
+				Subject:  pointers.Ptr(config.makeDocsSubject()),
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
@@ -373,18 +380,23 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 		config.ResponseCodeMetric.Duration = pointers.Ptr("60s")
 	}
 
+	// TODO: Why don't we just ask the spec to provide a usable name, or don't
+	// provide a name at all and generate it ourselves? For now, we reassign to
+	// match existing behaviour.
+	config.Name = fmt.Sprintf("High Ratio of %s Responses", config.Name)
 	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope,
 		id.TerraformID(config.ID), &monitoringalertpolicy.MonitoringAlertPolicyConfig{
 			Project:     pointers.Ptr(config.ProjectID),
-			DisplayName: pointers.Ptr(fmt.Sprintf("High Ratio of %s Responses", config.Name)),
+			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
+				Subject:  pointers.Ptr(config.makeDocsSubject()),
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
 			Combiner: pointers.Ptr("OR"),
 			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
 				{
-					DisplayName: pointers.Ptr(fmt.Sprintf("High Ratio of %s Responses", config.Name)),
+					DisplayName: pointers.Ptr(config.Name),
 					ConditionMonitoringQueryLanguage: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguage{
 						Query:    pointers.Ptr(query),
 						Duration: config.ResponseCodeMetric.Duration,
