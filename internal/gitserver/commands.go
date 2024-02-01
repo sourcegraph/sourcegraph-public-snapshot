@@ -2329,7 +2329,7 @@ func (c *clientImplementor) ArchiveReader(
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{r: r, closeFn: cancel},
+		base: &readCloseWrapper{Reader: r, closeFn: cancel},
 		repo: repo,
 		spec: options.Treeish,
 	}, nil
