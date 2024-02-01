@@ -9,13 +9,15 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
+anyhow.workspace = true
 clap.workspace = true
+protobuf.workspace = true
 rocket.workspace = true
 scip.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 syntect.workspace = true
-protobuf.workspace = true
+tree-sitter-highlight.workspace = true
 
 rustyline = "9.1.2"
 base64 = "0.13.0"

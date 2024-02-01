@@ -4,7 +4,7 @@
 extern crate rocket;
 
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use syntax_analysis::highlighting::{ScipHighlightQuery, SourcegraphQuery};
+use syntect_server::{ScipHighlightQuery, SourcegraphQuery};
 
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
@@ -13,7 +13,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
     let result = std::panic::catch_unwind(|| {
-        syntax_analysis::highlighting::syntect_highlight(q.into_inner())
+        syntect_server::syntect_highlight(q.into_inner())
     });
     match result {
         Ok(v) => v,
@@ -26,7 +26,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
 // for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    match syntax_analysis::highlighting::lsif_highlight(q.into_inner()) {
+    match syntect_server::lsif_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -34,7 +34,7 @@ fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
 
 #[post("/scip", format = "application/json", data = "<q>")]
 fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
-    match syntax_analysis::highlighting::scip_highlight(q.into_inner()) {
+    match syntect_server::scip_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -78,7 +78,7 @@ fn rocket() -> _ {
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
         Ok(v) if v == "true" => {}
-        _ => syntax_analysis::highlighting::list_features(),
+        _ => syntect_server::list_features(),
     };
 
     rocket::build()
