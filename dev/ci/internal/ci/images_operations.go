@@ -68,12 +68,8 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 }
 
 // Used in default run type
-func bazelPushImagesCandidates(version string, isAspectBuild bool) func(*bk.Pipeline) {
-	depKey := "bazel-tests"
-	if isAspectBuild {
-		depKey = "__main__::test"
-	}
-	return bazelPushImagesCmd(version, true, depKey)
+func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true, "pipeline-gen")
 }
 
 // Used in default run type
