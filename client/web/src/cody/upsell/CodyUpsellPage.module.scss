@@ -57,7 +57,7 @@
 
         &-enterprise {
             font-size: 1.125rem;
-            color: var(--gray-07);
+            color: var(--text-muted);
         }
 
         &-header {
@@ -140,7 +140,7 @@
 
     &-grid-one {
         background-color: var(--color-bg-1);
-        border-radius: 1rem;
+        border-radius: 0.5rem;
         padding: 2.5rem;
         font-size: 1rem;
 
@@ -157,7 +157,7 @@
 
     &-grid-two {
         background-color: var(--color-bg-1);
-        border-radius: 1rem;
+        border-radius: 0.5rem;
         padding: 2.5rem;
         font-size: 1rem;
         height: fit-content;
@@ -190,14 +190,14 @@
 
     &-grid-three {
         background-color: var(--color-bg-1);
-        border-radius: 1rem;
+        border-radius: 0.5rem;
         padding: 2.5rem;
         font-size: 1rem;
 
         &-container {
             margin-top: 2rem;
             background: linear-gradient(90.64deg, var(--logo-orange) 3.11%, var(--violet-04) 83.64%);
-            border-radius: 1rem;
+            border-radius: 0.5rem;
             padding: 0.0625rem;
         }
 
@@ -238,7 +238,7 @@
     &-container {
         background-color: transparent;
         border: 1px solid var(--border-color);
-        border-radius: 1rem;
+        border-radius: 0.5rem;
         padding: 2rem;
         height: fit-content;
 
