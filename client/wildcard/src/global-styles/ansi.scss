@@ -18,12 +18,10 @@
 
         .ansi-strikethrough {
             text-decoration-line: line-through;
-
         }
 
         .ansi-overline {
             text-decoration-line: overline;
-
         }
 
         .ansi-invert {
@@ -44,7 +42,6 @@
 
         .ansi-subscript {
             vertical-align: sub;
-
         }
 
         // Foreground colours ------------------
@@ -178,7 +175,6 @@
         .ansi-bg-bright-white {
             background-color: var(--ansi-bright-white);
         }
-
 
         // Underline colours ------------------
 
