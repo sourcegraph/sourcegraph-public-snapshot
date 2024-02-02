@@ -112,26 +112,24 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     Filter results
                 </h4>
                 {selectedFilters.length !== 0 && (
-                    <div>
-                        <Button className={styles.resetButton} variant='link' size='sm' onClick={() => setSelectedFilters([])}>
-                            Reset all
-                            <div>
-                                <Icon
-                                    className="mr-1"
-                                    svgPath={mdiAppleKeyboardOption}
-                                    size="sm"
-                                    inline={true}
-                                    aria-hidden={true}
-                                />
-                                <Icon
-                                    svgPath={mdiBackspaceOutline}
-                                    size="sm"
-                                    inline={true}
-                                    aria-hidden={true}
-                                />
-                            </div>
-                        </Button>
-                    </div>
+                    <Button className={styles.resetButton} variant='link' size='sm' onClick={() => setSelectedFilters([])}>
+                        Reset all
+                        <div>
+                            <Icon
+                                className="mr-1"
+                                svgPath={mdiAppleKeyboardOption}
+                                size="sm"
+                                inline={true}
+                                aria-hidden={true}
+                            />
+                            <Icon
+                                svgPath={mdiBackspaceOutline}
+                                size="sm"
+                                inline={true}
+                                aria-hidden={true}
+                            />
+                        </div>
+                    </Button>
                 )}
             </div>
             <div className={styles.filters}>
