@@ -268,13 +268,19 @@ func getIndexOptions(
 	}
 
 	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) int {
-		// Zoekt treats first branch as default branch, so put HEAD first
-		if a.Name == "HEAD" {
-			return -1
-		} else if b.Name == "HEAD" {
-			return 1
+		aName := a.Name
+		bName := b.Name
+
+		// Zoekt treats first branch as default branch, so put HEAD first. We
+		// do this by making the string empty, which is a bottom.
+		if aName == "HEAD" {
+			aName = ""
 		}
-		return cmp.Compare(a.Name, b.Name)
+		if bName == "HEAD" {
+			bName = ""
+		}
+
+		return cmp.Compare(aName, bName)
 	})
 
 	// If the first branch is not HEAD, do not index anything. This should
