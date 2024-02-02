@@ -2164,7 +2164,7 @@ func CommitsEqual(a, b *gitdomain.Commit) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
+func TestArchiveReaderForRepo(t *testing.T) {
 	repoName := MakeGitRepository(t,
 		"echo abcd > file1",
 		"git add file1",
@@ -2180,11 +2180,6 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		// sub-repo permissions are not present for repo with repoID = 1
 		return name != repoName, nil
 	})
-	ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (io.ReadCloser, error) {
-		stringReader := strings.NewReader("1337")
-		return io.NopCloser(stringReader), nil
-	}
-	defer ResetClientMocks()
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 

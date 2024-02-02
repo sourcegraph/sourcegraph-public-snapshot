@@ -178,7 +178,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	ctx := ss.Context()
 
 	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.GetRepo(),
+	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
 		log.String("format", req.GetFormat().String()),
 		log.Strings("path", req.GetPathspecs()),
@@ -214,7 +214,8 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
 			return errors.Wrap(err, "sub-repo permissions check")
 		} else if enabled {
-			return errors.New("archiveReader invoked for a repo with sub-repo permissions")
+			s := status.New(codes.Unimplemented, "archiveReader invoked for a repo with sub-repo permissions")
+			return s.Err()
 		}
 	}
 

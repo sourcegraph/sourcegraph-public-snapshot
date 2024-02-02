@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -53,16 +52,6 @@ func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
 		s.Close()
 		gitserver.ResetClientMocks()
 	})
-
-	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (reader io.ReadCloser, err error) {
-		if httpStatusCode != http.StatusOK {
-			err = errors.New("error")
-		} else {
-			stringReader := strings.NewReader(resp)
-			reader = io.NopCloser(stringReader)
-		}
-		return reader, err
-	}
 }
 
 func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
@@ -224,7 +213,6 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 			t.Errorf("Want %q in body, but got %q", mockGitServerResponse, body)
 		}
 	})
-
 }
 
 func Test_serveRawWithContentTypePlain(t *testing.T) {

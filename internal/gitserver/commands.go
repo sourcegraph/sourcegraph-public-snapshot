@@ -2237,7 +2237,6 @@ func (c *clientImplementor) ArchiveReader(
 	repo api.RepoName,
 	options ArchiveOptions,
 ) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request because we return a reader
 	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: append(
@@ -2245,20 +2244,17 @@ func (c *clientImplementor) ArchiveReader(
 			options.Attrs()...,
 		),
 	})
-	defer endObservation(1, observation.Args{})
-
-	if ClientMocks.Archive != nil {
-		return ClientMocks.Archive(ctx, repo, options)
-	}
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
@@ -2269,6 +2265,7 @@ func (c *clientImplementor) ArchiveReader(
 	stream, err := client.Archive(ctx, req)
 	if err != nil {
 		cancel()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
@@ -2298,6 +2295,7 @@ func (c *clientImplementor) ArchiveReader(
 		var cse *CommandStatusError
 		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 			cancel()
+			endObservation(1, observation.Args{})
 			return nil, convertGRPCErrorToGitDomainError(err)
 		}
 	}
@@ -2328,7 +2326,10 @@ func (c *clientImplementor) ArchiveReader(
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{r: r, closeFn: cancel},
+		base: &readCloseWrapper{r: r, closeFn: func() {
+			cancel()
+			endObservation(1, observation.Args{})
+		}},
 		repo: repo,
 		spec: options.Treeish,
 	}, nil
