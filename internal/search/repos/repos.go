@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -1047,7 +1047,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 				matched = append(matched, rev)
 			}
 		}
-		slices.SortFunc(matched, query.RevisionSpecifier.Less)
+		slices.SortFunc(matched, query.RevisionSpecifier.Compare)
 		return
 	}
 
@@ -1056,7 +1056,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
-	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
+	slices.SortFunc(clashing, query.RevisionSpecifier.Compare)
 	return
 }
 

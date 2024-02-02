@@ -1,10 +1,12 @@
 package backend
 
 import (
+	"cmp"
+	"slices"
+
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/zoekt"
-	"golang.org/x/exp/slices"
 
 	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
@@ -265,12 +267,14 @@ func getIndexOptions(
 		})
 	}
 
-	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) bool {
+	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) int {
 		// Zoekt treats first branch as default branch, so put HEAD first
-		if a.Name == "HEAD" || b.Name == "HEAD" {
-			return a.Name == "HEAD"
+		if a.Name == "HEAD" {
+			return -1
+		} else if b.Name == "HEAD" {
+			return 1
 		}
-		return a.Name < b.Name
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	// If the first branch is not HEAD, do not index anything. This should
