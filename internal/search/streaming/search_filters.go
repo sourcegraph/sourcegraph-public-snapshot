@@ -188,6 +188,11 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		s.filters.Add(filter, df.Label, 1, FilterKindCommitDate)
 	}
 
+	addTypeFilter := func(value, label string, count int32) {
+		s.filters.Add(value, label, count, FilterKindType)
+		s.filters.MarkImportant(value)
+	}
+
 	if event.Stats.ExcludedForks > 0 {
 		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), FilterKindUtility)
 		s.filters.MarkImportant("fork:yes")
@@ -212,12 +217,18 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addLangFilter(v.MostLikelyLanguage(), lines)
 			addFileFilter(v.Path, lines)
 			addSymbolFilter(v.Symbols)
+			addTypeFilter("type:file", "Code", int32(v.ChunkMatches.MatchCount()))
+			addTypeFilter("type:symbol", "Symbols", int32(len(v.Symbols)))
+			if len(v.Symbols) == 0 && len(v.ChunkMatches) == 0 && len(v.PathMatches) == 0 {
+				// If we have no highlights, we still have a match on the file itself,
+				// so count that as a "path match".
+				addTypeFilter("type:path", "Paths", 1)
+			} else {
+				addTypeFilter("type:path", "Paths", int32(len(v.PathMatches)))
+			}
 			s.Dirty = true
 		case *result.RepoMatch:
-			// It should be fine to leave this blank since revision specifiers
-			// can only be used with the 'repo:' scope. In that case,
-			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(v.Name, "", 1)
+			addTypeFilter("type:repo", "Repositories", 1)
 			s.Dirty = true
 		case *result.CommitMatch:
 			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
@@ -225,6 +236,11 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addRepoFilter(v.Repo.Name, "", int32(v.ResultCount()))
 			addCommitAuthorFilter(v.Commit)
 			addCommitDateFilter(v.Commit)
+			if v.DiffPreview != nil {
+				addTypeFilter("type:diff", "Diffs", int32(v.ResultCount()))
+			} else {
+				addTypeFilter("type:commit", "Commits", int32(v.ResultCount()))
+			}
 			s.Dirty = true
 
 			// =========== TODO: Jason Repo Metadata filters ============
