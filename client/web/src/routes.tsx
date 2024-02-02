@@ -159,7 +159,7 @@ export const routes: RouteObject[] = [
                         telemetryService={props.telemetryService}
                     />
                 )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled && isSearchJobsEnabled()}
+                condition={isSearchJobsEnabled}
             />
         ),
     },
