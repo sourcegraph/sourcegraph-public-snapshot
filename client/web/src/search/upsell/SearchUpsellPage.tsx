@@ -116,15 +116,15 @@ export const SearchUpsellPage: FC = () => {
 
             <section className={styles.footer}>
                 <Text className={styles.footerText}>Code Search also works great with...</Text>
-                <Link to="/">
+                <Link to="/help/code_monitoring">
                     Code Monitoring{' '}
-                    <Icon className="pl-2" svgPath={mdiOpenInNew} inline={false} aria-label="Copy snippet" />
+                    <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Code Monitoring" />
                 </Link>
-                <Link to="/">
-                    Insights <Icon className="pl-2" svgPath={mdiOpenInNew} inline={false} aria-label="Copy snippet" />
+                <Link to="/help/code_insights">
+                    Insights <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Code Insights" />
                 </Link>
-                <Link to="/">
-                    Notebooks <Icon className="pl-2" svgPath={mdiOpenInNew} inline={false} aria-label="Copy snippet" />
+                <Link to="/help/notebooks">
+                    Notebooks <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Notebooks" />
                 </Link>
             </section>
         </div>

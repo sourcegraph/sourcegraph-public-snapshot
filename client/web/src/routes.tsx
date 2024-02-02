@@ -9,7 +9,6 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
-import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from './util/license'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -83,126 +82,6 @@ const PassThroughToServer: React.FC = () => {
     return null
 }
 
-const disableCodeSearchFeatures = isCodyOnlyLicense()
-const disableCodyFeatures = isCodeSearchOnlyLicense()
-
-const codeSearchRoutes: readonly RouteObject[] = [
-    {
-        path: PageRoutes.BatchChanges,
-        element: (
-            <LegacyRoute
-                render={props => <GlobalBatchChangesArea {...props} />}
-                // We also render this route on sourcegraph.com as a precaution in case anyone
-                // follows an in-app link to /batch-changes from sourcegraph.com; the component
-                // will just redirect the visitor to the marketing page
-                condition={({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.CodeMonitoring,
-        element: (
-            <LegacyRoute
-                render={props => <GlobalCodeMonitoringArea {...props} />}
-                condition={({ isSourcegraphDotCom }) => !isSourcegraphDotCom}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.Insights,
-        element: (
-            <LegacyRoute
-                render={props => <CodeInsightsRouter {...props} />}
-                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.SearchJobs,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <SearchJob
-                        isAdmin={props.authenticatedUser?.siteAdmin ?? false}
-                        telemetryService={props.telemetryService}
-                    />
-                )}
-                condition={isSearchJobsEnabled}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.Contexts,
-        element: <LegacyRoute render={props => <SearchContextsListPage {...props} />} />,
-    },
-    {
-        path: PageRoutes.CreateContext,
-        element: <LegacyRoute render={props => <CreateSearchContextPage {...props} />} />,
-    },
-    {
-        path: PageRoutes.EditContext,
-        element: <LegacyRoute render={props => <EditSearchContextPage {...props} />} />,
-    },
-    {
-        path: PageRoutes.Context,
-        element: <LegacyRoute render={props => <SearchContextPage {...props} />} />,
-    },
-    {
-        path: PageRoutes.SearchNotebook,
-        element: <Navigate to={PageRoutes.Notebooks} replace={true} />,
-    },
-    {
-        path: PageRoutes.Notebooks + '/*',
-        element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
-    },
-    {
-        path: PageRoutes.Own,
-        element: <OwnPage />,
-    },
-    {
-        path: PageRoutes.SearchConsole,
-        element: <LegacyRoute render={props => <SearchConsolePageOrRedirect {...props} />} />,
-    },
-]
-
-const codyRoutes: readonly RouteObject[] = [
-    {
-        path: PageRoutes.CodySearch,
-        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
-    },
-    // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
-    {
-        path: `${PageRoutes.Cody}/*`,
-        element: (
-            <LegacyRoute
-                render={() => {
-                    const chatID = window.location.pathname.split('/').pop()
-                    const navigate = useNavigate()
-
-                    useEffect(() => {
-                        navigate(`/cody/chat/${chatID}`)
-                    }, [navigate, chatID])
-
-                    return <div />
-                }}
-                condition={() => !window.location.pathname.startsWith('/cody/chat')}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.CodyChat + '/*',
-        element: <LegacyRoute render={props => <CodyChatPage {...props} context={window.context} />} />,
-    },
-    {
-        path: PageRoutes.CodyManagement,
-        element: <LegacyRoute render={props => <CodyManagementPage {...props} />} />,
-    },
-    {
-        path: PageRoutes.CodySubscription,
-        element: <LegacyRoute render={props => <CodySubscriptionPage {...props} />} />,
-    },
-]
-
 /**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
@@ -237,6 +116,119 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.UnlockAccount,
         element: <LegacyRoute render={props => <UnlockAccountPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.BatchChanges,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalBatchChangesArea {...props} />}
+                // We also render this route on sourcegraph.com as a precaution in case anyone
+                // follows an in-app link to /batch-changes from sourcegraph.com; the component
+                // will just redirect the visitor to the marketing page
+                condition={({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodeMonitoring,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalCodeMonitoringArea {...props} />}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    !isSourcegraphDotCom && licenseFeatures.isCodeSearchEnabled
+                }
+            />
+        ),
+    },
+    {
+        path: PageRoutes.Insights,
+        element: (
+            <LegacyRoute
+                render={props => <CodeInsightsRouter {...props} />}
+                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.SearchJobs,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SearchJob
+                        isAdmin={props.authenticatedUser?.siteAdmin ?? false}
+                        telemetryService={props.telemetryService}
+                    />
+                )}
+                condition={isSearchJobsEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.Contexts,
+        element: (
+            <LegacyRoute
+                render={props => <SearchContextsListPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CreateContext,
+        element: (
+            <LegacyRoute
+                render={props => <CreateSearchContextPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.EditContext,
+        element: (
+            <LegacyRoute
+                render={props => <EditSearchContextPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.Context,
+        element: (
+            <LegacyRoute
+                render={props => <SearchContextPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.SearchNotebook,
+        element: <Navigate to={PageRoutes.Notebooks} replace={true} />,
+    },
+    {
+        path: PageRoutes.Notebooks + '/*',
+        element: (
+            <LegacyRoute
+                render={props => <GlobalNotebooksArea {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.Own,
+        element: (
+            <LegacyRoute
+                render={() => <OwnPage />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.SearchConsole,
+        element: (
+            <LegacyRoute
+                render={props => <SearchConsolePageOrRedirect {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
     },
     {
         path: PageRoutes.Welcome,
@@ -307,40 +299,93 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Debug,
         element: <PassThroughToServer />,
     },
-    ...communitySearchContextsRoutes,
-    ...(disableCodyFeatures
-        ? [
-              {
-                  path: PageRoutes.Cody,
-                  element: <LegacyRoute render={() => <CodyUpsellPage />} />,
-              },
-          ]
-        : codyRoutes),
-    ...(disableCodeSearchFeatures ? [] : codeSearchRoutes),
+    {
+        path: PageRoutes.CodySearch,
+        element: (
+            <LegacyRoute
+                render={props => <CodySearchPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
+    {
+        path: `${PageRoutes.Cody}/*`,
+        element: (
+            <LegacyRoute
+                render={() => {
+                    const chatID = window.location.pathname.split('/').pop()
+                    const navigate = useNavigate()
 
+                    useEffect(() => {
+                        navigate(`/cody/chat/${chatID}`)
+                    }, [navigate, chatID])
+
+                    return <div />
+                }}
+                condition={({ licenseFeatures }) =>
+                    !window.location.pathname.startsWith('/cody/chat') && licenseFeatures.isCodyEnabled
+                }
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyChat + '/*',
+        element: (
+            <LegacyRoute
+                render={props => <CodyChatPage {...props} context={window.context} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyManagement,
+        element: (
+            <LegacyRoute
+                render={props => <CodyManagementPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodySubscription,
+        element: (
+            <LegacyRoute
+                render={props => <CodySubscriptionPage {...props} />}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    ...communitySearchContextsRoutes,
+    {
+        path: PageRoutes.Cody,
+        element: (
+            <LegacyRoute
+                render={() => <CodyUpsellPage />}
+                condition={({ licenseFeatures }) => !licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
     // this should be the last route to be regustered because it's a catch all route
     // when the instance has the code search feature.
-    ...(disableCodeSearchFeatures
-        ? []
-        : [
-              {
-                  path: PageRoutes.RepoContainer,
-                  element: (
-                      <LegacyRoute
-                          render={props => (
-                              <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
-                                  <RepoContainer {...props} />
-                              </CodySidebarStoreProvider>
-                          )}
-                      />
-                  ),
-                  // In RR6, the useMatches hook will only give you the location that is matched
-                  // by the path rule and not the path rule instead. Since we need to be able to
-                  // detect if we're inside the repo container reliably inside the Layout, we
-                  // expose this information in the handle object instead.
-                  handle: { isRepoContainer: true },
-              },
-          ]),
+    {
+        path: PageRoutes.RepoContainer,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
+                        <RepoContainer {...props} />
+                    </CodySidebarStoreProvider>
+                )}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+            />
+        ),
+        // In RR6, the useMatches hook will only give you the location that is matched
+        // by the path rule and not the path rule instead. Since we need to be able to
+        // detect if we're inside the repo container reliably inside the Layout, we
+        // expose this information in the handle object instead.
+        handle: { isRepoContainer: true },
+    },
 ]
 
 function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
@@ -354,7 +399,8 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 }
 
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
-    if (disableCodeSearchFeatures) {
+    const { isCodyEnabled, isCodeSearchEnabled } = props.licenseFeatures
+    if (isCodyEnabled && !isCodeSearchEnabled) {
         return <SearchUpsellPage />
     }
     return <SearchPageWrapper {...props} />
