@@ -198,8 +198,7 @@ impl TreeSitterLanguageName {
     }
 
     fn highlighting_configuration(&self) -> Option<&'static HighlightConfiguration> {
-        self.parser_id()
-            .and_then(|parser| CONFIGURATIONS.get(&parser))
+        CONFIGURATIONS.get(&self.parser_id()?)
     }
 
     pub fn highlight_document_with_config(
