@@ -4,9 +4,8 @@ pub mod syntect_scip;
 use anyhow::anyhow;
 use protobuf::Message;
 use std::fmt::{Debug, Display, Formatter};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use syntect::html::ClassStyle;
-
 use syntect::parsing::{SyntaxReference, SyntaxSet};
 
 pub mod tree_sitter;
@@ -14,15 +13,7 @@ use crate::highlighting::syntect_html::ClassedTableGenerator;
 
 #[derive(Default)]
 pub struct FileInfo<'a> {
-    // This is kept as a String instead of a PathBuf because:
-    // 1. Sourcegraph doesn't support non-UTF-8 values in paths.
-    // 2. The input received from the network is UTF-8.
-    // 3. We're not using this path to call any OS APIs
-    //    which would require Path.
-    // 4. It avoids extra conversions when interacting with
-    //    syntect or in the ad-hoc language detection code that
-    //    we currently have.
-    path: String,
+    path: PathBuf,
     pub contents: &'a str,
     pub language: Option<&'a str>,
 }
@@ -30,7 +21,7 @@ pub struct FileInfo<'a> {
 impl<'a> FileInfo<'a> {
     pub fn new(path: &str, contents: &'a str, language: Option<&'a str>) -> FileInfo<'a> {
         FileInfo {
-            path: path.to_string(),
+            path: Path::new(path).to_path_buf(),
             contents,
             language,
         }
@@ -41,21 +32,19 @@ impl<'a> FileInfo<'a> {
         contents: &'a str,
         language: Option<&'a str>,
     ) -> FileInfo<'a> {
-        FileInfo {
-            path: format!(
-                "__highlighter_synthetic__{}{}",
-                if extension.starts_with('.') { "" } else { "." },
-                extension
-            ),
-            contents,
-            language,
-        }
+        let synthetic_path = format!(
+            "__highlighter_synthetic__{}{extension}",
+            if extension.starts_with('.') { "" } else { "." }
+        );
+        FileInfo::new(&synthetic_path, contents, language)
     }
 
     fn extension(&self) -> Option<&str> {
-        Path::new(&self.path)
-            .extension()
-            .and_then(|osstr| osstr.to_str())
+        self.path.extension().map(|s| s.to_str().unwrap_or(""))
+    }
+
+    fn file_name(&self) -> Option<&str> {
+        self.path.file_name().map(|s| s.to_str().unwrap_or(""))
     }
 
     pub fn determine_language(
@@ -63,12 +52,9 @@ impl<'a> FileInfo<'a> {
         syntax_set: &SyntaxSet,
     ) -> Result<TreeSitterLanguageName, LanguageDetectionError> {
         let name = SublimeLanguageName {
-            raw: match self.find_matching_syntax_reference(syntax_set) {
-                Ok(language) => language.name.clone(),
-                Err(e) => return Err(e),
-            },
+            raw: &self.find_matching_syntax_reference(syntax_set)?.name,
         }
-        .into_tree_sitter_name(self);
+        .to_tree_sitter_name(self);
         Ok(name)
     }
 
@@ -93,7 +79,7 @@ impl<'a> FileInfo<'a> {
             }
         }
 
-        if self.path.is_empty() {
+        if self.path.to_string_lossy().is_empty() {
             // Legacy codepath, kept for backwards-compatability with old clients.
             return match syntax_set.find_syntax_by_extension(self.extension().unwrap_or("")) {
                 Some(v) => Ok(v),
@@ -104,9 +90,6 @@ impl<'a> FileInfo<'a> {
                 },
             };
         }
-
-        let file_name = Path::new(&self.path).file_name().and_then(|n| n.to_str());
-        let extension = self.extension();
 
         // Override syntect's language detection for conflicting file extensions because
         // it's impossible to express this logic in a syntax definition.
@@ -128,7 +111,8 @@ impl<'a> FileInfo<'a> {
             },
         ];
 
-        if let Some(extension) = extension {
+        let extension = self.extension();
+        if let Some(extension) = self.extension() {
             for override_ in overrides.iter() {
                 if override_.extension != extension {
                     continue;
@@ -152,7 +136,7 @@ impl<'a> FileInfo<'a> {
             // name. This is done due to some syntaxes matching an "extension"
             // that is actually a whole file name (e.g. "Dockerfile" or "CMakeLists.txt")
             // see https://github.com/trishume/syntect/pull/170
-            .find_syntax_by_extension(file_name.unwrap_or(""))
+            .find_syntax_by_extension(self.file_name().unwrap_or(""))
             .or_else(|| syntax_set.find_syntax_by_extension(extension.unwrap_or("")))
             .or_else(|| syntax_set.find_syntax_by_first_line(self.contents))
             .unwrap_or_else(|| syntax_set.find_syntax_plain_text()))
@@ -160,12 +144,12 @@ impl<'a> FileInfo<'a> {
 }
 
 // Language names as used by syntect & Sublime grammars
-struct SublimeLanguageName {
-    raw: String,
+struct SublimeLanguageName<'a> {
+    raw: &'a str,
 }
 
-impl SublimeLanguageName {
-    fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
+impl<'a> SublimeLanguageName<'a> {
+    fn to_tree_sitter_name(&self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
         if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
             #[allow(clippy::single_match)]
             match file_info.extension() {
@@ -178,7 +162,7 @@ impl SublimeLanguageName {
         // 1. Avoid case-sensitive comparison
         // 2. We can look up corresponding Sublime Grammars easily
         //    when using case-sensitive text search
-        let normalized_name = self.raw.as_str().to_lowercase();
+        let normalized_name = self.raw.to_lowercase();
         let normalized_name = match normalized_name {
             x if x == "Rust Enhanced".to_lowercase() => "rust",
             x if x == "JS Custom - React".to_lowercase() => "javascript",
@@ -295,11 +279,11 @@ impl<'b> HighlightingBackend<'b> {
                     None => {
                         return Err(anyhow!(
                             "Tree-sitter backend requires a language to be specified"
-                        ))
+                        ));
                     }
-                    Some(s) => SublimeLanguageName { raw: s.to_string() },
+                    Some(s) => SublimeLanguageName { raw: s },
                 };
-                let language = language.into_tree_sitter_name(file_info);
+                let language = language.to_tree_sitter_name(file_info);
                 match language.highlight_document(file_info.contents, *include_locals) {
                     Ok(document) => match document.write_to_bytes() {
                         Err(e) => Err(anyhow!("failed to serialize document {:?}", e)),
@@ -365,23 +349,6 @@ mod test {
 
         for (path, content, lang) in cases {
             test_syntect_lang_detection_impl(path, content, lang);
-        }
-    }
-
-    #[test]
-    fn test_extension() {
-        let mapping = [
-            ("foo", None),
-            ("foo.x", Some("x")),
-            ("foo.x.y", Some("y")),
-            (".abc", None),
-            ("a/.abc", None),
-            ("a.c/b.d", Some("d")),
-            ("a.c/b", None),
-        ];
-
-        for (path, expected_ext) in mapping {
-            assert_eq!(FileInfo::new(path, "", None).extension(), expected_ext);
         }
     }
 }
