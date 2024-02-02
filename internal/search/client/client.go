@@ -314,7 +314,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	// When adding a new feature flag remember to add it to the list in
 	// client/web/src/featureFlags/featureFlags.ts to allow overriding.
 	return &search.Features{
-		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
+		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", true),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 		PhraseBoost:             flagSet.GetBoolOr("search-boost-phrase", false),
 	}
