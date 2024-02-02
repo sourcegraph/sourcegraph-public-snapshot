@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
-import { Button, Link, Icon, PageHeader, Container, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { FilteredConnection } from '../../../../components/FilteredConnection'

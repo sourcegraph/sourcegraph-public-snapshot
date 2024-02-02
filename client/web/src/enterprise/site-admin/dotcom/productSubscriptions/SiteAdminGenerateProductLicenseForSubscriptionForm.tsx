@@ -4,7 +4,7 @@ import { mdiChatQuestionOutline } from '@mdi/js'
 import classNames from 'classnames'
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
-import _, { noop } from 'lodash'
+import { noop } from 'lodash'
 
 import { useMutation } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -92,7 +92,7 @@ const getEmptyFormData = (account: string, latestLicense: License | undefined): 
         customer: account,
         salesforceSubscriptionID: latestLicense?.info?.salesforceSubscriptionID ?? '',
         salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
-        plan: latestLicense?.info?.tags.find(tag => tag.startsWith('plan:'))?.substring('plan:'.length) ?? '',
+        plan: latestLicense?.info?.tags.find(tag => tag.startsWith('plan:'))?.slice('plan:'.length) ?? '',
         userCount: latestLicense?.info?.userCount ?? 1,
         expiresAt: endOfDay(Date.now()),
         trial: latestLicense?.info?.tags.includes(TAG_TRIAL.tagValue) ?? false,
