@@ -4,20 +4,12 @@ import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 )
 
-func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format, treeish string, pathspecs []string) (io.ReadCloser, error) {
-	// This is a long time, but this never blocks a user request for this
-	// long. Even repos that are not that large can take a long time, for
-	// example a search over all repos in an organization may have several
-	// large repos. All of those repos will be competing for IO => we need
-	// a larger timeout.
-	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-
+func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error) {
 	archiveArgs := buildArchiveArgs(format, treeish, pathspecs)
-	cmd, _, err := g.gitCommand(ctx, archiveArgs...)
+	cmd, cancel, err := g.gitCommand(ctx, archiveArgs...)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -35,10 +27,10 @@ func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format, treeish strin
 	}, nil
 }
 
-func buildArchiveArgs(format, treeish string, pathspecs []string) []string {
-	args := []string{"archive", "--worktree-attributes", "--format=" + format}
+func buildArchiveArgs(format git.ArchiveFormat, treeish string, pathspecs []string) []string {
+	args := []string{"archive", "--worktree-attributes", "--format=" + string(format)}
 
-	if format == string(gitserver.ArchiveFormatZip) {
+	if format == git.ArchiveFormatZip {
 		args = append(args, "-0")
 	}
 

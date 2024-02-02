@@ -414,7 +414,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		svc := NewMockService()
 		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
 		gs := &grpcServer{svc: svc}
-		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: "zip"}, mockSS)
+		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_zip}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -438,14 +438,14 @@ func TestGRPCServer_Archive(t *testing.T) {
 
 		t.Run("subrepo perms are not enabled", func(t *testing.T) {
 			srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
-			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: "zip"}, mockSS)
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_zip}, mockSS)
 			assert.NoError(t, err)
 			mockassert.Called(t, srp.EnabledForRepoFunc)
 		})
 
 		t.Run("subrepo perms are enabled, returns error", func(t *testing.T) {
 			srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
-			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: "zip"}, mockSS)
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_zip}, mockSS)
 			assert.Error(t, err)
 			require.Contains(t, err.Error(), "archiveReader invoked for a repo with sub-repo permissions")
 			mockassert.Called(t, srp.EnabledForRepoFunc)
@@ -471,7 +471,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		cli := spawnServer(t, gs)
 		r, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
 			Repo:   "therepo",
-			Format: "zip",
+			Format: proto.ArchiveFormat_zip,
 		})
 		require.NoError(t, err)
 		for {
@@ -492,7 +492,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		b.ArchiveReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
 			Repo:   "therepo",
-			Format: "zip",
+			Format: proto.ArchiveFormat_zip,
 		})
 		require.NoError(t, err)
 		_, err = cc.Recv()
@@ -503,7 +503,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		b.ArchiveReaderFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
 		cc, err = cli.Archive(context.Background(), &v1.ArchiveRequest{
 			Repo:   "therepo",
-			Format: "zip",
+			Format: proto.ArchiveFormat_zip,
 		})
 		require.NoError(t, err)
 		_, err = cc.Recv()

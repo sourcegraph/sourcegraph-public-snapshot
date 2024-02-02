@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -179,7 +180,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	// Log which which actor is accessing the repo.
 	accesslog.Record(ss.Context(), req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
-		log.String("format", req.GetFormat()),
+		log.String("format", req.GetFormat().String()),
 		log.Strings("path", req.GetPathspecs()),
 	)
 
@@ -187,12 +188,13 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if req.GetRepo() == "" || req.GetFormat() == "" {
-		return status.Error(codes.InvalidArgument, "empty repo or format")
+	if req.GetRepo() == "" {
+		return status.Error(codes.InvalidArgument, "empty repo")
 	}
 
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+	format := git.ArchiveFormatFromProto(req.GetFormat())
 
 	// Ensure that the repo is cloned and if not start a background clone, then
 	// return a well-known NotFound payload error.
@@ -216,9 +218,17 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		}
 	}
 
+	// This is a long time, but this never blocks a user request for this
+	// long. Even repos that are not that large can take a long time, for
+	// example a search over all repos in an organization may have several
+	// large repos. All of those repos will be competing for IO => we need
+	// a larger timeout.
+	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
+
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	r, err := backend.ArchiveReader(ss.Context(), req.GetFormat(), req.GetTreeish(), req.GetPathspecs())
+	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), req.GetPathspecs())
 	if err != nil {
 		if os.IsNotExist(err) {
 			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{

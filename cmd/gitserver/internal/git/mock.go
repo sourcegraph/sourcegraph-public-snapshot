@@ -317,7 +317,7 @@ type MockGitBackend struct {
 func NewMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
 		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
-			defaultHook: func(context.Context, string, string, []string) (r0 io.ReadCloser, r1 error) {
+			defaultHook: func(context.Context, ArchiveFormat, string, []string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -369,7 +369,7 @@ func NewMockGitBackend() *MockGitBackend {
 func NewStrictMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
 		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
-			defaultHook: func(context.Context, string, string, []string) (io.ReadCloser, error) {
+			defaultHook: func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitBackend.ArchiveReader")
 			},
 		},
@@ -453,15 +453,15 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 // GitBackendArchiveReaderFunc describes the behavior when the ArchiveReader
 // method of the parent MockGitBackend instance is invoked.
 type GitBackendArchiveReaderFunc struct {
-	defaultHook func(context.Context, string, string, []string) (io.ReadCloser, error)
-	hooks       []func(context.Context, string, string, []string) (io.ReadCloser, error)
+	defaultHook func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)
+	hooks       []func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)
 	history     []GitBackendArchiveReaderFuncCall
 	mutex       sync.Mutex
 }
 
 // ArchiveReader delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBackend) ArchiveReader(v0 context.Context, v1 string, v2 string, v3 []string) (io.ReadCloser, error) {
+func (m *MockGitBackend) ArchiveReader(v0 context.Context, v1 ArchiveFormat, v2 string, v3 []string) (io.ReadCloser, error) {
 	r0, r1 := m.ArchiveReaderFunc.nextHook()(v0, v1, v2, v3)
 	m.ArchiveReaderFunc.appendCall(GitBackendArchiveReaderFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -470,7 +470,7 @@ func (m *MockGitBackend) ArchiveReader(v0 context.Context, v1 string, v2 string,
 // SetDefaultHook sets function that is called when the ArchiveReader method
 // of the parent MockGitBackend instance is invoked and the hook queue is
 // empty.
-func (f *GitBackendArchiveReaderFunc) SetDefaultHook(hook func(context.Context, string, string, []string) (io.ReadCloser, error)) {
+func (f *GitBackendArchiveReaderFunc) SetDefaultHook(hook func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
@@ -478,7 +478,7 @@ func (f *GitBackendArchiveReaderFunc) SetDefaultHook(hook func(context.Context, 
 // ArchiveReader method of the parent MockGitBackend instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitBackendArchiveReaderFunc) PushHook(hook func(context.Context, string, string, []string) (io.ReadCloser, error)) {
+func (f *GitBackendArchiveReaderFunc) PushHook(hook func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -487,19 +487,19 @@ func (f *GitBackendArchiveReaderFunc) PushHook(hook func(context.Context, string
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitBackendArchiveReaderFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, []string) (io.ReadCloser, error) {
+	f.SetDefaultHook(func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitBackendArchiveReaderFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, string, string, []string) (io.ReadCloser, error) {
+	f.PushHook(func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBackendArchiveReaderFunc) nextHook() func(context.Context, string, string, []string) (io.ReadCloser, error) {
+func (f *GitBackendArchiveReaderFunc) nextHook() func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -537,7 +537,7 @@ type GitBackendArchiveReaderFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 ArchiveFormat
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string

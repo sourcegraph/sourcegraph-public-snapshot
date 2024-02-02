@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,6 +27,23 @@ func readFileContentsFromTar(t *testing.T, tr *tar.Reader, name string) string {
 
 	t.Fatalf("File %q not found in tar archive", name)
 	return ""
+}
+
+func TestGitCLIBackend_buildArchiveArgs(t *testing.T) {
+	t.Run("no pathspecs", func(t *testing.T) {
+		args := buildArchiveArgs(git.ArchiveFormatTar, "HEAD", nil)
+		require.Equal(t, []string{"archive", "--worktree-attributes", "--format=tar", "HEAD", "--"}, args)
+	})
+
+	t.Run("with pathspecs", func(t *testing.T) {
+		args := buildArchiveArgs(git.ArchiveFormatTar, "HEAD", []string{"file1", "file2"})
+		require.Equal(t, []string{"archive", "--worktree-attributes", "--format=tar", "HEAD", "--", "file1", "file2"}, args)
+	})
+
+	t.Run("zip adds -0", func(t *testing.T) {
+		args := buildArchiveArgs(git.ArchiveFormatZip, "HEAD", nil)
+		require.Equal(t, []string{"archive", "--worktree-attributes", "--format=zip", "-0", "HEAD", "--"}, args)
+	})
 }
 
 func TestGitCLIBackend_ArchiveReader(t *testing.T) {

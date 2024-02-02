@@ -6,7 +6,28 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
+
+type ArchiveFormat string
+
+const (
+	// ArchiveFormatZip indicates a zip archive is desired.
+	ArchiveFormatZip ArchiveFormat = "zip"
+	// ArchiveFormatTar indicates a tar archive is desired.
+	ArchiveFormatTar ArchiveFormat = "tar"
+)
+
+func ArchiveFormatFromProto(format proto.ArchiveFormat) ArchiveFormat {
+	switch format {
+	case proto.ArchiveFormat_zip:
+		return ArchiveFormatZip
+	case proto.ArchiveFormat_tar:
+		return ArchiveFormatTar
+	default:
+		return ""
+	}
+}
 
 // GitBackend is the interface through which operations on a git repository can
 // be performed. It encapsulates the underlying git implementation and allows
@@ -42,7 +63,7 @@ type GitBackend interface {
 	// ArchiveReader returns a reader for an archive in the given format.
 	// Treeish is the tree or commit to archive, and pathspecs is the list of
 	// pathspecs to include in the archive. If empty, all pathspecs are included.
-	ArchiveReader(ctx context.Context, format, treeish string, pathspecs []string) (io.ReadCloser, error)
+	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
