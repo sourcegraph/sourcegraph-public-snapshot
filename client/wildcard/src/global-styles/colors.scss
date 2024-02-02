@@ -52,6 +52,18 @@ $theme-colors: (
     'merged': $merged,
 );
 
+// Brand secondary colors.
+// https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/color/#secondary-colors
+$violet-01: #eedfff;
+$violet-02: #e8d1ff;
+$violet-03: #ce9cff;
+$violet-04: #a112ff;
+$violet-05: #820dde;
+$violet-06: #6112a3;
+$violet-07: #270741;
+$violet-08: #160425;
+$violet-09: #5f3dc4;
+
 :root {
     // Gray (blueish) root palette.
     --white: #ffffff;
@@ -83,7 +95,6 @@ $theme-colors: (
     --cyan: #{$cyan};
 
     // Brand secondary colors.
-    // https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/color/#secondary-colors
     --violet-01: #eedfff;
     --violet-02: #e8d1ff;
     --violet-03: #ce9cff;
@@ -309,6 +320,12 @@ $theme-colors: (
 
     // Header colors
     --result-header-bg: #f5f8fa;
+
+    // Search input "chip" colors
+    // Transparency needs to be added to make the text selection marker visible
+    --search-input-token-pattern: #{rgba($gray-04, 0.6)};
+    --search-input-token-filter: #{rgba($oc-blue-1, 0.6)};
+    --search-input-token-keyword: #{rgba($violet-01, 0.6)};
 }
 
 .theme-dark {
@@ -487,6 +504,12 @@ $theme-colors: (
 
     // Header colors
     --result-header-bg: #22283b;
+
+    // Search input "chip" colors
+    // Transparency needs to be added to make the text selection marker visible
+    --search-input-token-pattern: #{rgba($gray-08, 0.8)};
+    --search-input-token-filter: #{rgba($oc-blue-9, 0.4)};
+    --search-input-token-keyword: #{rgba($violet-05, 0.6)};
 }
 
 // Additional colors global colors.
