@@ -18,6 +18,7 @@ import {
     symbolFilter,
     utilityFilter,
 } from './components/dynamic-filter/SearchDynamicFilter'
+import { SearchFilterSkeleton } from './components/filter-skeleton/SearchFilterSkeleton'
 import { FilterTypeList } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { ArrowBendIcon } from './components/Icons'
@@ -49,6 +50,20 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             setSelectedFilters(selectedFilters.filter(filter => filter.kind !== 'type'))
         }
     }, [selectedFilters, query, setSelectedFilters])
+
+    const hadAnyFiltersButUtility = useMemo(() => {
+        // Skip utility filter kind because this filter should not affect
+        // skeleton loading appereance, since utility filter is much faster
+        // than all other filter kinds.
+        const possibleFilterKinds = SEARCH_TYPES_TO_FILTER_TYPES[type].filter(filter => filter !== FiltersType.Utility)
+        const hasFilter = filters?.find(filter => possibleFilterKinds.includes(filter.kind))
+        const hasSelectedFilter = selectedFilters.find(filter => possibleFilterKinds.includes(filter.kind))
+
+        // This will be used to render skeleton loading state
+        // Show it only if we have no filters and no selected filters
+        // in the search filter panel.
+        return !hasFilter && !hasSelectedFilter
+    }, [filters, selectedFilters])
 
     const handleFilterTypeClick = useCallback(
         (filter: URLQueryFilter, remove: boolean): void => {
@@ -91,7 +106,16 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 selectedFilters={selectedFilters}
                 onClick={handleFilterTypeClick}
             />
+
             <div className={styles.filters}>
+                {hadAnyFiltersButUtility && (
+                    <>
+                        <SearchFilterSkeleton />
+                        <SearchFilterSkeleton />
+                        <SearchFilterSkeleton />
+                    </>
+                )}
+
                 <SearchDynamicFilter
                     title="By repositories"
                     filterKind={FilterKind.Repository}
