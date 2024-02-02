@@ -23,8 +23,6 @@ go_library(
         "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/git",
         "//internal/api",
-        "//internal/conf",
-        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/lazyregexp",
         "//internal/trace",
