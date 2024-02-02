@@ -34,4 +34,3 @@ fileExistenceTests:
   uid: 100
   gid: 101
   permissions: 'drwxr-xr-x'
-  
