@@ -25,6 +25,7 @@ contents:
 work-dir: /usr/share/grafana
 
 accounts:
+  run-as: grafana
   groups:
     - groupname: grafana
       gid: 472
@@ -32,6 +33,15 @@ accounts:
     - username: grafana
       uid: 472
       gid: 472
+
+environment:
+  GF_PATHS_CONFIG: /etc/grafana/grafana.ini
+  GF_PATHS_DATA: /var/lib/grafana
+  GF_PATHS_HOME: /usr/share/grafana
+  GF_PATHS_LOGS: /var/log/grafana
+  GF_PATHS_PLUGINS: /var/lib/grafana/plugins
+  GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+  LANG: en_US.UTF-8
 
 paths:
   - path: /var/lib/grafana
@@ -74,6 +84,9 @@ paths:
     permissions: 0o777
     uid: 472
     gid: 472
+
+archs:
+ - amd64
 
 # NOTE: These don't seem to be applied to the image
 annotations:
