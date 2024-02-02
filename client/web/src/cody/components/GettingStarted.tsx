@@ -6,9 +6,9 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon, CodySpeechBubbleIcon } from '../chat/CodyPageIcon'
-import type { CodyChatStore } from '../useCodyChat'
 
 import { ScopeSelector } from './ScopeSelector'
+import { ScopeSelectorProps } from './ScopeSelector/ScopeSelector'
 
 import styles from './GettingStarted.module.scss'
 
@@ -19,15 +19,7 @@ const DEFAULT_VERTICAL_OFFSET = '1rem'
 /* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
 
 export const GettingStarted: React.FC<
-    Pick<
-        CodyChatStore,
-        | 'scope'
-        | 'logTranscriptEvent'
-        | 'transcriptHistory'
-        | 'setScope'
-        | 'toggleIncludeInferredRepository'
-        | 'toggleIncludeInferredFile'
-    > & {
+    ScopeSelectorProps & {
         isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
         authenticatedUser: AuthenticatedUser | null

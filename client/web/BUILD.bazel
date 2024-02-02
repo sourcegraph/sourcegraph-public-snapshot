@@ -203,6 +203,7 @@ ts_project(
         "src/cody/chat/index.tsx",
         "src/cody/components/ChatUI/ChatUi.tsx",
         "src/cody/components/ChatUI/index.tsx",
+        "src/cody/components/ChatUI/useIsFileIgnored.ts",
         "src/cody/components/CodeMirrorEditor.ts",
         "src/cody/components/CodyIcon.tsx",
         "src/cody/components/CodyLogo.tsx",
@@ -1799,6 +1800,7 @@ ts_project(
         "//:node_modules/graphql",  # keep
         "//:node_modules/history",
         "//:node_modules/http-status-codes",
+        "//:node_modules/ignore",
         "//:node_modules/is-absolute-url",
         "//:node_modules/js-cookie",
         "//:node_modules/js-yaml",
