@@ -1076,7 +1076,6 @@ ts_project(
         "src/globals.d.ts",
         "src/hooks/index.ts",
         "src/hooks/useHandleSubmitFeedback.ts",
-        "src/hooks/useOperatingSystem.ts",
         "src/hooks/useRoutesMatch.ts",
         "src/hooks/useUrlSyncedState.ts",
         "src/hooks/useUrlSyncedString.ts",

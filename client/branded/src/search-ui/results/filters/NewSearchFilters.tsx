@@ -1,7 +1,5 @@
 import { FC, ReactNode, useEffect, useCallback, useMemo } from 'react'
 
-import { mdiAppleKeyboardOption, mdiBackspaceOutline } from '@mdi/js'
-
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
@@ -9,7 +7,7 @@ import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, KbdBadge, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -99,8 +97,25 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         telemetryService.log('SearchFiltersApplyFiltersClick')
     }
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.altKey && e.key === 'Backspace') {
+            setSelectedFilters([]);
+        }
+    }
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleKeyDown]);
+
+
+
     return (
-        <div className={styles.scrollWrapper}>
+        <div
+            className={styles.scrollWrapper}
+        >
             <FilterTypeList
                 backendFilters={filters ?? []}
                 disabled={queryHasTypeFilter(query)}
@@ -108,28 +123,29 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 onClick={handleFilterTypeClick}
             />
             <div className={styles.filterPanelHeader}>
-                <h4 className="ml-2 mt-2">
+                <h3 className="ml-2 mt-2">
                     Filter results
-                </h4>
+                </h3>
                 {selectedFilters.length !== 0 && (
-                    <Button className={styles.resetButton} variant='link' size='sm' onClick={() => setSelectedFilters([])}>
-                        Reset all
-                        <div>
-                            <Icon
-                                className="mr-1"
-                                svgPath={mdiAppleKeyboardOption}
-                                size="sm"
-                                inline={true}
-                                aria-hidden={true}
-                            />
-                            <Icon
-                                svgPath={mdiBackspaceOutline}
-                                size="sm"
-                                inline={true}
-                                aria-hidden={true}
-                            />
-                        </div>
-                    </Button>
+                    <div
+                        className={styles.resetButton}
+                    >
+                        <Button
+                            className={styles.resetButton}
+                            variant='link' size='sm'
+                            onClick={() => setSelectedFilters([])}
+                        >
+                            Reset all
+                        </Button>
+                        <KbdBadge
+                            shortCut={{
+                                modifier: "\u2325",
+                                selector: "\u232b",
+                            }}
+                            shadow={true}
+                            partnerKeyIsIcon={true}
+                        />
+                    </div>
                 )}
             </div>
             <div className={styles.filters}>
