@@ -17,7 +17,7 @@ func NewIndexingWorker(ctx context.Context, observationCtx *observation.Context,
 
 	return dbworker.NewWorker[*SyntacticIndexRecord](ctx, workerStore, &indexingHandler{}, workerutil.WorkerOptions{
 		Name:                 name,
-		Interval:             config.PollInterval, // Poll for a job once per second
+		Interval:             config.PollInterval,
 		HeartbeatInterval:    10 * time.Second,
 		Metrics:              workerutil.NewMetrics(observationCtx, name),
 		NumHandlers:          config.Concurrency,

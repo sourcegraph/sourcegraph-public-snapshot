@@ -26,7 +26,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("path to scip-treesitter CLI", config.IndexingWorker.CliPath),
 		log.String("API address", config.ListenAddress))
 
-	workerStore, _ := NewStore(observationCtx)
+	workerStore, _ := NewStore(observationCtx, "syntactic-code-intel-indexer")
 	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorker)
 
 	// Initialize health server

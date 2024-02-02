@@ -58,7 +58,20 @@ func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error
 
 	if err := s.Scan(
 		&job.ID,
-		&job.Commit, &job.QueuedAt, &job.State, &job.FailureMessage, &job.StartedAt, &job.FinishedAt, &job.ProcessAfter, &job.NumResets, &job.NumFailures, &job.RepositoryID, &job.RepositoryName, &job.Outfile, &job.ShouldReindex, &job.EnqueuerUserID,
+		&job.Commit,
+		&job.QueuedAt,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.RepositoryID,
+		&job.RepositoryName,
+		&job.Outfile,
+		&job.ShouldReindex,
+		&job.EnqueuerUserID,
 	); err != nil {
 		return err
 	}
@@ -66,7 +79,7 @@ func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error
 	return nil
 }
 
-func NewStore(observationCtx *observation.Context) (dbworkerstore.Store[*SyntacticIndexRecord], error) {
+func NewStore(observationCtx *observation.Context, name string) (dbworkerstore.Store[*SyntacticIndexRecord], error) {
 
 	// Make sure this is in sync
 	var columnExpressions = []*sqlf.Query{
@@ -88,29 +101,30 @@ func NewStore(observationCtx *observation.Context) (dbworkerstore.Store[*Syntact
 	}
 
 	storeOptions := dbworkerstore.Options[*SyntacticIndexRecord]{
-		Name:              "syntactic_scip_index_store",
-		TableName:         "syntactic_scip_indexes",
-		ViewName:          "syntactic_scip_indexes_with_repository_name u",
+		Name:      "syntactic_scip_index_store",
+		TableName: "syntactic_scip_indexes",
+		ViewName:  "syntactic_scip_indexes_with_repository_name u",
+		// Using enqueuer_user_id prioritises manually scheduled indexing
 		OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
 		ColumnExpressions: columnExpressions,
 		Scan:              dbworkerstore.BuildWorkerScan(ScanSyntacticIndexRecord),
 	}
 
-	db := mustInitializeDB(observationCtx)
+	db := mustInitializeDB(observationCtx, name)
 	handle := basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})
 	return dbworkerstore.New(observationCtx, handle, storeOptions), nil
 }
 
-func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
+func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "precise-code-intel-worker")
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, name)
 	if err != nil {
-		log.Scoped("init db").Fatal("Failed to connect to frontend database", log.Error(err))
+		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
-	//
+	// TODO: what is this?
 	// START FLAILING
 
 	ctx := context.Background()
