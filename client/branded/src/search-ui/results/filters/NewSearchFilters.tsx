@@ -53,11 +53,13 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     const hadAnyFiltersButUtility = useMemo(() => {
         // Skip utility filter kind because this filter should not affect
-        // skeleton loading appereance, since utility filter is much faster
+        // skeleton loading appearance, since utility filter is much faster
         // than all other filter kinds.
-        const possibleFilterKinds = SEARCH_TYPES_TO_FILTER_TYPES[type].filter(filter => filter !== FiltersType.Utility)
-        const hasFilter = filters?.find(filter => possibleFilterKinds.includes(filter.kind))
-        const hasSelectedFilter = selectedFilters.find(filter => possibleFilterKinds.includes(filter.kind))
+        const possibleFilterKinds = new Set(
+            SEARCH_TYPES_TO_FILTER_TYPES[type].filter(filter => filter !== FiltersType.Utility)
+        )
+        const hasFilter = filters?.find(filter => possibleFilterKinds.has(filter.kind))
+        const hasSelectedFilter = selectedFilters.find(filter => possibleFilterKinds.has(filter.kind))
 
         // This will be used to render skeleton loading state
         // Show it only if we have no filters and no selected filters
