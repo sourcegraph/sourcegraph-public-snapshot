@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
@@ -17,7 +16,7 @@ func createServiceAlerts(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	// Only provision if MaxCount is specified greater or equal 5 (the default).
 	// If nil, it doesn't matter
@@ -47,6 +46,29 @@ func createServiceAlerts(
 		}
 	}
 
+	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		Service:       vars.Service,
+		EnvironmentID: vars.EnvironmentID,
+
+		ID:           "cloud_run_pending_requests",
+		Name:         "Cloud Run Pending Requests",
+		Description:  "There are requests pending - we may need to increase  Cloud Run instance count, request concurrency, or investigate further.",
+		ProjectID:    vars.ProjectID,
+		ResourceName: vars.Service.ID,
+		ResourceKind: alertpolicy.CloudRunService,
+		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+			Filters:    map[string]string{"metric.type": "run.googleapis.com/pending_queue/pending_requests"},
+			Aligner:    alertpolicy.MonitoringAlignSum,
+			Reducer:    alertpolicy.MonitoringReduceSum,
+			Period:     "60s",
+			Threshold:  5,
+			Comparison: alertpolicy.ComparisonGT,
+		},
+		NotificationChannels: channels,
+	}); err != nil {
+		return errors.Wrap(err, "cloud_run_pending_requests")
+	}
+
 	// If an external DNS name is provisioned, use it to check service availability
 	// from outside Cloud Run. The service must not use IAM auth.
 	if vars.ServiceAuthentication == nil && vars.ExternalDomain.GetDNSName() != "" {
@@ -61,7 +83,7 @@ func createExternalHealthcheckAlert(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	var (
 		healthcheckPath    = "/"
@@ -111,11 +133,14 @@ func createExternalHealthcheckAlert(
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
+		ProjectID:     vars.ProjectID,
 
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
 		Description: fmt.Sprintf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
-		ProjectID:   vars.ProjectID,
+
+		// If a service is not reachable, it's definitely a problem.
+		Severity: alertpolicy.SeverityLevelCritical,
 
 		ResourceKind: alertpolicy.URLUptime,
 		ResourceName: *uptimeCheck.UptimeCheckId(),

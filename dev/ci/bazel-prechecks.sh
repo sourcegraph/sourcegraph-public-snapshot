@@ -30,8 +30,8 @@ function generate_diff_artifact() {
 
 trap generate_diff_artifact EXIT
 
-echo "--- :bazel: Running bazel configure"
-bazel "${bazelrc[@]}" configure
+echo "--- :bazel: Running bazel run //:gazelle"
+bazel "${bazelrc[@]}" run //:gazelle
 
 echo "--- Checking if BUILD.bazel files were updated"
 # Account for the possibility of a BUILD.bazel to be totally new, and thus untracked.
@@ -39,7 +39,7 @@ git ls-files --exclude-standard --others | grep BUILD.bazel | xargs git add --in
 
 git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
 
-# if we get a non-zero exit code, bazel configure updated files
+# if we get a non-zero exit code, bazel run //:gazelle updated files
 if [[ $EXIT_CODE -ne 0 ]]; then
   mkdir -p ./annotations
   cat <<-'END' > ./annotations/bazel-prechecks.md
@@ -48,7 +48,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   BUILD.bazel files need to be updated to match the repository state. You should run the following command and commit the result
 
   ```
-  bazel configure
+  sg bazel configure
   ```
 
   #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
@@ -63,7 +63,7 @@ bazel "${bazelrc[@]}" run //:gazelle-update-repos
 echo "--- Checking if deps.bzl was updated"
 git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
 
-# if we get a non-zero exit code, bazel configure updated files
+# if we get a non-zero exit code, bazel run //:gazelle-update-repos updated files
 if [[ $EXIT_CODE -ne 0 ]]; then
   mkdir -p ./annotations
   cat <<-'END' > ./annotations/bazel-prechecks.md
@@ -72,7 +72,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   `deps.bzl` needs to be updated to match the repository state. You should run the following command and commit the result
 
   ```
-  bazel run //:gazelle-update-repos
+  sg bazel configure godeps
   ```
 
   #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)

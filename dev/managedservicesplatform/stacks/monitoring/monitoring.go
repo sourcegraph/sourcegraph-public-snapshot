@@ -16,11 +16,13 @@ import (
 	slackconversation "github.com/sourcegraph/managed-services-platform-cdktf/gen/slack/conversation"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/nobl9provider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/opsgenieprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/sentryprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/slackprovider"
@@ -101,7 +103,8 @@ type Variables struct {
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
 	// If CloudSQL is enabled we configure alerts for it
-	CloudSQLInstanceID *string
+	CloudSQLInstanceID    *string
+	CloudSQLMaxConections *int
 	// ServiceHealthProbes is used to determine the threshold for service
 	// startup latency alerts.
 	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
@@ -112,6 +115,10 @@ type Variables struct {
 const StackName = "monitoring"
 
 const sharedAlertsSlackChannel = "#alerts-msp"
+
+// nobl9ClientID user account (@jac) for trial
+const nobl9ClientID = "0oab428uphKZbY1jy417"
+const nobl9OrganizationID = "sourcegraph-n8JWJzlFjsCw"
 
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	stack, _, err := stacks.New(StackName,
@@ -127,6 +134,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		sentryprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretSentryAuthToken,
 			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+		}),
+		nobl9provider.With(nobl9provider.Config{
+			ClientID:     nobl9ClientID,
+			Organization: nobl9OrganizationID,
+			Nobl9Token: gsmsecret.DataConfig{
+				Secret:    googlesecretsmanager.SecretNobl9ClientSecret,
+				ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+			},
 		}))
 	if err != nil {
 		return nil, err
@@ -136,7 +151,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Prepare GCP monitoring channels on which to notify on when an alert goes
 	// off.
-	var channels []monitoringnotificationchannel.MonitoringNotificationChannel
+	channels := make(map[alertpolicy.ServerityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
+	addChannel := func(level alertpolicy.ServerityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
+		channels[level] = append(channels[level], c)
+	}
 
 	// Configure opsgenie channels
 	// TODO: Enable after we dogfood the alerts for a while.
@@ -198,7 +216,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}},
 			})
 
-		channels = append(channels,
+		addChannel(alertpolicy.SeverityLevelCritical,
 			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
 				id.TerraformID("notification_channel"),
 				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
@@ -278,26 +296,28 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			}
 		}
 
-		channels = append(channels,
-			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
-				id.TerraformID("notification_channel"),
-				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
-					Project:     &vars.ProjectID,
-					DisplayName: pointers.Stringf("Slack - %s", channel.Name),
-					Type:        pointers.Ptr("slack"),
-					Labels: &map[string]*string{
-						"channel_name": &channel.Name,
-					},
-					SensitiveLabels: &monitoringnotificationchannel.MonitoringNotificationChannelSensitiveLabels{
-						AuthToken: &slackToken.Value,
-					},
-					DependsOn: func() *[]cdktf.ITerraformDependable {
-						if slackChannel != nil {
-							return pointers.Ptr([]cdktf.ITerraformDependable{slackChannel})
-						}
-						return nil
-					}(),
-				}))
+		slackNotifications := monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
+			id.TerraformID("notification_channel"),
+			&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
+				Project:     &vars.ProjectID,
+				DisplayName: pointers.Stringf("Slack - %s", channel.Name),
+				Type:        pointers.Ptr("slack"),
+				Labels: &map[string]*string{
+					"channel_name": &channel.Name,
+				},
+				SensitiveLabels: &monitoringnotificationchannel.MonitoringNotificationChannelSensitiveLabels{
+					AuthToken: &slackToken.Value,
+				},
+				DependsOn: func() *[]cdktf.ITerraformDependable {
+					if slackChannel != nil {
+						return pointers.Ptr([]cdktf.ITerraformDependable{slackChannel})
+					}
+					return nil
+				}(),
+			})
+
+		addChannel(alertpolicy.SeverityLevelWarning, slackNotifications)
+		addChannel(alertpolicy.SeverityLevelCritical, slackNotifications)
 	}
 
 	// Set up alerts, configuring each with all our notification channels
@@ -335,6 +355,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		if err := createCloudSQLAlerts(stack, id.Group("cloudsql"), vars, channels); err != nil {
 			return nil, errors.Wrap(err, "failed to create CloudSQL alerts")
 		}
+	}
+
+	if vars.Monitoring.Nobl9 {
+		createNobl9Project(stack, id.Group("nobl9"), vars)
 	}
 
 	return &CrossStackOutput{}, nil

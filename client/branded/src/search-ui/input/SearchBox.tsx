@@ -200,6 +200,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                             navbarSearchQuery={queryState.query}
                             className={styles.searchBoxToggles}
                             structuralSearchDisabled={props.structuralSearchDisabled}
+                            telemetryService={props.telemetryService}
                         />
                     ) : (
                         <LegacyToggles

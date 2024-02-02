@@ -155,6 +155,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     navbarSearchQuery={queryState.query}
                     submitSearch={submitSearchOnChange}
                     structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch !== 'enabled'}
+                    telemetryService={telemetryService}
                 />
             ) : (
                 <LegacyToggles

@@ -129,7 +129,11 @@ func (c *testGitserverConns) ClientForRepo(ctx context.Context, repo api.RepoNam
 		return nil, err
 	}
 
-	return c.clientFunc(conn), nil
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: c.clientFunc(conn),
+		},
+	}, nil
 }
 
 type testConnAndErr struct {
@@ -146,7 +150,11 @@ func (t *testConnAndErr) Address() string {
 
 // GRPCClient implements AddressWithClient
 func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
-	return t.clientFunc(t.conn), t.err
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: t.clientFunc(t.conn),
+		},
+	}, t.err
 }
 
 var _ ClientSource = &testGitserverConns{}
@@ -216,7 +224,11 @@ func (c *connAndErr) Address() string {
 }
 
 func (c *connAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
-	return proto.NewGitserverServiceClient(c.conn), c.err
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: proto.NewGitserverServiceClient(c.conn),
+		},
+	}, c.err
 }
 
 type atomicGitServerConns struct {
@@ -234,8 +246,11 @@ func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, repo api.RepoN
 		return nil, err
 	}
 
-	client := &automaticRetryClient{base: proto.NewGitserverServiceClient(conn)}
-	return client, nil
+	return &errorTranslatingClient{
+		base: &automaticRetryClient{
+			base: proto.NewGitserverServiceClient(conn),
+		},
+	}, nil
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {

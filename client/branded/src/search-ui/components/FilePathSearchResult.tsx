@@ -68,7 +68,7 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
             rankingDebug={result.debug}
             className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
-            actions={<SearchResultPreviewButton result={result} />}
+            actions={<SearchResultPreviewButton result={result} telemetryService={telemetryService} />}
         />
     )
 }

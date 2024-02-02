@@ -742,6 +742,9 @@ func (s *EnvironmentResourceBigQueryDatasetSpec) GetSchema(tableID string) []byt
 }
 
 type EnvironmentAlertingSpec struct {
-	// Opsgenie, if true, disables suppression of Opsgenie alerts.
+	// Opsgenie, if true, disables suppression of Opsgenie alerts. Note that
+	// only critical alerts are delivered to Opsgenie - this is a curated set
+	// of alerts that are considered high-signal indicators that something is
+	// definitely wrong with your service.
 	Opsgenie *bool `yaml:"opsgenie,omitempty"`
 }

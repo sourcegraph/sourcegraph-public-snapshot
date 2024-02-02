@@ -113,6 +113,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                             structuralSearchDisabled={
                                 window.context?.experimentalFeatures?.structuralSearch !== 'enabled'
                             }
+                            telemetryService={props.telemetryService}
                         />
                     ) : (
                         <LegacyToggles

@@ -27,10 +27,10 @@
     $: queryState.setSettings($settings)
 </script>
 
-{#if data.stream}
+{#if data.searchStream}
     <SearchResults
         bind:this={searchResults}
-        stream={data.stream}
+        stream={data.searchStream}
         queryFromURL={data.queryOptions.query}
         {queryState}
         queryFilters={data.queryFilters}

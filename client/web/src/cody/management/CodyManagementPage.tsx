@@ -88,7 +88,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const enrollPro = parameters.get('pro') === 'true'
 
-    let subscription = data?.currentUser?.codySubscription
+    const subscription = data?.currentUser?.codySubscription
 
     useEffect(() => {
         if (!arePaymentsEnabled && enrollPro && data?.currentUser && subscription?.plan !== CodySubscriptionPlan.PRO) {
@@ -107,8 +107,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
         return null
     }
-
-    subscription = { ...subscription, cancelAtPeriodEnd: true }
 
     const codeLimitReached = codyCurrentPeriodCodeUsage >= codyCurrentPeriodCodeLimit && codyCurrentPeriodCodeLimit > 0
     const chatLimitReached = codyCurrentPeriodChatUsage >= codyCurrentPeriodChatLimit && codyCurrentPeriodChatLimit > 0

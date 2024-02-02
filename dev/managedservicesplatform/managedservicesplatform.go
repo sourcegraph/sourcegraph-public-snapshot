@@ -141,6 +141,7 @@ func (r *Renderer) RenderEnvironment(
 		DiagnosticsSecret:     cloudrunOutput.DiagnosticsSecret,
 		RedisInstanceID:       cloudrunOutput.RedisInstanceID,
 		CloudSQLInstanceID:    cloudrunOutput.CloudSQLInstanceID,
+		CloudSQLMaxConections: pointers.DerefZero(pointers.DerefZero(env.Resources).PostgreSQL).MaxConnections,
 		ServiceHealthProbes:   pointers.DerefZero(env.EnvironmentServiceSpec).HealthProbes,
 		SentryProject:         cloudrunOutput.SentryProject,
 	}); err != nil {
