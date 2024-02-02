@@ -15,7 +15,6 @@ $cyan: #72dbe8;
 
 // Exception that's used in $theme-colors.
 $gray-02: #eff2f5;
-$gray-03: #e6ebf2;
 // Exception that's used in [data-reach-dialog-overlay] background.
 $gray-04: #dbe2f0;
 // Exception that's used in $custom-select-indicator as SVG icon fill color.
@@ -70,7 +69,7 @@ $violet-09: #5f3dc4;
     --white: #ffffff;
     --gray-01: #f9fafb;
     --gray-02: #{$gray-02};
-    --gray-03: #{$gray-03};
+    --gray-03: #e6ebf2;
     --gray-04: #{$gray-04};
     --gray-05: #a6b6d9;
     --gray-06: #{$gray-06};
