@@ -23,15 +23,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	logger.Info("Syntactic code intel worker running",
-		log.String("path to scip-treesitter CLI", config.CliPath),
+		log.String("path to scip-treesitter CLI", config.IndexingWorker.CliPath),
 		log.String("API address", config.ListenAddress))
 
-	store, _ := NewStore(observationCtx)
-
-	q, _ := store.QueuedCount(ctx, true)
-	record, flag, _ := store.Dequeue(ctx, config.ListenAddress, nil)
-
-	logger.Info("Queue size", log.Int("size", q), log.Int("id", record.ID), log.Bool("flag", flag))
+	workerStore, _ := NewStore(observationCtx)
+	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorker)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(config.ListenAddress, &http.Server{
@@ -41,7 +37,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	})
 
 	// Go!
-	goroutine.MonitorBackgroundRoutines(ctx, server)
+	goroutine.MonitorBackgroundRoutines(ctx, server, indexingWorker)
 
 	return nil
 }

@@ -492,7 +492,7 @@ func (s *store[T]) Dequeue(ctx context.Context, workerHostname string, condition
 		s.columnReplacer.Replace("{worker_hostname}"):   workerHostnameExpr,
 	}
 
-	records, err := s.options.Scan(s.Query(ctx, s.formatQuery(
+	query := s.formatQuery(
 		dequeueQuery,
 		s.options.OrderByExpression,
 		quote(s.options.ViewName),
@@ -508,7 +508,9 @@ func (s *store[T]) Dequeue(ctx context.Context, workerHostname string, condition
 		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
 		sqlf.Join(s.makeDequeueSelectExpressions(updatedColumns), ", "),
 		quote(s.options.ViewName),
-	)))
+	)
+
+	records, err := s.options.Scan(s.Query(ctx, query))
 	if err != nil {
 		return ret, false, err
 	}

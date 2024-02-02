@@ -59,6 +59,7 @@ CREATE VIEW syntactic_scip_indexes_with_repository_name AS
         u.outfile,
         u.execution_logs,
         u.should_reindex,
+        u.enqueuer_user_id,
         r.name AS repository_name
     FROM (syntactic_scip_indexes u
         JOIN repo r ON ((r.id = u.repository_id)))
