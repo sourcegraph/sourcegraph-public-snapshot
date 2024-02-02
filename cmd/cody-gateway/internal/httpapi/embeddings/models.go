@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
