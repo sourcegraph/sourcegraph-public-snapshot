@@ -4,8 +4,8 @@
     import { mdiFlaskRemoveOutline, mdiInformation } from '@mdi/js'
 
     // A hard referesh will only load the React version if the URL does not explicitly
-    // include the `feat=enable-ewp` query parameter.
-    $: urlHasFeatureFlag = $page.url.searchParams.getAll('feat').includes('enable-ewp')
+    // include the `feat=web-next` query parameter.
+    $: urlHasFeatureFlag = $page.url.searchParams.getAll('feat').includes('web-next')
 </script>
 
 <div>

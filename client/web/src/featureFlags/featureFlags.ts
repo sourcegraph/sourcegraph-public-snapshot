@@ -23,8 +23,8 @@ export const FEATURE_FLAGS = [
     'enable-sveltekit',
     // TODO(fkling): Remove this flag
     'enable-sveltekit-toggle',
-    'enable-ewp',
-    'enable-ewp-toggle',
+    'web-next',
+    'web-next-toggle',
     'end-user-onboarding',
     'insight-polling-enabled',
     'opencodegraph',

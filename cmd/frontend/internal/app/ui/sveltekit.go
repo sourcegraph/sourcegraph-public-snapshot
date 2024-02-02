@@ -40,7 +40,7 @@ func useSvelteKit(r *http.Request) bool {
 
 	ff := featureflag.FromContext(r.Context())
 
-	return ff.GetBoolOr("enable-sveltekit", false) || ff.GetBoolOr("enable-ewp", false)
+	return ff.GetBoolOr("enable-sveltekit", false) || ff.GetBoolOr("web-next", false)
 }
 
 // renderSvelteKit writes SvelteKit's fallback page to the provided writer

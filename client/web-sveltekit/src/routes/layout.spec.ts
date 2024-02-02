@@ -13,7 +13,7 @@ test('has sign in button', async ({ page }) => {
 test('has experimental web app toggle button', async ({ page }) => {
     await page.goto('/')
     await page.getByLabel('Leave experimental web app').click()
-    await expect(page).toHaveURL(/\?feat=-enable-ewp/)
+    await expect(page).toHaveURL(/\?feat=-web-next/)
 })
 
 test('has user menu', async ({ sg, page }) => {

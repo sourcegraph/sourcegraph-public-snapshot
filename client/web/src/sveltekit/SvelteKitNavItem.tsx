@@ -11,7 +11,7 @@ import { isSvelteKitSupportedURL, reload } from './util'
 
 function useIsSvelteKitToggleEnabled(): boolean {
     const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
-    const [isExperimentalWebAppToggleEnabled] = useFeatureFlag('enable-ewp-toggle')
+    const [isExperimentalWebAppToggleEnabled] = useFeatureFlag('web-next-toggle')
     return isSvelteKitToggleEnabled || isExperimentalWebAppToggleEnabled
 }
 

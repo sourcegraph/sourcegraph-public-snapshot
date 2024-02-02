@@ -20,11 +20,11 @@
         const urlCopy = new URL(url)
         urlCopy.searchParams.delete('feat')
         for (let feature of urlCopy.searchParams.getAll('feat')) {
-            if (feature !== 'enable-ewp') {
+            if (feature !== 'web-next') {
                 urlCopy.searchParams.append('feat', feature)
             }
         }
-        urlCopy.searchParams.append('feat', '-enable-ewp')
+        urlCopy.searchParams.append('feat', '-web-next')
         return urlCopy.toString()
     })($page.url)
 </script>

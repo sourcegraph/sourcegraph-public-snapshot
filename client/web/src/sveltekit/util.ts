@@ -25,6 +25,6 @@ export function isSvelteKitSupportedURL(pathname: string): boolean {
 
 export function reload(): void {
     const url = new URL(window.location.href)
-    url.searchParams.append('feat', 'enable-ewp')
+    url.searchParams.append('feat', 'web-next')
     window.location.href = url.toString()
 }
