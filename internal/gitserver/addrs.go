@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"

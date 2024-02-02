@@ -1,14 +1,15 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -99,8 +100,8 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 					}
 				}
 
-				slices.SortFunc(categories, func(a, b bzlgenTarget) bool {
-					return a.order < b.order
+				slices.SortFunc(categories, func(a, b bzlgenTarget) int {
+					return cmp.Compare(a.order, b.order)
 				})
 
 				std.Out.WriteLine(output.Emojif(output.EmojiAsterisk, "Invoking the following Bazel generating categories: %s", strings.Join(categoryNames, ", ")))
