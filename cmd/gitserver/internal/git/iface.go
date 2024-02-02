@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
 
 type ArchiveFormat string
@@ -17,17 +16,6 @@ const (
 	// ArchiveFormatTar indicates a tar archive is desired.
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
-
-func ArchiveFormatFromProto(format proto.ArchiveFormat) ArchiveFormat {
-	switch format {
-	case proto.ArchiveFormat_zip:
-		return ArchiveFormatZip
-	case proto.ArchiveFormat_tar:
-		return ArchiveFormatTar
-	default:
-		return ""
-	}
-}
 
 // GitBackend is the interface through which operations on a git repository can
 // be performed. It encapsulates the underlying git implementation and allows

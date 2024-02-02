@@ -579,18 +579,10 @@ func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
 		protoPathSpecs = append(protoPathSpecs, string(path))
 	}
 
-	var format proto.ArchiveFormat
-	switch o.Format {
-	case ArchiveFormatTar:
-		format = proto.ArchiveFormat_tar
-	case ArchiveFormatZip:
-		format = proto.ArchiveFormat_zip
-	}
-
 	return &proto.ArchiveRequest{
 		Repo:      repo,
 		Treeish:   o.Treeish,
-		Format:    format,
+		Format:    string(o.Format),
 		Pathspecs: protoPathSpecs,
 	}
 }

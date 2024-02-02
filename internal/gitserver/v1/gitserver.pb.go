@@ -2963,7 +2963,7 @@ type ArchiveRequest struct {
 	// treeish is the tree or commit to produce an archive for
 	Treeish string `protobuf:"bytes,2,opt,name=treeish,proto3" json:"treeish,omitempty"`
 	// format is the format of the resulting archive (usually "tar" or "zip")
-	Format ArchiveFormat `protobuf:"varint,3,opt,name=format,proto3,enum=gitserver.v1.ArchiveFormat" json:"format,omitempty"`
+	Format string `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
 	// pathspecs is the list of pathspecs to include in the archive. If empty, all
 	// pathspecs are included.
 	Pathspecs []string `protobuf:"bytes,4,rep,name=pathspecs,proto3" json:"pathspecs,omitempty"`
@@ -3015,11 +3015,11 @@ func (x *ArchiveRequest) GetTreeish() string {
 	return ""
 }
 
-func (x *ArchiveRequest) GetFormat() ArchiveFormat {
+func (x *ArchiveRequest) GetFormat() string {
 	if x != nil {
 		return x.Format
 	}
-	return ArchiveFormat_zip
+	return ""
 }
 
 func (x *ArchiveRequest) GetPathspecs() []string {

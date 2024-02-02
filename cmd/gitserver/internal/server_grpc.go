@@ -180,7 +180,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	// Log which which actor is accessing the repo.
 	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
-		log.String("format", req.GetFormat().String()),
+		log.String("format", req.GetFormat()),
 		log.Strings("path", req.GetPathspecs()),
 	)
 
@@ -194,7 +194,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
-	format := git.ArchiveFormatFromProto(req.GetFormat())
+	format := git.ArchiveFormat(req.GetFormat())
 
 	// Ensure that the repo is cloned and if not start a background clone, then
 	// return a well-known NotFound payload error.
