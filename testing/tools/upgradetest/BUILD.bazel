@@ -81,8 +81,8 @@ sh_binary(
     ],
     data = [
         ":upgradetest-darwin-arm64",
-        "//cmd/frontend:image_tarball",
         "//cmd/migrator:image_tarball",
+        "//cmd/frontend:image_tarball",
         "//internal/database:generate_schemas",
     ],
 )

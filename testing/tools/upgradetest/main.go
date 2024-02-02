@@ -48,6 +48,108 @@ func main() {
 		Usage: "Upgrade test is a tool for testing the migrator services creation of upgrade paths and application of upgrade paths.\nWhen run relevant upgrade paths are tested for each version relevant to a given upgrade type, initializing Sourcegraph databases and frontend services for each version, and attempting to generate and apply an upgrade path to your current branches head.",
 		Commands: []*cli.Command{
 			{
+				Name:    "all-types",
+				Aliases: []string{"all"},
+				Usage:   "Runs all upgrade test types",
+				Action: func(cCtx *cli.Context) error {
+					ctx := cCtx.Context
+
+					// check docker is running
+					if err := run.Cmd(ctx, "docker", "ps").Run().Wait(); err != nil {
+						fmt.Println("🚨 Error: could not connect to docker: ", err)
+						os.Exit(1)
+					}
+
+					// Get init versions to use for initializing upgrade environments for tests
+					latestMinorVersion, latestVersion, stdVersions, mvuVersions, autoVersions, err := getVersions(ctx)
+					if err != nil {
+						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
+						os.Exit(1)
+					}
+
+					fmt.Println("Latest version: ", latestVersion)
+					fmt.Println("Latest minor version: ", latestMinorVersion)
+					fmt.Println("Standard Versions:", stdVersions)
+					fmt.Println("Multiversion Versions:", mvuVersions)
+					fmt.Println("Autoupgrade Versions:", autoVersions)
+
+					// initialize test results
+					var results TestResults
+
+					// create array of all tests
+					var versions []typeVersion
+					for _, version := range stdVersions {
+						versions = append(versions, typeVersion{
+							Type:    "std",
+							Version: version,
+						})
+					}
+					for _, version := range mvuVersions {
+						versions = append(versions, typeVersion{
+							Type:    "mvu",
+							Version: version,
+						})
+					}
+					for _, version := range autoVersions {
+						versions = append(versions, typeVersion{
+							Type:    "auto",
+							Version: version,
+						})
+					}
+
+					// Run all test types
+					testPool := pool.New().WithMaxGoroutines(10).WithErrors()
+					for _, version := range versions {
+						version := version
+						if slices.Contains(knownBugVersions, version.Version.String()) {
+							continue
+						}
+
+						switch version.Type {
+						case "std":
+							testPool.Go(func() error {
+								fmt.Println("std: ", version.Version)
+								start := time.Now()
+								result := standardUpgradeTest(ctx, version.Version, latestVersion)
+								result.Runtime = time.Since(start)
+								result.DisplayLog() // DEBUG
+								results.AddStdTest(result)
+								return nil
+							})
+						case "mvu":
+							testPool.Go(func() error {
+								fmt.Println("mvu: ", version.Version)
+								start := time.Now()
+								result := multiversionUpgradeTest(ctx, version.Version, latestMinorVersion)
+								result.Runtime = time.Since(start)
+								result.DisplayLog() // DEBUG
+								results.AddMVUTest(result)
+								return nil
+							})
+						case "auto":
+							testPool.Go(func() error {
+								fmt.Println("auto: ", version.Version)
+								start := time.Now()
+								result := autoUpgradeTest(ctx, version.Version, latestMinorVersion)
+								result.Runtime = time.Since(start)
+								result.DisplayLog() // DEBUG
+								results.AddAutoTest(result)
+								return nil
+							})
+						}
+					}
+					if err := testPool.Wait(); err != nil {
+						log.Fatal(err)
+					}
+
+					// This is where we do the majority of our printing to stdout.
+					results.OrderByVersion()
+					results.PrintSimpleResults()
+
+					return nil
+				},
+			},
+			{
 				Name:    "standard",
 				Aliases: []string{"std"},
 				Usage:   "Runs standard upgrade tests for all patch versions from the last minor version.\nEx: 5.1.x -> 5.2.x (head)",
@@ -89,6 +191,7 @@ func main() {
 							start := time.Now()
 							result := standardUpgradeTest(ctx, version, latestVersion)
 							result.Runtime = time.Since(start)
+							result.DisplayLog() // DEBUG
 							results.AddStdTest(result)
 							return nil
 						})
@@ -143,6 +246,7 @@ func main() {
 							start := time.Now()
 							result := multiversionUpgradeTest(ctx, version, latestVersion)
 							result.Runtime = time.Since(start)
+							result.DisplayLog() // DEBUG
 							results.AddMVUTest(result)
 							return nil
 						})
@@ -197,7 +301,7 @@ func main() {
 							result := autoUpgradeTest(ctx, version, latestVersion)
 							result.Runtime = time.Since(start)
 							results.AddAutoTest(result)
-							result.DisplayLog() // DEBUG LOGGING
+							result.DisplayLog() // DEBUG
 							return nil
 						})
 					}
@@ -220,7 +324,7 @@ func main() {
 
 }
 
-// Tests are the basic unit of this program and represent a version being tested. Its methods are generally used to control its logging behavior.
+// Tests are the basic unit of this program and represent a version being tested. A tests methods are generally used to control its logging behavior.
 // Tests are further organized by TestResults, a test result aggregation.
 type Test struct {
 	Version  semver.Version
@@ -282,6 +386,12 @@ func (r *TestResults) AddAutoTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.AutoupgradeTests = append(r.AutoupgradeTests, test)
+}
+
+// Used in all-type test
+type typeVersion struct {
+	Type    string
+	Version *semver.Version
 }
 
 // Known bug versions
@@ -492,6 +602,13 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 }
 
 // TODO
+// This test type is still in development and currently only runs if the test is run while stamping the candidate images of frontend and migrator during the bazel build.
+// Ex command:
+//
+//	VERSION=5.2.8 bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker  --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh -- auto
+//
+// Without this in place autoupgrade fails and exits while trying to make an oobmigration comparison here: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/cli/autoupgrade.go?L67-76
+// {"SeverityText":"WARN","Timestamp":1706721478276103721,"InstrumentationScope":"frontend","Caller":"cli/autoupgrade.go:73","Function":"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli.tryAutoUpgrade","Body":"unexpected string for desired instance schema version, skipping auto-upgrade","Resource":{"service.name":"frontend","service.version":"devVersion","service.instance.id":"487754e1c54a"},"Attributes":{"version":"devVersion"}}
 func autoUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Version) Test {
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "auto", initVersion)
@@ -583,9 +700,9 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	// This isn't relevant since this test will only ever initialize instances v3.38+
 	// worth noting in case this changes in the future.
 	dbs = []*testDB{
-		{"pgsql", fmt.Sprintf("wg_pgsql_%s", initVersion), "postgres-12-alpine", ""},
-		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%s", initVersion), "codeintel-db", ""},
-		{"codeinsights-db", fmt.Sprintf("wg_codeinsights-db_%s", initVersion), "codeinsights-db", ""},
+		{"pgsql", fmt.Sprintf("%s_pgsql_%s", testType, initVersion), "postgres-12-alpine", ""},
+		{"codeintel-db", fmt.Sprintf("%s_codeintel-db_%s", testType, initVersion), "codeintel-db", ""},
+		{"codeinsights-db", fmt.Sprintf("%s_codeinsights-db_%s", testType, initVersion), "codeinsights-db", ""},
 	}
 
 	// Here we create the three databases using docker run.
@@ -815,19 +932,19 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
 		return nil, err
 	}
-	test.AddLog(fmt.Sprintf("🐋 creating wg_frontend_%x", hash))
+	test.AddLog(fmt.Sprintf("🐋 creating %s_frontend_%x", test.Type, hash))
 	// define cleanup function to stop and remove the container
 	cleanup = func() {
 		test.AddLog("🧹 removing frontend container")
 		out, err := run.Cmd(ctx, "docker", "container", "stop",
-			fmt.Sprintf("wg_frontend_%x", hash),
+			fmt.Sprintf("%s_frontend_%x", test.Type, hash),
 		).Run().String()
 		if err != nil {
 			fmt.Println("🚨 failed to stop frontend after testing: ", err)
 		}
 		test.AddLog(out)
 		out, err = run.Cmd(ctx, "docker", "container", "rm",
-			fmt.Sprintf("wg_frontend_%x", hash),
+			fmt.Sprintf("%s_frontend_%x", test.Type, hash),
 		).Run().String()
 		if err != nil {
 			fmt.Println("🚨 failed to remove frontend after testing: ", err)
@@ -840,17 +957,16 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 		"docker", "run",
 		"--detach",
 		"--platform", "linux/amd64",
-		"--name", fmt.Sprintf("wg_frontend_%x", hash),
+		"--name", fmt.Sprintf("%s_frontend_%x", test.Type, hash),
 	}
 	envString := []string{
-		"-e", "DEPLOY_TYPE=docker-compose",
+		"-e", "DEPLOY_TYPE=docker-container",
 		"-e", fmt.Sprintf("PGHOST=%s", dbs[0].ContainerName),
 		"-e", fmt.Sprintf("CODEINTEL_PGHOST=%s", dbs[1].ContainerName),
 		"-e", fmt.Sprintf("CODEINSIGHTS_PGDATASOURCE=postgres://sg@%s:5432/sg?sslmode=disable", dbs[2].ContainerName),
 	}
 	if auto {
 		envString = append(envString, "-e", "SRC_AUTOUPGRADE=true")
-		// envString = append(envString, "-e", "SG_DEV_MIGRATE_ON_APPLICATION_STARTUP=true") // This prevents a schema validation check when starting the frontend with an old database
 	}
 	// ERROR
 	// {"SeverityText":"FATAL","Timestamp":1706224238009644720,"InstrumentationScope":"sourcegraph","Caller":"svcmain/svcmain.go:167","Function":"github.com/sourcegraph/sourcegraph/internal/service/svcmain.run.func1","Body":"failed to start service","Resource":{"service.name":"frontend","service.version":"0.0.0+dev","service.instance.id":"79a3e3ca0bfc"},"Attributes":{"service":"frontend","error":"failed to connect to frontend database: database schema out of date"}}
@@ -960,7 +1076,7 @@ func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string,
 	baseString := []string{
 		"docker", "run", "--rm",
 		"--platform", "linux/amd64",
-		"--name", fmt.Sprintf("wg_migrator_%x", hash),
+		"--name", fmt.Sprintf("%s_migrator_%x", test.Type, hash),
 	}
 	envString := []string{
 		"-e", fmt.Sprintf("PGHOST=%s", dbs[0].ContainerName),
@@ -1085,6 +1201,8 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 	// stdVersions = append(stdVersions, semver.MustParse("v6.6.6")) // DEBUG
 
 	autoVersions = []*semver.Version{semver.MustParse("v5.0.0")} // DEBUG
+	mvuVersions = []*semver.Version{semver.MustParse("v5.0.0")}  // DEBUG
+	stdVersions = []*semver.Version{semver.MustParse("v5.1.0")}  // DEBUG
 
 	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, autoVersions, nil
 
