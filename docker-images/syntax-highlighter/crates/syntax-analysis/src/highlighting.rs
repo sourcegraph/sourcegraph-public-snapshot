@@ -14,9 +14,14 @@ use crate::highlighting::syntect_html::ClassedTableGenerator;
 
 #[derive(Default)]
 pub struct FileInfo<'a> {
-    // This is kept as a String instead of a PathBuf as
-    // we don't really care about OS-level operations, but
-    // using String is much more convenient.
+    // This is kept as a String instead of a PathBuf because:
+    // 1. Sourcegraph doesn't support non-UTF-8 values in paths.
+    // 2. The input received from the network is UTF-8.
+    // 3. We're not using this path to call any OS APIs
+    //    which would require Path.
+    // 4. It avoids extra conversions when interacting with
+    //    syntect or in the ad-hoc language detection code that
+    //    we currently have.
     path: String,
     pub contents: &'a str,
     pub language: Option<&'a str>,
