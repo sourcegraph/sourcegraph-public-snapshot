@@ -335,7 +335,7 @@ exports_files([
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
     ".swcrc",
-])
+] + glob(["mockgen*.yaml"]))
 
 # sg msp settings
 

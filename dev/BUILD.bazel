@@ -1,6 +1,9 @@
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
-exports_files(srcs = ["eslint-report-test.sh"])
+exports_files(srcs = [
+    "eslint-report-test.sh",
+    "go-mockgen.tpl",
+])
 
 write_source_files(
     name = "write_all_generated",
