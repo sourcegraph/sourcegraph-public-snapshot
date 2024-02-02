@@ -88,18 +88,12 @@ func checkPostgresConnection(ctx context.Context) error {
 	}
 	var errs []error
 	for _, dsn := range dsns {
-		conn, err := pgx.Connect(ctx, dsn)
-		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
-			continue
-		}
-		defer conn.Close(ctx)
-		err = conn.Ping(ctx)
-		if err == nil {
-			// if ping passed
+		// If any of the candidates succeed, we're good
+		if err := pingPG(ctx, dsn); err == nil {
 			return nil
+		} else {
+			errs = append(errs, err)
 		}
-		errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
 	}
 
 	messages := []string{"failed all attempts to connect to Postgresql database"}
@@ -109,19 +103,54 @@ func checkPostgresConnection(ctx context.Context) error {
 	return errors.New(strings.Join(messages, "\n"))
 }
 
+func pingPG(ctx context.Context, dsn string) error {
+	conn, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn)
+	}
+	defer conn.Close(ctx)
+
+	for {
+		err := conn.Ping(ctx)
+		if err == nil {
+			return nil
+		}
+		// If database is starting up we keep waiting
+		if strings.Contains(err.Error(), "database system is starting up") {
+			time.Sleep(5 * time.Millisecond)
+			continue
+		}
+		return errors.Wrapf(err, "failed to ping database at %s", dsn)
+	}
+}
+
 func dsnCandidates() ([]string, error) {
 	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
+	var candidates []string
+	add := func(dsn string) { candidates = append(candidates, dsn) }
 
 	// best case scenario
-	datasource := env("PGDATASOURCE")
+	add(env("PGDATASOURCE"))
 	// most classic dsn
 	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
+	// homebrew dsn
+	homebrewURL := baseURL
+	if uinfo, err := user.Current(); err == nil {
+		homebrewURL.User = url.User(uinfo.Username)
+		homebrewURL.Path = "postgres"
+		add(homebrewURL.String())
+	}
+
 	// classic docker dsn
 	dockerURL := baseURL
 	dockerURL.User = url.UserPassword("postgres", "postgres")
+	add(dockerURL.String())
+
 	// other classic docker dsn
 	dockerURL2 := baseURL
 	dockerURL2.User = url.UserPassword("postgres", "password")
+	add(dockerURL2.String())
+
 	// env based dsn
 	envURL := baseURL
 	username, ok := os.LookupEnv("PGUSER")
@@ -144,13 +173,9 @@ func dsnCandidates() ([]string, error) {
 		qry.Set("sslmode", sslmode)
 		envURL.RawQuery = qry.Encode()
 	}
-	return []string{
-		datasource,
-		envURL.String(),
-		baseURL.String(),
-		dockerURL.String(),
-		dockerURL2.String(),
-	}, nil
+	add(envURL.String())
+
+	return candidates, nil
 }
 
 func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckArgs) error {
@@ -179,24 +204,11 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	}
 
 	dsn := postgresdsn.New("", "", getEnv)
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
+
+	if err := pingPG(ctx, dsn); err != nil {
 		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
-	defer conn.Close(ctx)
-	for {
-		err := conn.Ping(ctx)
-		if err != nil {
-			// If database is starting up we keep waiting
-			if strings.Contains(err.Error(), "database system is starting up") {
-				time.Sleep(5 * time.Millisecond)
-				continue
-			}
-			return errors.Wrapf(err, "failed to ping Sourcegraph Postgres database at %s", dsn)
-		} else {
-			return nil
-		}
-	}
+	return nil
 }
 
 func checkRedisConnection(context.Context) error {
@@ -535,4 +547,42 @@ func guessPgUtilsPath(ctx context.Context) (error, string) {
 		return err, ""
 	}
 	return nil, filepath.Dir(str)
+}
+
+func caskInstall(formula string) check.FixAction[CheckArgs] {
+	return createBrewInstallFix(formula, true)
+
+}
+
+func brewInstall(formula string) check.FixAction[CheckArgs] {
+	return createBrewInstallFix(formula, false)
+}
+
+// brewInstall returns a FixAction that installs a brew formula.
+// If the brew output contains an autofix for adding the formula to the path
+// (in the case of keg-only formula), it will be automatically applied.
+func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] {
+	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		cmd := "brew install "
+		if cask {
+			cmd += "--cask "
+		}
+		cmd += formula
+		c := usershell.Command(ctx, cmd)
+		if cio.Input != nil {
+			c = c.Input(cio.Input)
+		}
+
+		pathAddCommandIsNext := false
+		return c.Run().StreamLines(func(line string) {
+			if pathAddCommandIsNext {
+				_ = usershell.Run(ctx, line).Wait()
+				pathAddCommandIsNext = false
+			}
+			if strings.Contains(line, "If you need to have "+formula+" first in your PATH, run:") {
+				pathAddCommandIsNext = true
+			}
+			cio.Verbose(line)
+		})
+	}
 }
