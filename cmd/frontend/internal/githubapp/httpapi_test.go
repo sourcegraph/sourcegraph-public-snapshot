@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/google/uuid"
@@ -80,7 +81,7 @@ func TestGenerateRedirectURL(t *testing.T) {
 	}
 }
 
-func TestGithubAppAuthMiddleware(t *testing.T) {
+func TestGithubAppHTTPAPI(t *testing.T) {
 	t.Cleanup(func() {
 		MockCreateGitHubApp = nil
 	})
@@ -133,7 +134,10 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	rcache.SetupForTest(t)
 	cache := rcache.NewWithTTL("test_cache", 200)
 
-	mux := newServeMux(db, "/githubapp", cache)
+	mux := mux.NewRouter()
+	subrouter := mux.PathPrefix("/githubapp/").Subrouter()
+
+	setupGitHubAppRoutesWithCache(subrouter, db, cache)
 
 	t.Run("/state", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/githubapp/state", nil)
@@ -256,7 +260,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	t.Run("/redirect", func(t *testing.T) {
 		baseURL := "/githubapp/redirect"
 		code := "2644896245sasdsf6dsd"
-		state, err := RandomState(128)
+		state, err := randomState()
 		if err != nil {
 			t.Fatalf("unexpected error generating random state: %s", err.Error())
 		}
@@ -333,7 +337,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 
 	t.Run("/setup", func(t *testing.T) {
 		baseURL := "/githubapp/setup"
-		state, err := RandomState(128)
+		state, err := randomState()
 		if err != nil {
 			t.Fatalf("unexpected error generating random state: %s", err.Error())
 		}

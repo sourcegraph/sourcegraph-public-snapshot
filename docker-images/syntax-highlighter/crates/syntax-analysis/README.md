@@ -13,7 +13,7 @@ Queries describing the local binding structure of various programming languages 
 use syntax_analysis::languages;
 use syntax_analysis::locals;
 use scip::types::Document;
-use tree_sitter_all_languages::parsers::BundledParser;
+use tree_sitter_all_languages::ParserId;
 
 const SOURCE: &[u8] = b"
 package main
@@ -25,7 +25,7 @@ func my_func(x int) {
 }";
 
 fn main() {
-  let config = languages::get_local_configuration(BundledParser::Go).unwrap();
+  let config = languages::get_local_configuration(ParserId::Go).unwrap();
   let tree = config.get_parser().parse(SOURCE, None).unwrap();
   let occurrences = locals::parse_tree(config, &tree, SOURCE);
   let mut document = Document::new();

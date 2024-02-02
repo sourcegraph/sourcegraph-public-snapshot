@@ -46,7 +46,7 @@ interface SearchDynamicFilterProps {
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
      * @param nextQuery
      */
-    onSelectedFilterChange: (filters: URLQueryFilter[]) => void
+    onSelectedFilterChange: (filterKind: Filter['kind'], filters: URLQueryFilter[]) => void
 }
 
 /**
@@ -83,9 +83,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     const handleFilterClick = (filter: URLQueryFilter, remove?: boolean): void => {
         if (remove) {
-            onSelectedFilterChange(selectedFilters.filter(f => !filtersEqual(f, filter)))
+            onSelectedFilterChange(
+                filterKind,
+                selectedFilters.filter(f => !filtersEqual(f, filter))
+            )
         } else {
-            onSelectedFilterChange([...selectedFilters, filter])
+            onSelectedFilterChange(filterKind, [...selectedFilters, filter])
         }
     }
 
@@ -169,7 +172,7 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
                 {filter.count !== 0 && (
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className={classNames('ml-2', styles.countBadge)}>
                         {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
                     </Badge>
                 )}

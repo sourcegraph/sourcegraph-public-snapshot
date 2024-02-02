@@ -4,6 +4,7 @@
 package search
 
 import (
+	"compress/gzip"
 	"context"
 	"net/http"
 	"net/url"
@@ -54,8 +55,14 @@ func StreamHandler(db database.DB) http.Handler {
 func gzipMiddleware(h *streamHandler) http.Handler {
 	// Always compress response since we can have large responses which are
 	// plain text inside of JSON. Setting a minimum size of 0 ensures the gzip
-	// handler won't buffer and respect calls to http flush.
-	m, err := gziphandler.GzipHandlerWithOpts(gziphandler.MinSize(0))
+	// handler won't buffer and respect calls to http flush. Additionally the
+	// stdlib default gzip compressor is quite slow. In our testing
+	// gzip.BestSpeed provides good enough compression on our plain text
+	// responses with minimal CPU overhead.
+	m, err := gziphandler.GzipHandlerWithOpts(
+		gziphandler.MinSize(0),
+		gziphandler.CompressionLevel(gzip.BestSpeed),
+	)
 	if err != nil {
 		// This should never happen since we have hardcoded options which
 		// work. If we update gziphandler and it doesn't like our options then

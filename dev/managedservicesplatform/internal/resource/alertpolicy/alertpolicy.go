@@ -129,6 +129,15 @@ const (
 	TriggerKindAllInViolation
 )
 
+type ServerityLevel string
+
+const (
+	SeverityLevelWarning  = "WARNING"
+	SeverityLevelCritical = "CRITICAL"
+)
+
+type NotificationChannels map[ServerityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
+
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
@@ -144,21 +153,34 @@ type Config struct {
 	// unified context will be included as well, including links to the service
 	// handbook page and so on.
 	Description string
-
+	// Severity is the desired level for this alert. It is used to choose from
+	// the provided set of NotificationChannels.
+	//
+	// If not provided, SeverityLevelWarning is used.
+	Severity ServerityLevel
 	// ResourceKind identifies what is being monitored.
 	ResourceKind ResourceKind
 	// ResourceName is the identifier for the monitored resource of ResourceKind.
 	ResourceName string
 
-	// NotificationChannels to subscribe on this alert
-	NotificationChannels []monitoringnotificationchannel.MonitoringNotificationChannel
+	// NotificationChannels to choose from for subscribing on this alert
+	NotificationChannels NotificationChannels
 
 	ThresholdAggregation *ThresholdAggregation
 	ResponseCodeMetric   *ResponseCodeMetric
 }
 
+// getDocsSlug points to the service page and environment anchor expected to be
+// generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
 func (c Config) getDocsSlug() string {
 	return fmt.Sprintf("%s#%s", c.Service.ID, c.EnvironmentID)
+}
+
+// makeDocsSubject prefixes the name with the service and environment for ease
+// of reading in various feeds.
+func (c Config) makeDocsSubject() string {
+	return fmt.Sprintf("%s (%s): %s",
+		c.Service.GetName(), c.EnvironmentID, c.Name)
 }
 
 type Output struct{}
@@ -185,6 +207,11 @@ See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s
 If you need additional assistance, reach out to #discuss-core-services.`,
 			config.Description,
 			config.getDocsSlug())
+	}
+
+	// Set default
+	if config.Severity == "" {
+		config.Severity = SeverityLevelWarning
 	}
 
 	if config.ThresholdAggregation != nil {
@@ -234,9 +261,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Subject: pointers.Stringf("%s (%s): %s",
-					config.Service.GetName(), config.EnvironmentID, config.Name),
-
+				Subject:  pointers.Ptr(config.makeDocsSubject()),
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
@@ -253,7 +278,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("86400s"), // 24 hours
 			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
 			// For now, set all MSP alerts as WARNING. In the future, we should
 			// have different severity levels.
 			// https://github.com/sourcegraph/managed-services/issues/385
@@ -355,18 +380,23 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 		config.ResponseCodeMetric.Duration = pointers.Ptr("60s")
 	}
 
+	// TODO: Why don't we just ask the spec to provide a usable name, or don't
+	// provide a name at all and generate it ourselves? For now, we reassign to
+	// match existing behaviour.
+	config.Name = fmt.Sprintf("High Ratio of %s Responses", config.Name)
 	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope,
 		id.TerraformID(config.ID), &monitoringalertpolicy.MonitoringAlertPolicyConfig{
 			Project:     pointers.Ptr(config.ProjectID),
-			DisplayName: pointers.Ptr(fmt.Sprintf("High Ratio of %s Responses", config.Name)),
+			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
+				Subject:  pointers.Ptr(config.makeDocsSubject()),
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
 			Combiner: pointers.Ptr("OR"),
 			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
 				{
-					DisplayName: pointers.Ptr(fmt.Sprintf("High Ratio of %s Responses", config.Name)),
+					DisplayName: pointers.Ptr(config.Name),
 					ConditionMonitoringQueryLanguage: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguage{
 						Query:    pointers.Ptr(query),
 						Duration: config.ResponseCodeMetric.Duration,
@@ -379,7 +409,7 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("604800s"),
 			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels),
+			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
 		})
 	return &Output{}, nil
 }

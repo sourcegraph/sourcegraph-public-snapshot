@@ -4,13 +4,13 @@ use protobuf::Message;
 use rocket::serde::json::{serde_json::json, Value as JsonValue};
 use scip::types::{Document, Occurrence, SyntaxKind};
 use std::collections::HashMap;
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 use tree_sitter_highlight::{
     Error, Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
 };
 
 use crate::highlighting::SourcegraphQuery;
-use crate::range::PackedRange;
+use crate::range::Range;
 
 macro_rules! include_scip_query {
     ($lang: expr, $query: literal) => {
@@ -97,7 +97,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
 /// just add the name of filetype that you want.
 macro_rules! create_configurations {
     ( $(($name:tt,$dirname:literal)),* ) => {{
-        use tree_sitter_all_languages::BundledParser;
+        use tree_sitter_all_languages::ParserId;
 
         let mut m = HashMap::new();
         let highlight_names = MATCHES_TO_SYNTAX_KINDS.iter().map(|hl| hl.0).collect::<Vec<&str>>();
@@ -106,7 +106,7 @@ macro_rules! create_configurations {
             {
                 // Create HighlightConfiguration language
                 let mut lang = HighlightConfiguration::new(
-                    paste! { BundledParser::$name.get_language() },
+                    paste! { ParserId::$name.language() },
                     include_scip_query!($dirname, "highlights"),
                     include_scip_query!($dirname, "injections"),
                     include_scip_query!($dirname, "locals"),
@@ -116,7 +116,7 @@ macro_rules! create_configurations {
                 lang.configure(&highlight_names);
 
                 // Insert into configurations, so we only create once at startup.
-                m.insert(BundledParser::$name, lang);
+                m.insert(ParserId::$name, lang);
             }
         )*
 
@@ -126,13 +126,13 @@ macro_rules! create_configurations {
                 include_scip_query!("javascript", "highlights"),
             ];
             let mut lang = HighlightConfiguration::new(
-                BundledParser::Typescript.get_language(),
+                ParserId::Typescript.language(),
                 &highlights.join("\n"),
                 include_scip_query!("typescript", "injections"),
                 include_scip_query!("typescript", "locals"),
             ).expect("parser for 'typescript' must be compiled");
             lang.configure(&highlight_names);
-            m.insert(BundledParser::Typescript, lang);
+            m.insert(ParserId::Typescript, lang);
         }
         {
             let highlights = vec![
@@ -141,13 +141,13 @@ macro_rules! create_configurations {
                 include_scip_query!("javascript", "highlights"),
             ];
             let mut lang = HighlightConfiguration::new(
-                BundledParser::Tsx.get_language(),
+                ParserId::Tsx.language(),
                 &highlights.join("\n"),
                 include_scip_query!("tsx", "injections"),
                 include_scip_query!("tsx", "locals"),
             ).expect("parser for 'tsx' must be compiled");
             lang.configure(&highlight_names);
-            m.insert(BundledParser::Tsx, lang);
+            m.insert(ParserId::Tsx, lang);
         }
 
         m
@@ -155,7 +155,7 @@ macro_rules! create_configurations {
 }
 
 lazy_static::lazy_static! {
-    pub static ref CONFIGURATIONS: HashMap<BundledParser, HighlightConfiguration> = {
+    pub static ref CONFIGURATIONS: HashMap<ParserId, HighlightConfiguration> = {
         // NOTE: typescript/tsx crates are included, even though not listed below.
 
         // You can add any new crate::parsers::Parser variants here.
@@ -184,7 +184,7 @@ lazy_static::lazy_static! {
 }
 
 fn get_highlighting_configuration(filetype: &str) -> Option<&'static HighlightConfiguration> {
-    BundledParser::get_parser(filetype).and_then(|parser| CONFIGURATIONS.get(&parser))
+    ParserId::from_name(filetype).and_then(|parser| CONFIGURATIONS.get(&parser))
 }
 
 fn get_syntax_kind_for_hl(hl: Highlight) -> SyntaxKind {
@@ -255,11 +255,11 @@ pub fn index_language_with_config(
     })?;
 
     let mut emitter = ScipEmitter::new();
-    let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
+    let mut doc = emitter.render(highlights, &code)?;
     doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
     if include_locals {
-        let parser = tree_sitter_all_languages::BundledParser::get_parser(filetype);
+        let parser = tree_sitter_all_languages::ParserId::from_name(filetype);
         if let Some(parser) = parser {
             // TODO: Could probably write this in a much better way.
             let mut local_occs = crate::get_locals(parser, code.as_bytes()).unwrap_or_default();
@@ -277,7 +277,7 @@ pub fn index_language_with_config(
                 // certain builds fail or something to test this out better (but
                 // not have syntax highlighting completely fall apart from one
                 // bad range)
-                let local_range = match PackedRange::from_vec(&local.range) {
+                let local_range = match Range::from_vec(&local.range) {
                     Some(range) => range,
                     None => continue,
                 };
@@ -311,12 +311,9 @@ struct OffsetManager {
 }
 
 impl OffsetManager {
-    fn new(s: &str) -> Result<Self, Error> {
-        if s.is_empty() {
-            // TODO: Make an error here
-            // Error(
-        }
-
+    // Pre-condition: Input string is non-empty
+    fn new(s: &str) -> Self {
+        debug_assert!(!s.is_empty());
         let source = s.to_string();
 
         let mut offsets = Vec::new();
@@ -330,7 +327,7 @@ impl OffsetManager {
             pos += line.len() + 1;
         }
 
-        Ok(Self { source, offsets })
+        Self { source, offsets }
     }
 
     fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
@@ -377,7 +374,6 @@ impl OffsetManager {
     }
 }
 
-/// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
 pub(crate) struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
@@ -388,19 +384,17 @@ impl ScipEmitter {
         ScipEmitter {}
     }
 
-    pub fn render<F>(
+    pub fn render(
         &mut self,
-        highlighter: impl Iterator<Item = Result<HighlightEvent, Error>>,
+        highlighter: impl Iterator<Item = Result<HighlightEvent, tree_sitter_highlight::Error>>,
         source: &str,
-        _attribute_callback: &F,
-    ) -> Result<Document, Error>
-    where
-        F: Fn(Highlight) -> SyntaxKind,
-    {
+    ) -> Result<Document, tree_sitter_highlight::Error> {
         let mut doc = Document::new();
+        if source.is_empty() {
+            return Ok(doc);
+        }
 
-        let line_manager = OffsetManager::new(source)?;
-
+        let line_manager = OffsetManager::new(source);
         let mut highlights = vec![];
         for event in highlighter {
             match event? {

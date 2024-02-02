@@ -5671,25 +5671,6 @@ Query: `sum(src_gitserver_clone_queue)`
 
 <br />
 
-#### gitserver: repository_existence_check_queue_size
-
-<p class="subtitle">Repository existence check queue size</p>
-
-Refer to the [alerts reference](./alerts.md#gitserver-repository-existence-check-queue-size) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100071` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(src_gitserver_lsremote_queue)`
-
-</details>
-
-<br />
-
 #### gitserver: echo_command_duration_test
 
 <p class="subtitle">Echo test command duration</p>
@@ -5704,7 +5685,7 @@ If this value is consistently high, consider the following:
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100080` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100071` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
@@ -5727,7 +5708,7 @@ It does not indicate any problems with the instance.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100090` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100072` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
