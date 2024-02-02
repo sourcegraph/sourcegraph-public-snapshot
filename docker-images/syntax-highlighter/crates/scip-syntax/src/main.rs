@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use scip_treesitter_cli::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
+use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -144,10 +144,10 @@ pub fn main() {
             print_false_positives,
             print_false_negatives,
             disable_colors,
-        } => scip_treesitter_cli::evaluate::evaluate_command(
+        } => scip_syntax::evaluate::evaluate_command(
             PathBuf::from(candidate),
             PathBuf::from(ground_truth),
-            scip_treesitter_cli::evaluate::EvaluationOutputOptions {
+            scip_syntax::evaluate::EvaluationOutputOptions {
                 print_mapping,
                 print_true_positives,
                 print_false_positives,

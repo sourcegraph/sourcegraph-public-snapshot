@@ -40,7 +40,7 @@ rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 members = [
     "crates/syntax-analysis",
     "crates/tree-sitter-all-languages",
-    "crates/scip-treesitter-cli",
+    "crates/scip-syntax",
 ]
 
 [workspace.dependencies]

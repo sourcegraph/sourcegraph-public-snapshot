@@ -71,7 +71,7 @@ pub fn index_command(
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
             tool_info: Some(scip::types::ToolInfo {
-                name: "scip-treesitter-cli".to_string(),
+                name: "scip-syntax".to_string(),
                 version: clap::crate_version!().to_string(),
                 arguments: vec![],
                 ..Default::default()

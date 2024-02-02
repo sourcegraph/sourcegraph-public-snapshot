@@ -1,5 +1,5 @@
 {
-  "checksum": "918bd96be703b8b273b10ab59b6ed914bf280077f6f1f001cbab4524d0debaeb",
+  "checksum": "9c772110d8ce590de8f49343993eef401797f37975d0e49a40c8f6582f183be8",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10422,14 +10422,14 @@
       },
       "license": "Apache-2.0"
     },
-    "scip-treesitter-cli 0.1.0": {
-      "name": "scip-treesitter-cli",
+    "scip-syntax 0.1.0": {
+      "name": "scip-syntax",
       "version": "0.1.0",
       "repository": null,
       "targets": [
         {
           "Library": {
-            "crate_name": "scip_treesitter_cli",
+            "crate_name": "scip_syntax",
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
@@ -10437,7 +10437,7 @@
           }
         }
       ],
-      "library_target_name": "scip_treesitter_cli",
+      "library_target_name": "scip_syntax",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -17085,7 +17085,7 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
+    "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
     "syntax-analysis 0.1.0": "docker-images/syntax-highlighter/crates/syntax-analysis",
     "syntect_server 1.0.1": "docker-images/syntax-highlighter",
     "tree-sitter-all-languages 0.1.0": "docker-images/syntax-highlighter/crates/tree-sitter-all-languages"

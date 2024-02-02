@@ -1,5 +1,5 @@
 ---
-source: crates/scip-treesitter-cli/tests/integration_test.rs
+source: crates/scip-syntax/tests/integration_test.rs
 expression: dumped
 ---
   package MyPackage;

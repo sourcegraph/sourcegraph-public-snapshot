@@ -1,7 +1,7 @@
-# scip-treesitter-cli
+# scip-syntax
 
 <!--toc:start-->
-- [scip-treesitter-cli](#scip-treesitter-cli)
+- [scip-syntax](#scip-syntax)
   - [Usage](#usage)
     - [Indexing](#indexing)
     - [Evaluation](#evaluation)
@@ -24,18 +24,18 @@ A command line tool that uses other scip-* crates to either
 Index a list of files:
 
 ```bash
-scip-treesitter index --language java --out ./index.scip file1.java file2.java ...
+scip-syntax index --language java --out ./index.scip file1.java file2.java ...
 ```
 
 Index a folder recursively:
 
 ```bash
-scip-treesitter index --language java --out ./index.scip --workspace <some-folder>
+scip-syntax index --language java --out ./index.scip --workspace <some-folder>
 ```
 ### Evaluation
 
 ```bash
-scip-treesitter evaluate --candidate index-tree-sitter.scip --ground-truth index.scip
+scip-syntax evaluate --candidate index-tree-sitter.scip --ground-truth index.scip
 ```
 
 ## Development
@@ -64,7 +64,7 @@ The setup for tests is required to work with both Bazel and Cargo, and so here's
    e.g.
 
    ```
-   testdata/java/index.scip -> ../../../../../../bazel-bin/docker-images/syntax-highlighter/crates/scip-treesitter-cli/index-java.scip
+   testdata/java/index.scip -> ../../../../../../bazel-bin/docker-images/syntax-highlighter/crates/scip-syntax/index-java.scip
    ```
 3. The code is written in such a way to fallback to a local `index.scip` file unless
    Bazel-specific environment variables are set up.
@@ -73,13 +73,13 @@ To generate reference SCIP files locally, it's recommended to run the `integrati
 once:
 
 ```
-bazel test //docker-images/syntax-highlighter/crates/scip-treesitter-cli:integration_test
+bazel test //docker-images/syntax-highlighter/crates/scip-syntax:integration_test
 ```
 
 Or if you prefer, run individual tasks:
 
 ```
-bazel build //docker-images/syntax-highlighter/crates/scip-treesitter-cli:java_groundtruth_scip
+bazel build //docker-images/syntax-highlighter/crates/scip-syntax:java_groundtruth_scip
 ```
 
 After that you can use `cargo test`, or continue to run tests through Bazel (which is what
@@ -91,7 +91,7 @@ cargo test
 ```
 
 ```bash
-bazel test //docker-images/syntax-highlighter/crates/scip-treesitter-cli:all
+bazel test //docker-images/syntax-highlighter/crates/scip-syntax:all
 ```
 
 We use [Insta](https://insta.rs/) for snapshot testing.
@@ -106,7 +106,7 @@ cargo build
 ```
 
 ```bash
-bazel build //docker-images/syntax-highlighter/crates/scip-treesitter-cli
+bazel build //docker-images/syntax-highlighter/crates/scip-syntax
 ```
 
 ### Run the locally built CLI
@@ -116,5 +116,5 @@ cargo run -- index --language java --out ./index.scip file1.java file2.java ...
 ```
 
 ```bash
-bazel run //docker-images/syntax-highlighter/crates/scip-treesitter-cli -- index --language java --out ./index.scip file1.java file2.java ...
+bazel run //docker-images/syntax-highlighter/crates/scip-syntax -- index --language java --out ./index.scip file1.java file2.java ...
 ```
