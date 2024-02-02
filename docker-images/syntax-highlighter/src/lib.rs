@@ -109,19 +109,17 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
-pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
+pub fn syntect_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     SYNTAX_SET.with(|syntax_set| {
         let backend = HighlightingBackend::SyntectHtml {
             syntax_set,
             line_length_limit: q.line_length_limit,
         };
-        let output = match backend.highlight(&q.file_info()) {
-            Ok(output) => output,
-            Err(e) => return jsonify_err(e),
-        };
+        let output = backend.highlight(&q.file_info())
+            .map_err(jsonify_err)?;
 
         debug_assert!(output.kind == PayloadKind::Html);
-        json!({ "data": output.payload, "plaintext": &output.grammar == "Plain Text", })
+        Ok(json!({ "data": output.payload, "plaintext": &output.grammar == "Plain Text", }))
     })
 }
 

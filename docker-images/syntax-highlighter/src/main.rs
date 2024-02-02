@@ -6,6 +6,10 @@ extern crate rocket;
 use rocket::serde::json::{json, Json, Value as JsonValue};
 use syntect_server::{ScipHighlightQuery, SourcegraphQuery};
 
+fn merge_ok_err<A>(r: Result<A, A>) -> A {
+    r.unwrap_or_else(|e| e)
+}
+
 #[post("/", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // TODO(slimsag): In an ideal world we wouldn't be relying on catch_unwind
@@ -14,7 +18,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // https://github.com/trishume/syntect/issues/98
     let result = std::panic::catch_unwind(|| syntect_server::syntect_highlight(q.into_inner()));
     match result {
-        Ok(v) => v,
+        Ok(v) => merge_ok_err(v),
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
     }
 }
@@ -24,18 +28,12 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
 // for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    match syntect_server::lsif_highlight(q.into_inner()) {
-        Ok(v) => v,
-        Err(err) => err,
-    }
+    merge_ok_err(syntect_server::lsif_highlight(q.into_inner()))
 }
 
 #[post("/scip", format = "application/json", data = "<q>")]
 fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
-    match syntect_server::scip_highlight(q.into_inner()) {
-        Ok(v) => v,
-        Err(err) => err,
-    }
+    merge_ok_err(syntect_server::scip_highlight(q.into_inner()))
 }
 
 pub fn jsonify_err(e: impl ToString) -> JsonValue {
