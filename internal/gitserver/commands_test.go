@@ -2181,6 +2181,19 @@ func TestArchiveReaderForRepo(t *testing.T) {
 		return name != repoName, nil
 	})
 
+	source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+			c := NewMockGitserverServiceClient()
+			ac := NewMockGitserverService_ArchiveClient()
+			ac.RecvFunc.PushReturn(&proto.ArchiveResponse{
+				Data: []byte("1337\n"),
+			}, nil)
+			ac.RecvFunc.PushReturn(nil, io.EOF)
+			c.ArchiveFunc.SetDefaultReturn(ac, nil)
+			return c
+		}
+	})
+
 	repo := &types.Repo{Name: repoName, ID: 1}
 
 	opts := ArchiveOptions{
@@ -2188,7 +2201,7 @@ func TestArchiveReaderForRepo(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient("test")
+	client := NewTestClient(t).WithClientSource(source)
 	readCloser, err := client.ArchiveReader(context.Background(), repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
