@@ -2307,7 +2307,7 @@ func (c *clientImplementor) ArchiveReader(
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{r: r, closeFn: func() {
+		base: &readCloseWrapper{Reader: r, closeFn: func() {
 			cancel()
 			endObservation(1, observation.Args{})
 		}},
