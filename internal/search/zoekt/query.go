@@ -30,16 +30,30 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		}
 	}
 
-	// Handle file: and -file: filters.
-	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
-	// Handle lang: and -lang: filters.
-	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-
 	var and []zoekt.Q
 	if q != nil {
 		and = append(and, q)
+	}
+
+	// Handle file: and -file: filters.
+	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
+	// Handle lang: and -lang: filters.
+	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
+	// more precise language metadata based on file contents analyzed by go-enry, so it's
+	// useful to pass lang: queries down.
+	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
+	if feat.ContentBasedLangFilters {
+		if len(langInclude) > 0 {
+			filters := toLangFilters(langInclude)
+			and = append(and, &zoekt.Or{Children: filters})
+		}
+		if len(langExclude) > 0 {
+			filters := toLangFilters(langExclude)
+			and = append(and, &zoekt.Not{Child: &zoekt.Or{Children: filters}})
+		}
+	} else {
+		filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
+		filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
 	}
 
 	// zoekt also uses regular expressions for file paths
@@ -68,24 +82,16 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		and = append(and, zoekt.NewAnd(repoHasFilters...))
 	}
 
-	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
-	// more precise language metadata based on file contents analyzed by go-enry, so it's
-	// useful to pass lang: queries down.
-	//
-	// Currently, negated lang queries create filename-based ExcludePatterns that cannot be
-	// corrected by the more precise language metadata. If this is a problem, indexed search
-	// queries should have a special query converter that produces *only* Language predicates
-	// instead of filepatterns.
-	if len(langInclude) > 0 && feat.ContentBasedLangFilters {
-		or := &zoekt.Or{}
-		for _, lang := range langInclude {
-			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
-			or.Children = append(or.Children, &zoekt.Language{Language: lang})
-		}
-		and = append(and, or)
-	}
-
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
+}
+
+func toLangFilters(langs []string) []zoekt.Q {
+	var filters []zoekt.Q
+	for _, lang := range langs {
+		lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
+		filters = append(filters, &zoekt.Language{Language: lang})
+	}
+	return filters
 }
 
 func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoekt.Q {

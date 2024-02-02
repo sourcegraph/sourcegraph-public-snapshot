@@ -83,19 +83,31 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query:   `file:"\\.go(?m:$)"`,
 		},
 		{
-			Name:    "Languages is ignored",
+			Name:    "Languages get passed as lang: query",
 			Type:    search.TextRequest,
-			Pattern: `file:\.go$ lang:go`,
-			Query:   `file:"\\.go(?m:$)" file:"\\.go(?m:$)"`,
-		},
-		{
-			Name:    "language gets passed as both file include and lang: predicate",
-			Type:    search.TextRequest,
-			Pattern: `file:\.go$ lang:go`,
+			Pattern: `lang:go lang:typescript`,
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lang:Go`,
+			Query: `lang:Go or lang:Typescript`,
+		},
+		{
+			Name:    "Excluded languages get passed as lang: query",
+			Type:    search.TextRequest,
+			Pattern: `lang:go -lang:typescript -lang:markdown`,
+			Features: search.Features{
+				ContentBasedLangFilters: true,
+			},
+			Query: `lang:Go -(lang:Typescript or lang:markdown)`,
+		},
+		{
+			Name:    "Mixed file and lang filters",
+			Type:    search.TextRequest,
+			Pattern: `file:\.go$ lang:go lang:typescript`,
+			Features: search.Features{
+				ContentBasedLangFilters: true,
+			},
+			Query: `file:"\\.go(?m:$)" (lang:Go or lang:Typescript)`,
 		},
 	}
 	for _, tt := range cases {
