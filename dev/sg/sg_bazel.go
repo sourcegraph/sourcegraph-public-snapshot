@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -46,21 +45,16 @@ var bzlgenTargets = map[string]bzlgenTarget{
 var bazelCommand = &cli.Command{
 	Name:            "bazel",
 	SkipFlagParsing: true,
-	Usage:           "placeholder, handled in top-level Action below",
+	HideHelpCommand: true,
+	Usage:           "Proxies the bazel CLI with custom commands for local dev convenience",
 	Category:        category.Dev,
 	Action: func(ctx *cli.Context) error {
-		root, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-
 		if slices.Equal(ctx.Args().Slice(), []string{"help"}) || slices.Equal(ctx.Args().Slice(), []string{"--help"}) || slices.Equal(ctx.Args().Slice(), []string{"-h"}) {
 			fmt.Println("Additional commands from sg:")
 			fmt.Println("  configure           Wrappers around some commands to generate various files required by Bazel")
 		}
 
 		cmd := exec.CommandContext(ctx.Context, "bazel", ctx.Args().Slice()...)
-		cmd.Dir = root
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
@@ -68,16 +62,15 @@ var bazelCommand = &cli.Command{
 	},
 	Subcommands: []*cli.Command{
 		{
-			Name:      "configure",
-			Usage:     "Wrappers around some commands to generate various files required by Bazel",
-			UsageText: "sg bazel configure [category...]",
-			Description: `For convenience, a number of Bazel commands are wrapped by this command to update various files required by Bazel.
+			Name:  "configure",
+			Usage: "Wrappers around some commands to generate various files required by Bazel",
+			UsageText: `sg bazel configure [category...]
 
 Available categories:
 	- builds: updates BUILD.bazel files for Go & Typescript targets.
 	- godeps: updates the bazel Go dependency targets based on go.mod changes.
 	- rustdeps: updates the cargo bazel lockfile.
-	- all: catch-all for the above
+	- all: catch-all for all of the above
 
 If no categories are referenced, then 'builds' is assumed as the default.`,
 			Before: func(ctx *cli.Context) error {
@@ -113,11 +106,6 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 				std.Out.WriteLine(output.Emojif(output.EmojiAsterisk, "Invoking the following Bazel generating categories: %s", strings.Join(categoryNames, ", ")))
 
 				for _, c := range categories {
-					root, err := root.RepositoryRoot()
-					if err != nil {
-						return err
-					}
-
 					std.Out.WriteNoticef("running command %q", strings.Join(append([]string{"bazel", c.cmd}, c.args...), " "))
 					if c.protip != "" {
 						std.Out.WriteLine(output.Emojif(output.EmojiLightbulb, "pro-tip: %s", c.protip))
@@ -125,13 +113,12 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 
 					args := append([]string{c.cmd, "--noshow_progress"}, c.args...)
 					cmd := exec.CommandContext(ctx.Context, "bazel", args...)
-					cmd.Dir = root
 					cmd.Stdout = os.Stdout
 					cmd.Stderr = os.Stderr
 					cmd.Env = c.env
 					cmd.Env = append(cmd.Env, os.Environ()...)
 
-					err = cmd.Run()
+					err := cmd.Run()
 					var exitErr *exec.ExitError
 					if errors.As(err, &exitErr) && exitErr.ExitCode() == 110 {
 						return nil
