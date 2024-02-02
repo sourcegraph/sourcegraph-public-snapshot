@@ -1,6 +1,14 @@
 import { FC } from 'react'
 
-import { mdiSourceFork, mdiCodeBraces, mdiFileOutline, mdiPlusMinus, mdiFunction, mdiSourceCommit } from '@mdi/js'
+import {
+    mdiSourceFork,
+    mdiCodeBraces,
+    mdiFileOutline,
+    mdiPlusMinus,
+    mdiFunction,
+    mdiSourceCommit,
+    mdiClose,
+} from '@mdi/js'
 import classNames from 'classnames'
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -120,6 +128,7 @@ const FilterTypeButton: FC<FilterTypeButtonProps> = props => {
                 {(filter.count > 0 || forceCount) && (
                     <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />
                 )}
+                {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </Tooltip>
     )
