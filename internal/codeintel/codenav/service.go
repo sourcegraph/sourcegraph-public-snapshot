@@ -2,15 +2,16 @@ package codenav
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -923,8 +924,8 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			// 	documentation = strings.TrimSpace(documentation)
 			// 	writeDocumentation(&b, documentation, prefix, false)
 			// }
-			slices.SortFunc(info.Relationships, func(a, b *scip.Relationship) bool {
-				return a.Symbol < b.Symbol
+			slices.SortFunc(info.Relationships, func(a, b *scip.Relationship) int {
+				return cmp.Compare(a.Symbol, b.Symbol)
 			})
 			for _, relationship := range info.Relationships {
 				var b strings.Builder

@@ -1,6 +1,7 @@
 package result
 
 import (
+	"cmp"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -86,31 +87,36 @@ type Key struct {
 
 // Less compares one key to another for sorting
 func (k Key) Less(other Key) bool {
-	if k.Repo != other.Repo {
-		return k.Repo < other.Repo
+	return k.Compare(other) < 0
+}
+
+// Compare k to other for sorting
+func (k Key) Compare(other Key) int {
+	if v := cmp.Compare(k.Repo, other.Repo); v != 0 {
+		return v
 	}
 
-	if k.Rev != other.Rev {
-		return k.Rev < other.Rev
+	if v := cmp.Compare(k.Rev, other.Rev); v != 0 {
+		return v
 	}
 
-	if !k.AuthorDate.Equal(other.AuthorDate) {
-		return k.AuthorDate.Before(other.AuthorDate)
+	if v := k.AuthorDate.Compare(other.AuthorDate); v != 0 {
+		return v
 	}
 
-	if k.Commit != other.Commit {
-		return k.Commit < other.Commit
+	if v := cmp.Compare(k.Commit, other.Commit); v != 0 {
+		return v
 	}
 
-	if k.Path != other.Path {
-		return k.Path < other.Path
+	if v := cmp.Compare(k.Path, other.Path); v != 0 {
+		return v
 	}
 
-	if k.OwnerMetadata != other.OwnerMetadata {
-		return k.OwnerMetadata < other.OwnerMetadata
+	if v := cmp.Compare(k.OwnerMetadata, other.OwnerMetadata); v != 0 {
+		return v
 	}
 
-	return k.TypeRank < other.TypeRank
+	return cmp.Compare(k.TypeRank, other.TypeRank)
 }
 
 // Matches implements sort.Interface
