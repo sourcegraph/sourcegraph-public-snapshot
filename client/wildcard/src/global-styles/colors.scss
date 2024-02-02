@@ -324,7 +324,7 @@ $violet-09: #5f3dc4;
 
     // Search input "chip" colors
     // Transparency needs to be added to make the text selection marker visible
-    --search-input-token-pattern: #{rgba($gray-03, 0.6)};
+    --search-input-token-pattern: #{rgba($gray-04, 0.6)};
     --search-input-token-filter: #{rgba($oc-blue-1, 0.6)};
     --search-input-token-keyword: #{rgba($violet-01, 0.6)};
 }
@@ -508,8 +508,8 @@ $violet-09: #5f3dc4;
 
     // Search input "chip" colors
     // Transparency needs to be added to make the text selection marker visible
-    --search-input-token-pattern: #{rgba($gray-08, 0.6)};
-    --search-input-token-filter: #{rgba($oc-blue-9, 0.6)};
+    --search-input-token-pattern: #{rgba($gray-08, 0.8)};
+    --search-input-token-filter: #{rgba($oc-blue-9, 0.4)};
     --search-input-token-keyword: #{rgba($violet-05, 0.6)};
 }
 
