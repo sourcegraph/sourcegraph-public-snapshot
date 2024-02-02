@@ -22,6 +22,9 @@ commandTests:
     command: "universal-ctags"
     args:
       - --version
+  - name: "ctags has correct features"
+    command: "universal-ctags --list-features"
+    expectedOutput: ["interactive", "json"]
 
   - name: "not running as root"
     command: "/usr/bin/id"
@@ -44,9 +47,6 @@ fileExistenceTests:
   uid: 100
   gid: 101
   permissions: 'drwxr-xr-x'
-- name: 'jansson package'
-  path: 'usr/lib/libjansson.la'
-  shouldExist: true
 
 metadataTest:
   envVars:
