@@ -73,7 +73,6 @@
         &-title {
             margin-bottom: 0.375rem;
             font-weight: 600;
-
         }
 
         &-description {
@@ -90,7 +89,11 @@
     gap: 1rem;
     padding: 3rem;
     border-radius: 0.5rem;
-    background: radial-gradient(114.58% 114.58% at 53.54% 108.8%, rgba(255, 85, 67, 0.16) 0%, rgba(161, 18, 255, 0.16) 100%);
+    background: radial-gradient(
+        114.58% 114.58% at 53.54% 108.8%,
+        rgba(255, 85, 67, 0.16) 0%,
+        rgba(161, 18, 255, 0.16) 100%
+    );
 
     &-meta {
         flex-direction: column;
