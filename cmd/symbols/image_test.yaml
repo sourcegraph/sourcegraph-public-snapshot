@@ -15,8 +15,10 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  - name: "universal-ctags has correct features"
-    command: "/usr/bin/universal-ctags --list-features"
+  - name: "ctags has correct features"
+    command: "universal-ctags"
+    args:
+      - --list-features
     expectedOutput: ["interactive", "json"]
 
   # TODO(security): This container should not be running as root

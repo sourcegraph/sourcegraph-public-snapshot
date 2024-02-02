@@ -18,12 +18,15 @@ commandTests:
     command: "git"
     args:
       - version
+
   - name: "ctags is runnable"
     command: "universal-ctags"
     args:
       - --version
   - name: "ctags has correct features"
-    command: "universal-ctags --list-features"
+    command: "universal-ctags"
+    args:
+      - "--list-features"
     expectedOutput: ["interactive", "json"]
 
   - name: "not running as root"
