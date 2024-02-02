@@ -9,7 +9,7 @@
     --blink-color: #4d5875;
 
     :global(.theme-light) & {
-        --main-color: #ddd;
+        --main-color: #dddddd;
         --blink-color: #e8e8e8;
     }
 }
@@ -19,7 +19,7 @@
     border-radius: var(--border-radius);
     background-size: 200% 100%;
     animation: shine-lines 1s infinite linear;
-    background-image: linear-gradient(100deg, var(--main-color) 0px, var(--blink-color) 40px, var(--main-color) 80px);
+    background-image: linear-gradient(100deg, var(--main-color) 0, var(--blink-color) 40px, var(--main-color) 80px);
 
     &-title {
         max-width: 50%;

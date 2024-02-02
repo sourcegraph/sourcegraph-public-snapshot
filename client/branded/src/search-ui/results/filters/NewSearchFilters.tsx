@@ -186,7 +186,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 />
             </div>
 
-            <FiltersDocFooter className={styles.footerDoc} />
+            <FiltersDocFooter />
 
             <footer className={styles.actions}>
                 {selectedFilters.length > 0 && (

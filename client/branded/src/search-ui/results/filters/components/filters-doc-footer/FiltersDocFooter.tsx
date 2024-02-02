@@ -1,5 +1,7 @@
 import { FC } from 'react'
 
+import classNames from 'classnames'
+
 import { Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LinkShareIcon, OpenBookIcon } from '../Icons'
@@ -11,7 +13,7 @@ interface FiltersDocFooterProps {
 }
 
 export const FiltersDocFooter: FC<FiltersDocFooterProps> = ({ className }) => (
-    <footer className={className}>
+    <footer className={classNames(className, styles.footer)}>
         <Link target="_blank" rel="noopener" to="/help/code_search/reference/queries" className={styles.link}>
             <Icon as={OpenBookIcon} aria-hidden={true} className={styles.linkIcon} />
             <span className={styles.linkText}>
