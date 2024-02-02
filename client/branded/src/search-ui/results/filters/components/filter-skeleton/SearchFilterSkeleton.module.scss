@@ -18,8 +18,7 @@
     height: 0.75rem;
     border-radius: var(--border-radius);
     background-size: 200% 100%;
-    animation: shine-lines 1.5s infinite linear;
-
+    animation: shine-lines 1s infinite linear;
     background-image: linear-gradient(100deg, var(--main-color) 0px, var(--blink-color) 40px, var(--main-color) 80px);
 
     &-title {
