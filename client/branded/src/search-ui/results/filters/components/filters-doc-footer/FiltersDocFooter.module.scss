@@ -11,11 +11,16 @@
 
     &:hover {
         &::before {
-            background: linear-gradient(91deg, var(--logo-blue) 3.11%, #C66FFF 44.21%, #FF8578 83.64%);
+            background: linear-gradient(91deg, var(--logo-blue) 3.11%, #c66fff 44.21%, #ff8578 83.64%);
         }
 
         .link {
-            background: linear-gradient(90deg, rgba(0, 203, 236, 0.08) 3.11%, rgba(198, 111, 255, 0.08) 44.21%, rgba(255, 133, 120, 0.08) 83.64%);
+            background: linear-gradient(
+                            90deg,
+                            rgba(0, 203, 236, 0.08) 3.11%,
+                            rgba(198, 111, 255, 0.08) 44.21%,
+                            rgba(255, 133, 120, 0.08) 83.64%
+            );
         }
     }
 }
