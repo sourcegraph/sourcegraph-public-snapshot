@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
-	"golang.org/x/exp/slices"
 
 	"github.com/mroth/weightedrand/v2"
 

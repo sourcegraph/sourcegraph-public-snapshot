@@ -22,6 +22,7 @@ go_library(
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/alertpolicy",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
+        "//dev/managedservicesplatform/internal/resource/logcountmetric",
         "//dev/managedservicesplatform/internal/resource/random",
         "//dev/managedservicesplatform/internal/resource/sentryalert",
         "//dev/managedservicesplatform/internal/resource/serviceaccount",

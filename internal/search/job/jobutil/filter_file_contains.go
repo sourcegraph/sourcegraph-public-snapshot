@@ -3,12 +3,12 @@ package jobutil
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -221,8 +221,10 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch, matchedFileCounts map[string]int) result.Match {
 	// Ensure the matched ranges are sorted by start offset
-	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) bool {
-		return a.Start.Offset < b.End.Offset
+	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) int {
+		// TODO(keegancsmith) I changed this from b.End to b.Start since that
+		// matches the comment above.
+		return a.Start.Compare(b.Start)
 	})
 
 	// Convert each file diff to a string so we know how much we are removing if we drop that file

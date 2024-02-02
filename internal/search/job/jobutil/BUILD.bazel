@@ -64,7 +64,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//query",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_x_exp//slices",
         "@org_uber_go_atomic//:atomic",
     ],
 )
@@ -124,7 +123,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_zoekt//query",
         "@com_github_stretchr_testify//require",
-        "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
     ],
 )
