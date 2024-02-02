@@ -167,7 +167,7 @@ impl<'a> SublimeLanguageName<'a> {
             x if x == "Rust Enhanced".to_lowercase() => "rust",
             x if x == "JS Custom - React".to_lowercase() => "javascript",
             x if x == "TypeScriptReact".to_lowercase() => {
-                if file_info.path.ends_with(".tsx") {
+                if file_info.extension() == Some("tsx") {
                     "tsx"
                 } else {
                     "typescript"
