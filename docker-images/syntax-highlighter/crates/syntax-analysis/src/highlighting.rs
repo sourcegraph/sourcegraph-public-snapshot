@@ -23,7 +23,7 @@ pub struct FileInfo<'a> {
 }
 
 impl<'a> FileInfo<'a> {
-    pub fn new<'b>(path: &str, contents: &'b str, language: Option<&'b str>) -> FileInfo<'b> {
+    pub fn new(path: &str, contents: &'a str, language: Option<&'a str>) -> FileInfo<'a> {
         FileInfo {
             path: path.to_string(),
             contents,
@@ -31,102 +31,28 @@ impl<'a> FileInfo<'a> {
         }
     }
 
-    pub fn new_from_extension<'b>(extension: &str, contents: &'b str, language: Option<&'b str>) -> FileInfo<'b> {
+    pub fn new_from_extension(
+        extension: &str,
+        contents: &'a str,
+        language: Option<&'a str>,
+    ) -> FileInfo<'a> {
         FileInfo {
-            path: format!("__highlighter_synthetic__{}{}",
+            path: format!(
+                "__highlighter_synthetic__{}{}",
                 if extension.starts_with('.') { "" } else { "." },
-                extension),
+                extension
+            ),
             contents,
-            language
+            language,
         }
     }
 
     fn extension(&self) -> Option<&str> {
-        for (i, c) in self.path.bytes().enumerate().rev() {
-            if c == b'/' {
-                return None
-            }
-            if c == b'.' {
-                if i == 0 {
-                    return None
-                }
-                let prev = self.path.as_bytes().get(i - 1)
-                    .expect("i > 0 so indexing with 'i - 1' should've succeeded");
-                if *prev == b'/' {
-                    return None
-                }
-                return Some(self.path.get(i + 1..).unwrap())
-            }
-        }
-        None
+        Path::new(&self.path)
+            .extension()
+            .and_then(|osstr| osstr.to_str())
     }
-}
 
-// Language names as used by syntect & Sublime grammars
-struct SublimeLanguageName {
-    raw: String,
-}
-
-impl SublimeLanguageName {
-    fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
-        if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
-            #[allow(clippy::single_match)]
-            match file_info.extension() {
-                Some("ncl") => return TreeSitterLanguageName::new("nickel"),
-                _ => {}
-            };
-        }
-
-        // Written in an unusual style so that we can:
-        // 1. Avoid case-sensitive comparison
-        // 2. We can look up corresponding Sublime Grammars easily
-        //    when using case-sensitive text search
-        let normalized_name = self.raw.as_str().to_lowercase();
-        let normalized_name = match normalized_name {
-            x if x == "Rust Enhanced".to_lowercase() => "rust",
-            x if x == "JS Custom - React".to_lowercase() => "javascript",
-            x if x == "TypeScriptReact".to_lowercase() => {
-                if file_info.path.ends_with(".tsx") {
-                    "tsx"
-                } else {
-                    "typescript"
-                }
-            }
-            _ => &normalized_name,
-        };
-        // TODO: When https://github.com/sourcegraph/sourcegraph/issues/56376
-        // is fixed, we should be able to detect the language without
-        // using syntect. We can directly then map Linguist/enry names
-        // to the data that we have instead of separately maintaining
-        // another set of names for Tree-sitter.
-        TreeSitterLanguageName::new(normalized_name)
-    }
-}
-
-// Somewhat ad-hoc set of names based on existing Tree-sitter grammars.
-pub struct TreeSitterLanguageName {
-    raw: String,
-}
-
-impl Display for TreeSitterLanguageName {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.raw)
-    }
-}
-
-impl TreeSitterLanguageName {
-    pub fn new(s: &str) -> TreeSitterLanguageName {
-        let mut s = s.to_lowercase();
-        if &s == "c++" {
-            s = "cpp".to_string();
-        } else if &s == "c#" {
-            s = "c_sharp".to_string();
-        }
-        TreeSitterLanguageName { raw: s }
-    }
-}
-
-impl<'a> FileInfo<'a> {
     pub fn determine_language(
         &self,
         syntax_set: &SyntaxSet,
@@ -227,6 +153,70 @@ impl<'a> FileInfo<'a> {
             .or_else(|| syntax_set.find_syntax_by_extension(extension))
             .or_else(|| syntax_set.find_syntax_by_first_line(self.contents))
             .unwrap_or_else(|| syntax_set.find_syntax_plain_text()))
+    }
+}
+
+// Language names as used by syntect & Sublime grammars
+struct SublimeLanguageName {
+    raw: String,
+}
+
+impl SublimeLanguageName {
+    fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
+        if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
+            #[allow(clippy::single_match)]
+            match file_info.extension() {
+                Some("ncl") => return TreeSitterLanguageName::new("nickel"),
+                _ => {}
+            };
+        }
+
+        // Written in an unusual style so that we can:
+        // 1. Avoid case-sensitive comparison
+        // 2. We can look up corresponding Sublime Grammars easily
+        //    when using case-sensitive text search
+        let normalized_name = self.raw.as_str().to_lowercase();
+        let normalized_name = match normalized_name {
+            x if x == "Rust Enhanced".to_lowercase() => "rust",
+            x if x == "JS Custom - React".to_lowercase() => "javascript",
+            x if x == "TypeScriptReact".to_lowercase() => {
+                if file_info.path.ends_with(".tsx") {
+                    "tsx"
+                } else {
+                    "typescript"
+                }
+            }
+            _ => &normalized_name,
+        };
+        // TODO: When https://github.com/sourcegraph/sourcegraph/issues/56376
+        // is fixed, we should be able to detect the language without
+        // using syntect. We can directly then map Linguist/enry names
+        // to the data that we have instead of separately maintaining
+        // another set of names for Tree-sitter.
+        TreeSitterLanguageName::new(normalized_name)
+    }
+}
+
+// Somewhat ad-hoc set of names based on existing Tree-sitter grammars.
+pub struct TreeSitterLanguageName {
+    raw: String,
+}
+
+impl Display for TreeSitterLanguageName {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.raw)
+    }
+}
+
+impl TreeSitterLanguageName {
+    pub fn new(s: &str) -> TreeSitterLanguageName {
+        let mut s = s.to_lowercase();
+        if &s == "c++" {
+            s = "cpp".to_string();
+        } else if &s == "c#" {
+            s = "c_sharp".to_string();
+        }
+        TreeSitterLanguageName { raw: s }
     }
 }
 
