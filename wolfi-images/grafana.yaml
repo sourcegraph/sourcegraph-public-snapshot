@@ -24,6 +24,9 @@ contents:
 
 work-dir: /usr/share/grafana
 
+entrypoint:
+  command: '/opt/grafana/entry.sh'
+
 accounts:
   run-as: grafana
   groups:
@@ -35,6 +38,7 @@ accounts:
       gid: 472
 
 environment:
+  PATH: /usr/share/grafana/bin:/usr/sbin:/sbin:/usr/bin:/bin
   GF_PATHS_CONFIG: /etc/grafana/grafana.ini
   GF_PATHS_DATA: /var/lib/grafana
   GF_PATHS_HOME: /usr/share/grafana
@@ -42,6 +46,7 @@ environment:
   GF_PATHS_PLUGINS: /var/lib/grafana/plugins
   GF_PATHS_PROVISIONING: /etc/grafana/provisioning
   LANG: en_US.UTF-8
+  SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
 
 paths:
   - path: /var/lib/grafana
