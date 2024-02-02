@@ -137,7 +137,7 @@ export const routes: RouteObject[] = [
             <LegacyRoute
                 render={props => <GlobalCodeMonitoringArea {...props} />}
                 condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                    !isSourcegraphDotCom && licenseFeatures.codeSearchEnabled
+                    !isSourcegraphDotCom && licenseFeatures.isCodeSearchEnabled
                 }
             />
         ),
@@ -161,7 +161,7 @@ export const routes: RouteObject[] = [
                         telemetryService={props.telemetryService}
                     />
                 )}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled && isSearchJobsEnabled()}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled && isSearchJobsEnabled()}
             />
         ),
     },
@@ -170,7 +170,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <SearchContextsListPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -179,7 +179,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CreateSearchContextPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -188,7 +188,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <EditSearchContextPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -197,7 +197,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <SearchContextPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -210,7 +210,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <GlobalNotebooksArea {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -219,7 +219,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={() => <OwnPage />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -228,7 +228,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <SearchConsolePageOrRedirect {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
@@ -306,7 +306,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodySearchPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codyEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
     },
@@ -326,7 +326,7 @@ export const routes: RouteObject[] = [
                     return <div />
                 }}
                 condition={({ licenseFeatures }) =>
-                    !window.location.pathname.startsWith('/cody/chat') && licenseFeatures.codyEnabled
+                    !window.location.pathname.startsWith('/cody/chat') && licenseFeatures.isCodyEnabled
                 }
             />
         ),
@@ -336,7 +336,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodyChatPage {...props} context={window.context} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codyEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
     },
@@ -345,7 +345,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodyManagementPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codyEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
     },
@@ -354,7 +354,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodySubscriptionPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.codyEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
             />
         ),
     },
@@ -364,7 +364,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={() => <CodyUpsellPage />}
-                condition={({ licenseFeatures }) => !licenseFeatures.codyEnabled}
+                condition={({ licenseFeatures }) => !licenseFeatures.isCodyEnabled}
             />
         ),
     },
@@ -379,7 +379,7 @@ export const routes: RouteObject[] = [
                         <RepoContainer {...props} />
                     </CodySidebarStoreProvider>
                 )}
-                condition={({ licenseFeatures }) => licenseFeatures.codeSearchEnabled}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
         // In RR6, the useMatches hook will only give you the location that is matched

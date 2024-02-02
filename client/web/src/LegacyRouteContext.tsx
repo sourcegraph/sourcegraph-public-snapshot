@@ -27,6 +27,7 @@ import type { SearchStreamingProps } from './search'
 import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
 import { eventLogger } from './tracking/eventLogger'
+import { getLicenseFeatures } from './util/license'
 
 export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
 
@@ -89,8 +90,8 @@ export interface LegacyLayoutRouteContext
         DynamicSourcegraphWebAppContext,
         StaticLegacyRouteContext {
     licenseFeatures: {
-        codeSearchEnabled: boolean
-        codyEnabled: boolean
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
     }
 }
 
@@ -167,10 +168,7 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         ...injections,
         ...computedContextFields,
         ...context,
-        licenseFeatures: {
-            codeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
-            codyEnabled: Boolean(window.context.licenseInfo?.features.cody),
-        },
+        licenseFeatures: getLicenseFeatures(),
     } satisfies LegacyLayoutRouteContext
 
     return <LegacyRouteContext.Provider value={legacyContext}>{children}</LegacyRouteContext.Provider>
