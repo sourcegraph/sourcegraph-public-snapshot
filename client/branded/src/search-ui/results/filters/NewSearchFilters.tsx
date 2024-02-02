@@ -23,7 +23,7 @@ import { FilterTypeList } from './components/filter-type-list/FilterTypeList'
 import { FiltersDocFooter } from './components/filters-doc-footer/FiltersDocFooter'
 import { ArrowBendIcon } from './components/Icons'
 import { mergeQueryAndFilters, URLQueryFilter, useUrlFilters } from './hooks'
-import { FilterKind, SearchTypeLabel, SEARCH_TYPES_TO_FILTER_TYPES } from './types'
+import { FilterKind, SearchTypeFilter, SEARCH_TYPES_TO_FILTER_TYPES, DYNAMIC_FILTER_KINDS } from './types'
 
 import styles from './NewSearchFilters.module.scss'
 
@@ -31,6 +31,7 @@ interface NewSearchFiltersProps extends TelemetryProps {
     query: string
     filters?: Filter[]
     withCountAllFilter: boolean
+    isFilterLoadingComplete: boolean
     onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
     children?: ReactNode
 }
@@ -39,33 +40,29 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     query,
     filters,
     withCountAllFilter,
+    isFilterLoadingComplete,
     onQueryChange,
     children,
     telemetryService,
 }) => {
     const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
 
+    const hasNoFilters = useMemo(() => {
+        const dynamicFilters = filters?.filter(filter => DYNAMIC_FILTER_KINDS.includes(filter.kind as FilterKind)) ?? []
+        const selectedDynamicFilters = selectedFilters.filter(filter =>
+            DYNAMIC_FILTER_KINDS.includes(filter.kind as FilterKind)
+        )
+
+        return dynamicFilters.length === 0 && selectedDynamicFilters.length === 0
+    }, [filters, selectedFilters])
+
+    // Observe query and selectedFilters change and reset filter type in URL filters
+    // if original search box query already has explicit type filter
     useEffect(() => {
-        if (queryHasTypeFilter(query) && selectedFilters.some(filter => filter.kind === 'type')) {
-            setSelectedFilters(selectedFilters.filter(filter => filter.kind !== 'type'))
+        if (queryHasTypeFilter(query) && selectedFilters.some(filter => filter.kind === FilterKind.Type)) {
+            setSelectedFilters(selectedFilters.filter(filter => filter.kind !== FilterKind.Type))
         }
     }, [selectedFilters, query, setSelectedFilters])
-
-    const hadAnyFiltersButUtility = useMemo(() => {
-        // Skip utility filter kind because this filter should not affect
-        // skeleton loading appearance, since utility filter is much faster
-        // than all other filter kinds.
-        const possibleFilterKinds = new Set(
-            SEARCH_TYPES_TO_FILTER_TYPES[type].filter(filter => filter !== FiltersType.Utility)
-        )
-        const hasFilter = filters?.find(filter => possibleFilterKinds.has(filter.kind))
-        const hasSelectedFilter = selectedFilters.find(filter => possibleFilterKinds.has(filter.kind))
-
-        // This will be used to render skeleton loading state
-        // Show it only if we have no filters and no selected filters
-        // in the search filter panel.
-        return !hasFilter && !hasSelectedFilter
-    }, [filters, selectedFilters])
 
     const handleFilterTypeClick = useCallback(
         (filter: URLQueryFilter, remove: boolean): void => {
@@ -77,7 +74,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     )
                 )
             } else {
-                const relevantFilters = omitImpossibleFilters(selectedFilters, filter.label as SearchTypeLabel)
+                const relevantFilters = omitImpossibleFilters(selectedFilters, filter.label as SearchTypeFilter)
                 setSelectedFilters([
                     ...relevantFilters.filter(relevantFilters => relevantFilters.kind !== 'type'),
                     filter,
@@ -110,7 +107,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             />
 
             <div className={styles.filters}>
-                {hadAnyFiltersButUtility && (
+                {hasNoFilters && !isFilterLoadingComplete && (
                     <>
                         <SearchFilterSkeleton />
                         <SearchFilterSkeleton />
@@ -295,7 +292,7 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
     )
 }
 
-function omitImpossibleFilters(filters: URLQueryFilter[], searchType: SearchTypeLabel): URLQueryFilter[] {
+function omitImpossibleFilters(filters: URLQueryFilter[], searchType: SearchTypeFilter): URLQueryFilter[] {
     const searchTypePossibleFilters = SEARCH_TYPES_TO_FILTER_TYPES[searchType]
     return filters.filter(filter => searchTypePossibleFilters.includes(filter.kind))
 }
