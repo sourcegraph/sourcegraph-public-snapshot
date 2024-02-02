@@ -52,9 +52,12 @@ impl<'a> FileInfo<'a> {
         syntax_set: &SyntaxSet,
     ) -> Result<TreeSitterLanguageName, LanguageDetectionError> {
         let name = SublimeLanguageName {
-            raw: &self.find_matching_syntax_reference(syntax_set)?.name,
+            raw: self
+                .find_matching_syntax_reference(syntax_set)?
+                .name
+                .clone(),
         }
-        .to_tree_sitter_name(self);
+        .into_tree_sitter_name(self);
         Ok(name)
     }
 
@@ -144,12 +147,12 @@ impl<'a> FileInfo<'a> {
 }
 
 // Language names as used by syntect & Sublime grammars
-struct SublimeLanguageName<'a> {
-    raw: &'a str,
+struct SublimeLanguageName {
+    raw: String,
 }
 
-impl<'a> SublimeLanguageName<'a> {
-    fn to_tree_sitter_name(&self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
+impl SublimeLanguageName {
+    fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
         if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
             #[allow(clippy::single_match)]
             match file_info.extension() {
@@ -281,9 +284,9 @@ impl<'b> HighlightingBackend<'b> {
                             "Tree-sitter backend requires a language to be specified"
                         ));
                     }
-                    Some(s) => SublimeLanguageName { raw: s },
+                    Some(s) => SublimeLanguageName { raw: s.to_string() },
                 };
-                let language = language.to_tree_sitter_name(file_info);
+                let language = language.into_tree_sitter_name(file_info);
                 match language.highlight_document(file_info.contents, *include_locals) {
                     Ok(document) => match document.write_to_bytes() {
                         Err(e) => Err(anyhow!("failed to serialize document {:?}", e)),
