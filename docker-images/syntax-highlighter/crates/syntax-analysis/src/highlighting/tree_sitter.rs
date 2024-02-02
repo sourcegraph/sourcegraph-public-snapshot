@@ -488,7 +488,7 @@ SELECT * FROM my_table
             let language = &crate::highlighting::test::SYNTAX_SET
                 .with(|syntax_set| {
                     FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                    .determine_language(syntax_set)
+                        .determine_language(syntax_set)
                 })
                 .unwrap();
 
@@ -540,7 +540,7 @@ SELECT * FROM my_table
             let language = crate::highlighting::test::SYNTAX_SET
                 .with(|syntax_set| {
                     FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                    .determine_language(syntax_set)
+                        .determine_language(syntax_set)
                 })
                 .unwrap();
 

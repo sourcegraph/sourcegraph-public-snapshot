@@ -361,10 +361,7 @@ mod test {
 
     #[test]
     fn test_syntect_lang_detection() {
-        let cases = [
-            ("foo.cls", "%", "TeX"),
-            ("foo.cls", "/**", "Apex"),
-        ];
+        let cases = [("foo.cls", "%", "TeX"), ("foo.cls", "/**", "Apex")];
 
         for (path, content, lang) in cases {
             test_syntect_lang_detection_impl(path, content, lang);

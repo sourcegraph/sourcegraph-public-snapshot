@@ -1,8 +1,8 @@
 use std::{fs, path::Path};
 
 use clap::Parser;
-use syntect::parsing::SyntaxSet;
 use syntax_analysis::highlighting::FileInfo;
+use syntect::parsing::SyntaxSet;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -40,12 +40,20 @@ fn main() -> Result<(), std::io::Error> {
 
     let file_info = FileInfo::new(path.to_string_lossy().as_ref(), &contents, None);
 
-    let language = file_info.determine_language(&SyntaxSet::load_defaults_newlines())
+    let language = file_info
+        .determine_language(&SyntaxSet::load_defaults_newlines())
         .expect("failed to determine language");
     println!("  language: {:?}", language.to_string());
 
-    let document = language.highlight_document(&contents, args.include_locals)
-        .unwrap_or_else(|e| panic!("failed to run Tree-sitter for file '{}': {:?}", path.to_string_lossy(), e));
+    let document = language
+        .highlight_document(&contents, args.include_locals)
+        .unwrap_or_else(|e| {
+            panic!(
+                "failed to run Tree-sitter for file '{}': {:?}",
+                path.to_string_lossy(),
+                e
+            )
+        });
     println!("  highlighted document");
 
     scip::write_message_to_file(output, document).expect("writes document");

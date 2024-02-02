@@ -12,9 +12,7 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
-    let result = std::panic::catch_unwind(|| {
-        syntect_server::syntect_highlight(q.into_inner())
-    });
+    let result = std::panic::catch_unwind(|| syntect_server::syntect_highlight(q.into_inner()));
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),

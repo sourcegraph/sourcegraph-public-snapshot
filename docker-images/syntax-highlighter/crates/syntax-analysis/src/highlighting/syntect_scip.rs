@@ -555,7 +555,9 @@ mod test {
 
     fn make_scip_doc_via_syntect(file_info: &FileInfo<'_>) -> Document {
         SYNTAX_SET.with(|syntax_set| {
-            let syntax_ref = file_info.find_matching_syntax_reference(syntax_set).unwrap();
+            let syntax_ref = file_info
+                .find_matching_syntax_reference(syntax_set)
+                .unwrap();
             DocumentGenerator::new(syntax_set, syntax_ref, file_info.contents, None).generate()
         })
     }

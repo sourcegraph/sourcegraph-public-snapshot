@@ -1,9 +1,7 @@
 use anyhow::Context;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
-use syntax_analysis::highlighting::{
-    FileInfo, HighlightingBackend, PayloadKind,
-};
+use syntax_analysis::highlighting::{FileInfo, HighlightingBackend, PayloadKind};
 use syntect::parsing::SyntaxSet;
 
 thread_local! {
@@ -130,10 +128,12 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
 // TODO(cleanup_lsif): Remove this when we remove /lsif endpoint
 // Currently left unchanged
 pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
-    let output = HighlightingBackend::TreeSitter { include_locals: false }
-        .highlight(&q.file_info())
-        .context("/lsif endpoint")
-        .map_err(jsonify_err)?;
+    let output = HighlightingBackend::TreeSitter {
+        include_locals: false,
+    }
+    .highlight(&q.file_info())
+    .context("/lsif endpoint")
+    .map_err(jsonify_err)?;
     debug_assert!(output.kind == PayloadKind::Base64EncodedScip);
     Ok(json!({"data": output.payload, "plaintext": false}))
 }
@@ -141,14 +141,13 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
     SYNTAX_SET.with(|syntax_set| {
         let backend = match q.engine {
-            SyntaxEngine::Syntect =>
-                HighlightingBackend::SyntectScip {
-                    syntax_set,
-                    line_length_limit: q.line_length_limit,
-                },
+            SyntaxEngine::Syntect => HighlightingBackend::SyntectScip {
+                syntax_set,
+                line_length_limit: q.line_length_limit,
+            },
             SyntaxEngine::TreeSitter | SyntaxEngine::ScipSyntax => {
                 HighlightingBackend::TreeSitter {
-                    include_locals: q.engine == SyntaxEngine::ScipSyntax
+                    include_locals: q.engine == SyntaxEngine::ScipSyntax,
                 }
             }
         };

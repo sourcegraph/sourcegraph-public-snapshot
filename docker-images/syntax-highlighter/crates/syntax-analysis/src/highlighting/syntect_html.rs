@@ -234,16 +234,27 @@ impl<'a> fmt::Display for Escape<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::highlighting::{FileInfo, HighlightingBackend};
     use crate::highlighting::test::SYNTAX_SET;
+    use crate::highlighting::{FileInfo, HighlightingBackend};
 
-    fn test_css_table_highlight(file_info: &FileInfo<'_>, line_length_limit: Option<usize>, expected: &str) {
+    fn test_css_table_highlight(
+        file_info: &FileInfo<'_>,
+        line_length_limit: Option<usize>,
+        expected: &str,
+    ) {
         let output = SYNTAX_SET.with(|syntax_set| {
-            HighlightingBackend::SyntectHtml { syntax_set, line_length_limit }
-                .highlight(file_info)
-                .unwrap()
+            HighlightingBackend::SyntectHtml {
+                syntax_set,
+                line_length_limit,
+            }
+            .highlight(file_info)
+            .unwrap()
         });
-        assert_eq!(expected, &output.payload, "used grammar: {}", output.grammar);
+        assert_eq!(
+            expected, &output.payload,
+            "used grammar: {}",
+            output.grammar
+        );
     }
 
     #[test]
@@ -305,7 +316,7 @@ mod tests {
         let file_info = FileInfo::new(
             "test.java",
             "package com.lwl.boot.model;\n\npublic class Item implements Serializable {}",
-            None
+            None,
         );
         let expected = "<table>\
                             <tbody>\
