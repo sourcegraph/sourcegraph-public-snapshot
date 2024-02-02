@@ -82,8 +82,6 @@ const PassThroughToServer: React.FC = () => {
     return null
 }
 
-const codyRoutes: readonly RouteObject[] = []
-
 /**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
@@ -401,7 +399,8 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 }
 
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
-    if (disableCodeSearchFeatures) {
+    const { isCodyEnabled, isCodeSearchEnabled } = props.licenseFeatures
+    if (isCodyEnabled && !isCodeSearchEnabled) {
         return <SearchUpsellPage />
     }
     return <SearchPageWrapper {...props} />
