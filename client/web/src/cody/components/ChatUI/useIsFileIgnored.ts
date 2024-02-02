@@ -26,6 +26,7 @@ export const useIsFileIgnored = (): ((path: string) => boolean) => {
     const location = useLocation()
     const { repoName, revision } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
     const { data } = useQuery<CodyIgnoreContentResult, CodyIgnoreContentVariables>(CODY_IGNORE_CONTENT, {
+        skip: !window.context?.experimentalFeatures.codyContextIgnore,
         variables: { repoName, repoRev: revision || '', filePath: CODY_IGNORE_PATH },
     })
     const [ignoreManager, setIgnoreManager] = useState<Ignore>()
