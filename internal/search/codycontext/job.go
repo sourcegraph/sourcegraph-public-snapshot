@@ -17,7 +17,8 @@ func NewSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (j
 		return nil, errors.New("The 'codycontext' patterntype does not support multiple clauses")
 	}
 
-	q, err := transformBasicQuery(plan[0])
+	basicQuery := plan[0].ToParseTree()
+	q, err := queryStringToKeywordQuery(query.StringHuman(basicQuery))
 	if err != nil || q == nil {
 		return nil, err
 	}
