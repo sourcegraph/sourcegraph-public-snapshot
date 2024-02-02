@@ -9,7 +9,6 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
-import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from './util/license'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
@@ -61,6 +60,8 @@ const SearchContextPage = lazyComponent(
     () => import('./enterprise/searchContexts/SearchContextPage'),
     'SearchContextPage'
 )
+const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsellPage'), 'SearchUpsellPage')
+const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
@@ -286,10 +287,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.ApiConsole,
         element: <ApiConsole />,
     },
-    // TODO(BolajiOlajide): render landing page instead of SearchPageWrapper when on Cody-only license
     {
         path: PageRoutes.Search,
-        element: <LegacyRoute render={props => <SearchPageWrapper {...props} />} />,
+        element: <LegacyRoute render={props => <SearchPageOrUpsellPage {...props} />} />,
     },
     {
         path: PageRoutes.UserArea,
@@ -351,4 +351,11 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
     ) : (
         <Navigate replace={true} to={PageRoutes.Search} />
     )
+}
+
+function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
+    if (disableCodeSearchFeatures) {
+        return <SearchUpsellPage />
+    }
+    return <SearchPageWrapper {...props} />
 }
