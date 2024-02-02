@@ -46,7 +46,7 @@ export const SearchUpsellPage: FC = () => {
                     Code Search, along with complementary tools, helps devs find, fix, and onboard to new code quickly.
                 </Text>
 
-                <div className={styles.heroCTAs}>
+                <div>
                     <ButtonLink href={contactSalesLink} variant="primary" className="py-2 px-3 rounded mr-5">
                         Talk to a product expert
                     </ButtonLink>
