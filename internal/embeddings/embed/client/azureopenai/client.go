@@ -55,10 +55,7 @@ func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
 	defer apiClient.mu.Unlock()
 	var err error
 	if accessToken != "" {
-		credential, credErr := azopenai.NewKeyCredential(accessToken)
-		if credErr != nil {
-			return nil, credErr
-		}
+		credential := azcore.NewKeyCredential(accessToken)
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
 		var opts *azidentity.DefaultAzureCredentialOptions
@@ -177,8 +174,8 @@ func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*azopenai.GetEmbeddingsResponse, error) {
 	for i := 0; i < retries; i++ {
 		response, err := c.client.GetEmbeddings(ctx, azopenai.EmbeddingsOptions{
-			Input:      []string{input},
-			Deployment: c.model,
+			Input:          []string{input},
+			DeploymentName: &c.model,
 		}, nil)
 
 		if err != nil {
