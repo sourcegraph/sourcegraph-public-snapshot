@@ -87,7 +87,12 @@ export interface LegacyLayoutRouteContext
     extends StaticAppConfig,
         StaticSourcegraphWebAppContext,
         DynamicSourcegraphWebAppContext,
-        StaticLegacyRouteContext {}
+        StaticLegacyRouteContext {
+    licenseFeatures: {
+        codeSearchEnabled: boolean
+        codyEnabled: boolean
+    }
+}
 
 interface LegacyRouteProps {
     render: (props: LegacyLayoutRouteContext) => JSX.Element
@@ -162,6 +167,10 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         ...injections,
         ...computedContextFields,
         ...context,
+        licenseFeatures: {
+            codeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+            codyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+        },
     } satisfies LegacyLayoutRouteContext
 
     return <LegacyRouteContext.Provider value={legacyContext}>{children}</LegacyRouteContext.Provider>
