@@ -89,7 +89,7 @@ func (s *searchClient) Plan(
 	protocol search.Protocol,
 	contextLines *int32,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	tr, ctx := trace.New(ctx, "Plan", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
