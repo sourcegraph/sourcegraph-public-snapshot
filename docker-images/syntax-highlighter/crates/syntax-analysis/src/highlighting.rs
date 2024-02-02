@@ -105,11 +105,8 @@ impl<'a> FileInfo<'a> {
             };
         }
 
-        // Split the input path ("foo/myfile.go") into file name
-        // ("myfile.go") and extension ("go").
-        let path = Path::new(&self.path);
-        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        let extension = path.extension().and_then(|x| x.to_str()).unwrap_or("");
+        let file_name = Path::new(&self.path).file_name().and_then(|n| n.to_str());
+        let extension = self.extension();
 
         // Override syntect's language detection for conflicting file extensions because
         // it's impossible to express this logic in a syntax definition.
@@ -131,22 +128,23 @@ impl<'a> FileInfo<'a> {
             },
         ];
 
-        if let Some(Override {
-            prefix_langs,
-            default,
-            ..
-        }) = overrides.iter().find(|o| o.extension == extension)
-        {
-            let name = match prefix_langs
-                .iter()
-                .find(|(prefix, _)| self.contents.starts_with(prefix))
-            {
-                Some((_, lang)) => lang,
-                None => default,
-            };
-            return Ok(syntax_set
-                .find_syntax_by_name(name)
-                .unwrap_or_else(|| syntax_set.find_syntax_plain_text()));
+        if let Some(extension) = extension {
+            for override_ in overrides.iter() {
+                if override_.extension != extension {
+                    continue;
+                }
+                let name = match override_
+                    .prefix_langs
+                    .iter()
+                    .find(|(prefix, _)| self.contents.starts_with(prefix))
+                {
+                    Some((_, lang)) => lang,
+                    None => override_.default,
+                };
+                return Ok(syntax_set
+                    .find_syntax_by_name(name)
+                    .unwrap_or_else(|| syntax_set.find_syntax_plain_text()));
+            }
         }
 
         Ok(syntax_set
@@ -154,8 +152,8 @@ impl<'a> FileInfo<'a> {
             // name. This is done due to some syntaxes matching an "extension"
             // that is actually a whole file name (e.g. "Dockerfile" or "CMakeLists.txt")
             // see https://github.com/trishume/syntect/pull/170
-            .find_syntax_by_extension(file_name)
-            .or_else(|| syntax_set.find_syntax_by_extension(extension))
+            .find_syntax_by_extension(file_name.unwrap_or(""))
+            .or_else(|| syntax_set.find_syntax_by_extension(extension.unwrap_or("")))
             .or_else(|| syntax_set.find_syntax_by_first_line(self.contents))
             .unwrap_or_else(|| syntax_set.find_syntax_plain_text()))
     }
