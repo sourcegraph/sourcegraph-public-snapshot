@@ -1,0 +1,82 @@
+# Grafana image to replace the Chainguard-built image
+# This will allow us to update OS packages
+
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://packages.sgdev.org/sourcegraph-melange-prod.rsa.pub
+    - https://packages.sgdev.org/chainguard/chainguard-enterprise.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+    - '@sourcegraph https://packages.sgdev.org/main'
+    - '@chainguard https://packages.sgdev.org/chainguard'
+  packages:
+    - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+    - busybox
+    - glibc-locale-en
+
+    # Grafana packages
+    - grafana-7@chainguard
+    - grafana-7-dashboards@chainguard
+    - sourcegraph-grafana=5.0.5@chainguard
+
+work-dir: /usr/share/grafana
+
+accounts:
+  groups:
+    - groupname: grafana
+      gid: 472
+  users:
+    - username: grafana
+      uid: 472
+      gid: 472
+
+paths:
+  - path: /var/lib/grafana
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /var/lib/grafana/plugins
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /var/log/grafana
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /sg_grafana_additional_dashboards
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/dashboards/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/datasources/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/notifiers/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+  - path: /etc/grafana/provisioning/plugins/
+    type: directory
+    permissions: 0o777
+    uid: 472
+    gid: 472
+
+# NOTE: These don't seem to be applied to the image
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://docs.sourcegraph.com/
