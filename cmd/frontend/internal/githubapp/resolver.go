@@ -74,6 +74,17 @@ func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *resolver) RefreshGitHubApp(ctx context.Context, args *graphqlbackend.RefreshGitHubAppArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	app, err := r.gitHubAppByID(ctx, args.GitHubApp)
+	if err != nil {
+		return nil, err
+	}
+
+	app.syncInstallations()
+	return nil, nil
+}
+
 func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAppsArgs) (graphqlbackend.GitHubAppConnectionResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

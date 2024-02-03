@@ -3,12 +3,14 @@ import React, { useState } from 'react'
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiCogOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { AppLogo } from '../../../components/gitHubApps/AppLogo'
 import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
 import type { BatchChangesCodeHostFields } from '../../../graphql-operations'
+
+import { useRefreshGitHubApp } from './backend'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
 
@@ -70,7 +72,7 @@ interface AppDetailsControlsProps {
 
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
-
+    const [refreshGitHubApp, { loading, error }] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     return config ? (
         <>
@@ -95,6 +97,14 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </small>
                 </AnchorLink>
+                <Button
+                    variant="warning"
+                    className="mr-2"
+                    size="sm"
+                    onClick={() => refreshGitHubApp({ variables: { gitHubApp: config.id } })}
+                >
+                    {loading ? <LoadingSpinner inline={true} /> : 'Refresh'}
+                </Button>
                 <ButtonLink
                     className="mr-2"
                     aria-label="Edit"
@@ -113,6 +123,7 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                 </Button>
             </div>
+            {error && <ErrorAlert error={error} />}
         </>
     ) : (
         <ButtonLink to={createURL} className="ml-auto text-nowrap" variant="success" as={Link} size="sm">

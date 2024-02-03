@@ -4,6 +4,12 @@ extend type Mutation {
     authentication provider, will be deleted.
     """
     deleteGitHubApp(gitHubApp: ID!): EmptyResponse
+
+    """
+    Refresh a GitHub App. This fetches information about the GitHub app and updates all installations
+    associated with it.
+    """
+    refreshGitHubApp(gitHubApp: ID!): EmptyResponse
 }
 
 extend type Query {
