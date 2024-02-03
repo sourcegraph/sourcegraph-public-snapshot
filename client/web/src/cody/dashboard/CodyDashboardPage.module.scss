@@ -1,0 +1,23 @@
+.dashboard {
+    &-container {
+        margin: 5rem 15rem;
+        width: 100%;
+    }
+
+    &-usage {
+        padding: 1.5rem;
+        border: 1px solid red;
+
+        &-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        &-plan {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+    }
+}
