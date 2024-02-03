@@ -17,14 +17,7 @@
     z-index: 1; // Show on top of search result contents
 
     border-bottom: 1px solid var(--border-color-2);
-
-    // TODO(taiyab): this needs to be fit into the design system
-    :global(.theme-light) & {
-        background-color: #f5f8fa;
-    }
-    :global(.theme-dark) & {
-        background-color: #22283b;
-    }
+    background-color: var(--result-header-bg);
 
     &-title {
         flex: 1 1 auto;

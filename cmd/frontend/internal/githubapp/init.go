@@ -18,8 +18,8 @@ func Init(
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
-	enterpriseServices *enterprise.Services,
+	s *enterprise.Services,
 ) error {
-	enterpriseServices.GitHubAppsResolver = NewResolver(log.Scoped("GitHubAppsResolver"), db)
+	s.GitHubAppsResolver = NewResolver(log.Scoped("GitHubAppsResolver"), db)
 	return nil
 }

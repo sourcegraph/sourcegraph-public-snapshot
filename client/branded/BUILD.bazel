@@ -126,6 +126,7 @@ ts_project(
         "src/search-ui/results/StreamingSearchResultsFooter.tsx",
         "src/search-ui/results/StreamingSearchResultsList.tsx",
         "src/search-ui/results/filters/NewSearchFilters.tsx",
+        "src/search-ui/results/filters/components/DynamicFilterBadge.tsx",
         "src/search-ui/results/filters/components/Icons.tsx",
         "src/search-ui/results/filters/components/dynamic-filter/SearchDynamicFilter.tsx",
         "src/search-ui/results/filters/components/filter-type-list/FilterTypeList.tsx",

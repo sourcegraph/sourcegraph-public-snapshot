@@ -205,6 +205,10 @@ func (r *CodySubscriptionResolver) CurrentPeriodEndAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.subscription.CurrentPeriodEndAt}
 }
 
+func (r *CodySubscriptionResolver) CancelAtPeriodEnd() bool {
+	return r.subscription.CancelAtPeriodEnd
+}
+
 func (r *UserResolver) fetchCodySubscription(ctx context.Context) (*cody.UserSubscription, error) {
 	r.fetchCodySubscriptionOnce.Do(func() {
 		subscription, err := cody.SubscriptionForUser(ctx, r.db, *r.user)
@@ -215,6 +219,10 @@ func (r *UserResolver) fetchCodySubscription(ctx context.Context) (*cody.UserSub
 
 		r.codySubscription = subscription
 	})
+
+	if r.fetchCodySubscriptionError != nil {
+		return nil, r.fetchCodySubscriptionError
+	}
 
 	return r.codySubscription, r.fetchCodySubscriptionError
 }

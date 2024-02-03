@@ -2,11 +2,11 @@ package licensing
 
 import (
 	"os"
+	"slices"
 	"time"
 
 	"go.uber.org/atomic"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
