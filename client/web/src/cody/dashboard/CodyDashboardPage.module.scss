@@ -1,17 +1,20 @@
 .dashboard {
     &-container {
-        margin: 5rem 15rem;
         width: 100%;
+        height: fit-content;
     }
 
     &-usage {
+        margin: 5rem 15rem;
         padding: 1.5rem;
-        border: 1px solid red;
+        border: 1px solid var(--border-color-2);
+        border-radius: 0.5rem;
 
         &-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--border-color-2);
         }
 
         &-plan {
@@ -19,5 +22,127 @@
             font-weight: 500;
             font-size: 0.875rem;
         }
+
+        &-details {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            justify-items: center;
+            padding: 1.5rem;
+
+            &-grid {
+                text-align: center;
+                width: 100%;
+
+                &-first {
+                    border-right: 1px solid var(--border-color-2);
+                }
+            }
+        }
+
+        &-metric {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        &-timeline {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        &-meta {
+            margin-bottom: 1rem;
+
+            &-info {
+                font-size: 0.875rem;
+                vertical-align: middle;
+                margin-left: 0.5rem;
+
+                &-number {
+                    font-weight: 600;
+                    font-size: 1.25rem;
+                }
+
+                &-max {
+                    font-size: 1.25rem;
+                    font-weight: 300;
+                }
+            }
+        }
     }
+
+    &-hero {
+        background: aliceblue;
+        text-align: center;
+        padding: 3rem 0;
+
+        &-header {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        &-tagline {
+            color: var(--text-muted);
+            font-size: 1.1875rem;
+        }
+    }
+
+    &-cody-icon {
+        height: 3rem;
+        width: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    &-onboarding {
+        margin: 5rem 15rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--border-color-2);
+        border-radius: 0.5rem;
+
+        &-ide {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            &-installation-link {
+                color: var(--body-color);
+                text-decoration: underline;
+            }
+        }
+
+        &-cody-icon {
+            width: 2.125rem;
+            height: 2.125rem;
+            margin-right: 1rem;
+        }
+
+        &-web {
+            border-left: 1px solid var(--border-color-2);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            &-link {
+                border: 1px solid var(--border-color-2);
+                padding: 1rem 2rem;
+                font-weight: 600;
+                font-size: 1rem;
+                border-radius: 0.5rem;
+            }
+        }
+    }
+}
+
+.cody-gradient {
+    background: linear-gradient(90.64deg, #00CBEC 3.11%, #A112FF 44.21%, #FF5543 83.64%);
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
 }
