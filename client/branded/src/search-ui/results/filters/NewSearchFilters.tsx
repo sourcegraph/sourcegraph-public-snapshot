@@ -113,15 +113,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
 
     return (
-        <div
-            className={styles.scrollWrapper}
-        >
-            <FilterTypeList
-                backendFilters={filters ?? []}
-                disabled={queryHasTypeFilter(query)}
-                selectedFilters={selectedFilters}
-                onClick={handleFilterTypeClick}
-            />
+        <div className={styles.scrollWrapper}>
             <div className={styles.filterPanelHeader}>
                 <h3 className="ml-2 mt-2">
                     Filter results
@@ -142,12 +134,16 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                                 modifier: "\u2325",
                                 selector: "\u232b",
                             }}
-                            shadow={true}
-                            partnerKeyIsIcon={true}
                         />
                     </div>
                 )}
             </div>
+            <FilterTypeList
+                backendFilters={filters ?? []}
+                disabled={queryHasTypeFilter(query)}
+                selectedFilters={selectedFilters}
+                onClick={handleFilterTypeClick}
+            />
             <div className={styles.filters}>
                 {hasNoFilters && !isFilterLoadingComplete && (
                     <>

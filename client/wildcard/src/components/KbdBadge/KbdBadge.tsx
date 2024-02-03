@@ -14,9 +14,7 @@ export interface Keybind {
 
 export interface KbdBadgeProps {
     shortCut: Keybind
-    shadow?: boolean
     className?: string
-    partnerKeyIsIcon: boolean
 }
 
 /**
@@ -24,8 +22,6 @@ export interface KbdBadgeProps {
  */
 export const KbdBadge = React.forwardRef(function KbdBadge({
     shortCut,
-    shadow,
-    partnerKeyIsIcon,
     className,
     as: Component = 'span',
     ...attributes
