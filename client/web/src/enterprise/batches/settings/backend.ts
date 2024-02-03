@@ -204,8 +204,3 @@ export const REFRESH_GITHUB_APP = gql`
 
 export const useRefreshGitHubApp = (): MutationTuple<RefreshGitHubAppResult, RefreshGitHubAppVariables> =>
     useMutation(REFRESH_GITHUB_APP)
-
-//     export const useCreateBatchChangesCredential = (): MutationTuple<
-//     CreateBatchChangesCredentialResult,
-//     CreateBatchChangesCredentialVariables
-// > => useMutation(CREATE_BATCH_CHANGES_CREDENTIAL)

@@ -81,8 +81,8 @@ func (r *resolver) RefreshGitHubApp(ctx context.Context, args *graphqlbackend.Re
 		return nil, err
 	}
 
-	app.syncInstallations()
-	return nil, nil
+	err = app.syncInstallations(true)
+	return nil, err
 }
 
 func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAppsArgs) (graphqlbackend.GitHubAppConnectionResolver, error) {
@@ -292,7 +292,7 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 
 		// We use this opportunity to sync installations in our database. This is done in
 		// a goroutine so that we don't block the request completion.
-		go r.syncInstallations()
+		go r.syncInstallations(false)
 
 		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindGitHub},
@@ -334,9 +334,9 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 }
 
 // syncInstallations syncs the GitHub App Installations in our database with those
-// found on GitHub.com. This method only logs errors rather than assigning them to
+// found on GitHub. This method only logs errors rather than assigning them to
 // the resolver because they should not block the request from completing.
-func (r *gitHubAppResolver) syncInstallations() {
+func (r *gitHubAppResolver) syncInstallations(returnError bool) (err error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
@@ -346,13 +346,19 @@ func (r *gitHubAppResolver) syncInstallations() {
 	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
 	if err != nil {
 		r.logger.Warn("Error creating GitHub App authenticator", log.Error(err))
-		return
+		if returnError {
+			return err
+		}
+		return nil
 	}
 
 	baseURL, err := url.Parse(r.app.BaseURL)
 	if err != nil {
 		r.logger.Warn("Error parsing GitHub App base URL", log.Error(err))
-		return
+		if returnError {
+			return err
+		}
+		return nil
 	}
 	apiURL, _ := github.APIRoot(baseURL)
 
@@ -361,5 +367,9 @@ func (r *gitHubAppResolver) syncInstallations() {
 	errs := r.db.GitHubApps().SyncInstallations(ctx, *r.app, r.logger, client)
 	if errs != nil && len(errs.Errors()) > 0 {
 		r.logger.Warn("Error syncing GitHub App Installations", log.Error(errs))
+		if returnError {
+			return errs
+		}
 	}
+	return nil
 }
