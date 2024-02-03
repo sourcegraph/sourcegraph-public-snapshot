@@ -27,6 +27,9 @@ import { FilterKind, SearchTypeFilter, SEARCH_TYPES_TO_FILTER_TYPES, DYNAMIC_FIL
 
 import styles from './NewSearchFilters.module.scss'
 
+const OPTION_KEY_CHAR = '\u2325'
+const BACKSPACE_KEY_CHAR = '\u232b'
+
 interface NewSearchFiltersProps extends TelemetryProps {
     query: string
     filters?: Filter[]
@@ -99,42 +102,37 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.altKey && e.key === 'Backspace') {
-            setSelectedFilters([]);
+            setSelectedFilters([])
         }
     }
 
     useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown)
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [handleKeyDown]);
-
-
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [handleKeyDown])
 
     return (
         <div className={styles.scrollWrapper}>
             <div className={styles.filterPanelHeader}>
-                <h3 className="ml-2 mt-2">
-                    Filter results
-                </h3>
+                <h3 className="ml-2 mt-2">Filter results</h3>
                 {selectedFilters.length !== 0 && (
-                    <div
-                        className={styles.resetButton}
-                    >
+                    <div className={styles.resetButton}>
                         <Button
                             className={styles.resetButton}
-                            variant='link' size='sm'
+                            variant="link"
+                            size="sm"
                             onClick={() => setSelectedFilters([])}
                         >
                             Reset all
+                            <KbdBadge
+                                shortCut={{
+                                    modifier: OPTION_KEY_CHAR,
+                                    selector: BACKSPACE_KEY_CHAR,
+                                }}
+                            />
                         </Button>
-                        <KbdBadge
-                            shortCut={{
-                                modifier: "\u2325",
-                                selector: "\u232b",
-                            }}
-                        />
                     </div>
                 )}
             </div>
@@ -243,7 +241,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 {children}
             </footer>
             <FiltersDocFooter className={styles.footerDoc} />
-        </div >
+        </div>
     )
 }
 

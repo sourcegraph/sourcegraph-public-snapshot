@@ -1,7 +1,7 @@
-import React from "react";
+import React from 'react'
 
 import classNames from 'classnames'
-import { isArray } from "lodash";
+import { isArray } from 'lodash'
 
 import { type ForwardReferenceComponent } from '../..'
 
@@ -20,36 +20,27 @@ export interface KbdBadgeProps {
 /**
  * KbdBadge Element
  */
-export const KbdBadge = React.forwardRef(function KbdBadge({
-    shortCut,
-    className,
-    as: Component = 'span',
-    ...attributes
-},
+export const KbdBadge = React.forwardRef(function KbdBadge(
+    { shortCut, className, as: Component = 'span', ...attributes },
     reference
 ) {
     const shortCutKeys = createKbd(shortCut)
 
     return (
-        <Component
-            className={classNames(className)}
-            ref={reference}
-            {...attributes}
-        >
+        <Component className={classNames(className)} ref={reference} {...attributes}>
             <div className={styles.keybind}>
-                {shortCutKeys[0]}{" "}{shortCutKeys[1]}
+                {shortCutKeys[0]} {shortCutKeys[1]}
             </div>
-        </Component >
+        </Component>
     )
 }) as ForwardReferenceComponent<'span', KbdBadgeProps>
 
-
 const createKbd = (kb: Keybind): string[] => {
     let shortcut = [kb.modifier]
-    let keys = ""
+    let keys = ''
     if (isArray(kb.selector)) {
         for (const p of kb.selector) {
-            keys += " + " + p.toUpperCase()
+            keys += ' + ' + p.toUpperCase()
         }
     } else {
         keys = kb.selector
