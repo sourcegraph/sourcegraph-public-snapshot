@@ -45,6 +45,7 @@ const (
 	GitserverService_Blame_FullMethodName                       = "/gitserver.v1.GitserverService/Blame"
 	GitserverService_DefaultBranch_FullMethodName               = "/gitserver.v1.GitserverService/DefaultBranch"
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
+	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -107,6 +108,17 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
+	// GetCommit gets a commit from the repo ODB.
+	// The endpoint will verify that the user is allowed to view the given commit.
+	//
+	// If subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	//
+	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -516,6 +528,15 @@ func (x *gitserverServiceReadFileClient) Recv() (*ReadFileResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error) {
+	out := new(GetCommitResponse)
+	err := c.cc.Invoke(ctx, GitserverService_GetCommit_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -576,6 +597,17 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
+	// GetCommit gets a commit from the repo ODB.
+	// The endpoint will verify that the user is allowed to view the given commit.
+	//
+	// If subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	//
+	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -660,6 +692,9 @@ func (UnimplementedGitserverServiceServer) DefaultBranch(context.Context, *Defau
 }
 func (UnimplementedGitserverServiceServer) ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
+}
+func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCommit not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1168,6 +1203,24 @@ func (x *gitserverServiceReadFileServer) Send(m *ReadFileResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_GetCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).GetCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_GetCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).GetCommit(ctx, req.(*GetCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1250,6 +1303,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DefaultBranch",
 			Handler:    _GitserverService_DefaultBranch_Handler,
+		},
+		{
+			MethodName: "GetCommit",
+			Handler:    _GitserverService_GetCommit_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -6,6 +6,43 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMessage(t *testing.T) {
+	t.Run("Subject", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "hello",
+			"hello\n":               "hello",
+			"hello\n\n":             "hello",
+			"hello\nworld":          "hello",
+			"hello\n\nworld":        "hello",
+			"hello\n\nworld\nfoo":   "hello",
+			"hello\n\nworld\nfoo\n": "hello",
+		}
+		for input, want := range tests {
+			got := input.Subject()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
+	t.Run("Body", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "",
+			"hello\n":               "",
+			"hello\n\n":             "",
+			"hello\nworld":          "world",
+			"hello\n\nworld":        "world",
+			"hello\n\nworld\nfoo":   "world\nfoo",
+			"hello\n\nworld\nfoo\n": "world\nfoo",
+		}
+		for input, want := range tests {
+			got := input.Body()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
+}
+
 func TestValidateBranchName(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
