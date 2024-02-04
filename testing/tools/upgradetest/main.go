@@ -77,10 +77,10 @@ func main() {
 
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
+					fmt.Println("Target version: ", targetVersion)
 					fmt.Println("Standard Versions:", stdVersions)
 					fmt.Println("Multiversion Versions:", mvuVersions)
 					fmt.Println("Autoupgrade Versions:", autoVersions)
-					fmt.Println("$VERSION: ", cCtx.String("stamp-version"))
 
 					// initialize test results
 					var results TestResults
@@ -180,6 +180,7 @@ func main() {
 
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
+					fmt.Println("Target version: ", targetVersion)
 					fmt.Println("Standard Versions:", stdVersions)
 
 					// initialize test results
@@ -230,7 +231,7 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, targetVersion, latestStableVersion, _, mvuVersions, _, err := getVersions(cCtx)
+					latestMinorVersion, latestStableVersion, targetVersion, _, mvuVersions, _, err := getVersions(cCtx)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -238,6 +239,7 @@ func main() {
 
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
+					fmt.Println("Target version: ", targetVersion)
 					fmt.Println("MVU Versions:", mvuVersions)
 
 					// initialize test results
