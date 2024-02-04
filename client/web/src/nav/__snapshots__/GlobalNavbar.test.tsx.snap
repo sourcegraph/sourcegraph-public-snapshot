@@ -92,11 +92,8 @@ exports[`GlobalNavbar > code search only license 1`] = `
               class="linkContent"
             >
               <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline icon"
                 fill="none"
                 height="20"
-                role="img"
                 viewBox="0 0 20 20"
                 width="24"
                 xmlns="http://www.w3.org/2000/svg"
@@ -241,11 +238,8 @@ exports[`GlobalNavbar > cody only license 1`] = `
               class="linkContent"
             >
               <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline icon"
                 fill="none"
                 height="20"
-                role="img"
                 viewBox="0 0 20 20"
                 width="24"
                 xmlns="http://www.w3.org/2000/svg"
@@ -390,11 +384,8 @@ exports[`GlobalNavbar > default 1`] = `
               class="linkContent"
             >
               <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline icon"
                 fill="none"
                 height="20"
-                role="img"
                 viewBox="0 0 20 20"
                 width="24"
                 xmlns="http://www.w3.org/2000/svg"

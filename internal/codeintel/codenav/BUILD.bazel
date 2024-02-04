@@ -39,7 +39,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_x_exp//slices",
     ],
 )
 

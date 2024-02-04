@@ -1,9 +1,8 @@
 package client
 
 import (
+	"slices"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	sgapi "github.com/sourcegraph/sourcegraph/internal/api"
 	searchshared "github.com/sourcegraph/sourcegraph/internal/search"

@@ -273,7 +273,7 @@ export interface Filter {
     label: string
     count: number
     exhaustive: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type'
+    kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
@@ -504,7 +504,7 @@ function initiateSearchStream(
         zoektSearchOptions,
         featureOverrides,
         searchMode = SearchMode.Precise,
-        displayLimit = 500,
+        displayLimit = 1500,
         sourcegraphURL = '',
         chunkMatches = false,
     }: StreamSearchOptions,

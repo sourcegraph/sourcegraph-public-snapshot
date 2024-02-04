@@ -836,10 +836,8 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		cancel()
 		endObservation(1, observation.Args{})
 
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.PermissionDenied {
-				return nil, os.ErrNotExist
-			}
+		if s, ok := status.FromError(err); ok && s.Code() == codes.PermissionDenied {
+			return nil, os.ErrNotExist
 		}
 
 		return nil, err
@@ -851,18 +849,6 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		cancel:         cancel,
 		endObservation: func() { endObservation(1, observation.Args{}) },
 	}, nil
-}
-
-type errUnauthorizedStreamBlame struct {
-	Repo api.RepoName
-}
-
-func (e errUnauthorizedStreamBlame) Unauthorized() bool {
-	return true
-}
-
-func (e errUnauthorizedStreamBlame) Error() string {
-	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
 }
 
 type grpcBlameHunkReader struct {
@@ -1210,17 +1196,12 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 		RepoName: string(repo),
 	})
 	if err != nil {
-		s, ok := status.FromError(err)
-		if ok {
-			if s.Code() == codes.NotFound {
-				for _, d := range s.Details() {
-					switch d.(type) {
-					// If we fail to get the default branch due to cloning or being empty, we return nothing.
-					case *proto.RepoNotFoundPayload, *proto.RevisionNotFoundPayload:
-						return "", "", nil
-					}
-				}
-			}
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if errors.HasType(err, &gitdomain.RepoNotExistError{}) {
+			return "", "", nil
+		}
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
 		}
 		return "", "", err
 	}
@@ -1709,7 +1690,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
+	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec, NoEnsureRevision: true}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -2301,12 +2282,12 @@ func (c *clientImplementor) ArchiveReader(
 
 		// We return early only if this isn't a revision not found error.
 
-		err := convertGRPCErrorToGitDomainError(firstError)
+		err := firstError
 
 		var cse *CommandStatusError
 		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 			cancel()
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 	}
 
@@ -2328,7 +2309,7 @@ func (c *clientImplementor) ArchiveReader(
 		// Receive the next message from the stream.
 		msg, err := stream.Recv()
 		if err != nil {
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 
 		// Return the data from the received message.
@@ -2336,7 +2317,7 @@ func (c *clientImplementor) ArchiveReader(
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{r: r, closeFn: cancel},
+		base: &readCloseWrapper{Reader: r, closeFn: cancel},
 		repo: repo,
 		spec: options.Treeish,
 	}, nil

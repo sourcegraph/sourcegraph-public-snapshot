@@ -2995,6 +2995,23 @@
       "!go": {
         "pointer": true
       }
+    },
+    "attribution.gateway": {
+      "description": "Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.",
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "description": "Endpoint where Cody gateway can be accessed for attribution.",
+          "type": "string"
+        },
+        "accessToken": {
+          "description": "Only for use to override token for attribution gateway access. If 'licenseKey' is set, a default access token is generated.",
+          "type": "string"
+        }
+      },
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {

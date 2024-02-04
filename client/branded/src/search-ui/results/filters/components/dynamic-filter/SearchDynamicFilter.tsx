@@ -8,10 +8,11 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Badge, Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { codeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
+import { DynamicFilterBadge } from '../DynamicFilterBadge'
 
 import styles from './SearchDynamicFilter.module.scss'
 
@@ -171,25 +172,11 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 onClick={() => onClick(filter, selected)}
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
-                {filter.count !== 0 && (
-                    <Badge variant="secondary" className={classNames('ml-2', styles.countBadge)}>
-                        {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
-                    </Badge>
-                )}
+                <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />
                 {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </li>
     )
-}
-
-function roundCount(count: number): number {
-    const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
-    for (const roundNumber of roundNumbers) {
-        if (count >= roundNumber) {
-            return roundNumber
-        }
-    }
-    return 0
 }
 
 function filtersEqual(a: URLQueryFilter, b: URLQueryFilter): boolean {

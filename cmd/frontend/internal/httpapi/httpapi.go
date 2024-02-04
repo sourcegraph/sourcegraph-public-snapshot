@@ -99,6 +99,7 @@ func NewHandler(
 
 	m := mux.NewRouter().PathPrefix("/.api/").Subrouter()
 	m.StrictSlash(true)
+	m.Use(trace.Route)
 
 	jsonHandler := JsonMiddleware(&ErrorHandler{
 		Logger: logger,
@@ -108,11 +109,11 @@ func NewHandler(
 		WriteErrBody: env.InsecureDev,
 	})
 
-	m.PathPrefix("/registry").Methods("GET").Handler(trace.Route(jsonHandler(frontendregistry.HandleRegistry)))
-	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(trace.Route(handlers.SCIMHandler))
-	m.Path("/graphql").Methods("POST").Handler(trace.Route(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false))))
+	m.PathPrefix("/registry").Methods("GET").Handler(jsonHandler(frontendregistry.HandleRegistry))
+	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(handlers.SCIMHandler)
+	m.Path("/graphql").Methods("POST").Handler(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false)))
 
-	m.Path("/opencodegraph").Methods("POST").Handler(trace.Route(jsonHandler(serveOpenCodeGraph(logger))))
+	m.Path("/opencodegraph").Methods("POST").Handler(jsonHandler(serveOpenCodeGraph(logger)))
 
 	// Webhooks
 	//
@@ -136,39 +137,39 @@ func NewHandler(
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookMiddleware := webhooks.NewLogMiddleware(db.WebhookLogs(keyring.Default().WebhookLogKey))
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
-	m.Path("/webhooks/{webhook_uuid}").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
+	m.Path("/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(webhookHandler))
 
 	// Old, soon to be deprecated, webhook handlers
 	gitHubWebhook := webhooks.GitHubWebhook{Router: &wh}
-	m.Path("/github-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
-	m.Path("/gitlab-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook)))
-	m.Path("/bitbucket-server-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook)))
-	m.Path("/bitbucket-cloud-webhooks").Methods("POST").Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
+	m.Path("/github-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(&gitHubWebhook))
+	m.Path("/gitlab-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook))
+	m.Path("/bitbucket-server-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook))
+	m.Path("/bitbucket-cloud-webhooks").Methods("POST").Handler(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook))
 
 	// Other routes
-	m.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
-	m.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
-	m.Path("/files/batch-changes/{spec}").Methods("POST").Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
-	m.Path("/lsif/upload").Methods("POST").Handler(trace.Route(lsifDeprecationHandler))
-	m.Path("/scip/upload").Methods("POST").Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
-	m.Path("/scip/upload").Methods("HEAD").Handler(trace.Route(noopHandler))
-	m.Path("/compute/stream").Methods("GET", "POST").Handler(trace.Route(handlers.NewComputeStreamHandler()))
-	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Handler(trace.Route(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream"))))
+	m.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(handlers.BatchesChangesFileGetHandler)
+	m.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(handlers.BatchesChangesFileExistsHandler)
+	m.Path("/files/batch-changes/{spec}").Methods("POST").Handler(handlers.BatchesChangesFileUploadHandler)
+	m.Path("/lsif/upload").Methods("POST").Handler(lsifDeprecationHandler)
+	m.Path("/scip/upload").Methods("POST").Handler(handlers.NewCodeIntelUploadHandler(true))
+	m.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
+	m.Path("/compute/stream").Methods("GET", "POST").Handler(handlers.NewComputeStreamHandler())
+	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Handler(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream")))
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
-	m.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Handler(trace.Route(releasecache.NewHandler(logger)))
+	m.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Handler(releasecache.NewHandler(logger))
 	// Return the minimum src-cli version that's compatible with this instance
-	m.Path("/src-cli/{rest:.*}").Methods("GET").Handler(trace.Route(newSrcCliVersionHandler(logger)))
-	m.Path("/insights/export/{id}").Methods("GET").Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
-	m.Path("/search/stream").Methods("GET").Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Path("/search/export/{id}.jsonl").Methods("GET").Handler(trace.Route(handlers.SearchJobsDataExportHandler))
-	m.Path("/search/export/{id}.log").Methods("GET").Handler(trace.Route(handlers.SearchJobsLogsHandler))
+	m.Path("/src-cli/{rest:.*}").Methods("GET").Handler(newSrcCliVersionHandler(logger))
+	m.Path("/insights/export/{id}").Methods("GET").Handler(handlers.CodeInsightsDataExportHandler)
+	m.Path("/search/stream").Methods("GET").Handler(frontendsearch.StreamHandler(db))
+	m.Path("/search/export/{id}.jsonl").Methods("GET").Handler(handlers.SearchJobsDataExportHandler)
+	m.Path("/search/export/{id}.log").Methods("GET").Handler(handlers.SearchJobsLogsHandler)
 
-	m.Path("/completions/stream").Methods("POST").Handler(trace.Route(handlers.NewChatCompletionsStreamHandler()))
-	m.Path("/completions/code").Methods("POST").Handler(trace.Route(handlers.NewCodeCompletionsHandler()))
+	m.Path("/completions/stream").Methods("POST").Handler(handlers.NewChatCompletionsStreamHandler())
+	m.Path("/completions/code").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
+		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(handlers.NewDotcomLicenseCheckHandler())
 
 		updatecheckHandler, err := updatecheck.ForwardHandler()
 		if err != nil {
@@ -177,7 +178,7 @@ func NewHandler(
 		m.Path("/updates").
 			Methods(http.MethodGet, http.MethodPost).
 			Name("updatecheck").
-			Handler(trace.Route(updatecheckHandler))
+			Handler(updatecheckHandler)
 	}
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
@@ -186,7 +187,7 @@ func NewHandler(
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
-	repo.Path("/shield").Methods("GET").Handler(trace.Route(jsonHandler(serveRepoShield())))
+	repo.Path("/shield").Methods("GET").Handler(jsonHandler(serveRepoShield()))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
