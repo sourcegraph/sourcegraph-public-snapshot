@@ -192,6 +192,10 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return status.Error(codes.InvalidArgument, "empty repo")
 	}
 
+	if req.GetFormat() == "" {
+		return status.Error(codes.InvalidArgument, "empty format")
+	}
+
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 	format := git.ArchiveFormat(req.GetFormat())

@@ -82,6 +82,9 @@ go_test(
         "templ_test.go",
     ],
     embed = [":ui"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
