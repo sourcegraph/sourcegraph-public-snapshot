@@ -46,6 +46,14 @@ func main() {
 	app := &cli.App{
 		Name:  "upgrade-test",
 		Usage: "Upgrade test is a tool for testing the migrator services creation of upgrade paths and application of upgrade paths.\nWhen run relevant upgrade paths are tested for each version relevant to a given upgrade type, initializing Sourcegraph databases and frontend services for each version, and attempting to generate and apply an upgrade path to your current branches head.",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "stamp-version",
+				Aliases: []string{"sv"},
+				Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+				EnvVars: []string{"VERSION"},
+			},
+		},
 		Commands: []*cli.Command{
 			{
 				Name:    "all-types",
@@ -61,17 +69,18 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestVersion, stdVersions, mvuVersions, autoVersions, err := getVersions(ctx)
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := getVersions(cCtx)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
-					fmt.Println("Latest version: ", latestVersion)
+					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Standard Versions:", stdVersions)
 					fmt.Println("Multiversion Versions:", mvuVersions)
 					fmt.Println("Autoupgrade Versions:", autoVersions)
+					fmt.Println("$VERSION: ", cCtx.String("stamp-version"))
 
 					// initialize test results
 					var results TestResults
@@ -110,7 +119,7 @@ func main() {
 							testPool.Go(func() error {
 								fmt.Println("std: ", version.Version)
 								start := time.Now()
-								result := standardUpgradeTest(ctx, version.Version, latestVersion)
+								result := standardUpgradeTest(cCtx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								result.DisplayLog() // DEBUG
 								results.AddStdTest(result)
@@ -120,7 +129,7 @@ func main() {
 							testPool.Go(func() error {
 								fmt.Println("mvu: ", version.Version)
 								start := time.Now()
-								result := multiversionUpgradeTest(ctx, version.Version, latestMinorVersion)
+								result := multiversionUpgradeTest(cCtx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								result.DisplayLog() // DEBUG
 								results.AddMVUTest(result)
@@ -130,7 +139,7 @@ func main() {
 							testPool.Go(func() error {
 								fmt.Println("auto: ", version.Version)
 								start := time.Now()
-								result := autoUpgradeTest(ctx, version.Version, latestMinorVersion)
+								result := autoUpgradeTest(cCtx, version.Version, targetVersion, latestStableVersion)
 								result.Runtime = time.Since(start)
 								result.DisplayLog() // DEBUG
 								results.AddAutoTest(result)
@@ -163,13 +172,13 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestVersion, stdVersions, _, _, err := getVersions(ctx)
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, _, _, err := getVersions(cCtx)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
-					fmt.Println("Latest version: ", latestVersion)
+					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Standard Versions:", stdVersions)
 
@@ -189,7 +198,7 @@ func main() {
 						stdTestPool.Go(func() error {
 							fmt.Println("std: ", version)
 							start := time.Now()
-							result := standardUpgradeTest(ctx, version, latestVersion)
+							result := standardUpgradeTest(cCtx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							result.DisplayLog() // DEBUG
 							results.AddStdTest(result)
@@ -221,13 +230,13 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestVersion, _, mvuVersions, _, err := getVersions(ctx)
+					latestMinorVersion, targetVersion, latestStableVersion, _, mvuVersions, _, err := getVersions(cCtx)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
-					fmt.Println("Latest version: ", latestVersion)
+					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("MVU Versions:", mvuVersions)
 
@@ -244,7 +253,7 @@ func main() {
 						mvuTestPool.Go(func() error {
 							fmt.Println("mvu: ", version)
 							start := time.Now()
-							result := multiversionUpgradeTest(ctx, version, latestVersion)
+							result := multiversionUpgradeTest(cCtx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							result.DisplayLog() // DEBUG
 							results.AddMVUTest(result)
@@ -275,13 +284,13 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestVersion, _, _, autoVersions, err := getVersions(ctx)
+					latestMinorVersion, targetVersion, latestStableVersion, _, _, autoVersions, err := getVersions(cCtx)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
 					}
 
-					fmt.Println("Latest version: ", latestVersion)
+					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
 					fmt.Println("Auto Versions:", autoVersions)
 
@@ -298,7 +307,7 @@ func main() {
 						autoTestPool.Go(func() error {
 							fmt.Println("auto: ", version)
 							start := time.Now()
-							result := autoUpgradeTest(ctx, version, latestVersion)
+							result := autoUpgradeTest(cCtx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddAutoTest(result)
 							result.DisplayLog() // DEBUG
@@ -489,9 +498,11 @@ func (r *TestResults) OrderByVersion() {
 
 // standardUpgradeTest initializes Sourcegraph's dbs and runs a standard upgrade
 // i.e. an upgrade test between some last minor version and the current release candidate
-func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semver.Version) Test {
+func standardUpgradeTest(cCtx *cli.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
+	ctx := cCtx.Context
+
 	//start test env
-	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "standard", initVersion)
+	test, networkName, dbs, cleanup, err := setupTestEnv(cCtx, "standard", initVersion)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to setup env: %w", err))
 		cleanup()
@@ -500,7 +511,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 	defer cleanup()
 
 	// ensure env correctly initialized
-	if err := validateDBs(ctx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", migratorVersion.String()), networkName, dbs, false); err != nil {
+	if err := validateDBs(cCtx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String()), networkName, dbs, false); err != nil {
 		test.AddError(fmt.Errorf("🚨 Upgrade failed: %w", err))
 		return test
 	}
@@ -518,7 +529,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 
 	// Start frontend with candidate
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
+	cleanFrontend, err = startFrontend(cCtx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
@@ -528,7 +539,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
-	if err := validateDBs(ctx, &test, "0.0.0+dev", "migrator:candidate", networkName, dbs, true); err != nil {
+	if err := validateDBs(cCtx, &test, targetVersion.String(), "migrator:candidate", networkName, dbs, true); err != nil {
 		test.AddError(fmt.Errorf("🚨 Upgrade failed: %w", err))
 		return test
 	}
@@ -538,9 +549,10 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 
 // multiversionUpgradeTest tests the migrator upgrade command,
 // initializing the three main dbs and conducting an upgrade to the release candidate version
-func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Version) Test {
+func multiversionUpgradeTest(cCtx *cli.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
+	ctx := cCtx.Context
 
-	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", initVersion)
+	test, networkName, dbs, cleanup, err := setupTestEnv(cCtx, "multiversion", initVersion)
 	if err != nil {
 		fmt.Println("🚨 failed to setup env: ", err)
 		cleanup()
@@ -550,18 +562,24 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	// ensure env correctly initialized, always use latest migrator for drift check,
 	// this allows us to avoid issues from changes in migrators invocation
-	if err := validateDBs(ctx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
+	if err := validateDBs(cCtx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String()), networkName, dbs, false); err != nil {
 		test.AddError(fmt.Errorf("🚨 Initializing env in multiversion test failed: %w", err))
 		return test
 	}
 
 	// Run multiversion upgrade using candidate image
-	// TODO: target the schema of the candidate version rather than latest released tag on branch, this has less effect than you might expect.
-	// The migrator "upgrade" command only applies migrations defined between first minor versions i.e. 5.1 -> 5.2, migrator `up` incorperates migrations defined in a patch version and is run later in the test.
-	// We may be able to work around this furhter in CI
-	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), latestVersion.String()))
+	//
+	// If the build version in the test has been stamped this is the "to" input for the upgrade command. If the builds arent stamped we use the latest stable release verstion,
+	// as the target for `migrator upgrade`. This is safe because we assume the target version of the test is always the latest release version. Therefore `migrator up` should always be a single minor version away.
+	var toVersion string
+	if targetVersion.String() != "0.0.0+dev" { // if version is stamped
+		toVersion = targetVersion.String()
+	} else {
+		toVersion = latestStableVersion.String()
+	}
+	test.AddLog(fmt.Sprintf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)", initVersion.String(), toVersion))
 	out, err := run.Cmd(ctx,
-		dockerMigratorBaseString(test, fmt.Sprintf("upgrade --from %s --to %s", initVersion.String(), latestVersion.String()), "migrator:candidate", networkName, false, false, dbs)...).
+		dockerMigratorBaseString(test, fmt.Sprintf("upgrade --from %s --to %s", initVersion.String(), toVersion), "migrator:candidate", networkName, false, false, dbs)...).
 		Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to upgrade: %w", err))
@@ -583,7 +601,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	// Start frontend with candidate
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
+	cleanFrontend, err = startFrontend(cCtx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
@@ -593,7 +611,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
-	if err := validateDBs(ctx, &test, "0.0.0+dev", "migrator:candidate", networkName, dbs, true); err != nil {
+	if err := validateDBs(cCtx, &test, targetVersion.String(), "migrator:candidate", networkName, dbs, true); err != nil {
 		test.AddError(fmt.Errorf("🚨 Upgrade failed: %w", err))
 		return test
 	}
@@ -609,9 +627,9 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, latestVersion *se
 //
 // Without this in place autoupgrade fails and exits while trying to make an oobmigration comparison here: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/cli/autoupgrade.go?L67-76
 // {"SeverityText":"WARN","Timestamp":1706721478276103721,"InstrumentationScope":"frontend","Caller":"cli/autoupgrade.go:73","Function":"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli.tryAutoUpgrade","Body":"unexpected string for desired instance schema version, skipping auto-upgrade","Resource":{"service.name":"frontend","service.version":"devVersion","service.instance.id":"487754e1c54a"},"Attributes":{"version":"devVersion"}}
-func autoUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Version) Test {
+func autoUpgradeTest(cCtx *cli.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
 	//start test env
-	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "auto", initVersion)
+	test, networkName, dbs, cleanup, err := setupTestEnv(cCtx, "auto", initVersion)
 	if err != nil {
 		test.AddError(fmt.Errorf("failed to setup env: %w", err))
 		cleanup()
@@ -621,7 +639,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Ver
 
 	// ensure env correctly initialized, always use latest migrator for drift check,
 	// this allows us to avoid issues from changes in migrators invocation
-	if err := validateDBs(ctx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
+	if err := validateDBs(cCtx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String()), networkName, dbs, false); err != nil {
 		test.AddError(fmt.Errorf("🚨 Initializing env in multiversion test failed: %w", err))
 		return test
 	}
@@ -629,7 +647,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Ver
 	// Set SRC_AUTOUPGRADE=true on Migrator and Frontend containers. Then start the frontend container.
 	test.AddLog("-- ⚙️  performing auto upgrade")
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, true, dbs)
+	cleanFrontend, err = startFrontend(cCtx, test, "frontend", "candidate", networkName, true, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
@@ -639,7 +657,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, latestVersion *semver.Ver
 
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
-	if err := validateDBs(ctx, &test, "0.0.0+dev", "migrator:candidate", networkName, dbs, true); err != nil {
+	if err := validateDBs(cCtx, &test, targetVersion.String(), "migrator:candidate", networkName, dbs, true); err != nil {
 		test.AddError(fmt.Errorf("🚨 Upgrade failed: %w", err))
 		return test
 	}
@@ -658,7 +676,9 @@ type testDB struct {
 // setupTestEnv initializeses a test environment and object. Creates a docker network for testing as well as instances of our three databases. Returning a cleanup function.
 // An instance of Sourcegraph-Frontend is also started to initialize the versions table of the database.
 // TODO: setupTestEnv should seed some initial data at the target initVersion. This will be usefull for testing OOB migrations
-func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Version) (test Test, networkName string, dbs []*testDB, cleanup func(), err error) {
+func setupTestEnv(cCtx *cli.Context, testType string, initVersion *semver.Version) (test Test, networkName string, dbs []*testDB, cleanup func(), err error) {
+	ctx := cCtx.Context
+
 	test = Test{
 		Version:  *initVersion,
 		Type:     testType,
@@ -803,7 +823,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 	//start frontend and poll db until initial version is set by frontend
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
+	cleanFrontend, err = startFrontend(cCtx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
 	}
@@ -845,7 +865,9 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 // validateDBs runs a few tests to assess the readiness of the database and wether or not drift exists on the schema.
 // It is used in initializing a new db as well as "validating" the db after an version change. This behavior is controlled by the upgrade parameter.
-func validateDBs(ctx context.Context, test *Test, version, migratorImage, networkName string, dbs []*testDB, upgrade bool) error {
+func validateDBs(cCtx *cli.Context, test *Test, version, migratorImage, networkName string, dbs []*testDB, upgrade bool) error {
+	ctx := cCtx.Context
+
 	test.AddLog("-- ⚙️  validating dbs")
 
 	// Get DB clients
@@ -924,9 +946,14 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 	return nil
 }
 
-// startFrontend starts a frontend container and returns a cleanup function that will stop and remove the container.
-// Optionally sets the auto upgrade env var to true or false.
-func startFrontend(ctx context.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (cleanup func(), err error) {
+// startFrontend starts a frontend container and polls the pgsql database for certain states. When the state conditions are startFrontend returns a cleanup function that will stop and remove the frontend container.
+// - checks for existence of site-config
+// - checks that the version is set in pgsql
+// - Optionally sets the auto upgrade env var to true or false.
+func startFrontend(cCtx *cli.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (cleanup func(), err error) {
+	ctx := cCtx.Context
+	stamp := cCtx.String("stamp-version")
+
 	hash, err := newContainerHash()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
@@ -979,6 +1006,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 
 	// Start the frontend container
 	fmt.Println(cmdString) // DEBUG
+
 	out, err := run.Cmd(ctx, cmdString...).Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
@@ -1015,7 +1043,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 		}
 		// wait for the frontend to set the database versions.version value before considering the frontend startup complete.
 		// "candidate" resolves to "0.0.0+dev" and should always be valid
-		if dbVersion == version || dbVersion == "0.0.0+dev" {
+		if dbVersion == version || dbVersion == stamp || dbVersion == "0.0.0+dev" {
 			test.AddLog(fmt.Sprintf("✅ versions.version is set: %s", dbVersion))
 			break
 		}
@@ -1043,6 +1071,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 			time.Sleep(1 * time.Second)
 			continue
 		}
+		// Just test for site-config existence
 		if siteConfig == "" {
 			test.AddLog("... waiting for site-config to be initialized")
 			time.Sleep(1 * time.Second)
@@ -1128,13 +1157,15 @@ func newContainerHash() ([]byte, error) {
 //
 // Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
 // so we reduce the scope of the test, to cover only v3.39 and forward, for MVU and Auto upgrade testing.
-func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
+func getVersions(cCtx *cli.Context) (latestMinor, latestFull, targetVersion *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
+	ctx := cCtx.Context
+
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
 		"--format", "'%(refname:short)'",
 		"refs/tags").Run().Lines()
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	var validTags []*semver.Version
@@ -1170,7 +1201,7 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 		}
 		latestMinorVer, err = semver.NewVersion(fmt.Sprintf("%d.%d.0", latestFullVer.Major(), latestFullVer.Minor()))
 		if err != nil {
-			return nil, nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, nil, err
 		}
 	}
 
@@ -1191,10 +1222,17 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 	}
 
 	if latestMinorVer == nil {
-		return nil, nil, nil, nil, nil, errors.New("No valid minor semver tags found")
+		return nil, nil, nil, nil, nil, nil, errors.New("No valid minor semver tags found")
 	}
 	if latestFullVer == nil {
-		return nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
+		return nil, nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
+	}
+
+	// Set target version to VERSION stamp if frontend and migrator are set at a stamped version, otherwise set it to 0.0.0+dev
+	if cCtx.String("stamp-version") != "" {
+		targetVersion = semver.MustParse(cCtx.String("stamp-version"))
+	} else {
+		targetVersion = semver.MustParse("0.0.0+dev") // If no stamp version is set, we assume version is in dev
 	}
 
 	// Induce test failure
@@ -1204,6 +1242,6 @@ func getVersions(ctx context.Context) (latestMinor, latestFull *semver.Version, 
 	mvuVersions = []*semver.Version{semver.MustParse("v5.0.0")}  // DEBUG
 	stdVersions = []*semver.Version{semver.MustParse("v5.1.0")}  // DEBUG
 
-	return latestMinorVer, latestFullVer, stdVersions, mvuVersions, autoVersions, nil
+	return latestMinorVer, latestFullVer, targetVersion, stdVersions, mvuVersions, autoVersions, nil
 
 }
