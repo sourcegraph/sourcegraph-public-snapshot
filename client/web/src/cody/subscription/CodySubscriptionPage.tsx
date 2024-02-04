@@ -74,6 +74,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
+
+    // CSS class name for the dollar amount charged for Cody Pro, which is tied to
+    // whether or not we are offering a free trial.
+    const proPricingClass = hasTrialEnded ? '' : styles.proPricing;
+
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
@@ -189,7 +194,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
+                                    <H2 className={classNames('text-muted d-inline mb-0', proPricingClass)}>$9</H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {!hasTrialEnded && (
