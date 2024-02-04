@@ -244,33 +244,65 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     userId,
 }) => {
     const [formCreated, setFormCreated] = useState<boolean>(false)
+    const [scriptsLoaded, setScriptsLoaded] = useState<boolean>(false)
+    const [loadError, setLoadError] = useState<boolean>(false)
+
+    // URLs of the scripts to send test GET requests
+    const scriptURLs = [hubSpotScript, jQueryScript]
 
     useEffect(() => {
-        // Set the master form id if it's provided
-        let masterFormId = ''
-        if (masterFormName) {
-            masterFormId = masterForms[masterFormName]
-        }
-
-        // Load all scripts
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        loadAllScripts()
-
-        if (!formCreated) {
-            createHubSpotForm({
-                formId: formId || masterFormId,
-                onFormReady: form => {
-                    onFormReady?.(form)
-                    onHubsportFormReady?.(form, userId, userEmail)
-                },
-                onFormSubmitted,
-                onFormSubmit,
-                inlineMessage,
+        // Make a test GET request to each script URL
+        Promise.all(
+            scriptURLs.map(url =>
+                fetch(url, { method: 'HEAD' }) // Use HEAD method for faster response
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch script from ${url}`)
+                        }
+                    })
+            )
+        )
+            .then(() => setScriptsLoaded(true))
+            .catch(error => {
+                // Handle the error if any of the requests fail
+                console.error('Error fetching scripts:', error)
+                // Mark a loading error that returns a minimal react component as a failure mode
+                setLoadError(true)
+                const emptyElement = document.createElement('div')
+                // Do this callback method to increase the value of step
+                onFormSubmitted?.(emptyElement)
             })
+    }, [])
 
-            setFormCreated(true)
+    useEffect(() => {
+        if (scriptsLoaded) {
+            // Set the master form id if it's provided
+            let masterFormId = ''
+            if (masterFormName) {
+                masterFormId = masterForms[masterFormName]
+            }
+
+            // Load all scripts
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            loadAllScripts()
+
+            if (!formCreated) {
+                createHubSpotForm({
+                    formId: formId || masterFormId,
+                    onFormReady: form => {
+                        onFormReady?.(form)
+                        onHubsportFormReady?.(form, userId, userEmail)
+                    },
+                    onFormSubmitted,
+                    onFormSubmit,
+                    inlineMessage,
+                })
+
+                setFormCreated(true)
+            }
         }
     }, [
+        scriptsLoaded,
         formId,
         onFormSubmitted,
         inlineMessage,
@@ -282,5 +314,9 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
         onFormSubmit,
     ])
 
+    if (loadError) {
+        return <div>Error loading form</div>
+        // return a minimal React element on failure to load the hubspot script
+    }
     return <div id="form-target" data-testid="hubspot-form-container" className={classNames(styles.container)} />
 }
