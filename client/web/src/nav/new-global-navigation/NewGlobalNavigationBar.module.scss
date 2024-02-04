@@ -14,6 +14,10 @@
 
     // TODO: Move to the top level of this component consumer
     flex-shrink: 0;
+
+    &--without-menu {
+        padding-left: 0.75rem;
+    }
 }
 
 .menu-button {
@@ -65,7 +69,7 @@
 }
 
 .inline-navigation-list {
-    margin: -0.5rem 1rem;
+    margin: -0.5rem 0.5rem;
 }
 
 .overlay {

@@ -15,6 +15,7 @@ import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Tooltip, Button, Icon } from '@sourcegraph/wildcard'
 
 import { URLQueryFilter } from '../../hooks'
+import { FilterKind } from '../../types'
 import { DynamicFilterBadge } from '../DynamicFilterBadge'
 
 import styles from './FilterTypeList.module.scss'
@@ -31,10 +32,10 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
 
     const mergedFilters = STATIC_TYPE_FILTERS.map(staticFilter => {
         const backendFilter = backendFilters.find(
-            filter => filter.kind === 'type' && filter.label === staticFilter.label
+            filter => filter.kind === FilterKind.Type && filter.label === staticFilter.label
         )
         const selectedFilter = selectedFilters.find(
-            filter => filter.kind === 'type' && filter.label === staticFilter.label
+            filter => filter.kind === FilterKind.Type && filter.label === staticFilter.label
         )
         const filter: Filter = {
             value: staticFilter.value,
