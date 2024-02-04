@@ -74,10 +74,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
-
     // CSS class name for the dollar amount charged for Cody Pro, which is tied to
     // whether or not we are offering a free trial.
-    const proPricingClass = hasTrialEnded ? '' : styles.proPricing;
+    const proPricingClass = hasTrialEnded ? '' : styles.proPricing
 
     return (
         <>
@@ -201,16 +200,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Text className="mb-3 text-muted" size="small">
                                         {/* The free trial has not ended, but we are not yet accepting payments. */}
                                         {!arePaymentsEnabled && (
-                                            <strong>
-                                                Free until Feb 2024, no credit card needed
-                                            </strong>
+                                            <strong>Free until Feb 2024, no credit card needed</strong>
                                         )}
                                         {/* The free trial has not ended, but we ARE accepting payments. */}
-                                        {arePaymentsEnabled && (
-                                            <strong>
-                                                 Free until February 15, 2024.
-                                            </strong>
-                                        )}
+                                        {arePaymentsEnabled && <strong>Free until February 15, 2024.</strong>}
                                     </Text>
                                 )}
                                 {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
