@@ -273,7 +273,6 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
             })
     }, [])
 
-    debugger
     useEffect(() => {
         if (scriptsLoaded) {
             // Set the master form id if it's provided

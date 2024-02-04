@@ -210,7 +210,7 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
             setShow(true)
         }, 500)
     }, [])
-    debugger
+
     return (
         <div className={classNames('d-flex flex-column align-items-center p-5')}>
             {show ? (
