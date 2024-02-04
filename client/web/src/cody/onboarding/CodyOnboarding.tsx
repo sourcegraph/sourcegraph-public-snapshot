@@ -147,7 +147,7 @@ export function CodyOnboarding({
             navigate(returnToURL)
         }
     }, [completed, returnToURL, navigate])
-    debugger;
+   // debugger
     if (completed && returnToURL) {
         return null
     }
@@ -255,7 +255,7 @@ function PurposeStep({
     pro: boolean
     authenticatedUser: AuthenticatedUser
 }): JSX.Element {
-    debugger
+
     useEffect(() => {
         eventLogger.log(
             EventName.CODY_ONBOARDING_PURPOSE_VIEWED,

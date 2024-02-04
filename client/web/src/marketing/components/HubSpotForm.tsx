@@ -248,9 +248,9 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     const [loadError, setLoadError] = useState<boolean>(false)
 
     // URLs of the scripts to test
-    const scriptURLs = [hubSpotScript, jQueryScript, clearbitScript]
+    const scriptURLs = [hubSpotScript, jQueryScript]
 
-    debugger
+    // debugger
     useEffect(() => {
         // Make a test GET request to each script URL
         Promise.all(
