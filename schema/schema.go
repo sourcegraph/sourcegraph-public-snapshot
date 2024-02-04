@@ -698,6 +698,12 @@ type Dotcom struct {
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
+	// SamsClientID description: The clientID for SAMS instance.
+	SamsClientID string `json:"sams.clientID,omitempty"`
+	// SamsClientSecret description: The clientSecret for SAMS instance.
+	SamsClientSecret string `json:"sams.clientSecret,omitempty"`
+	// SamsServer description: The server URL for SAMS instance.
+	SamsServer string `json:"sams.server,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
