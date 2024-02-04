@@ -130,9 +130,9 @@ export function CodyOnboarding({
     authenticatedUser: AuthenticatedUser | null
 }): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
-    const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
+    const [completed = false, setOnboardingCompleted] = useState<boolean>(false)
     // steps start from 0
-    const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
+    const [step = 0, setOnboardingStep] = useState<number>(0)
 
     const onNext = (): void => setOnboardingStep(currentsStep => (currentsStep || 0) + 1)
 
@@ -147,7 +147,7 @@ export function CodyOnboarding({
             navigate(returnToURL)
         }
     }, [completed, returnToURL, navigate])
-
+    debugger;
     if (completed && returnToURL) {
         return null
     }
@@ -210,7 +210,7 @@ function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
             setShow(true)
         }, 500)
     }, [])
-
+    debugger
     return (
         <div className={classNames('d-flex flex-column align-items-center p-5')}>
             {show ? (
@@ -255,6 +255,7 @@ function PurposeStep({
     pro: boolean
     authenticatedUser: AuthenticatedUser
 }): JSX.Element {
+    debugger
     useEffect(() => {
         eventLogger.log(
             EventName.CODY_ONBOARDING_PURPOSE_VIEWED,

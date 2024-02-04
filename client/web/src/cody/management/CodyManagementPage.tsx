@@ -104,7 +104,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
+    if (!isCodyEnabled() || isSourcegraphDotCom || !subscription) {
         return null
     }
 

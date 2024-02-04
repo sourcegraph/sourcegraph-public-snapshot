@@ -228,7 +228,7 @@ func (r *UserResolver) fetchCodySubscription(ctx context.Context) (*cody.UserSub
 }
 
 func (r *UserResolver) CodySubscription(ctx context.Context) (*CodySubscriptionResolver, error) {
-	if !envvar.SourcegraphDotComMode() {
+	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 

@@ -9,6 +9,8 @@ const defaultSettings: TemporarySettings = {
     'user.daysActiveCount': 1,
     'user.lastDayActive': new Date().toDateString(),
     'npsSurvey.hasTemporarilyDismissed': true,
+    'cody.onboarding.completed': false,
+    'cody.onboarding.step': 0
 }
 
 export class TemporarySettingsContext {
