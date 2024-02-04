@@ -67,6 +67,22 @@
 }
 
 .description {
-    margin: 0 0.65rem -0.25rem 0.65rem;
+    // margin: 0 0.65rem -0.25rem 0.65rem;
+    background-color: var(--secondary);
     color: var(--text-muted);
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+}
+
+.zero-state-search-button {
+    text-decoration: underline;
+    display: inline;
+    padding: 0;
+    font-size: 0.75rem;
+    text-align: unset;
+    color: var(--text-muted);
+    font-weight: normal;
+    margin: 0;
+    border: none;
+    vertical-align: unset;
 }

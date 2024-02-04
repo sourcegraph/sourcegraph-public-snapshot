@@ -129,6 +129,7 @@ ts_project(
         "src/search-ui/results/filters/components/DynamicFilterBadge.tsx",
         "src/search-ui/results/filters/components/Icons.tsx",
         "src/search-ui/results/filters/components/dynamic-filter/SearchDynamicFilter.tsx",
+        "src/search-ui/results/filters/components/filter-skeleton/SearchFilterSkeleton.tsx",
         "src/search-ui/results/filters/components/filter-type-list/FilterTypeList.tsx",
         "src/search-ui/results/filters/components/filters-doc-footer/FiltersDocFooter.tsx",
         "src/search-ui/results/filters/hooks.ts",
