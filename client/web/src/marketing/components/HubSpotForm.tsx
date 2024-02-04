@@ -247,11 +247,10 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     const [scriptsLoaded, setScriptsLoaded] = useState<boolean>(false)
     const [loadError, setLoadError] = useState<boolean>(false)
 
-    // URLs of the scripts to send test GET requests
-    const scriptURLs = [hubSpotScript, jQueryScript]
-
     useEffect(() => {
         // Make a test GET request to each script URL
+        // URLs of the scripts to send test GET requests
+        const scriptURLs = [hubSpotScript, jQueryScript]
         Promise.all(
             scriptURLs.map(url =>
                 fetch(url, { method: 'HEAD' }) // Use HEAD method for faster response
@@ -263,16 +262,14 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
             )
         )
             .then(() => setScriptsLoaded(true))
-            .catch(error => {
-                // Handle the error if any of the requests fail
-                console.error('Error fetching scripts:', error)
+            .catch(() => {
                 // Mark a loading error that returns a minimal react component as a failure mode
                 setLoadError(true)
                 const emptyElement = document.createElement('div')
                 // Do this callback method to increase the value of step
                 onFormSubmitted?.(emptyElement)
             })
-    }, [])
+    }, [onFormSubmitted])
 
     useEffect(() => {
         if (scriptsLoaded) {
