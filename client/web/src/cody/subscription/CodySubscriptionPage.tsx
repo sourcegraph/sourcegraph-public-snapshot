@@ -194,8 +194,18 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 </div>
                                 {!hasTrialEnded && (
                                     <Text className="mb-3 text-muted" size="small">
-                                        Free until Feb 2024,{' '}
-                                        {!arePaymentsEnabled && <strong>no credit card needed</strong>}
+                                        {/* The free trial has not ended, but we are not yet accepting payments. */}
+                                        {!arePaymentsEnabled && (
+                                            <strong>
+                                                Free until Feb 2024, no credit card needed
+                                            </strong>
+                                        )}
+                                        {/* The free trial has not ended, but we ARE accepting payments. */}
+                                        {arePaymentsEnabled && (
+                                            <strong>
+                                                 Free until February 15, 2024.
+                                            </strong>
+                                        )}
                                     </Text>
                                 )}
                                 {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
