@@ -125,7 +125,9 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                             size="sm"
                             onClick={() => setSelectedFilters([])}
                         >
-                            Reset all
+                            <div>
+                                Reset all
+                            </div>
                             <KbdBadge
                                 shortCut={{
                                     modifier: OPTION_KEY_CHAR,
