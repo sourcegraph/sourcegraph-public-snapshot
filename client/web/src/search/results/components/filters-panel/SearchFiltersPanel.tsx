@@ -24,6 +24,7 @@ export interface SearchFiltersPanelProps extends TelemetryProps {
     query: string
     filters: Filter[] | undefined
     withCountAllFilter: boolean
+    isFilterLoadingComplete: boolean
     className?: string
     onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
 }
@@ -37,7 +38,8 @@ export interface SearchFiltersPanelProps extends TelemetryProps {
  * as it is, use consumer agnostic NewSearchFilters component instead.
  */
 export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
-    const { query, filters, withCountAllFilter, className, onQueryChange, telemetryService } = props
+    const { query, filters, withCountAllFilter, isFilterLoadingComplete, className, onQueryChange, telemetryService } =
+        props
 
     const { isOpen, setFiltersPanel } = useSearchFiltersStore()
     const uiMode = useSearchFiltersPanelUIMode()
@@ -56,6 +58,7 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                     query={query}
                     filters={filters}
                     withCountAllFilter={withCountAllFilter}
+                    isFilterLoadingComplete={isFilterLoadingComplete}
                     onQueryChange={onQueryChange}
                     telemetryService={telemetryService}
                 />
@@ -74,6 +77,7 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                 query={query}
                 filters={filters}
                 withCountAllFilter={withCountAllFilter}
+                isFilterLoadingComplete={isFilterLoadingComplete}
                 onQueryChange={onQueryChange}
                 telemetryService={telemetryService}
             >

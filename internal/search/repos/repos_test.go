@@ -1,11 +1,13 @@
 package repos
 
 import (
+	stdcmp "cmp"
 	"context"
 	"flag"
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -14,7 +16,6 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -537,11 +538,11 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 			var want []RepoRevSpecs
 			want = append(want, tc.want...)
 
-			less := func(a, b RepoRevSpecs) bool {
-				return a.Repo.ID < b.Repo.ID
+			compare := func(a, b RepoRevSpecs) int {
+				return stdcmp.Compare(a.Repo.ID, b.Repo.ID)
 			}
-			slices.SortFunc(got, less)
-			slices.SortFunc(want, less)
+			slices.SortFunc(got, compare)
+			slices.SortFunc(want, compare)
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Errorf("unexpected (-have, +want):\n%s", diff)

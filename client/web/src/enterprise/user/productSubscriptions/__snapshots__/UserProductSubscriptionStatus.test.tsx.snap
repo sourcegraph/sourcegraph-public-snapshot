@@ -37,9 +37,6 @@ exports[`UserProductSubscriptionStatus > toggle > license key hidden 1`] = `
       </div>
     </div>
     <div
-      class="bg"
-    />
-    <div
       class="footer"
     >
       <div
@@ -112,9 +109,6 @@ exports[`UserProductSubscriptionStatus > toggle > license key revealed 1`] = `
         </h3>
       </div>
     </div>
-    <div
-      class="bg"
-    />
     <div
       class="footer"
     >

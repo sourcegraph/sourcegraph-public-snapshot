@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/logcountmetric"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -76,6 +77,11 @@ func createServiceAlerts(
 			return errors.Wrap(err, "external_healthcheck")
 		}
 	}
+
+	if err := createCloudRunPreconditionFailedAlert(stack, id, vars, channels); err != nil {
+		return errors.Wrap(err, "CloudRunPreconditionFailedAlert")
+	}
+
 	return nil
 }
 
@@ -167,5 +173,61 @@ func createExternalHealthcheckAlert(
 	}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func createCloudRunPreconditionFailedAlert(
+	stack cdktf.TerraformStack,
+	id resourceid.ID,
+	vars Variables,
+	channels alertpolicy.NotificationChannels,
+) error {
+	metric, err := logcountmetric.New(stack, id.Group("cloud_run_precondition_failed"), &logcountmetric.Config{
+		Name: "msp.sourcegraph.com/cloud_run_precondition_failed",
+		// Status 9 indicates 'precondition failed'
+		// https://github.com/googleapis/googleapis/blob/e3802a1c97ee876e01247f9d22c15219ef4d9c19/google/rpc/code.proto#L110-L128
+		LogFilters: fmt.Sprintf(`
+			resource.type="cloud_run_revision"
+			AND protoPayload.status.code="9"
+			AND resource.labels.service_name =~ "^%s.*"
+		`, vars.Service.ID),
+		LabelExtractors: map[string]logcountmetric.LabelExtractor{
+			"service_name": {
+				Expression:  "EXTRACT(resource.labels.service_name)",
+				Type:        "STRING",
+				Description: "Name of the affected Cloud Run service",
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if _, err := alertpolicy.New(stack, id.Group("cloud_run_precondition_failed_alert"), &alertpolicy.Config{
+		Service:       vars.Service,
+		EnvironmentID: vars.EnvironmentID,
+		ProjectID:     vars.ProjectID,
+
+		ID:   "cloud_run_precondition_failed",
+		Name: "Cloud Run Instance Precondition Failed",
+		Description: `Cloud Run instance failed to start due to a precondition failure.
+This is unlikely to cause immediate downtime, and may auto-resolve if no new instances are created and/or we return to a healthy state, but you should follow up to ensure the latest Cloud Run revision is healthy.`,
+		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+			Filters: map[string]string{
+				"metric.type": metric.Metric,
+				// HACK: Strangely, this seems required on our log-based metric
+				"resource.type": "cloud_run_revision",
+			},
+			Aligner:    alertpolicy.MonitoringAlignMax,
+			Reducer:    alertpolicy.MonitoringReduceSum,
+			Period:     "60s",
+			Threshold:  0, // any occurence is bad
+			Comparison: alertpolicy.ComparisonGT,
+			Trigger:    alertpolicy.TriggerKindAnyViolation,
+		},
+		NotificationChannels: channels,
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -2221,7 +2221,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(pgsql|codein
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
 
 **Next steps**
 
@@ -2233,7 +2233,7 @@ count being required for the volume of uploads.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_precise-code-intel-worker_codeintel_upload_queued_max_age"
+  "warning_precise-code-intel-worker_codeintel_upload_queued_max_age"
 ]
 ```
 
@@ -2242,7 +2242,7 @@ count being required for the volume of uploads.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})) >= 18000)`
+Generated query for warning alert: `max((max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})) >= 18000)`
 
 </details>
 

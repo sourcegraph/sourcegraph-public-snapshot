@@ -38,6 +38,5 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//key",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//project",
         "@org_golang_x_exp//maps",
-        "@org_golang_x_exp//slices",
     ],
 )

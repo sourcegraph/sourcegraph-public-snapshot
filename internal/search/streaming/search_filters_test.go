@@ -63,17 +63,15 @@ func TestSearchFiltersUpdate(t *testing.T) {
 		},
 		{
 			name: "RepoMatch",
-			events: []SearchEvent{
-				{
-					Results: []result.Match{
-						&result.RepoMatch{
-							Name: "foo",
-						},
+			events: []SearchEvent{{
+				Results: []result.Match{
+					&result.RepoMatch{
+						Name: "foo",
 					},
 				},
-			},
-			wantFilterValue: "repo:^foo$",
-			wantFilterKind:  "repo",
+			}},
+			wantFilterValue: "type:repo",
+			wantFilterKind:  "type",
 			wantFilterCount: 1,
 		},
 		{

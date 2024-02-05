@@ -8,6 +8,7 @@ import {
     mdiHistory,
     mdiPackageVariantClosed,
     mdiSourceBranch,
+    mdiSourceCommit,
     mdiSourceFork,
     mdiSourceRepository,
     mdiTag,
@@ -269,6 +270,18 @@ export const TreePage: FC<Props> = ({
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
+                    <Tooltip content="Git commits">
+                        <Button
+                            className="flex-shrink-0"
+                            to={`/${encodeURIPathComponent(repoName)}/-/commits`}
+                            variant="secondary"
+                            outline={true}
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiSourceCommit} />{' '}
+                            <span className={styles.text}>Commits</span>
+                        </Button>
+                    </Tooltip>
                     {!isPackage && (
                         <Tooltip content="Git branches">
                             <Button

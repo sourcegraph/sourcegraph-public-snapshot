@@ -351,6 +351,7 @@
     "http-status-codes": "^2.1.4",
     "https-browserify": "^1.0.0",
     "https-proxy-agent": "^5.0.1",
+    "ignore": "^5.3.0",
     "is-absolute-url": "^3.0.3",
     "isomorphic-fetch": "^3.0.0",
     "iterare": "^1.2.1",
