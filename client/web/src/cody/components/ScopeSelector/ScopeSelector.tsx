@@ -29,6 +29,7 @@ export interface ScopeSelectorProps {
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
     authenticatedUser: AuthenticatedUser | null
+    isFileIgnored: (path: string) => boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -42,6 +43,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     renderHint,
     encourageOverlap,
     authenticatedUser,
+    isFileIgnored,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -51,6 +53,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const reposStatusData = newReposStatusData || previousReposStatusData
 
     const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+
+    const isCurrentFileIgnored = activeEditor?.filePath ? isFileIgnored(activeEditor.filePath) : false
+    const inferredFilePath = (!isCurrentFileIgnored && activeEditor?.filePath) || null
+    useEffect(() => {
+        if (isCurrentFileIgnored && scope.includeInferredFile) {
+            setScope({ ...scope, includeInferredFile: false, includeInferredRepository: true })
+        }
+    }, [isCurrentFileIgnored, scope, setScope])
 
     useEffect(() => {
         const repoNames = [...scope.repositories]
@@ -122,7 +132,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         includeInferredRepository={scope.includeInferredRepository}
                         includeInferredFile={scope.includeInferredFile}
                         inferredRepository={inferredRepository}
-                        inferredFilePath={activeEditor?.filePath || null}
+                        inferredFilePath={inferredFilePath}
                         additionalRepositories={additionalRepositories}
                         addRepository={addRepository}
                         resetScope={resetScope}
@@ -133,9 +143,10 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         transcriptHistory={transcriptHistory}
                         authenticatedUser={authenticatedUser}
                     />
-                    {scope.includeInferredFile && activeEditor?.filePath && (
+
+                    {scope.includeInferredFile && inferredFilePath && (
                         <Text size="small" className="ml-2 mb-0 align-self-center">
-                            {getFileName(activeEditor.filePath)}
+                            {getFileName(inferredFilePath)}
                         </Text>
                     )}
                 </div>

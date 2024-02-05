@@ -11,6 +11,7 @@ import {
     MetaSelectorKind,
     type MetaPredicate,
 } from './decoratedToken'
+import { Pattern } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {
@@ -238,11 +239,20 @@ const toPredicateHover = (token: MetaPredicate): string => {
     return ''
 }
 
+const toPatternHover = (token: Pattern): string => {
+    let value = token.value
+    if (token.delimited && token.delimiter) {
+        // Replace escaped delimiters with the delimiter itself.
+        value = value.replaceAll(new RegExp(`\\\\${token.delimiter}`, 'g'), token.delimiter)
+    }
+    const quantity = value.length > 1 ? 'string' : 'character'
+    return `Matches the ${quantity} \`${value}\`.`
+}
+
 export const toHover = (token: DecoratedToken): string => {
     switch (token.type) {
         case 'pattern': {
-            const quantity = token.value.length > 1 ? 'string' : 'character'
-            return `Matches the ${quantity} \`${token.value}\`.`
+            return toPatternHover(token)
         }
         case 'metaRegexp': {
             return toRegexpHover(token)

@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Expiry to access tokens. Users can now select a maximum timespan for which a token is valid. Tokens will automatically lose access after this period. Default timeframes and an override to allow access tokens without expiration can be configured in the `auth.accessTokens` section of the site configuration. [#59565](https://github.com/sourcegraph/sourcegraph/pull/59565)
 - Gerrit code host connections now support an 'exclude' field that prevents repos in this list from being synced. [#59739](https://github.com/sourcegraph/sourcegraph/pull/59739)
 - Limit the number of active access tokens for a user. By default users are able to have 25 active access tokens. This limit can be configured using the `maxTokensPerUser` setting in the `auth.accessTokens` section of the site configuration. [#59731](https://github.com/sourcegraph/sourcegraph/pull/59731)
+- Add experimental support for .cody/ignore when retrieving remote context. To enable it, set `experimentalFeatures.codyContextIgnore: true` in the site configuration. [#59836](https://github.com/sourcegraph/sourcegraph/pull/59836), [#59907](https://github.com/sourcegraph/sourcegraph/pull/59907)
 
 ### Changed
 
@@ -41,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Structural Search is now disabled by default. To enable it, set `experimentalFeatures.structuralSearch: "enabled"` in the site configuration. [#57584](https://github.com/sourcegraph/sourcegraph/pull/57584)
 - Search Jobs switches the format of downloaded results from CSV to JSON. [#59619](https://github.com/sourcegraph/sourcegraph/pull/59619)
 - [Search Jobs](https://docs.sourcegraph.com/code_search/how-to/search-jobs) is now in beta and enabled by default. It can be disabled in the site configuration by setting `experimentalFeatures.searchJobs: false`.
+- The search input on the search homepage is now automatically focused when the page loads.
 
 ### Fixed
 
@@ -52,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Long lines now wrap correctly in the diff view. [#58138](https://github.com/sourcegraph/sourcegraph/pull/58138)
 - Fixed an issue in the search input where pressing Enter after selecting a suggestion would sometimes insert another suggestions instead of submitting the query. [#58186](https://github.com/sourcegraph/sourcegraph/pull/58186)
 - Fixed an issue where having sub-repo permissions enabled could cause repositories with a large number of files in directories to become unviewable. [#59420](https://github.com/sourcegraph/sourcegraph/pull/59420)
+- On the search context, code monitoring, code insights, saved searches or notebook pages, when selecting a repository or file suggestion in the query input with Enter the suggestion is now properly appended to the query instead of navigating away to the corresponding repository or file page. [#59941](https://github.com/sourcegraph/sourcegraph/pull/59941)
 
 ### Removed
 

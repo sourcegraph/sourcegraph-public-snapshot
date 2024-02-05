@@ -23,7 +23,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	logger.Info("Syntactic code intel worker running",
-		log.String("path to scip-treesitter CLI", config.CliPath),
+		log.String("path to scip-syntax CLI", config.CliPath),
 		log.String("API address", config.ListenAddress))
 
 	// Initialize health server

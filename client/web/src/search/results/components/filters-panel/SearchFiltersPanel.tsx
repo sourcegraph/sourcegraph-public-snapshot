@@ -5,6 +5,7 @@ import create from 'zustand'
 import { NewSearchFilters, useUrlFilters } from '@sourcegraph/branded'
 import { DeleteIcon } from '@sourcegraph/branded/src/search-ui/results/filters/components/Icons'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Button, Icon, Modal, Panel, useWindowSize } from '@sourcegraph/wildcard'
 
 import styles from './SearchFiltersPanel.module.scss'
@@ -19,10 +20,11 @@ export const useSearchFiltersStore = create<SearchFiltersStore>(set => ({
     setFiltersPanel: (open: boolean) => set({ isOpen: open }),
 }))
 
-export interface SearchFiltersPanelProps {
+export interface SearchFiltersPanelProps extends TelemetryProps {
     query: string
     filters: Filter[] | undefined
     withCountAllFilter: boolean
+    isFilterLoadingComplete: boolean
     className?: string
     onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
 }
@@ -36,7 +38,8 @@ export interface SearchFiltersPanelProps {
  * as it is, use consumer agnostic NewSearchFilters component instead.
  */
 export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
-    const { query, filters, withCountAllFilter, className, onQueryChange } = props
+    const { query, filters, withCountAllFilter, isFilterLoadingComplete, className, onQueryChange, telemetryService } =
+        props
 
     const { isOpen, setFiltersPanel } = useSearchFiltersStore()
     const uiMode = useSearchFiltersPanelUIMode()
@@ -55,7 +58,9 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                     query={query}
                     filters={filters}
                     withCountAllFilter={withCountAllFilter}
+                    isFilterLoadingComplete={isFilterLoadingComplete}
                     onQueryChange={onQueryChange}
+                    telemetryService={telemetryService}
                 />
             </Panel>
         )
@@ -72,7 +77,9 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
                 query={query}
                 filters={filters}
                 withCountAllFilter={withCountAllFilter}
+                isFilterLoadingComplete={isFilterLoadingComplete}
                 onQueryChange={onQueryChange}
+                telemetryService={telemetryService}
             >
                 <Button variant="secondary" outline={true} onClick={() => setFiltersPanel(false)}>
                     <Icon as={DeleteIcon} width={14} height={14} aria-hidden={true} className={styles.closeIcon} />{' '}

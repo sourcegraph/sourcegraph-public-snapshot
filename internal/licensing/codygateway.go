@@ -1,7 +1,7 @@
 package licensing
 
 import (
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.

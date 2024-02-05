@@ -61,6 +61,5 @@ go_test(
         "//internal/workerutil/dbworker/store",
         "//lib/codeintel/precise",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )

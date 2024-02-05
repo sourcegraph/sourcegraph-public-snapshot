@@ -2,13 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"

@@ -97,8 +97,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 name: name.trim(),
                 url: originURL,
                 hook_attributes: webhookURL ? { url: webhookURL } : undefined,
-                redirect_url: new URL('/.auth/githubapp/redirect', originURL).href,
-                setup_url: new URL('/.auth/githubapp/setup', originURL).href,
+                redirect_url: new URL('/githubapp/redirect', originURL).href,
+                setup_url: new URL('/githubapp/setup', originURL).href,
                 callback_urls: [new URL('/.auth/github/callback', originURL).href],
                 setup_on_update: true,
                 public: isPublic,
@@ -139,7 +139,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         setError(undefined)
         try {
             const response = await fetch(
-                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}`
+                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}`
             )
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {

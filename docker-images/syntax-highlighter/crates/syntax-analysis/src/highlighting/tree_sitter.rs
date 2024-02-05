@@ -1,130 +1,277 @@
-use anyhow::Result;
-use protobuf::Message;
-use rocket::serde::json::{serde_json::json, Value as JsonValue};
+use paste::paste;
 use scip::types::{Document, Occurrence, SyntaxKind};
-use crate::range::PackedRange;
-use tree_sitter_all_languages::highlights::{
-    get_highlighting_configuration, get_syntax_kind_for_hl,
-};
+use std::collections::HashMap;
+use tree_sitter_all_languages::ParserId;
 use tree_sitter_highlight::{
-    Error, Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
+    Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
 };
 
-use crate::highlighting::SourcegraphQuery;
+use crate::range::Range;
 
-// Handle special cases where syntect language names don't match treesitter names.
-pub fn treesitter_language(syntect_language: &str) -> &str {
-    match syntect_language {
-        "c++" => "cpp",
-        _ => syntect_language,
-    }
+macro_rules! include_scip_query {
+    ($lang: expr, $query: literal) => {
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/queries/",
+            $lang,
+            "/",
+            $query,
+            ".scm"
+        ))
+    };
 }
+use crate::highlighting::TreeSitterLanguageName;
+pub(crate) use include_scip_query;
 
-pub fn jsonify_err(e: impl ToString) -> JsonValue {
-    json!({"error": e.to_string()})
-}
+#[rustfmt::skip]
+// This table serves two purposes.
+//
+// 1. It serves as the list of all captures that we
+//    recognize in highlighting queries specified in
+//    highlights.scm files. The list of captures is
+//    the union across all languages.
+// 2. It describes the capture -> syntax kind mapping.
+//
+// Client-side code will convert the syntax kinds into actual colors.
+const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
+    ("boolean",                 SyntaxKind::BooleanLiteral),
+    ("character",               SyntaxKind::CharacterLiteral),
+    ("comment",                 SyntaxKind::Comment),
+    ("conditional",             SyntaxKind::IdentifierKeyword),
+    ("constant",                SyntaxKind::IdentifierConstant),
+    ("identifier.constant",     SyntaxKind::IdentifierConstant),
+    ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("constant.null",           SyntaxKind::IdentifierNull),
+    ("float",                   SyntaxKind::NumericLiteral),
+    ("function",                SyntaxKind::IdentifierFunction),
+    ("method",                  SyntaxKind::IdentifierFunction),
+    ("identifier.function",     SyntaxKind::IdentifierFunction),
+    ("function.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
+    ("identifier",              SyntaxKind::Identifier),
+    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
+    ("tag.attribute",           SyntaxKind::TagAttribute),
+    ("include",                 SyntaxKind::IdentifierKeyword),
+    ("keyword",                 SyntaxKind::IdentifierKeyword),
+    ("keyword.function",        SyntaxKind::IdentifierKeyword),
+    ("keyword.return",          SyntaxKind::IdentifierKeyword),
+    ("number",                  SyntaxKind::NumericLiteral),
+    ("operator",                SyntaxKind::IdentifierOperator),
+    ("identifier.operator",     SyntaxKind::IdentifierOperator),
+    ("property",                SyntaxKind::Identifier),
+    ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
+    ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
+    ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
+    ("string",                  SyntaxKind::StringLiteral),
+    ("string.special",          SyntaxKind::StringLiteral),
+    ("string.escape",           SyntaxKind::StringLiteralEscape),
+    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
+    ("type",                    SyntaxKind::IdentifierType),
+    ("identifier.type",         SyntaxKind::IdentifierType),
+    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
+    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
+    ("regex.join",              SyntaxKind::RegexJoin),
+    ("regex.escape",            SyntaxKind::RegexEscape),
+    ("regex.repeated",          SyntaxKind::RegexRepeated),
+    ("regex.wildcard",          SyntaxKind::RegexWildcard),
+    ("identifier",              SyntaxKind::Identifier),
+    ("variable",                SyntaxKind::Identifier),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
+    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
+    ("variable.parameter",      SyntaxKind::IdentifierParameter),
+    ("identifier.module",       SyntaxKind::IdentifierModule),
+    ("variable.module",         SyntaxKind::IdentifierModule),
+];
 
-// TODO(cleanup_lsif): Remove this when we remove /lsif endpoint
-// Currently left unchanged
-pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
-    let filetype = q
-        .filetype
-        .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
-        .to_lowercase();
+/// Add a language highlight configuration to the CONFIGURATIONS global.
+///
+/// This makes it so you don't have to understand how configurations are added,
+/// just add the name of filetype that you want.
+macro_rules! create_configurations {
+    ( $(($name:tt,$dirname:literal)),* ) => {{
+        use tree_sitter_all_languages::ParserId;
 
-    match index_language(&filetype, &q.code, false) {
-        Ok(document) => {
-            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+        let mut m = HashMap::new();
+        let highlight_names = MATCHES_TO_SYNTAX_KINDS.iter().map(|hl| hl.0).collect::<Vec<&str>>();
 
-            Ok(json!({"data": base64::encode(encoded), "plaintext": false}))
+        $(
+            {
+                // Create HighlightConfiguration language
+                let mut lang = HighlightConfiguration::new(
+                    paste! { ParserId::$name.language() },
+                    include_scip_query!($dirname, "highlights"),
+                    include_scip_query!($dirname, "injections"),
+                    include_scip_query!($dirname, "locals"),
+                ).expect(stringify!("parser for '{}' must be compiled", $name));
+
+                // Associate highlights with configuration
+                lang.configure(&highlight_names);
+
+                // Insert into configurations, so we only create once at startup.
+                m.insert(ParserId::$name, lang);
+            }
+        )*
+
+        {
+            let highlights = vec![
+                include_scip_query!("typescript", "highlights"),
+                include_scip_query!("javascript", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Typescript.language(),
+                &highlights.join("\n"),
+                include_scip_query!("typescript", "injections"),
+                include_scip_query!("typescript", "locals"),
+            ).expect("parser for 'typescript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Typescript, lang);
         }
-        Err(Error::InvalidLanguage) => Err(json!({
-            "error": format!("{} is not a valid filetype for treesitter", filetype)
-        })),
-        Err(err) => Err(jsonify_err(err)),
-    }
-}
-
-pub fn index_language(filetype: &str, code: &str, include_locals: bool) -> Result<Document, Error> {
-    match get_highlighting_configuration(filetype) {
-        Some(lang_config) => {
-            index_language_with_config(filetype, code, lang_config, include_locals)
+        {
+            let highlights = vec![
+                include_scip_query!("tsx", "highlights"),
+                include_scip_query!("typescript", "highlights"),
+                include_scip_query!("javascript", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Tsx.language(),
+                &highlights.join("\n"),
+                include_scip_query!("tsx", "injections"),
+                include_scip_query!("tsx", "locals"),
+            ).expect("parser for 'tsx' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Tsx, lang);
         }
-        None => Err(Error::InvalidLanguage),
-    }
+
+        m
+    }}
 }
 
-pub fn index_language_with_config(
-    filetype: &str,
-    code: &str,
-    lang_config: &HighlightConfiguration,
-    include_locals: bool,
-) -> Result<Document, Error> {
-    // Normalize string to be always only \n endings.
-    //  We don't care that the byte offsets are "incorrect" now for this
-    //  because we are using a line,col based approach
-    let code = code.replace("\r\n", "\n");
+lazy_static::lazy_static! {
+    pub static ref CONFIGURATIONS: HashMap<ParserId, HighlightConfiguration> = {
+        create_configurations!(
+            (C, "c"),
+            (Cpp, "cpp"),
+            (C_Sharp, "c_sharp"),
+            (Go, "go"),
+            (Java, "java"),
+            (Javascript, "javascript"),
+            (Jsonnet, "jsonnet"),
+            (Kotlin, "kotlin"),
+            (Matlab, "matlab"),
+            (Nickel, "nickel"),
+            (Perl, "perl"),
+            (Pod, "pod"),
+            (Python, "python"),
+            (Ruby, "ruby"),
+            (Rust, "rust"),
+            (Scala, "scala"),
+            (Sql, "sql"),
+            // Skipping TypeScript and TSX here as they're handled
+            // specially inside the macro implementation.
+            (Xlsg, "xlsg"),
+            (Zig, "zig")
+        )
+    };
+}
 
-    // TODO: We should automatically apply no highlights when we are
-    // in an injected piece of code.
-    //
-    // Unfortunately, that information isn't currently available when
-    // we are iterating in the higlighter.
-    let mut highlighter = TSHighlighter::new();
-    let highlights = highlighter.highlight(lang_config, code.as_bytes(), None, |l| {
-        get_highlighting_configuration(l)
-    })?;
+fn get_syntax_kind_for_hl(hl: Highlight) -> SyntaxKind {
+    MATCHES_TO_SYNTAX_KINDS[hl.0].1
+}
 
-    let mut emitter = ScipEmitter::new();
-    let mut doc = emitter.render(highlights, &code, &get_syntax_kind_for_hl)?;
-    doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
+impl TreeSitterLanguageName {
+    pub fn highlight_document(
+        &self,
+        code: &str,
+        include_locals: bool,
+    ) -> Result<Document, tree_sitter_highlight::Error> {
+        match self.highlighting_configuration() {
+            Some(lang_config) => {
+                self.highlight_document_with_config(code, include_locals, lang_config)
+            }
+            None => Err(tree_sitter_highlight::Error::InvalidLanguage),
+        }
+    }
 
-    if include_locals {
-        let parser = tree_sitter_all_languages::parsers::BundledParser::get_parser(filetype);
-        if let Some(parser) = parser {
-            // TODO: Could probably write this in a much better way.
-            let mut local_occs =
-                crate::get_locals(parser, code.as_bytes()).unwrap_or_default();
+    fn parser_id(&self) -> Option<ParserId> {
+        ParserId::from_name(&self.raw)
+    }
 
-            // Get ranges in reverse order, because we're going to pop off the back of the list.
-            //  (that's why we're sorting the opposite way of the document occurrences above).
-            local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
+    fn highlighting_configuration(&self) -> Option<&'static HighlightConfiguration> {
+        CONFIGURATIONS.get(&self.parser_id()?)
+    }
 
-            let mut next_doc_idx = 0;
-            while let Some(local) = local_occs.pop() {
-                // We *should* be able to assume that all these ranges are valid ranges
-                // but for now we'll skip if they aren't.
-                //
-                // We can add some observability stuff to this later, and/or make
-                // certain builds fail or something to test this out better (but
-                // not have syntax highlighting completely fall apart from one
-                // bad range)
-                let local_range = match PackedRange::from_vec(&local.range) {
-                    Some(range) => range,
-                    None => continue,
-                };
+    pub fn highlight_document_with_config(
+        &self,
+        code: &str,
+        include_locals: bool,
+        lang_config: &HighlightConfiguration,
+    ) -> Result<Document, tree_sitter_highlight::Error> {
+        // Normalize string to be always only \n endings.
+        //  We don't care that the byte offsets are "incorrect" now for this
+        //  because we are using a line,col based approach
+        let code = code.replace("\r\n", "\n");
 
-                let (matching_idx, matching_occ) = match doc
-                    .occurrences
-                    .iter_mut()
-                    .enumerate()
-                    .skip(next_doc_idx)
-                    .find(|(_, occ)| local_range.eq_vec(&occ.range))
-                {
-                    Some(found) => found,
-                    None => continue,
-                };
+        // TODO: We should automatically apply no highlights when we are
+        // in an injected piece of code.
+        //
+        // Unfortunately, that information isn't currently available when
+        // we are iterating in the higlighter.
+        let mut highlighter = TSHighlighter::new();
+        let highlights = highlighter.highlight(lang_config, code.as_bytes(), None, |l| {
+            TreeSitterLanguageName::new(l).highlighting_configuration()
+        })?;
 
-                next_doc_idx = matching_idx;
+        let mut emitter = ScipEmitter::new();
+        let mut doc = emitter.render(highlights, &code)?;
+        doc.occurrences.sort_by_key(|a| (a.range[0], a.range[1]));
 
-                // Update occurrence with new information from locals
-                matching_occ.symbol = local.symbol;
-                matching_occ.symbol_roles = local.symbol_roles;
+        if include_locals {
+            let parser = self.parser_id();
+            if let Some(parser) = parser {
+                // TODO: Could probably write this in a much better way.
+                let mut local_occs = crate::get_locals(parser, code.as_bytes()).unwrap_or_default();
+
+                // Get ranges in reverse order, because we're going to pop off the back of the list.
+                //  (that's why we're sorting the opposite way of the document occurrences above).
+                local_occs.sort_by_key(|a| (-a.range[0], -a.range[1]));
+
+                let mut next_doc_idx = 0;
+                while let Some(local) = local_occs.pop() {
+                    // We *should* be able to assume that all these ranges are valid ranges
+                    // but for now we'll skip if they aren't.
+                    //
+                    // We can add some observability stuff to this later, and/or make
+                    // certain builds fail or something to test this out better (but
+                    // not have syntax highlighting completely fall apart from one
+                    // bad range)
+                    let local_range = match Range::from_vec(&local.range) {
+                        Some(range) => range,
+                        None => continue,
+                    };
+
+                    let (matching_idx, matching_occ) = match doc
+                        .occurrences
+                        .iter_mut()
+                        .enumerate()
+                        .skip(next_doc_idx)
+                        .find(|(_, occ)| local_range.eq_vec(&occ.range))
+                    {
+                        Some(found) => found,
+                        None => continue,
+                    };
+
+                    next_doc_idx = matching_idx;
+
+                    // Update occurrence with new information from locals
+                    matching_occ.symbol = local.symbol;
+                    matching_occ.symbol_roles = local.symbol_roles;
+                }
             }
         }
-    }
 
-    Ok(doc)
+        Ok(doc)
+    }
 }
 
 struct OffsetManager {
@@ -133,12 +280,9 @@ struct OffsetManager {
 }
 
 impl OffsetManager {
-    fn new(s: &str) -> Result<Self, Error> {
-        if s.is_empty() {
-            // TODO: Make an error here
-            // Error(
-        }
-
+    // Pre-condition: Input string is non-empty
+    fn new(s: &str) -> Self {
+        debug_assert!(!s.is_empty());
         let source = s.to_string();
 
         let mut offsets = Vec::new();
@@ -152,7 +296,7 @@ impl OffsetManager {
             pos += line.len() + 1;
         }
 
-        Ok(Self { source, offsets })
+        Self { source, offsets }
     }
 
     fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
@@ -199,8 +343,7 @@ impl OffsetManager {
     }
 }
 
-/// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
-pub struct ScipEmitter {}
+pub(crate) struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
 ///
@@ -210,19 +353,17 @@ impl ScipEmitter {
         ScipEmitter {}
     }
 
-    pub fn render<F>(
+    pub fn render(
         &mut self,
-        highlighter: impl Iterator<Item = Result<HighlightEvent, Error>>,
+        highlighter: impl Iterator<Item = Result<HighlightEvent, tree_sitter_highlight::Error>>,
         source: &str,
-        _attribute_callback: &F,
-    ) -> Result<Document, Error>
-    where
-        F: Fn(Highlight) -> SyntaxKind,
-    {
+    ) -> Result<Document, tree_sitter_highlight::Error> {
         let mut doc = Document::new();
+        if source.is_empty() {
+            return Ok(doc);
+        }
 
-        let line_manager = OffsetManager::new(source)?;
-
+        let line_manager = OffsetManager::new(source);
         let mut highlights = vec![];
         for event in highlighter {
             match event? {
@@ -260,9 +401,9 @@ mod test {
         io::Read,
     };
 
-    use crate::snapshot::{self, dump_document_with_config};
     use super::*;
-    use crate::highlighting::determine_filetype;
+    use crate::highlighting::FileInfo;
+    use crate::snapshot::{self, dump_document_with_config};
 
     fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
         dump_document_with_config(
@@ -291,16 +432,16 @@ mod test {
     }
 
     #[test]
-    fn test_highlights_one_comment() -> Result<(), Error> {
+    fn test_highlights_one_comment() -> anyhow::Result<()> {
         let src = "// Hello World";
-        let document = index_language("go", src, false)?;
+        let document = TreeSitterLanguageName::new("go").highlight_document(src, false)?;
         insta::assert_snapshot!(snapshot_treesitter_syntax_kinds(&document, src));
 
         Ok(())
     }
 
     #[test]
-    fn test_highlights_a_sql_query_within_go() -> Result<(), Error> {
+    fn test_highlights_a_sql_query_within_go() -> anyhow::Result<()> {
         let src = r#"package main
 
 const MySqlQuery = `
@@ -308,16 +449,16 @@ SELECT * FROM my_table
 `
 "#;
 
-        let document = index_language("go", src, false)?;
+        let document = TreeSitterLanguageName::new("go").highlight_document(src, false)?;
         insta::assert_snapshot!(snapshot_treesitter_syntax_kinds(&document, src));
 
         Ok(())
     }
 
     #[test]
-    fn test_highlight_csharp_file() -> Result<(), Error> {
+    fn test_highlight_csharp_file() -> anyhow::Result<()> {
         let src = "using System;";
-        let document = index_language("c_sharp", src, false)?;
+        let document = TreeSitterLanguageName::new("c_sharp").highlight_document(src, false)?;
         insta::assert_snapshot!(snapshot_treesitter_syntax_kinds(&document, src));
 
         Ok(())
@@ -326,7 +467,11 @@ SELECT * FROM my_table
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
         let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
-        let input_dir = crate_root.join("src").join("highlighting").join("snapshots").join("files");
+        let input_dir = crate_root
+            .join("src")
+            .join("highlighting")
+            .join("snapshots")
+            .join("files");
         let dir = read_dir(&input_dir).unwrap();
 
         let mut failed_tests = vec![];
@@ -339,21 +484,14 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let filetype = &determine_filetype(&SourcegraphQuery {
-                extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
-                filepath: filepath.to_str().unwrap().to_string(),
-                filetype: None,
-                line_length_limit: None,
-                code: contents.clone(),
-            });
+            let language = &crate::highlighting::test::SYNTAX_SET
+                .with(|syntax_set| {
+                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
+                        .determine_language(syntax_set)
+                })
+                .unwrap();
 
-            let indexed = index_language(filetype, &contents, true);
-            if indexed.is_err() {
-                // assert failure
-                panic!("unknown filetype {:?}", filetype);
-            }
-            let document = indexed.unwrap();
-
+            let document = language.highlight_document(&contents, true).unwrap();
             // TODO: I'm not sure if there's a better way to run the snapshots without
             // panicing and then catching, but this will do for now.
             match std::panic::catch_unwind(|| {
@@ -398,20 +536,14 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let filetype = &determine_filetype(&SourcegraphQuery {
-                extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
-                filepath: filepath.to_str().unwrap().to_string(),
-                filetype: None,
-                line_length_limit: None,
-                code: contents.clone(),
-            });
+            let language = crate::highlighting::test::SYNTAX_SET
+                .with(|syntax_set| {
+                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
+                        .determine_language(syntax_set)
+                })
+                .unwrap();
 
-            let indexed = index_language(filetype, &contents, true);
-            if indexed.is_err() {
-                // assert failure
-                panic!("unknown filetype {:?}", filetype);
-            }
-            let document = indexed.unwrap();
+            let document = language.highlight_document(&contents, true).unwrap();
 
             // TODO: I'm not sure if there's a better way to run the snapshots without
             // panicing and then catching, but this will do for now.

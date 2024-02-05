@@ -2,8 +2,10 @@ package service
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -12,7 +14,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -237,8 +238,8 @@ func mockGitserver(repoMocks []repoMock) *gitserver.MockClient {
 				CommitID: api.CommitID(commit),
 			})
 		}
-		slices.SortFunc(refs, func(a, b gitdomain.Ref) bool {
-			return a.Name < b.Name
+		slices.SortFunc(refs, func(a, b gitdomain.Ref) int {
+			return cmp.Compare(a.Name, b.Name)
 		})
 		return refs, nil
 	})

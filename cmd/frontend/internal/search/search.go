@@ -4,6 +4,7 @@
 package search
 
 import (
+	"compress/gzip"
 	"context"
 	"net/http"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -41,20 +43,41 @@ import (
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db database.DB) http.Handler {
 	logger := log.Scoped("searchStreamHandler")
-	return &streamHandler{
+	return gzipMiddleware(&streamHandler{
 		logger:              logger,
 		db:                  db,
 		searchClient:        client.New(logger, db, gitserver.NewClient("http.search.stream")),
-		flushTickerInternal: 100 * time.Millisecond,
+		flushTickerInterval: 200 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+	})
+}
+
+func gzipMiddleware(h *streamHandler) http.Handler {
+	// Always compress response since we can have large responses which are
+	// plain text inside of JSON. Setting a minimum size of 0 ensures the gzip
+	// handler won't buffer and respect calls to http flush. Additionally the
+	// stdlib default gzip compressor is quite slow. In our testing
+	// gzip.BestSpeed provides good enough compression on our plain text
+	// responses with minimal CPU overhead.
+	m, err := gziphandler.GzipHandlerWithOpts(
+		gziphandler.MinSize(0),
+		gziphandler.CompressionLevel(gzip.BestSpeed),
+	)
+	if err != nil {
+		// This should never happen since we have hardcoded options which
+		// work. If we update gziphandler and it doesn't like our options then
+		// our unit tests will catch this.
+		panic("gziphandler fatal error on creation of middleware: " + err.Error())
 	}
+
+	return m(h)
 }
 
 type streamHandler struct {
 	logger              log.Logger
 	db                  database.DB
 	searchClient        client.SearchClient
-	flushTickerInternal time.Duration
+	flushTickerInterval time.Duration
 	pingTickerInterval  time.Duration
 }
 
@@ -163,7 +186,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 			h.db,
 			eventWriter,
 			progress,
-			h.flushTickerInternal,
+			h.flushTickerInterval,
 			h.pingTickerInterval,
 			displayFilter,
 			args.EnableChunkMatches,

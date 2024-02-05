@@ -12,6 +12,7 @@ import {
     type SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { QueryInputToggle } from './QueryInputToggle'
 
@@ -22,6 +23,7 @@ export interface TogglesProps
         SearchPatternTypeMutationProps,
         CaseSensitivityProps,
         SearchModeProps,
+        TelemetryProps,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
@@ -48,6 +50,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         className,
         submitSearch,
         structuralSearchDisabled,
+        telemetryService,
     } = props
 
     const submitOnToggle = useCallback(
@@ -73,7 +76,8 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
-    }, [patternType, setPatternType, submitOnToggle])
+        telemetryService.log('ToggleRegexpPatternType', { currentStatus: patternType === SearchPatternType.regexp })
+    }, [patternType, setPatternType, submitOnToggle, telemetryService])
 
     const toggleStructuralSearch = useCallback((): void => {
         const newPatternType: SearchPatternType =

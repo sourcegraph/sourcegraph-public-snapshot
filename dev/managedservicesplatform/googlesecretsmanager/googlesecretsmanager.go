@@ -39,7 +39,8 @@ const (
 	//
 	// The integration is configured in https://sourcegraph.sentry.io/settings/developer-settings/managed-services-platform-fbf7cc/
 	SecretSentryAuthToken = "TFC_MSP_SENTRY_INTEGRATION"
-
+	// SecretNobl9ClientSecret is used to provision Nobl9 projects
+	SecretNobl9ClientSecret = "MSP_NOBL9_CLIENT_SECRET"
 	// SecretSourcegraphWildcardKey and SecretSourcegraphWildcardCert are used
 	// for configuring Cloudflare TLS.
 	SecretSourcegraphWildcardKey  = "SOURCEGRAPH_WILDCARD_KEY"

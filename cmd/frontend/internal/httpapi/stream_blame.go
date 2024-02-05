@@ -5,6 +5,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -62,8 +63,8 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 		})
 		if err != nil {
 			tr.SetError(err)
-			if errcode.IsUnauthorized(err) {
-				http.Error(w, err.Error(), http.StatusForbidden)
+			if os.IsNotExist(err) {
+				http.Error(w, err.Error(), http.StatusNotFound)
 				return
 			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)

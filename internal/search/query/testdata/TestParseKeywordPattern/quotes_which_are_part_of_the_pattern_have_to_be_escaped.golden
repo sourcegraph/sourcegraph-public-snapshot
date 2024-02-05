@@ -3,7 +3,9 @@
     "value": "\\\"veneto\\\"",
     "negated": false,
     "labels": [
-      "Literal"
+      "Literal",
+      "QuotesAsLiterals",
+      "Standard"
     ],
     "range": {
       "start": {

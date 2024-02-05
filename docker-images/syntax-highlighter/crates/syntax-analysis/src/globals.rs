@@ -1,4 +1,4 @@
-use crate::range::PackedRange;
+use crate::range::Range;
 use anyhow::Result;
 use bitvec::prelude::*;
 use protobuf::Enum;
@@ -8,8 +8,8 @@ use crate::languages::TagConfiguration;
 
 #[derive(Debug)]
 pub struct Scope {
-    pub ident_range: PackedRange,
-    pub scope_range: PackedRange,
+    pub ident_range: Range,
+    pub scope_range: Range,
     pub globals: Vec<Global>,
     pub children: Vec<Scope>,
     pub descriptors: Vec<Descriptor>,
@@ -18,8 +18,8 @@ pub struct Scope {
 
 #[derive(Debug)]
 pub struct Global {
-    pub range: PackedRange,
-    pub enclosing: Option<PackedRange>,
+    pub range: Range,
+    pub enclosing: Option<Range>,
     pub descriptors: Vec<Descriptor>,
     pub kind: symbol_information::Kind,
 }
@@ -314,7 +314,7 @@ pub fn parse_tree<'a>(
 pub mod test {
     use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
     use scip::types::Document;
-    use tree_sitter_all_languages::parsers::BundledParser;
+    use tree_sitter_all_languages::ParserId;
 
     use super::*;
 
@@ -329,8 +329,7 @@ pub mod test {
 
     #[test]
     fn test_enclosing_range() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(BundledParser::Go).expect("to have parser");
+        let config = crate::languages::get_tag_configuration(ParserId::Go).expect("to have parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 

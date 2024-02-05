@@ -8,7 +8,7 @@ we are building and loading grammars and sync them all on the same tree-sitter v
 ## Adding a language
 
 - Add the tree-sitter grammar as a dependency
-- Add a new entry in the `BundledParser`
+- Add a new entry in the `ParserId`
 - Fix associated type errors (since there are a few match statements using the enum).
 - Add `highlights.scm`, `locals.scm`, and `injections.scm` to the queries folder.
 - Enable the highlights in `src/highlight.rs`

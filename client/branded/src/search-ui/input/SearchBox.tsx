@@ -13,7 +13,6 @@ import {
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -59,6 +58,7 @@ export interface SearchBoxProps
     showSearchHistory?: boolean
 
     recentSearches?: RecentSearch[]
+    showKeywordSearchToggle?: boolean
 }
 
 export const SearchBox: FC<SearchBoxProps> = props => {
@@ -118,8 +118,6 @@ export const SearchBox: FC<SearchBoxProps> = props => {
             return search
         })
     }, [recentSearches, selectedSearchContextSpec])
-
-    const showKeywordSearchToggle = useExperimentalFeatures(features => features.keywordSearch)
 
     return (
         <div
@@ -188,8 +186,9 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
+                        enableJumpToSuggestion={true}
                     />
-                    {showKeywordSearchToggle ? (
+                    {props.showKeywordSearchToggle ? (
                         <Toggles
                             patternType={props.patternType}
                             setPatternType={props.setPatternType}
@@ -201,6 +200,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                             navbarSearchQuery={queryState.query}
                             className={styles.searchBoxToggles}
                             structuralSearchDisabled={props.structuralSearchDisabled}
+                            telemetryService={props.telemetryService}
                         />
                     ) : (
                         <LegacyToggles

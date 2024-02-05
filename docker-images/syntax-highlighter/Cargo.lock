@@ -1887,7 +1887,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "scip-treesitter-cli"
+name = "scip-syntax"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2090,11 +2090,12 @@ dependencies = [
  "if_chain",
  "insta",
  "itertools 0.10.5",
+ "lazy_static",
  "once_cell",
+ "paste",
  "pretty_assertions",
  "protobuf",
  "regex",
- "rocket",
  "rustc-hash",
  "scip",
  "serde",
@@ -2132,6 +2133,7 @@ dependencies = [
 name = "syntect_server"
 version = "1.0.1"
 dependencies = [
+ "anyhow",
  "base64 0.13.1",
  "clap 4.3.23",
  "criterion",
@@ -2148,6 +2150,7 @@ dependencies = [
  "syntax-analysis",
  "syntect",
  "tree-sitter-all-languages",
+ "tree-sitter-highlight",
 ]
 
 [[package]]
@@ -2420,15 +2423,11 @@ dependencies = [
 name = "tree-sitter-all-languages"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
- "paste",
- "scip",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-c-sharp",
  "tree-sitter-cpp",
  "tree-sitter-go",
- "tree-sitter-highlight",
  "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",

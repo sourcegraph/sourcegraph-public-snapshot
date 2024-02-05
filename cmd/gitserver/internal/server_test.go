@@ -86,7 +86,7 @@ func TestExecRequest(t *testing.T) {
 			},
 			ExpectedCode:  codes.NotFound,
 			ExpectedError: "repo not found",
-			ExpectedDetails: []any{&v1.NotFoundPayload{
+			ExpectedDetails: []any{&v1.RepoNotFoundPayload{
 				Repo:            "github.com/gorilla/doesnotexist",
 				CloneInProgress: false,
 			}},
@@ -99,7 +99,7 @@ func TestExecRequest(t *testing.T) {
 			},
 			ExpectedCode:  codes.NotFound,
 			ExpectedError: "repo not found",
-			ExpectedDetails: []any{&v1.NotFoundPayload{
+			ExpectedDetails: []any{&v1.RepoNotFoundPayload{
 				Repo:            "github.com/nicksnyder/go-i18n",
 				CloneInProgress: true,
 			}},
@@ -232,7 +232,7 @@ func TestExecRequest(t *testing.T) {
 				require.Equal(t, test.ExpectedCode, s.Code(), "wrong error code: expected %v, got %v %v", test.ExpectedCode, s.Code(), err)
 
 				if len(test.ExpectedDetails) > 0 {
-					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.NotFoundPayload{})); diff != "" {
+					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.RepoNotFoundPayload{})); diff != "" {
 						t.Fatalf("unexpected error details (-want +got):\n%s", diff)
 					}
 				}
@@ -322,7 +322,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ctx:                     ctx,
 		Locker:                  NewRepositoryLocker(),
 		cloneLimiter:            limiter.NewMutable(1),
-		cloneableLimiter:        limiter.NewMutable(1),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),

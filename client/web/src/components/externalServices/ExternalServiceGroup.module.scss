@@ -35,9 +35,7 @@
         &:not(:last-child) {
             border-bottom: 1px solid var(--border-color-2);
         }
-    }
 
-    &__enabled-node {
         &:hover {
             background-color: var(--color-bg-2);
         }
