@@ -30,14 +30,18 @@ export function viewerSubjectFromSettings(
     return siteSubjectNoAdmin()
 }
 
+function isKeywordSearchEnabled(settingsCascade: SettingsCascadeOrError): boolean {
+    const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
+    return features?.keywordSearch !== false
+}
+
 /**
  * Returns the user-configured default search mode or undefined if not
  * configured by the user.
  */
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
     // When the 'keyword search' language update is enabled, make sure to disable smart search
-    const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
-    if (features?.keywordSearch) {
+    if (isKeywordSearchEnabled(settingsCascade)) {
         return SearchMode.Precise
     }
 
@@ -58,8 +62,7 @@ export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOr
  */
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
     // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype
-    const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
-    if (features?.keywordSearch) {
+    if (isKeywordSearchEnabled(settingsCascade)) {
         return SearchPatternType.keyword
     }
 
