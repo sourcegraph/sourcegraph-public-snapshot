@@ -6,10 +6,11 @@ package hostmatcher
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"syscall"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewDialContext returns a DialContext for Transport, the DialContext will do allow/block list check
@@ -35,18 +36,18 @@ func NewDialContext(usage string, allowList, blockList *HostMatchList) func(ctx 
 				// in Control func, the addr was already resolved to IP:PORT format, there is no cost to do ResolveTCPAddr here
 				tcpAddr, err := net.ResolveTCPAddr(network, ipAddr)
 				if err != nil {
-					return fmt.Errorf("%s can only call HTTP servers via TCP, deny '%s(%s:%s)', err=%w", usage, host, network, ipAddr, err)
+					return errors.Newf("%s can only call HTTP servers via TCP, deny '%s(%s:%s)', err=%w", usage, host, network, ipAddr, err)
 				}
 
 				var blockedError error
 				if blockList.MatchHostOrIP(host, tcpAddr.IP) {
-					blockedError = fmt.Errorf("%s can not call blocked HTTP servers (check your %s setting), deny '%s(%s)'", usage, blockList.SettingKeyHint, host, ipAddr)
+					blockedError = errors.Newf("%s can not call blocked HTTP servers (check your %s setting), deny '%s(%s)'", usage, blockList.SettingKeyHint, host, ipAddr)
 				}
 
 				// if we have an allow-list, check the allow-list first
 				if !allowList.IsEmpty() {
 					if !allowList.MatchHostOrIP(host, tcpAddr.IP) {
-						return fmt.Errorf("%s can only call allowed HTTP servers (check your %s setting), deny '%s(%s)'", usage, allowList.SettingKeyHint, host, ipAddr)
+						return errors.Newf("%s can only call allowed HTTP servers (check your %s setting), deny '%s(%s)'", usage, allowList.SettingKeyHint, host, ipAddr)
 					}
 				}
 				// otherwise, we always follow the blocked list
