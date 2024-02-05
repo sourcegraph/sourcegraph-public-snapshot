@@ -1887,7 +1887,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "scip-treesitter-cli"
+name = "scip-syntax"
 version = "0.1.0"
 dependencies = [
  "anyhow",
