@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import classNames from 'classnames'
 
-import { Badge, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Tooltip, Code } from '@sourcegraph/wildcard'
 
 import styles from './DynamicFilterBadge.module.scss'
 
@@ -10,7 +10,7 @@ export const DynamicFilterBadge: FC<{ exhaustive: boolean; count: number }> = ({
     const tooltipContent = exhaustive ? null : (
         <>
             This is an approximate count of the results returned because you hit a limit. Try increasing the limit using
-            the <code>count:</code> filter in the search query, or select <code>count:all</code> from the filter list.
+            the <Code>count:</Code> filter in the search query, or select <Code>count:all</Code> from the filter list.
         </>
     )
 
