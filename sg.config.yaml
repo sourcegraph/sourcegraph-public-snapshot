@@ -1246,8 +1246,12 @@ commandsets:
       - git
     commands:
       - frontend
+      - web
       - worker
       - blobstore
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
       - syntactic-code-intel-worker-0
       - syntactic-code-intel-worker-1
 
