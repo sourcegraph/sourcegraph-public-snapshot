@@ -271,8 +271,8 @@ go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
-    sum = "h1:0bLhH6DRAqox+g0LatcjGKjjhU6Eudyys6HB6DJVPj8=",
-    version = "v1.14.1",
+    sum = "h1:xLPZMyuZ4GuqRCIec/zWuIhRFPXh2UOJdLXBSi64ZWQ=",
+    version = "v1.14.5",
 )
 
 # Overrides the default provided protobuf dep from rules_go by a more
