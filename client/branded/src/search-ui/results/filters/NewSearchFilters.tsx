@@ -116,7 +116,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 )}
 
                 <SearchDynamicFilter
-                    title="By repositories"
+                    title="By repository"
                     filterKind={FilterKind.Repository}
                     filters={filters}
                     selectedFilters={selectedFilters}
