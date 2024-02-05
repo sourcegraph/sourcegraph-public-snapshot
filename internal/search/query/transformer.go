@@ -379,11 +379,7 @@ func space(patterns []Pattern) []Node {
 
 // and concatenates patterns with AND.
 func and(patterns []Node) []Node {
-	p := make([]Node, 0, len(patterns))
-	for _, pattern := range patterns {
-		p = append(p, pattern)
-	}
-	return NewOperator(p, And)
+	return NewOperator(patterns, And)
 }
 
 // substituteConcat returns a function that concatenates all contiguous patterns
