@@ -9,12 +9,13 @@ import styles from './DynamicFilterBadge.module.scss'
 export const DynamicFilterBadge: FC<{ exhaustive: boolean; count: number }> = ({ exhaustive, count }) => {
     const tooltipContent = exhaustive ? null : (
         <>
-            Result count is approximate because a limit was hit. Increase the limit with the <code>count:</code> filter.
+            This is an approximate count of the results returned because you hit a limit. Try increasing the limit using
+            the <code>count:</code> filter in the search query, or select <code>count:all</code> from the filter list.
         </>
     )
 
     return (
-        <Tooltip content={tooltipContent}>
+        <Tooltip content={tooltipContent} placement="right">
             <Badge ref={null} variant="secondary" className={classNames('ml-2', styles.countBadge)}>
                 {exhaustive ? count : `${roundCount(count)}+`}
             </Badge>
