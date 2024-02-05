@@ -4,7 +4,7 @@ Crates:
 
 - The main `syntect_server` executable
 - `crates/tree-sitter-all-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
-- `crates/scip-treesitter-cli/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
+- `crates/scip-syntax/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
 - `crates/syntax-analysis/`: local navigation calculation (and some other utilities) live here.
 
 # scip-ctags

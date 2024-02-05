@@ -1,5 +1,5 @@
 ---
-source: crates/scip-treesitter-cli/tests/integration_test.rs
+source: crates/scip-syntax/tests/integration_test.rs
 expression: "String::from_utf8(str).unwrap()"
 ---
 {"precision_percent":"100.0","recall_percent":"37.4","true_positives":"34.0","false_positives":"0.0","false_negatives":"57.0"}

@@ -38,7 +38,7 @@ func TestServeStream_empty(t *testing.T) {
 
 	ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 		logger:              logtest.Scoped(t),
-		flushTickerInternal: 1 * time.Millisecond,
+		flushTickerInterval: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
 	}))
@@ -134,7 +134,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 		logger:              logtest.Scoped(t),
 		db:                  db,
-		flushTickerInternal: 1 * time.Millisecond,
+		flushTickerInterval: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
 	}))
@@ -252,7 +252,7 @@ func TestDisplayLimit(t *testing.T) {
 			ts := httptest.NewServer(gzipMiddleware(&streamHandler{
 				logger:              logtest.Scoped(t),
 				db:                  db,
-				flushTickerInternal: 1 * time.Millisecond,
+				flushTickerInterval: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				searchClient:        mock,
 			}))

@@ -23,6 +23,7 @@ export const FiltersStore = () => (
         filters={[]}
         onQueryChange={() => {}}
         withCountAllFilter={false}
+        isFilterLoadingComplete={false}
         telemetryService={NOOP_TELEMETRY_SERVICE}
     />
 )

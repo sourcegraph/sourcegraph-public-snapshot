@@ -89,7 +89,7 @@ func TestGeneratedSearchJob(t *testing.T) {
 
 	autogold.Expect(autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
 	autogold.Expect(autogold.Raw("1 result")).Equal(t, autogold.Raw(test(1)))
-	autogold.Expect(autogold.Raw("2000+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+	autogold.Expect(autogold.Raw("10000+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
 func TestNewSmartSearchJob_ResultCount(t *testing.T) {

@@ -6,7 +6,7 @@ mkdir -p .bin
 
 # TODO: add similar task to zoekt alpine
 
-NAME="scip-treesitter"
+NAME="scip-syntax"
 TARGET="$PWD/.bin/${NAME}"
 
 if [ $# -ne 0 ]; then
@@ -23,12 +23,12 @@ function ctrl_c() {
 
 trap ctrl_c INT
 
-function build_scip_treesitter {
-  cd docker-images/syntax-highlighter/crates/scip-treesitter-cli
-  cargo build --bin scip-treesitter --target-dir target
-  cp ./target/release/scip-treesitter "$TARGET"
+function build_scip_syntax {
+  cd docker-images/syntax-highlighter/crates/scip-syntax
+  cargo build --bin scip-syntax --target-dir target
+  cp ./target/release/scip-syntax "$TARGET"
 }
 
-build_scip_treesitter
+build_scip_syntax
 
 popd >/dev/null

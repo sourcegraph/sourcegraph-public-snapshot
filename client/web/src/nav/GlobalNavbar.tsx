@@ -365,7 +365,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             </NavItem>
         )
 
-    const CodyLogoWrapper = (): JSX.Element => <CodyLogo withColor={true} />
+    const CodyLogoWrapper = (): JSX.Element => <CodyLogo withColor={routeMatch === `${PageRoutes.Cody}/*`} />
     const hideCodyDropdown = disableCodyFeatures || !props.authenticatedUser
     const codyNavigation = hideCodyDropdown ? (
         <NavItem icon={() => <CodyLogoWrapper />} key="cody">
