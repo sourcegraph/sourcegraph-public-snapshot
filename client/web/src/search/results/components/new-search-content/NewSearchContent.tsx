@@ -188,6 +188,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                     query={submittedURLQuery}
                     filters={results?.filters}
                     withCountAllFilter={isSearchLimitHit(results)}
+                    isFilterLoadingComplete={results?.state === 'complete'}
                     className={styles.newFilters}
                     onQueryChange={handleFilterPanelQueryChange}
                     telemetryService={telemetryService}

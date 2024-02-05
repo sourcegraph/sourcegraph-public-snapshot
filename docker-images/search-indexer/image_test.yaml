@@ -45,7 +45,7 @@ fileExistenceTests:
   gid: 101
   permissions: 'drwxr-xr-x'
 - name: 'jansson package'
-  path: 'usr/lib/libjansson.la'
+  path: 'usr/lib/libjansson.so.4'
   shouldExist: true
 
 metadataTest:

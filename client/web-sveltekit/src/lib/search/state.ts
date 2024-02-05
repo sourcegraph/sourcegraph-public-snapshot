@@ -3,7 +3,7 @@ import { writable, type Readable } from 'svelte/store'
 import { goto } from '$app/navigation'
 import { SearchPatternType } from '$lib/graphql-operations'
 import { buildSearchURLQuery, type Settings } from '$lib/shared'
-import { defaultSearchModeFromSettings } from '$lib/web'
+import { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '$lib/web'
 
 import { USE_CLIENT_CACHE_QUERY_PARAMETER } from './constants'
 
@@ -32,7 +32,7 @@ export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'sear
 
 export class QueryState {
     private defaultCaseSensitive = false
-    private defaultPatternType = SearchPatternType.standard
+    private defaultPatternType = SearchPatternType.keyword
     private defaultSearchMode = SearchMode.Precise
     private defaultQuery = ''
     private defaultSearchContext = 'global'
@@ -50,7 +50,7 @@ export class QueryState {
     public get patternType(): SearchPatternType {
         return (
             this.options.patternType ??
-            (this.settings?.['search.defaultPatternType'] as SearchPatternType) ??
+            (this.settings ? defaultPatternTypeFromSettings({ final: this.settings, subjects: [] }) : null) ??
             this.defaultPatternType
         )
     }

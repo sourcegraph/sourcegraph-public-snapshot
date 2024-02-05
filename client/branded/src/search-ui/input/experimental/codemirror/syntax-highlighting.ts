@@ -10,6 +10,7 @@ import { queryTokens } from '../../codemirror/parsedQuery'
 
 const filter = Decoration.mark({ class: 'sg-query-token sg-query-token-filter' })
 const pattern = Decoration.mark({ class: 'sg-query-token sg-query-token-pattern' })
+const keyword = Decoration.mark({ class: 'sg-query-token sg-query-token-keyword' })
 
 function getDecorationForToken(token: Token): Decoration | null {
     switch (token.type) {
@@ -18,6 +19,9 @@ function getDecorationForToken(token: Token): Decoration | null {
         }
         case 'pattern': {
             return pattern
+        }
+        case 'keyword': {
+            return keyword
         }
     }
     return null
@@ -33,19 +37,15 @@ export const filterDecoration = [
             // which is surprising to the user).
             padding: '1px 3px',
         },
+
         '.sg-query-token-pattern': {
-            backgroundColor: '#E6EBF295', // --gray-03 with transparency to make text selection visible
+            backgroundColor: 'var(--search-input-token-pattern)',
         },
         '.sg-query-token-filter': {
-            backgroundColor: '#CCEDFFa0', // --oc-blue-1 with transparency to make text selection visible
+            backgroundColor: 'var(--search-input-token-filter)',
         },
-
-        '.theme-dark & .sg-query-token-pattern': {
-            backgroundColor: '#5E6E8C80', // --gray-08 with transparency to make text selection visible
-        },
-
-        '.theme-dark & .sg-query-token-filter': {
-            backgroundColor: '#074884a0', // --oc-blue-9 with transparency to make text selection visible
+        '.sg-query-token-keyword': {
+            backgroundColor: 'var(--search-input-token-keyword)',
         },
     }),
     EditorView.decorations.compute([queryTokens, 'selection'], state => {

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"slices"
 	"testing"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -1067,6 +1067,9 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		input:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol -file:^README\.md `,
 		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"^README\\.md"}`),
 	}, {
+		input:  `repo:go-diff type:symbol`,
+		output: autogold.Expect(`{"RegexpPattern":"","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":""}`),
+	}, {
 		input:   `type:symbol NOT option`,
 		output:  autogold.Expect("null"),
 		wantErr: true,
@@ -1079,14 +1082,12 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		}
 
 		b := plan[0]
-		var pattern query.Pattern
+		var pattern *query.Pattern
 		if p, ok := b.Pattern.(query.Pattern); ok {
-			pattern = p
-		} else {
-			t.Fatal(err)
+			pattern = &p
 		}
 
-		f := query.Flat{Parameters: b.Parameters, Pattern: &pattern}
+		f := query.Flat{Parameters: b.Parameters, Pattern: pattern}
 		return toSymbolSearchRequest(f)
 	}
 
@@ -1400,7 +1401,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	for i, match := range matches {
 		matchKeys[i] = match.Key()
 	}
-	slices.SortFunc(matchKeys, result.Key.Less)
+	slices.SortFunc(matchKeys, result.Key.Compare)
 
 	wantResultKeys := []result.Key{
 		{Repo: "foo", Commit: "branch3", Path: "main.go"},

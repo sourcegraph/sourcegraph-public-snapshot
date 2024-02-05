@@ -273,7 +273,7 @@ export interface Filter {
     label: string
     count: number
     exhaustive: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type'
+    kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'

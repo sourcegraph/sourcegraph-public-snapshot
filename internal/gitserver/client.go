@@ -14,7 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/conc/pool"
@@ -661,92 +660,23 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	}
 	r := streamio.NewReader(func() ([]byte, error) {
 		msg, err := stream.Recv()
-		if status.Code(err) == codes.Canceled {
-			return nil, context.Canceled
-		} else if err != nil {
+		if err != nil {
 			return nil, err
 		}
 		return msg.GetData(), nil
 	})
 
-	return &readCloseWrapper{r: r, closeFn: done}, nil
+	return &readCloseWrapper{Reader: r, closeFn: done}, nil
 }
 
 type readCloseWrapper struct {
-	r       io.Reader
+	io.Reader
 	closeFn func()
-}
-
-func (r *readCloseWrapper) Read(p []byte) (int, error) {
-	n, err := r.r.Read(p)
-	if err != nil {
-		err = convertGRPCErrorToGitDomainError(err)
-	}
-
-	return n, err
 }
 
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-// convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
-// If the error is not a GRPC error, it is returned as-is.
-func convertGRPCErrorToGitDomainError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		switch payload := detail.(type) {
-
-		case *proto.ExecStatusPayload:
-			return &CommandStatusError{
-				Message:    st.Message(),
-				Stderr:     payload.Stderr,
-				StatusCode: payload.StatusCode,
-			}
-
-		case *proto.RepoNotFoundPayload:
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(payload.Repo),
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			}
-		}
-	}
-
-	return err
-}
-
-type CommandStatusError struct {
-	Message    string
-	StatusCode int32
-	Stderr     string
-}
-
-func (c *CommandStatusError) Error() string {
-	stderr := c.Stderr
-	if len(stderr) > 100 {
-		stderr = stderr[:100] + "... (truncated)"
-	}
-	if c.Message != "" {
-		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
-	}
-	if c.StatusCode != 0 {
-		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
-	}
-	return stderr
 }
 
 func isRevisionNotFound(err string) bool {
@@ -776,14 +706,17 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	cs, err := client.Search(ctx, args.ToProto())
 	if err != nil {
-		return false, convertGitserverError(err)
+		return false, err
 	}
 
 	limitHit := false
 	for {
 		msg, err := cs.Recv()
 		if err != nil {
-			return limitHit, convertGitserverError(err)
+			if errors.Is(err, io.EOF) {
+				return limitHit, nil
+			}
+			return limitHit, err
 		}
 
 		switch m := msg.Message.(type) {
@@ -795,37 +728,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 			return false, errors.Newf("unknown message type %T", m)
 		}
 	}
-}
-
-func convertGitserverError(err error) error {
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		if notFound, ok := detail.(*proto.RepoNotFoundPayload); ok {
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(notFound.GetRepo()),
-				CloneProgress:   notFound.GetCloneProgress(),
-				CloneInProgress: notFound.GetCloneInProgress(),
-			}
-		}
-	}
-
-	return err
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{

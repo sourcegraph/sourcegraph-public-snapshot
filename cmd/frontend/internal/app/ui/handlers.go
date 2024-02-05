@@ -353,7 +353,7 @@ func serveHome(db database.DB) handlerFunc {
 		// except if the instance is on a Cody-Only license.
 		redirectURL := "/search"
 		features := common.Context.LicenseInfo.Features
-		if !features.CodeSearch && features.Cody {
+		if !features.CodeSearch && features.Cody && !envvar.SourcegraphDotComMode() {
 			redirectURL = "/cody"
 		}
 
