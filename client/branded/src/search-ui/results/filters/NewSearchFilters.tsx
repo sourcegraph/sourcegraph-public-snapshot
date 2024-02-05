@@ -7,7 +7,7 @@ import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, KbdBadge, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Icon, KbdBadge, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
