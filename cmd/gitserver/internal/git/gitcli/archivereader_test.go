@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -104,5 +105,17 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		tr := tar.NewReader(r)
 		contents := readFileContentsFromTar(t, tr, "dir1/file2")
 		require.Equal(t, "efgh\n", contents)
+	})
+
+	t.Run("non existent commit", func(t *testing.T) {
+		_, err := backend.ArchiveReader(ctx, "tar", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	t.Run("non existent file", func(t *testing.T) {
+		_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"no-file"})
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
 	})
 }
