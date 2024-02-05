@@ -136,7 +136,7 @@ export const ALL_PLANS: Plan[] = [
     },
     {
         name: 'Cody Only Enterprise',
-        label: 'cody-only-enterprise-0',
+        label: 'cody-enterprise-0',
         additionalTags: [TAG_TRIAL, TAG_AIR_GAPPED, TAG_DISABLE_TELEMETRY_EXPORT, TAG_TRUEUP, TAG_DEV, TAG_INTERNAL],
     },
     {
