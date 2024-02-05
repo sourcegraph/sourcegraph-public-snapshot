@@ -560,16 +560,14 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	defer cancel()
 
 	// Start frontend with candidate
-	check, cleanFrontend, err := startFrontend(fctx, test, "frontend", "candidate", networkName, false, dbs)
-	defer cleanFrontend()
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(fctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
+		cleanFrontend()
 		return test
 	}
-	// does check site-config / other thing
-	if err := check(); err != nil {
-		panic(err)
-	}
+	defer cleanFrontend()
 
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
@@ -584,9 +582,6 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 // multiversionUpgradeTest tests the migrator upgrade command,
 // initializing the three main dbs and conducting an upgrade to the release candidate version
 func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-	fctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "multiversion", initVersion)
 	if err != nil {
 		fmt.Println("🚨 failed to setup env: ", err)
@@ -635,16 +630,14 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	test.AddLog(out)
 
 	// Start frontend with candidate
-	check, cleanFrontend, err := startFrontend(fctx, test, "frontend", "candidate", networkName, false, dbs)
-	defer cleanFrontend()
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
+		cleanFrontend()
 		return test
 	}
-	// does check site-config / other thing
-	if err := check(); err != nil {
-		panic(err)
-	}
+	defer cleanFrontend()
 
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
@@ -665,7 +658,6 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 // Without this in place autoupgrade fails and exits while trying to make an oobmigration comparison here: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/cli/autoupgrade.go?L67-76
 // {"SeverityText":"WARN","Timestamp":1706721478276103721,"InstrumentationScope":"frontend","Caller":"cli/autoupgrade.go:73","Function":"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli.tryAutoUpgrade","Body":"unexpected string for desired instance schema version, skipping auto-upgrade","Resource":{"service.name":"frontend","service.version":"devVersion","service.instance.id":"487754e1c54a"},"Attributes":{"version":"devVersion"}}
 func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStableVersion *semver.Version) Test {
-
 	//start test env
 	test, networkName, dbs, cleanup, err := setupTestEnv(ctx, "auto", initVersion)
 	if err != nil {
@@ -689,16 +681,14 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	defer cancel()
 
 	// Start frontend with candidate
-	check, cleanFrontend, err := startFrontend(fctx, test, "frontend", "candidate", networkName, true, dbs)
-	defer cleanFrontend()
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(fctx, test, "frontend", "candidate", networkName, true, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
+		cleanFrontend()
 		return test
 	}
-
-	if err := check(); err != nil {
-		panic(err)
-	}
+	defer cleanFrontend()
 
 	test.AddLog("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
@@ -864,19 +854,13 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		}
 	}
 
-	fctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	//start frontend and poll db until initial version is set by frontend
-	check, cleanFrontend, err := startFrontend(fctx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
-	defer cleanFrontend()
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(ctx, test, "sourcegraph/frontend", initVersion.String(), networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
 	}
-
-	if err := check(); err != nil {
-		panic(err)
-	}
+	defer cleanFrontend()
 
 	// Return a cleanup function that will remove the containers and network.
 	cleanup = func() {
@@ -997,20 +981,17 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 // - checks for existence of site-config
 // - checks that the version is set in pgsql
 // - Optionally sets the auto upgrade env var to true or false.
-func startFrontend(ctx context.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (check func() error, cleanup func(), err error) {
+func startFrontend(ctx context.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (cleanup func(), err error) {
 	stamp := ctx.Value(versionKey{})
-	ctx, cancel := context.WithCancel(ctx)
 
 	hash, err := newContainerHash()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
-		return nil, nil, err
+		return nil, err
 	}
 	test.AddLog(fmt.Sprintf("🐋 creating %s_frontend_%x", test.Type, hash))
 	// define cleanup function to stop and remove the container
 	cleanup = func() {
-		cancel()
-
 		test.AddLog("🧹 removing frontend container")
 		out, err := run.Cmd(ctx, "docker", "container", "stop",
 			fmt.Sprintf("%s_frontend_%x", test.Type, hash),
@@ -1059,7 +1040,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	out, err := run.Cmd(ctx, cmdString...).Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start frontend: %w", err))
-		return nil, cleanup, err
+		return cleanup, err
 	}
 	test.AddLog(fmt.Sprintf("frontend startup logs: %s", out))
 
@@ -1074,72 +1055,66 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	}
 	defer dbClient.Close()
 
-	check = func() error {
-		// Poll till versions.version is set
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-setInitTimeout.Done():
-				return setInitTimeout.Err()
-			default:
-			}
-			// check version string set
-			var dbVersion string
-			row := dbClient.QueryRowContext(setInitTimeout, versionQuery)
-			err = row.Scan(&dbVersion)
-			if err != nil {
-				test.AddLog(fmt.Sprintf("... querying versions.version: %s", err))
-				time.Sleep(1 * time.Second)
-				continue
-			}
-			// wait for the frontend to set the database versions.version value before considering the frontend startup complete.
-			// "candidate" resolves to "0.0.0+dev" and should always be valid
-			if dbVersion == version || dbVersion == stamp || dbVersion == "0.0.0+dev" {
-				test.AddLog(fmt.Sprintf("✅ versions.version is set: %s", dbVersion))
-				break
-			}
-			if version != dbVersion {
-				time.Sleep(1 * time.Second)
-				test.AddLog(fmt.Sprintf(" ... waiting for versions.version to be set: %s", version))
-				continue
-			}
+	// Poll till versions.version is set
+	for {
+		select {
+		case <-ctx.Done():
+			return cleanup, setInitTimeout.Err()
+		case <-setInitTimeout.Done():
+			return cleanup, setInitTimeout.Err()
+		default:
 		}
-
-		// poll db until site-config is initialized, migrator will sometimes fail if this initialization of the frontend db hasnt finished
-		// returning an error like: "instance is new"
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-setInitTimeout.Done():
-				return setInitTimeout.Err()
-			default:
-			}
-			// check version string set
-			var siteConfig string
-			row := dbClient.QueryRowContext(setInitTimeout, siteConfigQuery)
-			err = row.Scan(&siteConfig)
-			if err != nil {
-				test.AddLog(fmt.Sprintf("... checking site-config initialized: %s", err))
-				time.Sleep(1 * time.Second)
-				continue
-			}
-			// Just test for site-config existence
-			if siteConfig == "" {
-				test.AddLog("... waiting for site-config to be initialized")
-				time.Sleep(1 * time.Second)
-				continue
-			} else {
-				test.AddLog("✅ site-config is initialized")
-				break
-			}
+		// check version string set
+		var dbVersion string
+		row := dbClient.QueryRowContext(setInitTimeout, versionQuery)
+		err = row.Scan(&dbVersion)
+		if err != nil {
+			test.AddLog(fmt.Sprintf("... querying versions.version: %s", err))
+			time.Sleep(1 * time.Second)
+			continue
 		}
-
-		return nil
+		// wait for the frontend to set the database versions.version value before considering the frontend startup complete.
+		// "candidate" resolves to "0.0.0+dev" and should always be valid
+		if dbVersion == version || dbVersion == stamp || dbVersion == "0.0.0+dev" {
+			test.AddLog(fmt.Sprintf("✅ versions.version is set: %s", dbVersion))
+			break
+		}
+		if version != dbVersion {
+			time.Sleep(1 * time.Second)
+			test.AddLog(fmt.Sprintf(" ... waiting for versions.version to be set: %s", version))
+			continue
+		}
 	}
 
-	return check, cleanup, nil
+	// poll db until site-config is initialized, migrator will sometimes fail if this initialization of the frontend db hasnt finished
+	// returning an error like: "instance is new"
+	for {
+		select {
+		case <-setInitTimeout.Done():
+			return cleanup, setInitTimeout.Err()
+		default:
+		}
+		// check version string set
+		var siteConfig string
+		row := dbClient.QueryRowContext(setInitTimeout, siteConfigQuery)
+		err = row.Scan(&siteConfig)
+		if err != nil {
+			test.AddLog(fmt.Sprintf("... checking site-config initialized: %s", err))
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		// Just test for site-config existence
+		if siteConfig == "" {
+			test.AddLog("... waiting for site-config to be initialized")
+			time.Sleep(1 * time.Second)
+			continue
+		} else {
+			test.AddLog("✅ site-config is initialized")
+			break
+		}
+	}
+
+	return cleanup, nil
 }
 
 const versionQuery = `SELECT version FROM versions;`
