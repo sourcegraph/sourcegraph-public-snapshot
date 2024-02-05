@@ -83,8 +83,9 @@
     color: var(--oc-gray-6);
     display: flex;
     flex-flow: row nowrap;
-    jusitfy-content: space-between;
+    jusitfy-content: end;
     align-items: center;
+    margin-right: 0.5rem;
 }
 
 .reset-icon {
@@ -97,6 +98,6 @@
     padding-right: 0.4rem;
     padding-top: 0.1rem;
     padding-bottom: 0.1rem;
-    padding-left: 0.4rem;
-    margin-left: 0.4rem;
+    border: 1px solid black;
 }
+

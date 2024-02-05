@@ -7,7 +7,7 @@ import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, H4, Icon, KbdBadge, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, KbdBadge, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -26,6 +26,7 @@ import { mergeQueryAndFilters, URLQueryFilter, useUrlFilters } from './hooks'
 import { FilterKind, SearchTypeFilter, SEARCH_TYPES_TO_FILTER_TYPES, DYNAMIC_FILTER_KINDS } from './types'
 
 import styles from './NewSearchFilters.module.scss'
+import classNames from 'classnames'
 
 const OPTION_KEY_CHAR = '\u2325'
 const BACKSPACE_KEY_CHAR = '\u232b'
@@ -120,21 +121,20 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                 {selectedFilters.length !== 0 && (
                     <div className={styles.resetButton}>
                         <Button
-                            className={styles.resetButton}
                             variant="link"
                             size="sm"
                             onClick={() => setSelectedFilters([])}
+                            className="p-0 m-0"
                         >
-                            <div>
-                                Reset all
-                            </div>
-                            <KbdBadge
-                                shortCut={{
-                                    modifier: OPTION_KEY_CHAR,
-                                    selector: BACKSPACE_KEY_CHAR,
-                                }}
-                            />
+                            Reset all
                         </Button>
+                        <KbdBadge
+                            shortCut={{
+                                modifier: OPTION_KEY_CHAR,
+                                selector: BACKSPACE_KEY_CHAR,
+                            }}
+                            onClick={() => setSelectedFilters([])}
+                        />
                     </div>
                 )}
             </div>

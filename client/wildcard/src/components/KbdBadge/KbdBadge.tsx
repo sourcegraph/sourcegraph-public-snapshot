@@ -14,6 +14,7 @@ export interface Keybind {
 
 export interface KbdBadgeProps {
     shortCut: Keybind
+    onClick?: () => void
     className?: string
 }
 
@@ -21,17 +22,17 @@ export interface KbdBadgeProps {
  * KbdBadge Element
  */
 export const KbdBadge = React.forwardRef(function KbdBadge(
-    { shortCut, className, as: Component = 'span', ...attributes },
+    { shortCut, className, onClick, as: Component = 'span', ...attributes },
     reference
 ) {
     const shortCutKeys = createKbd(shortCut)
 
     return (
         <Component className={classNames(className)} ref={reference} {...attributes}>
-            <div className={styles.keybind}>
+            <div className={classNames(styles.keybind, onClick && styles.withCursor)} onClick={onClick}>
                 {shortCutKeys[0]} {shortCutKeys[1]}
             </div>
-        </Component>
+        </Component >
     )
 }) as ForwardReferenceComponent<'span', KbdBadgeProps>
 
