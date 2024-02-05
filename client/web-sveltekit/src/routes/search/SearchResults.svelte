@@ -112,7 +112,7 @@
 </svelte:head>
 
 <div class="search">
-    <SearchInput {queryState} showSmartSearchButton />
+    <SearchInput {queryState} />
 </div>
 
 <div class="search-results">
@@ -123,13 +123,16 @@
                 {#each resultTypeFilter as filter}
                     <li class:selected={filter.isSelected(queryFromURL)}>
                         <a
-                            href="{getQueryURL({
-                                searchMode: $queryState.searchMode,
-                                patternType: $queryState.patternType,
-                                caseSensitive: $queryState.caseSensitive,
-                                searchContext: $queryState.searchContext,
-                                query: filter.getQuery($queryState.query),
-                            }, true)}"
+                            href={getQueryURL(
+                                {
+                                    searchMode: $queryState.searchMode,
+                                    patternType: $queryState.patternType,
+                                    caseSensitive: $queryState.caseSensitive,
+                                    searchContext: $queryState.searchContext,
+                                    query: filter.getQuery($queryState.query),
+                                },
+                                true
+                            )}
                         >
                             <Icon svgPath={filter.icon} inline aria-hidden="true" />
                             {filter.label}
@@ -229,11 +232,16 @@
         </aside>
         {#if resultsToShow}
             <ol>
-                {#each resultsToShow as result}
+                {#each resultsToShow as result, i}
                     {@const component = getSearchResultComponent(result)}
-                    <li><svelte:component this={component} {result} /></li>
+                    {#if i === resultsToShow.length - 1}
+                        <li use:observeIntersection on:intersecting={loadMore}>
+                            <svelte:component this={component} {result} />
+                        </li>
+                    {:else}
+                        <li><svelte:component this={component} {result} /></li>
+                    {/if}
                 {/each}
-                <div use:observeIntersection on:intersecting={loadMore} />
             </ol>
             {#if resultsToShow.length === 0 && !loading}
                 <div class="no-result">

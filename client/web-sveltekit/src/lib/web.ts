@@ -28,6 +28,6 @@ export {
 } from '@sourcegraph/web/src/repo/blob/codemirror/linenumbers'
 export { isValidLineRange } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
 export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
-export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
+export { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '@sourcegraph/web/src/util/settings'
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
