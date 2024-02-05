@@ -297,11 +297,12 @@ func initTestStore(ctx context.Context, t *testing.T, dataDir string) (uploadsto
 		Bucket:       "lsif-uploads",
 		TTL:          168 * time.Hour,
 		S3: uploadstore.S3Config{
-			Region:          "us-east-1",
-			Endpoint:        ts.URL,
-			UsePathStyle:    false,
-			AccessKeyID:     "TESTACCESSKEY",
-			SecretAccessKey: "TEST/SECRET/ACCESSKEY",
+			Region:       "us-east-1",
+			Endpoint:     ts.URL,
+			UsePathStyle: false,
+			// NOTE: we do not set AccessKeyID and SecretAccessKey
+			// intentionally since most uses of blobstore do not use
+			// credentials and we want to confirm s3 client doesn't break.
 		},
 	}
 	store, err := uploadstore.CreateLazy(ctx, config, uploadstore.NewOperations(observationCtx, "test", "lsifstore"))
