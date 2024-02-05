@@ -6,6 +6,7 @@
     import { settings } from '$lib/stores'
     import { mdiMagnify } from '@mdi/js'
     import { tick } from 'svelte'
+    import { repositoryInsertText } from '$lib/shared'
 
     export let repoName: string
 
@@ -15,7 +16,7 @@
     } = createDialog()
 
     let searchInput: SearchInput | undefined
-    let queryState = queryStateStore({ query: `repo:${repoName} ` }, $settings)
+    let queryState = queryStateStore({ query: `repo:${repositoryInsertText({ repository: repoName })} ` }, $settings)
 
     $: if ($open) {
         // @melt-ui automatically focuses the search input but that positions the cursor at the
