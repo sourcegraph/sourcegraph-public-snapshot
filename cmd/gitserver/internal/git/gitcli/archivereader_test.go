@@ -2,11 +2,15 @@ package gitcli
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"context"
 	"io"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,6 +31,17 @@ func readFileContentsFromTar(t *testing.T, tr *tar.Reader, name string) string {
 
 	t.Fatalf("File %q not found in tar archive", name)
 	return ""
+}
+
+func readFileContentsFromZip(t *testing.T, zr *zip.Reader, name string) string {
+	f, err := zr.Open(name)
+	if err != nil {
+		t.Fatalf("File %q not found in zip archive", name)
+	}
+
+	contents, err := io.ReadAll(f)
+	require.NoError(t, err)
+	return string(contents)
 }
 
 func TestGitCLIBackend_buildArchiveArgs(t *testing.T) {
@@ -51,19 +66,43 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 
 	backend := BackendWithRepoCommands(t,
 		"echo abcd > file1",
+		"mkdir dir1",
+		"echo efgh > dir1/file2",
 		"git add file1",
+		"git add dir1",
 		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
 	)
 
 	commitID, err := backend.RevParseHead(ctx)
 	require.NoError(t, err)
 
-	t.Run("read simple archive", func(t *testing.T) {
+	t.Run("read simple tar archive", func(t *testing.T) {
 		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), nil)
 		require.NoError(t, err)
 		t.Cleanup(func() { r.Close() })
 		tr := tar.NewReader(r)
 		contents := readFileContentsFromTar(t, tr, "file1")
 		require.Equal(t, "abcd\n", contents)
+	})
+
+	t.Run("read simple zip archive", func(t *testing.T) {
+		r, err := backend.ArchiveReader(ctx, "zip", string(commitID), nil)
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close() })
+		contents, err := io.ReadAll(r)
+		require.NoError(t, err)
+		zr, err := zip.NewReader(bytes.NewReader([]byte(contents)), int64(len(contents)))
+		require.NoError(t, err)
+		fileContents := readFileContentsFromZip(t, zr, "file1")
+		require.Equal(t, "abcd\n", fileContents)
+	})
+
+	t.Run("read file in directory", func(t *testing.T) {
+		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), nil)
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close() })
+		tr := tar.NewReader(r)
+		contents := readFileContentsFromTar(t, tr, "dir1/file2")
+		require.Equal(t, "efgh\n", contents)
 	})
 }
