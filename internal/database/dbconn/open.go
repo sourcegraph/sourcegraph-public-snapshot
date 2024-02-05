@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"strconv"
 	"strings"
 	"sync"
@@ -376,7 +376,7 @@ func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []dr
 			attrs[i] = attribute.StringSlice(key, strings)
 
 		default: // in case we miss anything
-			attrs[i] = attribute.String(key, fmt.Sprintf("%v", v))
+			attrs[i] = attribute.String(key, fmt.Sprintf("%T", v))
 		}
 	}
 	return attrs

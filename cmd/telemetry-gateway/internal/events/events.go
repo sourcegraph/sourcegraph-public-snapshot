@@ -14,18 +14,29 @@ import (
 )
 
 type Publisher struct {
-	topic pubsub.TopicClient
+	topic pubsub.TopicPublisher
+	opts  PublishStreamOptions
 
 	metadataJSON json.RawMessage
 }
 
-func NewPublisherForStream(eventsTopic pubsub.TopicClient, metadata *telemetrygatewayv1.RecordEventsRequestMetadata) (*Publisher, error) {
+type PublishStreamOptions struct {
+	// ConcurrencyLimit sets the maximum number of concurrent publishes for
+	// a stream.
+	ConcurrencyLimit int
+}
+
+func NewPublisherForStream(eventsTopic pubsub.TopicPublisher, metadata *telemetrygatewayv1.RecordEventsRequestMetadata, opts PublishStreamOptions) (*Publisher, error) {
 	metadataJSON, err := protojson.Marshal(metadata)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling metadata")
 	}
+	if opts.ConcurrencyLimit <= 0 {
+		opts.ConcurrencyLimit = 250
+	}
 	return &Publisher{
 		topic:        eventsTopic,
+		opts:         opts,
 		metadataJSON: metadataJSON,
 	}, nil
 }
@@ -40,7 +51,7 @@ type PublishEventResult struct {
 // Publish emits all events concurrently, up to 100 at a time for each call.
 func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Event) []PublishEventResult {
 	wg := pool.NewWithResults[PublishEventResult]().
-		WithMaxGoroutines(100) // limit each batch to some degree
+		WithMaxGoroutines(p.opts.ConcurrencyLimit) // limit each batch to some degree
 
 	for _, event := range events {
 		event := event // capture range variable :(
@@ -61,8 +72,13 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			}
 
 			// Publish a single message in each callback to manage concurrency
-			// ourselves, and
-			if err := p.topic.Publish(ctx, payload); err != nil {
+			// ourselves, and attach attributes for ease of routing the pub/sub
+			// message.
+			if err := p.topic.PublishMessage(ctx, payload, extractPubSubAttributes(event)); err != nil {
+				// Try to record the cancel cause in case one is recorded.
+				if cancelCause := context.Cause(ctx); cancelCause != nil {
+					return errors.Wrap(err, "interrupted event publish")
+				}
 				return errors.Wrap(err, "publishing event")
 			}
 

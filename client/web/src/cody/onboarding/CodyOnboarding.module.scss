@@ -1,12 +1,106 @@
-.modal {
-    width: 50rem;
+.root {
+    :global(.theme-dark) & {
+        background: linear-gradient(180deg, rgba(17, 20, 27, 0.92) 0%, rgba(13, 16, 25, 0.92) 100%);
+        backdrop-filter: blur(7px);
+    }
+
+    :global(.theme-light) & {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
+        backdrop-filter: blur(7px);
+    }
 }
 
+.modal {
+    width: 54rem;
+    border-radius: 6px;
+    background-image: repeating-conic-gradient(
+        rgba(112, 72, 232, 0.5) 50%,
+        rgba(0, 203, 236, 0.5) 75%,
+        rgba(161, 18, 255, 0.5) 100%,
+        rgba(255, 85, 67, 0.5) 125%,
+        rgba(112, 72, 232, 0.5) 150%
+    );
+    background-origin: border-box;
+
+    /* to allow a gradient stroke, this is actually where the color of the background is set */
+    box-shadow: inset 0 100vw var(--theme-bg-plain);
+
+    /* to let the gradient on the background act as a stroke */
+    border: 1px solid transparent;
+
+    /* to let gradient shadow be behind the modal */
+    transform-style: preserve-3d;
+
+    /* Colorful shadow on the modal */
+    &::after {
+        content: '';
+        position: absolute;
+        width: 90%;
+        height: 2.8125rem;
+        background: linear-gradient(90deg, #7048e8 0%, #4ac1e8 32.21%, #4d0b79 65.39%, #ff5543 104.43%), #eff2f5;
+        transform: translateZ(-1px);
+        filter: blur(30px);
+        opacity: 0.9;
+        animation: modal-shadow 6s ease-in-out infinite;
+    }
+
+    :global(.theme-dark) & {
+        background-image: repeating-conic-gradient(
+            rgba(112, 72, 232, 0.3) 50%,
+            rgba(0, 203, 236, 0.3) 75%,
+            rgba(161, 18, 255, 0.5) 100%,
+            rgba(255, 85, 67, 0.3) 125%,
+            rgba(112, 72, 232, 0.3) 150%
+        );
+    }
+}
+
+@keyframes modal-shadow {
+    0% {
+        transform: translateY(0) translateZ(-1px);
+        opacity: 0.4;
+    }
+    50% {
+        transform: translateY(-25px) translateZ(-1px);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateY(0) translateZ(-1px);
+        opacity: 0.4;
+    }
+}
+
+.highlight-step {
+    :global(.theme-light) & {
+        background: radial-gradient(50% 100% at 50% 100%, var(--gray-04) 0%, transparent 100%);
+    }
+
+    :global(.theme-dark) & {
+        background: radial-gradient(50% 100% at 50% 100%, var(--gray-09) 0%, transparent 100%);
+    }
+}
+
+.release-stage {
+    color: var(--gray-07);
+}
+
+/* Step section on instructions */
 .step {
     background: #343a4d;
     color: #ffffff;
     padding: 0.25rem 0.675rem;
     border-radius: 50%;
+}
+
+.ide-grid:hover {
+    background: var(--subtle-bg);
+    transition: all 0.25s ease;
+}
+
+.instructions-container {
+    /* adds vertical scroll to long instructions and prevents "next" and "back buttons" to be under the fold */
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .responsive-container {
@@ -23,4 +117,79 @@
 
 .ide-name {
     font-size: 1rem;
+}
+
+/* Initial welcome */
+.welcome-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+}
+
+.welcome-subtitle {
+    font-size: 1.1rem;
+    font-weight: 300;
+}
+
+.fade-in {
+    animation: 0.8s fadeInUp ease-in-out;
+}
+
+.fade-first {
+    animation-delay: 3.3s;
+    opacity: 0;
+
+    /* to keep opacity */
+    animation-fill-mode: forwards;
+}
+
+.fade-second {
+    animation-delay: 3.5s;
+    opacity: 0;
+
+    /* to keep opacity */
+    animation-fill-mode: forwards;
+}
+
+.fade-third {
+    animation-delay: 3.8s;
+    opacity: 0;
+
+    /* to keep opacity */
+    animation-fill-mode: forwards;
+}
+
+.welcome-video {
+    animation: 0.8s moveUp 3.5s ease-in-out;
+    transform: translateY(70%);
+    animation-fill-mode: forwards;
+}
+
+@keyframes moveUp {
+    0% {
+        transform: translateY(70%);
+    }
+    100% {
+        transform: translateY(0%);
+    }
+}
+
+@keyframes fadeInUp {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0%);
+        opacity: 1;
+    }
+}
+
+.fade-in-up-animation {
+    animation: 1.5s fadeInUp;
+}
+
+.blank-placeholder {
+    min-width: 11.25rem;
+    min-height: 17rem;
 }

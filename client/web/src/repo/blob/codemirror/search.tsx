@@ -113,7 +113,7 @@ class SearchPanel implements Panel {
 
     constructor(private view: EditorView, private navigate: NavigateFunction, config?: SearchPanelConfig) {
         this.dom = createElement('div', {
-            className: 'cm-sg-search-container d-flex align-items-center',
+            className: classNames('cm-sg-search-container', styles.root),
             id: BLOB_SEARCH_CONTAINER_ID,
             onkeydown: this.onkeydown,
         })
@@ -223,7 +223,7 @@ class SearchPanel implements Panel {
                     this.input?.select()
                 }}
             >
-                <div className="cm-sg-search-input d-flex align-items-center pr-2 mr-1">
+                <div className={classNames('cm-sg-search-input', styles.input)}>
                     <Input
                         ref={element => (this.input = element)}
                         type="search"
@@ -252,7 +252,7 @@ class SearchPanel implements Panel {
                     />
                 </div>
                 {totalMatches > 1 && (
-                    <div className="ml-2">
+                    <div>
                         <Button
                             className={classNames(styles.bgroupLeft, 'p-1')}
                             type="button"
@@ -282,17 +282,15 @@ class SearchPanel implements Panel {
                 )}
 
                 {searchQuery.search ? (
-                    <div>
-                        <Text className="cm-search-results mt-0 mr-0 mb-0 ml-2 small">
-                            {currentMatchIndex !== null && `${currentMatchIndex} of `}
-                            {totalMatches} {pluralize('result', totalMatches)}
-                        </Text>
-                    </div>
+                    <Text className="cm-search-results m-0 small">
+                        {currentMatchIndex !== null && `${currentMatchIndex} of `}
+                        {totalMatches} {pluralize('result', totalMatches)}
+                    </Text>
                 ) : null}
 
                 {isFullMode && (
-                    <div className="ml-auto">
-                        <Label className="mb-0">
+                    <div className={styles.actions}>
+                        <Label className={styles.actionsLabel}>
                             <Toggle
                                 className="mr-1 align-text-bottom"
                                 value={overrideBrowserSearch}
@@ -301,7 +299,7 @@ class SearchPanel implements Panel {
                             {searchKeybinding}
                         </Label>
                         {searchKeybindingTooltip}
-                        <span className={classNames(styles.closeButton, 'ml-4')}>
+                        <span className={styles.closeButton}>
                             <Icon
                                 className={classNames(styles.x)}
                                 onClick={() => closeSearchPanel(this.view)}
@@ -324,10 +322,24 @@ class SearchPanel implements Panel {
 
     private findNext = (): void => {
         findNext(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     private findPrevious = (): void => {
         findPrevious(this.view)
+        // Scroll the selection into the middle third of the view
+        this.view.dispatch({
+            effects: EditorView.scrollIntoView(this.view.state.selection.main.from, {
+                y: 'nearest',
+                yMargin: this.view.dom.getBoundingClientRect().height / 3,
+            }),
+        })
     }
 
     // Taken from CodeMirror's default search panel implementation. This is
@@ -415,29 +427,24 @@ class SearchPanel implements Panel {
 }
 
 function calculateMatches(query: SearchQuery, document: CodeMirrorText): SearchMatches {
-    if (!query.valid) {
-        return new Map()
-    }
-
     const newSearchMatches: SearchMatches = new Map()
+
+    if (!query.valid) {
+        return newSearchMatches
+    }
+
     let index = 1
-    let result = query.getCursor(document).next()
-    // Regular expressions that result in matches with length 0 would
-    // cause an infinite loop. So we guard against that by verifying
-    // whether or not the cursor moves to the next match at a new position.
-    let prevValue: { from: number; to: number } | null = null
+    const matches = query.getCursor(document)
+    let result = matches.next()
 
-    while (!result.done && result.value.from !== prevValue?.from) {
-        newSearchMatches.set(result.value.from, index++)
-        prevValue = result.value
-        result = query.getCursor(document, result.value.to).next()
+    while (!result.done) {
+        if (result.value.from !== result.value.to) {
+            newSearchMatches.set(result.value.from, index++)
+        }
+
+        result = matches.next()
     }
 
-    // If the result is not done, it detected an infinite loop, so we
-    // do not have any matches.
-    if (!result.done) {
-        return new Map()
-    }
     return newSearchMatches
 }
 

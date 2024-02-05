@@ -54,7 +54,7 @@ func (r *roleResolver) Permissions(ctx context.Context, args *ListPermissionArgs
 	rid := MarshalRoleID(r.role.ID)
 	args.Role = &rid
 	args.User = nil
-	connectionStore := &permisionConnectionStore{
+	connectionStore := &permissionConnectionStore{
 		db:     r.db,
 		roleID: r.role.ID,
 	}

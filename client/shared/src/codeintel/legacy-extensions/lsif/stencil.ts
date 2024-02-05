@@ -17,8 +17,11 @@ export const stencil = async (
 const stencilQuery = gql`
     query LegacyStencil($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     lsif {
                         stencil {
                             start {

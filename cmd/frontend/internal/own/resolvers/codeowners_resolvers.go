@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -155,9 +156,11 @@ func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlba
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 func (r *ownResolver) logBackendEvent(ctx context.Context, eventName string) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsMockUser() {
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err := usagestats.LogBackendEvent(
 			r.db,
 			a.UID,

@@ -11,7 +11,7 @@ fi
 
 # asdf setup
 # ----------
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "macos" ]]; then
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
     echo "~~~ Preparing asdf dependencies"
 
     if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then

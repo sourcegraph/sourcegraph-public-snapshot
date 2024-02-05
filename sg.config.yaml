@@ -43,7 +43,6 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
-  SRC_GRPC_ENABLE_CONF: 'true'
   SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
@@ -60,6 +59,8 @@ env:
       { "Name": "embeddings", "Host": "127.0.0.1:6099" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
+      { "Name": "syntactic-code-intel-worker-0", "Host": "127.0.0.1:6075" },
+      { "Name": "syntactic-code-intel-worker-1", "Host": "127.0.0.1:6076" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
@@ -132,7 +133,7 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
-  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:10080'
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:6080'
   SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
 
   # By default, allow temporary edits to external services.
@@ -183,7 +184,7 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
-    env: &gitserverenv
+    env:
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
@@ -198,7 +199,6 @@ commands:
   gitserver-0:
     <<: *gitserver_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
@@ -207,7 +207,6 @@ commands:
   gitserver-1:
     <<: *gitserver_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
@@ -281,6 +280,7 @@ commands:
         -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
         --entrypoint /usr/local/bin/qdrant \
         sourcegraph/qdrant:insiders
+
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -332,12 +332,10 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
     checkBinary: .bin/telemetry-gateway
     env:
-      PORT: '10080'
+      PORT: '6080'
       DIAGNOSTICS_SECRET: sekret
       TELEMETRY_GATEWAY_EVENTS_PUBSUB_ENABLED: false
       SRC_LOG_LEVEL: info
-      # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: '127.0.0.1:6080'
       GRPC_WEB_UI_ENABLED: true
     watch:
       - lib
@@ -463,7 +461,20 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
+    env:
+      RUN_SCRIPT_NAME: .bin/bazel_run_docsite.sh
+    cmd: |
+      # We tell bazel to write out a script to run docsite and run that script via sg otherwise
+      # when we get a SIGINT ... bazel gets killed but docsite doesn't get killed properly. So we use --script_path
+      # which tells bazel to write out a script to run docsite, and let sg run that script rather, which means
+      # any signal gets propagated and docsite gets properly terminated.
+      #
+      # We also specifically put this in .bin, since that directory is gitignored, otherwise the run script is left
+      # around and currently there is no clean way to remove it - even using a bash trap doesn't work, since the trap
+      # never gets executed due to sg running the script.
+      bazel run --script_path=${RUN_SCRIPT_NAME} --noshow_progress --noshow_loading_progress //doc:serve
+
+      ./${RUN_SCRIPT_NAME}
 
   syntax-highlighter:
     ignoreStdout: true
@@ -552,6 +563,46 @@ commands:
       - internal
       - cmd/precise-code-intel-worker
       - lib/codeintel
+
+  syntactic-codeintel-worker-template: &syntactic_codeintel_worker_template
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/syntactic-code-intel-worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      if [ ! -f $(./dev/scip-syntax-install.sh which) ]; then
+        echo "Building scip-syntax"
+        ./dev/scip-syntax-install.sh
+      fi
+
+      echo "Building codeintel-outkline-scip-worker"
+      go build -gcflags="$GCFLAGS" -o .bin/syntactic-code-intel-worker github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker
+    checkBinary: .bin/syntactic-code-intel-worker
+    watch:
+      - lib
+      - internal
+      - cmd/syntactic-code-intel-worker
+      - lib/codeintel
+    env:
+      SCIP_SYNTAX_PATH: dev/scip-syntax-dev
+
+  syntactic-code-intel-worker-0:
+    <<: *syntactic_codeintel_worker_template
+    env:
+      SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6075
+
+  syntactic-code-intel-worker-1:
+    <<: *syntactic_codeintel_worker_template
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/syntactic-code-intel-worker
+    env:
+      SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6076
+
+
 
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
@@ -957,47 +1008,6 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
-  sourcegraph: &sourcegraph_command
-    description: Single-program distribution
-    cmd: |
-      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
-
-      # TODO: This should be fixed
-      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
-      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
-
-      .bin/sourcegraph
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
-    checkBinary: .bin/sourcegraph
-    env:
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
-      WEB_BUILDER_DEV_SERVER: 1
-    watch:
-      - cmd
-      - enterprise
-      - internal
-      - lib
-      - schema
-
-  cody-app:
-    <<: *sourcegraph_command
-    description: Cody App
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
-
-  tauri:
-    description: App shell (Tauri)
-    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
-
 bazelCommands:
   blobstore:
     target: //cmd/blobstore:blobstore
@@ -1070,6 +1080,7 @@ bazelCommands:
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
+
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1116,7 +1127,8 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1140,7 +1152,8 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1223,6 +1236,21 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
+
+  codeintel-syntactic:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - blobstore
+      - syntactic-code-intel-worker-0
+      - syntactic-code-intel-worker-1
+
 
   codeintel:
     requiresDevPrivate: true
@@ -1532,23 +1560,6 @@ commandsets:
       EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
       USE_EMBEDDED_POSTGRESQL: false
 
-  app:
-    requiresDevPrivate: true
-    checks:
-      - git
-    commands:
-      - cody-app
-      - docsite
-      - web
-      - caddy
-      - tauri
-    env:
-      DISABLE_CODE_INSIGHTS: true
-      CODY_APP: 1
-      EXTSVC_CONFIG_ALLOW_EDITS: true
-      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-
   cody-gateway:
     checks:
       - redis
@@ -1594,6 +1605,29 @@ tests:
     cmd: go test
     defaultArgs: ./...
 
+  bazel-backend-integration:
+    cmd: |
+      export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+
+      export BITBUCKET_SERVER_USERNAME=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_USERNAME --quiet --project=sourcegraph-ci)
+      export BITBUCKET_SERVER_TOKEN=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_TOKEN --quiet --project=sourcegraph-ci)
+      export BITBUCKET_SERVER_URL=$(gcloud secrets versions access latest --secret=BITBUCKET_SERVER_URL --quiet --project=sourcegraph-ci)
+
+      export PERFORCE_PASSWORD=$(gcloud secrets versions access latest --secret=PERFORCE_PASSWORD --quiet --project=sourcegraph-ci)
+      export PERFORCE_USER=$(gcloud secrets versions access latest --secret=PERFORCE_USER --quiet --project=sourcegraph-ci)
+      export PERFORCE_PORT=$(gcloud secrets versions access latest --secret=PERFORCE_PORT --quiet --project=sourcegraph-ci)
+
+      export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
+
+      if [[ $(uname) == "Darwin" ]]; then
+        BAZEL_FLAGS=("--config darwin-docker")
+      else
+        BAZEL_FLAGS=()
+      fi
+      bazel test //testing:backend_integration_test ${BAZEL_FLAGS[*]} --verbose_failures --sandbox_debug
+
   bazel-e2e:
     cmd: |
       export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
@@ -1606,13 +1640,13 @@ tests:
       else
         BAZEL_FLAGS=""
       fi
-      bazel test //testing:e2e_test $BAZEL_FLAGS --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY
+      bazel test //testing:e2e_test $BAZEL_FLAGS --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
 
   bazel-web-integration:
     cmd: |
       export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
       export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
-      bazel test //client/web/src/integration:integration-tests --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY --define=PERCY_TOKEN=$PERCY_TOKEN
+      bazel test //client/web/src/integration:integration-tests --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY --action_env=PERCY_TOKEN=$PERCY_TOKEN
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest

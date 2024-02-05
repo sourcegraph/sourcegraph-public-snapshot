@@ -808,6 +808,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create an event log
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			err = db.EventLogs().Insert(ctx, &Event{
 				Name:            "something",
 				URL:             "http://example.com",
@@ -1370,6 +1371,33 @@ func TestUsers_CreateWithExternalAccount_NilData(t *testing.T) {
 	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func TestUsers_CreateCancelAccessRequest(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	usersStore := db.Users()
+	accessRequestsStore := db.AccessRequests()
+
+	_, err := accessRequestsStore.Create(ctx, &types.AccessRequest{
+		Email:          "a123@email.com",
+		Name:           "a123",
+		AdditionalInfo: "info1",
+	})
+	require.NoError(t, err)
+
+	_, err = usersStore.Create(ctx, NewUser{Username: "u1ted", Email: "a123@email.com", EmailVerificationCode: "e"})
+	require.NoError(t, err)
+
+	updated, _ := accessRequestsStore.GetByEmail(ctx, "a123@email.com")
+
+	assert.Equal(t, updated.Status, types.AccessRequestStatusCanceled)
 }
 
 func normalizeUsers(users []*types.User) []*types.User {

@@ -67,6 +67,12 @@ var schemes = map[string]struct{}{
 	"rsync":    {},
 	"file":     {},
 	"perforce": {},
+	// This is not an officially supported git protocol, and it will not work
+	// without adding an override to the global git config for iap:// to https://.
+	// This has been added as a response to a customer issue where their GitLab
+	// instance reports a URL with the iap:// scheme.
+	// https://github.com/sourcegraph/accounts/issues/2379
+	"iap": {},
 }
 
 func parseScheme(rawurl string) (*URL, error) {

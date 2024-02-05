@@ -4,11 +4,8 @@ import (
 	"bytes"
 	"container/list"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,20 +19,27 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -43,128 +47,92 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Test struct {
-	Name             string
-	Request          *http.Request
-	ExpectedCode     int
-	ExpectedBody     string
-	ExpectedTrailers http.Header
-}
-
-func newRequest(method, path string, body io.Reader) *http.Request {
-	r := httptest.NewRequest(method, path, body)
-	r.Header.Add("X-Requested-With", "Sourcegraph")
-	return r
+	Name            string
+	Request         *v1.ExecRequest
+	ExpectedCode    codes.Code
+	ExpectedBody    string
+	ExpectedError   string
+	ExpectedDetails []any
 }
 
 func TestExecRequest(t *testing.T) {
+	conf.Mock(&conf.Unified{})
+	t.Cleanup(func() { conf.Mock(nil) })
+
 	tests := []Test{
 		{
-			Name:         "HTTP GET",
-			Request:      newRequest("GET", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusMethodNotAllowed,
-			ExpectedBody: "",
-		},
-		{
-			Name:         "Command",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "teststdout",
-			ExpectedTrailers: http.Header{
-				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"42"},
-				"X-Exec-Stderr":      {"teststderr"},
+			Name: "Command",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/mux",
+				Args: [][]byte{[]byte("diff")},
 			},
+			ExpectedCode:  codes.Unknown,
+			ExpectedBody:  "teststdout",
+			ExpectedError: "teststderr",
+			ExpectedDetails: []any{&v1.ExecStatusPayload{
+				StatusCode: 42,
+				Stderr:     "teststderr",
+			}},
 		},
 		{
-			Name:         "CommandWithURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "teststdout",
-			ExpectedTrailers: http.Header{
-				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"42"},
-				"X-Exec-Stderr":      {"teststderr"},
+			Name: "NonexistingRepo",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/doesnotexist",
+				Args: [][]byte{[]byte("diff")},
 			},
+			ExpectedCode:  codes.NotFound,
+			ExpectedError: "repo not found",
+			ExpectedDetails: []any{&v1.RepoNotFoundPayload{
+				Repo:            "github.com/gorilla/doesnotexist",
+				CloneInProgress: false,
+			}},
 		},
 		{
-			Name: "echo",
-			Request: newRequest(
-				"POST", "/exec", strings.NewReader(
-					`{"repo": "github.com/gorilla/mux", "args": ["testecho", "hi"]}`,
-				),
-			),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "hi",
-			ExpectedTrailers: http.Header{
-				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"0"},
-				"X-Exec-Stderr":      {""},
+			Name: "UnclonedRepo",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/nicksnyder/go-i18n",
+				Args: [][]byte{[]byte("diff")},
 			},
+			ExpectedCode:  codes.NotFound,
+			ExpectedError: "repo not found",
+			ExpectedDetails: []any{&v1.RepoNotFoundPayload{
+				Repo:            "github.com/nicksnyder/go-i18n",
+				CloneInProgress: true,
+			}},
 		},
 		{
-			Name: "stdin",
-			Request: newRequest(
-				"POST", "/exec", strings.NewReader(
-					`{"repo": "github.com/gorilla/mux", "args": ["testcat"], "stdin": "aGk="}`,
-				),
-			),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "hi",
-			ExpectedTrailers: http.Header{
-				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"0"},
-				"X-Exec-Stderr":      {""},
+			Name: "Error",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/mux",
+				Args: [][]byte{[]byte("merge-base")},
 			},
+			ExpectedCode:  codes.Unknown,
+			ExpectedError: "testerror",
+			ExpectedDetails: []any{&v1.ExecStatusPayload{
+				StatusCode: 1,
+				Stderr:     "teststderr",
+			}},
 		},
 		{
-			Name:         "NonexistingRepo",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
-		},
-		{
-			Name: "NonexistingRepoWithURL",
-			Request: newRequest(
-				"POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
-		},
-		{
-			Name:         "UnclonedRepoWithoutURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
-		},
-		{
-			Name:         "UnclonedRepoWithURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`,
-		},
-		{
-			Name:         "Error",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedTrailers: http.Header{
-				"X-Exec-Error":       {"testerror"},
-				"X-Exec-Exit-Status": {"0"},
-				"X-Exec-Stderr":      {""},
+			Name: "EmptyInput",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/mux",
 			},
+			ExpectedCode:  codes.InvalidArgument,
+			ExpectedError: "invalid command",
 		},
 		{
-			Name:         "EmptyInput",
-			Request:      newRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
-		},
-		{
-			Name:         "BadCommand",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Name: "BadCommand",
+			Request: &v1.ExecRequest{
+				Repo: "github.com/gorilla/mux",
+				Args: [][]byte{[]byte("invalid-command")},
+			},
+			ExpectedCode:  codes.InvalidArgument,
+			ExpectedError: "invalid command",
 		},
 	}
 
@@ -177,6 +145,39 @@ func TestExecRequest(t *testing.T) {
 		ObservationCtx:    observation.TestContextTB(t),
 		ReposDir:          reposDir,
 		skipCloneForTests: true,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			backend := git.NewMockGitBackend()
+			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
+				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args, gitserverfs.RepoDirFromName(reposDir, repoName)) {
+					return nil, gitcli.ErrBadGitCommand
+				}
+
+				switch args[0] {
+				case "diff":
+					var stdout bytes.Buffer
+					stdout.Write([]byte("teststdout"))
+					return &errorReader{
+						ReadCloser: io.NopCloser(&stdout),
+						err: &gitcli.CommandFailedError{
+							Stderr:     []byte("teststderr"),
+							ExitStatus: 42,
+							Inner:      errors.New("teststderr"),
+						},
+					}, nil
+				case "merge-base":
+					return &errorReader{
+						ReadCloser: io.NopCloser(&bytes.Buffer{}),
+						err: &gitcli.CommandFailedError{
+							Stderr:     []byte("teststderr"),
+							ExitStatus: 1,
+							Inner:      errors.New("testerror"),
+						},
+					}, nil
+				}
+				return io.NopCloser(&bytes.Buffer{}), nil
+			})
+			return backend
+		},
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
@@ -188,7 +189,10 @@ func TestExecRequest(t *testing.T) {
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	}
-	h := s.Handler()
+	// Initialize side-effects.
+	_ = s.Handler()
+
+	gs := NewGRPCServer(s)
 
 	origRepoCloned := repoCloned
 	repoCloned = func(dir common.GitDir) bool {
@@ -204,67 +208,62 @@ func TestExecRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
 
-	executil.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
-		switch cmd.Args[1] {
-		case "testcommand":
-			_, _ = cmd.Stdout.Write([]byte("teststdout"))
-			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 42, nil
-		case "testerror":
-			return 0, errors.New("testerror")
-		case "testecho", "testcat":
-			// We do an actual exec in this case to test that code path.
-			exe := strings.TrimPrefix(cmd.Args[1], "test")
-			lp, err := exec.LookPath(exe)
-			if err != nil {
-				return -1, err
-			}
-			cmd.Path = lp
-			cmd.Args = cmd.Args[1:]
-			cmd.Args[0] = exe
-			cmd.Dir = "" // the test doesn't setup the dir
-
-			// We run the real codepath cause we can in this case.
-			m := executil.RunCommandMock
-			executil.RunCommandMock = nil
-			defer func() { executil.RunCommandMock = m }()
-			return executil.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
-		}
-		return 0, nil
-	}
-	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
-
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
-			h.ServeHTTP(&w, test.Request)
+			ss := gitserver.NewMockGitserverService_ExecServer()
+			ss.ContextFunc.SetDefaultReturn(context.Background())
+			var receivedData []byte
+			ss.SendFunc.SetDefaultHook(func(er *v1.ExecResponse) error {
+				receivedData = append(receivedData, er.GetData()...)
+				return nil
+			})
+			err := gs.Exec(test.Request, ss)
 
-			res := w.Result()
-			if res.StatusCode != test.ExpectedCode {
-				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
-			}
-
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
+			if test.ExpectedCode == codes.OK && err != nil {
 				t.Fatal(err)
 			}
-			if strings.TrimSpace(string(body)) != test.ExpectedBody {
-				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+
+			if test.ExpectedCode != codes.OK {
+				if err == nil {
+					t.Fatal("expected error to be returned")
+				}
+				s, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, test.ExpectedCode, s.Code(), "wrong error code: expected %v, got %v %v", test.ExpectedCode, s.Code(), err)
+
+				if len(test.ExpectedDetails) > 0 {
+					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.RepoNotFoundPayload{})); diff != "" {
+						t.Fatalf("unexpected error details (-want +got):\n%s", diff)
+					}
+				}
+
+				if strings.TrimSpace(s.Message()) != test.ExpectedError {
+					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedError, s.Message())
+				}
 			}
 
-			for k, v := range test.ExpectedTrailers {
-				if got := res.Trailer.Get(k); got != v[0] {
-					t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
-				}
+			if strings.TrimSpace(string(receivedData)) != test.ExpectedBody {
+				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(receivedData))
 			}
 		})
 	}
 }
 
-func staticGetRemoteURL(remote string) func(context.Context, api.RepoName) (string, error) {
-	return func(context.Context, api.RepoName) (string, error) {
-		return remote, nil
+type errorReader struct {
+	io.ReadCloser
+
+	err error
+}
+
+func (ec *errorReader) Read(p []byte) (int, error) {
+	n, err := ec.ReadCloser.Read(p)
+	if err == nil {
+		return n, nil
 	}
+	if err == io.EOF {
+		return n, ec.err
+	}
+	return n, err
 }
 
 // makeSingleCommitRepo make create a new repo with a single commit and returns
@@ -305,19 +304,24 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 
 	cloneQueue := NewCloneQueue(obctx, list.New())
 	s := &Server{
-		Logger:           logger,
-		ObservationCtx:   obctx,
-		ReposDir:         repoDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		Logger:         logger,
+		ObservationCtx: obctx,
+		ReposDir:       repoDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
+		GetRemoteURLFunc: func(context.Context, api.RepoName) (string, error) {
+			return remote, nil
+		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory()), nil
+			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.
+				NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
 		ctx:                     ctx,
 		Locker:                  NewRepositoryLocker(),
 		cloneLimiter:            limiter.NewMutable(1),
-		cloneableLimiter:        limiter.NewMutable(1),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
@@ -525,130 +529,6 @@ var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
 	"CloningProgress",
 )
 
-func TestHandleRepoDelete(t *testing.T) {
-	testHandleRepoDelete(t, false)
-}
-
-func TestHandleRepoDeleteWhenDeleteInDB(t *testing.T) {
-	// We also want to ensure that we can delete repo data on disk for a repo that
-	// has already been deleted in the DB.
-	testHandleRepoDelete(t, true)
-}
-
-func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
-	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	remote := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(t))
-
-	dbRepo := &types.Repo{
-		Name:        repoName,
-		Description: "Test",
-	}
-
-	// Insert the repo into our database
-	if err := db.Repos().Create(ctx, dbRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	repo := remote
-	cmd := func(name string, arg ...string) string {
-		t.Helper()
-		return runCmd(t, repo, name, arg...)
-	}
-	_ = makeSingleCommitRepo(cmd)
-	// Add a bad tag
-	cmd("git", "tag", "HEAD")
-
-	reposDir := t.TempDir()
-
-	s := makeTestServer(ctx, t, reposDir, remote, db)
-
-	// We need some of the side effects here
-	_ = s.Handler()
-
-	rr := httptest.NewRecorder()
-
-	updateReq := protocol.RepoUpdateRequest{
-		Repo: repoName,
-	}
-	body, err := json.Marshal(updateReq)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// This will perform an initial clone
-	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
-
-	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
-	want := &types.GitserverRepo{
-		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
-		RepoSizeBytes: size,
-	}
-	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
-	}
-
-	if deletedInDB {
-		if err := db.Repos().Delete(ctx, dbRepo.ID); err != nil {
-			t.Fatal(err)
-		}
-		repos, err := db.Repos().List(ctx, database.ReposListOptions{IncludeDeleted: true, IDs: []api.RepoID{dbRepo.ID}})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(repos) != 1 {
-			t.Fatalf("Expected 1 repo, got %d", len(repos))
-		}
-		dbRepo = repos[0]
-	}
-
-	// Now we can delete it
-	deleteReq := protocol.RepoDeleteRequest{
-		Repo: dbRepo.Name,
-	}
-	body, err = json.Marshal(deleteReq)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req = newRequest("GET", "/delete", bytes.NewReader(body))
-	s.handleRepoDelete(rr, req)
-
-	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
-	if size != 0 {
-		t.Fatalf("Size should be 0, got %d", size)
-	}
-
-	// Check status in gitserver_repos
-	want = &types.GitserverRepo{
-		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: size,
-	}
-	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
 func TestHandleRepoUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -683,23 +563,14 @@ func TestHandleRepoUpdate(t *testing.T) {
 	// We need the side effects here
 	_ = s.Handler()
 
-	rr := httptest.NewRecorder()
-
-	updateReq := protocol.RepoUpdateRequest{
-		Repo: repoName,
-	}
-	body, err := json.Marshal(updateReq)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Confirm that failing to clone the repo stores the error
 	oldRemoveURLFunc := s.GetRemoteURLFunc
 	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
+		Repo: repoName,
+	})
 
 	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
@@ -728,8 +599,9 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.GetRemoteURLFunc = oldRemoveURLFunc
-	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
+		Repo: repoName,
+	})
 
 	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
 	want = &types.GitserverRepo{
@@ -756,8 +628,9 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
+		Repo: repoName,
+	})
 
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
@@ -780,8 +653,9 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	s.RepoUpdate(&protocol.RepoUpdateRequest{
+		Repo: repoName,
+	})
 
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
@@ -1060,11 +934,10 @@ func TestSyncRepoState(t *testing.T) {
 }
 
 type BatchLogTest struct {
-	Name           string
-	Request        *http.Request
-	ExpectedCode   int
-	ExpectedBody   string
-	RunCommandMock func(ctx context.Context, cmd *exec.Cmd) (int, error)
+	Name         string
+	Request      *v1.BatchLogRequest
+	ExpectedCode codes.Code
+	ExpectedBody *proto.BatchLogResponse
 }
 
 func TestHandleBatchLog(t *testing.T) {
@@ -1088,82 +961,70 @@ func TestHandleBatchLog(t *testing.T) {
 
 	tests := []BatchLogTest{
 		{
-			Name:         "bad request",
-			Request:      newRequest("POST", "/batch-log", strings.NewReader(``)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "EOF", // the particular error when parsing empty payload
-		},
-		{
 			Name:         "empty",
-			Request:      newRequest("POST", "/batch-log", strings.NewReader(`{}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{},
-			}),
+			Request:      &v1.BatchLogRequest{},
+			ExpectedCode: codes.OK,
+			ExpectedBody: &proto.BatchLogResponse{},
 		},
 		{
 			Name: "all resolved",
-			Request: newRequest("POST", "/batch-log", strings.NewReader(`{
-				"repoCommits": [
-					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
-					{"repo": "github.com/foo/baz", "commitId": "deadbeef2"},
-					{"repo": "github.com/foo/bonk", "commitId": "deadbeef3"}
-				],
-				"format": "--format=test"
-			}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{
+			Request: &v1.BatchLogRequest{
+				RepoCommits: []*v1.RepoCommit{
+					{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
+					{Repo: "github.com/foo/baz", Commit: "deadbeef2"},
+					{Repo: "github.com/foo/bonk", Commit: "deadbeef3"},
+				},
+				Format: "--format=test",
+			},
+			ExpectedCode: codes.OK,
+			ExpectedBody: &proto.BatchLogResponse{
+				Results: []*proto.BatchLogResult{
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
 						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-						CommandError:  "",
 					},
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "deadbeef2"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/baz", Commit: "deadbeef2"},
 						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --name-only --format=test deadbeef2>",
-						CommandError:  "",
 					},
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bonk", CommitID: "deadbeef3"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bonk", Commit: "deadbeef3"},
 						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --name-only --format=test deadbeef3>",
-						CommandError:  "",
 					},
 				},
-			}),
+			},
 		},
 		{
 			Name: "partially resolved",
-			Request: newRequest("POST", "/batch-log", strings.NewReader(`{
-				"repoCommits": [
-					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
-					{"repo": "github.com/foo/baz", "commitId": "dumbmilk1"},
-					{"repo": "github.com/foo/honk", "commitId": "deadbeef3"}
-				],
-				"format": "--format=test"
-			}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{
+			Request: &v1.BatchLogRequest{
+				RepoCommits: []*v1.RepoCommit{
+					{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
+					{Repo: "github.com/foo/baz", Commit: "dumbmilk1"},
+					{Repo: "github.com/foo/honk", Commit: "deadbeef3"},
+				},
+				Format: "--format=test",
+			},
+			ExpectedCode: codes.OK,
+			ExpectedBody: &proto.BatchLogResponse{
+				Results: []*proto.BatchLogResult{
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
 						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-						CommandError:  "",
 					},
 					{
 						// git directory found, but cmd.Run returned error
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "dumbmilk1"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/baz", Commit: "dumbmilk1"},
 						CommandOutput: "",
-						CommandError:  "test error",
+						CommandError:  pointers.Ptr("test error"),
 					},
 					{
 						// no .git directory here
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/honk", CommitID: "deadbeef3"},
+						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/honk", Commit: "deadbeef3"},
 						CommandOutput: "",
-						CommandError:  "repo not found",
+						CommandError:  pointers.Ptr("repo not found"),
 					},
 				},
-			}),
+			},
 		},
 	}
 
@@ -1176,128 +1037,34 @@ func TestHandleBatchLog(t *testing.T) {
 				DB:                      dbmocks.NewMockDB(),
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  NewRepositoryLocker(),
+				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+					return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+				},
 			}
-			h := server.Handler()
+			// Initialize side-effects.
+			_ = server.Handler()
 
-			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
-			h.ServeHTTP(&w, test.Request)
+			gs := NewGRPCServer(server)
 
-			res := w.Result()
-			if res.StatusCode != test.ExpectedCode {
-				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
-			}
+			res, err := gs.BatchLog(context.Background(), test.Request)
 
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
+			if test.ExpectedCode == codes.OK && err != nil {
 				t.Fatal(err)
 			}
-			if strings.TrimSpace(string(body)) != test.ExpectedBody {
-				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+
+			if test.ExpectedCode != codes.OK {
+				if err == nil {
+					t.Fatal("expected error to be returned")
+				}
+				s, ok := status.FromError(err)
+				require.True(t, ok)
+				require.Equal(t, test.ExpectedCode, s.Code())
+				return
 			}
+
+			require.Equal(t, test.ExpectedBody, res)
 		})
 	}
-}
-
-func TestHeaderXRequestedWithMiddleware(t *testing.T) {
-	test := headerXRequestedWithMiddleware(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("success"))
-			w.WriteHeader(http.StatusOK)
-		}),
-	)
-
-	assertBody := func(result *http.Response, want string) {
-		b, err := io.ReadAll(result.Body)
-		if err != nil {
-			t.Fatalf("failed to read body: %v", err)
-		}
-
-		data := string(b)
-
-		if data != want {
-			t.Fatalf(`Expected body to contain %q, but found %q`, want, data)
-		}
-	}
-
-	failureExpectation := "header X-Requested-With is not set or is invalid\n"
-
-	t.Run("x-requested-with not set", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		w := httptest.NewRecorder()
-
-		test(w, r)
-
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusBadRequest {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
-		}
-
-		assertBody(result, failureExpectation)
-	})
-
-	t.Run("x-requested-with invalid value", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r.Header.Add("X-Requested-With", "foo")
-		w := httptest.NewRecorder()
-
-		test(w, r)
-
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusBadRequest {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
-		}
-
-		assertBody(result, failureExpectation)
-	})
-
-	t.Run("x-requested-with correct value", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r.Header.Add("X-Requested-With", "Sourcegraph")
-		w := httptest.NewRecorder()
-
-		test(w, r)
-
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
-		}
-
-		assertBody(result, "success")
-	})
-
-	t.Run("check skippped for /ping", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/ping", nil)
-		w := httptest.NewRecorder()
-
-		test(w, r)
-
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
-		}
-	})
-
-	t.Run("check skipped for /git", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/git/foo/bar", nil)
-		w := httptest.NewRecorder()
-
-		test(w, r)
-
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
-		}
-	})
 }
 
 func TestLogIfCorrupt(t *testing.T) {
@@ -1333,7 +1100,9 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
+		s.LogIfCorrupt(ctx, repoName, common.ErrRepoCorrupted{
+			Reason: stdErr,
+		})
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
@@ -1357,49 +1126,12 @@ func TestLogIfCorrupt(t *testing.T) {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		stdErr := "Brought to you by Horsegraph"
-
-		s.logIfCorrupt(ctx, repoName, gitserverfs.RepoDirFromName(s.ReposDir, repoName), stdErr)
+		s.LogIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
 		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
-}
-
-func mustEncodeJSONResponse(value any) string {
-	encoded, _ := json.Marshal(value)
-	return strings.TrimSpace(string(encoded))
-}
-
-func TestStdErrIndicatesCorruption(t *testing.T) {
-	bad := []string{
-		"error: packfile .git/objects/pack/pack-a.pack does not match index",
-		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
-		`error: short SHA1 1325 is ambiguous
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		`unrelated
-error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
-		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
-		"fatal: commit-graph requires overflow generation data but has none\n",
-		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
-	}
-	good := []string{
-		"",
-		"error: short SHA1 1325 is ambiguous",
-		"error: object 156639577dd2ea91cdd53b25352648387d985743 is a blob, not a commit",
-		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
-	}
-	for _, stderr := range bad {
-		if !stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should contain corrupt line:\n%s", stderr)
-		}
-	}
-	for _, stderr := range good {
-		if stdErrIndicatesCorruption(stderr) {
-			t.Errorf("should not contain corrupt line:\n%s", stderr)
-		}
-	}
 }
 
 func TestLinebasedBufferedWriter(t *testing.T) {

@@ -192,32 +192,26 @@ func TestCreateBatchSpec(t *testing.T) {
 	}{
 		"unauthorized access": {
 			changesetSpecs: []*btypes.ChangesetSpec{},
-			licenseInfo:    licensingInfo("starter"),
+			licenseInfo:    licensingInfo("plan:enterprise-0"),
 			wantErr:        true,
 			userID:         unauthorizedUser.ID,
 			unauthorized:   true,
 		},
 		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter"),
+			licenseInfo:    licensingInfo("plan:enterprise-0"),
 			wantErr:        true,
 			userID:         userID,
 		},
 		"batch changes license, restricted, under the limit": {
 			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
-			licenseInfo:    licensingInfo("starter"),
+			licenseInfo:    licensingInfo("plan:enterprise-0"),
 			wantErr:        false,
 			userID:         userID,
 		},
 		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "batch-changes"),
-			wantErr:        false,
-			userID:         userID,
-		},
-		"campaigns license, no limit": {
-			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "campaigns"),
+			licenseInfo:    licensingInfo("plan:enterprise-0", "batch-changes"),
 			wantErr:        false,
 			userID:         userID,
 		},

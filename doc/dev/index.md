@@ -86,7 +86,6 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Accessibility](background-information/web/accessibility.md)
   - [Temporary settings](background-information/web/temporary_settings.md)
   - [Build process](background-information/web/build.md)
-- [Developing Cody App](background-information/app/index.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing the SCIM API](background-information/scim_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)

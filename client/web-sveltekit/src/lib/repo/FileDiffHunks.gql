@@ -1,0 +1,17 @@
+fragment FileDiffHunks_Hunk on FileDiffHunk {
+    oldRange {
+        startLine
+        lines
+    }
+    newRange {
+        startLine
+        lines
+    }
+    highlight(disableTimeout: false) {
+        lines {
+            kind
+            html
+        }
+    }
+    section
+}

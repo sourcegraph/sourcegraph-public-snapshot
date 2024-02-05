@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"strconv"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
@@ -87,6 +88,7 @@ type batchChangeEventArg struct {
 	BatchChangeID int64 `json:"batch_change_id"`
 }
 
+// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 func logBackendEvent(ctx context.Context, db database.DB, name string, args any, publicArgs any) error {
 	actor := sgactor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
@@ -98,6 +100,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args any,
 		return err
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
 }
 

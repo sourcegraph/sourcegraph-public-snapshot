@@ -2,7 +2,7 @@ package licensing
 
 import (
 	"bytes"
-	"log"
+	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"sync"
 	"time"
 
@@ -182,10 +182,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			lastSignature = signature
 		}
 		return info, signature, nil
-	} else {
-		// If no license key, default to free tier
-		return GetFreeLicenseInfo(), "", nil
 	}
+
+	// If no license key, default to free tier
+	return GetFreeLicenseInfo(), "", nil
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for

@@ -24,7 +24,9 @@ func Render() ([]byte, error) {
 		return nil, errors.Wrap(err, "must be in sourcegraph/sourcegraph repository")
 	}
 
-	var r jsonschema.Reflector
+	r := jsonschema.Reflector{
+		FieldNameTag: "yaml",
+	}
 	if err := r.AddGoComments(
 		"github.com/sourcegraph/sourcegraph",
 		"./dev/managedservicesplatform/spec",

@@ -79,8 +79,8 @@ If you are not permitted to view a repository on Sourcegraph, then you won't be 
 
 ## Disabling Batch Changes
 
-A site admin can disable Batch Changes for the entire site by setting the [site configuration](../../../admin/config/site_config.md) property `"batch-changes.enabled"` to `false`. <!--- TODO:check --->
+A site admin can disable Batch Changes for the entire site by setting the [site configuration](../../../admin/config/site_config.md) property `"batchChanges.enabled"` to `false`. <!--- TODO:check --->
 
 ## Disabling Batch Changes for non-site-admin users
 
-A site admin can disable batch changes for normal users by setting the [site configuration](../../../admin/config/site_config.md) property `"batch-changes.restrictToAdmins"` to `true`. <!--- TODO:check --->
+A site admin can disable batch changes for normal users by setting the [site configuration](../../../admin/config/site_config.md) property `"batchChanges.restrictToAdmins"` to `true`. <!--- TODO:check --->

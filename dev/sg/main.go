@@ -266,6 +266,7 @@ var sg = &cli.App{
 		testCommand,
 		lintCommand,
 		generateCommand,
+		bazelCommand,
 		dbCommand,
 		migrationCommand,
 		insightsCommand,
@@ -280,7 +281,6 @@ var sg = &cli.App{
 		setupCommand,
 		srcCommand,
 		srcInstanceCommand,
-		appCommand,
 
 		// Company
 		teammateCommand,
@@ -293,13 +293,14 @@ var sg = &cli.App{
 		msp.Command,
 
 		// Util
-		helpCommand,
-		versionCommand,
-		updateCommand,
-		installCommand,
-		funkyLogoCommand,
 		analyticsCommand,
+		doctorCommand,
+		funkyLogoCommand,
+		helpCommand,
+		installCommand,
 		releaseCommand,
+		updateCommand,
+		versionCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		if err == nil {

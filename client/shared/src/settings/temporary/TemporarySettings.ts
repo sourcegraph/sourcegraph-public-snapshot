@@ -56,6 +56,7 @@ export interface TemporarySettingsSchema {
         repositoryName: string
         filePath: string
     }
+    'search.homepage.keywordCta.dismissed': boolean
     'search.results.collapseSmartSearch': boolean
     'search.results.collapseUnownedResultsAlert': boolean
     'search.input.recentSearches': RecentSearch[]
@@ -65,6 +66,7 @@ export interface TemporarySettingsSchema {
      */
     'search.input.usedExamples': string[]
     'search.input.usedInlineHistory': boolean
+    'search.navigation': boolean
 
     /** Let users quickly switch between the v1 and v2 query inputs. */
     'search.input.experimental': boolean
@@ -77,7 +79,6 @@ export interface TemporarySettingsSchema {
     'own.panelExplanationHidden': boolean
     'cody.showSidebar': boolean
     'cody.blobPageCta.dismissed': boolean
-    'cody.searchPageCta.dismissed': boolean
     'cody.chatPageCta.dismissed': boolean
     'cody.survey.submitted': boolean
     'app.codyStandalonePage.selectedRepo': string
@@ -87,6 +88,9 @@ export interface TemporarySettingsSchema {
     'simple.search.toggle': boolean
     'cody.onboarding.completed': boolean
     'cody.onboarding.step': number
+
+    /** OpenCodeGraph */
+    'openCodeGraph.annotations.visible': boolean
 }
 
 /**
@@ -122,9 +126,11 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'onboarding.userconfig': null,
     'characterKeyShortcuts.enabled': null,
     'search.homepage.queryExamplesContent': null,
+    'search.homepage.keywordCta.dismissed': null,
     'search.results.collapseSmartSearch': null,
     'search.results.collapseUnownedResultsAlert': null,
     'search.input.recentSearches': null,
+    'search.navigation': null,
     /**
      * Keeps track of which of the query examples shown as suggestions
      * the user has used so that we don't suggest them anymore.
@@ -140,7 +146,6 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'own.panelExplanationHidden': null,
     'cody.showSidebar': null,
     'cody.blobPageCta.dismissed': null,
-    'cody.searchPageCta.dismissed': null,
     'cody.chatPageCta.dismissed': null,
     'cody.survey.submitted': null,
     'app.codyStandalonePage.selectedRepo': null,
@@ -150,6 +155,7 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'simple.search.toggle': null,
     'cody.onboarding.completed': null,
     'cody.onboarding.step': null,
+    'openCodeGraph.annotations.visible': null,
 }
 
 export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

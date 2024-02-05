@@ -28,7 +28,7 @@
     const { update, popover } = createPopover()
 
     let visible = false
-    let container: HTMLElement
+    let wrapper: HTMLElement
     let target: Element | null
 
     afterUpdate(update)
@@ -52,9 +52,9 @@
             },
         ],
     }
-    $: target = container?.firstElementChild
-    $: if (target) {
-        target.setAttribute('aria-labeledby', id)
+    $: target = wrapper?.firstElementChild
+    $: if (target && tooltip) {
+        target.setAttribute('aria-label', tooltip)
     }
 </script>
 
@@ -64,17 +64,10 @@
     itself is not interactable.
     svelte-ignore a11y-no-static-element-interactions
 -->
-<div
-    class="container"
-    bind:this={container}
-    on:mouseenter={show}
-    on:mouseleave={hide}
-    on:focusin={show}
-    on:focusout={hide}
->
+<div class="wrapper" bind:this={wrapper} on:mouseenter={show} on:mouseleave={hide} on:focusin={show} on:focusout={hide}>
     <slot />
 </div>
-{#if (alwaysVisible || visible) && target}
+{#if (alwaysVisible || visible) && target && tooltip}
     <div role="tooltip" {id} use:popover={{ target, options }}>
         {tooltip}
         <div data-popper-arrow />
@@ -82,7 +75,7 @@
 {/if}
 
 <style lang="scss">
-    .container {
+    .wrapper {
         display: contents;
     }
 
@@ -96,7 +89,9 @@
         --tooltip-padding-x: 0.5rem;
         --tooltip-margin: 0;
 
+        all: initial;
         isolation: isolate;
+        font-family: inherit;
         font-size: var(--tooltip-font-size);
         font-style: normal;
         font-weight: normal;

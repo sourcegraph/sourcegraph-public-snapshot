@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -310,7 +311,7 @@ func fuzzyRegexp(patterns []Pattern) []Node {
 
 // standard reduces a sequence of Patterns such that:
 //
-// - adjacent literal patterns are concattenated with space. I.e., contiguous
+// - adjacent literal patterns are concatenated with space. I.e., contiguous
 // literal patterns are joined on space to create one literal pattern.
 //
 // - any patterns adjacent to regular expression patterns are AND-ed.
@@ -525,8 +526,8 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 	return query
 }
 
-// concatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
-// Invariant: Guaranteed to succeed on a validat Basic query.
+// ConcatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
+// Invariant: Guaranteed to succeed on a validated Basic query.
 func ConcatRevFilters(b Basic) Basic {
 	var revision string
 	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
@@ -579,8 +580,8 @@ func OmitField(q Q, field string) string {
 	}))
 }
 
-// addRegexpField adds a new expr to the query with the given field and pattern
-// value. The nonnegated field is assumed to associate with a regexp value. The
+// AddRegexpField adds a new expr to the query with the given field and pattern
+// value. The non-negated field is assumed to correspond to a regexp value. The
 // pattern value is assumed to be unquoted.
 //
 // It tries to remove redundancy in the result. For example, given
@@ -609,11 +610,60 @@ func AddRegexpField(q Q, field, pattern string) string {
 	return StringHuman(q)
 }
 
-// Converts a parse tree to a basic query by attempting to obtain a valid partition.
+// ToBasicQuery converts a parse tree to a basic query by attempting to obtain a valid partition.
 func ToBasicQuery(nodes []Node) (Basic, error) {
 	parameters, pattern, err := PartitionSearchPattern(nodes)
 	if err != nil {
 		return Basic{}, err
 	}
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
+}
+
+// ExperimentalPhraseBoost returns a transformation on basic queries that
+// appends a phrase query to the original query but only if the original query
+// consists of a single top-level AND expression. The purpose is to improve
+// ranking of exact matches by adding a phrase query for the entire query
+// string.
+//
+// Example:
+//
+//	foo bar bas -> (or (and foo bar bas) ("foo bar bas"))
+func ExperimentalPhraseBoost(logger sglog.Logger, originalQuery string) BasicPass {
+	return func(basic Basic) Basic {
+		if basic.Pattern == nil {
+			return basic
+		}
+
+		if n, ok := basic.Pattern.(Operator); ok && n.Kind == And {
+			// Gate on the number of operands. We don't want to add a phrase query for very
+			// short queries.
+			if len(n.Operands) < 3 {
+				return basic
+			}
+
+			phrase := ""
+			for _, child := range n.Operands {
+				c, isPattern := child.(Pattern)
+				if !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
+					return basic
+				}
+
+				phrase += c.Value + " "
+			}
+			phrase = strings.TrimSpace(phrase)
+
+			basic.Pattern = Operator{
+				Kind: Or,
+				Operands: []Node{
+					Pattern{
+						Value:      phrase,
+						Annotation: Annotation{Labels: Boost | Literal | QuotesAsLiterals | Standard},
+					},
+					n,
+				},
+			}
+		}
+
+		return basic
+	}
 }

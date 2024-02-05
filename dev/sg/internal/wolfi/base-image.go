@@ -52,7 +52,6 @@ func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error 
 		"-e", fmt.Sprintf("SOURCE_DATE_EPOCH=%d", time.Now().Unix()),
 		"-w", "/work",
 		"cgr.dev/chainguard/apko", "build",
-		"--debug",
 		"--arch", "x86_64",
 		"--repository-append", "@local /packages",
 		"--keyring-append", fmt.Sprintf("/keys/%s.pub", c.KeyFilename),

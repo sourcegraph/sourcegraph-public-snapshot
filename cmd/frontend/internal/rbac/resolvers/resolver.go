@@ -172,6 +172,7 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 	return &gql.EmptyResponse{}, nil
 }
 
+// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 func (r *Resolver) logBackendEvent(ctx context.Context, eventName string, args any) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsMockUser() {
@@ -180,6 +181,8 @@ func (r *Resolver) logBackendEvent(ctx context.Context, eventName string, args a
 			r.logger.Warn(fmt.Sprintf("Could not log event: %s", eventName), log.Error(err))
 			return
 		}
+
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err := usagestats.LogBackendEvent(
 			r.db,
 			a.UID,

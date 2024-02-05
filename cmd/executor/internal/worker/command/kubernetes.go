@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/pointer"
 
 	k8swatch "k8s.io/apimachinery/pkg/watch"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const (
@@ -445,7 +445,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
 			// cleaned up from the first failure.
-			BackoffLimit: pointer.Int32(0),
+			BackoffLimit: pointers.Ptr[int32](0),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: options.PodAnnotations,
@@ -667,7 +667,7 @@ func NewKubernetesSingleJob(
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
 			// cleaned up from the first failure.
-			BackoffLimit: pointer.Int32(0),
+			BackoffLimit: pointers.Ptr[int32](0),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: options.PodAnnotations,

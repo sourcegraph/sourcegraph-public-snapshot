@@ -29,8 +29,8 @@ func TestClientSource_AddrMatchesTarget(t *testing.T) {
 
 	ctx := context.Background()
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
-		addr := source.AddrForRepo(ctx, "test", repo)
-		conn, err := conns.ConnForRepo(ctx, "test", repo)
+		addr := source.AddrForRepo(ctx, repo)
+		conn, err := conns.ConnForRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}

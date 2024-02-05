@@ -14,7 +14,7 @@ import (
 // Exhaustive exports what is needed for the search jobs product (exhaustive
 // search). The naming conflict between the product search jobs and the search
 // job infrastructure is unfortunate. So we use the name exhaustive to
-// differentiate ourself from the infrastructure.
+// differentiate ourselves from the infrastructure.
 type Exhaustive struct {
 	repoPagerJob *repoPagerJob
 }
@@ -39,28 +39,28 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	b := inputs.Plan[0]
-	term, ok := b.Pattern.(query.Pattern)
-	if !ok {
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
+	if b.Pattern == nil {
+		return Exhaustive{}, errors.Errorf("missing pattern")
 	}
 
-	// We don't support file: predicates, such as file:has.content(), because the
+	// We don't support file predicates, such as file:has.content(), because the
 	// search breaks in unexpected ways. For example, for interactive search
 	// file:has.content() is translated to an AND query which we don't support in
 	// Search Jobs yet.
 	if pred, ok := hasPredicates(query.FieldFile, inputs.Query); ok {
-		return Exhaustive{}, errors.Errorf("file: predicates are not supported. Got %v", pred)
+		return Exhaustive{}, errors.Errorf("file predicates are not supported. Got %v", pred)
 	}
 
 	// This is a very weak protection but should be enough to catch simple misuse.
-	if inputs.PatternType == query.SearchTypeRegex && term.Value == ".*" {
-		return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+	if inputs.PatternType == query.SearchTypeRegex {
+		if term, ok := b.Pattern.(query.Pattern); ok && term.Value == ".*" {
+			return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+		}
 	}
 
-	planJob, err := NewFlatJob(inputs, query.Flat{Parameters: b.Parameters, Pattern: &term})
-	if err != nil {
-		return Exhaustive{}, err
-	}
+	repoOptions := toRepoOptions(b, inputs.UserSettings)
+	resultTypes := computeResultTypes(b, inputs.PatternType)
+	planJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 
 	repoPagerJob, ok := planJob.(*repoPagerJob)
 	if !ok {
@@ -102,5 +102,5 @@ func (e Exhaustive) ResolveRepositoryRevSpec(ctx context.Context, clients job.Ru
 }
 
 func reposNewResolver(clients job.RuntimeClients) *repos.Resolver {
-	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, clients.Zoekt)
 }

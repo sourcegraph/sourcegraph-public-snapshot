@@ -5,7 +5,9 @@
         "value": "alsace",
         "negated": false,
         "labels": [
-          "Literal"
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {
@@ -39,7 +41,9 @@
         "value": "bordeaux",
         "negated": false,
         "labels": [
-          "Literal"
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {

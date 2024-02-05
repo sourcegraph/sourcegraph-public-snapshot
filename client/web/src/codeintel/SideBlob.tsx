@@ -16,6 +16,7 @@ import {
     ReferencesPanelHighlightedBlobVariables,
 } from '../graphql-operations'
 import { SearchPanelConfig } from '../repo/blob/codemirror/search'
+import { Range } from '../repo/blob/codemirror/static-highlights'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
@@ -37,6 +38,7 @@ export interface SideBlobProps
     navigateToLineOnAnyClick?: boolean
     searchPanelConfig?: SearchPanelConfig
     className?: string
+    staticHighlightRanges?: Range[]
 }
 
 export const SideBlob: FC<SideBlobProps> = props => {
@@ -54,6 +56,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
         telemetryService,
         platformContext,
         className,
+        staticHighlightRanges,
     } = props
 
     const { data, error, loading } = useQuery<
@@ -98,12 +101,11 @@ export const SideBlob: FC<SideBlobProps> = props => {
         )
     }
 
+    const blob = data?.repository?.commit?.blob
     // If there weren't any errors and we just didn't receive any data
-    if (!data?.repository?.commit?.blob?.highlight) {
+    if (!blob || !blob.highlight) {
         return <>Nothing found</>
     }
-
-    const { lsif } = data?.repository?.commit?.blob?.highlight
 
     // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
@@ -114,13 +116,14 @@ export const SideBlob: FC<SideBlobProps> = props => {
             wrapCode={wrapLines}
             navigateToLineOnAnyClick={navigateToLineOnAnyClick}
             blobInfo={{
-                lsif: lsif ?? '',
+                lsif: blob.highlight.lsif ?? '',
                 commitID,
                 filePath: file,
                 repoName: repository,
                 revision: commitID,
-                content: data?.repository?.commit?.blob?.content ?? '',
+                content: blob.content,
                 mode: 'lspmode',
+                languages: blob.languages,
             }}
             searchPanelConfig={searchPanelConfig}
             className={classNames(className, styles.sideBlobCode)}
@@ -128,6 +131,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
             extensionsController={extensionsController}
             settingsCascade={settingsCascade}
             telemetryService={telemetryService}
+            staticHighlightRanges={staticHighlightRanges}
         />
     )
 }

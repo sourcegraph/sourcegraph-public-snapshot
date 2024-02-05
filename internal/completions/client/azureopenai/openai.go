@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -13,6 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// HTTP proxy value to be used for id token requests to Azure
+// This value will only used when using an access token is not provided
+// and it will only apply to requests made to the Azure authentication endpoint
+// not other requests such as to the OpenAI API
+var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 
 // We want to reuse the client because when using the DefaultAzureCredential
 // it will acquire a short lived token and reusing the client
@@ -52,13 +60,38 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 		}
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
-		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
+		var opts *azidentity.DefaultAzureCredentialOptions
+		opts, err = getCredentialOptions()
+		if err != nil {
+			return nil, err
+		}
+		credential, credErr := azidentity.NewDefaultAzureCredential(opts)
 		if credErr != nil {
 			return nil, credErr
 		}
+		apiClient.endpoint = endpoint
 		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
 	}
 	return apiClient.client, err
+
+}
+
+func getCredentialOptions() (*azidentity.DefaultAzureCredentialOptions, error) {
+	// if there is no proxy we don't need any options
+	if authProxyURL == "" {
+		return nil, nil
+	}
+
+	proxyUrl, err := url.Parse(authProxyURL)
+	if err != nil {
+		return nil, err
+	}
+	proxiedClient := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	return &azidentity.DefaultAzureCredentialOptions{
+		ClientOptions: azcore.ClientOptions{
+			Transport: proxiedClient,
+		},
+	}, nil
 
 }
 

@@ -346,6 +346,7 @@ const gitRepo: RepositoryFields = {
     },
     defaultBranch: null,
     metadata: [],
+    topics: [],
 }
 
 export const GitCommitsStory: StoryFn<RepositoryCommitsPageProps> = () => (
@@ -390,6 +391,7 @@ const perforceRepo: RepositoryFields = {
     },
     defaultBranch: null,
     metadata: [],
+    topics: [],
 }
 
 export const PerforceChangelistsStory: StoryFn<RepositoryCommitsPageProps> = () => (

@@ -17,7 +17,6 @@ import { isPackagesEnabled } from './flags'
 import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 const analyticsGroup: SiteAdminSideBarGroup = {
-    condition: ({ isCodyApp }) => !isCodyApp,
     header: {
         label: 'Analytics',
         icon: ChartLineVariantIcon,
@@ -31,10 +30,12 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Users',
@@ -53,6 +54,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Extensions',
@@ -61,11 +63,11 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code ownership',
             to: '/site-admin/analytics/own',
+            condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
     ],
 }
@@ -83,7 +85,6 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'End user onboarding',
@@ -97,18 +98,14 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
-
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'Incoming webhooks',
             to: '/site-admin/webhooks/incoming',
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'Outgoing webhooks',
             to: '/site-admin/webhooks/outgoing',
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
     ],
 }
@@ -130,7 +127,6 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
-    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: maintenanceGroupUpdatesItemLabel,
@@ -182,7 +178,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
-            condition: ({ isCodyApp, codeInsightsEnabled }) => !isCodyApp && codeInsightsEnabled,
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
     ],
 }
@@ -222,7 +218,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             condition: props => props.batchChangesExecutionEnabled,
         },
     ],
-    condition: ({ batchChangesEnabled, isCodyApp }) => batchChangesEnabled && !isCodyApp,
+    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
@@ -249,7 +245,6 @@ const businessGroup: SiteAdminSideBarGroup = {
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
-    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             to: '/site-admin/code-graph/dashboard',
@@ -271,13 +266,14 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-graph/ranking',
             label: 'Ranking',
+            condition: () => window.context?.codeIntelRankingDocumentReferenceCountsEnabled,
         },
         {
             label: 'Ownership signals',
             to: '/site-admin/own-signal-page',
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
     ],
+    condition: ({ license }) => license.isCodeSearchEnabled,
 }
 
 export const codyGroup: SiteAdminSideBarGroup = {
@@ -295,7 +291,7 @@ export const codyGroup: SiteAdminSideBarGroup = {
             condition: () => window.context?.embeddingsEnabled,
         },
     ],
-    condition: () => window.context?.codyEnabled,
+    condition: () => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled),
 }
 
 const usersGroup: SiteAdminSideBarGroup = {
@@ -303,7 +299,6 @@ const usersGroup: SiteAdminSideBarGroup = {
         label: 'Users & auth',
         icon: AccountMultipleIcon,
     },
-    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: 'Users',
@@ -338,7 +333,6 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
         label: 'Repositories',
         icon: SourceRepositoryIcon,
     },
-    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: 'Code host connections',
@@ -347,7 +341,6 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Repositories',
             to: '/site-admin/repositories',
-            condition: ({ isCodyApp }) => !isCodyApp,
         },
         {
             label: 'GitHub Apps',
@@ -370,7 +363,6 @@ const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
-    condition: ({ isCodyApp }) => !isCodyApp,
     items: [
         {
             label: 'API Console',

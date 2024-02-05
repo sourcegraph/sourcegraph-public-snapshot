@@ -29,16 +29,16 @@ func (e *eventWriter) MatchesJSON(data []byte) error {
 	return e.inner.EventBytes("matches", data)
 }
 
-func (e *eventWriter) Filters(fs []*streaming.Filter) error {
+func (e *eventWriter) Filters(fs []*streaming.Filter, exhaustive bool) error {
 	if len(fs) > 0 {
 		buf := make([]streamhttp.EventFilter, 0, len(fs))
 		for _, f := range fs {
 			buf = append(buf, streamhttp.EventFilter{
-				Value:    f.Value,
-				Label:    f.Label,
-				Count:    f.Count,
-				LimitHit: f.IsLimitHit,
-				Kind:     f.Kind,
+				Value:      f.Value,
+				Label:      f.Label,
+				Count:      f.Count,
+				Kind:       string(f.Kind),
+				Exhaustive: exhaustive,
 			})
 		}
 

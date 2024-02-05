@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
@@ -31,6 +32,12 @@ go_binary(
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
+)
+
+# Ensure this builds, so we don't fail at publish time later on in the pipeline.
+build_test(
+    name = "executor_build_test",
+    targets = [":executor"],
 )
 
 go_binary(
@@ -106,4 +113,17 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("executor"),
+)
+
+sh_binary(
+    name = "binary.push",
+    srcs = ["_binary.push.sh"],
+    args = [
+        "$(location //dev/tools:gsutil)",
+        "$(location :executor)",
+    ],
+    data = [
+        ":executor",
+        "//dev/tools:gsutil",
+    ],
 )

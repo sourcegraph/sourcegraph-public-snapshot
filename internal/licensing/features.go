@@ -68,12 +68,6 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 		return newFeatureRequiresSubscriptionError(f.FeatureName())
 	}
 
-	// If the deprecated campaigns are enabled, use unrestricted batch changes.
-	if FeatureCampaigns.Check(info) == nil {
-		f.Unrestricted = true
-		return nil
-	}
-
 	// If the batch changes tag exists on the license, use unrestricted batch
 	// changes.
 	if info.HasTag(f.FeatureName()) {

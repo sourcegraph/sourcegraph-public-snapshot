@@ -41,6 +41,7 @@ type MetaToken =
     | MetaSelector
     | MetaPath
     | MetaPredicate
+    | MetaKeyword
 
 /**
  * Defines common properties for meta tokens.
@@ -200,6 +201,18 @@ export interface MetaPredicate {
     groupRange?: CharacterRange
     kind: MetaPredicateKind
     value: Predicate
+}
+
+enum MetaKeywordKind {
+    EscapedCharacter = 'EscapedCharacter',
+}
+
+/**
+ * Keyword tokens, which can be quoted and contain escape sequences.
+ */
+interface MetaKeyword extends BaseMetaToken {
+    type: 'metaKeyword'
+    kind: MetaKeywordKind
 }
 
 /**
@@ -800,6 +813,41 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
 }
 
 /**
+ * Adds decorations for a quoted pattern, like "foo" and "foo \" bar" for
+ * escaped quotes inside the pattern. The result always contains the
+ * original token so that hover tooltips can show information about the
+ * whole pattern.
+ */
+const mapQuotedPattern = (token: Pattern): DecoratedToken[] => {
+    // We always include the original token so that hover tooltips can show
+    // information about the whole pattern.
+    const tokens: DecoratedToken[] = [token]
+    const { value, delimiter } = token
+
+    if (delimiter) {
+        // + 1 because `value` is the value without delimiters, but token.range.start is the position of the first delimiter
+        const startOffset = token.range.start + 1
+        let i = 0
+
+        while (i < value.length) {
+            if (value[i] === '\\' && value[i + 1] === delimiter) {
+                tokens.push({
+                    type: 'metaKeyword',
+                    kind: MetaKeywordKind.EscapedCharacter,
+                    value: value.slice(i, i + 2),
+                    range: {
+                        start: startOffset + i,
+                        end: startOffset + i + 2,
+                    },
+                })
+                i += 1
+            }
+            i += 1
+        }
+    }
+    return tokens
+}
+/**
  * Returns true for filter values that have regexp values, e.g., repo, file.
  * Excludes FilterType.content because that depends on the pattern kind.
  */
@@ -1108,7 +1156,11 @@ export const decorate = (token: Token): DecoratedToken[] => {
                     break
                 }
                 case PatternKind.Literal: {
-                    decorated.push(token)
+                    if (token.delimited) {
+                        decorated.push(...mapQuotedPattern(token))
+                    } else {
+                        decorated.push(token)
+                    }
                     break
                 }
             }
@@ -1162,7 +1214,10 @@ export const decorate = (token: Token): DecoratedToken[] => {
     return decorated
 }
 
-const tokenKindToCSSName: Record<MetaRevisionKind | MetaRegexpKind | MetaPredicateKind | MetaStructuralKind, string> = {
+const tokenKindToCSSName: Record<
+    MetaRevisionKind | MetaRegexpKind | MetaPredicateKind | MetaStructuralKind | MetaKeywordKind,
+    string
+> = {
     Separator: 'separator',
     IncludeGlobMarker: 'include-glob-marker',
     ExcludeGlobMarker: 'exclude-glob-marker',
@@ -1217,6 +1272,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
             return `search-revision-${tokenKindToCSSName[token.kind]}`
         }
 
+        case 'metaKeyword':
         case 'metaRegexp': {
             return `search-regexp-meta-${tokenKindToCSSName[token.kind]}`
         }

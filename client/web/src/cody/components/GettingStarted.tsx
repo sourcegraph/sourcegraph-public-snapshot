@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -6,11 +6,9 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon, CodySpeechBubbleIcon } from '../chat/CodyPageIcon'
-import type { CodyChatStore } from '../useCodyChat'
 
 import { ScopeSelector } from './ScopeSelector'
-import type { IRepo } from './ScopeSelector/RepositoriesSelectorPopover'
-import { isRepoIndexed } from './ScopeSelector/RepositoriesSelectorPopover'
+import { ScopeSelectorProps } from './ScopeSelector/ScopeSelector'
 
 import styles from './GettingStarted.module.scss'
 
@@ -18,18 +16,10 @@ type ConversationScope = 'general' | 'repo'
 
 const DEFAULT_VERTICAL_OFFSET = '1rem'
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const GettingStarted: React.FC<
-    Pick<
-        CodyChatStore,
-        | 'scope'
-        | 'logTranscriptEvent'
-        | 'transcriptHistory'
-        | 'setScope'
-        | 'toggleIncludeInferredRepository'
-        | 'toggleIncludeInferredFile'
-        | 'fetchRepositoryNames'
-    > & {
-        isCodyApp?: boolean
+    ScopeSelectorProps & {
         isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
         authenticatedUser: AuthenticatedUser | null
@@ -118,34 +108,6 @@ export const GettingStarted: React.FC<
         }
     }, [conversationScope, scopeSelectorProps.scope.repositories])
 
-    const renderRepoIndexingWarning: (repos: IRepo[]) => React.ReactNode = useCallback(
-        (repos: IRepo[]) => {
-            if (conversationScope === 'general' || repos.every(isRepoIndexed)) {
-                return null
-            }
-
-            const unindexedCount = repos.filter(repo => !isRepoIndexed(repo)).length
-            const warningText =
-                repos.length === 1
-                    ? 'The selected repository is not indexed for Cody and is missing embeddings.'
-                    : `${unindexedCount} of ${repos.length} selected repositories are not indexed for Cody and are missing embeddings.`
-
-            return (
-                <Text size="small" className={styles.scopeSelectorWarning}>
-                    {warningText} This may affect the quality of the answers. To enable indexing, see the{' '}
-                    <Link
-                        className={styles.scopeSelectorWarningLink}
-                        to="/help/cody/explanations/code_graph_context#embeddings"
-                    >
-                        embeddings documentation
-                    </Link>
-                    .
-                </Text>
-            )
-        },
-        [conversationScope]
-    )
-
     return (
         <div ref={containerRef} className={styles.container}>
             {/* eslint-disable-next-line react/forbid-dom-props */}
@@ -205,7 +167,6 @@ export const GettingStarted: React.FC<
                                 <div className={styles.scopeSelectorWrapper}>
                                     <ScopeSelector
                                         {...scopeSelectorProps}
-                                        renderHint={renderRepoIndexingWarning}
                                         encourageOverlap={true}
                                         authenticatedUser={authenticatedUser}
                                     />

@@ -57,6 +57,8 @@ import type { SourcegraphContext } from '../../jscontext'
 import type { NotebookProps } from '../../notebooks'
 import { copyNotebook, type CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { ToggleOpenCodeGraphVisibilityAction } from '../../opencodegraph/global/ToggleOpenCodeGraphVisibility'
+import { useOpenCodeGraphVisibility } from '../../opencodegraph/global/useOpenCodeGraphVisibility'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import type { SearchStreamingProps } from '../../search'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
@@ -71,6 +73,7 @@ import type { HoverThresholdProps } from '../RepoContainer'
 import type { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
+import { GoToRawAction } from './actions/GoToRawAction'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
@@ -78,7 +81,6 @@ import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
-import { GoToRawAction } from './GoToRawAction'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -208,6 +210,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                                 revision,
                                 filePath,
                                 mode,
+                                languages: blob.languages,
                                 // Properties used in `BlobPage` but not `Blob`
                                 richHTML: blob.richHTML,
                                 aborted: false,
@@ -261,6 +264,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                             revision,
                             filePath,
                             mode,
+                            languages: blob.languages,
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
@@ -301,6 +305,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
     const [isBlameVisible] = useBlameVisibility(isPackage)
     const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath }, props.platformContext.sourcegraphURL)
+
+    // OpenCodeGraph
+    const [enableOpenCodeGraph] = useFeatureFlag('opencodegraph', false)
+    const [ocgVisibility] = useOpenCodeGraphVisibility()
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
@@ -357,7 +365,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={112}
+                    priority={6}
                     id="open-in-editor-action"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
@@ -373,7 +381,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             )}
             <RepoHeaderContributionPortal
                 position="right"
-                priority={111}
+                priority={4}
                 id="toggle-blame-action"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
@@ -386,9 +394,25 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     />
                 )}
             </RepoHeaderContributionPortal>
+            {enableOpenCodeGraph && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={4}
+                    id="toggle-opencodegraph"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <ToggleOpenCodeGraphVisibilityAction
+                            actionType={actionType}
+                            source="repoHeader"
+                            renderMode={renderMode}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
             <RepoHeaderContributionPortal
                 position="right"
-                priority={20}
+                priority={5}
                 id="toggle-blob-panel"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
@@ -405,9 +429,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             {renderMode === 'code' && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={99}
+                    priority={9}
                     id="toggle-line-wrap"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                    renderInContextMenu={true}
                 >
                     {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                 </RepoHeaderContributionPortal>
@@ -415,9 +440,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={30}
+                priority={8}
                 id="raw-action"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                renderInContextMenu={true}
             >
                 {context => (
                     <GoToRawAction
@@ -521,9 +547,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
             {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={100}
+                    priority={10}
                     id="toggle-rendered-file-mode"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                    renderInContextMenu={true}
                 >
                     {({ actionType }) => (
                         <ToggleRenderedFileMode
@@ -582,6 +609,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
+                        ocgVisibility={ocgVisibility}
                         overrideBrowserSearchKeybinding={true}
                     />
                 </TraceSpanProvider>

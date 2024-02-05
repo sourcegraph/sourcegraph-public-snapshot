@@ -20,6 +20,9 @@ import (
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -92,6 +95,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Logger:         logger,
 		ObservationCtx: observationCtx,
 		ReposDir:       config.ReposDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName)
+		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
@@ -174,10 +180,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.NewJanitor(
 				ctx,
 				server.JanitorConfig{
-					ShardID:            gitserver.Hostname,
-					JanitorInterval:    config.JanitorInterval,
-					ReposDir:           config.ReposDir,
-					DesiredPercentFree: config.JanitorReposDesiredPercentFree,
+					ShardID:                        gitserver.Hostname,
+					JanitorInterval:                config.JanitorInterval,
+					ReposDir:                       config.ReposDir,
+					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
+					DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
 				},
 				db,
 				recordingCommandFactory,
@@ -230,10 +237,13 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	var additionalServerOptions []grpc.ServerOption
 
 	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog"),
-		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog"),
-		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog"),
-		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog"),
+		proto.GitserverService_Exec_FullMethodName:          logger.Scoped("exec.accesslog"),
+		proto.GitserverService_Archive_FullMethodName:       logger.Scoped("archive.accesslog"),
+		proto.GitserverService_P4Exec_FullMethodName:        logger.Scoped("p4exec.accesslog"),
+		proto.GitserverService_GetObject_FullMethodName:     logger.Scoped("get-object.accesslog"),
+		proto.GitserverService_MergeBase_FullMethodName:     logger.Scoped("merge-base.accesslog"),
+		proto.GitserverService_Blame_FullMethodName:         logger.Scoped("blame.accesslog"),
+		proto.GitserverService_DefaultBranch_FullMethodName: logger.Scoped("default-branch.accesslog"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
@@ -245,9 +255,7 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	}
 
 	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
-		Server: s,
-	})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	return grpcServer
 }

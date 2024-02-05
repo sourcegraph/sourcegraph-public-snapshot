@@ -102,7 +102,9 @@ To ensure system performance and stability, configurable GraphQL query cost limi
   "rateLimits": {
     "graphQLMaxAliases": 500,
     "graphQLMaxDepth": 30,
-    "graphQLMaxFieldCount": 500000
+    "graphQLMaxFieldCount": 500000,
+    "graphQLMaxDuplicateFieldCount": 500,
+    "graphQLMaxUniqueFieldCount": 500
   },
 ```
 
@@ -117,3 +119,11 @@ To ensure system performance and stability, configurable GraphQL query cost limi
 ### GraphQLMaxAliases
 - **Default Value**: 500
 - Sets a cap on the number of aliases in a single GraphQL query, mitigating the risk of resource-intensive queries due to excessive aliasing.
+
+### GraphqlMaxDuplicateFieldCount
+- **Default Value**: 500
+- Limits the number of duplicate fields in a GraphQL query to prevent queries with unnecessary duplication from consuming excessive resources.
+
+### GraphqlMaxUniqueFieldCount
+- **Default Value**: 500
+- Restricts the number of unique fields in a GraphQL query to prevent queries with unnecessary broadness from consuming excessive resources.

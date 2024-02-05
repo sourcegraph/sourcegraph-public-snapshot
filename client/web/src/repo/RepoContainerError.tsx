@@ -1,4 +1,5 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import AlertIcon from 'mdi-react/AlertIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import type { ErrorLike } from '@sourcegraph/common'
@@ -7,6 +8,7 @@ import {
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,
+    isRepoDeniedErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -33,6 +35,16 @@ export const RepoContainerError: React.FunctionComponent<React.PropsWithChildren
 
     if (isRepoNotFoundErrorLike(repoFetchError)) {
         return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
+    }
+
+    if (isRepoDeniedErrorLike(repoFetchError)) {
+        return (
+            <HeroPage
+                icon={AlertIcon}
+                title={displayRepoName(repoName)}
+                body={<Text className="mt-4">Repository cannot be added on-demand: {repoFetchError.reason}.</Text>}
+            />
+        )
     }
 
     if (isCloneInProgressErrorLike(repoFetchError)) {

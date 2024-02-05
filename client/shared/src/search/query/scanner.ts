@@ -131,7 +131,7 @@ const quoted =
         return {
             type: 'success',
             // end + 1 as `end` is currently the index of the quote in the string.
-            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true),
+            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true, delimiter),
         }
     }
 
@@ -424,7 +424,8 @@ const createPattern = (
     value: string,
     range: CharacterRange,
     kind: PatternKind,
-    delimited?: boolean
+    delimited?: boolean,
+    delimiter?: string
 ): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
@@ -433,6 +434,7 @@ const createPattern = (
         kind,
         value,
         delimited,
+        delimiter,
     },
 })
 
@@ -446,11 +448,11 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
 export const toPatternResult =
-    (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> =>
+    (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> =>
     (input, start) => {
         const result = scanner(input, start)
         if (result.type === 'success') {
-            return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
+            return createPattern(result.term.value, result.term.range, kind, result.term.quoted, result.term.quotes)
         }
         return result
     }
@@ -511,6 +513,38 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
+/**
+ * scanKeyword is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
+ */
+const scanKeyword = (query: string): ScanResult<Token[]> => {
+    const tokenScanner = [
+        keyword,
+        filter,
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        scanPattern(PatternKind.Literal),
+    ]
+    const earlyPatternScanner = [
+        toPatternResult(quoted('"'), PatternKind.Literal),
+        toPatternResult(quoted("'"), PatternKind.Literal),
+        toPatternResult(quoted('/'), PatternKind.Regexp),
+        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+    ]
+
+    const scan = zeroOrMore(
+        oneOf<Term>(
+            whitespace,
+            ...earlyPatternScanner.map(token => followedBy(token, whitespaceOrClosingParen)),
+            openingParen,
+            closingParen,
+            ...tokenScanner.map(token => followedBy(token, whitespaceOrClosingParen))
+        )
+    )
+
+    return scan(query, 0)
+}
+
 export function detectPatternType(query: string): SearchPatternType | undefined {
     const result = scanStandard(query)
     const tokens =
@@ -538,9 +572,11 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.newStandardRC1:
-        case SearchPatternType.keyword: {
+        case SearchPatternType.codycontext: {
             return scanStandard(query)
+        }
+        case SearchPatternType.keyword: {
+            return scanKeyword(query)
         }
         case SearchPatternType.literal: {
             patternKind = PatternKind.Literal
@@ -557,4 +593,12 @@ export const scanSearchQuery = (
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)
+}
+
+export const succeedScan = (query: string): Token[] => {
+    const result = scanSearchQuery(query)
+    if (result.type !== 'success') {
+        throw new Error('Internal error: invariant broken: succeedScan callers must be called with a valid query')
+    }
+    return result.term
 }

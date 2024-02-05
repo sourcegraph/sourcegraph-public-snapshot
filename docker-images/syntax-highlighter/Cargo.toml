@@ -3,27 +3,27 @@ name = "syntect_server"
 version = "1.0.1"
 authors = [
     "TJ DeVries <devries.timothyj@gmail.com>",
-    "Stephen Gutekanst <stephen.gutekanst@gmail.com>"
+    "Stephen Gutekanst <stephen.gutekanst@gmail.com>",
 ]
 edition = "2021"
 license = "MIT"
 
 [dependencies]
+anyhow.workspace = true
 clap.workspace = true
+protobuf.workspace = true
 rocket.workspace = true
 scip.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 syntect.workspace = true
-protobuf.workspace = true
+tree-sitter-highlight.workspace = true
 
 rustyline = "9.1.2"
 base64 = "0.13.0"
 
-sg-syntax = { path = "./crates/sg-syntax" }
-scip-treesitter = { path = "./crates/scip-treesitter" }
-scip-treesitter-languages = { path = "./crates/scip-treesitter-languages" }
-scip-syntax = { path = "./crates/scip-syntax" }
+tree-sitter-all-languages = { path = "./crates/tree-sitter-all-languages" }
+syntax-analysis = { path = "./crates/syntax-analysis" }
 # March 20, 2023 - Pinned explicitly with features that match the features
 # required by rocket. Once bazel rules correctly roll up all the features,
 # we can remove this, but until then, this works just fine for building
@@ -38,24 +38,20 @@ rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 
 [workspace]
 members = [
-    "crates/sg-syntax",
-
-    # later, these will be pulled out to a separate repo
-    "crates/scip-macros",
+    "crates/syntax-analysis",
+    "crates/tree-sitter-all-languages",
     "crates/scip-syntax",
-    "crates/scip-treesitter",
-    "crates/scip-treesitter-languages",
-    "crates/scip-treesitter-cli",
 ]
 
 [workspace.dependencies]
 anyhow = "1"
 # "cargo" feature is enabled for using the `crate_version` macro
-clap = { version = "4.1.11", features = [ "derive", "cargo"] }
+clap = { version = "4.1.11", features = ["derive", "cargo"] }
 itertools = "0.10.5"
+lazy_static = "1.0"
+paste = "1.0.6"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
-# See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1
-serde = { version = "=1.0.164", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 string-interner = "0.14.0"
 # Since there is no version tag, we pin the dependency to a specific revision
@@ -66,6 +62,7 @@ walkdir = "2"
 
 scip = "0.3.2"
 protobuf = "3"
+insta = "1.11.0"
 
 [profile.release]
 # Enabled debug symbols in release build, so if we have a crash
@@ -73,4 +70,4 @@ protobuf = "3"
 debug = true
 
 [dev-dependencies]
-criterion = { version = "0.4", features = [ "html_reports" ] }
+criterion = { version = "0.4", features = ["html_reports"] }

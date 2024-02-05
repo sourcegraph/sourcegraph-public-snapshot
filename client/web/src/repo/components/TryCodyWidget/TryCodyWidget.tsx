@@ -66,7 +66,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
             page: eventPage,
             description: '',
         }
-        telemetryService.log(EventName.TRY_CODY_SIGNUP_INITIATED, eventArguments, eventArguments)
+        telemetryService.log(EventName.AUTH_INITIATED, eventArguments, eventArguments)
     }
 
     const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free' : 'Meet Cody, your AI assistant'

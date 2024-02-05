@@ -11,7 +11,6 @@ import { ExternalsAuth } from '../auth/components/ExternalsAuth'
 import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
@@ -39,30 +38,31 @@ const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_
 const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
 
 const onClickCTAButton = (type: string): void =>
-    eventLogger.log(EventName.SIGNUP_INITIATED, { type, source: 'get-started' })
+    eventLogger.log(EventName.AUTH_INITIATED, { type, source: 'get-started' })
 
 const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
 
 const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
 
+/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
+
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
     const navigate = useNavigate()
     const location = useLocation()
     const [search] = useState(location.search)
-    const [isCodyProEnabled, ffStatus] = useFeatureFlag('cody-pro', false)
 
     useEffect(() => {
-        if (authenticatedUser && isCodyProEnabled) {
+        if (authenticatedUser) {
             navigate(`/cody/manage${search || ''}`)
         }
-    }, [authenticatedUser, navigate, search, isCodyProEnabled])
+    }, [authenticatedUser, navigate, search])
 
     useEffect(() => {
         logPageView(EventName.VIEW_GET_CODY)
     }, [])
 
-    if (authenticatedUser && (ffStatus !== 'loaded' || isCodyProEnabled)) {
+    if (authenticatedUser) {
         return null
     }
 

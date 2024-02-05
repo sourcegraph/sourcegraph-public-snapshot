@@ -2,25 +2,33 @@
 
 <p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will perform the following three tasks:</p>
 
-1. Try the `Generate Unit Tests` command
-2. Ask Cody to suggest bug fixes and changes to code snippets
-3. Ask Cody to pull additional information from the documentation
+1. Generate unit tests for your code
+2. Identify errors and get suggested code fixes
+3. Add documentation to your code snippets
 
 ## Prerequisites
 
 - Make sure you have the [Cody extension installed](overview/install-vscode.md) in your VS Code editor
-- You have enabled an instance for [Cody from your Sourcegraph.com](overview/cody-with-sourcegraph.md) account
-- You have a project open in VS Code that Cody has access to via Sourcegraph
+- You have a Free or Pro account through Sourcegraph.com or a Sourcegraph Enterprise account
+- You have a project open in VS Code
 
-## Getting started with Cody extension and commands
+## Getting started with the Cody extension and commands
 
-After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's `Chat` panel will open. This interface is used to ask Cody questions and paste in code snippets.
+After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's panel will open. This interface is used to start a **New Chat**, run Cody **commands** or get access to relevant resources.
 
-Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
+![Cody icon in side activity bar ](https://storage.googleapis.com/sourcegraph-assets/Docs/NLS-Beta.png)
 
-1. Type `/` in the chat bar, and Cody will suggest a list of commands
-2. Right click > Cody > Select a command
-3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
+Cody supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in the following ways:
+
+1. Highlight your code and select the command from the sidebar
+
+![running-commands](https://storage.googleapis.com/sourcegraph-assets/Docs/using-commands.png)
+
+2. Open up the command palette with `Option+C` `Alt+C`
+3. Right-click on any code element and select **Cody > Choose a command** from the list
+4. Type `/` in the chat bar. Cody will then suggest a list of available commands
+
+![slash-command](https://storage.googleapis.com/sourcegraph-assets/Docs/slash-command-trigger.png)
 
 ## Working with the Cody extension
 
@@ -69,12 +77,12 @@ function getTimeAgoDescription(dateString) {
 
 ## 1. Generate a unit test
 
-To ensure code quality and early bug detection, one of the most useful commands that Cody offers is `Generate Unit Tests`. It quickly helps you write a test code for any snippet that you have highlighted. To generate a unit test for our example function:
+To ensure code quality and early bug detection, one of the most useful commands that Cody offers is **Generate unit tests**. It quickly helps you write test code for any snippet that you have highlighted. To generate a unit test for our example function:
 
 - Open the `date.js` file in VS Code
 - Highlight a code snippet that you'd like to test
 - Inside Cody chat, type `/test` or press the command hotkey (`⌥` + `c` / `alt` + `c`)
-- Select `Generate Unit Tests` option and hit `Enter`
+- Select `Generate unit tests` option and hit `Enter`
 
 Cody will help you generate the following unit test in the sidebar:
 
@@ -120,15 +128,14 @@ Leveraging the failed test output, Cody is able to identify the potential bug an
 
 ![Example of successfully running unit test ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/passed-tests.png)
 
-## 3. Ask Cody to pull reference documentation
+## 3. Ask Cody to add code documentation
 
-Cody can also directly reference documentation. If you've committed docs within your codebase, Cody can search through the text to understand documentation and quickly pull out information so you don't have to search it yourself.
+Cody can also create well-crafted code documentation and comments, significantly improving the readability experience.
+You can add it by selecting a code snippet and running the **Document** command. Cody will add a comment to the top of the code snippet.
 
-Inside the Cody chat, type `/doc` followed by a query to search documentation. For example, ask Cody: "Can the getTimeAgoDescription() function run out of memory?"
-
-And you get the following response:
-
-![Cody referencing docs ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/get-ref-docs.png)
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-comments-cody.mp4" type="video/mp4">
+</video>
 
 ## Try other commands and Cody chat
 

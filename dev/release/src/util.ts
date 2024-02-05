@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync, createReadStream } from 'fs'
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
@@ -290,47 +290,57 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
     }
 }
 
-export const updateMigratorBazelOuts =
-    (version: string): EditFunc =>
-    (directory: string): void => {
-        const newEntries = `        "schema-descriptions/v${version}-internal_database_schema.codeinsights.json",
-        "schema-descriptions/v${version}-internal_database_schema.codeintel.json",
-        "schema-descriptions/v${version}-internal_database_schema.json",`
-        const filePath = `${directory}/cmd/migrator/BUILD.bazel`
+// This is a copy of updateUpgradeGuides designed to target mdx files instead of md files and also search files in the docs/ rather than doc/ directory
+export const updateDocsUpgradeGuides = (previous: string, next: string): EditFunc => {
+    let updateDirectory = '/docs/admin/updates'
+    const notPatchRelease = next.endsWith('.0')
 
-        let inGenrule = false
-        let inOuts = false
-        const result: string[] = []
-
-        const rls = readline.createInterface({
-            input: createReadStream(filePath),
-            output: process.stdout,
-            terminal: false,
-        })
-
-        rls.on('line', line => {
-            if (line.includes('genrule(')) {
-                inGenrule = true
+    return (directory: string): void => {
+        updateDirectory = directory + updateDirectory
+        for (const file of readdirSync(updateDirectory)) {
+            if (file === 'index.mdx') {
+                continue
             }
-
-            if (inGenrule && line.includes('outs = [')) {
-                inOuts = true
+            const mode = file.replace('.mdx', '')
+            const updateFunc = getUpgradeGuide(mode)
+            if (updateFunc === undefined) {
+                console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+                continue
             }
+            const guide = getUpgradeGuide(mode)(previous, next)
 
-            if (inGenrule && inOuts && line.includes('],')) {
-                inOuts = false
-                inGenrule = false
-                line = `${newEntries}\n${line}`
+            const fullPath = path.join(updateDirectory, file)
+            console.log(`Updating upgrade guide: ${fullPath}`)
+            let updateContents = readFileSync(fullPath).toString()
+            const releaseHeader = `## v${previous} ➔ v${next}`
+            const notesHeader = '\n\n#### Notes:'
+
+            if (notPatchRelease) {
+                let content = `${update.releaseTemplate}\n\n${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader
+                updateContents = updateContents.replace(update.releaseTemplate, content)
+            } else {
+                const prevReleaseHeaderPattern = `##\\s+v\\d\\.\\d(?:\\.\\d)? ➔ v${previous}\\s*`
+                const matches = updateContents.match(new RegExp(prevReleaseHeaderPattern))
+                if (!matches || matches.length === 0) {
+                    console.log(`Unable to find header using pattern: ${prevReleaseHeaderPattern}. Skipping.`)
+                    continue
+                }
+                const prevReleaseHeader = matches[0]
+                let content = `${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader + `\n\n${prevReleaseHeader}`
+                updateContents = updateContents.replace(prevReleaseHeader, content)
             }
-
-            result.push(line)
-        })
-
-        rls.on('close', () => {
-            writeFileSync(filePath, result.join('\n'))
-            console.log(`${filePath} updated successfully.`)
-        })
+            writeFileSync(fullPath, updateContents)
+        }
     }
+}
 
 export async function retryInput(
     prompt: string,

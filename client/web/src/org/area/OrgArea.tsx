@@ -99,7 +99,6 @@ export interface OrgAreaProps
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 
     location: H.Location
     navigate: NavigateFunction
@@ -134,10 +133,14 @@ export interface OrgAreaRouteContext
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
-    isCodyApp: boolean
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
+
+    license: {
+        isCodeSearchEnabled: boolean
+        isCodyEnabled: boolean
+    }
 }
 
 /**
@@ -235,7 +238,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
-            isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
@@ -244,6 +246,10 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             useBreadcrumb: this.state.useBreadcrumb,
             orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
             orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
+            license: {
+                isCodeSearchEnabled: Boolean(window.context.licenseInfo?.features.codeSearch),
+                isCodyEnabled: Boolean(window.context.licenseInfo?.features.cody),
+            },
         }
 
         if (this.props.location.pathname === `/organizations/${this.props.orgName}/invitation`) {

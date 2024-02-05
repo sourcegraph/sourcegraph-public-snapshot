@@ -51,6 +51,7 @@ go_test(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
+        "//cmd/frontend/hubspot",
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/conf",
@@ -66,5 +67,6 @@ go_test(
         "@com_github_coreos_go_oidc//:go-oidc",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_oauth2//:oauth2",
     ],
 )

@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostmatcher"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -111,6 +111,7 @@ var (
 	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
 	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
 	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+	codyGatewayDisableHTTP2          = env.MustGetBool("SRC_HTTP_CLI_DISABLE_CODY_GATEWAY_HTTP2", false, "Whether we should disable HTTP2 for Cody Gateway communication")
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -139,7 +140,7 @@ func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware
 	mw = append(mw, middleware...)
 
 	externalTransportOpt := ExternalTransportOpt
-	if testOpt || env.InsecureDev {
+	if testOpt {
 		externalTransportOpt = TestExternalTransportOpt
 	}
 
@@ -177,6 +178,10 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // convenience for existing uses of http.DefaultClient.
 // This client does not cache responses. To cache responses see ExternalDoer instead.
 var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
+
+// CodyGatewayDoer is a client for communication with Cody Gateway.
+// This client does not cache responses.
+var CodyGatewayDoer, _ = UncachedExternalClientFactory.Doer(NewDisableHTTP2Opt(codyGatewayDisableHTTP2))
 
 // TestExternalClientFactory is a httpcli.Factory with common options
 // and is created for tests where you'd normally use an ExternalClientFactory.
@@ -407,6 +412,10 @@ var defaultDenylist = []denyRule{
 	{pattern: "169.254.169.254"},
 }
 
+var localDevDenylist = []denyRule{
+	{pattern: "169.254.169.254"},
+}
+
 // TestTransportOpt creates a transport for tests that does not apply any denylisting
 func TestExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
@@ -429,17 +438,23 @@ func ExternalTransportOpt(cli *http.Client) error {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
-	var denyList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
-	for _, rule := range defaultDenylist {
+	var denyMatchList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
+
+	denyList := defaultDenylist
+	if env.InsecureDev {
+		denyList = localDevDenylist
+	}
+
+	for _, rule := range denyList {
 		if rule.builtin != "" {
-			denyList.AppendBuiltin(rule.builtin)
+			denyMatchList.AppendBuiltin(rule.builtin)
 		} else if rule.pattern != "" {
-			denyList.AppendPattern(rule.pattern)
+			denyMatchList.AppendPattern(rule.pattern)
 		}
 	}
 
 	// this dialer will match resolved domain names against the deny list
-	tr.DialContext = hostmatcher.NewDialContext("", nil, denyList)
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyMatchList)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }
@@ -813,6 +828,22 @@ func NewMaxIdleConnsPerHostOpt(max int) Opt {
 
 		tr.MaxIdleConnsPerHost = max
 
+		return nil
+	}
+}
+
+// NewDisableHTTP2Opt returns an Opt that makes the http.Client use HTTP/1.1 (instead of defaulting to HTTP/2).
+func NewDisableHTTP2Opt(disable bool) Opt {
+	return func(cli *http.Client) error {
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewDisableHTTP2Opt")
+		}
+		if disable {
+			tr.ForceAttemptHTTP2 = false
+			tr.TLSNextProto = make(map[string]func(authority string, c *tls.Conn) http.RoundTripper)
+			tr.TLSClientConfig = &tls.Config{}
+		}
 		return nil
 	}
 }

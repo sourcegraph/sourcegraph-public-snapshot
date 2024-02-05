@@ -8,7 +8,6 @@ PORT=${PORT:-"7080"}
 URL="http://localhost:$PORT"
 DATA=${DATA:-"/tmp/sourcegraph-data"}
 SOURCEGRAPH_LICENSE_GENERATION_KEY=${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}
-SG_FEATURE_FLAG_GRPC=${SG_FEATURE_FLAG_GRPC:-"false"}
 DB_STARTUP_TIMEOUT="10s"
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
@@ -20,16 +19,16 @@ fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-"true")
-  clean=y
-  ;;
-"false")
-  clean=n
-  ;;
-*)
-  echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-  read -r clean
-  ;;
+  "true")
+    clean=y
+    ;;
+  "false")
+    clean=n
+    ;;
+  *)
+    echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+    read -r clean
+    ;;
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
@@ -48,7 +47,6 @@ docker run "$@" \
   --publish "$PORT":7080 \
   -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
-  -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
   -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
   -e SOURCEGRAPH_5_1_DB_MIGRATION=true \
   --volume "$DATA/config:/etc/sourcegraph" \

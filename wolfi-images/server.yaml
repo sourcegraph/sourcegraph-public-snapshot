@@ -29,6 +29,7 @@ contents:
     - prometheus
     - prometheus-alertmanager
     - redis-6.2
+    - redis-cli-6.2
     - sqlite-libs
     - su-exec
 
@@ -38,7 +39,7 @@ contents:
     - p4cli@sourcegraph
     - p4-fusion-sg@sourcegraph
     - s3proxy@sourcegraph
-    - grafana@chainguard
+    - grafana-7@chainguard
 
 accounts:
   groups:

@@ -15,8 +15,12 @@ import (
 	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -25,7 +29,6 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -77,6 +80,9 @@ func InitGitserver() {
 		Logger:         sglog.Scoped("server"),
 		ObservationCtx: &observation.TestContext,
 		ReposDir:       filepath.Join(root, "repos"),
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(&t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return filepath.Join(root, "remotes", string(name)), nil
 		},
@@ -91,7 +97,7 @@ func InitGitserver() {
 	}
 
 	grpcServer := defaults.NewServer(logger)
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{
@@ -105,7 +111,7 @@ func InitGitserver() {
 
 	serverAddress := l.Addr().String()
 	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
-	testGitserverClient = gitserver.NewTestClient(&t).WithDoer(httpcli.InternalDoer).WithClientSource(source)
+	testGitserverClient = gitserver.NewTestClient(&t).WithClientSource(source)
 	GitserverAddresses = []string{serverAddress}
 }
 

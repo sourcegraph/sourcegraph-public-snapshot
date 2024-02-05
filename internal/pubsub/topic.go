@@ -16,15 +16,27 @@ import (
 
 // TopicClient is a Pub/Sub client that bound to a topic.
 type TopicClient interface {
+	// TopicPublisher is the interface most callsites will use, which only
+	// includes publishing entrypoints. When propagating TopicClient as a
+	// dependency, prefer to use the smaller TopicPublisher interface.
+	TopicPublisher
+
 	// Ping checks if the connection to the topic is valid.
 	Ping(ctx context.Context) error
-	// Publish publishes messages and waits for all the results synchronously.
-	// It returns the first error encountered or nil if all succeeded. To collect
-	// individual errors, call Publish with only 1 message.
-	Publish(ctx context.Context, messages ...[]byte) error
 	// Stop stops the topic publishing channel. The client should not be used after
 	// calling Stop.
 	Stop()
+}
+
+// TopicPublisher is a Pub/Sub publisher bound to a topic.
+type TopicPublisher interface {
+	// Publish publishes messages and waits for all the results synchronously.
+	// It returns the first error encountered or nil if all succeeded. To collect
+	// individual errors, call Publish with only 1 message, or use PublishMessage.
+	Publish(ctx context.Context, messages ...[]byte) error
+	// PublishMessage publishes a single message with attributes and waits for
+	// the result synchronously.
+	PublishMessage(ctx context.Context, message []byte, attributes map[string]string) error
 }
 
 var (
@@ -81,6 +93,14 @@ func (c *topicClient) Publish(ctx context.Context, messages ...[]byte) error {
 	return nil
 }
 
+func (c *topicClient) PublishMessage(ctx context.Context, message []byte, attributes map[string]string) error {
+	r := c.topic.Publish(ctx, &pubsub.Message{Data: message, Attributes: attributes})
+	if _, err := r.Get(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *topicClient) Stop() {
 	c.topic.Stop()
 }
@@ -95,7 +115,10 @@ type noopTopicClient struct{}
 
 func (c *noopTopicClient) Ping(context.Context) error               { return nil }
 func (c *noopTopicClient) Publish(context.Context, ...[]byte) error { return nil }
-func (c *noopTopicClient) Stop()                                    {}
+func (c *noopTopicClient) PublishMessage(context.Context, []byte, map[string]string) error {
+	return nil
+}
+func (c *noopTopicClient) Stop() {}
 
 // NewLoggingTopicClient creates a Pub/Sub client that just logs all messages,
 // and does nothing otherwise. This is also a useful stub implementation of the
@@ -118,5 +141,16 @@ func (c *loggingTopicClient) Publish(ctx context.Context, messages ...[]byte) er
 	for _, m := range messages {
 		l.Debug("Publish", log.String("message", string(m)))
 	}
+	return nil
+}
+
+func (c *loggingTopicClient) PublishMessage(ctx context.Context, message []byte, attributes map[string]string) error {
+	attributesFields := make([]log.Field, 0, len(attributes))
+	for k, v := range attributes {
+		attributesFields = append(attributesFields, log.String(k, v))
+	}
+	trace.Logger(ctx, c.logger).Debug("Publish",
+		log.String("message", string(message)),
+		log.Object("attributes", attributesFields...))
 	return nil
 }
