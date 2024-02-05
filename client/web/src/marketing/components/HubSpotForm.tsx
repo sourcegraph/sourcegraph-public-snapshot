@@ -53,6 +53,7 @@ export interface HubSpotFormProps {
     formId?: string
     masterFormName?: 'qualificationSurvey'
     onFormSubmitted?: ($element: HTMLElement) => void
+    onFormLoadError?: () => void
     onFormReady?: ($form: HTMLFormElement) => void
     onFormSubmit?: ($form: HTMLFormElement) => void
     inlineMessage?: string
@@ -237,6 +238,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     formId,
     masterFormName,
     onFormSubmitted,
+    onFormLoadError,
     onFormReady,
     onFormSubmit,
     inlineMessage = 'Thank you for your feedback!',
@@ -265,13 +267,13 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
             .catch(() => {
                 // Mark a loading error that returns a minimal react component as a failure mode
                 setLoadError(true)
-                const emptyElement = document.createElement('div')
                 // Do this callback method to increase the value of step
-                onFormSubmitted?.(emptyElement)
+                onFormLoadError?.()
             })
     }, [onFormSubmitted])
 
     useEffect(() => {
+        loadAllScripts()
         if (scriptsLoaded) {
             // Set the master form id if it's provided
             let masterFormId = ''
@@ -281,7 +283,6 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
 
             // Load all scripts
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            loadAllScripts()
 
             if (!formCreated) {
                 createHubSpotForm({
