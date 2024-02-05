@@ -159,9 +159,18 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         onCompleted: onGenerate,
     })
 
-    const plans =
-        window.context.licenseInfo?.knownLicenseTags?.filter(tag => tag.startsWith('plan:')).map(tag => tag.slice(5)) ||
-        []
+    const plans: string[] = [
+        'old-starter-0',
+        'old-enterprise-0',
+        'team-0',
+        'enterprise-0',
+        'business-0',
+        'enterprise-1',
+        'exterprise-extension',
+        'free-0',
+        'free-1',
+        'enterprise-air-gap-0',
+    ]
 
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
@@ -174,7 +183,26 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 
     const tags = useDebounce<string[]>(tagsFromString(formData.tags), 300)
 
-    const knownNonPlanTags = window.context.licenseInfo?.knownLicenseTags?.filter(tag => !tag.startsWith('plan:')) || []
+    const knownNonPlanTags = [
+        'sso',
+        'acls',
+        'explicit-permissions-api',
+        'code-insights',
+        'batch-changes',
+        'SCIM',
+        'allow-air-gapped',
+        'code-monitors',
+        'notebooks',
+        'code-search',
+        'trial',
+        'true-up',
+        'internal',
+        'dev',
+        'starter',
+        'mau',
+        'gpt',
+        'disable-telemetry-events-export',
+    ]
 
     return (
         <Modal position="center" onDismiss={onCancel} aria-labelledby={labelId}>

@@ -149,9 +149,54 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm > renders 1`] = `
                     label="Plan"
                   >
                     <option
+                      value="old-starter-0"
+                    >
+                      old-starter-0
+                    </option>
+                    <option
+                      value="old-enterprise-0"
+                    >
+                      old-enterprise-0
+                    </option>
+                    <option
+                      value="team-0"
+                    >
+                      team-0
+                    </option>
+                    <option
+                      value="enterprise-0"
+                    >
+                      enterprise-0
+                    </option>
+                    <option
+                      value="business-0"
+                    >
+                      business-0
+                    </option>
+                    <option
                       value="enterprise-1"
                     >
                       enterprise-1
+                    </option>
+                    <option
+                      value="exterprise-extension"
+                    >
+                      exterprise-extension
+                    </option>
+                    <option
+                      value="free-0"
+                    >
+                      free-0
+                    </option>
+                    <option
+                      value="free-1"
+                    >
+                      free-1
+                    </option>
+                    <option
+                      value="enterprise-air-gap-0"
+                    >
+                      enterprise-air-gap-0
                     </option>
                   </select>
                 </div>
@@ -184,16 +229,70 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm > renders 1`] = `
                   >
                     <p
                       class="mb-0"
-                    />
+                    >
+                      <div
+                        class="tagsWrapper"
+                      />
+                    </p>
                   </small>
                 </label>
                 <datalist
                   id="known-tags"
                 >
                   <option
+                    value="sso"
+                  >
+                    sso
+                  </option>
+                  <option
+                    value="acls"
+                  >
+                    acls
+                  </option>
+                  <option
+                    value="explicit-permissions-api"
+                  >
+                    explicit-permissions-api
+                  </option>
+                  <option
+                    value="code-insights"
+                  >
+                    code-insights
+                  </option>
+                  <option
                     value="batch-changes"
                   >
                     batch-changes
+                  </option>
+                  <option
+                    value="SCIM"
+                  >
+                    SCIM
+                  </option>
+                  <option
+                    value="allow-air-gapped"
+                  >
+                    allow-air-gapped
+                  </option>
+                  <option
+                    value="code-monitors"
+                  >
+                    code-monitors
+                  </option>
+                  <option
+                    value="notebooks"
+                  >
+                    notebooks
+                  </option>
+                  <option
+                    value="code-search"
+                  >
+                    code-search
+                  </option>
+                  <option
+                    value="trial"
+                  >
+                    trial
                   </option>
                   <option
                     value="true-up"
@@ -201,9 +300,34 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm > renders 1`] = `
                     true-up
                   </option>
                   <option
-                    value="trial"
+                    value="internal"
                   >
-                    trial
+                    internal
+                  </option>
+                  <option
+                    value="dev"
+                  >
+                    dev
+                  </option>
+                  <option
+                    value="starter"
+                  >
+                    starter
+                  </option>
+                  <option
+                    value="mau"
+                  >
+                    mau
+                  </option>
+                  <option
+                    value="gpt"
+                  >
+                    gpt
+                  </option>
+                  <option
+                    value="disable-telemetry-events-export"
+                  >
+                    disable-telemetry-events-export
                   </option>
                 </datalist>
                 <label
