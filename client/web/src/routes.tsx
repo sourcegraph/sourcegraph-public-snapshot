@@ -285,7 +285,9 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.ApiConsole,
-        element: <LegacyRoute render={props => <ApiConsole {...props} />} />,
+        element: (
+            <LegacyRoute render={props => <ApiConsole telemetryRecorder={props.platformContext.telemetryRecorder} />} />
+        ),
     },
     {
         path: PageRoutes.Search,
