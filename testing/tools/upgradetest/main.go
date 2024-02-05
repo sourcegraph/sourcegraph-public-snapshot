@@ -46,19 +46,20 @@ func main() {
 	app := &cli.App{
 		Name:  "upgrade-test",
 		Usage: "Upgrade test is a tool for testing the migrator services creation of upgrade paths and application of upgrade paths.\nWhen run relevant upgrade paths are tested for each version relevant to a given upgrade type, initializing Sourcegraph databases and frontend services for each version, and attempting to generate and apply an upgrade path to your current branches head.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "stamp-version",
-				Aliases: []string{"sv"},
-				Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
-				EnvVars: []string{"VERSION"},
-			},
-		},
 		Commands: []*cli.Command{
 			{
 				Name:    "all-types",
 				Aliases: []string{"all"},
-				Usage:   "Runs all upgrade test types",
+				Usage:   "Runs all upgrade test types\n\nRequires stamp-version for tryAutoUpgrade call.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "stamp-version",
+						Aliases:  []string{"sv"},
+						Usage:    "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars:  []string{"VERSION"},
+						Required: true,
+					},
+				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := cCtx.Context
 
@@ -162,6 +163,14 @@ func main() {
 				Name:    "standard",
 				Aliases: []string{"std"},
 				Usage:   "Runs standard upgrade tests for all patch versions from the last minor version.\nEx: 5.1.x -> 5.2.x (head)",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "stamp-version",
+						Aliases: []string{"sv"},
+						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars: []string{"VERSION"},
+					},
+				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := cCtx.Context
 
@@ -221,6 +230,14 @@ func main() {
 				Name:    "multiversion",
 				Aliases: []string{"mvu"},
 				Usage:   "Runs multiversion upgrade tests for all versions which would require a multiversion upgrade to reach your current repo head. i.e those versions more than a minor version behind the last minor release.\nEx: 3.4.1 -> 5.2.6",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "stamp-version",
+						Aliases: []string{"sv"},
+						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars: []string{"VERSION"},
+					},
+				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := cCtx.Context
 
@@ -275,7 +292,16 @@ func main() {
 			{
 				Name:    "autoupgrade",
 				Aliases: []string{"auto"},
-				Usage:   "Runs autoupgrade upgrade tests for all versions.",
+				Usage:   "Runs autoupgrade upgrade tests for all versions.\n\nRequires stamp-version for tryAutoUpgrade call.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "stamp-version",
+						Aliases:  []string{"sv"},
+						Usage:    "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars:  []string{"VERSION"},
+						Required: true,
+					},
+				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := cCtx.Context
 
