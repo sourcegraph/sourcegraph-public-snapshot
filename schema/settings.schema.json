@@ -226,7 +226,7 @@
         "keywordSearch": {
           "description": "Whether to enable the 'keyword search' language improvement",
           "type": "boolean",
-          "default": false
+          "default": true
         }
       },
       "group": "Experimental"
