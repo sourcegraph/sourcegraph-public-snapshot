@@ -68,15 +68,15 @@ func TestParseParameterList(t *testing.T) {
 		}
 	}
 
-	// autogold.Expect(value{
-	// 	Result:      `{"field":"file","value":"README.md","negated":false}`,
-	// 	ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-	// }).Equal(t, test(`file:README.md`))
-	//
-	// autogold.Expect(value{
-	// 	Result:      `{"field":"file","value":"README.md","negated":false}`,
-	// 	ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-	// }).Equal(t, test(`file:README.md    `))
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"README.md","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equal(t, test(`file:README.md`))
+
+	autogold.Expect(value{
+		Result:      `{"field":"file","value":"README.md","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equal(t, test(`file:README.md    `))
 
 	autogold.Expect(value{
 		Result: `{"value":":foo","negated":false}`, ResultLabels: "Regexp",
