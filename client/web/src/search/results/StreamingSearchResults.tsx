@@ -22,7 +22,7 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
 import type { CodeInsightsProps } from '../../insights/types'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
-import { useDeveloperSettings, useNavbarQueryState } from '../../stores'
+import { setSearchPatternType, useDeveloperSettings, useNavbarQueryState } from '../../stores'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
 
@@ -144,19 +144,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
          * Example use-case: search-aggregation result bar click where we first update the URL
          * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
          */
-        (updates: QueryUpdate[], updatedSearchQuery?: string) =>
+        (updates: QueryUpdate[], updatedSearchQuery?: string) => {
             submitQuerySearch(
                 {
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    source: 'filter',
                     historyOrNavigate: navigate,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
                     location: {
                         ...location,
                         search: updatedSearchQuery || location.search,
                     },
-                    source: 'filter',
                 },
                 updates
-            ),
+            )
+        },
         [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
     )
 
@@ -213,6 +214,26 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         })
     }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
+    const onTogglePatternType = useCallback(
+        (patternType: SearchPatternType) => {
+            const newPatternType =
+                patternType !== SearchPatternType.keyword ? SearchPatternType.keyword : SearchPatternType.standard
+            const { selectedSearchContextSpec } = props
+
+            setSearchPatternType(newPatternType)
+            submitSearch({
+                historyOrNavigate: navigate,
+                location,
+                selectedSearchContextSpec,
+                caseSensitive,
+                patternType: newPatternType,
+                query: submittedURLQuery,
+                source: 'nav',
+            })
+        },
+        [caseSensitive, location, navigate, props, submittedURLQuery]
+    )
+
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
@@ -226,6 +247,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             trace={!!trace}
             searchContextsEnabled={props.searchContextsEnabled}
             patternType={patternType}
+            setPatternType={setSearchPatternType}
             results={results}
             showAggregationPanel={showAggregationPanel}
             selectedSearchContextSpec={props.selectedSearchContextSpec}
@@ -243,6 +265,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             onExpandAllResultsToggle={onExpandAllResultsToggle}
             onSearchAgain={onSearchAgain}
             onDisableSmartSearch={onDisableSmartSearch}
+            onTogglePatternType={onTogglePatternType}
             onLogSearchResultClick={logSearchResultClicked}
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}

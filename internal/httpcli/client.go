@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostmatcher"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"

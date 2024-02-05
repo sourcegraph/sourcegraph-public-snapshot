@@ -25,6 +25,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/featureflag",
+        "//internal/guardrails",
         "//internal/hashutil",
         "//internal/honey",
         "//internal/metrics",

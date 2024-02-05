@@ -146,4 +146,19 @@ func (r *automaticRetryClient) MergeBase(ctx context.Context, in *proto.MergeBas
 	return r.base.MergeBase(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) Blame(ctx context.Context, in *proto.BlameRequest, opts ...grpc.CallOption) (proto.GitserverService_BlameClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.Blame(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) DefaultBranch(ctx context.Context, in *proto.DefaultBranchRequest, opts ...grpc.CallOption) (*proto.DefaultBranchResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.DefaultBranch(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadFileClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadFile(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

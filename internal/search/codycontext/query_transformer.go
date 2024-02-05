@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const maxTransformedPatterns = 10
@@ -106,17 +107,13 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	}
 
 	if len(rawParseTree) != 1 {
-		return nil, nil
+		return nil, errors.New("The 'codycontext' patterntype does not support multiple clauses")
 	}
 
 	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
 
 	transformedPatterns := transformPatterns(patterns)
-	if len(transformedPatterns) == 0 {
-		return nil, nil
-	}
-
-	nodes := []query.Node{}
+	var nodes []query.Node
 	for _, p := range parameters {
 		nodes = append(nodes, p)
 	}
@@ -125,7 +122,10 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	for _, p := range transformedPatterns {
 		patternNodes = append(patternNodes, query.Pattern{Value: p})
 	}
-	nodes = append(nodes, query.NewOperator(patternNodes, query.Or)...)
+
+	if len(patternNodes) > 0 {
+		nodes = append(nodes, query.NewOperator(patternNodes, query.Or)...)
+	}
 
 	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(nodes)
 	if err != nil {
@@ -138,8 +138,4 @@ func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	}
 
 	return &keywordQuery{newBasic, transformedPatterns}, nil
-}
-
-func transformBasicQuery(basicQuery query.Basic) (*keywordQuery, error) {
-	return queryStringToKeywordQuery(query.StringHuman(basicQuery.ToParseTree()))
 }

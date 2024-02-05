@@ -35,7 +35,7 @@ import (
 
 var patchID uint64
 
-func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
 	logger := s.Logger.Scoped("createCommitFromPatch").
 		With(
 			log.String("repo", string(req.Repo)),

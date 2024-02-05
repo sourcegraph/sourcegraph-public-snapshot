@@ -1,0 +1,10 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  package exconst
+//        ^^^^^^^ definition(Package) scip-ctags exconst/
+  
+  const myconst = 5
+//      ^^^^^^^ definition(Constant) scip-ctags exconst/myconst.
+

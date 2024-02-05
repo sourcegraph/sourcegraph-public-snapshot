@@ -41,6 +41,8 @@ func GetProvider(id string) *Provider {
 	return nil
 }
 
+var errNoSuchProvider = errors.New("no such authentication provider")
+
 // GetProviderAndRefresh retrieves the authentication provider with the given
 // type and ID, and refreshes the token used by the provider.
 func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id string) *Provider) (p *Provider, safeErrMsg string, err error) {
@@ -48,7 +50,7 @@ func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id s
 	if p == nil {
 		return nil,
 			"Misconfigured authentication provider.",
-			errors.Errorf("no authentication provider found with ID %q", id)
+			errNoSuchProvider
 	}
 	if p.config.Issuer == "" {
 		return nil,

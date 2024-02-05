@@ -5,7 +5,9 @@
         "value": "anjou",
         "negated": false,
         "labels": [
-          "Literal"
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {

@@ -16,7 +16,6 @@
     import { gql, query } from '$lib/graphql'
     import Suggestions from './Suggestions.svelte'
     import { user } from '$lib/stores'
-    import SmartSearchToggleButton from './SmartSearchToggleButton.svelte'
 
     import { EditorSelection, EditorState, Prec, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
@@ -107,7 +106,6 @@
 
 <script lang="ts">
     export let queryState: QueryStateStore
-    export let showSmartSearchButton = false
 
     export function focus() {
         input?.focus()
@@ -139,7 +137,7 @@
 
     function setOrUnsetPatternType(patternType: SearchPatternType): void {
         queryState.setPatternType(currentPatternType =>
-            currentPatternType === patternType ? SearchPatternType.standard : patternType
+            currentPatternType === patternType ? SearchPatternType.keyword : patternType
         )
     }
 
@@ -200,19 +198,17 @@
                     <Icon svgPath={mdiRegex} inline />
                 </button>
             </Tooltip>
-            <Tooltip tooltip="{structuralEnabled ? 'Disable' : 'Enable'} structural search">
-                <button
-                    class="toggle icon"
-                    type="button"
-                    class:active={structuralEnabled}
-                    on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
-                >
-                    <Icon svgPath={mdiCodeBrackets} inline />
-                </button>
-            </Tooltip>
-            {#if showSmartSearchButton}
-                <span class="divider" />
-                <SmartSearchToggleButton {queryState} />
+            {#if structuralEnabled}
+                <Tooltip tooltip="Disable structural search">
+                    <button
+                        class="toggle icon"
+                        type="button"
+                        class:active={structuralEnabled}
+                        on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
+                    >
+                        <Icon svgPath={mdiCodeBrackets} inline />
+                    </button>
+                </Tooltip>
             {/if}
         {/if}
     </div>
@@ -306,13 +302,6 @@
         :global(svg) {
             transform: scale(1.172);
         }
-    }
-
-    .divider {
-        width: 1px;
-        height: 1rem;
-        background-color: var(--border-color-2);
-        margin: 0 0.5rem;
     }
 
     button.icon {

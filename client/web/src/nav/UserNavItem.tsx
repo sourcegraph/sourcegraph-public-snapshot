@@ -179,7 +179,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             {!newSearchNavigationUI && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
-                                        <div className="mr-2">New search navigation UI</div>
+                                        <div className="mr-2">Minimize navigation</div>
                                         <Toggle value={newNavigationEnabled} onToggle={onNewSearchNavigationChange} />
                                     </div>
                                 </div>

@@ -3333,6 +3333,16 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
+    The creator of this external service. Null if the user was deleted or created by a background routine.
+    """
+    creator: User
+
+    """
+    The last updater of this external service. Null if the user was deleted or created by a background routine.
+    """
+    lastUpdater: User
+
+    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
@@ -6407,6 +6417,10 @@ type CodySubscription {
     subscription is in a canceled state.
     """
     currentPeriodEndAt: DateTime!
+    """
+    Whether the subscription will be canceled at the end of the current billing period. (Or automatically renew, if true.)
+    """
+    cancelAtPeriodEnd: Boolean!
 }
 
 """
@@ -8705,9 +8719,10 @@ type ProductSubscriptionStatus {
     """
     noLicenseWarningUserCount: Int
     """
-    The product license associated with this subscription, if any.
+    The product license associated with this subscription.
+    If no license key is applied, a free plan is assumed.
     """
-    license: ProductLicenseInfo
+    license: ProductLicenseInfo!
 }
 
 """
@@ -8720,6 +8735,10 @@ type ProductLicenseInfo {
     no license).
     """
     productNameWithBrand: String!
+    """
+    True if the license is for a free plan.
+    """
+    isFreePlan: Boolean!
     """
     Tags indicating the product plan and features activated by this license.
     """
