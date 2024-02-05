@@ -4,32 +4,52 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"os"
 )
 
+// P4ProtectsForUserArguments are the arguments for P4ProtectsForUser.
+type P4ProtectsForUserArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// Username is the username for which to get the protect definition for
+	Username string
+}
+
 // P4ProtectsForUser returns all protect definitions that apply to the given username.
-func P4ProtectsForUser(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, username string) ([]*p4types.Protect, error) {
+func P4ProtectsForUser(ctx context.Context, args P4ProtectsForUserArguments) ([]*p4types.Protect, error) {
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
 
 	// -u User : Displays protection lines that apply to the named user. This option
 	// requires super access.
-	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-u", username))
+	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-u", args.Username))
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-protects-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-protects-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
@@ -51,24 +71,42 @@ func P4ProtectsForUser(ctx context.Context, reposDir, p4home, p4port, p4user, p4
 	return parseP4Protects(out)
 }
 
+type P4ProtectsForDepotArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// Depot is the depot to get the protect definition for.
+	Depot string
+}
+
 // P4ProtectsForUser returns all protect definitions that apply to the given depot.
-func P4ProtectsForDepot(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, depot string) ([]*p4types.Protect, error) {
+func P4ProtectsForDepot(ctx context.Context, args P4ProtectsForDepotArguments) ([]*p4types.Protect, error) {
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
 
 	// -a : Displays protection lines for all users. This option requires super
 	// access.
-	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-a", depot))
+	options = append(options, WithArguments("-Mj", "-ztag", "protects", "-a", args.Depot))
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-protects-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-protects-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {

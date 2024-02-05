@@ -66,7 +66,7 @@ func (gs *grpcServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err = perforce.P4TestWithTrust(ss.Context(), gs.reposDir, p4home, req.GetP4Port(), req.GetP4User(), req.GetP4Passwd()) //nolint:staticcheck
+	err = perforce.P4TestWithTrust(ss.Context(), perforce.P4TestWithTrustArguments{ReposDir: gs.reposDir, P4Home: p4home, P4Port: req.GetP4Port(), P4User: req.GetP4User(), P4Passwd: req.GetP4Passwd()}) //nolint:staticcheck
 	if err != nil {
 		if ctxErr := ss.Context().Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
