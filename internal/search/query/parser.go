@@ -142,7 +142,7 @@ type heuristics uint8
 const (
 	// If set, balanced parentheses, which would normally be treated as
 	// delimiting expression groups, may in select cases be parsed as
-	// literal search patterns instead. Example: (a b) -> "a b"
+	// literal search patterns instead. Example: (a b) -> "(a b)"
 	parensAsPatterns heuristics = 1 << iota
 	// If set, all parentheses, whether balanced or unbalanced, are parsed
 	// as literal search patterns (i.e., interpreting parentheses as
@@ -154,8 +154,8 @@ const (
 	// If set, the parser will parse patterns containing balanced parentheses as
 	// literal patterns. Example: func(a int, b int) -> "func(a int, b int)"
 	balancedPattern
-	// If set, the parser will parse () as a literal pattern instead of as pattern
-	// group.
+	// If set, the parser will parse empty parenthesis, "()", as a literal pattern
+	// instead of as pattern group.
 	emptyParens
 )
 
@@ -968,7 +968,7 @@ loop:
 			p.heuristics |= disambiguated
 			if len(nodes) == 0 {
 				// We parsed "()".
-				if isSet(p.heuristics, parensAsPatterns|emptyParens) {
+				if isSet(p.heuristics, emptyParens) {
 					// Interpret literally.
 					nodes = []Node{newPattern("()", Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
 				} else {
@@ -1167,12 +1167,15 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 
 	parser := &parser{
 		buf:        []byte(in),
-		heuristics: balancedPattern | parensAsPatterns,
 		leafParser: searchType,
 	}
 
-	if searchType == SearchTypeKeyword {
+	switch searchType {
+	case SearchTypeKeyword:
 		parser.heuristics = balancedPattern | emptyParens
+	default:
+		parser.heuristics = balancedPattern | emptyParens | parensAsPatterns
+
 	}
 
 	nodes, err := parser.parseOr()
