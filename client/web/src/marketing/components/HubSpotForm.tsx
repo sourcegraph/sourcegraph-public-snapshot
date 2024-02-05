@@ -53,6 +53,7 @@ export interface HubSpotFormProps {
     formId?: string
     masterFormName?: 'qualificationSurvey'
     onFormSubmitted?: ($element: HTMLElement) => void
+    onFormLoadError?: () => void
     onFormReady?: ($form: HTMLFormElement) => void
     onFormSubmit?: ($form: HTMLFormElement) => void
     inlineMessage?: string
@@ -237,6 +238,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     formId,
     masterFormName,
     onFormSubmitted,
+    onFormLoadError,
     onFormReady,
     onFormSubmit,
     inlineMessage = 'Thank you for your feedback!',
@@ -266,16 +268,16 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
             .then(() => setScriptsLoaded(true)) // Set scriptsLoaded to true when all requests succeed
             .catch(error => {
                 console.error('Error fetching scripts:', error)
-                setLoadError(true);
-                const emptyElement = document.createElement('div');
-                onFormSubmitted?.(emptyElement);
+                setLoadError(true)
+                onFormLoadError?.()
+                debugger
                 // Handle the error if any of the requests fail
             })
     }, [])
 
     useEffect(() => {
+        loadAllScripts()
         if (scriptsLoaded) {
-            // Set the master form id if it's provided
             let masterFormId = ''
             if (masterFormName) {
                 masterFormId = masterForms[masterFormName]
@@ -283,8 +285,6 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
 
             // Load all scripts
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            loadAllScripts()
-
             if (!formCreated) {
                 createHubSpotForm({
                     formId: formId || masterFormId,
@@ -314,7 +314,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
     ])
 
     if (loadError) {
-        return <div>Error loading form</div>; // Or return a minimal React element, e.g., <div>Error loading form</div>
+        return <div>Error loading form</div> // Or return a minimal React element, e.g., <div>Error loading form</div>
     }
     return <div id="form-target" data-testid="hubspot-form-container" className={classNames(styles.container)} />
 }

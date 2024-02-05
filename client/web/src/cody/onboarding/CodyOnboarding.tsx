@@ -147,7 +147,7 @@ export function CodyOnboarding({
             navigate(returnToURL)
         }
     }, [completed, returnToURL, navigate])
-   // debugger
+    // debugger
     if (completed && returnToURL) {
         return null
     }
@@ -255,7 +255,6 @@ function PurposeStep({
     pro: boolean
     authenticatedUser: AuthenticatedUser
 }): JSX.Element {
-
     useEffect(() => {
         eventLogger.log(
             EventName.CODY_ONBOARDING_PURPOSE_VIEWED,
@@ -289,6 +288,9 @@ function PurposeStep({
                 <HubSpotForm
                     formId="85548efc-a879-4553-9ef0-a8da8fdcf541"
                     onFormSubmitted={() => {
+                        onNext()
+                    }}
+                    onFormLoadError={() => {
                         onNext()
                     }}
                     userId={authenticatedUser.id}
