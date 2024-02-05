@@ -45,7 +45,6 @@ export {
 } from './Form'
 export { Grid } from './Grid'
 export { LoadingSpinner } from './LoadingSpinner'
-export { KbdBadge } from './KbdBadge'
 export { PageHeader } from './PageHeader'
 export { PageSelector } from './PageSelector'
 export { PageSwitcher } from './PageSwitcher'
