@@ -53,35 +53,28 @@ exports[`SiteAdminProductLicenseNode > active 1`] = `
             </span>
           </div>
           <div
-            class="d-flex align-items-baseline mb-2"
+            class="mb-1"
           >
             <h3
               class="h3 mb-0"
             >
               NB (123 users)
             </h3>
-            <p
-              class="ml-3 mb-0"
-            >
-              <small
-                class="text-muted"
-              >
-                Created 
-                <span
-                  class="timestamp"
-                >
-                  in almost 14 years
-                </span>
-              </small>
-            </p>
-            <p
-              class="ml-3 mb-0 text-muted"
-            >
-              <small>
-                v1
-              </small>
-            </p>
           </div>
+          <p
+            class="mb-2"
+          >
+            <small
+              class="text-muted"
+            >
+              Created 
+              <span
+                class="timestamp"
+              >
+                in almost 14 years
+              </span>
+            </small>
+          </p>
           <div
             class=""
           >
@@ -129,6 +122,20 @@ exports[`SiteAdminProductLicenseNode > active 1`] = `
           <p
             class="ml-3"
           />
+        </div>
+        <div
+          class="d-flex"
+        >
+          <label
+            class="label"
+          >
+            Key Version
+          </label>
+          <p
+            class="ml-3"
+          >
+            1
+          </p>
         </div>
         <div
           aria-live="assertive"
@@ -270,35 +277,28 @@ exports[`SiteAdminProductLicenseNode > inactive 1`] = `
             </span>
           </div>
           <div
-            class="d-flex align-items-baseline mb-2"
+            class="mb-1"
           >
             <h3
               class="h3 mb-0"
             >
               NB (123 users)
             </h3>
-            <p
-              class="ml-3 mb-0"
-            >
-              <small
-                class="text-muted"
-              >
-                Created 
-                <span
-                  class="timestamp"
-                >
-                  in almost 14 years
-                </span>
-              </small>
-            </p>
-            <p
-              class="ml-3 mb-0 text-muted"
-            >
-              <small>
-                v1
-              </small>
-            </p>
           </div>
+          <p
+            class="mb-2"
+          >
+            <small
+              class="text-muted"
+            >
+              Created 
+              <span
+                class="timestamp"
+              >
+                in almost 14 years
+              </span>
+            </small>
+          </p>
           <div
             class=""
           >
@@ -346,6 +346,20 @@ exports[`SiteAdminProductLicenseNode > inactive 1`] = `
           <p
             class="ml-3"
           />
+        </div>
+        <div
+          class="d-flex"
+        >
+          <label
+            class="label"
+          >
+            Key Version
+          </label>
+          <p
+            class="ml-3"
+          >
+            1
+          </p>
         </div>
         <div
           aria-live="assertive"

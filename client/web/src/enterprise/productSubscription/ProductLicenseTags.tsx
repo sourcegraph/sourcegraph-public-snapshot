@@ -10,6 +10,9 @@ import {
     TAG_AIR_GAPPED,
     TAG_BATCH_CHANGES,
     TAG_CODE_INSIGHTS,
+    TAG_DEV,
+    TAG_DISABLE_TELEMETRY_EXPORT,
+    TAG_INTERNAL,
     TAG_TRIAL,
     TAG_TRUEUP,
 } from '../site-admin/dotcom/productSubscriptions/plandata'
@@ -53,6 +56,9 @@ const knownLicenseTags = new Set([
     TAG_CODE_INSIGHTS.tagValue,
     TAG_TRIAL.tagValue,
     TAG_TRUEUP.tagValue,
+    TAG_DISABLE_TELEMETRY_EXPORT.tagValue,
+    TAG_DEV.tagValue,
+    TAG_INTERNAL.tagValue,
     ...DEPRECATED_TAGS.map(tag => tag.tagValue),
 ])
 
