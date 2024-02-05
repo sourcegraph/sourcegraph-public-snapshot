@@ -125,55 +125,91 @@ func pingPG(ctx context.Context, dsn string) error {
 }
 
 func dsnCandidates() ([]string, error) {
-	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
 	var candidates []string
+
+	// most classic dsn
+	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
+
+	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
 	add := func(dsn string) { candidates = append(candidates, dsn) }
+
+	withUserPass := func(user, password string) func(dsn url.URL) {
+		return func(dsn url.URL) {
+			if password == "" {
+				dsn.User = url.User(user)
+			} else {
+				dsn.User = url.UserPassword(user, password)
+			}
+		}
+	}
+
+	withPath := func(path string) func(dsn url.URL) {
+		return func(dsn url.URL) {
+			dsn.Path = path
+		}
+	}
+
+	withSSL := func(sslmode string) func(dsn url.URL) {
+		return func(dsn url.URL) {
+			if sslmode != "" {
+				qry := dsn.Query()
+				qry.Set("sslmode", sslmode)
+				dsn.RawQuery = qry.Encode()
+			}
+		}
+	}
+
+	withHost := func(host, port string) func(dsn url.URL) {
+		return func(dsn url.URL) {
+			if host == "" {
+				return
+			}
+			if port == "" {
+				port = "5432"
+			}
+			dsn.Host = fmt.Sprintf("%s:%s", host, "5432")
+		}
+	}
+
+	addURL := func(modifiers ...func(dsn url.URL)) {
+		dsn := baseURL
+		for _, modifier := range modifiers {
+			modifier(dsn)
+		}
+		add(dsn.String())
+	}
 
 	// best case scenario
 	add(env("PGDATASOURCE"))
-	// most classic dsn
-	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
+
 	// homebrew dsn
-	homebrewURL := baseURL
 	if uinfo, err := user.Current(); err == nil {
-		homebrewURL.User = url.User(uinfo.Username)
-		homebrewURL.Path = "postgres"
-		add(homebrewURL.String())
+		addURL(
+			withUserPass(uinfo.Username, ""),
+			withPath("postgres"),
+		)
 	}
 
 	// classic docker dsn
-	dockerURL := baseURL
-	dockerURL.User = url.UserPassword("postgres", "postgres")
-	add(dockerURL.String())
-
+	addURL(withUserPass("postgres", "postgres"))
 	// other classic docker dsn
-	dockerURL2 := baseURL
-	dockerURL2.User = url.UserPassword("postgres", "password")
-	add(dockerURL2.String())
+	addURL(withUserPass("postgres", "password"))
 
 	// env based dsn
-	envURL := baseURL
 	username, ok := os.LookupEnv("PGUSER")
 	if !ok {
 		uinfo, err := user.Current()
 		if err != nil {
 			return nil, err
 		}
-		username = uinfo.Name
+		username = uinfo.Username
 	}
-	envURL.User = url.UserPassword(username, env("PGPASSWORD"))
-	if host, ok := os.LookupEnv("PGHOST"); ok {
-		if port, ok := os.LookupEnv("PGPORT"); ok {
-			envURL.Host = fmt.Sprintf("%s:%s", host, port)
-		}
-		envURL.Host = fmt.Sprintf("%s:%s", host, "5432")
-	}
-	if sslmode := env("PGSSLMODE"); sslmode != "" {
-		qry := envURL.Query()
-		qry.Set("sslmode", sslmode)
-		envURL.RawQuery = qry.Encode()
-	}
-	add(envURL.String())
+
+	addURL(
+		withUserPass(username, env("PGPASSWORD")),
+		withHost(env("PGHOST"), env("PGPORT")),
+		withSSL(env("PGSSLMODE")),
+	)
 
 	return candidates, nil
 }
@@ -248,6 +284,24 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		return check.Version("git", trimmed, versionConstraint)
 	}
 }
+
+var majorMinorVersionRegex = regexp.MustCompile(`\d+\.\d+`)
+
+// func checkPostgresVersion(dsn, versionConstraint string) func(context.Context) error {
+// 	return func(ctx context.Context) error {
+// 		out, err := usershell.Command(ctx, `psql -t -c "select version()"`).StdOut().Run().String()
+// 		if err != nil {
+// 			return errors.Wrapf(err, "failed to get postgres version")
+// 		}
+
+// 		version := majorMinorVersionRegex.FindString(out)
+// 		if version == "" {
+// 			return errors.Newf("unexpected output from postgres: %s", out)
+// 		}
+
+// 		return check.Version("postgres", version, versionConstraint)
+// 	}
+// }
 
 func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {

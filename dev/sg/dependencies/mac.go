@@ -171,7 +171,7 @@ var Mac = []category{
 If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
-				Check: checkAction(check.InPath("psql")),
+				Check: checkAction(check.Combine(check.InPath("psql"))), //, checkPostgresVersion(">= 15.0"))),
 				Fix:   brewInstall("postgresql@15"),
 			},
 			{
