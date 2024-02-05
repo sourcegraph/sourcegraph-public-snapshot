@@ -1465,29 +1465,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 		return nil, err
 	}
 
-	commit := res.GetCommit()
-
-	// TODO: Add separate function for converting from proto to gitdomain.
-	parents := make([]api.CommitID, len(commit.GetParents()))
-	for i, p := range commit.GetParents() {
-		parents[i] = api.CommitID(p)
-	}
-
-	return &gitdomain.Commit{
-		ID:      api.CommitID(commit.GetOid()),
-		Message: gitdomain.Message(commit.GetMessage()),
-		Author: gitdomain.Signature{
-			Name:  commit.GetAuthor().GetName(),
-			Email: commit.GetAuthor().GetEmail(),
-			Date:  commit.GetAuthor().GetDate().AsTime(),
-		},
-		Committer: &gitdomain.Signature{
-			Name:  commit.GetCommitter().GetName(),
-			Email: commit.GetCommitter().GetEmail(),
-			Date:  commit.GetCommitter().GetDate().AsTime(),
-		},
-		Parents: parents,
-	}, nil
+	return gitdomain.CommitFromProto(res.GetCommit()), nil
 }
 
 // Commits returns all commits matching the options.

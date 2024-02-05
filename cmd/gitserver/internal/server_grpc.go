@@ -8,7 +8,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/log"
 
@@ -813,28 +812,8 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 		return nil, s.Err()
 	}
 
-	// TODO: Move elsewhere, so we can also test this better?
-	parents := make([]string, len(commit.Parents))
-	for i, p := range commit.Parents {
-		parents[i] = string(p)
-	}
-
 	return &proto.GetCommitResponse{
-		Commit: &proto.GitCommit{
-			Oid:     string(commit.ID),
-			Message: string(commit.Message),
-			Parents: parents,
-			Author: &proto.GitSignature{
-				Name:  commit.Author.Name,
-				Email: commit.Author.Email,
-				Date:  timestamppb.New(commit.Author.Date),
-			},
-			Committer: &proto.GitSignature{
-				Name:  commit.Committer.Name,
-				Email: commit.Committer.Email,
-				Date:  timestamppb.New(commit.Committer.Date),
-			},
-		},
+		Commit: commit.ToProto(),
 	}, nil
 }
 
