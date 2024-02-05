@@ -1175,7 +1175,6 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 		parser.heuristics = balancedPattern | emptyParens
 	default:
 		parser.heuristics = balancedPattern | emptyParens | parensAsPatterns
-
 	}
 
 	nodes, err := parser.parseOr()
