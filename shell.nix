@@ -27,9 +27,6 @@ let
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
     unset TMPDIR TMP
-    if [ "$1" == "configure" ]; then
-      exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
-    fi
     exec ${pkgs.bazel_7}/bin/bazel "$@"
   '');
   bazel-watcher = writeShellScriptBin "ibazel" ''
@@ -112,13 +109,14 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
     rustfmt
     libiconv
     clippy
+
+    bazel-buildtools
   ] ++ lib.optional hostPlatform.isLinux (with pkgs; [
     # bazel via nix is broken on MacOS for us. Lets just rely on bazelisk from brew.
     # special sauce bazel stuff.
     bazelisk # needed to please sg, but not used directly by us
     bazel-fhs
     bazel-watcher
-    bazel-buildtools
   ]) ++ lib.optional hostPlatform.isMacOS [ bazel-wrapper ];
 
   # Startup postgres, redis & set nixos specific stuff

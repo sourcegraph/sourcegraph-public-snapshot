@@ -23,13 +23,13 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 
 	// expect phrase query
 	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
-
-	// respect whitespace
-	autogold.Expect(`(or "foo   bar  bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo   bar  bas", SearchTypeKeyword))
-	autogold.Expect(`(or "foo\tbar:  bas" (and "foo" "bar:" "bas"))`).Equal(t, test("foo\tbar:  bas ", SearchTypeKeyword))
-	autogold.Expect(`(or "いい お天気 です" (and "いい" "お天気" "です"))`).Equal(t, test("いい お天気 です", SearchTypeKeyword))
+	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
+	autogold.Expect(`(or "* int func(" (and "*" "int" "func("))`).Equal(t, test("* int func(", SearchTypeKeyword))
+	autogold.Expect(`(or "foo bar bas qux" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
 
 	// expect no phrase query
+	autogold.Expect(`"foo bar bas"`).Equal(t, test("/foo bar bas/", SearchTypeKeyword))
+	autogold.Expect(`(and "foo" "bar" "ba.*")`).Equal(t, test("foo bar /ba.*/", SearchTypeKeyword))
 	autogold.Expect(`"foo"`).Equal(t, test("foo", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo bar", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo and bar", SearchTypeKeyword))
@@ -58,10 +58,10 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Expect(`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
 		Equal(t, test("path:foo", SearchTypeLiteral))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]`).
+	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"foo","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":10}}},{"value":"bar","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":11},"end":{"line":0,"column":14}}}]}]`).
 		Equal(t, test("r:repo foo bar", SearchTypeKeyword))
 
-	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Regexp"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":13}}}]}]`).
+	autogold.Expect(`[{"and":[{"value":"foo","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":3}}},{"value":"bar","negated":false,"labels":["Literal","QuotesAsLiterals","Standard"],"range":{"start":{"line":0,"column":4},"end":{"line":0,"column":7}}},{"value":"bas","negated":false,"labels":["Regexp"],"range":{"start":{"line":0,"column":8},"end":{"line":0,"column":13}}}]}]`).
 		Equal(t, test("foo bar /bas/", SearchTypeKeyword))
 }
 

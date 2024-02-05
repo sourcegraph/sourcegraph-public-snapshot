@@ -1,21 +1,13 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
-import { mockLicenseContext } from './testUtils'
 
 vi.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: () => 'AccountName' }))
 
 describe('SiteAdminProductLicenseNode', () => {
-    const origContext = window.context
-    beforeEach(() => {
-        window.context = mockLicenseContext
-    })
-    afterEach(() => {
-        window.context = origContext
-    })
     test('active', () => {
         expect(
             renderWithBrandedContext(
@@ -39,6 +31,7 @@ describe('SiteAdminProductLicenseNode', () => {
                                 salesforceOpportunityID: null,
                             },
                             subscription: {
+                                uuid: 'uuid',
                                 id: 'id1',
                                 account: null,
                                 name: 's',
@@ -79,6 +72,7 @@ describe('SiteAdminProductLicenseNode', () => {
                                 salesforceOpportunityID: null,
                             },
                             subscription: {
+                                uuid: 'uuid',
                                 id: 'id1',
                                 account: null,
                                 name: 's',

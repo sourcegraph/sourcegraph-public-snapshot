@@ -5,14 +5,21 @@ import (
 
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	gcpdetector "go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Config struct {
 	GCPProjectID string
+	// OtelSDKDisabled disables the OpenTelemetry SDK integration. We manually
+	// implement this spec as the Go SDK does not:
+	//
+	// - https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#general-sdk-configuration
+	// - https://github.com/open-telemetry/opentelemetry-go/issues/3559
+	OtelSDKDisabled bool
 }
 
 // Init initializes OpenTelemetry integrations. If config.GCPProjectID is set,
@@ -22,6 +29,11 @@ type Config struct {
 //   - traces: OTLP exporter
 //   - metrics: Prometheus exporter
 func Init(ctx context.Context, logger log.Logger, config Config, r log.Resource) (func(), error) {
+	if config.OtelSDKDisabled {
+		logger.Warn("OpenTelemetry SDK integration disabled by configuration")
+		return func() {}, nil
+	}
+
 	res, err := getOpenTelemetryResource(ctx, r)
 	if err != nil {
 		return nil, errors.Wrap(err, "init resource")

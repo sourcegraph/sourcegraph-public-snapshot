@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -43,10 +42,7 @@ var (
 
 func getOperations(logger log.Logger) *operations {
 	opsOnce.Do(func() {
-		observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
-			Name:       "database-batch",
-			SampleRate: 20,
-		}))
+		observationCtx := observation.NewContext(logger)
 
 		ops = newOperations(observationCtx)
 	})

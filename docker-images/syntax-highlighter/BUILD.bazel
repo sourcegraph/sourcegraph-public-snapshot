@@ -1,5 +1,5 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
@@ -16,6 +16,27 @@ rust_binary(
     deps = all_crate_deps(
         normal = True,
     ) + [
+        ":syntect_server_lib",
+        "//docker-images/syntax-highlighter/crates/syntax-analysis",
+        "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
+    ],
+)
+
+rust_library(
+    name = "syntect_server_lib",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+        exclude = [
+            "src/main.rs",
+            "src/bin/**/*.rs",
+        ],
+    ),
+    aliases = aliases(),
+    crate_name = "syntect_server",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
+    deps = all_crate_deps(normal = True) + [
         "//docker-images/syntax-highlighter/crates/syntax-analysis",
         "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages",
     ],

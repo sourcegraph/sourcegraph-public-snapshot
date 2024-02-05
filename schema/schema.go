@@ -66,6 +66,14 @@ type AnnotationsResult struct {
 	Items []*OpenCodeGraphItem `json:"items"`
 }
 
+// AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
+type AttributionGateway struct {
+	// AccessToken description: Only for use to override token for attribution gateway access. If 'licenseKey' is set, a default access token is generated.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Endpoint description: Endpoint where Cody gateway can be accessed for attribution.
+	Endpoint string `json:"endpoint,omitempty"`
+}
+
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
@@ -911,6 +919,8 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// BatchChangesEnablePerforce description: When enabled, batch changes will be executable on Perforce depots.
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
+	// CodyContextIgnore description: Enabled filtering of remote Cody context based on repositories ./cody/ignore file
+	CodyContextIgnore *bool `json:"codyContextIgnore,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -1006,6 +1016,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "batchChanges.enablePerforce")
+	delete(m, "codyContextIgnore")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGithubInternalRepoVisibility")
@@ -2639,6 +2650,8 @@ type SiteConfiguration struct {
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// AttributionEnabled description: Enable/Disable attribution search for Cody-generated snippets
 	AttributionEnabled *bool `json:"attribution.enabled,omitempty"`
+	// AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
+	AttributionGateway *AttributionGateway `json:"attribution.gateway,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -2958,6 +2971,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "attribution.enabled")
+	delete(m, "attribution.gateway")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.allowedIpAddress")

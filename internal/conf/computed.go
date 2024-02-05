@@ -888,6 +888,23 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 	return computedConfig
 }
 
+func GetAttributionGateway(siteConfig schema.SiteConfiguration) (string, string) {
+	if !codyEnabled(siteConfig) {
+		return "", ""
+	}
+	// Explicit attribution gateway config overrides autocomplete config (if used).
+	if g := siteConfig.AttributionGateway; g != nil {
+		return g.Endpoint, getSourcegraphProviderAccessToken(g.AccessToken, siteConfig)
+	}
+	// Fall back to autocomplete config if no explicit gateway config.
+	cc := GetCompletionsConfig(siteConfig)
+	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
+	if ccUsingGateway {
+		return cc.Endpoint, getSourcegraphProviderAccessToken(cc.AccessToken, siteConfig)
+	}
+	return "", ""
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on

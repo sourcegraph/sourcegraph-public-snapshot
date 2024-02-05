@@ -10,10 +10,10 @@ test('has sign in button', async ({ page }) => {
     await expect(page).toHaveURL('/sign-in')
 })
 
-test('has SvelteKit toggle button', async ({ page }) => {
+test('has experimental web app toggle button', async ({ page }) => {
     await page.goto('/')
-    await page.getByLabel('Disable SvelteKit').click()
-    await expect(page).toHaveURL(/\?feat=-enable-sveltekit/)
+    await page.getByLabel('Leave experimental web app').click()
+    await expect(page).toHaveURL(/\?feat=-web-next/)
 })
 
 test('has user menu', async ({ sg, page }) => {

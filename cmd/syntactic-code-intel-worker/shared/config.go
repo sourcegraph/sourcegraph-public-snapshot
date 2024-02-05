@@ -36,14 +36,12 @@ func (c *IndexingWorkerConfig) Load() {
 	c.PollInterval = c.GetInterval(scopedEnv("INDEXING_POLL_INTERVAL"), "1s", "Interval between queries to the repository queue")
 	c.Concurrency = c.GetInt(scopedEnv("INDEXING_CONCURRENCY"), "1", "The maximum number of repositories that can be processed concurrently.")
 	c.MaximumRuntimePerJob = c.GetInterval(scopedEnv("INDEXING_MAXIMUM_RUNTIME_PER_JOB"), "5m", "The maximum time a single repository indexing job can take")
-
-	c.CliPath = c.Get("SCIP_TREESITTER_PATH", "scip-treesitter", "TODO: fill in description")
+	c.CliPath = c.Get("SCIP_SYNTAX_PATH", "scip-syntax", "TODO: fill in description")
 }
 
 func (c *Config) Load() {
 	c.IndexingWorker = &IndexingWorkerConfig{}
 	c.IndexingWorker.Load()
-
 	c.ListenAddress = c.GetOptional("SYNTACTIC_CODE_INTEL_WORKER_ADDR", "The address under which the syntactic codeintel worker API listens. Can include a port.")
 	// Fall back to a reasonable default.
 	if c.ListenAddress == "" {

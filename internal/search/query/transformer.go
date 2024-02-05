@@ -1,7 +1,6 @@
 package query
 
 import (
-	"math"
 	"strconv"
 	"strings"
 
@@ -642,42 +641,23 @@ func ExperimentalPhraseBoost(logger sglog.Logger, originalQuery string) BasicPas
 				return basic
 			}
 
-			first := math.MaxInt
-			last := math.MinInt
-			// Check if all operands are patterns and not negated.
+			phrase := ""
 			for _, child := range n.Operands {
 				c, isPattern := child.(Pattern)
-				if !isPattern || c.Negated {
+				if !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
 					return basic
 				}
 
-				if c.Annotation.Range.Start.Column < first {
-					first = c.Annotation.Range.Start.Column
-				}
-
-				if c.Annotation.Range.End.Column > last {
-					last = c.Annotation.Range.End.Column
-				}
+				phrase += c.Value + " "
 			}
-
-			// To get here, we must have found several non-negated patterns. Assuming the
-			// ranges are set correctly, this statement should always be false.
-			if first > last {
-				logger.Error(
-					"encountered invalid range during phrase boost",
-					sglog.Int("first", first),
-					sglog.Int("last", last),
-					sglog.String("query", originalQuery),
-				)
-				return basic
-			}
+			phrase = strings.TrimSpace(phrase)
 
 			basic.Pattern = Operator{
 				Kind: Or,
 				Operands: []Node{
 					Pattern{
-						Value:      originalQuery[first:last],
-						Annotation: Annotation{Labels: Boost},
+						Value:      phrase,
+						Annotation: Annotation{Labels: Boost | Literal | QuotesAsLiterals | Standard},
 					},
 					n,
 				},
