@@ -254,6 +254,9 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		ID:            s.Uuid,
 		Name:          name,
 		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
+		EndpointAccess: map[string]bool{
+			"/v1/attribution": !disallowedLicense && !s.IsArchived,
+		},
 		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
 		LastUpdated:   &now,
 		Source:        source,
