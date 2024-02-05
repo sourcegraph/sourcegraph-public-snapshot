@@ -74,10 +74,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
-    // CSS class name for the dollar amount charged for Cody Pro, which is tied to
-    // whether or not we are offering a free trial.
-    const proPricingClass = hasTrialEnded ? '' : styles.proPricing
-
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
@@ -193,7 +189,13 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', proPricingClass)}>$9</H2>
+                                    <H2
+                                        className={classNames('text-muted d-inline mb-0', {
+                                            [styles.proPricing]: !hasTrialEnded,
+                                        })}
+                                    >
+                                        $9
+                                    </H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {!hasTrialEnded && (
@@ -203,7 +205,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                             <strong>Free until Feb 2024, no credit card needed</strong>
                                         )}
                                         {/* The free trial has not ended, but we ARE accepting payments. */}
-                                        {arePaymentsEnabled && <strong>Free until February 15, 2024.</strong>}
+                                        {arePaymentsEnabled && !hasTrialEnded && (
+                                            <strong>Free until February 15, 2024.</strong>
+                                        )}
+                                        {arePaymentsEnabled && hasTrialEnded && (
+                                            <strong>Billed monthly. Cancel anytime.</strong>
+                                        )}
                                     </Text>
                                 )}
                                 {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
@@ -251,7 +258,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        {arePaymentsEnabled ? 'Get Pro' : 'Get Pro trial'}
+                                        {!arePaymentsEnabled && 'Get Pro'}
+                                        {arePaymentsEnabled && !hasTrialEnded && 'Get Pro trial'}
+                                        {arePaymentsEnabled && hasTrialEnded && 'Purchase Cody Pro'}
                                     </Button>
                                 )}
                             </div>
