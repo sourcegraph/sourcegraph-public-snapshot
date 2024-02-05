@@ -2096,7 +2096,6 @@ dependencies = [
  "pretty_assertions",
  "protobuf",
  "regex",
- "rocket",
  "rustc-hash",
  "scip",
  "serde",
@@ -2134,6 +2133,7 @@ dependencies = [
 name = "syntect_server"
 version = "1.0.1"
 dependencies = [
+ "anyhow",
  "base64 0.13.1",
  "clap 4.3.23",
  "criterion",
@@ -2150,6 +2150,7 @@ dependencies = [
  "syntax-analysis",
  "syntect",
  "tree-sitter-all-languages",
+ "tree-sitter-highlight",
 ]
 
 [[package]]
