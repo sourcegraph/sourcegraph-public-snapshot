@@ -4,7 +4,7 @@ import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { map, throttleTime } from 'rxjs/operators'
+import { catchError, map, throttleTime } from 'rxjs/operators'
 
 import { ErrorLike, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -105,8 +105,8 @@ const fetchBlameViaStreaming = memoizeObservable(
         revision: string
         filePath: string
         sourcegraphURL: string
-    }): Observable<BlameHunkData> =>
-        new Observable<BlameHunkData>(subscriber => {
+    }): Observable<BlameHunkData | ErrorLike> =>
+        new Observable<BlameHunkData | ErrorLike>(subscriber => {
             let didEmitFirstCommitDate = false
             let firstCommitDate: Date | undefined
             let externalURLs: BlameHunkData['externalURLs']
@@ -184,7 +184,10 @@ const fetchBlameViaStreaming = memoizeObservable(
             )
         })
             // Throttle the results to avoid re-rendering the blame sidebar for every hunk
-            .pipe(throttleTime(1000, undefined, { leading: true, trailing: true })),
+            .pipe(
+                throttleTime(1000, undefined, { leading: true, trailing: true }),
+                catchError(error => of(error))
+            ),
     makeRepoURI
 )
 
@@ -269,21 +272,17 @@ export const useBlameHunks = (
     const [isBlameVisible] = useBlameVisibility(isPackage)
     const shouldFetchBlame = isBlameVisible
 
-    try {
-        const hunks = useObservable(
-            useMemo(
-                () =>
-                    shouldFetchBlame
-                        ? fetchBlameViaStreaming({ revision, repoName, filePath: filePath + 'asdf', sourcegraphURL })
-                        : of({ current: undefined, externalURLs: undefined, firstCommitDate: undefined }),
-                [shouldFetchBlame, revision, repoName, filePath, sourcegraphURL]
-            )
+    const hunks = useObservable(
+        useMemo(
+            () =>
+                shouldFetchBlame
+                    ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
+                    : of({ current: undefined, externalURLs: undefined, firstCommitDate: undefined }),
+            [shouldFetchBlame, revision, repoName, filePath, sourcegraphURL]
         )
+    )
 
-        return hunks || { current: undefined, externalURLs: undefined, firstCommitDate: undefined }
-    } catch (error) {
-        return error
-    }
+    return hunks || { current: undefined, externalURLs: undefined, firstCommitDate: undefined }
 }
 
 const ONE_MONTH = 30 * 24 * 60 * 60 * 1000
