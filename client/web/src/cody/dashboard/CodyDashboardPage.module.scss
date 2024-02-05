@@ -146,3 +146,46 @@
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
 }
+
+.link-selector {
+    &-container {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--border-color-2);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    &-info {
+        padding: 1rem;
+        gap: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    &-btn {
+        border-left: 1px solid var(--border-color-2);
+        padding: 1rem;
+        height: 100%;
+    }
+
+    &-icon {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    &-option {
+        &-maker {
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+            font-weight: 400;
+            margin-bottom: 0;
+        }
+
+        &-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+    }
+}
