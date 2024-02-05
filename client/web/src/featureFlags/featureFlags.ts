@@ -39,7 +39,6 @@ export const FEATURE_FLAGS = [
     'search-keyword',
     'search-input-show-history',
     'search-results-keyboard-navigation',
-    'search-simple',
     'search.newFilters',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
