@@ -81,7 +81,7 @@ enum Commands {
     },
 }
 
-pub fn main() {
+pub fn main() -> anyhow::Result<()> {
     // Exits with a code zero if the environment variable SANITY_CHECK equals
     // to "true". This enables testing that the current program is in a runnable
     // state against the platform it's being executed on.
@@ -133,7 +133,7 @@ pub fn main() {
                     analysis_mode: mode,
                     fail_fast,
                 },
-            )
+            )?
         }
 
         Commands::ScipEvaluate {
@@ -154,6 +154,7 @@ pub fn main() {
                 print_false_negatives,
                 disable_colors,
             },
-        ),
+        )?,
     }
+    Ok(())
 }
