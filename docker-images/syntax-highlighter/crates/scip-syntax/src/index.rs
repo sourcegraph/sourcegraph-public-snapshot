@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{get_globals, get_locals};
@@ -55,7 +55,7 @@ pub fn index_command(
     project_root: PathBuf,
     evaluate_against: Option<PathBuf>,
     options: IndexOptions,
-) {
+) -> Result<()> {
     let p = ParserId::from_name(&language).unwrap();
     let project_root = {
         match index_mode {
@@ -64,9 +64,12 @@ pub fn index_command(
         }
     };
 
-    let canonical_project_root = project_root
-        .canonicalize()
-        .expect("Failed to canonicalize project root");
+    let canonical_project_root = project_root.canonicalize().with_context(|| {
+        format!(
+            "Failed to canonicalize project root: {}",
+            project_root.display()
+        )
+    })?;
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
@@ -84,8 +87,9 @@ pub fn index_command(
         ..Default::default()
     };
 
-    let mut index_file = |filepath: &PathBuf| {
-        let contents = std::fs::read(filepath).unwrap();
+    let mut index_file = |filepath: &PathBuf| -> Result<()> {
+        let contents = std::fs::read(filepath)
+            .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
         let relative_path = filepath
             .strip_prefix(canonical_project_root.clone())
             .expect("Failed to strip project root prefix");
@@ -94,12 +98,18 @@ pub fn index_command(
             Ok(mut document) => {
                 document.relative_path = relative_path.display().to_string();
                 index.documents.push(document);
+                Ok(())
             }
             Err(error) => {
                 if options.fail_fast {
-                    panic!("Failed to index {}: {:?}", filepath.display(), error);
+                    Err(anyhow!(
+                        "Failed to index {}: {:?}",
+                        filepath.display(),
+                        error
+                    ))
                 } else {
-                    eprintln!("Failed to index {}: {:?}", filepath.display(), error)
+                    eprintln!("Failed to index {}: {:?}", filepath.display(), error);
+                    Ok(())
                 }
             }
         }
@@ -111,7 +121,7 @@ pub fn index_command(
             for filename in list {
                 let filepath = PathBuf::from(filename).canonicalize().unwrap();
                 bar.set_message(filepath.display().to_string());
-                index_file(&filepath);
+                index_file(&filepath)?;
                 bar.inc(1);
             }
 
@@ -142,7 +152,7 @@ pub fn index_command(
                 let entry = entry.unwrap();
                 if !entry.file_type().is_dir() {
                     bar.set_message(entry.path().display().to_string());
-                    index_file(&entry.into_path());
+                    index_file(&entry.into_path())?;
                     bar.tick();
                 }
             }
@@ -160,24 +170,25 @@ pub fn index_command(
     if let Some(file) = evaluate_against {
         eprintln!("Evaluating built index against {}", file.display());
 
-        let ground_truth = read_index_from_file(file);
+        let ground_truth = read_index_from_file(&file)?;
 
         let mut evaluator = Evaluator::default();
         evaluator
-            .evaluate_indexes(&index, &ground_truth)
-            .unwrap()
-            .write_summary(&mut std::io::stdout(), Default::default())
-            .unwrap();
+            .evaluate_indexes(&index, &ground_truth)?
+            .write_summary(&mut std::io::stdout(), Default::default())?
     }
 
-    write_message_to_file(out, index).expect("to write the file");
+    write_message_to_file(out.clone(), index)
+        .map_err(|err| anyhow!("{err:?}"))
+        .with_context(|| format!("When writing index to {}", out.display()))
 }
 
 fn index_content(contents: Vec<u8>, parser: ParserId, options: &IndexOptions) -> Result<Document> {
     let mut document: Document;
 
     if options.analysis_mode.globals() {
-        let (mut scope, hint) = get_globals(parser, &contents).unwrap().unwrap();
+        let (mut scope, hint) =
+            get_globals(parser, &contents).ok_or(anyhow!("Failed to get globals"))??;
         document = scope.into_document(hint, vec![]);
     } else {
         document = Document::new();

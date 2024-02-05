@@ -254,7 +254,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 func (s *SearchFilters) Compute() []*Filter {
 	s.Dirty = false
 	return s.filters.Compute(computeOpts{
-		MaxRepos: 40,
-		MaxOther: 40,
+		MaxRepos: 1000,
+		MaxOther: 1000,
 	})
 }

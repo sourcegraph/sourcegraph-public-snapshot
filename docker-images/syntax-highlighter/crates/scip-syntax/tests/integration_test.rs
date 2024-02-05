@@ -68,7 +68,8 @@ fn java_e2e_evaluation() {
             analysis_mode: AnalysisMode::Full,
             fail_fast: true,
         },
-    );
+    )
+    .unwrap();
 
     let mut str = vec![];
 
@@ -100,7 +101,7 @@ fn java_e2e_indexing() {
 
     run_index(&out_dir, &setup, vec!["--language", "java"]);
 
-    let index = read_index_from_file(out_dir.join("index.scip"));
+    let index = read_index_from_file(&out_dir.join("index.scip")).unwrap();
 
     for doc in &index.documents {
         let path = &doc.relative_path;
