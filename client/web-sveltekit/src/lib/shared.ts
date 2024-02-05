@@ -71,6 +71,7 @@ export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
 export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+export { repositoryInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 
 // Copies of non-reusable code
 
