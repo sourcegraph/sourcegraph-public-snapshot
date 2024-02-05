@@ -4,7 +4,6 @@ import { useSearchParams } from 'react-router-dom'
 
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -21,18 +20,14 @@ import { eventLogger } from '../../../../tracking/eventLogger'
 import { useQueryProductLicensesConnection } from './backend'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 
-interface Props {
-    authenticatedUser: AuthenticatedUser
-}
+interface Props {}
 
 const SEARCH_PARAM_KEY = 'query'
 
 /**
  * Displays the product licenses that have been created on Sourcegraph.com.
  */
-export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    authenticatedUser,
-}) => {
+export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     useEffect(() => eventLogger.logPageView('SiteAdminLicenseKeyLookup'), [])
 
     const [searchParams, setSearchParams] = useSearchParams()
@@ -88,7 +83,6 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
                                         node={node}
                                         showSubscription={true}
                                         onRevokeCompleted={refetchAll}
-                                        authenticatedUser={authenticatedUser}
                                     />
                                 ))}
                             </ConnectionList>

@@ -8,7 +8,6 @@ import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -41,16 +40,12 @@ import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminG
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { accessTokenPath, errorForPath } from './utils'
 
-interface Props {
-    authenticatedUser: AuthenticatedUser
-}
+interface Props {}
 
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    authenticatedUser,
-}) => {
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
@@ -221,7 +216,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                         subscriptionUUID={subscriptionUUID}
                         toggleShowGenerate={toggleShowGenerate}
                         setRefetch={setRefetchRef}
-                        authenticatedUser={authenticatedUser}
                     />
                 </Container>
             </div>
@@ -241,10 +235,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
 const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
     subscriptionUUID: string
-    authenticatedUser: AuthenticatedUser
     toggleShowGenerate: () => void
     setRefetch: (refetch: () => void) => void
-}> = ({ subscriptionUUID, setRefetch, authenticatedUser, toggleShowGenerate }) => {
+}> = ({ subscriptionUUID, setRefetch, toggleShowGenerate }) => {
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
         subscriptionUUID,
         20
@@ -275,7 +268,6 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
                         defaultExpanded={node.id === licenseIDFromLocationHash}
                         showSubscription={false}
                         onRevokeCompleted={refetchAll}
-                        authenticatedUser={authenticatedUser}
                     />
                 ))}
             </ConnectionList>
@@ -288,12 +280,7 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
                         noun="product license"
                         pluralNoun="product licenses"
                         hasNextPage={hasNextPage}
-                        emptyElement={
-                            <NoProductLicense
-                                authenticatedUser={authenticatedUser}
-                                toggleShowGenerate={toggleShowGenerate}
-                            />
-                        }
+                        emptyElement={<NoProductLicense toggleShowGenerate={toggleShowGenerate} />}
                     />
                     {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                 </SummaryContainer>
@@ -303,9 +290,8 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
 }
 
 const NoProductLicense: React.FunctionComponent<{
-    authenticatedUser: AuthenticatedUser
     toggleShowGenerate: () => void
-}> = ({ authenticatedUser, toggleShowGenerate }) => (
+}> = ({ toggleShowGenerate }) => (
     <>
         <Text className="text-muted">No license key has been generated yet.</Text>
         <Button onClick={toggleShowGenerate} variant="primary">

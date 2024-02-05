@@ -18,7 +18,6 @@ import {
     Text,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
 import { CopyableText } from '../../../../components/CopyableText'
 import { LoaderButton } from '../../../../components/LoaderButton'
 import type { ProductLicenseFields, RevokeLicenseResult, RevokeLicenseVariables } from '../../../../graphql-operations'
@@ -37,7 +36,6 @@ export interface SiteAdminProductLicenseNodeProps {
     showSubscription: boolean
     defaultExpanded?: boolean
     onRevokeCompleted: () => void
-    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -45,7 +43,7 @@ export interface SiteAdminProductLicenseNodeProps {
  */
 export const SiteAdminProductLicenseNode: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminProductLicenseNodeProps>
-> = ({ node, showSubscription, onRevokeCompleted, authenticatedUser, defaultExpanded = false }) => {
+> = ({ node, showSubscription, onRevokeCompleted, defaultExpanded = false }) => {
     const [revoke, { loading, error }] = useMutation<RevokeLicenseResult, RevokeLicenseVariables>(REVOKE_LICENSE)
 
     const onRevoke = useCallback(() => {
