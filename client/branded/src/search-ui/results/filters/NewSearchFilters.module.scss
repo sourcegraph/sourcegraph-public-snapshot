@@ -48,10 +48,10 @@
 .actions {
     position: sticky;
     bottom: 0;
-    margin-bottom: -0.5rem;
+    margin-top: -0.5rem;
     padding: 0.75rem 0.5rem 0.75rem 0.75rem;
     border-top: 1px solid var(--border-color);
-    background: var(--color-bg-1);
+    background-color: var(--code-bg);
 
     display: flex;
     flex-direction: column;
@@ -60,10 +60,6 @@
     &:empty {
         display: none;
     }
-}
-
-.footer-doc {
-    border-top: 1px solid var(--border-color);
 }
 
 .move-icon {

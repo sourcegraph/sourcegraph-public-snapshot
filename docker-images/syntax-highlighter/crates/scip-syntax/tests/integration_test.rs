@@ -6,15 +6,15 @@ use std::{env::temp_dir, path::PathBuf};
 use assert_cmd::cargo::cargo_bin;
 use assert_cmd::prelude::*;
 
-use scip_treesitter_cli::evaluate::Evaluator;
-use scip_treesitter_cli::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
-use scip_treesitter_cli::io::read_index_from_file;
+use scip_syntax::evaluate::Evaluator;
+use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
+use scip_syntax::io::read_index_from_file;
 
 lazy_static::lazy_static! {
     static ref BINARY_LOCATION: PathBuf = {
-        match std::env::var("SCIP_TREESITTER_PATH") {
+        match std::env::var("SCIP_SYNTAX_PATH") {
             Ok(va) => std::env::current_dir().unwrap().join(va),
-            _ => cargo_bin("scip-treesitter"),
+            _ => cargo_bin("scip-syntax"),
         }
     };
 
@@ -68,7 +68,8 @@ fn java_e2e_evaluation() {
             analysis_mode: AnalysisMode::Full,
             fail_fast: true,
         },
-    );
+    )
+    .unwrap();
 
     let mut str = vec![];
 
@@ -77,7 +78,7 @@ fn java_e2e_evaluation() {
         .unwrap()
         .write_summary(
             &mut str,
-            scip_treesitter_cli::evaluate::EvaluationOutputOptions {
+            scip_syntax::evaluate::EvaluationOutputOptions {
                 print_false_negatives: true,
                 print_true_positives: true,
                 print_false_positives: true,
@@ -100,7 +101,7 @@ fn java_e2e_indexing() {
 
     run_index(&out_dir, &setup, vec!["--language", "java"]);
 
-    let index = read_index_from_file(out_dir.join("index.scip"));
+    let index = read_index_from_file(&out_dir.join("index.scip")).unwrap();
 
     for doc in &index.documents {
         let path = &doc.relative_path;

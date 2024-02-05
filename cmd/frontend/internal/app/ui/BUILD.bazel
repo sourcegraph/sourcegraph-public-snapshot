@@ -86,7 +86,6 @@ go_test(
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
-        "//cmd/frontend/hooks",
         "//cmd/frontend/internal/app/ui/router",
         "//internal/api",
         "//internal/conf",

@@ -1,4 +1,4 @@
-import { FC, ReactNode, useMemo, useState } from 'react'
+import { FC, ReactNode, useMemo, useRef, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -62,6 +62,8 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     renderItem,
     onSelectedFilterChange,
 }) => {
+    const inputRef = useRef<HTMLInputElement>(null)
+
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
@@ -93,6 +95,10 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
         }
     }
 
+    const handleZeroStateButtonClick = (): void => {
+        inputRef.current?.focus()
+    }
+
     if (mergedFilters.length === 0) {
         return null
     }
@@ -113,6 +119,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
             {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
+                    ref={inputRef}
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}
@@ -132,7 +139,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
                 {filtersToShow.length === 0 && (
                     <small className={styles.description}>
-                        There are no {filterKind}s to show, try to use different search value
+                        <b>We couldn’t return a {filterKind} that matched your filter input.</b> Try a more expansive
+                        search{' '}
+                        <Button onClick={handleZeroStateButtonClick} className={styles.zeroStateSearchButton}>
+                            using the search bar
+                        </Button>{' '}
+                        above.
                     </small>
                 )}
             </ul>

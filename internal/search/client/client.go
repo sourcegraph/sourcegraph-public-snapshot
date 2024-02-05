@@ -316,7 +316,6 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
-		PhraseBoost:             flagSet.GetBoolOr("search-boost-phrase", false),
 	}
 }
 

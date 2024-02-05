@@ -628,7 +628,7 @@ func mapSlice(values []string, f func(string) string) []string {
 }
 
 func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) {
-	if f.Pattern.Negated {
+	if f.Pattern != nil && f.Pattern.Negated {
 		return nil, &query.UnsupportedError{
 			Msg: "symbol search does not support negation.",
 		}

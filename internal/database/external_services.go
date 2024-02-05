@@ -36,10 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
-// new external service in the database.
-var BeforeCreateExternalService func(context.Context, ExternalServiceStore, *types.ExternalService) error
-
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
 	//
@@ -582,13 +578,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	es.CreatedAt = timeutil.Now()
 	es.UpdatedAt = es.CreatedAt
-
-	// Prior to saving the record, run a validation hook.
-	if BeforeCreateExternalService != nil {
-		if err = BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices(), es); err != nil {
-			return err
-		}
-	}
 
 	// Ensure the calculated fields in the external service are up to date.
 	e.recalculateFields(es, string(normalized))
