@@ -203,7 +203,7 @@ func listRemoteTaggedVersions(ctx context.Context, currentVersion *semver.Versio
 			}
 
 			// If the tag is relevant to the version we're releasing, include it.
-			if isTagAfterGCS(versionTag) && isTagPriorToCurrrentRelease(versionTag, currentVersion) {
+			if isTagAfterGCS(versionTag) && isTagPriorToCurrentRelease(versionTag, currentVersion) {
 				allTags = append(allTags, tag.GetName())
 			}
 		}
@@ -235,10 +235,10 @@ func isTagAfterGCS(versionFromTag *semver.Version) bool {
 	return versionFromTag.GreaterThan(&gcsVersions[len(gcsVersions)-1])
 }
 
-// isTagPriorToCurrrentRelease returns true if the tag we're looking at has been release prior to the
+// isTagPriorToCurrentRelease returns true if the tag we're looking at has been release prior to the
 // current version we're releasing. This is to avoid embedding 5.3.0 schemas into a 5.2.X patch release
 // that gets released AFTER 5.3.0, typically to share a bug fix to customers still running on 5.2.X-1.
-func isTagPriorToCurrrentRelease(versionFromTag *semver.Version, currentVersion *semver.Version) bool {
+func isTagPriorToCurrentRelease(versionFromTag *semver.Version, currentVersion *semver.Version) bool {
 	// We include versions that are:
 	// - released after than the latest gcs version
 	// - before the current version we're releasing.
