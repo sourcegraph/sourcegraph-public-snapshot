@@ -556,9 +556,12 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	}
 	test.AddLog(out)
 
+	fctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// Start frontend with candidate
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
+	cleanFrontend, err = startFrontend(fctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
@@ -1050,6 +1053,8 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	// Poll till versions.version is set
 	for {
 		select {
+		case <-ctx.Done():
+			return cleanup, setInitTimeout.Err()
 		case <-setInitTimeout.Done():
 			return cleanup, setInitTimeout.Err()
 		default:
