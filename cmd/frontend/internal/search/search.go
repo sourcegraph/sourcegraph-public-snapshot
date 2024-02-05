@@ -47,7 +47,7 @@ func StreamHandler(db database.DB) http.Handler {
 		logger:              logger,
 		db:                  db,
 		searchClient:        client.New(logger, db, gitserver.NewClient("http.search.stream")),
-		flushTickerInternal: 100 * time.Millisecond,
+		flushTickerInternal: 200 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	})
 }
