@@ -187,7 +187,14 @@ export const BaseCodeMirrorQueryInput = memo(
                 themeExtension,
                 staticExtensions,
             ],
-            [eventHandlers, parsedQueryExtension, readOnlyExtension, multiLineExtension, externalExtension]
+            [
+                eventHandlers,
+                parsedQueryExtension,
+                readOnlyExtension,
+                multiLineExtension,
+                externalExtension,
+                themeExtension,
+            ]
         )
 
         useCodeMirror(editorRef, containerRef, normalizedValue, allExtensions)
