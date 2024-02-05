@@ -33,15 +33,12 @@ export const searchQueryValidator = (value: string | undefined): Checks => {
         const hasOr = keywords.some(filter => filter.kind === 'or')
         const hasNot = keywords.some(filter => filter.kind === 'not')
 
-        const hasLiteralPattern = filters.some(
-            filter =>
-                resolveFilter(filter.field.value)?.type === FilterType.patterntype && filter.value?.value === 'literal'
-        )
-
-        const hasStructuralPattern = filters.some(
+        const hasInvalidPatternType = filters.some(
             filter =>
                 resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                filter.value?.value === 'structural'
+                (filter.value?.value === 'literal' ||
+                    filter.value?.value === 'structural' ||
+                    filter.value?.value === 'keyword')
         )
 
         const hasRepo = filters.some(
@@ -66,7 +63,7 @@ export const searchQueryValidator = (value: string | undefined): Checks => {
 
         return {
             isValidOperator: !hasAnd && !hasOr && !hasNot,
-            isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
+            isValidPatternType: !hasInvalidPatternType,
             isNotRepo: !hasRepo,
             isNotContext: !hasContext,
             isNotCommitOrDiff: !hasCommit && !hasDiff,
