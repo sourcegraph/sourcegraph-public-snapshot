@@ -1067,6 +1067,9 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		input:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol -file:^README\.md `,
 		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"^README\\.md"}`),
 	}, {
+		input:  `repo:go-diff type:symbol`,
+		output: autogold.Expect(`{"RegexpPattern":"","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":""}`),
+	}, {
 		input:   `type:symbol NOT option`,
 		output:  autogold.Expect("null"),
 		wantErr: true,
@@ -1079,14 +1082,12 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		}
 
 		b := plan[0]
-		var pattern query.Pattern
+		var pattern *query.Pattern
 		if p, ok := b.Pattern.(query.Pattern); ok {
-			pattern = p
-		} else {
-			t.Fatal(err)
+			pattern = &p
 		}
 
-		f := query.Flat{Parameters: b.Parameters, Pattern: &pattern}
+		f := query.Flat{Parameters: b.Parameters, Pattern: pattern}
 		return toSymbolSearchRequest(f)
 	}
 
