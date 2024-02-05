@@ -298,11 +298,11 @@ func main() {
 				Usage:   "Runs autoupgrade upgrade tests for all versions.\n\nRequires stamp-version for tryAutoUpgrade call.",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:     "stamp-version",
-						Aliases:  []string{"sv"},
-						Usage:    "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
-						EnvVars:  []string{"VERSION"},
-						Required: true,
+						Name:    "stamp-version",
+						Aliases: []string{"sv"},
+						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
+						EnvVars: []string{"VERSION"},
+						// Required: true,
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
@@ -676,8 +676,13 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 
 	// Set SRC_AUTOUPGRADE=true on Migrator and Frontend containers. Then start the frontend container.
 	test.AddLog("-- ⚙️  performing auto upgrade")
+
+	fctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Start frontend with candidate
 	var cleanFrontend func()
-	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, true, dbs)
+	cleanFrontend, err = startFrontend(fctx, test, "frontend", "candidate", networkName, true, dbs)
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to start candidate frontend: %w", err))
 		cleanFrontend()
