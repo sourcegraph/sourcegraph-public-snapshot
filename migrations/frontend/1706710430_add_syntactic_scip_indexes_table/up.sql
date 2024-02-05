@@ -33,6 +33,17 @@ CREATE TABLE syntactic_scip_indexes (
     CONSTRAINT syntactic_scip_indexes_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
+CREATE SEQUENCE syntactic_scip_index_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE syntactic_scip_index_id_seq OWNED BY syntactic_scip_indexes.id;
+
+
+
 COMMENT ON TABLE syntactic_scip_indexes IS 'Stores metadata about a code intel syntactic index job.';
 
 COMMENT ON COLUMN syntactic_scip_indexes.commit IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
