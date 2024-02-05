@@ -20,12 +20,10 @@ pub fn evaluate_command(
     candidate: PathBuf,
     ground_truth: PathBuf,
     evaluation_output_options: EvaluationOutputOptions,
-) {
+) -> Result<()> {
     Evaluator::default()
-        .evaluate_files(candidate, ground_truth)
-        .unwrap()
+        .evaluate_files(candidate, ground_truth)?
         .write_summary(&mut std::io::stdout(), evaluation_output_options)
-        .unwrap()
 }
 
 fn validate_index(idx: &Index) -> Result<()> {
@@ -419,8 +417,8 @@ impl Evaluator {
         ground_truth: PathBuf,
     ) -> Result<EvaluationResult<'e>> {
         self.evaluate_indexes(
-            &read_index_from_file(candidate),
-            &read_index_from_file(ground_truth),
+            &read_index_from_file(&candidate)?,
+            &read_index_from_file(&ground_truth)?,
         )
     }
 
@@ -429,8 +427,8 @@ impl Evaluator {
         candidate: &Index,
         ground_truth: &Index,
     ) -> Result<EvaluationResult<'e>> {
-        validate_index(candidate)?;
-        validate_index(ground_truth)?;
+        validate_index(candidate).context("When validating the candidate index")?;
+        validate_index(ground_truth).context("When validating the ground truth index")?;
 
         let bar = create_spinner();
         bar.set_message("Indexing candidate symbols by location");

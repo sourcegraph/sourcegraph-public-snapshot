@@ -1,10 +1,10 @@
 [package]
-name = "scip-treesitter-cli"
+name = "scip-syntax"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "scip-treesitter"
+name = "scip-syntax"
 
 [dependencies]
 assert_cmd = "2.0.12"

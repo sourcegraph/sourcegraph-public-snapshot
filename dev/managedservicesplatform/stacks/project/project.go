@@ -127,6 +127,12 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				for k, v := range input {
 					labels[sanitizeName(k)] = pointers.Ptr(v)
 				}
+
+				// For security purposes enable audit logging for production projects (external and internal)
+				if vars.Category == spec.EnvironmentCategoryExternal || vars.Category == spec.EnvironmentCategoryInternal {
+					labels["collect-security-audit-logs"] = pointers.Ptr("true")
+				}
+
 				return &labels
 			}(vars.Labels),
 

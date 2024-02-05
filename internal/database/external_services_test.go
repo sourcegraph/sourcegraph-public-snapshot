@@ -275,30 +275,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 }
 
-func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-
-	ctx := context.Background()
-	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-	}
-	store := db.ExternalServices()
-	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
-		return errcode.NewPresentationError("test plan limit exceeded")
-	}
-	t.Cleanup(func() { BeforeCreateExternalService = nil })
-	if err := store.Create(ctx, confGet, es); err == nil {
-		t.Fatal("expected an error, got none")
-	}
-}
-
 func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

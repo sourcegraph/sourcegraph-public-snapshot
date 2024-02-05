@@ -3,8 +3,8 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 
 rust_binary(
-    name = "scip-treesitter",
-    srcs = ["src/bin/scip-treesitter.rs"],
+    name = "scip-syntax",
+    srcs = ["src/main.rs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -13,7 +13,7 @@ rust_binary(
     deps = all_crate_deps(
         normal = True,
     ) + [
-        ":scip-treesitter-cli-lib",
+        ":scip_syntax_lib",
     ],
 )
 
@@ -25,7 +25,7 @@ WORKSPACE_DEPS = [
 # This separate library target is needed so that the integration
 # test can re-use some of the code in the CLI.
 rust_library(
-    name = "scip-treesitter-cli-lib",
+    name = "scip_syntax_lib",
     srcs = glob(
         [
             "src/*.rs",
@@ -34,7 +34,8 @@ rust_library(
         exclude = ["src/main.rs"],
     ),
     aliases = aliases(),
-    crate_name = "scip_treesitter_cli",
+    # Workaround for https://github.com/bazelbuild/rules_rust/issues/2455
+    crate_name = "scip_syntax",
     crate_root = "src/lib.rs",
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -73,7 +74,7 @@ rust_test(
     ),
     data = [
         ":java_groundtruth_scip",
-        ":scip-treesitter",
+        ":scip-syntax",
     ] + glob(
         ["tests/snapshots/**"],
         allow_empty = False,
@@ -85,13 +86,13 @@ rust_test(
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",
         "JAVA_SCIP_INDEX": "$(rootpath :java_groundtruth_scip)",
-        "SCIP_TREESITTER_PATH": "$(rootpath :scip-treesitter)",
+        "SCIP_SYNTAX_PATH": "$(rootpath :scip-syntax)",
     },
     deps = all_crate_deps(
         normal = True,
     ) + [
-        ":scip-treesitter",
-        ":scip-treesitter-cli-lib",
+        ":scip-syntax",
+        ":scip_syntax_lib",
     ] + WORKSPACE_DEPS,
 )
 

@@ -327,10 +327,10 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-var patternType = lazyregexp.New(`(?i)\bpatternType:(literal|regexp|structural|standard)\b`)
+var patternType = lazyregexp.New(`(?i)\bpatternType:(literal|regexp|structural|standard|keyword)\b`)
 
 func queryHasPatternType(query string) bool {
 	return patternType.Match([]byte(query))
 }
 
-var errMissingPatternType = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"standard\", \"literal\", \"regexp\" or \"structural\"")
+var errMissingPatternType = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"keyword\", \"standard\", \"literal\", or \"regexp\"")

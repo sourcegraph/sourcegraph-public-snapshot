@@ -15,7 +15,6 @@ import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
-import { hacksGobQueriesToRegex } from './searchSimple'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.
@@ -512,24 +511,7 @@ function initiateSearchStream(
 ): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const subscriptions = new Subscription()
-
-        // HACK(keegan) forgive me for this hack, but this is for rapid
-        // prototyping of a new query language. We should fast follow on
-        // something more robust once we get some internal validation. This
-        // feature flag is purely so we can demonstrate it more easily.
-        //
-        // If you still see this code after February 2024 delete it (or me).
-        let queryParam = `${query} ${caseSensitive ? 'case:yes' : ''}`
-        if (featureOverrides?.includes('search-simple')) {
-            const queryRegex = hacksGobQueriesToRegex(queryParam)
-            // eslint-disable-next-line no-console
-            console.log('query rewritten due to search-simple feature flag being set', {
-                old: queryParam,
-                new: queryRegex,
-            })
-            queryParam = queryRegex
-        }
-
+        const queryParam = `${query} ${caseSensitive ? 'case:yes' : ''}`
         const parameters = [
             ['q', queryParam],
             ['v', version],
