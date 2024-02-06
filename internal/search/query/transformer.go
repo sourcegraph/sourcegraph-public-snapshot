@@ -378,12 +378,8 @@ func space(patterns []Pattern) []Node {
 }
 
 // and concatenates patterns with AND.
-func and(patterns []Pattern) []Node {
-	p := make([]Node, 0, len(patterns))
-	for _, pattern := range patterns {
-		p = append(p, pattern)
-	}
-	return NewOperator(p, And)
+func and(patterns []Node) []Node {
+	return NewOperator(patterns, And)
 }
 
 // substituteConcat returns a function that concatenates all contiguous patterns
@@ -428,6 +424,50 @@ func substituteConcat(callback func([]Pattern) []Node) func([]Node) []Node {
 							ps = []Pattern{}
 						}
 						newNode = append(newNode, substituteNodes([]Node{node})...)
+					}
+					if len(ps) > 0 {
+						newNode = append(newNode, callback(ps)...)
+					}
+				} else {
+					newNode = append(newNode, NewOperator(substituteNodes(v.Operands), v.Kind)...)
+				}
+			}
+		}
+		return newNode
+	}
+	return substituteNodes
+}
+
+// substituteConcatForKeyword returns a function that replaces concat with the
+// result of callback. Unlike substituteConcat, this function allows "OR" and
+// "AND" operators to be nested inside "CONCAT".
+func substituteConcatForKeyword(callback func([]Node) []Node) func([]Node) []Node {
+	isPattern := func(node Node) bool {
+		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
+			return true
+		}
+		return false
+	}
+
+	// define a recursive function to close over callback and isPattern.
+	var substituteNodes func(nodes []Node) []Node
+	substituteNodes = func(nodes []Node) []Node {
+		var newNode []Node
+		for _, node := range nodes {
+			switch v := node.(type) {
+			case Parameter, Pattern:
+				newNode = append(newNode, node)
+			case Operator:
+				if v.Kind == Concat {
+					// Merge consecutive patterns.
+					var ps []Node
+					for _, node := range v.Operands {
+						if isPattern(node) {
+							ps = append(ps, node)
+							continue
+						} else {
+							ps = append(ps, substituteNodes([]Node{node})...)
+						}
 					}
 					if len(ps) > 0 {
 						newNode = append(newNode, callback(ps)...)

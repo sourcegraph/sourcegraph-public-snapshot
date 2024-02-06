@@ -13,7 +13,7 @@ interface FiltersDocFooterProps {
 }
 
 export const FiltersDocFooter: FC<FiltersDocFooterProps> = ({ className }) => (
-    <footer className={classNames(styles.footer, className)}>
+    <footer className={classNames(className, styles.footer)}>
         <Link target="_blank" rel="noopener" to="/help/code_search/reference/queries" className={styles.link}>
             <Icon as={OpenBookIcon} aria-hidden={true} className={styles.linkIcon} />
             <span className={styles.linkText}>

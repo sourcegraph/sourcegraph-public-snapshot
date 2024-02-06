@@ -65,7 +65,7 @@ func (c *client) sendRequest(ctx context.Context, method string, url string, out
 	}
 	defer resp.Body.Close()
 
-	if outBody != nil {
+	if outBody != nil && resp.StatusCode == http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return &resp.StatusCode, errors.Wrap(err, "reading response")

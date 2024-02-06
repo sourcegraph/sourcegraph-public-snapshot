@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func IsDepotPathCloneable(ctx context.Context, p4home, p4port, p4user, p4passwd, depotPath string) error {
+func IsDepotPathCloneable(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, depotPath string) error {
 	// start with a test and set up trust if necessary
-	if err := P4TestWithTrust(ctx, p4home, p4port, p4user, p4passwd); err != nil {
+	if err := P4TestWithTrust(ctx, reposDir, p4home, p4port, p4user, p4passwd); err != nil {
 		return errors.Wrap(err, "checking perforce credentials")
 	}
 
@@ -22,7 +22,7 @@ func IsDepotPathCloneable(ctx context.Context, p4home, p4port, p4user, p4passwd,
 	depot := strings.Split(strings.TrimLeft(depotPath, "/"), "/")[0]
 
 	// get a list of depots that match the supplied depot (if it's defined)
-	depots, err := P4Depots(ctx, p4home, p4port, p4user, p4passwd, depot)
+	depots, err := P4Depots(ctx, reposDir, p4home, p4port, p4user, p4passwd, depot)
 	if err != nil {
 		return err
 	}

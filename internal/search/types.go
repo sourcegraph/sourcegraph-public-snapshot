@@ -388,9 +388,6 @@ type Features struct {
 	// options. This should be used for quick interactive experiments only. An
 	// invalid JSON string or unknown fields will be ignored.
 	ZoektSearchOptionsOverride string
-
-	// PhraseBoost is a feature flag that enables boosting of exact matches.
-	PhraseBoost bool `json:"search-boost-phrase"`
 }
 
 func (f *Features) String() string {

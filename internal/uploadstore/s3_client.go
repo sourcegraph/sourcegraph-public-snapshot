@@ -405,12 +405,20 @@ func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) 
 		// For blobstore, no need to read local credential files or talk to a server
 		// to get a role assumption. Instead, we return a simple config with only a static
 		// provider and that's it.
+		//
+		// NOTE: We allow credential free access. In that case we set no
+		// provider. Otherwise the s3 client fails to sign requests with empty
+		// static credentials.
 		cfg := aws.NewConfig()
-		cfg.Credentials = credentials.NewStaticCredentialsProvider(
-			s3config.AccessKeyID,
-			s3config.SecretAccessKey,
-			s3config.SessionToken,
-		)
+
+		if s3config.AccessKeyID != "" || s3config.SecretAccessKey != "" || s3config.SessionToken != "" {
+			cfg.Credentials = credentials.NewStaticCredentialsProvider(
+				s3config.AccessKeyID,
+				s3config.SecretAccessKey,
+				s3config.SessionToken,
+			)
+		}
+
 		cfg.Region = s3config.Region
 		return *cfg, nil
 	}

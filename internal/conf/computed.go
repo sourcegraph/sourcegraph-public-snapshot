@@ -84,10 +84,10 @@ func AccessTokensMaxPerUser() int {
 // AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
 func AccessTokensAllowNoExpiration() bool {
 	cfg := Get().AuthAccessTokens
-	if cfg == nil {
-		return false
+	if cfg == nil || cfg.AllowNoExpiration == nil {
+		return true
 	}
-	return cfg.AllowNoExpiration
+	return *cfg.AllowNoExpiration
 }
 
 // AccessTokensExpirationOptions returns the default access token expiration days

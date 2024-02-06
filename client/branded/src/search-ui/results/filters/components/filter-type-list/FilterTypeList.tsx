@@ -12,9 +12,10 @@ import {
 import classNames from 'classnames'
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Tooltip, Button, Icon } from '@sourcegraph/wildcard'
+import { Tooltip, Button, Icon, H4, H2 } from '@sourcegraph/wildcard'
 
 import { URLQueryFilter } from '../../hooks'
+import { FilterKind } from '../../types'
 import { DynamicFilterBadge } from '../DynamicFilterBadge'
 
 import styles from './FilterTypeList.module.scss'
@@ -31,10 +32,10 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
 
     const mergedFilters = STATIC_TYPE_FILTERS.map(staticFilter => {
         const backendFilter = backendFilters.find(
-            filter => filter.kind === 'type' && filter.label === staticFilter.label
+            filter => filter.kind === FilterKind.Type && filter.label === staticFilter.label
         )
         const selectedFilter = selectedFilters.find(
-            filter => filter.kind === 'type' && filter.label === staticFilter.label
+            filter => filter.kind === FilterKind.Type && filter.label === staticFilter.label
         )
         const filter: Filter = {
             value: staticFilter.value,
@@ -51,19 +52,24 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
     })
 
     return (
-        <ul className={styles.typeList}>
-            {mergedFilters.map(({ filter, selected, forceCount }) => (
-                <li key={filter.value}>
-                    <FilterTypeButton
-                        filter={filter}
-                        disabled={disabled}
-                        selected={selected}
-                        onClick={disabled ? undefined : onClick}
-                        forceCount={forceCount}
-                    />
-                </li>
-            ))}
-        </ul>
+        <>
+            <H4 as={H2} className={styles.heading}>
+                By type
+            </H4>
+            <ul className={styles.typeList}>
+                {mergedFilters.map(({ filter, selected, forceCount }) => (
+                    <li key={filter.value}>
+                        <FilterTypeButton
+                            filter={filter}
+                            disabled={disabled}
+                            selected={selected}
+                            onClick={disabled ? undefined : onClick}
+                            forceCount={forceCount}
+                        />
+                    </li>
+                ))}
+            </ul>
+        </>
     )
 }
 

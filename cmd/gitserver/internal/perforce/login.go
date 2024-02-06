@@ -2,34 +2,31 @@ package perforce
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // P4TestWithTrust attempts to test the Perforce server and performs a trust operation when needed.
-func P4TestWithTrust(ctx context.Context, p4home, p4port, p4user, p4passwd string) error {
+func P4TestWithTrust(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd string) error {
 	// Attempt to check connectivity, may be prompted to trust.
-	err := P4Test(ctx, p4home, p4port, p4user, p4passwd)
+	err := P4Test(ctx, reposDir, p4home, p4port, p4user, p4passwd)
 	if err == nil {
 		return nil // The test worked, session still valid for the user
 	}
 
 	// If the output indicates that we have to run p4trust first, do that.
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
-		err := P4Trust(ctx, p4home, p4port)
+		err := P4Trust(ctx, reposDir, p4home, p4port)
 		if err != nil {
 			return errors.Wrap(err, "trust")
 		}
 		// Now attempt to run p4test again.
-		err = P4Test(ctx, p4home, p4port, p4user, p4passwd)
+		err = P4Test(ctx, reposDir, p4home, p4port, p4user, p4passwd)
 		if err != nil {
 			return errors.Wrap(err, "testing connection after trust")
 		}
@@ -44,20 +41,26 @@ func P4TestWithTrust(ctx context.Context, p4home, p4port, p4user, p4passwd strin
 // If the user is a super user, no error is returned. If not, ErrIsNotSuperUser
 // is returned.
 // Other errors may occur.
-func P4UserIsSuperUser(ctx context.Context, p4home, p4port, p4user, p4passwd string) error {
+func P4UserIsSuperUser(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
-	cmd := exec.CommandContext(ctx, "p4", "protects", "-u", p4user)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+	options := []P4OptionFunc{
+		WithAuthentication(p4user, p4passwd),
+		WithHost(p4port),
+	}
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
+	options = append(options, WithArguments("protects", "-u", p4user))
+
+	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-protects-")
+	if err != nil {
+		return errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -80,17 +83,25 @@ func P4UserIsSuperUser(ctx context.Context, p4home, p4port, p4user, p4passwd str
 var ErrIsNotSuperUser = errors.New("the user does not have super access")
 
 // P4Trust blindly accepts fingerprint of the Perforce server.
-func P4Trust(ctx context.Context, p4home, host string) error {
+func P4Trust(ctx context.Context, reposDir, p4home, host string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "p4", "trust", "-y", "-f")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"HOME="+p4home,
-	)
+	options := []P4OptionFunc{
+		WithHost(host),
+	}
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	options = append(options, WithArguments("trust", "-y", "-f"))
+
+	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-trust-")
+	if err != nil {
+		return errors.Wrap(err, "could not create temp dir to invoke 'p4 trust'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -105,30 +116,37 @@ func P4Trust(ctx context.Context, p4home, host string) error {
 
 // P4Test uses `p4 login -s` to test the Perforce connection: port, user, passwd.
 // If the command times out after 10 seconds, it will be tried one more time.
-func P4Test(ctx context.Context, p4home, p4port, p4user, p4passwd string) error {
+func P4Test(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd string) error {
 	runCommand := func() error {
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
+
+		options := []P4OptionFunc{
+			WithAuthentication(p4user, p4passwd),
+			WithHost(p4port),
+		}
 
 		// `p4 ping` requires extra-special access, so we want to avoid using it
 		//
 		// p4 login -s checks the connection and the credentials,
 		// so it seems like the perfect alternative to `p4 ping`.
-		cmd := exec.CommandContext(ctx, "p4", "login", "-s")
-		cmd.Env = append(os.Environ(),
-			"P4PORT="+p4port,
-			"P4USER="+p4user,
-			"P4PASSWD="+p4passwd,
-			"HOME="+p4home,
-		)
+		options = append(options, WithArguments("login", "-s"))
 
-		out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+		scratchDir, err := gitserverfs.TempDir(reposDir, "p4-login-")
+		if err != nil {
+			return errors.Wrap(err, "could not create temp dir to invoke 'p4 login'")
+		}
+		defer os.Remove(scratchDir)
+
+		cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+
+		out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 		if err != nil {
 			if ctxerr := ctx.Err(); ctxerr != nil {
 				err = errors.Wrap(ctxerr, "p4 login context error")
 			}
 			if len(out) > 0 {
-				err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
+				err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 			}
 			return err
 		}
