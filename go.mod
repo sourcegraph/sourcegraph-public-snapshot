@@ -42,6 +42,8 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
+
+	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240205172710-991c6ab66d41
 )
 
 // Status unclear replace directives

@@ -23,7 +23,8 @@ go_library(
     ],
     embedsrcs = ["sg_maintenance.sh"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal",
-    visibility = ["//cmd/gitserver:__subpackages__"],
+    # visibility = ["//cmd/gitserver:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/gitserver/internal/accesslog",
