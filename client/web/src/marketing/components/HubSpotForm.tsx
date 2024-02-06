@@ -270,7 +270,7 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
                 // Do this callback method to increase the value of step
                 onFormLoadError?.()
             })
-    }, [onFormSubmitted])
+    }, [onFormLoadError])
 
     useEffect(() => {
         loadAllScripts()
