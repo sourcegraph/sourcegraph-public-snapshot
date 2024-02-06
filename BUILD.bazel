@@ -360,7 +360,5 @@ go_mockgen(
     interfaces = [
         "service",
     ],
-    deps = [
-        "//cmd/gitserver/internal",
-    ],
+    deps = "//cmd/gitserver/internal",
 )
