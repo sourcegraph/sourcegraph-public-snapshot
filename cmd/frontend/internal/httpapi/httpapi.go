@@ -184,31 +184,35 @@ func NewHandler(
 			Name("updatecheck").
 			Handler(updatecheckHandler)
 
+		// Register additional endpoints specific to DOTCOM.
 		dotcomConf := conf.Get().Dotcom
+		if dotcomConf == nil {
+			logger.Error("dotcom configuration is missing, refusing to register /ssc/ APIs")
+		} else {
+			samsClient := sams.NewClient(
+				dotcomConf.SamsServer,
+				clientcredentials.Config{
+					ClientID:     dotcomConf.SamsClientID,
+					ClientSecret: dotcomConf.SamsClientSecret,
+					TokenURL:     fmt.Sprintf("%s/oauth/token", dotcomConf.SamsServer),
+					Scopes:       []string{"openid", "profile", "email"},
+				},
+			)
 
-		samsClient := sams.NewClient(
-			dotcomConf.SamsServer,
-			clientcredentials.Config{
-				ClientID:     dotcomConf.SamsClientID,
-				ClientSecret: dotcomConf.SamsClientSecret,
-				TokenURL:     fmt.Sprintf("%s/oauth/token", dotcomConf.SamsServer),
-				Scopes:       []string{"openid", "profile", "email"},
-			},
-		)
+			samsAuthenticator := sams.Authenticator{
+				Logger:     logger.Scoped("sams.Authenticator"),
+				SAMSClient: samsClient,
+			}
 
-		samsAuthenticator := sams.Authenticator{
-			Logger:     logger.Scoped("sams.Authenticator"),
-			SAMSClient: samsClient,
+			// API endpoint for ssc to trigger cody's rate limit refresh for a user
+			// TODO(sourcegraph#59625) remove this as part of adding SAMSActor source
+			m.Path("/ssc/users/{samsAccountID}/cody/limits/refresh").Methods("POST").Handler(
+				samsAuthenticator.RequireScopes(
+					[]sams.Scope{sams.ScopeDotcom},
+					newSSCRefreshCodyRateLimitHandler(logger, db),
+				),
+			)
 		}
-
-		// API endpoint for ssc to trigger cody's rate limit refresh for a user
-		// TODO(sourcegraph#59625) remove this as part of adding SAMSActor source
-		m.Path("/ssc/users/{samsAccountID}/cody/limits/refresh").Methods("POST").Handler(
-			samsAuthenticator.RequireScopes(
-				[]sams.Scope{sams.ScopeDotcom},
-				newSSCRefreshCodyRateLimitHandler(logger, db),
-			),
-		)
 	}
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
