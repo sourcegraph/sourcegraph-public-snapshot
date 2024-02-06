@@ -219,40 +219,7 @@ func checkRedisConnection(context.Context) error {
 	return nil
 }
 
-var Git = Combine(InPath("git"), checkGitVersion(">= 2.42.0"))
-
-func checkGitVersion(versionConstraint string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		out, err := usershell.Command(ctx, "git version").StdOut().Run().String()
-		if err != nil {
-			return errors.Wrapf(err, "failed to run 'git version'")
-		}
-
-		elems := strings.Split(out, " ")
-		if len(elems) != 3 && len(elems) != 5 {
-			return errors.Newf("unexpected output from git: %s", out)
-		}
-
-		trimmed := strings.TrimSpace(elems[2])
-		return Version("git", trimmed, versionConstraint)
-	}
-}
-
-// func checkPostgresVersion(dsn, versionConstraint string) func(context.Context) error {
-// 	return func(ctx context.Context) error {
-// 		out, err := usershell.Command(ctx, `psql -t -c "select version()"`).StdOut().Run().String()
-// 		if err != nil {
-// 			return errors.Wrapf(err, "failed to get postgres version")
-// 		}
-
-// 		version := majorMinorVersionRegex.FindString(out)
-// 		if version == "" {
-// 			return errors.Newf("unexpected output from postgres: %s", out)
-// 		}
-
-// 		return Version("postgres", version, versionConstraint)
-// 	}
-// }
+var Git = Combine(InPath("git"), CompareSemanticVersion("git", "git version", ">= 2.42.0"))
 
 func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
 	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
@@ -336,72 +303,21 @@ func getPackageManagerConstraint(tool string) (string, error) {
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-var Go = Combine(InPath("go"), checkGoVersion)
+var Go = Combine(
+	InPath("go"),
+	CompareSemanticVersionWithASDF("golang", "go version"),
+)
 
-func checkGoVersion(ctx context.Context) error {
-	if err := InPath("go")(ctx); err != nil {
-		return err
-	}
+var Node = Combine(
+	InPath("node"),
+	CompareSemanticVersionWithASDF("nodejs", "node --version"),
+	CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar"),
+)
 
-	constraint, err := getToolVersionConstraint(ctx, "golang")
-	if err != nil {
-		return err
-	}
-
-	cmd := "go version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
-}
-
-var Node = Combine(InPath("node"), checkNodeVersion, CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar"))
-
-func checkNodeVersion(ctx context.Context) error {
-	constraint, err := getToolVersionConstraint(ctx, "nodejs")
-	if err != nil {
-		return err
-	}
-
-	cmd := "node --version"
-	data, err := usershell.Run(ctx, cmd).Lines()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	trimmed := strings.TrimSpace(data[len(data)-1])
-	if len(trimmed) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return Version("nodejs", trimmed, constraint)
-}
-
-var Rust = Combine(InPath("cargo"), checkRustVersion)
-
-func checkRustVersion(ctx context.Context) error {
-	constraint, err := getToolVersionConstraint(ctx, "rust")
-	if err != nil {
-		return err
-	}
-
-	cmd := "cargo --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return Version("cargo", parts[1], constraint)
-}
+var Rust = Combine(
+	InPath("cargo"),
+	CompareSemanticVersionWithASDF("rust", "cargo --version"),
+)
 
 var Docker = WrapErrMessage(
 	Combine(InPath("docker"), CommandExitCode("docker info", 0)),
@@ -410,26 +326,10 @@ If Docker is installed and the check fails, you might need to restart your termi
 
 var ASDF = CommandOutputContains("asdf", "version")
 
-var Python = Combine(InPath("python"), checkPythonVersion)
-
-func checkPythonVersion(ctx context.Context) error {
-	constraint, err := getToolVersionConstraint(ctx, "python")
-	if err != nil {
-		return err
-	}
-
-	cmd := "python --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return Version("python", parts[1], constraint)
-}
+var Python = Combine(
+	InPath("python"),
+	CompareSemanticVersionWithASDF("python", "python --version"),
+)
 
 var Bazelisk = WrapErrMessage(Combine(InPath("bazel"), CommandOutputContains("bazel version", "Bazelisk version")), "sg setup --fix")
 
