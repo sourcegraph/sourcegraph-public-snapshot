@@ -8,7 +8,6 @@ import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensio
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import {

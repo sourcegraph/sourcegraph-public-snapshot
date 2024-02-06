@@ -200,6 +200,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     className={resultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
+                    // TODO (dadlerj): update to use a real telemetry recorder
+                    telemetryRecorder={noOpTelemetryRecorder}
                 />
             </span>
         </>
