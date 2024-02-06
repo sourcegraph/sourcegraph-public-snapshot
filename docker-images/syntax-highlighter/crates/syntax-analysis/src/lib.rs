@@ -58,8 +58,7 @@ mod test {
                 let parser = ParserId::from_file_extension(extension).expect("to have parser");
                 let config =
                     crate::languages::get_tag_configuration(parser).expect("to have rust parser");
-                let doc = crate::globals::test::parse_file_for_lang(config, &source_code)
-                    .expect("to parse document");
+                let doc = crate::globals::test::parse_file_for_lang(config, &source_code);
                 let dumped = dump_document(&doc, &source_code).expect("to dumb document");
                 insta::assert_snapshot!(dumped_name, dumped);
             }
