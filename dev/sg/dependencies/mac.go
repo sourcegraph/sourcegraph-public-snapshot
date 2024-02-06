@@ -168,6 +168,11 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.Combine(
+					func(ctx context.Context) error {
+						out, _ := usershell.Run(ctx, "cat /Users/runner/.bash_profile; echo newline; echo user $USER; which psql").String()
+						std.Out.Writef("psql output is %s\n\n\n", out)
+						return nil
+					},
 					check.InPath("psql"),
 					check.CompareSemanticVersion("psql", "psql --version", ">= 15.0"),
 				)),
