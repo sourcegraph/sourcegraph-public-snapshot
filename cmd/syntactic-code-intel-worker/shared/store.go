@@ -1,14 +1,18 @@
 package shared
 
 import (
+	"context"
 	"database/sql"
 	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -120,6 +124,24 @@ func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB 
 	if err != nil {
 		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
+
+	// START FLAILING
+	// We rely on the frontend to do authz checks for
+	// user requests.
+	//
+	// This call to SetProviders is here so that calls to GetProviders don't block.
+
+	ctx := context.Background()
+	db := database.NewDB(observationCtx.Logger, sqlDB)
+	go func() {
+		for range time.NewTicker(providers.RefreshInterval()).C {
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	// END FLAILING
+	//
 
 	return sqlDB
 }
