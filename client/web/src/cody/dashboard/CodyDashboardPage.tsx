@@ -1,6 +1,7 @@
 import { type FC, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
+import classNames from 'classnames'
 
 import {
     Text,
@@ -62,7 +63,7 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
 
             <section className={styles.dashboardOnboarding}>
                 <section className={styles.dashboardOnboardingIde}>
-                    <Text className="text-muted">Download Cody for your favorite IDE</Text>
+                    <Text className={styles.dashboardText}>Download Cody for your favorite IDE</Text>
                     <LinkSelector options={setupOptions} />
                     <Text className="text-muted">
                         Struggling with setup?{' '}
@@ -73,7 +74,7 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
                     </Text>
                 </section>
                 <section className={styles.dashboardOnboardingWeb}>
-                    <Text className="text-muted">... or try it on the web</Text>
+                    <Text className={styles.dashboardText}>... or try it on the web</Text>
                     <ButtonLink to="/cody/chat" outline={true} className={styles.dashboardOnboardingWebLink}>
                         <CodyColorIcon className={styles.dashboardOnboardingCodyIcon} />
                         <span>Cody for web</span>
