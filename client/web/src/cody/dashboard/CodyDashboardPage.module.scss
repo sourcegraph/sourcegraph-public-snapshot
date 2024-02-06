@@ -161,6 +161,10 @@
         gap: 1rem;
         display: flex;
         align-items: center;
+
+        &:active {
+            background-color: var(--secondary);
+        }
     }
 
     &-btn {
