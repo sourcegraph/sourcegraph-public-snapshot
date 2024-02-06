@@ -19,7 +19,7 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-rwxr-xr-x'
+  permissions: '-r-xr-xr-x'
 - name: 'Dashboard config'
   path: '/sg_config_grafana/provisioning/dashboards/sourcegraph/gitserver.json'
   shouldExist: true
