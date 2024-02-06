@@ -47,8 +47,8 @@ export const SearchFiltersPanel: FC<SearchFiltersPanelProps> = props => {
     if (uiMode === SearchFiltersPanelUIMode.Sidebar) {
         return (
             <Panel
-                defaultSize={250}
-                minSize={200}
+                defaultSize={300}
+                minSize={240}
                 position="left"
                 storageKey="filter-sidebar"
                 ariaLabel="Filters sidebar"
