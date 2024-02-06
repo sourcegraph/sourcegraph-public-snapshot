@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"os"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,31 +55,50 @@ type perforceDepot struct {
 	Type perforceDepotType `json:"type,omitempty"`
 }
 
+// P4DepotsArguments contains the arguments for P4Depots.
+type P4DepotsArguments struct {
+	// ReposDir is the directory where the repos are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4Port is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// NameFilter is a filter for the depot names to return.
+	NameFilter string
+}
+
 // P4Depots returns all of the depots to which the user has access on the host
 // and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
 // if nameFilter is blank, return all depots.
-func P4Depots(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, nameFilter string) ([]perforceDepot, error) {
+func P4Depots(ctx context.Context, args P4DepotsArguments) ([]perforceDepot, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
 
-	if nameFilter == "" {
+	if args.NameFilter == "" {
 		options = append(options, WithArguments("-Mj", "-ztag", "depots"))
 	} else {
-		options = append(options, WithArguments("-Mj", "-ztag", "depots", "-e", nameFilter))
+		options = append(options, WithArguments("-Mj", "-ztag", "depots", "-e", args.NameFilter))
 	}
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-depots-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-depots-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 depots'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {

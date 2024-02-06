@@ -7,9 +7,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func IsDepotPathCloneable(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, depotPath string) error {
+// IsDepotPathCloneableArguments are the arguments for IsDepotPathCloneable.
+type IsDepotPathCloneableArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// DepotPath is the path to the depot to check.
+	DepotPath string
+}
+
+func IsDepotPathCloneable(ctx context.Context, args IsDepotPathCloneableArguments) error {
 	// start with a test and set up trust if necessary
-	if err := P4TestWithTrust(ctx, reposDir, p4home, p4port, p4user, p4passwd); err != nil {
+	if err := P4TestWithTrust(ctx, P4TestWithTrustArguments{
+		ReposDir: args.ReposDir,
+		P4Home:   args.P4Home,
+
+		P4Port:   args.P4Port,
+		P4User:   args.P4User,
+		P4Passwd: args.P4Passwd,
+	}); err != nil {
 		return errors.Wrap(err, "checking perforce credentials")
 	}
 
@@ -19,10 +45,20 @@ func IsDepotPathCloneable(ctx context.Context, reposDir, p4home, p4port, p4user,
 	// the first path part will be the depot - subsequent parts define a directory path into a depot
 	// ignore the directory parts for now, and only test for access to the depot
 	// TODO: revisit if we want to also test for access to the directories, if any are included
-	depot := strings.Split(strings.TrimLeft(depotPath, "/"), "/")[0]
+	depot := strings.Split(strings.TrimLeft(args.DepotPath, "/"), "/")[0]
 
 	// get a list of depots that match the supplied depot (if it's defined)
-	depots, err := P4Depots(ctx, reposDir, p4home, p4port, p4user, p4passwd, depot)
+	depots, err := P4Depots(ctx, P4DepotsArguments{
+		ReposDir: args.ReposDir,
+
+		P4Home: args.P4Home,
+		P4Port: args.P4Port,
+
+		P4User:   args.P4User,
+		P4Passwd: args.P4Passwd,
+
+		NameFilter: depot,
+	})
 	if err != nil {
 		return err
 	}
@@ -30,9 +66,9 @@ func IsDepotPathCloneable(ctx context.Context, reposDir, p4home, p4port, p4user,
 		// this user doesn't have access to any depots,
 		// or to the given depot
 		if depot != "" {
-			return errors.Newf("the user %s does not have access to the depot %s on the server %s", p4user, depot, p4port)
+			return errors.Newf("the user %s does not have access to the depot %s on the server %s", args.P4User, depot, args.P4Port)
 		} else {
-			return errors.Newf("the user %s does not have access to any depots on the server %s", p4user, p4port)
+			return errors.Newf("the user %s does not have access to any depots on the server %s", args.P4User, args.P4Port)
 		}
 	}
 

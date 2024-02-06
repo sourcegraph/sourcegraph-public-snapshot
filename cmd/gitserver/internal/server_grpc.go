@@ -437,7 +437,16 @@ func (gs *grpcServer) IsPerforcePathCloneable(ctx context.Context, req *proto.Is
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.IsDepotPathCloneable(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.DepotPath)
+	err = perforce.IsDepotPathCloneable(ctx, perforce.IsDepotPathCloneableArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		DepotPath: req.GetDepotPath(),
+	})
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -452,7 +461,14 @@ func (gs *grpcServer) CheckPerforceCredentials(ctx context.Context, req *proto.C
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -471,7 +487,14 @@ func (gs *grpcServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -487,7 +510,14 @@ func (gs *grpcServer) PerforceUsers(ctx context.Context, req *proto.PerforceUser
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	users, err := perforce.P4Users(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	users, err := perforce.P4Users(ctx, perforce.P4UsersArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -510,7 +540,14 @@ func (gs *grpcServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -526,7 +563,17 @@ func (gs *grpcServer) PerforceProtectsForUser(ctx context.Context, req *proto.Pe
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	protects, err := perforce.P4ProtectsForUser(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetUsername())
+	args := perforce.P4ProtectsForUserArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		Username: req.GetUsername(),
+	}
+	protects, err := perforce.P4ProtectsForUser(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -548,7 +595,14 @@ func (gs *grpcServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -564,7 +618,14 @@ func (gs *grpcServer) PerforceProtectsForDepot(ctx context.Context, req *proto.P
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	protects, err := perforce.P4ProtectsForDepot(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetDepot())
+	protects, err := perforce.P4ProtectsForDepot(ctx, perforce.P4ProtectsForDepotArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+		Depot:    req.GetDepot(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +647,14 @@ func (gs *grpcServer) PerforceGroupMembers(ctx context.Context, req *proto.Perfo
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -602,7 +670,18 @@ func (gs *grpcServer) PerforceGroupMembers(ctx context.Context, req *proto.Perfo
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	members, err := perforce.P4GroupMembers(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetGroup())
+	args := perforce.P4GroupMembersArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		Group: req.GetGroup(),
+	}
+
+	members, err := perforce.P4GroupMembers(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +698,14 @@ func (gs *grpcServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerf
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -628,7 +714,13 @@ func (gs *grpcServer) IsPerforceSuperUser(ctx context.Context, req *proto.IsPerf
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	err = perforce.P4UserIsSuperUser(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4UserIsSuperUser(ctx, perforce.P4UserIsSuperUserArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -651,7 +743,14 @@ func (gs *grpcServer) PerforceGetChangelist(ctx context.Context, req *proto.Perf
 	}
 
 	conn := req.GetConnectionDetails()
-	err = perforce.P4TestWithTrust(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd())
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: gs.reposDir,
+		P4Home:   p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, status.FromContextError(ctxErr).Err()
@@ -667,7 +766,17 @@ func (gs *grpcServer) PerforceGetChangelist(ctx context.Context, req *proto.Perf
 		log.String("p4port", conn.GetP4Port()),
 	)
 
-	changelist, err := perforce.GetChangelistByID(ctx, gs.reposDir, p4home, conn.GetP4Port(), conn.GetP4User(), conn.GetP4Passwd(), req.GetChangelistId())
+	changelist, err := perforce.GetChangelistByID(ctx, perforce.GetChangeListByIDArguments{
+		ReposDir: gs.reposDir,
+
+		P4Home: p4home,
+
+		P4Port:   conn.GetP4Port(),
+		P4User:   conn.GetP4User(),
+		P4Passwd: conn.GetP4Passwd(),
+
+		ChangelistID: req.GetChangelistId(),
+	})
 	if err != nil {
 		return nil, err
 	}
