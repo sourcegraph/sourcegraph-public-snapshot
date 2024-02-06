@@ -20,7 +20,7 @@ type IndexingWorkerConfig struct {
 type Config struct {
 	env.BaseConfig
 
-	IndexingWorker *IndexingWorkerConfig
+	IndexingWorkerConfig *IndexingWorkerConfig
 
 	ListenAddress string
 }
@@ -40,8 +40,8 @@ func (c *IndexingWorkerConfig) Load() {
 }
 
 func (c *Config) Load() {
-	c.IndexingWorker = &IndexingWorkerConfig{}
-	c.IndexingWorker.Load()
+	c.IndexingWorkerConfig = &IndexingWorkerConfig{}
+	c.IndexingWorkerConfig.Load()
 	c.ListenAddress = c.GetOptional("SYNTACTIC_CODE_INTEL_WORKER_ADDR", "The address under which the syntactic codeintel worker API listens. Can include a port.")
 	// Fall back to a reasonable default.
 	if c.ListenAddress == "" {
@@ -57,6 +57,6 @@ func (c *Config) Load() {
 func (c *Config) Validate() error {
 	var errs error
 	errs = errors.Append(errs, c.BaseConfig.Validate())
-	errs = errors.Append(errs, c.IndexingWorker.Validate())
+	errs = errors.Append(errs, c.IndexingWorkerConfig.Validate())
 	return errs
 }
