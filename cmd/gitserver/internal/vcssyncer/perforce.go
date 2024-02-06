@@ -82,7 +82,7 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 
 // Clone writes a Perforce depot into tmpPath, using a Perforce-to-git-conversion.
 // It reports redacted progress logs via the progressWriter.
-func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, _ common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
@@ -119,7 +119,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Env = s.p4CommandEnv(p4port, p4user, p4passwd)
+	cmd.Env = s.p4CommandEnv(tmpPath, p4port, p4user, p4passwd)
 
 	redactor := urlredactor.New(remoteURL)
 	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
@@ -222,7 +222,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
 	}
-	cmd.Env = s.p4CommandEnv(p4port, p4user, p4passwd)
+	cmd.Env = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
 	dir.Set(cmd.Cmd)
 
 	// TODO(keegancsmith)(indradhanush) This is running a remote command and
@@ -268,12 +268,13 @@ func (s *perforceDepotSyncer) p4CommandOptions() []string {
 	return flags
 }
 
-func (s *perforceDepotSyncer) p4CommandEnv(p4port, p4user, p4passwd string) []string {
+func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd string) []string {
 	env := append(
 		os.Environ(),
 		"P4PORT="+p4port,
 		"P4USER="+p4user,
 		"P4PASSWD="+p4passwd,
+		"P4CLIENTPATH="+cmdCWD,
 	)
 
 	if s.P4Client != "" {
