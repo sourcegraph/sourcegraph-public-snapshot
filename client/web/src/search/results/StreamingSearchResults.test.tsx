@@ -110,6 +110,7 @@ describe('StreamingSearchResults', () => {
             searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
+            maxLineLen: 5 * 1024,
             featureOverrides: [],
             zoektSearchOptions: '',
         })
