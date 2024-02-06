@@ -38,7 +38,7 @@ func (g *gitCLIBackend) ReadFile(ctx context.Context, commit api.CommitID, path 
 
 	return &closingFileReader{
 		ReadCloser: r,
-		onClose:    func() { cancel() },
+		onClose:    cancel,
 	}, nil
 }
 
