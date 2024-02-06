@@ -100,6 +100,7 @@ export interface ChunkMatch {
     content: string
     contentStart: Location
     ranges: Range[]
+    contentTruncated?: bool
 }
 
 export interface SymbolMatch {
