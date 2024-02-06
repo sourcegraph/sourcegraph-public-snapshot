@@ -125,11 +125,13 @@ func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB 
 		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
-	// START FLAILING
-	// We rely on the frontend to do authz checks for
-	// user requests.
+	// This is an internal service, so we rely on the
+	// frontend to do authz checks for user requests.
+	// Authz checks are enforced by the DB layer
 	//
 	// This call to SetProviders is here so that calls to GetProviders don't block.
+	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
+	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
 
 	ctx := context.Background()
 	db := database.NewDB(observationCtx.Logger, sqlDB)
@@ -139,9 +141,5 @@ func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB 
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
-
-	// END FLAILING
-	//
-
 	return sqlDB
 }
