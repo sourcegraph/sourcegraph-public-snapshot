@@ -257,9 +257,9 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		EndpointAccess: map[string]bool{
 			"/v1/attribution": !disallowedLicense && !s.IsArchived,
 		},
-		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
-		LastUpdated:   &now,
-		Source:        source,
+		RateLimits:  map[codygateway.Feature]actor.RateLimit{},
+		LastUpdated: &now,
+		Source:      source,
 	}
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {

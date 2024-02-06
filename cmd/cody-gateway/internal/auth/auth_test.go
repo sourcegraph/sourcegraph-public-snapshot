@@ -156,18 +156,19 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		client := dotcom.NewMockClient()
 
 		t.Run("bypass works for attribution", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/v1/attribution", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
-			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, "/v1/attribution", strings.NewReader(`{}`))
+			r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+			(&Authenticator{
+				Logger:      logger,
+				EventLogger: events.NewStdoutLogger(logger),
+				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+			}).Middleware(next).ServeHTTP(w, r)
+			assert.Equal(t, http.StatusOK, w.Code)
 		})
 
-		t.Run("bypass does not work for other endpoints", func(t *testing.T) {		w := httptest.NewRecorder()
+		t.Run("bypass does not work for other endpoints", func(t *testing.T) {
+			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPost, "/v1/completions", strings.NewReader(`{}`))
 			r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
 			(&Authenticator{
