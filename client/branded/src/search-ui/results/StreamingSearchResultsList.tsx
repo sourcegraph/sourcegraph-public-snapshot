@@ -129,7 +129,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 isPrefetchEnabled={prefetchFileEnabled}
                                 prefetch={prefetchFile}
                                 filePath={result.path}
-                                revision={result.commit}
+                                revision={result.commit ?? ''}
                                 repoName={result.repository}
                                 as="li"
                             >

@@ -105,7 +105,7 @@ export const fetchBlob = memoizeObservable(
     fetchBlobCacheKey
 )
 
-const BLOB_QUERY = gql`
+export const BLOB_QUERY = gql`
     query Blob(
         $repoName: String!
         $revision: String!

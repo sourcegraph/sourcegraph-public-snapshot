@@ -15,17 +15,13 @@ import {
     type UsePreciseCodeIntelForPositionVariables,
     HighlightResponseFormat,
     type LocationFields,
-    type ReferencesPanelHighlightedBlobVariables,
     type ResolveRepoAndRevisionVariables,
 } from '../graphql-operations'
+import { BLOB_QUERY } from '../repo/blob/backend'
 
 import { buildPreciseLocation, LocationsGroup } from './location'
 import type { ReferencesPanelProps } from './ReferencesPanel'
-import {
-    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-    RESOLVE_REPO_REVISION_BLOB_QUERY,
-    FETCH_HIGHLIGHTED_BLOB,
-} from './ReferencesPanelQueries'
+import { USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, RESOLVE_REPO_REVISION_BLOB_QUERY } from './ReferencesPanelQueries'
 import type { UseCodeIntelParameters, UseCodeIntelResult } from './useCodeIntel'
 
 const goDiffFileContent =
@@ -68,10 +64,10 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
         revision: commit,
     }
 
-    const fetchHighlightedBlobVariables: ReferencesPanelHighlightedBlobVariables = {
-        commit,
-        path,
-        repository: repoName,
+    const fetchHighlightedBlobVariables = {
+        revision: commit,
+        filePath: path,
+        repoName,
         format: HighlightResponseFormat.JSON_SCIP,
     }
 
@@ -94,7 +90,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
             },
             {
                 request: {
-                    query: getDocumentNode(FETCH_HIGHLIGHTED_BLOB),
+                    query: getDocumentNode(BLOB_QUERY),
                     variables: fetchHighlightedBlobVariables,
                 },
                 result: HIGHLIGHTED_FILE_MOCK,
