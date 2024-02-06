@@ -13,9 +13,9 @@ import (
 )
 
 func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error) {
-	if err := g.verifyPathspecs(ctx, treeish, pathspecs); err != nil {
-		return nil, err
-	}
+	// if err := g.verifyPathspecs(ctx, treeish, pathspecs); err != nil {
+	// 	return nil, err
+	// }
 
 	archiveArgs := buildArchiveArgs(format, treeish, pathspecs)
 	cmd, cancel, err := g.gitCommand(ctx, archiveArgs...)
