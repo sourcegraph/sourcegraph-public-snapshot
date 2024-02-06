@@ -40,15 +40,19 @@ type perforceDepotSyncer struct {
 	// P4Home is a directory we will pass to `git p4` commands as the
 	// $HOME directory as it requires this to write cache data.
 	P4Home string
+
+	// reposDir is the directory where repositories are cloned.
+	reposDir string
 }
 
-func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, connection *schema.PerforceConnection, p4Home string) VCSSyncer {
+func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, connection *schema.PerforceConnection, reposDir, p4Home string) VCSSyncer {
 	return &perforceDepotSyncer{
 		logger:                  logger.Scoped("PerforceDepotSyncer"),
 		recordingCommandFactory: r,
 		MaxChanges:              int(connection.MaxChanges),
 		P4Client:                connection.P4Client,
 		FusionConfig:            configureFusionClient(connection),
+		reposDir:                reposDir,
 		P4Home:                  p4Home,
 	}
 }
@@ -64,7 +68,7 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 		return errors.Wrap(err, "invalid perforce remote URL")
 	}
 
-	return perforce.IsDepotPathCloneable(ctx, s.P4Home, host, username, password, path)
+	return perforce.IsDepotPathCloneable(ctx, s.reposDir, s.P4Home, host, username, password, path)
 }
 
 // Clone writes a Perforce depot into tmpPath, using a Perforce-to-git-conversion.
@@ -82,7 +86,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 
 	// First, do a quick check if we can reach the Perforce server.
 	tryWrite(s.logger, progressWriter, "Checking Perforce server connection\n")
-	err = perforce.P4TestWithTrust(ctx, s.P4Home, p4port, p4user, p4passwd)
+	err = perforce.P4TestWithTrust(ctx, s.reposDir, s.P4Home, p4port, p4user, p4passwd)
 	if err != nil {
 		return errors.Wrap(err, "verifying connection to perforce server")
 	}
@@ -180,7 +184,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	}
 
 	// First, do a quick check if we can reach the Perforce server.
-	err = perforce.P4TestWithTrust(ctx, s.P4Home, p4port, p4user, p4passwd)
+	err = perforce.P4TestWithTrust(ctx, s.reposDir, s.P4Home, p4port, p4user, p4passwd)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying connection to perforce server")
 	}
