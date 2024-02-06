@@ -15,10 +15,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetChangelistByID(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, changelistID string) (*p4types.Changelist, error) {
+// GetChangeListByIDArguments are the arguments for GetChangelistByID.
+type GetChangeListByIDArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// ChangelistID is the ID of the changelist to get.
+	ChangelistID string
+}
+
+func GetChangelistByID(ctx context.Context, args GetChangeListByIDArguments) (*p4types.Changelist, error) {
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
 
 	options = append(options, WithArguments(
@@ -27,17 +46,17 @@ func GetChangelistByID(ctx context.Context, reposDir, p4home, p4port, p4user, p4
 		"changes",
 		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
 		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
-		"-l",               // use a long listing, which includes the whole commit message
-		"-e", changelistID, // start from this changelist and go up
+		"-l",                    // use a long listing, which includes the whole commit message
+		"-e", args.ChangelistID, // start from this changelist and go up
 	))
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-changelist-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-changelist-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 changes'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
@@ -53,7 +72,7 @@ func GetChangelistByID(ctx context.Context, reposDir, p4home, p4port, p4user, p4
 	output := bytes.TrimSpace(out)
 
 	if len(output) == 0 {
-		return nil, errors.New("invalid changelist " + changelistID)
+		return nil, errors.New("invalid changelist " + args.ChangelistID)
 	}
 
 	pcl, err := parseChangelistOutput(output)
@@ -64,11 +83,31 @@ func GetChangelistByID(ctx context.Context, reposDir, p4home, p4port, p4user, p4
 	return pcl, nil
 }
 
-func GetChangelistByClient(ctx context.Context, p4home, p4port, p4user, p4passwd, workDir, client string) (*p4types.Changelist, error) {
+// GetChangeListByClientArguments are the arguments for GetChangelistByClient.
+type GetChangeListByClientArguments struct {
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// WorkDir is the working directory of the command.
+	WorkDir string
+
+	// Client is the client name to use to get the changelist.
+	Client string
+}
+
+func GetChangelistByClient(ctx context.Context, args GetChangeListByClientArguments) (*p4types.Changelist, error) {
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
-		WithClient(client),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Home),
+		WithClient(args.Client),
 	}
 
 	options = append(options, WithArguments(
@@ -78,10 +117,10 @@ func GetChangelistByClient(ctx context.Context, p4home, p4port, p4user, p4passwd
 		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
 		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
 		"-l", // use a long listing, which includes the whole commit message
-		"-c", client,
+		"-c", args.Client,
 	))
 
-	cmd := NewBaseCommand(ctx, p4home, workDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, args.WorkDir, options...)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
@@ -97,7 +136,7 @@ func GetChangelistByClient(ctx context.Context, p4home, p4port, p4user, p4passwd
 	output := bytes.TrimSpace(out)
 
 	if len(output) == 0 {
-		return nil, errors.New("no changelist found for client " + client)
+		return nil, errors.New("no changelist found for client " + args.Client)
 	}
 
 	pcl, err := parseChangelistOutput(output)

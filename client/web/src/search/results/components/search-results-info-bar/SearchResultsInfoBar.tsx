@@ -313,7 +313,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                                 targetPadding={KEYWORD_SEARCH_POPOVER_PADDING}
                             >
                                 <div>
-                                    <H3>
+                                    <H3 className="d-flex align-items-center">
                                         About keyword search
                                         <ProductStatusBadge status="beta" className="ml-2" />
                                     </H3>
