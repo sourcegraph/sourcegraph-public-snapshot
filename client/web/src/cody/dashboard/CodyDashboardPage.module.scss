@@ -188,4 +188,12 @@
             margin-bottom: 0;
         }
     }
+
+    &-item {
+        cursor: pointer;
+    }
+
+    &-dropdown {
+        min-width: 12rem;
+    }
 }

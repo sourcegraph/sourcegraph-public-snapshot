@@ -1,7 +1,6 @@
 import { type FC, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
-import classNames from 'classnames'
 
 import {
     Text,
@@ -11,19 +10,15 @@ import {
     Menu,
     MenuButton,
     MenuList,
-    MenuHeader,
     MenuItem,
-    MenuText,
     Icon,
     Position,
+    MenuLink,
 } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon } from '../chat/CodyPageIcon'
-import { CodyLogo } from '../components/CodyLogo'
 import { IntelliJIcon } from '../upsell/IntelliJ'
 import { VSCodeIcon } from '../upsell/vs-code'
-
-// import { AutocompletesIcon, ChatMessagesIcon } from '../components/CodyIcon'
 
 import styles from './CodyDashboardPage.module.scss'
 
@@ -45,7 +40,7 @@ const setupOptions: SetupOption[] = [
         icon: <IntelliJIcon className={styles.linkSelectorIcon} />,
         maker: 'Jetbrains',
         name: 'IntelliJ',
-        setupLink: 'https://docs.sourcegraph.com/cody/overview/install-vscode',
+        setupLink: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
     },
 ]
 
@@ -85,61 +80,6 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
                     </ButtonLink>
                 </section>
             </section>
-
-            {/* <section className={styles.dashboardUsage}>
-                <section className={styles.dashboardUsageHeader}>
-                    <H2>Your Usage</H2>
-                    <Text className={styles.dashboardUsagePlan}>Enterprise plan</Text>
-                </section> */}
-
-            {/* <section className={styles.dashboardUsageDetails}>
-                    <section
-                        className={classNames(styles.dashboardUsageDetailsGrid, styles.dashboardUsageDetailsGridFirst)}
-                    >
-                        <section className={styles.dashboardUsageMeta}>
-                            <AutocompletesIcon />
-                            <span
-                                className={classNames(
-                                    styles.dashboardUsageMetaInfo,
-                                    styles.dashboardUsageMetaInfoNumber
-                                )}
-                            >
-                                345
-                            </span>
-                            <span className={styles.dashboardUsageMetaInfo}>/</span>
-                            <span
-                                className={classNames(styles.dashboardUsageMetaInfo, styles.dashboardUsageMetaInfoMax)}
-                            >
-                                &#8734;
-                            </span>
-                        </section>
-                        <H3 className={styles.dashboardUsageMetric}>Autocompletions</H3>
-                        <Text className={styles.dashboardUsageTimeline}>this month</Text>
-                    </section>
-
-                    <section className={styles.dashboardUsageDetailsGrid}>
-                        <section className={styles.dashboardUsageMeta}>
-                            <ChatMessagesIcon />
-                            <span
-                                className={classNames(
-                                    styles.dashboardUsageMetaInfo,
-                                    styles.dashboardUsageMetaInfoNumber
-                                )}
-                            >
-                                240
-                            </span>
-                            <span className={styles.dashboardUsageMetaInfo}>/</span>
-                            <span
-                                className={classNames(styles.dashboardUsageMetaInfo, styles.dashboardUsageMetaInfoMax)}
-                            >
-                                &#8734;
-                            </span>
-                        </section>
-                        <H3 className={styles.dashboardUsageMetric}>Chat messages</H3>
-                        <Text className={styles.dashboardUsageTimeline}>this month</Text>
-                    </section>
-                </section>
-            </section> */}
         </section>
     )
 }
@@ -154,21 +94,21 @@ const LinkSelector: FC<LinkSelectorProps> = ({ options }) => {
     return (
         <section className={styles.linkSelectorContainer}>
             <Menu>
-                <MenuHeader className={styles.linkSelectorInfo}>
+                <MenuLink as={Link} className={styles.linkSelectorInfo} to={selectedOption.setupLink} target="_blank">
                     {selectedOption.icon}
                     <section>
                         <Text className={styles.linkSelectorOptionMaker}>{selectedOption.maker}</Text>
                         <Text className={styles.linkSelectorOptionName}>{selectedOption.name}</Text>
                     </section>
-                </MenuHeader>
+                </MenuLink>
                 <MenuButton variant={undefined} className={styles.linkSelectorBtn}>
                     <Icon size="md" aria-hidden={true} svgPath={mdiChevronDown} />
                 </MenuButton>
 
-                <MenuList position={Position.bottomEnd}>
+                <MenuList position={Position.bottomEnd} className={styles.linkSelectorDropdown}>
                     {options.map(option => (
-                        <MenuItem onSelect={() => setSelectedOption(option)}>
-                            <Text>{option.name}</Text>
+                        <MenuItem className={styles.linkSelectorItem} onSelect={() => setSelectedOption(option)}>
+                            <Text className="m-0">Install Cody on {option.name}</Text>
                         </MenuItem>
                     ))}
                 </MenuList>
