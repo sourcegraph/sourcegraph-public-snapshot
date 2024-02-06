@@ -44,6 +44,7 @@ export const FEATURE_FLAGS = [
     'sourcegraph-operator-site-admin-hide-maintenance',
     'use-ssc-for-cody-subscription',
     'cody-pro-trial-ended',
+    'cody-payments-testing-mode',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
