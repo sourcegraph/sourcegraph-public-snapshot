@@ -178,7 +178,7 @@ func TestDisplayLimit(t *testing.T) {
 			displayLimit:        1,
 			wantDisplayLimitHit: true,
 			wantMatchCount:      2,
-			wantMessage:         "We only display 1 result even if your search returned more results. To see all results and configure the display limit, use our CLI.",
+			wantMessage:         "We only display 1 result even if your search returned more results. To see all results, use our CLI.",
 		},
 		{
 			queryString:         "foo count:2",
