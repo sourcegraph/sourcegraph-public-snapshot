@@ -3,26 +3,19 @@ package dependencies
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
-	"net/url"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/grafana/regexp"
-	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -76,210 +69,26 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-// checkPostgresConnection succeeds connecting to the default user database works, regardless
-// of if it's running locally or with docker.
-func checkPostgresConnection(ctx context.Context) error {
-	dsns, err := dsnCandidates()
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, dsn := range dsns {
-		// If any of the candidates succeed, we're good
-		if err := pingPG(ctx, dsn); err == nil {
-			return nil
+func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckArgs) error {
+	getConfig := func() (*sgconf.Config, error) {
+		var config *sgconf.Config
+		var err error
+		if args.DisableOverwrite {
+			config, err = sgconf.GetWithoutOverwrites(args.ConfigFile)
 		} else {
-			errs = append(errs, err)
+			config, err = sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
 		}
-	}
-
-	messages := []string{"failed all attempts to connect to Postgresql database"}
-	for _, e := range errs {
-		messages = append(messages, "\t"+e.Error())
-	}
-	return errors.New(strings.Join(messages, "\n"))
-}
-
-func pingPG(ctx context.Context, dsn string) error {
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn)
-	}
-	defer conn.Close(ctx)
-
-	for {
-		err := conn.Ping(ctx)
-		if err == nil {
-			return nil
-		}
-		// If database is starting up we keep waiting
-		if strings.Contains(err.Error(), "database system is starting up") {
-			time.Sleep(5 * time.Millisecond)
-			continue
-		}
-		return errors.Wrapf(err, "failed to ping database at %s", dsn)
-	}
-}
-
-func dsnCandidates() ([]string, error) {
-	var candidates []string
-
-	// most classic dsn
-	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
-
-	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
-	add := func(dsn string) { candidates = append(candidates, dsn) }
-
-	withUserPass := func(user, password string) func(dsn url.URL) {
-		return func(dsn url.URL) {
-			if password == "" {
-				dsn.User = url.User(user)
-			} else {
-				dsn.User = url.UserPassword(user, password)
-			}
-		}
-	}
-
-	withPath := func(path string) func(dsn url.URL) {
-		return func(dsn url.URL) {
-			dsn.Path = path
-		}
-	}
-
-	withSSL := func(sslmode string) func(dsn url.URL) {
-		return func(dsn url.URL) {
-			if sslmode != "" {
-				qry := dsn.Query()
-				qry.Set("sslmode", sslmode)
-				dsn.RawQuery = qry.Encode()
-			}
-		}
-	}
-
-	withHost := func(host, port string) func(dsn url.URL) {
-		return func(dsn url.URL) {
-			if host == "" {
-				return
-			}
-			if port == "" {
-				port = "5432"
-			}
-			dsn.Host = fmt.Sprintf("%s:%s", host, "5432")
-		}
-	}
-
-	addURL := func(modifiers ...func(dsn url.URL)) {
-		dsn := baseURL
-		for _, modifier := range modifiers {
-			modifier(dsn)
-		}
-		add(dsn.String())
-	}
-
-	// best case scenario
-	add(env("PGDATASOURCE"))
-
-	// homebrew dsn
-	if uinfo, err := user.Current(); err == nil {
-		addURL(
-			withUserPass(uinfo.Username, ""),
-			withPath("postgres"),
-		)
-	}
-
-	// classic docker dsn
-	addURL(withUserPass("postgres", "postgres"))
-	// other classic docker dsn
-	addURL(withUserPass("postgres", "password"))
-
-	// env based dsn
-	username, ok := os.LookupEnv("PGUSER")
-	if !ok {
-		uinfo, err := user.Current()
 		if err != nil {
 			return nil, err
 		}
-		username = uinfo.Username
-	}
-
-	addURL(
-		withUserPass(username, env("PGPASSWORD")),
-		withHost(env("PGHOST"), env("PGPORT")),
-		withSSL(env("PGSSLMODE")),
-	)
-
-	return candidates, nil
-}
-
-func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckArgs) error {
-	// This check runs only in the `sourcegraph/sourcegraph` repository, so
-	// we try to parse the globalConf and use its `Env` to configure the
-	// Postgres connection.
-	var config *sgconf.Config
-	if args.DisableOverwrite {
-		config, _ = sgconf.GetWithoutOverwrites(args.ConfigFile)
-	} else {
-		config, _ = sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
-	}
-	if config == nil {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
-	}
-
-	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
-		if ok {
-			return val
-		}
-		// Otherwise check in globalConf.Env
-		return config.Env[key]
-	}
-
-	dsn := postgresdsn.New("", "", getEnv)
-
-	if err := pingPG(ctx, dsn); err != nil {
-		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
-	}
-	return nil
-}
-
-func checkRedisConnection(context.Context) error {
-	conn, err := redis.Dial("tcp", ":6379", redis.DialConnectTimeout(5*time.Second))
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
-	}
-
-	if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
-		return errors.Wrap(err, "failed to write to Redis at 127.0.0.1:6379")
-	}
-
-	retval, err := redis.String(conn.Do("GET", "sg-setup"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read from Redis at 127.0.0.1:6379")
-	}
-
-	if retval != "was-here" {
-		return errors.New("failed to test write in Redis")
-	}
-	return nil
-}
-
-func checkGitVersion(versionConstraint string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		out, err := usershell.Command(ctx, "git version").StdOut().Run().String()
-		if err != nil {
-			return errors.Wrapf(err, "failed to run 'git version'")
+		if config == nil {
+			return nil, errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 		}
 
-		elems := strings.Split(out, " ")
-		if len(elems) != 3 && len(elems) != 5 {
-			return errors.Newf("unexpected output from git: %s", out)
-		}
-
-		trimmed := strings.TrimSpace(elems[2])
-		return check.Version("git", trimmed, versionConstraint)
+		return config, nil
 	}
+
+	return check.SourcegraphDatabase(getConfig)(ctx)
 }
 
 // func checkPostgresVersion(dsn, versionConstraint string) func(context.Context) error {

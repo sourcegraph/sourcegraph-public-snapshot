@@ -182,7 +182,7 @@ If you used another method, make sure psql is available.`,
 					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
 						return nil
 					}
-					return checkPostgresConnection(ctx)
+					return check.PostgresConnection(ctx)
 				},
 				Description: `Sourcegraph requires the PostgreSQL database (v12+) to be running.
 

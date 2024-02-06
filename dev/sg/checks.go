@@ -2,20 +2,16 @@ package main
 
 import (
 	"context"
-	"os"
-
-	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var checks = map[string]check.CheckFunc{
-	"postgres":      check.Any(checkSourcegraphDatabase, check.CheckPostgresConnection),
+	"postgres":      check.Any(check.SourcegraphDatabase(getConfig), check.PostgresConnection),
 	"redis":         check.Redis,
 	"caddy-trusted": check.Caddy,
 	"asdf":          check.ASDF,
@@ -26,7 +22,7 @@ var checks = map[string]check.CheckFunc{
 	"rust":          check.Rust,
 	"docker":        check.Docker,
 	"ibazel":        check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
-	"bazelisk":      check.WrapErrMessage(check.InPath("bazelisk"), "brew install bazelisk"),
+	"bazelisk":      check.Bazelisk,
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
@@ -95,33 +91,4 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 	std.Out.Write("")
 
 	return errors.Newf("%d failed checks", len(failed))
-}
-
-func checkSourcegraphDatabase(ctx context.Context) error {
-	// This check runs only in the `sourcegraph/sourcegraph` repository, so
-	// we try to parse the globalConf and use its `Env` to configure the
-	// Postgres connection.
-	config, _ := getConfig()
-	if config == nil {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
-	}
-
-	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
-		if ok {
-			return val
-		}
-		// Otherwise check in globalConf.Env
-		return config.Env[key]
-	}
-
-	dsn := postgresdsn.New("", "", getEnv)
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
-	}
-	defer conn.Close(ctx)
-	return conn.Ping(ctx)
 }

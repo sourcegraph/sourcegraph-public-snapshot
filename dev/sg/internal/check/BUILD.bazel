@@ -17,9 +17,11 @@ go_library(
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/analytics",
+        "//dev/sg/internal/sgconf",
         "//dev/sg/internal/std",
         "//dev/sg/internal/usershell",
         "//dev/sg/root",
+        "//internal/database/postgresdsn",
         "//internal/limiter",
         "//lib/errors",
         "//lib/output",

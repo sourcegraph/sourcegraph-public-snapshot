@@ -19,14 +19,16 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/sourcegraph/run"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
 // of if it's running locally or with docker.
-func CheckPostgresConnection(ctx context.Context) error {
+func PostgresConnection(ctx context.Context) error {
 	dsns, err := dsnCandidates()
 	if err != nil {
 		return err
@@ -48,6 +50,8 @@ func CheckPostgresConnection(ctx context.Context) error {
 	return errors.New(strings.Join(messages, "\n"))
 }
 
+// Attempts to connect to the given Postgresql database.
+// if the database is starting up, it will wait until it's ready.
 func pingPG(ctx context.Context, dsn string) error {
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
@@ -112,7 +116,7 @@ func dsnCandidates() ([]string, error) {
 			if port == "" {
 				port = "5432"
 			}
-			dsn.Host = fmt.Sprintf("%s:%s", host, "5432")
+			dsn.Host = fmt.Sprintf("%s:%s", host, port)
 		}
 	}
 
@@ -159,9 +163,42 @@ func dsnCandidates() ([]string, error) {
 	return candidates, nil
 }
 
-var Redis = Retry(CheckRedisConnection, 5, 500*time.Millisecond)
+func SourcegraphDatabase(getConfig func() (*sgconf.Config, error)) CheckFunc {
+	return func(ctx context.Context) error {
+		// This check runs only in the `sourcegraph/sourcegraph` repository, so
+		// we try to parse the globalConf and use its `Env` to configure the
+		// Postgres connection.
+		config, err := getConfig()
+		if err != nil {
+			return err
+		}
+		if config == nil {
+			return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		}
 
-func CheckRedisConnection(context.Context) error {
+		getEnv := func(key string) string {
+			// First look into process env, emulating the logic in makeEnv used
+			// in internal/run/run.go
+			val, ok := os.LookupEnv(key)
+			if ok {
+				return val
+			}
+			// Otherwise check in globalConf.Env
+			return config.Env[key]
+		}
+
+		dsn := postgresdsn.New("", "", getEnv)
+
+		if err := pingPG(ctx, dsn); err != nil {
+			return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+		}
+		return nil
+	}
+}
+
+var Redis = Retry(checkRedisConnection, 5, 500*time.Millisecond)
+
+func checkRedisConnection(context.Context) error {
 	conn, err := redis.Dial("tcp", ":6379", redis.DialConnectTimeout(5*time.Second))
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
