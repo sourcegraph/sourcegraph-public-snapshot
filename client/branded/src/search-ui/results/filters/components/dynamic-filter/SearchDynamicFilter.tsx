@@ -206,7 +206,7 @@ export const repoFilter = (filter: Filter): ReactNode => {
     const { svgPath } = codeHostIcon(filter.label)
 
     return (
-        <Tooltip content={filter.label}>
+        <Tooltip content={filter.label} placement="right">
             <span>
                 <Icon aria-hidden={true} svgPath={svgPath ?? mdiSourceRepository} /> {displayRepoName(filter.label)}
             </span>
