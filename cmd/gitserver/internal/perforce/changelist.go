@@ -4,24 +4,24 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetChangelistByID(ctx context.Context, p4home, p4port, p4user, p4passwd, changelistID string) (*p4types.Changelist, error) {
-	cmd := exec.CommandContext(
-		ctx,
-		"p4",
+func GetChangelistByID(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, changelistID string) (*p4types.Changelist, error) {
+	options := []P4OptionFunc{
+		WithAuthentication(p4user, p4passwd),
+		WithHost(p4port),
+	}
+
+	options = append(options, WithArguments(
 		"-Mj",
 		"-z", "tag",
 		"changes",
@@ -29,21 +29,23 @@ func GetChangelistByID(ctx context.Context, p4home, p4port, p4user, p4passwd, ch
 		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
 		"-l",               // use a long listing, which includes the whole commit message
 		"-e", changelistID, // start from this changelist and go up
-	)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"HOME="+p4home,
-	)
+	))
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-changelist-")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 changes'")
+	}
+	defer os.Remove(scratchDir)
+
+	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 changes context error")
 		}
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 changes" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 changes" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 		return nil, err
 	}
@@ -62,10 +64,14 @@ func GetChangelistByID(ctx context.Context, p4home, p4port, p4user, p4passwd, ch
 	return pcl, nil
 }
 
-func GetChangelistByClient(ctx context.Context, p4port, p4user, p4passwd, workDir, client string) (*p4types.Changelist, error) {
-	cmd := exec.CommandContext(
-		ctx,
-		"p4",
+func GetChangelistByClient(ctx context.Context, p4home, p4port, p4user, p4passwd, workDir, client string) (*p4types.Changelist, error) {
+	options := []P4OptionFunc{
+		WithAuthentication(p4user, p4passwd),
+		WithHost(p4port),
+		WithClient(client),
+	}
+
+	options = append(options, WithArguments(
 		"-Mj",
 		"-z", "tag",
 		"changes",
@@ -73,22 +79,17 @@ func GetChangelistByClient(ctx context.Context, p4port, p4user, p4passwd, workDi
 		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
 		"-l", // use a long listing, which includes the whole commit message
 		"-c", client,
-	)
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+p4port,
-		"P4USER="+p4user,
-		"P4PASSWD="+p4passwd,
-		"P4CLIENT="+client,
-	)
-	cmd.Dir = workDir
+	))
 
-	out, err := executil.RunCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	cmd := NewBaseCommand(ctx, p4home, workDir, options...)
+
+	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = errors.Wrap(ctxerr, "p4 changes context error")
 		}
 		if len(out) > 0 {
-			err = errors.Wrapf(err, `failed to run command "p4 changes" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+			err = errors.Wrapf(err, `failed to run command "p4 changes" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd.Unwrap()))
 		}
 		return nil, err
 	}
