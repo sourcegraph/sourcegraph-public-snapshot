@@ -1,18 +1,14 @@
 package shared
 
 import (
-	"context"
 	"database/sql"
 	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -56,6 +52,7 @@ func ScanSyntacticIndexRecord(s dbutil.Scanner) (*SyntacticIndexRecord, error) {
 
 func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error {
 
+	// Make sure this is in sync with columnExpressions below...
 	if err := s.Scan(
 		&job.ID,
 		&job.Commit,
@@ -81,7 +78,8 @@ func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error
 
 func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.Store[*SyntacticIndexRecord], error) {
 
-	// Make sure this is in sync
+	// Make sure this is in sync with the columns of the
+	// syntactic_scip_indexes_with_repository_name view
 	var columnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("u.id"),
 		sqlf.Sprintf("u.commit"),
@@ -122,21 +120,6 @@ func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB 
 	if err != nil {
 		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
-
-	// TODO: what is this?
-	// START FLAILING
-
-	ctx := context.Background()
-	db := database.NewDB(observationCtx.Logger, sqlDB)
-	go func() {
-		for range time.NewTicker(providers.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
-
-	// END FLAILING
-	//
 
 	return sqlDB
 }
