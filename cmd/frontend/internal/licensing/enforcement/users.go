@@ -78,12 +78,11 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.Accoun
 // NewAfterCreateUserHook returns a AfterCreateUserHook closure that determines whether
 // a new user should be promoted to site admin based on the product license.
 func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) error {
-	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
-	if envvar.SourcegraphDotComMode() {
-		return nil
-	}
-
 	return func(ctx context.Context, tx database.DB, user *types.User) error {
+		// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
+		if envvar.SourcegraphDotComMode() {
+			return nil
+		}
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err

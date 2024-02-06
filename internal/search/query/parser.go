@@ -142,7 +142,7 @@ type heuristics uint8
 const (
 	// If set, balanced parentheses, which would normally be treated as
 	// delimiting expression groups, may in select cases be parsed as
-	// literal search patterns instead.
+	// literal search patterns instead. Example: (a b) -> "(a b)"
 	parensAsPatterns heuristics = 1 << iota
 	// If set, all parentheses, whether balanced or unbalanced, are parsed
 	// as literal search patterns (i.e., interpreting parentheses as
@@ -151,6 +151,12 @@ const (
 	// If set, implies that at least one expression was disambiguated by
 	// explicit parentheses.
 	disambiguated
+	// If set, the parser will parse patterns containing balanced parentheses as
+	// literal patterns. Example: func(a int, b int) -> "func(a int, b int)"
+	balancedPattern
+	// If set, the parser will parse empty parenthesis, "()", as a literal pattern
+	// instead of as pattern group.
+	emptyParens
 )
 
 func isSet(h, heuristic heuristics) bool { return h&heuristic != 0 }
@@ -840,7 +846,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		}
 	}
 
-	if isSet(p.heuristics, parensAsPatterns) {
+	if isSet(p.heuristics, balancedPattern) {
 		if pattern, ok := p.TryScanBalancedPattern(label); ok {
 			return pattern
 		}
@@ -962,7 +968,7 @@ loop:
 			p.heuristics |= disambiguated
 			if len(nodes) == 0 {
 				// We parsed "()".
-				if isSet(p.heuristics, parensAsPatterns) {
+				if isSet(p.heuristics, emptyParens) {
 					// Interpret literally.
 					nodes = []Node{newPattern("()", Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
 				} else {
@@ -1161,8 +1167,14 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 
 	parser := &parser{
 		buf:        []byte(in),
-		heuristics: parensAsPatterns,
 		leafParser: searchType,
+	}
+
+	switch searchType {
+	case SearchTypeKeyword:
+		parser.heuristics = balancedPattern | emptyParens
+	default:
+		parser.heuristics = balancedPattern | emptyParens | parensAsPatterns
 	}
 
 	nodes, err := parser.parseOr()
@@ -1192,7 +1204,10 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeKeyword {
+
+	// Note that we don't include keyword search in this check because we want to
+	// support mixing of implicit and explicit operators
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err

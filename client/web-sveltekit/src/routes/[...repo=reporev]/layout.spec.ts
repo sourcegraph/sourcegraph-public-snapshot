@@ -34,7 +34,7 @@ test.describe('cloned repository', () => {
 
     test('has search button', async ({ page }) => {
         await page.getByRole('button', { name: 'Search' }).click()
-        await expect(page.getByRole('textbox')).toHaveText('repo:github.com/sourcegraph/sourcegraph ')
+        await expect(page.getByRole('textbox')).toHaveText(String.raw`repo:^github\.com/sourcegraph/sourcegraph$ `)
     })
 })
 

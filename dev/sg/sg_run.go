@@ -92,47 +92,35 @@ func runExec(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
-	var cmds []run.Command
-	var bcmds []run.BazelCommand
+	cmds := make([]run.SGConfigCommand, 0, len(args))
 	for _, arg := range args {
-		if bazelCmd, okB := config.BazelCommands[arg]; okB && !legacy {
-			bcmds = append(bcmds, bazelCmd)
-		} else {
-			cmd, okC := config.Commands[arg]
-			if !okC && !okB {
-				std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
-				return flag.ErrHelp
-			}
+		if bazelCmd, ok := config.BazelCommands[arg]; ok && !legacy {
+			cmds = append(cmds, bazelCmd)
+		} else if cmd, ok := config.Commands[arg]; ok {
 			cmds = append(cmds, cmd)
+		} else {
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
+			return flag.ErrHelp
 		}
 	}
 
 	if ctx.Bool("describe") {
-		// TODO Bazel commands
 		for _, cmd := range cmds {
 			out, err := yaml.Marshal(cmd)
 			if err != nil {
 				return err
 			}
-			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.Name, string(out)))
+			if err = std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.GetName(), string(out))); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	}
 
-	if !legacy {
-		// First we build everything once, to ensure all binaries are present.
-		if err := run.BazelBuild(ctx.Context, bcmds...); err != nil {
-			return err
-		}
-	}
-
 	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
 	p.Go(func(ctx context.Context) error {
 		return run.Commands(ctx, config.Env, verbose, cmds...)
-	})
-	p.Go(func(ctx context.Context) error {
-		return run.BazelCommands(ctx, config.Env, verbose, bcmds...)
 	})
 
 	return p.Wait()

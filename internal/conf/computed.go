@@ -84,10 +84,10 @@ func AccessTokensMaxPerUser() int {
 // AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
 func AccessTokensAllowNoExpiration() bool {
 	cfg := Get().AuthAccessTokens
-	if cfg == nil {
-		return false
+	if cfg == nil || cfg.AllowNoExpiration == nil {
+		return true
 	}
-	return cfg.AllowNoExpiration
+	return *cfg.AllowNoExpiration
 }
 
 // AccessTokensExpirationOptions returns the default access token expiration days
@@ -886,6 +886,23 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 		Attribution:  attributionEnabled,
 	}
 	return computedConfig
+}
+
+func GetAttributionGateway(siteConfig schema.SiteConfiguration) (string, string) {
+	if !codyEnabled(siteConfig) {
+		return "", ""
+	}
+	// Explicit attribution gateway config overrides autocomplete config (if used).
+	if g := siteConfig.AttributionGateway; g != nil {
+		return g.Endpoint, getSourcegraphProviderAccessToken(g.AccessToken, siteConfig)
+	}
+	// Fall back to autocomplete config if no explicit gateway config.
+	cc := GetCompletionsConfig(siteConfig)
+	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
+	if ccUsingGateway {
+		return cc.Endpoint, getSourcegraphProviderAccessToken(cc.AccessToken, siteConfig)
+	}
+	return "", ""
 }
 
 const embeddingsMaxFileSizeBytes = 1000000

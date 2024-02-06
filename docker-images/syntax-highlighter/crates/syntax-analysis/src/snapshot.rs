@@ -6,7 +6,7 @@ use scip::types::{
     symbol_information, Document, Occurrence, SymbolInformation, SymbolRole, SyntaxKind,
 };
 
-use crate::range::PackedRange;
+use crate::range::Range;
 
 #[derive(Debug, Clone, Default)]
 pub struct SnapshotRange {
@@ -51,7 +51,7 @@ pub fn dump_document_with_config(
     opts: SnapshotOptions,
 ) -> Result<String> {
     let mut occurrences = doc.occurrences.clone();
-    occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range).unwrap_or_default());
+    occurrences.sort_by_key(|o| Range::from_vec(&o.range).unwrap_or_default());
     let mut occurrences = VecDeque::from(occurrences);
 
     let mut result = String::new();
@@ -80,7 +80,7 @@ pub fn dump_document_with_config(
                 _ => &occ.range,
             };
 
-            let range = match PackedRange::from_vec(range) {
+            let range = match Range::from_vec(range) {
                 Some(range) => range,
                 None => continue,
             };

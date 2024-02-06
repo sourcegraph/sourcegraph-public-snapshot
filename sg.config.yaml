@@ -563,9 +563,9 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      if [ ! -f $(./dev/scip-treesitter-install.sh which) ]; then
-        echo "Building scip-treesitter"
-        ./dev/scip-treesitter-install.sh
+      if [ ! -f $(./dev/scip-syntax-install.sh which) ]; then
+        echo "Building scip-syntax"
+        ./dev/scip-syntax-install.sh
       fi
 
       echo "Building codeintel-outkline-scip-worker"
@@ -577,7 +577,7 @@ commands:
       - cmd/syntactic-code-intel-worker
       - lib/codeintel
     env:
-      SCIP_TREESITTER_PATH: dev/scip-treesitter-dev
+      SCIP_SYNTAX_PATH: dev/scip-syntax-dev
 
   syntactic-code-intel-worker-0:
     <<: *syntactic_codeintel_worker_template
@@ -998,7 +998,9 @@ commands:
 
 bazelCommands:
   blobstore:
-    target: //cmd/blobstore:blobstore
+    target: //cmd/blobstore
+  docsite:
+    runTarget: //doc:serve
   searcher:
     target: //cmd/searcher
   syntax-highlighter:
@@ -1105,6 +1107,7 @@ commandsets:
       - ibazel
     bazelCommands:
       - blobstore
+      - docsite
       - frontend
       - worker
       - repo-updater
@@ -1112,16 +1115,25 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
-      - syntax-highlighter
+      # - syntax-highlighter
     commands:
       - web
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+
+  simple:
+    requiresDevPrivate: true
+    bazelCommands:
+      - docsite
+      - worker
+      - syntax-highlighter
+    commands:
+      - web
+      - slow
+
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
