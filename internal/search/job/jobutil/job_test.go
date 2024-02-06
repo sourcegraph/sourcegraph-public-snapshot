@@ -60,7 +60,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -96,7 +96,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -124,7 +124,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -149,7 +149,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -184,7 +184,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -209,7 +209,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -234,7 +234,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . substr:"@nope")
@@ -255,7 +255,7 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (REPOSCOMPUTEEXCLUDED
               (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
@@ -276,7 +276,7 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (REPOSCOMPUTEEXCLUDED
               (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
@@ -296,7 +296,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . regex:"foo(?-s:.)*?@bar")
@@ -316,7 +316,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALSYMBOLSEARCH
             (query . sym:substr:"test")
@@ -336,12 +336,12 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
             (diff . false)
-            (limit . 2000)
+            (limit . 10000)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
@@ -358,12 +358,12 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (DIFFSEARCH
             (query . *protocol.DiffMatches(test))
             (diff . true)
-            (limit . 2000)
+            (limit . 10000)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
@@ -380,7 +380,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
@@ -388,7 +388,7 @@ func TestNewPlanJob(t *testing.T) {
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
             (diff . false)
-            (limit . 2000)
+            (limit . 10000)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
@@ -405,7 +405,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -432,7 +432,7 @@ func TestNewPlanJob(t *testing.T) {
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
             (diff . false)
-            (limit . 2000)
+            (limit . 10000)
             (repoOpts.repoFilters . [test])
             (repoOpts.onlyCloned . true))
           (REPOSCOMPUTEEXCLUDED
@@ -444,7 +444,7 @@ func TestNewPlanJob(t *testing.T) {
                 (SEARCHERSYMBOLSEARCH
                   (request.pattern . test)
                   (numRepos . 0)
-                  (limit . 2000))))
+                  (limit . 10000))))
             NOOP))))))`),
 	}, {
 		query:      `type:file type:commit test`,
@@ -459,7 +459,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
@@ -467,7 +467,7 @@ func TestNewPlanJob(t *testing.T) {
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
             (diff . false)
-            (limit . 2000)
+            (limit . 10000)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
@@ -484,7 +484,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -511,7 +511,7 @@ func TestNewPlanJob(t *testing.T) {
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
             (diff . false)
-            (limit . 2000)
+            (limit . 10000)
             (repoOpts.repoFilters . [test])
             (repoOpts.onlyCloned . true))
           (REPOSCOMPUTEEXCLUDED
@@ -523,7 +523,7 @@ func TestNewPlanJob(t *testing.T) {
                 (SEARCHERSYMBOLSEARCH
                   (request.pattern . test)
                   (numRepos . 0)
-                  (limit . 2000))))
+                  (limit . 10000))))
             NOOP))))))`),
 	}, {
 		query:      `(type:commit or type:diff) (a or b)`,
@@ -540,12 +540,12 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (COMMITSEARCH
               (query . (*protocol.MessageMatches((?:a)|(?:b))))
               (diff . false)
-              (limit . 2000)
+              (limit . 10000)
               (repoOpts.onlyCloned . true))
             REPOSCOMPUTEEXCLUDED
             (OR
@@ -554,12 +554,12 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (DIFFSEARCH
               (query . (*protocol.DiffMatches((?:a)|(?:b))))
               (diff . true)
-              (limit . 2000)
+              (limit . 10000)
               (repoOpts.onlyCloned . true))
             REPOSCOMPUTEEXCLUDED
             (OR
@@ -579,7 +579,7 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             REPOSCOMPUTEEXCLUDED
             (REPOSEARCH
@@ -588,7 +588,7 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (ZOEKTGLOBALTEXTSEARCH
               (query . content_substr:"b")
@@ -608,7 +608,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (ZOEKTGLOBALSYMBOLSEARCH
             (query . (or sym:substr:"a" sym:substr:"b"))
@@ -631,7 +631,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.hasFileContent[0].path . a)
@@ -653,7 +653,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.hasFileContent[0].path . a)
@@ -675,7 +675,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.hasKVPs[0].key . key)
@@ -697,7 +697,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.hasKVPs[0].key . tag))
@@ -717,7 +717,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.hasTopics[0].topic . mytopic))
@@ -737,7 +737,7 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           (SEQUENTIAL
             (ensureUnique . false)
@@ -773,13 +773,13 @@ func TestNewPlanJob(t *testing.T) {
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
-        (limit . 2000)
+        (limit . 10000)
         (PARALLEL
           REPOSCOMPUTEEXCLUDED
           (STRUCTURALSEARCH
             (patternInfo.query . "(:[_])")
             (patternInfo.isStructural . true)
-            (patternInfo.fileMatchLimit . 2000)))))))`),
+            (patternInfo.fileMatchLimit . 10000)))))))`),
 		},
 		// The next two queries show an unexpected way that a query is
 		// translated into a global zoekt query, all depending on if context:
@@ -800,7 +800,7 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (ZOEKTGLOBALTEXTSEARCH
               (query . (and substr:"foo" substr:"bar" substr:"baz"))
@@ -830,7 +830,7 @@ func TestNewPlanJob(t *testing.T) {
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
-          (limit . 2000)
+          (limit . 10000)
           (PARALLEL
             (SEQUENTIAL
               (ensureUnique . false)
