@@ -187,17 +187,15 @@ fn index_content(contents: Vec<u8>, parser: ParserId, options: &IndexOptions) ->
     let mut document: Document;
 
     if options.analysis_mode.globals() {
-        let (mut scope, hint) =
-            get_globals(parser, &contents).ok_or(anyhow!("Failed to get globals"))??;
+        let (mut scope, hint) = get_globals(parser, &contents)?;
         document = scope.into_document(hint, vec![]);
     } else {
         document = Document::new();
     }
 
     if options.analysis_mode.locals() {
-        if let Some(occurrences) = get_locals(parser, &contents) {
-            document.occurrences.extend(occurrences)
-        }
+        let occurrences = get_locals(parser, &contents)?;
+        document.occurrences.extend(occurrences)
     }
 
     Ok(document)
