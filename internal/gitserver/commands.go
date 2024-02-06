@@ -2243,7 +2243,7 @@ func (c *clientImplementor) ArchiveReader(
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	stream, err := client.Archive(ctx, req)
+	cli, err := client.Archive(ctx, req)
 	if err != nil {
 		cancel()
 		endObservation(1, observation.Args{})
@@ -2261,7 +2261,7 @@ func (c *clientImplementor) ArchiveReader(
 	// the stream to see any errors from the server. Reading the first message ensures we
 	// handle any errors synchronously, similar to the HTTP implementation.
 
-	firstMessage, firstError := stream.Recv()
+	firstMessage, firstError := cli.Recv()
 	if firstError != nil && !isRevisionNotFound(firstError.Error()) {
 		// Hack: The ArchiveReader.Read() implementation handles surfacing the
 		// any "revision not found" errors returned from the invoked git binary.
@@ -2297,7 +2297,7 @@ func (c *clientImplementor) ArchiveReader(
 		}
 
 		// Receive the next message from the stream.
-		msg, err := stream.Recv()
+		msg, err := cli.Recv()
 		if err != nil {
 			return nil, err
 		}
