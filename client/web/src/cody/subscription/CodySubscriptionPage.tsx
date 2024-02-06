@@ -27,7 +27,7 @@ import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-op
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
-import { useArePaymentsEnabled, useHasTrialEnded } from '../featurFlags'
+import { useArePaymentsEnabled, useHasTrialEnded, useIsCodyPaymentsTestingMode } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
 
 import { CancelProModal } from './CancelProModal'
@@ -40,7 +40,16 @@ interface CodySubscriptionPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
-const MANAGE_SUBSCRIPTION_REDIRECT_URL = 'https://accounts.sourcegraph.com/cody/subscription'
+
+export const useCodyPaymentsUrl = (): string => {
+    const isCodyPaymentsTestingMode = useIsCodyPaymentsTestingMode()
+
+    if (isCodyPaymentsTestingMode) {
+        return 'https://accounts.sgdev.org'
+    }
+
+    return 'https://accounts.sourcegraph.com'
+}
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,
@@ -52,6 +61,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const arePaymentsEnabled = useArePaymentsEnabled()
     const hasTrialEnded = useHasTrialEnded()
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
@@ -189,13 +200,28 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
+                                    <H2
+                                        className={classNames('text-muted d-inline mb-0', {
+                                            [styles.proPricing]: !hasTrialEnded,
+                                        })}
+                                    >
+                                        $9
+                                    </H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {!hasTrialEnded && (
                                     <Text className="mb-3 text-muted" size="small">
-                                        Free until Feb 2024,{' '}
-                                        {!arePaymentsEnabled && <strong>no credit card needed</strong>}
+                                        {/* The free trial has not ended, but we are not yet accepting payments. */}
+                                        {!arePaymentsEnabled && (
+                                            <strong>Free until Feb 2024, no credit card needed</strong>
+                                        )}
+                                        {/* The free trial has not ended, but we ARE accepting payments. */}
+                                        {arePaymentsEnabled && !hasTrialEnded && (
+                                            <strong>Free until February 15, 2024.</strong>
+                                        )}
+                                        {arePaymentsEnabled && hasTrialEnded && (
+                                            <strong>Billed monthly. Cancel anytime.</strong>
+                                        )}
                                     </Text>
                                 )}
                                 {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
@@ -214,7 +240,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                     }
                                                 )
                                                 if (arePaymentsEnabled) {
-                                                    window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                    window.location.href = manageSubscriptionRedirectURL
                                                     return
                                                 }
 
@@ -235,7 +261,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 { tier: 'pro' }
                                             )
                                             if (arePaymentsEnabled) {
-                                                window.location.href = MANAGE_SUBSCRIPTION_REDIRECT_URL
+                                                window.location.href = manageSubscriptionRedirectURL
                                                 return
                                             }
 
@@ -243,7 +269,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        {arePaymentsEnabled ? 'Get Pro' : 'Get Pro trial'}
+                                        {!arePaymentsEnabled && 'Get Pro'}
+                                        {arePaymentsEnabled && !hasTrialEnded && 'Get Pro trial'}
+                                        {arePaymentsEnabled && hasTrialEnded && 'Purchase Cody Pro'}
                                     </Button>
                                 )}
                             </div>

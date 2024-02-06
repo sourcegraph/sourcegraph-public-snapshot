@@ -1,11 +1,37 @@
 .footer {
-    padding: 1rem 0.75rem;
+    &::before {
+        content: '';
+        width: 100%;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: 1px;
+        display: block;
+        background: var(--border-color);
+        transition: background 0.75s ease;
+    }
+
+    &:hover {
+        &::before {
+            background: linear-gradient(91deg, var(--logo-blue) 3.11%, #c66fff 44.21%, #ff8578 83.64%);
+        }
+
+        .link {
+            background: linear-gradient(
+                90deg,
+                rgba(0, 203, 236, 0.08) 3.11%,
+                rgba(198, 111, 255, 0.08) 44.21%,
+                rgba(255, 133, 120, 0.08) 83.64%
+            );
+        }
+    }
 }
 
 .link {
     display: flex;
     gap: 0.5rem;
     color: var(--text-muted);
+    padding: 1rem 0.75rem;
+    transition: background 0.75s ease;
+    background: transparent;
 
     &-text {
         display: flex;

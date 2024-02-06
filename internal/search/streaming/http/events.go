@@ -82,9 +82,10 @@ type DecoratedContent struct {
 }
 
 type ChunkMatch struct {
-	Content      string   `json:"content"`
-	ContentStart Location `json:"contentStart"`
-	Ranges       []Range  `json:"ranges"`
+	Content          string   `json:"content"`
+	ContentStart     Location `json:"contentStart"`
+	Ranges           []Range  `json:"ranges"`
+	ContentTruncated bool     `json:"contentTruncated,omitempty"`
 }
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.

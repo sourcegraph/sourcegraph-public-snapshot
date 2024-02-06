@@ -28,7 +28,7 @@ interface TriggerAreaProps {
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
-const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
+const isValidPatternType = (value: string): boolean => value === 'keyword' || value === 'literal' || value === 'regexp'
 
 const ValidQueryChecklistItem: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -170,7 +170,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                         filter.type === 'filter' &&
                         resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
                         filter.value &&
-                        isLiteralOrRegexp(filter.value.value)
+                        isValidPatternType(filter.value.value)
                 )
         }
 
@@ -268,7 +268,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <Code>patternType:literal</Code> or <Code>patternType:regexp</Code>
+                                    Is <Code>patternType:keyword</Code>, <Code>literal</Code> or <Code>regexp</Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>

@@ -551,27 +551,28 @@ mod test {
     }
 
     use super::*;
-    use crate::highlighting::{determine_language, SourcegraphQuery};
+    use crate::highlighting::{test::SYNTAX_SET, FileInfo};
+
+    fn make_scip_doc_via_syntect(file_info: &FileInfo<'_>) -> Document {
+        SYNTAX_SET.with(|syntax_set| {
+            let syntax_ref = file_info
+                .find_matching_syntax_reference(syntax_set)
+                .unwrap();
+            DocumentGenerator::new(syntax_set, syntax_ref, file_info.contents, None).generate()
+        })
+    }
 
     #[test]
     fn test_generates_empty_file() {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
-        let q = SourcegraphQuery {
-            filetype: Some("go".to_string()),
-            code: "".to_string(),
+        let output = make_scip_doc_via_syntect(&FileInfo {
+            language: Some("go"),
             ..Default::default()
-        };
-
-        let syntax_def = determine_language(&q, &syntax_set).unwrap();
-        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
-            .generate();
-
+        });
         assert_eq!(Document::default(), output);
     }
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
-        let ss = SyntaxSet::load_defaults_newlines();
         let mut failed = vec![];
 
         let crate_root: std::path::PathBuf = std::env::var("CARGO_MANIFEST_DIR").unwrap().into();
@@ -601,15 +602,8 @@ mod test {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let q = SourcegraphQuery {
-                extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
-                filepath: filepath.to_str().unwrap().to_string(),
-                filetype: None,
-                line_length_limit: None,
-                code: contents.clone(),
-            };
-            let syntax_def = determine_language(&q, &ss).unwrap();
-            let document = DocumentGenerator::new(&ss, syntax_def, &q.code, None).generate();
+            let file_info = FileInfo::new(filepath.to_str().unwrap(), &contents, None);
+            let document = make_scip_doc_via_syntect(&file_info);
 
             // As far as I can tell, there is no "matches_snapshot" or similar for `insta`.
             // So we'll just catch the panic for now, push the results and then panic at the end
