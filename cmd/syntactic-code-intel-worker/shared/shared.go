@@ -26,7 +26,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("path to scip-syntax CLI", config.IndexingWorker.CliPath),
 		log.String("API address", config.ListenAddress))
 
-	workerStore, _ := NewStore(observationCtx, "syntactic-code-intel-indexer")
+	db := mustInitializeDB(observationCtx, "syntactic-code-intel-indexer")
+	workerStore, _ := NewStore(observationCtx, db)
 	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorker)
 
 	// Initialize health server

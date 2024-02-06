@@ -79,7 +79,7 @@ func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error
 	return nil
 }
 
-func NewStore(observationCtx *observation.Context, name string) (dbworkerstore.Store[*SyntacticIndexRecord], error) {
+func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.Store[*SyntacticIndexRecord], error) {
 
 	// Make sure this is in sync
 	var columnExpressions = []*sqlf.Query{
@@ -110,7 +110,6 @@ func NewStore(observationCtx *observation.Context, name string) (dbworkerstore.S
 		Scan:              dbworkerstore.BuildWorkerScan(ScanSyntacticIndexRecord),
 	}
 
-	db := mustInitializeDB(observationCtx, name)
 	handle := basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})
 	return dbworkerstore.New(observationCtx, handle, storeOptions), nil
 }
