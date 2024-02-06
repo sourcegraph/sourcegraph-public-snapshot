@@ -189,13 +189,28 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="d-flex flex-column border-bottom py-4">
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$9</H2>
+                                    <H2
+                                        className={classNames('text-muted d-inline mb-0', {
+                                            [styles.proPricing]: !hasTrialEnded,
+                                        })}
+                                    >
+                                        $9
+                                    </H2>
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {!hasTrialEnded && (
                                     <Text className="mb-3 text-muted" size="small">
-                                        Free until Feb 2024,{' '}
-                                        {!arePaymentsEnabled && <strong>no credit card needed</strong>}
+                                        {/* The free trial has not ended, but we are not yet accepting payments. */}
+                                        {!arePaymentsEnabled && (
+                                            <strong>Free until Feb 2024, no credit card needed</strong>
+                                        )}
+                                        {/* The free trial has not ended, but we ARE accepting payments. */}
+                                        {arePaymentsEnabled && !hasTrialEnded && (
+                                            <strong>Free until February 15, 2024.</strong>
+                                        )}
+                                        {arePaymentsEnabled && hasTrialEnded && (
+                                            <strong>Billed monthly. Cancel anytime.</strong>
+                                        )}
                                     </Text>
                                 )}
                                 {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
@@ -243,7 +258,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         }}
                                     >
                                         <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                        {arePaymentsEnabled ? 'Get Pro' : 'Get Pro trial'}
+                                        {!arePaymentsEnabled && 'Get Pro'}
+                                        {arePaymentsEnabled && !hasTrialEnded && 'Get Pro trial'}
+                                        {arePaymentsEnabled && hasTrialEnded && 'Purchase Cody Pro'}
                                     </Button>
                                 )}
                             </div>

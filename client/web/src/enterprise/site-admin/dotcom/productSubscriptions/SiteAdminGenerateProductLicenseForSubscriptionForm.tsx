@@ -347,7 +347,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                 <option value="" disabled={true}>
                                     Select a plan
                                 </option>
-                                {ALL_PLANS.filter(plan => !plan.deprecated).map(plan => (
+                                {ALL_PLANS.filter(plan => !plan.deprecated && !plan.stopIssuance).map(plan => (
                                     <option key={plan.label} value={plan.label}>
                                         {plan.name}
                                     </option>
@@ -355,8 +355,8 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                 <option value="" disabled={true}>
                                     Deprecated plans
                                 </option>
-                                {ALL_PLANS.filter(plan => plan.deprecated).map(plan => (
-                                    <option key={plan.label} value={plan.label} disabled={plan.stopIssuance}>
+                                {ALL_PLANS.filter(plan => plan.deprecated && !plan.stopIssuance).map(plan => (
+                                    <option key={plan.label} value={plan.label}>
                                         {plan.name}
                                     </option>
                                 ))}
