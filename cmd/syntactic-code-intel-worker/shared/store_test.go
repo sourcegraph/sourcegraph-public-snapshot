@@ -45,7 +45,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead1111",
 			RepositoryID:   1,
 			RepositoryName: "tangy/tacos",
-			State:          "queued",
+			State:          Queued,
 			QueuedAt:       time.Now().Add(time.Second * -5),
 		},
 		SyntacticIndexRecord{
@@ -53,7 +53,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead2222",
 			RepositoryID:   2,
 			RepositoryName: "salty/empanadas",
-			State:          "queued",
+			State:          Queued,
 			QueuedAt:       time.Now().Add(time.Second * -2),
 		},
 		SyntacticIndexRecord{
@@ -61,7 +61,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead3333",
 			RepositoryID:   3,
 			RepositoryName: "juicy/mangoes",
-			State:          "processing",
+			State:          Processing,
 			QueuedAt:       time.Now().Add(time.Second * -1),
 		},
 	)

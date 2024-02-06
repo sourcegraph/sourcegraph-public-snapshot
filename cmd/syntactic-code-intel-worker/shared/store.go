@@ -21,21 +21,30 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+type recordState string
+
+const (
+	Queued     recordState = "queued"
+	Errored                = "errored"
+	Processing             = "processing"
+	Completed              = "completed"
+)
+
 type SyntacticIndexRecord struct {
-	ID             int        `json:"id"`
-	Commit         string     `json:"commit"`
-	QueuedAt       time.Time  `json:"queuedAt"`
-	State          string     `json:"state"`
-	FailureMessage *string    `json:"failureMessage"`
-	StartedAt      *time.Time `json:"startedAt"`
-	FinishedAt     *time.Time `json:"finishedAt"`
-	ProcessAfter   *time.Time `json:"processAfter"`
-	NumResets      int        `json:"numResets"`
-	NumFailures    int        `json:"numFailures"`
-	RepositoryID   int        `json:"repositoryId"`
-	RepositoryName string     `json:"repositoryName"`
-	ShouldReindex  bool       `json:"shouldReindex"`
-	EnqueuerUserID int32      `json:"enqueuerUserID"`
+	ID             int         `json:"id"`
+	Commit         string      `json:"commit"`
+	QueuedAt       time.Time   `json:"queuedAt"`
+	State          recordState `json:"state"`
+	FailureMessage *string     `json:"failureMessage"`
+	StartedAt      *time.Time  `json:"startedAt"`
+	FinishedAt     *time.Time  `json:"finishedAt"`
+	ProcessAfter   *time.Time  `json:"processAfter"`
+	NumResets      int         `json:"numResets"`
+	NumFailures    int         `json:"numFailures"`
+	RepositoryID   int         `json:"repositoryId"`
+	RepositoryName string      `json:"repositoryName"`
+	ShouldReindex  bool        `json:"shouldReindex"`
+	EnqueuerUserID int32       `json:"enqueuerUserID"`
 }
 
 var _ workerutil.Record = SyntacticIndexRecord{}
