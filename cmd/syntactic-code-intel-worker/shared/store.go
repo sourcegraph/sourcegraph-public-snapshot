@@ -17,6 +17,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -36,6 +37,8 @@ type SyntacticIndexRecord struct {
 	ShouldReindex  bool       `json:"shouldReindex"`
 	EnqueuerUserID int32      `json:"enqueuerUserID"`
 }
+
+var _ workerutil.Record = SyntacticIndexRecord{}
 
 func (i SyntacticIndexRecord) RecordID() int {
 	return i.ID
