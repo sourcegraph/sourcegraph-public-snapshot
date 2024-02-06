@@ -454,7 +454,6 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
         repoName,
         revision: revision || '',
         resolvedRevision,
-        telemetryRecorder: props.platformContext.telemetryRecorder,
     }
 
     const perforceCodeHostUrlToSwarmUrlMap =
