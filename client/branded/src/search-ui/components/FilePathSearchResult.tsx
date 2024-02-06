@@ -29,7 +29,6 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps> = (
     containerClassName,
     index,
     telemetryService,
-    telemetryRecorder,
     settingsCascade,
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
