@@ -35,7 +35,15 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
  * current revision.
  */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
-    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, globalContext, ...context } = props
+    const {
+        repo,
+        resolvedRevision,
+        repoName,
+        objectType: maybeObjectType,
+        globalContext,
+        platformContext,
+        ...context
+    } = props
 
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
@@ -80,7 +88,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                 revision={context.revision}
                 settingsCascade={context.settingsCascade}
                 telemetryService={context.telemetryService}
-                telemetryRecorder={context.telemetryRecorder}
+                telemetryRecorder={platformContext.telemetryRecorder}
                 authenticatedUser={context.authenticatedUser}
                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                 commitID={resolvedRevision?.commitID}
@@ -111,7 +119,8 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
                                     context={globalContext}
-                                    telemetryRecorder={}
+                                    platformContext={platformContext}
+                                    telemetryRecorder={platformContext.telemetryRecorder}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
