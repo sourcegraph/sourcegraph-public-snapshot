@@ -26,10 +26,30 @@ func TestTruncateLines(t *testing.T) {
 		content:    "line 1\nline 2",
 		maxLineLen: 4,
 		want:       "line\nline",
+	}, {
+		name:       "trunc 1st",
+		content:    "line 1 is too long to show\nline 2\nline 3",
+		maxLineLen: 15,
+		want:       "lin...truncated\nline 2\nline 3",
+	}, {
+		name:       "trunc 2st",
+		content:    "line 1\nline 2 is too long to show\nline 3",
+		maxLineLen: 15,
+		want:       "line 1\nlin...truncated\nline 3",
+	}, {
+		name:       "trunc 3rd",
+		content:    "line 1\nline 2\nline 3 is too long to show",
+		maxLineLen: 15,
+		want:       "line 1\nline 2\nlin...truncated",
+	}, {
+		name:       "trunc 1st and third",
+		content:    "line 1 is too long to show\nline 2\nline 3 is too long to show",
+		maxLineLen: 15,
+		want:       "lin...truncated\nline 2\nlin...truncated",
 	}}
 
 	// For each test case we ensure that if we have a trailing nl it is still
-	// treated well
+	// treated well.
 	for _, tc := range testCases {
 		tcnl := testCase{
 			name:       tc.name + " nl",
@@ -59,14 +79,16 @@ func TestTruncateLines(t *testing.T) {
 
 func TestTruncateLines_disabled(t *testing.T) {
 	fn := func(content string) bool {
-		got, gotTrunc := truncateLines(content, 0)
-		if got != content {
-			t.Logf("got content %q want %q", got, content)
-			return false
-		}
-		if gotTrunc {
-			t.Logf("truncated for %q", content)
-			return false
+		for _, maxLineLen := range []int{0, -1, -10} {
+			got, gotTrunc := truncateLines(content, maxLineLen)
+			if got != content {
+				t.Logf("got content %q want %q", got, content)
+				return false
+			}
+			if gotTrunc {
+				t.Logf("truncated for %q", content)
+				return false
+			}
 		}
 		return true
 	}
