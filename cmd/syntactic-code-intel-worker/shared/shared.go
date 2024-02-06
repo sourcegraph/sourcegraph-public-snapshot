@@ -27,7 +27,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("API address", config.ListenAddress))
 
 	db := mustInitializeDB(observationCtx, "syntactic-code-intel-indexer")
-	workerStore, _ := NewStore(observationCtx, db)
+
+	workerStore, err := NewStore(observationCtx, db)
+	if err != nil {
+		return errors.Wrap(err, "initializing worker store")
+	}
+
 	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorker)
 
 	// Initialize health server
