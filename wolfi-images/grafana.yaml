@@ -20,7 +20,6 @@ contents:
     # Grafana packages
     - grafana-7@chainguard
     - grafana-7-dashboards@chainguard
-    - sourcegraph-grafana=5.0.5@chainguard
 
 work-dir: /usr/share/grafana
 
