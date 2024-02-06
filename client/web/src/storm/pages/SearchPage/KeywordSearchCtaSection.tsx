@@ -19,7 +19,7 @@ interface KeywordSearchCtaSection {
 
 export const KeywordSearchCtaSection: React.FC<KeywordSearchCtaSection> = ({ className }) => {
     const keywordSearchEnabled = useExperimentalFeatures(features => features.keywordSearch)
-    const [isDismissed = true, setIsDismissed] = useTemporarySetting('search.homepage.keywordCta.dismissed', true)
+    const [isDismissed = true, setIsDismissed] = useTemporarySetting('search.homepage.keywordCta.dismissed', false)
     if (!keywordSearchEnabled || isDismissed) {
         return null
     }
