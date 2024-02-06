@@ -47,7 +47,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
             )}
 
             {(skippedDisplay || resultLimitHit) && (
-                <Alert className="d-flex m-3" variant="info">
+                <Alert className="d-flex flex-column m-3" variant="info">
                     {skippedDisplay && (
                         <Text className="m-0">
                             <strong>Display limit hit.</strong> {skippedDisplay.message}
@@ -55,8 +55,8 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
                     )}
                     {resultLimitHit && (
                         <Text className="m-0">
-                            <strong>Result limit hit.</strong> Modify your search with <Code>count:</Code> to return
-                            additional items.
+                            <strong>Result limit hit.</strong> Modify your query with <Code>count:</Code> to search for
+                            more items.
                         </Text>
                     )}
                 </Alert>
