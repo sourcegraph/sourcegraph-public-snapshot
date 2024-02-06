@@ -657,8 +657,10 @@ func licenseInfo() (info LicenseInfo) {
 	}
 
 	info.Features = LicenseFeatures{
-		CodeSearch: licensing.Check(licensing.FeatureCodeSearch) == nil,
-		Cody:       licensing.Check(licensing.FeatureCody) == nil,
+		// CodeSearch: licensing.Check(licensing.FeatureCodeSearch) == nil,
+		// Cody:       licensing.Check(licensing.FeatureCody) == nil,
+		CodeSearch: false,
+		Cody:       true,
 	}
 
 	return info
