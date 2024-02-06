@@ -641,7 +641,7 @@ func TestAccessTokens_Limits(t *testing.T) {
 		SiteConfiguration: schema.SiteConfiguration{
 			AuthAccessTokens: &schema.AuthAccessTokens{
 				MaxTokensPerUser:  pointers.Ptr(2),
-				AllowNoExpiration: true,
+				AllowNoExpiration: pointers.Ptr(true),
 			},
 			Log: &schema.Log{
 				SecurityEventLog: &schema.SecurityEventLog{Location: "database"},
