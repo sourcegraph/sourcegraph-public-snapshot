@@ -1,8 +1,8 @@
 use crate::range::Range;
-use anyhow::Result;
 use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
+use std::str::Utf8Error;
 
 use crate::languages::TagConfiguration;
 
@@ -147,7 +147,7 @@ pub fn parse_tree<'a>(
     config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
-) -> Result<(Scope, usize)> {
+) -> Result<(Scope, usize), Utf8Error> {
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
@@ -318,20 +318,20 @@ pub mod test {
 
     use super::*;
 
-    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
+    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Document {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        let (mut scope, hint) = parse_tree(config, &tree, source_bytes)?;
-        Ok(scope.into_document(hint, vec![]))
+        let (mut scope, hint) = parse_tree(config, &tree, source_bytes).unwrap();
+        scope.into_document(hint, vec![])
     }
 
     #[test]
-    fn test_enclosing_range() -> Result<()> {
+    fn test_enclosing_range() {
         let config = crate::languages::get_tag_configuration(ParserId::Go).expect("to have parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
-        let doc = parse_file_for_lang(config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code).unwrap();
 
         // let dumped = dump_document(&doc, source_code)?;
         let dumped = dump_document_with_config(
@@ -345,7 +345,5 @@ pub mod test {
         )?;
 
         insta::assert_snapshot!(dumped);
-
-        Ok(())
     }
 }

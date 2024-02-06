@@ -12,19 +12,19 @@ pub mod snapshot;
 pub mod tree_sitter_ext;
 pub mod ts_scip;
 
-pub fn get_globals(
-    parser: ParserId,
-    source_bytes: &[u8],
-) -> Option<Result<(globals::Scope, usize)>> {
-    let config = languages::get_tag_configuration(parser)?;
+pub fn get_globals(parser: ParserId, source_bytes: &[u8]) -> Result<(globals::Scope, usize)> {
+    let config = languages::get_tag_configuration(parser)
+        .ok_or_else(|| anyhow!("No tag configuration for language: {parser:?}"))?;
     let mut parser = config.get_parser();
-    let tree = parser.parse(source_bytes, None).unwrap();
-    Some(globals::parse_tree(config, &tree, source_bytes))
+    let tree = parser
+        .parse(source_bytes, None)
+        .ok_or(anyhow!("Failed to parse when extracting globals"))?;
+    globals::parse_tree(config, &tree, source_bytes).context("when extracting globals")
 }
 
 pub fn get_locals(parser: ParserId, source_bytes: &[u8]) -> Result<Vec<Occurrence>> {
     let config = languages::get_local_configuration(parser)
-        .ok_or_else(|| anyhow!("No local configuration for language: {parser}"))?;
+        .ok_or_else(|| anyhow!("No local configuration for language: {parser:?}"))?;
     let mut parser = config.get_parser();
     let tree = parser
         .parse(source_bytes, None)
