@@ -23,7 +23,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	logger.Info("Syntactic code intel worker running",
-		log.String("path to scip-syntax CLI", config.IndexingWorker.CliPath),
+		log.String("path to scip-syntax CLI", config.IndexingWorkerConfig.CliPath),
 		log.String("API address", config.ListenAddress))
 
 	db := mustInitializeDB(observationCtx, "syntactic-code-intel-indexer")
@@ -33,7 +33,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "initializing worker store")
 	}
 
-	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorker)
+	indexingWorker := NewIndexingWorker(ctx, observationCtx, workerStore, *config.IndexingWorkerConfig)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(config.ListenAddress, &http.Server{

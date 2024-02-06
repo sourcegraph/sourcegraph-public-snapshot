@@ -25,9 +25,9 @@ type recordState string
 
 const (
 	Queued     recordState = "queued"
-	Errored                = "errored"
-	Processing             = "processing"
-	Completed              = "completed"
+	Errored    recordState = "errored"
+	Processing recordState = "processing"
+	Completed  recordState = "completed"
 )
 
 type SyntacticIndexRecord struct {
