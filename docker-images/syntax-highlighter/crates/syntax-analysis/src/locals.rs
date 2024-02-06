@@ -525,8 +525,11 @@ impl<'a> LocalResolver<'a> {
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
-                        // TODO(Christoph): This should not unwrap
-                        hoist = Some(prop.value.as_ref().unwrap().to_string());
+                        if let Some(hoist_target) = prop.value.as_ref() {
+                            hoist = Some(hoist_target.to_string());
+                        } else {
+                            debug_assert!(false, "hoist _must_ be targeting a scope level");
+                        }
                     }
                     definitions.push(DefCapture {
                         hoist,
