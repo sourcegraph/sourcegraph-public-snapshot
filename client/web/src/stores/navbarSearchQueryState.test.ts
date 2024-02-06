@@ -88,6 +88,13 @@ describe('navbar query state', () => {
 
             expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)
         })
+
+        it('should not default to "standard" if patterntype is missing', () => {
+            useNavbarQueryState.setState({ searchPatternType: SearchPatternType.keyword })
+            setQueryStateFromURL(parseSearchURL('q=hello'))
+
+            expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.keyword)
+        })
     })
 
     describe('state initialization precedence', () => {
