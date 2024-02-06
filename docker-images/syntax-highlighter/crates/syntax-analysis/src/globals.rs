@@ -2,7 +2,6 @@ use crate::range::Range;
 use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
-use std::str::Utf8Error;
 
 use crate::languages::TagConfiguration;
 
@@ -146,8 +145,9 @@ impl Scope {
 pub fn parse_tree<'a>(
     config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
-    source_bytes: &'a [u8],
-) -> Result<(Scope, usize), Utf8Error> {
+    source: &'a str,
+) -> (Scope, usize) {
+    let source_bytes = source.as_bytes();
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
@@ -177,7 +177,7 @@ pub fn parse_tree<'a>(
                 .expect("capture indexes should always work");
 
             if capture_name.starts_with("descriptor") {
-                descriptors.push((capture_name, capture.node.utf8_text(source_bytes)?));
+                descriptors.push((capture_name, capture.node.utf8_text(source_bytes).unwrap()));
                 node = Some(capture.node);
             }
 
@@ -307,7 +307,7 @@ pub fn parse_tree<'a>(
         root.insert_global(m);
     }
 
-    Ok((root, globals.len()))
+    (root, globals.len())
 }
 
 #[cfg(test)]
@@ -319,11 +319,10 @@ pub mod test {
     use super::*;
 
     pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Document {
-        let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
-        let tree = parser.parse(source_bytes, None).unwrap();
+        let tree = parser.parse(source_code.as_bytes(), None).unwrap();
 
-        let (mut scope, hint) = parse_tree(config, &tree, source_bytes).unwrap();
+        let (mut scope, hint) = parse_tree(config, &tree, source_code);
         scope.into_document(hint, vec![])
     }
 

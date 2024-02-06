@@ -187,7 +187,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
 pub fn generate_tags<W: std::io::Write>(
     buf_writer: &mut BufWriter<W>,
     filename: String,
-    file_data: &[u8],
+    file_data: &str,
 ) -> Option<()> {
     let path = path::Path::new(&filename);
     let extension = path.extension()?.to_str()?;
@@ -258,7 +258,8 @@ pub fn ctags_runner<R: Read, W: Write>(
                     .read_exact(&mut file_data)
                     .expect("Could not fill file data exactly");
 
-                generate_tags(output, filename, &file_data);
+                let code = String::from_utf8(file_data).context("when generating tags")?;
+                generate_tags(output, filename, &code);
             }
         }
 

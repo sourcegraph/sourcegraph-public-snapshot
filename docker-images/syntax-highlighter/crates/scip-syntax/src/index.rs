@@ -187,7 +187,7 @@ fn index_content(contents: &str, parser: ParserId, options: &IndexOptions) -> Re
     let mut document: Document;
 
     if options.analysis_mode.globals() {
-        let (mut scope, hint) = get_globals(parser, contents.as_bytes())?;
+        let (mut scope, hint) = get_globals(parser, contents)?;
         document = scope.into_document(hint, vec![]);
     } else {
         document = Document::new();

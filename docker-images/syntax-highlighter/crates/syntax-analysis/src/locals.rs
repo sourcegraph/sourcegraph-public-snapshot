@@ -768,11 +768,9 @@ mod test {
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        let resolver = LocalResolver::new(source_bytes);
+        let resolver = LocalResolver::new(source_code);
         let mut tree_output = String::new();
-        let occ = resolver
-            .process(config, &tree, Some(&mut tree_output))
-            .unwrap();
+        let occ = resolver.process(config, &tree, Some(&mut tree_output));
 
         let mut doc = Document::new();
         doc.occurrences = occ;

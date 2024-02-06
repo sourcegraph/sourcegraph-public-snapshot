@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use scip::types::Occurrence;
 use tree_sitter_all_languages::ParserId;
 
@@ -12,14 +12,14 @@ pub mod snapshot;
 pub mod tree_sitter_ext;
 pub mod ts_scip;
 
-pub fn get_globals(parser: ParserId, source_bytes: &[u8]) -> Result<(globals::Scope, usize)> {
+pub fn get_globals(parser: ParserId, source: &str) -> Result<(globals::Scope, usize)> {
     let config = languages::get_tag_configuration(parser)
         .ok_or_else(|| anyhow!("No tag configuration for language: {parser:?}"))?;
     let mut parser = config.get_parser();
     let tree = parser
-        .parse(source_bytes, None)
+        .parse(source.as_bytes(), None)
         .ok_or(anyhow!("Failed to parse when extracting globals"))?;
-    globals::parse_tree(config, &tree, source_bytes).context("when extracting globals")
+    Ok(globals::parse_tree(config, &tree, source))
 }
 
 pub fn get_locals(parser: ParserId, source: &str) -> Result<Vec<Occurrence>> {
@@ -74,7 +74,7 @@ mod test {
                 let ctags_name = format!("tags_snapshot_{filename}");
                 let contents = include_str!(concat!("../testdata/", $filename));
 
-                generate_tags(&mut buf_writer, filename.to_string(), contents.as_bytes());
+                generate_tags(&mut buf_writer, filename.to_string(), contents);
                 insta::assert_snapshot!(ctags_name, String::from_utf8_lossy(buf_writer.buffer()));
             }
         };
