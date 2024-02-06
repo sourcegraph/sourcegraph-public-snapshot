@@ -93,7 +93,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             />
             <div className={styles.filters}>
                 <SearchDynamicFilter
-                    title="By repositories"
+                    title="By repository"
                     filterKind={FilterKind.Repository}
                     filters={filters}
                     selectedFilters={selectedFilters}
