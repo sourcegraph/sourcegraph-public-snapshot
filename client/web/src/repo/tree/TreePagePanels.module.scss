@@ -75,6 +75,13 @@ table.files {
     .commit-date-column {
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         width: 120px;
+
+        // When showing absolute dates by default we have to give the column
+        // more space to show the full date + time.
+        &.absolute {
+            /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+            width: 160px;
+        }
     }
 
     th,

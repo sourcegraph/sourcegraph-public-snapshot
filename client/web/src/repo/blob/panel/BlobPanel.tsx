@@ -59,7 +59,6 @@ function useBlobPanelViews({
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
-    const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
     const defaultPageSize = defaultPageSizeFromSettings(settingsCascade)
 
     const location = useLocation()
@@ -119,7 +118,6 @@ function useBlobPanelViews({
                                       repoID={repoID}
                                       revision={revision}
                                       filePath={filePath}
-                                      preferAbsoluteTimestamps={preferAbsoluteTimestamps}
                                       defaultPageSize={defaultPageSize}
                                   />
                               </PanelContent>
@@ -158,7 +156,6 @@ function useBlobPanelViews({
             repoID,
             revision,
             filePath,
-            preferAbsoluteTimestamps,
             defaultPageSize,
             ownEnabled,
             enableOwnershipPanels,
@@ -166,13 +163,6 @@ function useBlobPanelViews({
     )
 
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
-}
-
-function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): boolean {
-    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-        return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
-    }
-    return false
 }
 
 function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
