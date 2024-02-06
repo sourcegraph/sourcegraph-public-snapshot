@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Code, H2, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Code, H2, Icon, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
@@ -30,7 +30,10 @@ export const KeywordSearchCtaSection: React.FC<KeywordSearchCtaSection> = ({ cla
             contentClassName={classNames('flex-grow-1 d-flex justify-content-between p-4', styles.card)}
         >
             <div>
-                <H2>New keyword search</H2>
+                <H2>
+                    New keyword search
+                    <ProductStatusBadge status="beta" className="ml-2" />
+                </H2>
                 <div className="d-flex d-flex-column">
                     <div>
                         <KeywordSearchStarsIcon aria-hidden={true} />
