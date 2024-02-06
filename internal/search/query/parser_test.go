@@ -657,7 +657,9 @@ func TestParseParensKeyword(t *testing.T) {
 		plan, err := Pipeline(
 			Init(input, SearchTypeKeyword),
 		)
-		require.NoError(t, err)
+		if err != nil {
+			return err.Error()
+		}
 
 		return plan.ToQ().String()
 	}
@@ -705,6 +707,22 @@ func TestParseParensKeyword(t *testing.T) {
 	autogold.Expect(`"()"`).Equal(t, test("()"))
 	autogold.Expect(`(and "()" "=>" "{}")`).Equal(t, test("() => {}"))
 	autogold.Expect(`(and "err" "error," "ok" "bool")`).Equal(t, test("(err error, ok bool)"))
+
+	// unbalanced parentheses
+	autogold.Expect(`"("`).Equal(t, test("("))
+	autogold.Expect(`"(()"`).Equal(t, test("(()"))
+	autogold.Expect("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("())"))
+	autogold.Expect(`"foo("`).Equal(t, test("foo("))
+
+	// unescaped quotes
+	autogold.Expect(`"\""`).Equal(t, test(`"`))
+	autogold.Expect(`""`).Equal(t, test(`""`))
+	autogold.Expect(`"\"\"\""`).Equal(t, test(`"""`))
+	autogold.Expect(`"\"\"\"\""`).Equal(t, test(`""""`))
+	autogold.Expect(`"\"\"\"\"\""`).Equal(t, test(`"""""`))
+	autogold.Expect(`"\"\"foo\""`).Equal(t, test(`""foo"`))
+	autogold.Expect(`"\"\"foo\"\""`).Equal(t, test(`""foo""`))
+	autogold.Expect(`"\"foo\"bar\"bas\""`).Equal(t, test(`"foo"bar"bas"`))
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
