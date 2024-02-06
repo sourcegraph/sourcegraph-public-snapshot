@@ -147,6 +147,39 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
+	t.Run("authenticated bypassing attribution while not enabled", func(t *testing.T) {
+		cache := NewMockCache()
+		cache.GetFunc.SetDefaultReturn(
+			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"endpointAccess":{"/v1/attribution":true},"rateLimit":null}`),
+			true,
+		)
+		client := dotcom.NewMockClient()
+
+		t.Run("bypass works for attribution", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, "/v1/attribution", strings.NewReader(`{}`))
+			r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+			(&Authenticator{
+				Logger:      logger,
+				EventLogger: events.NewStdoutLogger(logger),
+				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+			}).Middleware(next).ServeHTTP(w, r)
+			assert.Equal(t, http.StatusOK, w.Code)
+		})
+
+		t.Run("bypass does not work for other endpoints", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, "/v1/completions", strings.NewReader(`{}`))
+			r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+			(&Authenticator{
+				Logger:      logger,
+				EventLogger: events.NewStdoutLogger(logger),
+				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+			}).Middleware(next).ServeHTTP(w, r)
+			assert.Equal(t, http.StatusForbidden, w.Code)
+		})
+	})
+
 	t.Run("access token denied from sources", func(t *testing.T) {
 		cache := NewMockCache()
 		client := dotcom.NewMockClient()
