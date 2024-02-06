@@ -1,5 +1,5 @@
 
-CREATE TABLE syntactic_scip_indexes (
+CREATE TABLE IF NOT EXISTS syntactic_scip_indexes (
     id bigint NOT NULL,
     commit text NOT NULL,
     queued_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -41,10 +41,7 @@ COMMENT ON COLUMN syntactic_scip_indexes.execution_logs IS 'An array of [log ent
 
 COMMENT ON COLUMN syntactic_scip_indexes.enqueuer_user_id IS 'ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest';
 
-
-DROP VIEW IF EXISTS syntactic_scip_indexes_with_repository_name;
-
-CREATE VIEW syntactic_scip_indexes_with_repository_name AS
+CREATE OR REPLACE VIEW syntactic_scip_indexes_with_repository_name AS
     SELECT u.id,
         u.commit,
         u.queued_at,
