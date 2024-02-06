@@ -16,6 +16,14 @@ contents:
     - tzdata
     - busybox
     - glibc-locale-en
+    # Packages that were included in our original image
+    - apk-tools
+    - krb5
+    - libssl3
+    - libtirpc
+    - ncurses
+    - ncurses-terminfo
+    - openssl
 
     # Grafana packages
     - grafana-7=7.5.28-r2@chainguard
