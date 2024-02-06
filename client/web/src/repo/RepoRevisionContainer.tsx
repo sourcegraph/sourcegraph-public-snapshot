@@ -1,4 +1,4 @@
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useMemo, useState, useEffect } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
@@ -121,6 +121,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
     const { revision, resolvedRevision, repoName, repo } = props
 
     const [revisionLabelElement, setRevisionLabelElement] = useState<HTMLElement | null>(null)
+    const [showRevisionTooltip, setShowRevisionTooltip] = useState(false)
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
@@ -133,8 +134,11 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
 
     // The revision label has a max-width, an ellipsis is shown when the revision is too long.
     // In this case, we show the full revision in a tooltip.
-    const showRevisionTooltip =
-        revisionLabelElement && revisionLabelElement.scrollWidth > revisionLabelElement.offsetWidth
+    useEffect(() => {
+        if (revisionLabel && revisionLabelElement) {
+            setShowRevisionTooltip(revisionLabelElement.scrollWidth > revisionLabelElement.offsetWidth)
+        }
+    }, [revisionLabelElement, revisionLabel])
     const isPopoverContentReady = repo && resolvedRevision
 
     return (
@@ -150,7 +154,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                 size="sm"
                 disabled={!isPopoverContentReady}
             >
-                <Tooltip content={showRevisionTooltip ? revision : ''}>
+            <Tooltip content={showRevisionTooltip ? revision : ''}>
                     <span ref={setRevisionLabelElement} className={styles.revisionLabel}>
                         {revisionLabel}
                     </span>
