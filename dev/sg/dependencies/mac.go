@@ -167,8 +167,11 @@ var Mac = []category{
 If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
-				Check: checkAction(check.Combine(check.InPath("psql"))), //, checkPostgresVersion(">= 15.0"))),
-				Fix:   brewInstall("postgresql@15"),
+				Check: checkAction(check.Combine(
+					check.InPath("psql"),
+					check.CompareSemanticVersion("psql", "psql --version", ">= 15.0"),
+				)),
+				Fix: brewInstall("postgresql@15"),
 			},
 			{
 				Name: "Start Postgres",
@@ -184,7 +187,7 @@ If you used another method, make sure psql is available.`,
 					}
 					return check.PostgresConnection(ctx)
 				},
-				Description: `Sourcegraph requires the PostgreSQL database (v12+) to be running.
+				Description: `Sourcegraph requires the PostgreSQL database (v15+) to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
@@ -193,7 +196,7 @@ For example: you can use https://postgresapp.com/
 If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Fix: cmdFixes(
 					"brew services start postgresql@15",
-					"sleep 5",
+					"sleep 3",
 				),
 			},
 			{
@@ -325,3 +328,19 @@ WARNING: if you just fixed (automatically or manually) this step, you must resta
 		},
 	},
 }
+
+// var homebrewPsqlVersion = regexp.MustCompile(`^psql (PostgreSQL) 15\.(\d+) (Homebrew)$`)
+// var homebrewPostgresVersion = regexp.MustCompile(`^PostgreSQL (\d+)\.(\d+)$`)
+
+// // var psqlCheck = check.Combine(check.InPath("psql"), )
+
+// func checkPsqlVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+// 	version, err := usershell.Run(ctx, "psql --version").String()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if !homebrewPsqlVersion.MatchString(version) {
+// 		return errors.Newf("wanted psql is not installed with Homebrew")
+// 	}
+// }

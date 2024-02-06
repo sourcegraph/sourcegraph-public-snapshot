@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -243,26 +242,12 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 var PNPM = Combine(InPath("pnpm"), checkPnpmVersion)
 
 func checkPnpmVersion(ctx context.Context) error {
-	if err := InPath("pnpm")(ctx); err != nil {
-		return err
-	}
-
 	constraint, err := getPackageManagerConstraint("pnpm")
 	if err != nil {
 		return err
 	}
 
-	cmd := "pnpm --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	trimmed := strings.TrimSpace(data)
-	if len(trimmed) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return Version("pnpm", trimmed, constraint)
+	return CompareSemanticVersion("pnpm", "pnpm --version", constraint)(ctx)
 }
 
 func getPackageManagerConstraint(tool string) (string, error) {

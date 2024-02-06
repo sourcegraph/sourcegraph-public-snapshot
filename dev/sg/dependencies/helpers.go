@@ -91,47 +91,8 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	return check.SourcegraphDatabase(getConfig)(ctx)
 }
 
-// func checkPostgresVersion(dsn, versionConstraint string) func(context.Context) error {
-// 	return func(ctx context.Context) error {
-// 		out, err := usershell.Command(ctx, `psql -t -c "select version()"`).StdOut().Run().String()
-// 		if err != nil {
-// 			return errors.Wrapf(err, "failed to get postgres version")
-// 		}
-
-// 		version := majorMinorVersionRegex.FindString(out)
-// 		if version == "" {
-// 			return errors.Newf("unexpected output from postgres: %s", out)
-// 		}
-
-// 		return check.Version("postgres", version, versionConstraint)
-// 	}
-// }
-
-func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		lines, err := usershell.Command(ctx, "src version -client-only").StdOut().Run().Lines()
-		if err != nil {
-			return errors.Wrapf(err, "failed to run 'src version'")
-		}
-
-		if len(lines) < 1 {
-			return errors.Newf("unexpected output from src: %s", strings.Join(lines, "\n"))
-		}
-		out := lines[0]
-
-		elems := strings.Split(out, " ")
-		if len(elems) != 3 {
-			return errors.Newf("unexpected output from src: %s", out)
-		}
-
-		trimmed := strings.TrimSpace(elems[2])
-
-		// If the user is using a local dev build, let them get away.
-		if trimmed == "dev" {
-			return nil
-		}
-		return check.Version("src", trimmed, versionConstraint)
-	}
+func checkSrcCliVersion(versionConstraint string) check.CheckFunc {
+	return check.CompareSemanticVersion("src", "src version -client-only", versionConstraint)
 }
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
@@ -237,15 +198,6 @@ func guessPgUtilsPath(ctx context.Context) (error, string) {
 	return nil, filepath.Dir(str)
 }
 
-func caskInstall(formula string) check.FixAction[CheckArgs] {
-	return createBrewInstallFix(formula, true)
-
-}
-
-func brewInstall(formula string) check.FixAction[CheckArgs] {
-	return createBrewInstallFix(formula, false)
-}
-
 // brewInstall returns a FixAction that installs a brew formula.
 // If the brew output contains an autofix for adding the formula to the path
 // (in the case of keg-only formula), it will be automatically applied.
@@ -273,4 +225,13 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 			cio.Verbose(line)
 		})
 	}
+}
+
+func caskInstall(formula string) check.FixAction[CheckArgs] {
+	return createBrewInstallFix(formula, true)
+
+}
+
+func brewInstall(formula string) check.FixAction[CheckArgs] {
+	return createBrewInstallFix(formula, false)
 }
