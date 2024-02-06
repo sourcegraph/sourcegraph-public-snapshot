@@ -85,9 +85,6 @@ func fromChunkMatches(cms result.ChunkMatches, opts FromMatchOptions) []http.Chu
 
 func fromChunkMatch(cm result.ChunkMatch, opts FromMatchOptions) http.ChunkMatch {
 	content, truncated := truncateLines(cm.Content, opts.MaxContentLineLength)
-	if truncated {
-		fmt.Println("BEFORE\n", cm.Content, "\n\nAFTER", content, "\n")
-	}
 	return http.ChunkMatch{
 		Content:          content,
 		ContentStart:     fromLocation(cm.ContentStart),
