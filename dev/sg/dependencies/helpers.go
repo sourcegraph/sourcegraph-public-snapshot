@@ -216,7 +216,13 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 		pathAddCommandIsNext := false
 		return c.Run().StreamLines(func(line string) {
 			if pathAddCommandIsNext {
-				_ = usershell.Run(ctx, line).Wait()
+				cmd = line
+				// quick hack to ensure that if the usershell does not end with a line feed,
+				// we start our new command with a line feed.
+				if strings.HasPrefix(line, "echo '") {
+					cmd = strings.Replace(line, "echo ", "echo -e ", 1)
+				}
+				_ = usershell.Run(ctx, cmd).Wait()
 				pathAddCommandIsNext = false
 			}
 			if strings.Contains(line, "If you need to have "+formula+" first in your PATH, run:") {
