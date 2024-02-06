@@ -8,6 +8,7 @@ go_library(
         "env.go",
         "repo_revs.go",
         "repo_status.go",
+        "truncate.go",
         "type_converters.go",
         "types.go",
     ],
@@ -48,6 +49,7 @@ go_test(
     srcs = [
         "alert_test.go",
         "repo_status_test.go",
+        "truncate_test.go",
         "types_test.go",
     ],
     embed = [":search"],
