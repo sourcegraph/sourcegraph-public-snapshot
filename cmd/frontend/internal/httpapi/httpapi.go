@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	sglog "github.com/sourcegraph/log"
+	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
@@ -30,10 +32,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/sams"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -179,6 +183,32 @@ func NewHandler(
 			Methods(http.MethodGet, http.MethodPost).
 			Name("updatecheck").
 			Handler(updatecheckHandler)
+
+		dotcomConf := conf.Get().Dotcom
+
+		samsClient := sams.NewClient(
+			dotcomConf.SamsServer,
+			clientcredentials.Config{
+				ClientID:     dotcomConf.SamsClientID,
+				ClientSecret: dotcomConf.SamsClientSecret,
+				TokenURL:     fmt.Sprintf("%s/oauth/token", dotcomConf.SamsServer),
+				Scopes:       []string{"openid", "profile", "email"},
+			},
+		)
+
+		samsAuthenticator := sams.Authenticator{
+			Logger:     logger.Scoped("sams.Authenticator"),
+			SAMSClient: samsClient,
+		}
+
+		// API endpoint for ssc to trigger cody's rate limit refresh for a user
+		// TODO(sourcegraph#59625) remove this as part of adding SAMSActor source
+		m.Path("/ssc/users/{samsAccountID}/cody/limits/refresh").Methods("POST").Handler(
+			samsAuthenticator.RequireScopes(
+				[]sams.Scope{sams.ScopeDotcom},
+				newSSCRefreshCodyRateLimitHandler(logger, db),
+			),
+		)
 	}
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").

@@ -5,6 +5,7 @@ go_library(
     name = "cody",
     srcs = [
         "feature_flag.go",
+        "rate_limits.go",
         "subscription.go",
         "utils.go",
     ],
@@ -13,12 +14,15 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/auth",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/featureflag",
+        "//internal/hashutil",
+        "//internal/httpcli",
         "//internal/licensing",
         "//internal/rbac",
         "//internal/ssc",
