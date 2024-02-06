@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use scip::types::Occurrence;
 use tree_sitter_all_languages::ParserId;
 
@@ -22,11 +22,14 @@ pub fn get_globals(
     Some(globals::parse_tree(config, &tree, source_bytes))
 }
 
-pub fn get_locals(parser: ParserId, source_bytes: &[u8]) -> Option<Vec<Occurrence>> {
-    let config = languages::get_local_configuration(parser)?;
+pub fn get_locals(parser: ParserId, source_bytes: &[u8]) -> Result<Vec<Occurrence>> {
+    let config = languages::get_local_configuration(parser)
+        .ok_or_else(|| anyhow!("No local configuration for language: {parser}"))?;
     let mut parser = config.get_parser();
-    let tree = parser.parse(source_bytes, None)?;
-    Some(locals::find_locals(config, &tree, source_bytes))
+    let tree = parser
+        .parse(source_bytes, None)
+        .ok_or(anyhow!("Failed to parse when extracting globals"))?;
+    locals::find_locals(config, &tree, source_bytes).context("when extracting locals")
 }
 
 #[cfg(test)]

@@ -25,6 +25,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::ops::{Index, IndexMut};
 use std::slice::Iter;
+use std::str::Utf8Error;
 use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
 
@@ -46,7 +47,7 @@ pub fn find_locals(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
     source_bytes: &[u8],
-) -> Vec<Occurrence> {
+) -> Result<Vec<Occurrence>, Utf8Error> {
     let resolver = LocalResolver::new(source_bytes);
     resolver.process(config, tree, None)
 }
@@ -451,17 +452,13 @@ impl<'a> LocalResolver<'a> {
         scope: ScopeId<'a>,
         references_iter: &mut Iter<'b, RefCapture<'a>>,
         f: F,
-    ) where
+    ) -> Result<(), Utf8Error>
+    where
         F: Fn(&RefCapture<'a>) -> bool,
         'a: 'b,
     {
         for ref_capture in references_iter.take_while_ref(|ref_capture| f(ref_capture)) {
-            let name = self.make_name(
-                ref_capture
-                    .node
-                    .utf8_text(self.source_bytes)
-                    .expect("non utf-8 variable name"),
-            );
+            let name = self.make_name(ref_capture.node.utf8_text(self.source_bytes)?);
             let reference = Reference {
                 node: ref_capture.node,
                 name,
@@ -469,6 +466,7 @@ impl<'a> LocalResolver<'a> {
             };
             self.add_reference(scope, reference)
         }
+        Ok(())
     }
 
     fn add_defs_while<'b, F>(
@@ -476,17 +474,13 @@ impl<'a> LocalResolver<'a> {
         scope: ScopeId<'a>,
         definitions_iter: &mut Iter<'b, DefCapture<'a>>,
         f: F,
-    ) where
+    ) -> Result<(), Utf8Error>
+    where
         F: Fn(&DefCapture<'a>) -> bool,
         'a: 'b,
     {
         for def_capture in definitions_iter.take_while_ref(|def_capture| f(def_capture)) {
-            let name = self.make_name(
-                def_capture
-                    .node
-                    .utf8_text(self.source_bytes)
-                    .expect("non utf-8 variable name"),
-            );
+            let name = self.make_name(def_capture.node.utf8_text(self.source_bytes)?);
             self.add_definition(
                 scope,
                 name,
@@ -495,6 +489,7 @@ impl<'a> LocalResolver<'a> {
                 def_capture.is_def_ref,
             )
         }
+        Ok(())
     }
 
     fn collect_captures(
@@ -530,6 +525,7 @@ impl<'a> LocalResolver<'a> {
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
+                        // TODO(Christoph): This should not unwrap
                         hoist = Some(prop.value.as_ref().unwrap().to_string());
                     }
                     definitions.push(DefCapture {
@@ -562,7 +558,11 @@ impl<'a> LocalResolver<'a> {
     /// Build a tree of scopes for pre-order traversal by sorting scopes, definitions
     /// and references. Definitions and references are added or hoisted to the
     /// closest enclosing scope as appropriate.
-    fn build_tree(&mut self, top_scope: ScopeId<'a>, captures: Captures<'a>) {
+    fn build_tree(
+        &mut self,
+        top_scope: ScopeId<'a>,
+        captures: Captures<'a>,
+    ) -> Result<(), Utf8Error> {
         let Captures {
             mut scopes,
             mut definitions,
@@ -588,10 +588,10 @@ impl<'a> LocalResolver<'a> {
                 let scope_end_byte = self.end_byte(current_scope);
                 self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                     def_capture.node.start_byte() < scope_end_byte
-                });
+                })?;
                 self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
                     ref_capture.node.start_byte() < scope_end_byte
-                });
+                })?;
 
                 if let Some(parent_scope) = self[current_scope].parent {
                     current_scope = parent_scope
@@ -605,10 +605,10 @@ impl<'a> LocalResolver<'a> {
             let new_scope_start = scope_node.start_byte();
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < new_scope_start
-            });
+            })?;
             self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
                 ref_capture.node.start_byte() < new_scope_start
-            });
+            })?;
 
             let new_scope = self.arena.alloc(Scope::new(
                 scope_kind.to_string(),
@@ -631,10 +631,10 @@ impl<'a> LocalResolver<'a> {
             let scope_end_byte = self.end_byte(current_scope);
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < scope_end_byte
-            });
+            })?;
             self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
                 ref_capture.node.start_byte() < scope_end_byte
-            });
+            })?;
 
             if let Some(parent) = self[current_scope].parent {
                 current_scope = parent
@@ -652,6 +652,7 @@ impl<'a> LocalResolver<'a> {
             references_iter.next().is_none(),
             "Should've entered all references into the tree"
         );
+        Ok(())
     }
 
     /// Walks up the scope tree and tries to find the definition for a given name
@@ -718,7 +719,7 @@ impl<'a> LocalResolver<'a> {
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
         test_writer: Option<&mut dyn Write>,
-    ) -> Vec<Occurrence> {
+    ) -> Result<Vec<Occurrence>, Utf8Error> {
         // First we collect all captures from the tree-sitter locals query
         let captures = self.collect_captures(config, tree, self.source_bytes);
 
@@ -726,7 +727,7 @@ impl<'a> LocalResolver<'a> {
         let top_scope = self
             .arena
             .alloc(Scope::new("global".to_string(), tree.root_node(), None));
-        self.build_tree(top_scope, captures);
+        self.build_tree(top_scope, captures)?;
         match test_writer {
             None => {}
             Some(w) => self.print_scope(w, top_scope, 0),
@@ -734,7 +735,7 @@ impl<'a> LocalResolver<'a> {
         // Finally we resolve all references against that tree structure
         self.resolve_references();
 
-        self.occurrences
+        Ok(self.occurrences)
     }
 }
 
@@ -766,7 +767,9 @@ mod test {
 
         let resolver = LocalResolver::new(source_bytes);
         let mut tree_output = String::new();
-        let occ = resolver.process(config, &tree, Some(&mut tree_output));
+        let occ = resolver
+            .process(config, &tree, Some(&mut tree_output))
+            .unwrap();
 
         let mut doc = Document::new();
         doc.occurrences = occ;
