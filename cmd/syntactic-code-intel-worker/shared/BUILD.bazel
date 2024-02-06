@@ -44,6 +44,7 @@ go_test(
         "store_test.go",
     ],
     embed = [":shared"],
+    tags = ["requires-network"],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
