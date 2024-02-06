@@ -26425,7 +26425,7 @@
       "Columns": [
         {
           "Name": "cancel",
-          "Index": 17,
+          "Index": 16,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -26451,7 +26451,7 @@
         },
         {
           "Name": "commit_last_checked_at",
-          "Index": 14,
+          "Index": 13,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -26464,7 +26464,7 @@
         },
         {
           "Name": "enqueuer_user_id",
-          "Index": 19,
+          "Index": 18,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -26477,7 +26477,7 @@
         },
         {
           "Name": "execution_logs",
-          "Index": 13,
+          "Index": 12,
           "TypeName": "json[]",
           "IsNullable": true,
           "Default": "",
@@ -26529,7 +26529,7 @@
         },
         {
           "Name": "last_heartbeat_at",
-          "Index": 16,
+          "Index": 15,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -26565,19 +26565,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "outfile",
-          "Index": 12,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "The path to the index file produced by the index command relative to the working directory."
         },
         {
           "Name": "process_after",
@@ -26620,7 +26607,7 @@
         },
         {
           "Name": "should_reindex",
-          "Index": 18,
+          "Index": 17,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -26659,7 +26646,7 @@
         },
         {
           "Name": "worker_hostname",
-          "Index": 15,
+          "Index": 14,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "''::text",
@@ -29885,7 +29872,7 @@
     },
     {
       "Name": "syntactic_scip_indexes_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.outfile,\n    u.execution_logs,\n    u.should_reindex,\n    u.enqueuer_user_id,\n    r.name AS repository_name\n   FROM (syntactic_scip_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.execution_logs,\n    u.should_reindex,\n    u.enqueuer_user_id,\n    r.name AS repository_name\n   FROM (syntactic_scip_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "tracking_changeset_specs_and_changesets",

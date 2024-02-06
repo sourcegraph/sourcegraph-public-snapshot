@@ -4042,7 +4042,6 @@ Foreign-key constraints:
  process_after          | timestamp with time zone |           |          | 
  num_resets             | integer                  |           | not null | 0
  num_failures           | integer                  |           | not null | 0
- outfile                | text                     |           | not null | 
  execution_logs         | json[]                   |           |          | 
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
@@ -4062,8 +4061,6 @@ Stores metadata about a code intel syntactic index job.
 **enqueuer_user_id**: ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest
 
 **execution_logs**: An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.
-
-**outfile**: The path to the index file produced by the index command relative to the working directory.
 
 # Table "public.team_members"
 ```
@@ -5039,7 +5036,6 @@ Foreign-key constraints:
     u.process_after,
     u.num_resets,
     u.num_failures,
-    u.outfile,
     u.execution_logs,
     u.should_reindex,
     u.enqueuer_user_id,
