@@ -413,12 +413,6 @@ commands:
     env:
       ENABLE_OPEN_TELEMETRY: true
 
-  slow:
-    description: Nothing
-    cmd: echo hi
-    install: |
-      sleep 25
-
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: pnpm --filter @sourcegraph/web serve:dev --color
