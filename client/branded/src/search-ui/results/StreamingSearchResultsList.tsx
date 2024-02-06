@@ -14,7 +14,6 @@ import type { BuildSearchQueryURLParameters, QueryState, SearchContextProps } fr
 import {
     type AggregateStreamingSearchResults,
     getMatchUrl,
-    getRevision,
     type SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -130,7 +129,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 isPrefetchEnabled={prefetchFileEnabled}
                                 prefetch={prefetchFile}
                                 filePath={result.path}
-                                revision={getRevision(result.branches, result.commit)}
+                                revision={result.commit}
                                 repoName={result.repository}
                                 as="li"
                             >

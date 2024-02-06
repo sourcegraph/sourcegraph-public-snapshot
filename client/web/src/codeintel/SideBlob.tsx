@@ -1,25 +1,19 @@
 import { FC } from 'react'
 
 import classNames from 'classnames'
+import { fetchBlob } from 'src/repo/blob/backend'
 
 import { Position } from '@sourcegraph/extension-api-classes'
-import { useQuery } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { Code, LoadingSpinner, Text, useObservableWithStatus } from '@sourcegraph/wildcard'
 
-import {
-    HighlightResponseFormat,
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
-} from '../graphql-operations'
+import { HighlightResponseFormat } from '../graphql-operations'
 import { SearchPanelConfig } from '../repo/blob/codemirror/search'
 import { Range } from '../repo/blob/codemirror/static-highlights'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
-
-import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 
 import styles from './ReferencesPanel.module.scss'
 
@@ -59,24 +53,17 @@ export const SideBlob: FC<SideBlobProps> = props => {
         staticHighlightRanges,
     } = props
 
-    const { data, error, loading } = useQuery<
-        ReferencesPanelHighlightedBlobResult,
-        ReferencesPanelHighlightedBlobVariables
-    >(FETCH_HIGHLIGHTED_BLOB, {
-        variables: {
-            repository: props.repository,
-            commit: props.commitID,
-            path: props.file,
+    const [blob, loading, error] = useObservableWithStatus(
+        fetchBlob({
+            repoName: props.repository,
+            revision: props.commitID,
+            filePath: props.file,
             format: HighlightResponseFormat.JSON_SCIP,
-        },
-        // Cache this data but always re-request it in the background when we revisit
-        // this page to pick up newer changes.
-        fetchPolicy: 'cache-and-network',
-        nextFetchPolicy: 'network-only',
-    })
+        })
+    )
 
     // If we're loading and haven't received any data yet
-    if (loading && !data) {
+    if (loading && !blob) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
@@ -90,7 +77,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
     }
 
     // If we received an error before we had received any data
-    if (error && !data) {
+    if (error && !blob) {
         return (
             <div>
                 <Text className="text-danger">
@@ -101,7 +88,6 @@ export const SideBlob: FC<SideBlobProps> = props => {
         )
     }
 
-    const blob = data?.repository?.commit?.blob
     // If there weren't any errors and we just didn't receive any data
     if (!blob || !blob.highlight) {
         return <>Nothing found</>

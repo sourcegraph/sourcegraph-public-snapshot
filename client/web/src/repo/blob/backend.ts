@@ -72,88 +72,17 @@ export const fetchBlob = memoizeObservable(
             visibleIndexID,
         } = applyDefaultValuesToFetchBlobOptions(options)
 
-        return requestGraphQL<BlobResult, BlobVariables>(
-            gql`
-                query Blob(
-                    $repoName: String!
-                    $revision: String!
-                    $filePath: String!
-                    $disableTimeout: Boolean!
-                    $format: HighlightResponseFormat!
-                    $startLine: Int
-                    $endLine: Int
-                    $snapshot: Boolean!
-                    $visibleIndexID: ID!
-                ) {
-                    repository(name: $repoName) {
-                        commit(rev: $revision) {
-                            __typename
-                            ...GitCommitFieldsWithFileAndBlob
-                        }
-                        changelist(cid: $revision) {
-                            __typename
-                            cid
-                            commit {
-                                ...GitCommitFieldsWithFileAndBlob
-                            }
-                        }
-                    }
-                }
-
-                fragment GitCommitFieldsWithFileAndBlob on GitCommit {
-                    oid
-                    file(path: $filePath) {
-                        ...BlobFileFields
-                    }
-                    blob(path: $filePath) @include(if: $snapshot) {
-                        lsif {
-                            snapshot(indexID: $visibleIndexID) {
-                                offset
-                                data
-                                additional
-                            }
-                        }
-                    }
-                }
-
-                fragment BlobFileFields on File2 {
-                    __typename
-                    content(startLine: $startLine, endLine: $endLine)
-                    richHTML(startLine: $startLine, endLine: $endLine)
-                    highlight(
-                        disableTimeout: $disableTimeout
-                        format: $format
-                        startLine: $startLine
-                        endLine: $endLine
-                    ) {
-                        aborted
-                        lsif
-                    }
-                    totalLines
-                    ... on GitBlob {
-                        lfs {
-                            byteSize
-                        }
-                        externalURLs {
-                            url
-                            serviceKind
-                        }
-                    }
-                    languages
-                }
-            `,
-            {
-                repoName,
-                revision,
-                filePath,
-                disableTimeout,
-                format,
-                startLine,
-                endLine,
-                snapshot: scipSnapshot,
-                visibleIndexID: visibleIndexID ?? '',
-            }
-        ).pipe(
+        return requestGraphQL<BlobResult, BlobVariables>(BLOB_QUERY, {
+            repoName,
+            revision,
+            filePath,
+            disableTimeout,
+            format,
+            startLine,
+            endLine,
+            snapshot: scipSnapshot,
+            visibleIndexID: visibleIndexID ?? '',
+        }).pipe(
             map(dataOrThrowErrors),
             map(data => {
                 const commit = data.repository?.commit || data.repository?.changelist?.commit
@@ -175,3 +104,69 @@ export const fetchBlob = memoizeObservable(
     },
     fetchBlobCacheKey
 )
+
+const BLOB_QUERY = gql`
+    query Blob(
+        $repoName: String!
+        $revision: String!
+        $filePath: String!
+        $disableTimeout: Boolean!
+        $format: HighlightResponseFormat!
+        $startLine: Int
+        $endLine: Int
+        $snapshot: Boolean!
+        $visibleIndexID: ID!
+    ) {
+        repository(name: $repoName) {
+            id
+            commit(rev: $revision) {
+                __typename
+                ...GitCommitFieldsWithFileAndBlob
+            }
+            changelist(cid: $revision) {
+                __typename
+                cid
+                commit {
+                    ...GitCommitFieldsWithFileAndBlob
+                }
+            }
+        }
+    }
+
+    fragment GitCommitFieldsWithFileAndBlob on GitCommit {
+        oid
+        file(path: $filePath) {
+            ...BlobFileFields
+        }
+        blob(path: $filePath) @include(if: $snapshot) {
+            lsif {
+                snapshot(indexID: $visibleIndexID) {
+                    offset
+                    data
+                    additional
+                }
+            }
+        }
+    }
+
+    fragment BlobFileFields on File2 {
+        __typename
+        content(startLine: $startLine, endLine: $endLine)
+        richHTML(startLine: $startLine, endLine: $endLine)
+        highlight(disableTimeout: $disableTimeout, format: $format, startLine: $startLine, endLine: $endLine) {
+            aborted
+            lsif
+        }
+        totalLines
+        ... on GitBlob {
+            lfs {
+                byteSize
+            }
+            externalURLs {
+                url
+                serviceKind
+            }
+        }
+        languages
+    }
+`
