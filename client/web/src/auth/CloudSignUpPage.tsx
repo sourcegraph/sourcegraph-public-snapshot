@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
@@ -13,7 +14,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import type { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
-import { EventName } from '../util/constants'
+import { EventName, V2AuthProviderTypes } from '../util/constants'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { FeatureList } from './components/FeatureList'
@@ -21,7 +22,7 @@ import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -56,6 +57,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
+    telemetryRecorder,
     isSourcegraphDotCom,
 }) => {
     const location = useLocation()
@@ -82,6 +84,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log(EventName.AUTH_INITIATED, { type: eventType }, { type: eventType })
+        telemetryRecorder.recordEvent('auth', 'initiate', { type: V2AuthProviderTypes[type] })
     }
 
     const signUpForm = (
@@ -98,6 +101,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
             buttonLabel="Sign up"
             experimental={true}
             className="my-3"
+            telemetryRecorder={telemetryRecorder}
         />
     )
 

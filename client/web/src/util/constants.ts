@@ -1,3 +1,5 @@
+import type { AuthProvider } from '../jscontext'
+
 // NOTE(naman): Remember to add events to allow list: https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
 export const enum EventName {
     CODY_CHAT_PAGE_VIEWED = 'web:codyChat:pageViewed',
@@ -56,4 +58,17 @@ export const enum EventName {
 export const enum EventLocation {
     NAV_BAR = 'NavBar',
     CHAT_RESPONSE = 'ChatResponse',
+}
+
+export const V2AuthProviderTypes: { [k in AuthProvider['serviceType']]: number } = {
+    github: 0,
+    gitlab: 1,
+    bitbucketCloud: 2,
+    'http-header': 3,
+    openidconnect: 4,
+    'sourcegraph-operator': 5,
+    saml: 6,
+    builtin: 7,
+    gerrit: 8,
+    azuredevops: 9,
 }

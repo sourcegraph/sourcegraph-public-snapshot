@@ -3,6 +3,7 @@ import * as React from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -125,7 +126,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
     }
 }
 
-interface ResetPasswordCodeFormProps {
+interface ResetPasswordCodeFormProps extends TelemetryV2Props {
     userID: number
     code: string
     email: string | null
@@ -194,6 +195,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 
     private handleSubmitResetPassword = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
+        this.props.telemetryRecorder.recordEvent('auth.reset-password', 'submitted')
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-code', {
             credentials: 'same-origin',
@@ -223,7 +225,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
     }
 }
 
-interface ResetPasswordPageProps {
+interface ResetPasswordPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'xhrHeaders' | 'sourcegraphDotComMode' | 'resetPasswordEnabled'>
 }
@@ -237,7 +239,8 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
 
     React.useEffect(() => {
         eventLogger.logViewEvent('ResetPassword', false)
-    }, [])
+        props.telemetryRecorder.recordEvent('auth.reset-password', 'view')
+    }, [props.telemetryRecorder])
 
     let body: JSX.Element
     if (props.authenticatedUser) {
