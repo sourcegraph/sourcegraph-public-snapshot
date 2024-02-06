@@ -77,6 +77,7 @@ func newCompletionsHandler(
 		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+			return
 		}
 
 		var requestParams types.CodyCompletionRequestParameters
