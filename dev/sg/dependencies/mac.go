@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -40,7 +39,7 @@ var Mac = []category{
 		Checks: []*dependency{
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.42.0"))),
+				Check: checkAction(check.Git),
 				Fix:   brewInstall("git"),
 			},
 			{
@@ -99,7 +98,7 @@ var Mac = []category{
 				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
 				// Bazelisk replaces the bazel binary in your path
 				Name:  "bazelisk (bazel)",
-				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
+				Check: checkAction(check.Bazelisk),
 				Fix:   brewInstall("bazelisk"),
 			},
 			{
@@ -109,9 +108,9 @@ var Mac = []category{
 			},
 			{
 				Name:  "asdf",
-				Check: checkAction(check.CommandOutputContains("asdf", "version")),
+				Check: checkAction(check.ASDF),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "brew install asdf").StreamLines(cio.Verbose); err != nil {
+					if err := brewInstall("asdf")(ctx, cio, args); err != nil {
 						return err
 					}
 					return usershell.Run(ctx,
@@ -133,11 +132,8 @@ var Mac = []category{
 		DependsOn: []string{depsHomebrew},
 		Checks: []*dependency{
 			{
-				Name: "docker",
-				Check: checkAction(check.Combine(
-					check.WrapErrMessage(check.InPath("docker"),
-						"if Docker is installed and the check fails, you might need to restart terminal and 'sg setup'"),
-				)),
+				Name:  "docker",
+				Check: checkAction(check.Docker),
 				Fix: check.CombineFix(
 					caskInstall("docker"),
 					cmdFix("open --hide --background /Applications/Docker.app"),
@@ -284,7 +280,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Name: "Start Redis",
 				Description: `Sourcegraph requires the Redis database to be running.
 We recommend installing it with Homebrew and starting it as a system service.`,
-				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
+				Check: checkAction(check.Redis),
 				Fix: cmdFixes(
 					"brew reinstall redis",
 					"brew services start redis",
@@ -312,7 +308,7 @@ trust the certificate created by Caddy, the proxy we use locally.
 
 WARNING: if you just fixed (automatically or manually) this step, you must restart sg setup for the check to pass.`,
 				Enabled: disableInCI(), // Can't seem to get this working
-				Check:   checkAction(checkCaddyTrusted),
+				Check:   checkAction(check.Caddy),
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
 				},

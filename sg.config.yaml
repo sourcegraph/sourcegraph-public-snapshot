@@ -602,8 +602,6 @@ commands:
     env:
       SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6076
 
-
-
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
@@ -1250,7 +1248,6 @@ commandsets:
       - blobstore
       - syntactic-code-intel-worker-0
       - syntactic-code-intel-worker-1
-
 
   codeintel:
     requiresDevPrivate: true

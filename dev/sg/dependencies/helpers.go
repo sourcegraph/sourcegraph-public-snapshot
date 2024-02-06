@@ -3,7 +3,6 @@ package dependencies
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -17,8 +16,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/grafana/regexp"
 	"github.com/jackc/pgx/v4"
-
-	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
@@ -285,8 +282,6 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 	}
 }
 
-var majorMinorVersionRegex = regexp.MustCompile(`\d+\.\d+`)
-
 // func checkPostgresVersion(dsn, versionConstraint string) func(context.Context) error {
 // 	return func(ctx context.Context) error {
 // 		out, err := usershell.Command(ctx, `psql -t -c "select version()"`).StdOut().Run().String()
@@ -330,182 +325,12 @@ func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 	}
 }
 
-func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
-	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
-	if err != nil {
-		return "", errors.Wrap(err, "Read .tool-versions")
-	}
-	var version string
-	for _, t := range tools {
-		parts := strings.Split(t, " ")
-		if parts[0] == tool {
-			version = parts[1]
-			break
-		}
-	}
-	if version == "" {
-		return "", errors.Newf("tool %q not found in .tool-versions", tool)
-	}
-	return fmt.Sprintf("~> %s", version), nil
-}
-
-func getPackageManagerConstraint(tool string) (string, error) {
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to determine repository root location")
-	}
-
-	jsonFile, err := os.Open(filepath.Join(repoRoot, "package.json"))
-	if err != nil {
-		return "", errors.Wrap(err, "Open package.json")
-	}
-	defer jsonFile.Close()
-
-	jsonData, err := io.ReadAll(jsonFile)
-	if err != nil {
-		return "", errors.Wrap(err, "Read package.json")
-	}
-
-	data := struct {
-		PackageManager string `json:"packageManager"`
-	}{}
-
-	if err := json.Unmarshal(jsonData, &data); err != nil {
-		return "", errors.Wrap(err, "Unmarshal package.json")
-	}
-
-	var version string
-	parts := strings.Split(data.PackageManager, "@")
-	if parts[0] == tool {
-		version = parts[1]
-	}
-
-	if version == "" {
-		return "", errors.Newf("pnpm version is not found in package.json")
-	}
-
-	return fmt.Sprintf("~> %s", version), nil
-}
-
-func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("go")(ctx); err != nil {
-		return err
-	}
-
-	constraint, err := getToolVersionConstraint(ctx, "golang")
-	if err != nil {
-		return err
-	}
-
-	cmd := "go version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return check.Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
-}
-
-func checkPnpmVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("pnpm")(ctx); err != nil {
-		return err
-	}
-
-	constraint, err := getPackageManagerConstraint("pnpm")
-	if err != nil {
-		return err
-	}
-
-	cmd := "pnpm --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	trimmed := strings.TrimSpace(data)
-	if len(trimmed) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return check.Version("pnpm", trimmed, constraint)
-}
-
-func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("node")(ctx); err != nil {
-		return err
-	}
-
-	constraint, err := getToolVersionConstraint(ctx, "nodejs")
-	if err != nil {
-		return err
-	}
-
-	cmd := "node --version"
-	data, err := usershell.Run(ctx, cmd).Lines()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	trimmed := strings.TrimSpace(data[len(data)-1])
-	if len(trimmed) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return check.Version("nodejs", trimmed, constraint)
-}
-
-func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("cargo")(ctx); err != nil {
-		return err
-	}
-
-	constraint, err := getToolVersionConstraint(ctx, "rust")
-	if err != nil {
-		return err
-	}
-
-	cmd := "cargo --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-
-	return check.Version("cargo", parts[1], constraint)
-}
-
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
 	err := usershell.Run(ctx, "asdf plugin-add", plugin, source).Wait()
 	if err != nil && strings.Contains(err.Error(), "already added") {
 		return nil
 	}
 	return errors.Wrap(err, "asdf plugin-add")
-}
-
-func checkPythonVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("python")(ctx); err != nil {
-		return err
-	}
-
-	cmd := "python -V"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
-	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
-	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
-		return errors.Newf("no output from %q", cmd)
-	}
-	if len(parts) < 2 {
-		return errors.Newf("unexpected output from %q: %q", cmd, data)
-	}
-
-	return check.Version("python", parts[1], "~3")
 }
 
 // pgUtilsPathRe is the regexp used to check what value user.bazelrc defines for
