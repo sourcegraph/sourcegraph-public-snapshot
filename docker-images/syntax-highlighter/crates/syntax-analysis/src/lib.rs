@@ -22,14 +22,14 @@ pub fn get_globals(parser: ParserId, source_bytes: &[u8]) -> Result<(globals::Sc
     globals::parse_tree(config, &tree, source_bytes).context("when extracting globals")
 }
 
-pub fn get_locals(parser: ParserId, source_bytes: &[u8]) -> Result<Vec<Occurrence>> {
+pub fn get_locals(parser: ParserId, source: &str) -> Result<Vec<Occurrence>> {
     let config = languages::get_local_configuration(parser)
         .ok_or_else(|| anyhow!("No local configuration for language: {parser:?}"))?;
     let mut parser = config.get_parser();
     let tree = parser
-        .parse(source_bytes, None)
+        .parse(source.as_bytes(), None)
         .ok_or(anyhow!("Failed to parse when extracting globals"))?;
-    locals::find_locals(config, &tree, source_bytes).context("when extracting locals")
+    Ok(locals::find_locals(config, &tree, source))
 }
 
 #[cfg(test)]
