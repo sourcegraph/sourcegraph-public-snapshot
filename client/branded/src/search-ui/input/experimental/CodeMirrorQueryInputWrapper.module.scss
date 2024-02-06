@@ -3,6 +3,7 @@
 :root {
     --search-box-color: var(--input-bg);
     --search-box-border: 1px solid var(--border-color-2);
+    --search-box-shadow: none;
 }
 
 .container {
@@ -36,6 +37,7 @@
     border-radius: 4px;
     border: var(--search-box-border);
     background-color: var(--search-box-color);
+    box-shadow: var(--search-box-shadow);
     position: relative;
 
     &:focus-within {

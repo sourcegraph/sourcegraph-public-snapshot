@@ -15,12 +15,7 @@ import { routes } from '../routes'
 import { siteAdminAreaRoutes } from '../site-admin/routes'
 import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
-import {
-    type StaticAppConfig,
-    type StaticHardcodedAppConfig,
-    type StaticInjectedAppConfig,
-    windowContextConfig,
-} from '../staticAppConfig'
+import { type StaticAppConfig, type StaticInjectedAppConfig, windowContextConfig } from '../staticAppConfig'
 import type { AppShellInit } from '../storm/app-shell-init'
 import { routes as stormRoutes } from '../storm/routes'
 import { userAreaHeaderNavItems } from '../user/area/navitems'
@@ -60,20 +55,9 @@ const injectedValuesConfig = {
     brainDot: BrainDot,
 } satisfies StaticInjectedAppConfig
 
-const hardcodedConfig = {
-    codeIntelligenceEnabled: true,
-    codeInsightsEnabled: true,
-    searchContextsEnabled: true,
-    notebooksEnabled: true,
-    codeMonitoringEnabled: true,
-    searchAggregationEnabled: true,
-    ownEnabled: true,
-} satisfies StaticHardcodedAppConfig
-
 const staticAppConfig = {
     ...injectedValuesConfig,
     ...windowContextConfig,
-    ...hardcodedConfig,
 } satisfies StaticAppConfig
 
 export const EnterpriseWebApp: FC<AppShellInit> = props => {

@@ -17,10 +17,10 @@
     $: repoName = displayRepoName(result.repository)
     $: [fileBase, fileName] = splitPath(result.path)
 
-    let matches: [number, number][] = []
-    $: if (result.type !== 'symbol' && result.pathMatches) {
-        matches = result.pathMatches.map((match): [number, number] => [match.start.column, match.end.column])
-    }
+    $: matches =
+        result.type !== 'symbol' && result.pathMatches
+            ? result.pathMatches.map((match): [number, number] => [match.start.column, match.end.column])
+            : []
 </script>
 
 <a href={repoAtRevisionURL}>{repoName}</a>

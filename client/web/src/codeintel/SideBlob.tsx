@@ -16,6 +16,7 @@ import {
     ReferencesPanelHighlightedBlobVariables,
 } from '../graphql-operations'
 import { SearchPanelConfig } from '../repo/blob/codemirror/search'
+import { Range } from '../repo/blob/codemirror/static-highlights'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
@@ -37,6 +38,7 @@ export interface SideBlobProps
     navigateToLineOnAnyClick?: boolean
     searchPanelConfig?: SearchPanelConfig
     className?: string
+    staticHighlightRanges?: Range[]
 }
 
 export const SideBlob: FC<SideBlobProps> = props => {
@@ -54,6 +56,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
         telemetryService,
         platformContext,
         className,
+        staticHighlightRanges,
     } = props
 
     const { data, error, loading } = useQuery<
@@ -128,6 +131,7 @@ export const SideBlob: FC<SideBlobProps> = props => {
             extensionsController={extensionsController}
             settingsCascade={settingsCascade}
             telemetryService={telemetryService}
+            staticHighlightRanges={staticHighlightRanges}
         />
     )
 }

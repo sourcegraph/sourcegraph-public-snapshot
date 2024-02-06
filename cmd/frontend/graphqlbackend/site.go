@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -315,6 +316,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)
+	}
+
+	cloudSiteConfig := cloud.SiteConfig()
+	if cloudSiteConfig.SiteConfigAllowlistEnabled() && !actor.FromContext(ctx).SourcegraphOperator {
+		if p, ok := allowEdit(prev.Site, unredacted, cloudSiteConfig.SiteConfigAllowlist.Paths); !ok {
+			return false, cloudSiteConfig.SiteConfigAllowlistOnError(p)
+		}
 	}
 
 	prev.Site = unredacted
@@ -646,4 +654,17 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 		return &max
 	}
 	return nil
+}
+
+func allowEdit(before, after string, allowlist []string) ([]string, bool) {
+	var notAllowed []string
+	changes := conf.Diff(before, after)
+	for key := range changes {
+		for _, p := range allowlist {
+			if key != p {
+				notAllowed = append(notAllowed, key)
+			}
+		}
+	}
+	return notAllowed, len(notAllowed) == 0
 }

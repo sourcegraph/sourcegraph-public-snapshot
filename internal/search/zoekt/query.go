@@ -210,6 +210,11 @@ func toZoektPattern(
 			if n.Negated {
 				q = &zoekt.Not{Child: q}
 			}
+
+			if n.Annotation.Labels.IsSet(query.Boost) {
+				q = &zoekt.Boost{Child: q, Boost: 20}
+			}
+
 			return q, nil
 		}
 		// unreachable

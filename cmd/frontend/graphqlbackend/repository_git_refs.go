@@ -151,7 +151,7 @@ func fetchBranchCommits(ctx context.Context, gitserverClient gitserver.Client, r
 		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 	}
-
+	m = make(map[gitdomain.Branch]*gitdomain.Commit, len(branches))
 	for _, branch := range branches {
 		m[*branch], err = gitserverClient.GetCommit(ctx, repo, branch.Head)
 		if err != nil {

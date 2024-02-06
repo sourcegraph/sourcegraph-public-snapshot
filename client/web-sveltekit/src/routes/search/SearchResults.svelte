@@ -1,6 +1,7 @@
 <svelte:options immutable />
 
 <script context="module" lang="ts">
+    export type SearchResultsCapture = number
     interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
@@ -16,7 +17,6 @@
     import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { preserveScrollPosition } from '$lib/app'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
@@ -40,6 +40,16 @@
     export let queryFilters: string
     export let queryState: QueryStateStore
 
+    export function capture(): SearchResultsCapture {
+        return resultContainer?.scrollTop ?? 0
+    }
+
+    export function restore(capture?: SearchResultsCapture): void {
+        if (resultContainer) {
+            resultContainer.scrollTop = capture ?? 0
+        }
+    }
+
     let resultContainer: HTMLElement | null = null
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
@@ -60,14 +70,6 @@
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let scrollTop: number = 0
-    preserveScrollPosition(
-        position => (scrollTop = position ?? 0),
-        () => resultContainer?.scrollTop
-    )
-    $: if (resultContainer) {
-        resultContainer.scrollTop = scrollTop ?? 0
-    }
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -110,7 +112,7 @@
 </svelte:head>
 
 <div class="search">
-    <SearchInput {queryState} showSmartSearchButton />
+    <SearchInput {queryState} />
 </div>
 
 <div class="search-results">
@@ -121,13 +123,16 @@
                 {#each resultTypeFilter as filter}
                     <li class:selected={filter.isSelected(queryFromURL)}>
                         <a
-                            href={getQueryURL({
-                                searchMode: $queryState.searchMode,
-                                patternType: $queryState.patternType,
-                                caseSensitive: $queryState.caseSensitive,
-                                searchContext: $queryState.searchContext,
-                                query: filter.getQuery($queryState.query),
-                            })}
+                            href={getQueryURL(
+                                {
+                                    searchMode: $queryState.searchMode,
+                                    patternType: $queryState.patternType,
+                                    caseSensitive: $queryState.caseSensitive,
+                                    searchContext: $queryState.searchContext,
+                                    query: filter.getQuery($queryState.query),
+                                },
+                                true
+                            )}
                         >
                             <Icon svgPath={filter.icon} inline aria-hidden="true" />
                             {filter.label}
@@ -227,11 +232,16 @@
         </aside>
         {#if resultsToShow}
             <ol>
-                {#each resultsToShow as result}
+                {#each resultsToShow as result, i}
                     {@const component = getSearchResultComponent(result)}
-                    <li><svelte:component this={component} {result} /></li>
+                    {#if i === resultsToShow.length - 1}
+                        <li use:observeIntersection on:intersecting={loadMore}>
+                            <svelte:component this={component} {result} />
+                        </li>
+                    {:else}
+                        <li><svelte:component this={component} {result} /></li>
+                    {/if}
                 {/each}
-                <div use:observeIntersection on:intersecting={loadMore} />
             </ol>
             {#if resultsToShow.length === 0 && !loading}
                 <div class="no-result">

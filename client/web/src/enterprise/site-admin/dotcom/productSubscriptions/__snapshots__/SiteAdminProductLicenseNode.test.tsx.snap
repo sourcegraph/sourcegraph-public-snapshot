@@ -98,7 +98,7 @@ exports[`SiteAdminProductLicenseNode > active 1`] = `
                 d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
               />
             </svg>
-            Valid 
+            Valid, 
             <span
               class="timestamp"
             >
@@ -148,11 +148,15 @@ exports[`SiteAdminProductLicenseNode > active 1`] = `
           <p
             class="mb-2"
           >
-            <span
-              class="badge danger mr-1"
+            <div
+              class="tagsWrapper"
             >
-              a
-            </span>
+              <span
+                class="badge danger"
+              >
+                a
+              </span>
+            </div>
           </p>
         </label>
         <label
@@ -311,7 +315,7 @@ exports[`SiteAdminProductLicenseNode > inactive 1`] = `
                 d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
               />
             </svg>
-            Valid 
+            Valid, 
             <span
               class="timestamp"
             >
@@ -361,11 +365,15 @@ exports[`SiteAdminProductLicenseNode > inactive 1`] = `
           <p
             class="mb-2"
           >
-            <span
-              class="badge danger mr-1"
+            <div
+              class="tagsWrapper"
             >
-              a
-            </span>
+              <span
+                class="badge danger"
+              >
+                a
+              </span>
+            </div>
           </p>
         </label>
         <label

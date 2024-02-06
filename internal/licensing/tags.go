@@ -2,8 +2,6 @@ package licensing
 
 import (
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/license"
 )
 
 const (
@@ -24,16 +22,21 @@ const (
 	// for Cody-related events, which we are always allowed to export as part of
 	// Cody usage terms: https://sourcegraph.com/terms/cody-notice
 	//
-	// To completely disable telemetry events export, use PlanAirGappedEnterprise
+	// To completely disable telemetry events export, use FeatureAllowAirGapped.
 	TelemetryEventsExportDisabledTag = "disable-telemetry-events-export"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
 // on the license info.
-func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
-	if !hasLicense {
-		return "Sourcegraph Free"
+func ProductNameWithBrand(licenseTags []string) string {
+	plan := PlanFromTags(licenseTags)
+
+	details, ok := planDetails[plan]
+	if !ok {
+		return "Unrecognized plan"
 	}
+
+	name := details.DisplayName
 
 	hasTag := func(tag string) bool {
 		for _, t := range licenseTags {
@@ -42,32 +45,6 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 			}
 		}
 		return false
-	}
-
-	baseName := "Sourcegraph Enterprise"
-	var name string
-
-	info := &Info{
-		Info: license.Info{
-			Tags: licenseTags,
-		},
-	}
-	plan := info.Plan()
-	// Identify known plans first
-	switch {
-	case strings.HasPrefix(string(plan), "team-"):
-		baseName = "Sourcegraph Team"
-	case strings.HasPrefix(string(plan), "enterprise-"):
-		baseName = "Sourcegraph Enterprise"
-	case strings.HasPrefix(string(plan), "business-"):
-		baseName = "Sourcegraph Business"
-
-	default:
-		if hasTag("team") {
-			baseName = "Sourcegraph Team"
-		} else if hasTag("starter") {
-			name = " Starter"
-		}
 	}
 
 	var misc []string
@@ -84,16 +61,5 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		name += " (" + strings.Join(misc, ", ") + ")"
 	}
 
-	return baseName + name
-}
-
-var MiscTags = []string{
-	TrialTag,
-	TrueUpUserCountTag,
-	InternalTag,
-	DevTag,
-	"starter",
-	"mau",
-	GPTLLMAccessTag,
-	TelemetryEventsExportDisabledTag,
+	return name
 }

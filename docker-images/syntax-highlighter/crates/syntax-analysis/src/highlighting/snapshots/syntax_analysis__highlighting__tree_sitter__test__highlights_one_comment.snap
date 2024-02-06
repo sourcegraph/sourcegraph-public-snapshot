@@ -1,0 +1,7 @@
+---
+source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, src)"
+---
+  // Hello World
+//^^^^^^^^^^^^^^ Comment
+

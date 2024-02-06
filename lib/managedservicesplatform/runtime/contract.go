@@ -77,6 +77,7 @@ func newContract(logger log.Logger, env *Env, service ServiceMetadata) Contract 
 				GCPProjectID: pointers.Deref(
 					env.GetOptional("OTEL_GCP_PROJECT_ID", "GCP project ID for OpenTelemetry export"),
 					defaultGCPProjectID),
+				OtelSDKDisabled: env.GetBool("OTEL_SDK_DISABLED", "false", "disable OpenTelemetry SDK"),
 			},
 			sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
 		},

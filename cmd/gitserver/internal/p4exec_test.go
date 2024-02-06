@@ -63,7 +63,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 
 		server := defaults.NewServer(logger)
-		proto.RegisterGitserverServiceServer(server, &GRPCServer{Server: s})
+		proto.RegisterGitserverServiceServer(server, NewGRPCServer(s))
 		handler = grpc.MultiplexHandlers(server, s.Handler())
 
 		srv := httptest.NewServer(handler)

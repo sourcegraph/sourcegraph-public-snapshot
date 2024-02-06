@@ -30,6 +30,12 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     codeInsightsEnabled: true,
     executorsEnabled: true,
     codyEnabled: true,
+    codeIntelligenceEnabled: true,
+    codeMonitoringEnabled: true,
+    notebooksEnabled: true,
+    searchAggregationEnabled: true,
+    searchContextsEnabled: true,
+    ownEnabled: true,
     codyEnabledForCurrentUser: true,
     codyRequiresVerifiedEmail: false,
     extsvcConfigAllowEdits: false,
@@ -45,7 +51,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     experimentalFeatures: {},
     isAuthenticatedUser: true,
     licenseInfo: {
-        currentPlan: 'team-0',
         batchChanges: {
             maxNumChangesets: -1,
             unrestricted: true,

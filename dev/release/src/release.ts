@@ -1359,7 +1359,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Test update the upgrade guides',
         argNames: ['previous', 'next', 'dir'],
         run: (config, previous, next, dir) => {
-            updateUpgradeGuides(previous, next)(dir)
+            updateDocsUpgradeGuides(previous, next)(dir)
         },
     },
     {

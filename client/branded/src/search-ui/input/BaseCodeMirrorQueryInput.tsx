@@ -9,6 +9,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 
 import {
     type QueryInputEventHandlers,
@@ -144,6 +145,7 @@ export const BaseCodeMirrorQueryInput = memo(
         const containerRef = useRef<HTMLDivElement | null>(null)
         const localEditorRef = useRef<EditorView | null>(null)
         const editorRef = useMergeRefs([ref, localEditorRef])
+        const isLightTheme = useIsLightTheme()
         // We need to expliclity remove line breaks when multiLine is set, to ensure
         // that the initial value is properly formatted. The corresponding CodeMirror
         // extension only affects changes made after initialization.
@@ -170,6 +172,10 @@ export const BaseCodeMirrorQueryInput = memo(
             editorRef,
             useMemo(() => multiline(multiLine), [multiLine])
         )
+        const themeExtension = useCompartment(
+            editorRef,
+            useMemo(() => EditorView.darkTheme.of(!isLightTheme), [isLightTheme])
+        )
         const externalExtension = useCompartment(editorRef, extension)
         const allExtensions = useMemo(
             () => [
@@ -178,9 +184,17 @@ export const BaseCodeMirrorQueryInput = memo(
                 eventHandlers,
                 multiLineExtension,
                 readOnlyExtension,
+                themeExtension,
                 staticExtensions,
             ],
-            [eventHandlers, parsedQueryExtension, readOnlyExtension, multiLineExtension, externalExtension]
+            [
+                eventHandlers,
+                parsedQueryExtension,
+                readOnlyExtension,
+                multiLineExtension,
+                externalExtension,
+                themeExtension,
+            ]
         )
 
         useCodeMirror(editorRef, containerRef, normalizedValue, allExtensions)

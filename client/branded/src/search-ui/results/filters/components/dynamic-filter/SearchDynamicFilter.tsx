@@ -1,4 +1,4 @@
-import { FC, ReactNode, useMemo, useState } from 'react'
+import { FC, ReactNode, useMemo, useRef, useState } from 'react'
 
 import { mdiClose, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,10 +8,11 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Badge, Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { codeHostIcon } from '../../../../components'
 import { URLQueryFilter } from '../../hooks'
+import { DynamicFilterBadge } from '../DynamicFilterBadge'
 
 import styles from './SearchDynamicFilter.module.scss'
 
@@ -20,7 +21,7 @@ const MAX_FILTERS_NUMBER = 10
 
 interface SearchDynamicFilterProps {
     /** Name title of the filter section */
-    title: string
+    title?: string
 
     /**
      * Specifies which type filter we want to render in this particular
@@ -46,7 +47,7 @@ interface SearchDynamicFilterProps {
      * It's called whenever user changes (pick/reset) any filters in the filter panel.
      * @param nextQuery
      */
-    onSelectedFilterChange: (filters: URLQueryFilter[]) => void
+    onSelectedFilterChange: (filterKind: Filter['kind'], filters: URLQueryFilter[]) => void
 }
 
 /**
@@ -61,29 +62,41 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     renderItem,
     onSelectedFilterChange,
 }) => {
+    const inputRef = useRef<HTMLInputElement>(null)
+
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [showMoreFilters, setShowMoreFilters] = useState<boolean>(false)
 
-    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
     const relevantFilters = filters?.filter(f => f.kind === filterKind) ?? []
+    const relevantSelectedFilters = selectedFilters.filter(sf => sf.kind === filterKind)
+
     const isSelected = (filter: Filter): boolean =>
         relevantSelectedFilters.find(sf => filtersEqual(filter, sf)) !== undefined
 
     const mergedFilters = [
-        // Selected filters come first, but we want to map them to the backend filters to get the relevant count and exhaustiveness
+        // Selected filters come first, but we want to map them to the backend filters
+        // to get the relevant count and exhaustiveness
         ...relevantSelectedFilters.map(
             sf => filters?.find(f => filtersEqual(f, sf)) ?? { ...sf, count: 0, exhaustive: true }
         ),
-        // Followed by filters from the backend, but excluding the ones we already listed
+        // Followed by filters from the backend, but excluding the ones we
+        // already listed
         ...relevantFilters.filter(f => relevantSelectedFilters.find(sf => filtersEqual(f, sf)) === undefined),
     ]
 
     const handleFilterClick = (filter: URLQueryFilter, remove?: boolean): void => {
         if (remove) {
-            onSelectedFilterChange(selectedFilters.filter(f => !filtersEqual(f, filter)))
+            onSelectedFilterChange(
+                filterKind,
+                selectedFilters.filter(f => !filtersEqual(f, filter))
+            )
         } else {
-            onSelectedFilterChange([...selectedFilters, filter])
+            onSelectedFilterChange(filterKind, [...selectedFilters, filter])
         }
+    }
+
+    const handleZeroStateButtonClick = (): void => {
+        inputRef.current?.focus()
     }
 
     if (mergedFilters.length === 0) {
@@ -98,12 +111,15 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
     return (
         <div className={styles.root}>
-            <H4 as={H2} className={styles.heading}>
-                {title}
-            </H4>
+            {title && (
+                <H4 as={H2} className={styles.heading}>
+                    {title}
+                </H4>
+            )}
 
             {mergedFilters.length > DEFAULT_FILTERS_NUMBER && (
                 <Input
+                    ref={inputRef}
                     value={searchTerm}
                     placeholder={`Filter ${filterKind}`}
                     onChange={event => setSearchTerm(event.target.value)}
@@ -123,7 +139,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
                 {filtersToShow.length === 0 && (
                     <small className={styles.description}>
-                        There are no {filterKind}s to show, try to use different search value
+                        <b>We couldn’t return a {filterKind} that matched your filter input.</b> Try a more expansive
+                        search{' '}
+                        <Button onClick={handleZeroStateButtonClick} className={styles.zeroStateSearchButton}>
+                            using the search bar
+                        </Button>{' '}
+                        above.
                     </small>
                 )}
             </ul>
@@ -163,25 +184,11 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 onClick={() => onClick(filter, selected)}
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
-                {filter.count !== 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                        {filter.exhaustive ? filter.count : `${roundCount(filter.count)}+`}
-                    </Badge>
-                )}
+                <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />
                 {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </li>
     )
-}
-
-function roundCount(count: number): number {
-    const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
-    for (const roundNumber of roundNumbers) {
-        if (count >= roundNumber) {
-            return roundNumber
-        }
-    }
-    return 0
 }
 
 function filtersEqual(a: URLQueryFilter, b: URLQueryFilter): boolean {
@@ -208,6 +215,13 @@ export const repoFilter = (filter: Filter): ReactNode => {
 }
 
 export const commitDateFilter = (filter: Filter, selected: boolean): ReactNode => (
+    <span className={styles.commitDate}>
+        {filter.label}
+        <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
+    </span>
+)
+
+export const countAllFilter = (filter: Filter, selected: boolean): ReactNode => (
     <span className={styles.commitDate}>
         {filter.label}
         <Code className={!selected ? 'text-muted' : ''}>{filter.value}</Code>
