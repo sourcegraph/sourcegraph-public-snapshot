@@ -54,5 +54,6 @@ go_test(
         "//internal/types",
         "//schema",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
