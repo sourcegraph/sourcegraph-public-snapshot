@@ -430,10 +430,6 @@ func logTrace(ctx context.Context, message string, attrs ...attribute.KeyValue) 
 
 func newRetryObserver(ctx context.Context, logger log.Logger, serviceName, methodName string) *retryObserver {
 	tracingCallback := func(attempt uint, lastErr error) {
-		if attempt == 0 {
-			return
-		}
-
 		tr := trace.FromContext(ctx)
 
 		if !tr.IsRecording() {
