@@ -1,13 +1,3 @@
-// Run with bazel test //testing/tools/upgradetest:sh_upgradetest --config darwin-docker -- <test args>
-// Run with bazel run //testing/tools/upgradetest:sh_upgradetest_run --config darwin-docker -- <test args>
-// Run in CI: sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
-//
-// TODO
-// - Test things in CI
-// - Use urfave/cli to parse args
-// - Make it so it can fail early if needed perhaps?
-// - Print stuff (fail/pass/errs) as it goes through.
-
 package main
 
 import (
@@ -35,15 +25,7 @@ import (
 
 type versionKey struct{}
 
-// This is a CI test intended to verify that the upgrade process works as expected. For the three primary Sourcegraph databases (frontend, codeintel-db, and codeinsights-db)
-// We conduct multiversion upgrades, and standard upgrades, based on their respective upgrade policies.
-// - For Standard upgrades (migrator up) we test each patch version defined in the previous minor version of sourcegraph.
-// - For MVU upgrades (migrator upgrade) we test all versions defined at least two minor versions prior to the latest patch release. i.e. all versions for which a standard upgrade will not work.
-// - TODO: autoupgrades
-// A test consists of upgradeing from an initial version to a candidate version. Defined as the latest builds of frontend, migrator, and the db schemes as found on the local branch.
-// This test does not test Sourcegraph features, only the basic operations of schema upgrade paths.
-// TODO: test OOB migrations by seeding data.
-// TODO: definition file for tests with known bugs and tests to be run
+// Register upgrade commands -- see README.md for more details.
 func main() {
 	app := &cli.App{
 		Name:  "upgrade-test",
