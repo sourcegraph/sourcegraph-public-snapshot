@@ -293,6 +293,10 @@ func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (int32, e
 }
 
 func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return 0, errors.New("this feature is only available on sourcegraph.com")
+	}
+
 	subscription, err := r.fetchCodySubscription(ctx)
 	if err != nil {
 		return 0, err
