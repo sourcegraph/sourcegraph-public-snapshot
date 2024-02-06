@@ -22,7 +22,7 @@ internal:
                 "message": "Testing a build from the API",
                 "env": {
                   "RELEASE_INTERNAL": "true",
-                  "VERSION": "{{version}}"
+                  "VERSION": "{{tag}}"
                 }
               }'
   finalize:
@@ -48,7 +48,7 @@ promoteToPublic:
               "message": "Testing a build from the API",
               "env": {
                 "RELEASE_PUBLIC": "true",
-                "VERSION": "{{version}}"
+                "VERSION": "{{tag}}"
               }
             }'
   finalize:

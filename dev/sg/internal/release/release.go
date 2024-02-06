@@ -1,6 +1,7 @@
 package release
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/run"
@@ -148,7 +149,9 @@ func Command() *cli.Command {
 func newReleaseRunnerFromCliContext(cctx *cli.Context) (*releaseRunner, error) {
 	workdir := cctx.String("workdir")
 	pretend := cctx.Bool("pretend")
-	version := cctx.String("version")
+	// Normalize the version string, to prevent issues where this was given with the wrong convention
+	// which requires a full rebuild.
+	version := fmt.Sprintf("v%s", strings.TrimPrefix(cctx.String("version"), "v"))
 	typ := cctx.String("type")
 	inputs := cctx.String("inputs")
 
