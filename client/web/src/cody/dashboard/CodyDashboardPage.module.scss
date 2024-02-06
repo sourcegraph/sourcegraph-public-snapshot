@@ -5,13 +5,31 @@
     }
 
     &-hero {
-        background: linear-gradient(0deg, #FFF 46.16%, rgba(255, 255, 255, 0.00) 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.20) 100%), conic-gradient(from 71deg at 11.62% 37.39%, rgba(74, 193, 232, 0.24) 99.66692805290222deg, rgba(112, 72, 232, 0.24) 196.56766176223755deg, rgba(77, 11, 121, 0.24) 314.87035274505615deg, rgba(255, 85, 67, 0.24) 360deg), var(--Root-_gray-02, #EFF2F5);
+        background: linear-gradient(0deg, #fff 46.16%, rgba(255, 255, 255, 0) 100%),
+            linear-gradient(0deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) 100%),
+            conic-gradient(
+                from 71deg at 11.62% 37.39%,
+                rgba(74, 193, 232, 0.24) 99.66692805290222deg,
+                rgba(112, 72, 232, 0.24) 196.56766176223755deg,
+                rgba(77, 11, 121, 0.24) 314.87035274505615deg,
+                rgba(255, 85, 67, 0.24) 360deg
+            ),
+            var(--Root-_gray-02, #eff2f5);
         text-align: center;
         padding: 3rem 0;
         border-bottom-right-radius: 5rem;
 
         :global(.theme-dark) & {
-            background: linear-gradient(0deg, #14171F 46.16%, rgba(20, 23, 31, 0.00) 100%), linear-gradient(0deg, rgba(20, 23, 31, 0.20) 0%, rgba(20, 23, 31, 0.20) 100%), conic-gradient(from 71deg at 11.62% 37.39%, rgba(74, 193, 232, 0.24) 99.66692805290222deg, rgba(112, 72, 232, 0.24) 196.56766176223755deg, rgba(77, 11, 121, 0.24) 314.87035274505615deg, rgba(255, 85, 67, 0.24) 360deg), #14171F;
+            background: linear-gradient(0deg, #14171f 46.16%, rgba(20, 23, 31, 0) 100%),
+                linear-gradient(0deg, rgba(20, 23, 31, 0.2) 0%, rgba(20, 23, 31, 0.2) 100%),
+                conic-gradient(
+                    from 71deg at 11.62% 37.39%,
+                    rgba(74, 193, 232, 0.24) 99.66692805290222deg,
+                    rgba(112, 72, 232, 0.24) 196.56766176223755deg,
+                    rgba(77, 11, 121, 0.24) 314.87035274505615deg,
+                    rgba(255, 85, 67, 0.24) 360deg
+                ),
+                #14171f;
         }
 
         &-header {
