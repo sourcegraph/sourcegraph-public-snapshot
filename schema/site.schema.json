@@ -1164,7 +1164,10 @@
         "allowNoExpiration": {
           "description": "Allows new tokens to be created without specifying an expiration.",
           "type": "boolean",
-          "default": "false"
+          "!go": {
+            "pointer": true
+          },
+          "default": "true"
         },
         "expirationOptionDays": {
           "description": "Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.",
