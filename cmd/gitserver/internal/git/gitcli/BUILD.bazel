@@ -4,12 +4,15 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "gitcli",
     srcs = [
+        "blame.go",
         "clibackend.go",
         "config.go",
         "exec.go",
+        "head.go",
         "mergebase.go",
         "metrics.go",
         "object.go",
+        "odb.go",
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli",
@@ -35,14 +38,19 @@ go_library(
 go_test(
     name = "gitcli_test",
     srcs = [
+        "blame_test.go",
         "config_test.go",
         "exec_test.go",
+        "head_test.go",
         "mergebase_test.go",
         "object_test.go",
+        "odb_test.go",
+        "util_test.go",
     ],
     embed = [":gitcli"],
     deps = [
         "//cmd/gitserver/internal/common",
+        "//cmd/gitserver/internal/git",
         "//internal/api",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

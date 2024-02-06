@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
@@ -17,10 +16,11 @@ func createServiceAlerts(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
-	// Only provision if MaxCount is specified above 5
-	if pointers.Deref(vars.MaxInstanceCount, 0) > 5 {
+	// Only provision if MaxCount is specified greater or equal 5 (the default).
+	// If nil, it doesn't matter
+	if vars.MaxInstanceCount != nil && *vars.MaxInstanceCount >= 5 {
 		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			Service:       vars.Service,
 			EnvironmentID: vars.EnvironmentID,
@@ -36,6 +36,9 @@ func createServiceAlerts(
 				Aligner: alertpolicy.MonitoringAlignMax,
 				Reducer: alertpolicy.MonitoringReduceMax,
 				Period:  "60s",
+				// Fire when we are 1 instance away from hitting the limit.
+				Threshold:  float64(*vars.MaxInstanceCount - 1),
+				Comparison: alertpolicy.ComparisonGT,
 			},
 			NotificationChannels: channels,
 		}); err != nil {
@@ -57,7 +60,7 @@ func createExternalHealthcheckAlert(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	var (
 		healthcheckPath    = "/"
@@ -107,11 +110,14 @@ func createExternalHealthcheckAlert(
 	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
+		ProjectID:     vars.ProjectID,
 
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
 		Description: fmt.Sprintf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
-		ProjectID:   vars.ProjectID,
+
+		// If a service is not reachable, it's definitely a problem.
+		Severity: alertpolicy.SeverityLevelCritical,
 
 		ResourceKind: alertpolicy.URLUptime,
 		ResourceName: *uptimeCheck.UptimeCheckId(),
@@ -120,14 +126,19 @@ func createExternalHealthcheckAlert(
 			Filters: map[string]string{
 				"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
 			},
-			Aligner: alertpolicy.MonitoringAlignFractionTrue,
-			// Checks occur every 60s, in a 300s window if 2/5 fail we are in trouble
-			Period:     "300s",
+			Aligner:    alertpolicy.MonitoringAlignFractionTrue,
 			Duration:   "0s",
 			Comparison: alertpolicy.ComparisonLT,
-			Threshold:  0.4,
-			// Alert when all locations go down
-			Trigger: alertpolicy.TriggerKindAllInViolation,
+			// Checks run once every 60s, if 2/3 fail we are in trouble.
+			Period:    "180s",
+			Threshold: 0.4,
+			// We want to alert when all locations go down, but right now that
+			// sends 6 notifications when the alert fires, which is annoying -
+			// there seems to be no way to change this. So we group by the check
+			// target anyway.
+			Trigger:       alertpolicy.TriggerKindAllInViolation,
+			GroupByFields: []string{"metric.labels.host"},
+			Reducer:       alertpolicy.MonitoringReduceMean,
 		},
 		NotificationChannels: channels,
 	}); err != nil {

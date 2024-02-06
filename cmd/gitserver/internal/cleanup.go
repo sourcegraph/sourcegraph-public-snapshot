@@ -288,7 +288,7 @@ func cleanupRepos(
 		// Record the number of repos that should not belong on this instance and
 		// remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		name := gitserverfs.RepoNameFromDir(reposDir, dir)
-		addr := addrForRepo(ctx, name, gitServerAddrs)
+		addr := gitServerAddrs.AddrForRepo(ctx, name)
 
 		if hostnameMatch(shardID, addr) {
 			return false, nil

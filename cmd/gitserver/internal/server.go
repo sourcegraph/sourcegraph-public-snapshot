@@ -43,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -171,11 +170,9 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
-	// cloneLimiter and cloneableLimiter limits the number of concurrent
-	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
-	// s.acquireCloneableLimiter() instead of using these directly.
-	cloneLimiter     *limiter.MutableLimiter
-	cloneableLimiter *limiter.MutableLimiter
+	// cloneLimiter limits the number of concurrent
+	// clones. Use s.acquireCloneLimiter() and instead of using it directly.
+	cloneLimiter *limiter.MutableLimiter
 
 	// RPSLimiter limits the remote code host git operations done per second
 	// per gitserver instance
@@ -236,13 +233,11 @@ func (s *Server) Handler() http.Handler {
 	// Max concurrent clones also means repo updates.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
 	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
-	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
 	// TODO: Remove side-effects from this Handler method.
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
-		s.cloneableLimiter.SetLimit(limit)
 	})
 
 	mux := http.NewServeMux()
@@ -267,10 +262,6 @@ func (s *Server) Handler() http.Handler {
 	)))
 
 	return mux
-}
-
-func addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName)
 }
 
 // NewClonePipeline creates a new pipeline that clones repos asynchronously. It
@@ -438,13 +429,7 @@ func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, cont
 	return s.cloneLimiter.Acquire(ctx)
 }
 
-func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	lsRemoteQueue.Inc()
-	defer lsRemoteQueue.Dec()
-	return s.cloneableLimiter.Acquire(ctx)
-}
-
-func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
+func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
 	// We use an internal actor here as the repo may be private. It is safe since all
 	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
 	// the only things that could leak here is whether a private repo exists although
@@ -471,7 +456,7 @@ func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	return resp, nil
 }
 
-func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+func (s *Server) RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 	logger := s.Logger.Scoped("handleRepoUpdate")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
@@ -544,10 +529,10 @@ type execStatus struct {
 }
 
 // TODO: eseliger
-// exec runs a git command. After the first write to w, it must not return an error.
+// Exec runs a git command. After the first write to w, it must not return an error.
 // TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
 // because gRPC can handle trailing errors on a stream.
-func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
+func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) (execStatus, error) {
 	repoName := protocol.NormalizeRepo(req.Repo)
 	dir := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
 	backend := s.GetBackendFunc(dir, repoName)
@@ -579,7 +564,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
 		)
-		logger = logger.WithTrace(trace.Context(ctx))
+		logger := s.Logger.WithTrace(trace.Context(ctx))
 
 		execRunning.WithLabelValues(cmd).Inc()
 		defer func() {
@@ -614,7 +599,6 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
-				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("exit_status", exitStatus)
 				ev.AddField("status", status)
@@ -648,7 +632,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}()
 	}
 
-	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, repoName); !cloned {
+	if notFoundPayload, cloned := s.MaybeStartClone(ctx, repoName); !cloned {
 		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
 		} else {
@@ -666,7 +650,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := git.QuickRevParseHead(dir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
+		if resolved, err := gitcli.QuickRevParseHead(dir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}
@@ -676,7 +660,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
-		if resolved, err := git.QuickSymbolicRefHead(dir); err == nil {
+		if resolved, err := gitcli.QuickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
 			return execStatus{}, nil
 		}
@@ -691,7 +675,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	_, execErr = io.Copy(w, stdout)
 	if execErr != nil {
-		s.logIfCorrupt(ctx, repoName, execErr)
+		s.LogIfCorrupt(ctx, repoName, execErr)
 		commandFailedErr := &gitcli.CommandFailedError{}
 		if errors.As(execErr, &commandFailedErr) {
 			exitStatus = commandFailedErr.ExitStatus
@@ -741,7 +725,7 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
-func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, err error) {
+func (s *Server) LogIfCorrupt(ctx context.Context, repo api.RepoName, err error) {
 	var corruptErr common.ErrRepoCorrupted
 	if errors.As(err, &corruptErr) {
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, corruptErr.Reason, s.Hostname); err != nil {
@@ -799,17 +783,6 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	if err != nil {
 		return "", err
 	}
-
-	// isCloneable causes a network request, so we limit the number that can
-	// run at one time. We use a separate semaphore to cloning since these
-	// checks being blocked by a few slow clones will lead to poor feedback to
-	// users. We can defer since the rest of the function does not block this
-	// goroutine.
-	ctx, cancel, err := s.acquireCloneableLimiter(ctx)
-	if err != nil {
-		return "", err // err will be a context error
-	}
-	defer cancel()
 
 	if err = s.RPSLimiter.Wait(ctx); err != nil {
 		return "", err
@@ -1215,10 +1188,6 @@ var (
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
 	})
-	lsRemoteQueue = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_lsremote_queue",
-		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
-	})
 	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
 		Help: "number of successful git clones run",
@@ -1274,7 +1243,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				// The repo update might have failed due to the repo being corrupt
 				var corruptErr common.ErrRepoCorrupted
 				if errors.As(err, &corruptErr) {
-					s.logIfCorrupt(ctx, repo, corruptErr)
+					s.LogIfCorrupt(ctx, repo, corruptErr)
 				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)

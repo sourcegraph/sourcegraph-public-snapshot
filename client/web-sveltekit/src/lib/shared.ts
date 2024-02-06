@@ -56,6 +56,8 @@ export {
     truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+export { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter, appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -69,6 +71,7 @@ export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
 export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+export { repositoryInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 
 // Copies of non-reusable code
 

@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use anyhow::Result;
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
-use scip_syntax::{get_globals, get_locals};
-use scip_treesitter_languages::parsers::BundledParser;
+use syntax_analysis::{get_globals, get_locals};
+use tree_sitter_all_languages::ParserId;
 use walkdir::DirEntry;
 
 use crate::{
@@ -56,7 +56,7 @@ pub fn index_command(
     evaluate_against: Option<PathBuf>,
     options: IndexOptions,
 ) {
-    let p = BundledParser::get_parser(&language).unwrap();
+    let p = ParserId::from_name(&language).unwrap();
     let project_root = {
         match index_mode {
             IndexMode::Files { .. } => project_root,
@@ -118,7 +118,7 @@ pub fn index_command(
             bar.finish();
         }
         IndexMode::Workspace { location } => {
-            let extensions = BundledParser::get_language_extensions(&p);
+            let extensions = ParserId::language_extensions(&p);
             let is_valid = |entry: &DirEntry| {
                 entry.file_type().is_dir()
                     || entry
@@ -164,19 +164,16 @@ pub fn index_command(
 
         let mut evaluator = Evaluator::default();
         evaluator
-            .evaluate_indexes(&index, &ground_truth, Default::default())
+            .evaluate_indexes(&index, &ground_truth)
             .unwrap()
-            .print_summary();
+            .write_summary(&mut std::io::stdout(), Default::default())
+            .unwrap();
     }
 
     write_message_to_file(out, index).expect("to write the file");
 }
 
-fn index_content(
-    contents: Vec<u8>,
-    parser: BundledParser,
-    options: &IndexOptions,
-) -> Result<Document> {
+fn index_content(contents: Vec<u8>, parser: ParserId, options: &IndexOptions) -> Result<Document> {
     let mut document: Document;
 
     if options.analysis_mode.globals() {

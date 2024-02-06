@@ -228,9 +228,10 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
         go: 'https://github.com/sourcegraph/lsif-go',
         rust: 'https://github.com/rust-analyzer/rust-analyzer',
         scala: 'https://github.com/sourcegraph/lsif-java',
-        cpp: 'https://github.com/sourcegraph/lsif-clang',
+        cpp: 'https://github.com/sourcegraph/scip-clang',
         csharp: 'https://github.com/tcz717/LsifDotnet',
-        dart: 'https://github.com/sourcegraph/lsif-dart',
+        dart: 'https://github.com/Workiva/scip-dart',
+        php: 'https://github.com/davidrjenni/scip-php',
         haskell: 'https://github.com/mpickering/hie-lsif',
         kotlin: 'https://github.com/sourcegraph/lsif-java',
     }

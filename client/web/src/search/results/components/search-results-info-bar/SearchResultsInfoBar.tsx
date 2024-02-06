@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -11,7 +11,21 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Icon, Label, Link, Text, useSessionStorage } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    createRectangle,
+    FeedbackPrompt,
+    H3,
+    Icon,
+    Link,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+    Text,
+    useSessionStorage,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import {
@@ -19,6 +33,7 @@ import {
     NO_ACCESS_BATCH_CHANGES_WRITE,
     NO_ACCESS_SOURCEGRAPH_COM,
 } from '../../../../batches/utils'
+import { useHandleSubmitFeedback } from '../../../../hooks'
 import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../../../tracking/util'
@@ -33,8 +48,13 @@ import {
     getInsightsCreateAction,
     getSearchContextCreateAction,
 } from './createActions'
+import { NewStarsIcon } from './NewStarsIcon'
 
 import styles from './SearchResultsInfoBar.module.scss'
+
+// Adds padding to the popover content to add some space between the trigger
+// button and the content
+const KEYWORD_SEARCH_POPOVER_PADDING = createRectangle(0, 0, 0, 2)
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
@@ -84,8 +104,18 @@ export interface SearchResultsInfoBarProps
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
-    const { query, patternType, authenticatedUser, results, options, sourcegraphURL, telemetryService } = props
+    const {
+        query,
+        patternType,
+        authenticatedUser,
+        results,
+        options,
+        sourcegraphURL,
+        onTogglePatternType,
+        telemetryService,
+    } = props
 
+    const popoverRef = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     const newFiltersEnabled = useExperimentalFeatures(features => features.newSearchResultFiltersPanel)
 
@@ -177,6 +207,18 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
+    const handleKeywordSearchToggle = useCallback(() => {
+        telemetryService.log('ToggleKeywordPatternType', { currentStatus: patternType === SearchPatternType.keyword })
+        onTogglePatternType(patternType)
+    }, [onTogglePatternType, patternType, telemetryService])
+
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch: location.pathname,
+        textPrefix: '[Source: keyword search] ',
+    })
+
     return (
         <aside
             role="region"
@@ -184,6 +226,22 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
             className={classNames(props.className, styles.searchResultsInfoBar)}
             data-testid="results-info-bar"
         >
+            {feedbackModalOpen ? (
+                <FeedbackPrompt
+                    onSubmit={handleSubmitFeedback}
+                    modal={true}
+                    openByDefault={true}
+                    authenticatedUser={
+                        props.authenticatedUser
+                            ? {
+                                  username: props.authenticatedUser.username || '',
+                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                              }
+                            : null
+                    }
+                    onClose={() => setFeedbackModalOpen(false)}
+                />
+            ) : null}
             {refFromCodySearch && codySearchInput.input && codySearchInput.translatedQuery === props.query ? (
                 <Alert variant="info" className={styles.codyFeedbackAlert}>
                     Sourcegraph converted "<strong>{codySearchInput.input}</strong>" to "
@@ -232,15 +290,60 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                 <div className={styles.expander} />
 
                 {props.showKeywordSearchToggle && (
-                    <Label className={styles.toggle}>
-                        Search language update{' '}
+                    <div ref={popoverRef} className={styles.toggleWrapper}>
+                        <span className="mr-1">
+                            <NewStarsIcon aria-hidden={true} />
+                        </span>
+
+                        <Popover>
+                            <PopoverTrigger
+                                as={Button}
+                                type="button"
+                                className="p-0"
+                                data-testid="dropdown-toggle"
+                                data-test-tooltip-content="Learn more about the new search language."
+                            >
+                                Keyword search
+                            </PopoverTrigger>
+                            <PopoverContent
+                                target={popoverRef.current}
+                                position={Position.bottomEnd}
+                                className={styles.popoverContent}
+                                targetPadding={KEYWORD_SEARCH_POPOVER_PADDING}
+                            >
+                                <div>
+                                    <H3>About keyword search</H3>
+                                    <Text>
+                                        The new search behavior ANDs terms together instead of searching literally by
+                                        default. To search literally, wrap the query in quotes.
+                                    </Text>
+                                    <Text>
+                                        <Link
+                                            to="https://sourcegraph.com/docs/code-search/queries#keyword-search-default"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Read the docs
+                                        </Link>{' '}
+                                        to learn more.
+                                    </Text>
+                                    <Button
+                                        className={styles.feedbackButton}
+                                        onClick={() => setFeedbackModalOpen(true)}
+                                    >
+                                        Send feedback
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
                         <Toggle
                             value={props.patternType === SearchPatternType.keyword}
-                            onToggle={() => props.onTogglePatternType(props.patternType)}
+                            onToggle={handleKeywordSearchToggle}
                             title="Enable search language update"
                             className="mr-2"
                         />
-                    </Label>
+                    </div>
                 )}
 
                 <ul className="nav align-items-center">

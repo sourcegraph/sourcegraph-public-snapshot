@@ -117,7 +117,6 @@
 .infobar {
     grid-area: infobar;
     padding: 0.3rem 0.5rem;
-    background: var(--color-bg-1);
     border-bottom: 1px solid var(--border-color-2);
     min-height: 41px;
 }
@@ -125,7 +124,6 @@
 .content {
     grid-area: contents;
     overflow: auto;
-    padding: 0 0.5rem 0.5rem 0.5rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;
@@ -185,15 +183,12 @@
 
     &-file-link {
         padding: 0.25rem 0.5rem;
-        background: var(--oc-gray-1);
+        background: var(--result-header-bg);
         overflow: hidden;
         flex-shrink: 0;
         width: 100%;
         text-overflow: ellipsis;
-
-        :global(.theme-dark) & {
-            background: var(--oc-gray-9);
-        }
+        border-bottom: 1px solid var(--border-color-2);
     }
 
     &-content {

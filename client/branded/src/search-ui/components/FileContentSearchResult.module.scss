@@ -1,0 +1,24 @@
+.toggle-matches-button {
+    width: 100%;
+    text-align: left;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--code-bg);
+    color: var(--text-disabled);
+
+    &:hover {
+        color: var(--text-muted);
+    }
+
+    // When expanded, stick collapse button to the bottom of the
+    // screen if there are enough search results to cause scrolling.
+    &--expanded {
+        position: sticky;
+        bottom: 0;
+    }
+
+    &-text {
+        margin-left: 0.125rem;
+    }
+}

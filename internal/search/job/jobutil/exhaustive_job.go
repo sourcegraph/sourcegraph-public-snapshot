@@ -39,12 +39,8 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	b := inputs.Plan[0]
-	term, ok := b.Pattern.(query.Pattern)
-	if !ok {
-		if b.Pattern == nil {
-			return Exhaustive{}, errors.Errorf("missing pattern")
-		}
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
+	if b.Pattern == nil {
+		return Exhaustive{}, errors.Errorf("missing pattern")
 	}
 
 	// We don't support file predicates, such as file:has.content(), because the
@@ -56,8 +52,10 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	}
 
 	// This is a very weak protection but should be enough to catch simple misuse.
-	if inputs.PatternType == query.SearchTypeRegex && term.Value == ".*" {
-		return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+	if inputs.PatternType == query.SearchTypeRegex {
+		if term, ok := b.Pattern.(query.Pattern); ok && term.Value == ".*" {
+			return Exhaustive{}, errors.Errorf("regex search with .* is not supported")
+		}
 	}
 
 	repoOptions := toRepoOptions(b, inputs.UserSettings)

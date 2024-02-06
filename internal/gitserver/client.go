@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/conc/pool"
@@ -61,9 +59,9 @@ var _ Client = &clientImplementor{}
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
-	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
-	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
+	AddrForRepo(ctx context.Context, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
 	// GetAddressWithClient returns the address and client for a gitserver instance.
@@ -76,12 +74,8 @@ type ClientSource interface {
 func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
-		logger: logger,
-		scope:  scope,
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               scope,
 		operations:          getOperations(),
 		clientSource:        conns,
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -93,12 +87,8 @@ func NewTestClient(t testing.TB) TestClient {
 	logger := logtest.Scoped(t)
 
 	return &clientImplementor{
-		logger: logger,
-		scope:  fmt.Sprintf("gitserver.test.%s", t.Name()),
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               fmt.Sprintf("gitserver.test.%s", t.Name()),
 		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -194,10 +184,6 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
-	// userAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	userAgent string
-
 	// the current scope of the client.
 	scope string
 
@@ -219,7 +205,6 @@ func (c *clientImplementor) Scoped(scope string) Client {
 	return &clientImplementor{
 		logger:       c.logger,
 		scope:        appendScope(c.scope, scope),
-		userAgent:    c.userAgent,
 		operations:   c.operations,
 		clientSource: c.clientSource,
 	}
@@ -233,8 +218,25 @@ func appendScope(existing, new string) string {
 }
 
 type HunkReader interface {
-	Read() (*Hunk, error)
+	Read() (*gitdomain.Hunk, error)
 	Close() error
+}
+
+// BlameOptions configures a blame.
+type BlameOptions struct {
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+}
+
+func (o *BlameOptions) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Int("startLine", o.StartLine),
+		attribute.Int("endLine", o.EndLine),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
+	}
 }
 
 type CommitLog struct {
@@ -530,11 +532,11 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 }
 
 func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	return c.clientSource.AddrForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.AddrForRepo(ctx, repo)
 }
 
 func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.ClientForRepo(ctx, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -658,92 +660,23 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	}
 	r := streamio.NewReader(func() ([]byte, error) {
 		msg, err := stream.Recv()
-		if status.Code(err) == codes.Canceled {
-			return nil, context.Canceled
-		} else if err != nil {
+		if err != nil {
 			return nil, err
 		}
 		return msg.GetData(), nil
 	})
 
-	return &readCloseWrapper{r: r, closeFn: done}, nil
+	return &readCloseWrapper{Reader: r, closeFn: done}, nil
 }
 
 type readCloseWrapper struct {
-	r       io.Reader
+	io.Reader
 	closeFn func()
-}
-
-func (r *readCloseWrapper) Read(p []byte) (int, error) {
-	n, err := r.r.Read(p)
-	if err != nil {
-		err = convertGRPCErrorToGitDomainError(err)
-	}
-
-	return n, err
 }
 
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-// convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
-// If the error is not a GRPC error, it is returned as-is.
-func convertGRPCErrorToGitDomainError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		switch payload := detail.(type) {
-
-		case *proto.ExecStatusPayload:
-			return &CommandStatusError{
-				Message:    st.Message(),
-				Stderr:     payload.Stderr,
-				StatusCode: payload.StatusCode,
-			}
-
-		case *proto.NotFoundPayload:
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(payload.Repo),
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			}
-		}
-	}
-
-	return err
-}
-
-type CommandStatusError struct {
-	Message    string
-	StatusCode int32
-	Stderr     string
-}
-
-func (c *CommandStatusError) Error() string {
-	stderr := c.Stderr
-	if len(stderr) > 100 {
-		stderr = stderr[:100] + "... (truncated)"
-	}
-	if c.Message != "" {
-		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
-	}
-	if c.StatusCode != 0 {
-		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
-	}
-	return stderr
 }
 
 func isRevisionNotFound(err string) bool {
@@ -773,14 +706,17 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	cs, err := client.Search(ctx, args.ToProto())
 	if err != nil {
-		return false, convertGitserverError(err)
+		return false, err
 	}
 
 	limitHit := false
 	for {
 		msg, err := cs.Recv()
 		if err != nil {
-			return limitHit, convertGitserverError(err)
+			if errors.Is(err, io.EOF) {
+				return limitHit, nil
+			}
+			return limitHit, err
 		}
 
 		switch m := msg.Message.(type) {
@@ -792,37 +728,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 			return false, errors.Newf("unknown message type %T", m)
 		}
 	}
-}
-
-func convertGitserverError(err error) error {
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		if notFound, ok := detail.(*proto.NotFoundPayload); ok {
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(notFound.GetRepo()),
-				CloneProgress:   notFound.GetCloneProgress(),
-				CloneInProgress: notFound.GetCloneInProgress(),
-			}
-		}
-	}
-
-	return err
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{

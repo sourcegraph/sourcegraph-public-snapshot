@@ -9,7 +9,7 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/internal/context/resolvers",
         "//internal/codeintel",
-        "//internal/codycontext:context",
+        "//internal/codycontext",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/embeddings",
