@@ -50,6 +50,6 @@ go_test(
         "//internal/database/dbtest",
         "//internal/observation",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

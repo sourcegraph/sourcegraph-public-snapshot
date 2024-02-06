@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIndexingWorkerStore(t *testing.T) {
@@ -24,11 +24,11 @@ func TestIndexingWorkerStore(t *testing.T) {
 		so it's important that we use the real Postgres in this test to prevent
 		schema/implementation drift.
 	*/
-	observationcontext := &observation.TestContext
+	observationContext := &observation.TestContext
 	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationcontext.Logger, sqlDB)
+	db := database.NewDB(observationContext.Logger, sqlDB)
 
-	store, err := NewStore(observationcontext, sqlDB)
+	store, err := NewStore(observationContext, sqlDB)
 
 	if err != nil {
 		t.Fatalf("unexpected error creating dbworker store: %s", err)
@@ -37,7 +37,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 
 	initCount, _ := store.QueuedCount(ctx, true)
 
-	assert.Equal(t, 0, initCount)
+	require.Equal(t, 0, initCount)
 
 	insertIndexRecords(t, db,
 		SyntacticIndexRecord{
@@ -68,18 +68,22 @@ func TestIndexingWorkerStore(t *testing.T) {
 
 	afterCount, _ := store.QueuedCount(ctx, true)
 
-	assert.Equal(t, 3, afterCount)
+	require.Equal(t, 3, afterCount)
 
-	rec1, _, _ := store.Dequeue(ctx, "worker1", nil)
+	record1, hasRecord, err := store.Dequeue(ctx, "worker1", nil)
 
-	assert.Equal(t, 1, rec1.ID)
-	assert.Equal(t, "tangy/tacos", rec1.RepositoryName)
-	assert.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead1111", rec1.Commit)
+	require.NoError(t, err)
+	require.True(t, hasRecord)
+	require.Equal(t, 1, record1.ID)
+	require.Equal(t, "tangy/tacos", record1.RepositoryName)
+	require.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead1111", record1.Commit)
 
-	rec2, _, _ := store.Dequeue(ctx, "worker2", nil)
+	record2, hasRecord, err := store.Dequeue(ctx, "worker2", nil)
 
-	assert.Equal(t, 2, rec2.ID)
-	assert.Equal(t, "salty/empanadas", rec2.RepositoryName)
-	assert.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead2222", rec2.Commit)
+	require.NoError(t, err)
+	require.True(t, hasRecord)
+	require.Equal(t, 2, record2.ID)
+	require.Equal(t, "salty/empanadas", record2.RepositoryName)
+	require.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead2222", record2.Commit)
 
 }
