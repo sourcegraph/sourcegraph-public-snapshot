@@ -187,6 +187,7 @@ export const Default: StoryFn = () => (
                 repoID="github.com/sourcegraph/sourcegraph"
                 filePath="README.md"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                // TODO (dadlerj): update to use a real telemetry recorder
                 telemetryRecorder={noOpTelemetryRecorder}
             />
         )}

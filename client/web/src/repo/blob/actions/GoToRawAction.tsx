@@ -29,7 +29,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
             repoName: this.props.repoName,
             filePath: this.props.filePath,
         })
-        this.props.telemetryRecorder.recordEvent('blob.header.raw-file', 'download')
+        this.props.telemetryRecorder.recordEvent('search.header.raw-file', 'download')
     }
 
     public render(): JSX.Element {
