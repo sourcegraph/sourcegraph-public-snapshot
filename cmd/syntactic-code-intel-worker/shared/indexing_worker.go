@@ -13,7 +13,7 @@ import (
 
 func NewIndexingWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*SyntacticIndexRecord], config IndexingWorkerConfig) *workerutil.Worker[*SyntacticIndexRecord] {
 
-	name := "syntactic_code_intel_indexer"
+	name := "syntactic_code_intel_indexing_worker"
 
 	return dbworker.NewWorker[*SyntacticIndexRecord](ctx, workerStore, &indexingHandler{}, workerutil.WorkerOptions{
 		Name:                 name,
