@@ -194,7 +194,7 @@ fn index_content(contents: &str, parser: ParserId, options: &IndexOptions) -> Re
     }
 
     if options.analysis_mode.locals() {
-        let occurrences = get_locals(parser, &contents)?;
+        let occurrences = get_locals(parser, contents)?;
         document.occurrences.extend(occurrences)
     }
 
