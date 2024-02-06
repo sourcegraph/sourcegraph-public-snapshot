@@ -136,7 +136,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             >
                 {context.sourcegraphDotComMode && <Text className="pt-1 pb-2">Start searching public code now</Text>}
                 <Container>
-                    <SignUpForm context={context} onSignUp={handleSignUp} />
+                    <SignUpForm context={context} onSignUp={handleSignUp} telemetryRecorder={telemetryRecorder} />
                 </Container>
                 <Text className="text-center mt-3">
                     Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>

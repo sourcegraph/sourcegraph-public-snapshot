@@ -259,6 +259,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
                         userID={userID}
                         email={email}
                         emailVerifyCode={emailVerifyCode}
+                        telemetryRecorder={props.telemetryRecorder}
                     />
                 )
             } else {
