@@ -272,7 +272,7 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		parts = append(parts, q)
 	}
 
-	for _, pat := range p.IncludePatterns {
+	for _, pat := range p.IncludePaths {
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -284,8 +284,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		})
 	}
 
-	if p.ExcludePattern != "" {
-		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
+	if p.ExcludePaths != "" {
+		re, err := syntax.Parse(p.ExcludePaths, syntax.Perl)
 		if err != nil {
 			return nil, err
 		}
@@ -293,6 +293,18 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 			Regexp:        re,
 			FileName:      true,
 			CaseSensitive: p.PathPatternsAreCaseSensitive,
+		}})
+	}
+
+	for _, lang := range p.IncludeLangs {
+		parts = append(parts, &zoektquery.Language{
+			Language: lang,
+		})
+	}
+
+	for _, lang := range p.ExcludeLangs {
+		parts = append(parts, &zoektquery.Not{Child: &zoektquery.Language{
+			Language: lang,
 		}})
 	}
 

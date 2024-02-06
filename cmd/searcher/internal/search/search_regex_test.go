@@ -62,7 +62,7 @@ func BenchmarkSearchRegex_large_empty_pattern(b *testing.B) {
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
-			IncludePatterns: []string{".*"},
+			IncludePaths: []string{".*"},
 			Query: &protocol.PatternNode{
 				Value: "",
 			},
@@ -425,7 +425,7 @@ func TestPathMatches(t *testing.T) {
 		Query: &protocol.PatternNode{
 			Value: "",
 		},
-		IncludePatterns:       []string{"a", "b"},
+		IncludePaths:          []string{"a", "b"},
 		PatternMatchesContent: true,
 		PatternMatchesPath:    true,
 		IsCaseSensitive:       false,
@@ -637,8 +637,8 @@ func TestRegexSearch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			patternInfo := tt.args.p
-			patternInfo.IncludePatterns = []string{`a\.go`}
-			patternInfo.ExcludePattern = `README\.md`
+			patternInfo.IncludePaths = []string{`a\.go`}
+			patternInfo.ExcludePaths = `README\.md`
 			patternInfo.Limit = 5
 
 			gotFm, err := regexSearchBatch(context.Background(), tt.args.p, tt.args.zf, 0)

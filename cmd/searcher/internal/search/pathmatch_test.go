@@ -8,8 +8,8 @@ import (
 
 func TestCompilePathPatterns(t *testing.T) {
 	match, err := toPathMatcher(&protocol.PatternInfo{
-		IncludePatterns: []string{`main\.go`, `m`},
-		ExcludePattern:  `README\.md`,
+		IncludePaths:    []string{`main\.go`, `m`},
+		ExcludePaths:    `README\.md`,
 		IsCaseSensitive: false,
 	})
 	if err != nil {

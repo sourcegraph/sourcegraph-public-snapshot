@@ -54,13 +54,13 @@ func toPathMatcher(p *protocol.PatternInfo) (*pathMatcher, error) {
 	}
 
 	var include []*regexp.Regexp
-	for _, p := range p.IncludePatterns {
+	for _, p := range p.IncludePaths {
 		include = append(include, compile(p))
 	}
 
 	var exclude *regexp.Regexp
-	if p.ExcludePattern != "" {
-		exclude = compile(p.ExcludePattern)
+	if p.ExcludePaths != "" {
+		exclude = compile(p.ExcludePaths)
 	}
 
 	return &pathMatcher{

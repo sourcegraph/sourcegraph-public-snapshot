@@ -27,6 +27,7 @@ func (am *allLangMatcher) Matches(_ string, _ func() ([]byte, error)) bool {
 type enryLangMatcher struct {
 	IncludeLangs []string
 	ExcludeLangs []string
+	OnlyExcludes bool
 }
 
 func (em *enryLangMatcher) Matches(path string, getContent func() ([]byte, error)) bool {
@@ -35,10 +36,16 @@ func (em *enryLangMatcher) Matches(path string, getContent func() ([]byte, error
 	langs, err := languages.GetLanguages(path, getContent)
 
 	// In practice err will always be nil, because we never error when fetching content
-	if len(langs) == 0 || err != nil {
+	if err != nil {
 		return false
 	}
 
+	// It's fine if file has no detected language, as long as there are no include filters
+	if len(langs) == 0 {
+		return em.OnlyExcludes
+	}
+
+	// Choose the most likely language
 	lang := langs[0]
 	for _, includeLang := range em.IncludeLangs {
 		if lang != includeLang {
@@ -57,5 +64,6 @@ func toLangMatcher(p *protocol.PatternInfo) langMatcher {
 	return &enryLangMatcher{
 		IncludeLangs: p.IncludeLangs,
 		ExcludeLangs: p.ExcludeLangs,
+		OnlyExcludes: len(p.IncludeLangs) == 0,
 	}
 }
