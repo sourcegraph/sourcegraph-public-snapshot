@@ -33,7 +33,6 @@ type SyntacticIndexRecord struct {
 	NumFailures    int        `json:"numFailures"`
 	RepositoryID   int        `json:"repositoryId"`
 	RepositoryName string     `json:"repositoryName"`
-	Outfile        string     `json:"outfile"`
 	ShouldReindex  bool       `json:"shouldReindex"`
 	EnqueuerUserID int32      `json:"enqueuerUserID"`
 }
@@ -70,7 +69,6 @@ func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error
 		&job.NumFailures,
 		&job.RepositoryID,
 		&job.RepositoryName,
-		&job.Outfile,
 		&job.ShouldReindex,
 		&job.EnqueuerUserID,
 	); err != nil {
@@ -97,7 +95,6 @@ func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.St
 		sqlf.Sprintf("u.num_failures"),
 		sqlf.Sprintf("u.repository_id"),
 		sqlf.Sprintf("u.repository_name"),
-		sqlf.Sprintf("u.outfile"),
 		sqlf.Sprintf("u.should_reindex"),
 		sqlf.Sprintf("u.enqueuer_user_id"),
 	}

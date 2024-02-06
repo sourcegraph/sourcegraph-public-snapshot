@@ -38,10 +38,9 @@ func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexR
 				num_resets,
 				num_failures,
 				repository_id,
-				outfile,
 				should_reindex,
 				enqueuer_user_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -54,7 +53,6 @@ func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexR
 			index.NumResets,
 			index.NumFailures,
 			index.RepositoryID,
-			index.Outfile,
 			index.ShouldReindex,
 			index.EnqueuerUserID,
 		)
