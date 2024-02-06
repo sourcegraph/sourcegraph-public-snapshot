@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS syntactic_scip_indexes (
     CONSTRAINT syntactic_scip_indexes_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
-CREATE SEQUENCE syntactic_scip_index_id_seq
+CREATE SEQUENCE IF NOT EXISTS syntactic_scip_index_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
