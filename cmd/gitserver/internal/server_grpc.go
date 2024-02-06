@@ -1096,3 +1096,19 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 	_, err = io.Copy(w, r)
 	return err
 }
+
+func (gs *grpcServer) P4Exec(_ *proto.P4ExecRequest, _ proto.GitserverService_P4ExecServer) error {
+	return status.Error(codes.Unimplemented, "P4Exec has been deprecated and removed")
+}
+
+// p4ExecRequest is a request to execute a p4 command with given arguments.
+//
+// Note that this request is deserialized by both gitserver and the frontend's
+// internal proxy route and any major change to this structure will need to be
+// reconciled in both places.
+type p4ExecRequest struct {
+	P4Port   string   `json:"p4port"`
+	P4User   string   `json:"p4user"`
+	P4Passwd string   `json:"p4passwd"`
+	Args     []string `json:"args"`
+}
