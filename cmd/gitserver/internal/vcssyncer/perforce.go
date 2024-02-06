@@ -68,7 +68,16 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 		return errors.Wrap(err, "invalid perforce remote URL")
 	}
 
-	return perforce.IsDepotPathCloneable(ctx, s.reposDir, s.P4Home, host, username, password, path)
+	return perforce.IsDepotPathCloneable(ctx, perforce.IsDepotPathCloneableArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
+		P4Port:   host,
+		P4User:   username,
+		P4Passwd: password,
+
+		DepotPath: path,
+	})
 }
 
 // Clone writes a Perforce depot into tmpPath, using a Perforce-to-git-conversion.
@@ -86,7 +95,14 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 
 	// First, do a quick check if we can reach the Perforce server.
 	tryWrite(s.logger, progressWriter, "Checking Perforce server connection\n")
-	err = perforce.P4TestWithTrust(ctx, s.reposDir, s.P4Home, p4port, p4user, p4passwd)
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+	})
 	if err != nil {
 		return errors.Wrap(err, "verifying connection to perforce server")
 	}
@@ -184,7 +200,14 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	}
 
 	// First, do a quick check if we can reach the Perforce server.
-	err = perforce.P4TestWithTrust(ctx, s.reposDir, s.P4Home, p4port, p4user, p4passwd)
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying connection to perforce server")
 	}

@@ -449,7 +449,17 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	}
 
 	// check to see if there's a changelist for this target branch already
-	cl, err := perforce.GetChangelistByClient(ctx, p4home, p4port, p4user, p4passwd, tmpClientDir, p4client)
+	args := perforce.GetChangeListByClientArguments{
+		P4Home:   p4home,
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+
+		WorkDir: tmpClientDir,
+		Client:  p4client,
+	}
+
+	cl, err := perforce.GetChangelistByClient(ctx, args)
 	if err == nil && cl.ID != "" {
 		return cl.ID, nil
 	}

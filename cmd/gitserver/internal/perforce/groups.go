@@ -11,22 +11,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// P4GroupMembersArguments are the arguments for P4GroupMembers.
+type P4GroupMembersArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+
+	// Group is the name of the group to get members for.
+	Group string
+}
+
 // P4GroupMembers returns all usernames that are members of the given group.
-func P4GroupMembers(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd, group string) ([]string, error) {
+func P4GroupMembers(ctx context.Context, args P4GroupMembersArguments) ([]string, error) {
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
 
-	options = append(options, WithArguments("-Mj", "-ztag", "group", "-o", group))
+	options = append(options, WithArguments("-Mj", "-ztag", "group", "-o", args.Group))
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-group-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-group-")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir to invoke 'p4 group'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {

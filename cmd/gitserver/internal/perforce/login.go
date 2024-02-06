@@ -2,31 +2,53 @@ package perforce
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// P4TestWithTrustArguments are the arguments for P4TestWithTrust.
+type P4TestWithTrustArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+}
+
 // P4TestWithTrust attempts to test the Perforce server and performs a trust operation when needed.
-func P4TestWithTrust(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd string) error {
+func P4TestWithTrust(ctx context.Context, args P4TestWithTrustArguments) error {
 	// Attempt to check connectivity, may be prompted to trust.
-	err := P4Test(ctx, reposDir, p4home, p4port, p4user, p4passwd)
+
+	err := P4Test(ctx, P4TestArguments(args))
 	if err == nil {
 		return nil // The test worked, session still valid for the user
 	}
 
 	// If the output indicates that we have to run p4trust first, do that.
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
-		err := P4Trust(ctx, reposDir, p4home, p4port)
+		err := P4Trust(ctx, P4TrustArguments{
+			ReposDir: args.ReposDir,
+			P4Home:   args.P4Home,
+			P4Port:   args.P4Port,
+		})
 		if err != nil {
 			return errors.Wrap(err, "trust")
 		}
 		// Now attempt to run p4test again.
-		err = P4Test(ctx, reposDir, p4home, p4port, p4user, p4passwd)
+		err = P4Test(ctx, P4TestArguments(args))
 		if err != nil {
 			return errors.Wrap(err, "testing connection after trust")
 		}
@@ -37,29 +59,45 @@ func P4TestWithTrust(ctx context.Context, reposDir, p4home, p4port, p4user, p4pa
 	return err
 }
 
+// P4UserIsSuperUserArguments are the arguments for P4UserIsSuperUser.
+type P4UserIsSuperUserArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4Port is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+}
+
 // P4UserIsSuperUser checks if the given credentials are for a super level user.
 // If the user is a super user, no error is returned. If not, ErrIsNotSuperUser
 // is returned.
 // Other errors may occur.
-func P4UserIsSuperUser(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd string) error {
+func P4UserIsSuperUser(ctx context.Context, args P4UserIsSuperUserArguments) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	options := []P4OptionFunc{
-		WithAuthentication(p4user, p4passwd),
-		WithHost(p4port),
+		WithAuthentication(args.P4User, args.P4Passwd),
+		WithHost(args.P4Port),
 	}
 
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
-	options = append(options, WithArguments("protects", "-u", p4user))
+	options = append(options, WithArguments("protects", "-u", args.P4User))
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-protects-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-protects-")
 	if err != nil {
 		return errors.Wrap(err, "could not create temp dir to invoke 'p4 protects'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
@@ -82,24 +120,37 @@ func P4UserIsSuperUser(ctx context.Context, reposDir, p4home, p4port, p4user, p4
 
 var ErrIsNotSuperUser = errors.New("the user does not have super access")
 
+// P4TrustArguments are the arguments to P4Trust.
+type P4TrustArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+}
+
 // P4Trust blindly accepts fingerprint of the Perforce server.
-func P4Trust(ctx context.Context, reposDir, p4home, host string) error {
+func P4Trust(ctx context.Context, args P4TrustArguments) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	options := []P4OptionFunc{
-		WithHost(host),
+		WithHost(args.P4Port),
 	}
 
 	options = append(options, WithArguments("trust", "-y", "-f"))
 
-	scratchDir, err := gitserverfs.TempDir(reposDir, "p4-trust-")
+	scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-trust-")
 	if err != nil {
 		return errors.Wrap(err, "could not create temp dir to invoke 'p4 trust'")
 	}
 	defer os.Remove(scratchDir)
 
-	cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+	cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
 	out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 	if err != nil {
@@ -114,16 +165,32 @@ func P4Trust(ctx context.Context, reposDir, p4home, host string) error {
 	return nil
 }
 
+// P4TestArguments are the arguments to the P4Test function.
+type P4TestArguments struct {
+	// ReposDir is the directory where the repositories are stored.
+	ReposDir string
+	// P4Home is the path to the directory that 'p4' will use as $HOME
+	// and where it will store cache data.
+	P4Home string
+
+	// P4PORT is the address of the Perforce server.
+	P4Port string
+	// P4User is the Perforce username to authenticate with.
+	P4User string
+	// P4Passwd is the Perforce password to authenticate with.
+	P4Passwd string
+}
+
 // P4Test uses `p4 login -s` to test the Perforce connection: port, user, passwd.
 // If the command times out after 10 seconds, it will be tried one more time.
-func P4Test(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd string) error {
+func P4Test(ctx context.Context, args P4TestArguments) error {
 	runCommand := func() error {
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		options := []P4OptionFunc{
-			WithAuthentication(p4user, p4passwd),
-			WithHost(p4port),
+			WithAuthentication(args.P4User, args.P4Passwd),
+			WithHost(args.P4Port),
 		}
 
 		// `p4 ping` requires extra-special access, so we want to avoid using it
@@ -132,13 +199,13 @@ func P4Test(ctx context.Context, reposDir, p4home, p4port, p4user, p4passwd stri
 		// so it seems like the perfect alternative to `p4 ping`.
 		options = append(options, WithArguments("login", "-s"))
 
-		scratchDir, err := gitserverfs.TempDir(reposDir, "p4-login-")
+		scratchDir, err := gitserverfs.TempDir(args.ReposDir, "p4-login-")
 		if err != nil {
 			return errors.Wrap(err, "could not create temp dir to invoke 'p4 login'")
 		}
 		defer os.Remove(scratchDir)
 
-		cmd := NewBaseCommand(ctx, p4home, scratchDir, options...)
+		cmd := NewBaseCommand(ctx, args.P4Home, scratchDir, options...)
 
 		out, err := executil.RunCommandCombinedOutput(ctx, cmd)
 		if err != nil {
