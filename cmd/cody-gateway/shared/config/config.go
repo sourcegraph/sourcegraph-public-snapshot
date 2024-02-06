@@ -77,7 +77,6 @@ type FireworksConfig struct {
 	AllowedModels                          []string
 	AccessToken                            string
 	LogSelfServeCodeCompletionRequests     bool
-	DisableSingleTenant                    bool
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
 }
@@ -163,7 +162,6 @@ func (c *Config) Load() {
 		}, ","),
 		"Fireworks models that can be used."))
 	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
-	c.Fireworks.DisableSingleTenant = c.GetBool("CODY_GATEWAY_FIREWORKS_DISABLE_SINGLE_TENANT", "false", "Whether we should disable single tenant models for Fireworks.")
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}

@@ -118,22 +118,6 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.N = 1
 	}
 
-	// This code rewrites an older model identifier that we've used when testing a single-tenant
-	// deployment and that is no longer live. Since the clients used to hard code these, some
-	// outdated clients might still be sending these requests and we want to make sure they are
-	// compatible with the new virtual model strings.
-	if f.config.DisableSingleTenant {
-		oldModel := body.Model
-		if body.Model == "accounts/sourcegraph/models/starcoder-16b" {
-			body.Model = "starcoder-16b"
-		} else if body.Model == "accounts/sourcegraph/models/starcoder-7b" {
-			body.Model = "starcoder-7b"
-		}
-		if oldModel != body.Model {
-			f.baseLogger.Debug("rewriting model", log.String("old-model", oldModel), log.String("new-model", body.Model))
-		}
-	}
-
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
