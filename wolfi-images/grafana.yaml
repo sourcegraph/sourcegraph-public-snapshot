@@ -18,8 +18,8 @@ contents:
     - glibc-locale-en
 
     # Grafana packages
-    - grafana-7@chainguard
-    - grafana-7-dashboards@chainguard
+    - grafana-7=7.5.28-r2@chainguard
+    - grafana-7-dashboards=7.5.28-r2@chainguard
 
 work-dir: /usr/share/grafana
 
