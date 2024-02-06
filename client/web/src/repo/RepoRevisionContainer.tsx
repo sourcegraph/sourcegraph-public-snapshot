@@ -18,6 +18,7 @@ import {
     PopoverContent,
     PopoverTrigger,
     Position,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -119,14 +120,21 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
 export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = props => {
     const { revision, resolvedRevision, repoName, repo } = props
 
+    const [revisionLabelElement, setRevisionLabelElement] = useState<HTMLElement | null>(null)
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
-    const revisionLabel = (revision && revision === resolvedRevision?.commitID
-        ? resolvedRevision?.commitID.slice(0, 7)
-        : revision.slice(0, 7)) ||
-        resolvedRevision?.defaultBranch || <LoadingSpinner />
+    let revisionLabel = resolvedRevision?.defaultBranch || <LoadingSpinner />
+    if (revision && revision === resolvedRevision?.commitID) {
+        revisionLabel = resolvedRevision?.commitID.slice(0, 7)
+    } else {
+        revisionLabel = revision
+    }
 
+    // The revision label has a max-width, an ellipsis is shown when the revision is too long.
+    // In this case, we show the full revision in a tooltip.
+    const showRevisionTooltip =
+        revisionLabelElement && revisionLabelElement.scrollWidth > revisionLabelElement.offsetWidth
     const isPopoverContentReady = repo && resolvedRevision
 
     return (
@@ -142,7 +150,11 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                 size="sm"
                 disabled={!isPopoverContentReady}
             >
-                {revisionLabel}
+                <Tooltip content={showRevisionTooltip ? revision : ''}>
+                    <span ref={setRevisionLabelElement} className={styles.revisionLabel}>
+                        {revisionLabel}
+                    </span>
+                </Tooltip>
                 <RepoRevisionChevronDownIcon aria-hidden={true} />
             </PopoverTrigger>
             <PopoverContent
