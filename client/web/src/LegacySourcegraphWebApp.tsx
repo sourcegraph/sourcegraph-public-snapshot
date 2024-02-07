@@ -57,6 +57,7 @@ import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } 
 import { TelemetryRecorderProvider } from './telemetry'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
+import { getLicenseFeatures } from './util/license'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
@@ -249,6 +250,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
                             streamSearch={aggregateStreamingSearch}
+                            licenseFeatures={getLicenseFeatures()}
                         />
                     }
                 />

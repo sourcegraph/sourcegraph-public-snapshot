@@ -72,9 +72,9 @@ func TestNewTelemetryEventsExportMode(t *testing.T) {
 			wantMode: TelemetryEventsExportCodyOnly, // cody export is allowed due to terms of use
 		},
 		{
-			name: "export completely disabled via airgapped plan",
+			name: "export completely disabled via airgapped tag",
 			licenseKey: mustKey(license.Info{
-				Tags: []string{PlanAirGappedEnterprise.tag()},
+				Tags: []string{FeatureAllowAirGapped.FeatureName()},
 			}),
 			wantMode: TelemetryEventsExportDisabled,
 		},

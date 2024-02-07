@@ -1201,7 +1201,7 @@ func TestAccessTokenAllowNoExpiration(t *testing.T) {
 		{
 			name:       "no accesstoken config set",
 			siteConfig: schema.SiteConfiguration{},
-			want:       false,
+			want:       true,
 		},
 		{
 			name: "default value",
@@ -1210,17 +1210,27 @@ func TestAccessTokenAllowNoExpiration(t *testing.T) {
 					Allow: string(AccessTokensAll),
 				},
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "allow no expiration",
 			siteConfig: schema.SiteConfiguration{
 				AuthAccessTokens: &schema.AuthAccessTokens{
 					Allow:             string(AccessTokensAll),
-					AllowNoExpiration: true,
+					AllowNoExpiration: pointers.Ptr(true),
 				},
 			},
 			want: true,
+		},
+		{
+			name: "do not allow no expiration",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow:             string(AccessTokensAll),
+					AllowNoExpiration: pointers.Ptr(false),
+				},
+			},
+			want: false,
 		},
 	}
 

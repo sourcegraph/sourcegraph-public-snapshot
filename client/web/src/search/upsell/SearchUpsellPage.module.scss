@@ -1,0 +1,150 @@
+.container {
+    margin: 3rem 15rem;
+    height: fit-content;
+    width: 100%;
+}
+
+.hero {
+    text-align: center;
+    margin: 0 auto;
+
+    &-description {
+        color: var(--text-muted);
+        font-size: 1.1875rem;
+    }
+
+    &-header {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    &-cta {
+        margin-top: 1rem;
+    }
+}
+
+.search {
+    &-example {
+        width: 100%;
+        margin: 5rem 0;
+        filter: drop-shadow(-7px -16px 32px #a112ff24);
+    }
+}
+
+.features {
+    background: var(--color-bg-1);
+    padding: 1.5rem 2rem;
+    border-radius: 0.5rem;
+    margin-bottom: 5rem;
+
+    &-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    &-image {
+        margin-right: -2rem;
+        margin-top: -1.5rem;
+    }
+
+    &-code-search-icon {
+        margin: 1rem 0;
+    }
+
+    &-tag-line {
+        margin-bottom: 1rem;
+        font-weight: 500;
+        font-size: 1.5rem;
+    }
+
+    &-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+    }
+
+    &-card {
+        font-size: 0.9375rem;
+        margin: 1rem 0;
+
+        &-title {
+            margin-bottom: 0.375rem;
+            font-weight: 600;
+        }
+
+        &-description {
+            margin-bottom: 0;
+            font-weight: 400;
+            color: var(--icon-color);
+        }
+    }
+}
+
+.integrations {
+    display: grid;
+    grid-template-columns: 1.5fr 0.5fr;
+    gap: 1rem;
+    padding: 3rem;
+    border-radius: 0.5rem;
+    background: radial-gradient(
+        114.58% 114.58% at 53.54% 108.8%,
+        rgba(255, 85, 67, 0.16) 0%,
+        rgba(161, 18, 255, 0.16) 100%
+    );
+
+    &-meta {
+        flex-direction: column;
+        display: flex;
+        justify-content: center;
+    }
+
+    &-header {
+        font-weight: 500;
+        font-size: 1.5rem;
+    }
+
+    &-description {
+        margin: 0;
+        font-weight: 0.9375rem;
+    }
+}
+
+.other-integrations {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 5rem 0;
+
+    &-grid {
+        padding: 2rem;
+        background: var(--color-bg-1);
+        border-radius: 0.5rem;
+    }
+
+    &-title {
+        font-weight: 500;
+        font-size: 1.5rem;
+    }
+
+    &-description {
+        color: var(--text-muted);
+        font-size: 0.9375rem;
+    }
+}
+
+.footer {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    font-size: 1rem;
+
+    &-text {
+        font-size: 1.3125rem;
+        font-weight: 500;
+        margin: 0;
+    }
+}

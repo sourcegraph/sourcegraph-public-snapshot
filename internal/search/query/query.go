@@ -102,7 +102,7 @@ func For(searchType SearchType) step {
 	case SearchTypeStructural:
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
 	case SearchTypeKeyword:
-		processType = succeeds(substituteConcat(and))
+		processType = succeeds(substituteConcatForKeyword(and))
 	}
 	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
 	return Sequence(normalize, processType)

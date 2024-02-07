@@ -30,10 +30,10 @@ func init() {
 // IsCodyEnabled determines if cody is enabled for the actor in the given context.
 // If it is an unauthenticated request, cody is disabled.
 // If authenticated it checks if cody is enabled for the deployment type
-func IsCodyEnabled(ctx context.Context, db database.DB) bool {
+func IsCodyEnabled(ctx context.Context, db database.DB) (enabled bool, reason string) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
-		return false
+		return false, "not authenticated"
 	}
 	return isCodyEnabled(ctx, db)
 }
@@ -46,27 +46,34 @@ func IsCodyEnabled(ctx context.Context, db database.DB) bool {
 // will determine access.
 // If CodyPermissions is enabled, RBAC will determine access.
 // Otherwise, all authenticated users are granted access.
-func isCodyEnabled(ctx context.Context, db database.DB) bool {
+func isCodyEnabled(ctx context.Context, db database.DB) (enabled bool, reason string) {
 	if err := licensing.Check(licensing.FeatureCody); err != nil {
-		return false
+		return false, "instance license does not allow cody"
 	}
 
 	if !conf.CodyEnabled() {
-		return false
+		return false, "cody is disabled"
 	}
 
 	// Note: we respect the deprecated feature flag, which was in use before
 	// we had proper RBAC implemented.
 	if conf.CodyRestrictUsersFeatureFlag() {
-		return featureflag.FromContext(ctx).GetBoolOr("cody", false)
+		enabled = featureflag.FromContext(ctx).GetBoolOr("cody", false)
+		if enabled {
+			return true, ""
+		}
+		return false, "cody is restricted to feature flag but feature flag is not enabled"
 	}
 
 	if conf.CodyPermissionsEnabled() {
 		// Check if user has cody permission via RBAC
 		err := rbac.CheckCurrentUserHasPermission(ctx, db, rbac.CodyAccessPermission)
-		return err == nil
+		if err != nil {
+			return false, "user does not have permission " + rbac.CodyAccessPermission
+		}
+		return true, ""
 	}
-	return true
+	return true, ""
 }
 
 var ErrRequiresVerifiedEmailAddress = errors.New("cody requires a verified email address")

@@ -54,10 +54,7 @@ func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
 	defer apiClient.mu.Unlock()
 	var err error
 	if accessToken != "" {
-		credential, credErr := azopenai.NewKeyCredential(accessToken)
-		if credErr != nil {
-			return nil, credErr
-		}
+		credential := azcore.NewKeyCredential(accessToken)
 		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
 	} else {
 		var opts *azidentity.DefaultAzureCredentialOptions
@@ -296,21 +293,17 @@ func hasValidFirstCompletionsChoice(choices []azopenai.Choice) bool {
 		choices[0].Text != nil
 }
 
-func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
-	azureMessages := make([]azopenai.ChatMessage, len(messages))
+func getChatMessages(messages []types.Message) []azopenai.ChatRequestMessageClassification {
+	azureMessages := make([]azopenai.ChatRequestMessageClassification, len(messages))
 	for i, m := range messages {
-		var role azopenai.ChatRole
 		message := m.Text
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
-			role = azopenai.ChatRoleUser
+			azureMessages[i] = &azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent(message)}
 		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = azopenai.ChatRoleAssistant
+			azureMessages[i] = &azopenai.ChatRequestAssistantMessage{Content: &message}
 		}
-		azureMessages[i] = azopenai.ChatMessage{
-			Content: &message,
-			Role:    &role,
-		}
+
 	}
 	return azureMessages
 }
@@ -323,13 +316,13 @@ func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.Ch
 		requestParams.TopP = 0
 	}
 	return azopenai.ChatCompletionsOptions{
-		Messages:    getChatMessages(requestParams.Messages),
-		Temperature: &requestParams.Temperature,
-		TopP:        &requestParams.TopP,
-		N:           intToInt32Ptr(1),
-		Stop:        requestParams.StopSequences,
-		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
-		Deployment:  requestParams.Model,
+		Messages:       getChatMessages(requestParams.Messages),
+		Temperature:    &requestParams.Temperature,
+		TopP:           &requestParams.TopP,
+		N:              intToInt32Ptr(1),
+		Stop:           requestParams.StopSequences,
+		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
+		DeploymentName: &requestParams.Model,
 	}
 }
 
@@ -345,13 +338,13 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 		return azopenai.CompletionsOptions{}, err
 	}
 	return azopenai.CompletionsOptions{
-		Prompt:      []string{prompt},
-		Temperature: &requestParams.Temperature,
-		TopP:        &requestParams.TopP,
-		N:           intToInt32Ptr(1),
-		Stop:        requestParams.StopSequences,
-		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
-		Deployment:  requestParams.Model,
+		Prompt:         []string{prompt},
+		Temperature:    &requestParams.Temperature,
+		TopP:           &requestParams.TopP,
+		N:              intToInt32Ptr(1),
+		Stop:           requestParams.StopSequences,
+		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
+		DeploymentName: &requestParams.Model,
 	}, nil
 }
 

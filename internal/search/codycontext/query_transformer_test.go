@@ -67,6 +67,11 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 			wantPatterns: autogold.Expect([]string{"cluster", "python"}),
 		},
 		{
+			query:        "context:global the who",
+			wantQuery:    autogold.Expect("type:file context:global"),
+			wantPatterns: autogold.Expect([]string{}),
+		},
+		{
 			query:     `outer content:"inner {with} (special) ^characters$ and keywords like file or repo"`,
 			wantQuery: autogold.Expect("type:file (special OR ^characters$ OR keyword OR file OR repo OR outer)"),
 			wantPatterns: autogold.Expect([]string{

@@ -97,7 +97,7 @@ type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
 	Allow string `json:"allow,omitempty"`
 	// AllowNoExpiration description: Allows new tokens to be created without specifying an expiration.
-	AllowNoExpiration bool `json:"allowNoExpiration,omitempty"`
+	AllowNoExpiration *bool `json:"allowNoExpiration,omitempty"`
 	// DefaultExpirationDays description: The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present
 	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
 	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
@@ -698,6 +698,12 @@ type Dotcom struct {
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
+	// SamsClientID description: The clientID for SAMS instance.
+	SamsClientID string `json:"sams.clientID,omitempty"`
+	// SamsClientSecret description: The clientSecret for SAMS instance.
+	SamsClientSecret string `json:"sams.clientSecret,omitempty"`
+	// SamsServer description: The server URL for SAMS instance.
+	SamsServer string `json:"sams.server,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.

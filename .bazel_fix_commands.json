@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "regex": "^Check that imports in Go sources match importpath attributes in deps.$",
+    "command": "./dev/bazel_configure_accept_changes.sh",
+    "args": []
+  },
+  {
+    "regex": "missing input file",
+    "command": "./dev/bazel_configure_accept_changes.sh",
+    "args": []
+  },
+  {
+    "regex": ": undefined:",
+    "command": "./dev/bazel_configure_accept_changes.sh",
+    "args": []
+  }
+]
