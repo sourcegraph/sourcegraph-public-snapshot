@@ -4027,7 +4027,7 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.syntactic_scip_indexes"
+# Table "public.syntactic_scip_indexing_jobs"
 ```
          Column         |           Type           | Collation | Nullable |    Default     
 ------------------------+--------------------------+-----------+----------+----------------
@@ -4050,7 +4050,7 @@ Foreign-key constraints:
  should_reindex         | boolean                  |           | not null | false
  enqueuer_user_id       | integer                  |           | not null | 0
 Check constraints:
-    "syntactic_scip_indexes_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
+    "syntactic_scip_indexing_jobs_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 
 ```
 
@@ -5020,7 +5020,7 @@ Foreign-key constraints:
    FROM global_state;
 ```
 
-# View "public.syntactic_scip_indexes_with_repository_name"
+# View "public.syntactic_scip_indexing_jobs_with_repository_name"
 
 ## View query:
 
@@ -5040,7 +5040,7 @@ Foreign-key constraints:
     u.should_reindex,
     u.enqueuer_user_id,
     r.name AS repository_name
-   FROM (syntactic_scip_indexes u
+   FROM (syntactic_scip_indexing_jobs u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
 ```

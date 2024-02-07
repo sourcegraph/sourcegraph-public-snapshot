@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexRecord) {
+func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexingJob) {
 	for _, index := range records {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -26,7 +26,7 @@ func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexR
 		insertRepo(t, db, index.RepositoryID, index.RepositoryName)
 
 		query := sqlf.Sprintf(`
-			INSERT INTO syntactic_scip_indexes (
+			INSERT INTO syntactic_scip_indexing_jobs (
 				id,
 				commit,
 				queued_at,

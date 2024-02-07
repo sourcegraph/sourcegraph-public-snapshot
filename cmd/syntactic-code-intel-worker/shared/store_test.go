@@ -40,7 +40,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 	require.Equal(t, 0, initCount)
 
 	insertIndexRecords(t, db,
-		SyntacticIndexRecord{
+		SyntacticIndexingJob{
 			ID:             1,
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead1111",
 			RepositoryID:   1,
@@ -48,7 +48,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 			State:          Queued,
 			QueuedAt:       time.Now().Add(time.Second * -5),
 		},
-		SyntacticIndexRecord{
+		SyntacticIndexingJob{
 			ID:             2,
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead2222",
 			RepositoryID:   2,
@@ -56,7 +56,7 @@ func TestIndexingWorkerStore(t *testing.T) {
 			State:          Queued,
 			QueuedAt:       time.Now().Add(time.Second * -2),
 		},
-		SyntacticIndexRecord{
+		SyntacticIndexingJob{
 			ID:             3,
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead3333",
 			RepositoryID:   3,

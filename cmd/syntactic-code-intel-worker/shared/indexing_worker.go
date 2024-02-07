@@ -11,11 +11,11 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewIndexingWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*SyntacticIndexRecord], config IndexingWorkerConfig) *workerutil.Worker[*SyntacticIndexRecord] {
+func NewIndexingWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*SyntacticIndexingJob], config IndexingWorkerConfig) *workerutil.Worker[*SyntacticIndexingJob] {
 
 	name := "syntactic_code_intel_indexing_worker"
 
-	return dbworker.NewWorker[*SyntacticIndexRecord](ctx, workerStore, &indexingHandler{}, workerutil.WorkerOptions{
+	return dbworker.NewWorker[*SyntacticIndexingJob](ctx, workerStore, &indexingHandler{}, workerutil.WorkerOptions{
 		Name:                 name,
 		Interval:             config.PollInterval,
 		HeartbeatInterval:    10 * time.Second,
@@ -28,9 +28,9 @@ func NewIndexingWorker(ctx context.Context, observationCtx *observation.Context,
 
 type indexingHandler struct{}
 
-var _ workerutil.Handler[*SyntacticIndexRecord] = &indexingHandler{}
+var _ workerutil.Handler[*SyntacticIndexingJob] = &indexingHandler{}
 
-func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *SyntacticIndexRecord) error {
+func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *SyntacticIndexingJob) error {
 	logger.Info("Stub indexing worker handling record",
 		log.Int("id", record.ID),
 		log.String("repository name", record.RepositoryName),

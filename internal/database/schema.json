@@ -26420,7 +26420,7 @@
       "Triggers": []
     },
     {
-      "Name": "syntactic_scip_indexes",
+      "Name": "syntactic_scip_indexing_jobs",
       "Comment": "Stores metadata about a code intel syntactic index job.",
       "Columns": [
         {
@@ -26661,7 +26661,7 @@
       "Indexes": [],
       "Constraints": [
         {
-          "Name": "syntactic_scip_indexes_commit_valid_chars",
+          "Name": "syntactic_scip_indexing_jobs_commit_valid_chars",
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
@@ -29871,8 +29871,8 @@
       "Definition": " SELECT global_state.site_id,\n    global_state.initialized\n   FROM global_state;"
     },
     {
-      "Name": "syntactic_scip_indexes_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.execution_logs,\n    u.should_reindex,\n    u.enqueuer_user_id,\n    r.name AS repository_name\n   FROM (syntactic_scip_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Name": "syntactic_scip_indexing_jobs_with_repository_name",
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.execution_logs,\n    u.should_reindex,\n    u.enqueuer_user_id,\n    r.name AS repository_name\n   FROM (syntactic_scip_indexing_jobs u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "tracking_changeset_specs_and_changesets",

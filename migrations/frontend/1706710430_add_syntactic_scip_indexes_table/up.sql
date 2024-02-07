@@ -1,5 +1,5 @@
 
-CREATE TABLE IF NOT EXISTS syntactic_scip_indexes (
+CREATE TABLE IF NOT EXISTS syntactic_scip_indexing_jobs (
     id bigint NOT NULL,
     commit text NOT NULL,
     queued_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS syntactic_scip_indexes (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     enqueuer_user_id integer DEFAULT 0 NOT NULL,
-    CONSTRAINT syntactic_scip_indexes_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
+    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
 CREATE SEQUENCE IF NOT EXISTS syntactic_scip_index_id_seq
@@ -28,17 +28,17 @@ CREATE SEQUENCE IF NOT EXISTS syntactic_scip_index_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE syntactic_scip_index_id_seq OWNED BY syntactic_scip_indexes.id;
+ALTER SEQUENCE syntactic_scip_index_id_seq OWNED BY syntactic_scip_indexing_jobs.id;
 
-COMMENT ON TABLE syntactic_scip_indexes IS 'Stores metadata about a code intel syntactic index job.';
+COMMENT ON TABLE syntactic_scip_indexing_jobs IS 'Stores metadata about a code intel syntactic index job.';
 
-COMMENT ON COLUMN syntactic_scip_indexes.commit IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
+COMMENT ON COLUMN syntactic_scip_indexing_jobs.commit IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';
 
-COMMENT ON COLUMN syntactic_scip_indexes.execution_logs IS 'An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.';
+COMMENT ON COLUMN syntactic_scip_indexing_jobs.execution_logs IS 'An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.';
 
-COMMENT ON COLUMN syntactic_scip_indexes.enqueuer_user_id IS 'ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest';
+COMMENT ON COLUMN syntactic_scip_indexing_jobs.enqueuer_user_id IS 'ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest';
 
-CREATE OR REPLACE VIEW syntactic_scip_indexes_with_repository_name AS
+CREATE OR REPLACE VIEW syntactic_scip_indexing_jobs_with_repository_name AS
     SELECT u.id,
         u.commit,
         u.queued_at,
@@ -54,6 +54,6 @@ CREATE OR REPLACE VIEW syntactic_scip_indexes_with_repository_name AS
         u.should_reindex,
         u.enqueuer_user_id,
         r.name AS repository_name
-    FROM (syntactic_scip_indexes u
+    FROM (syntactic_scip_indexing_jobs u
         JOIN repo r ON ((r.id = u.repository_id)))
     WHERE (r.deleted_at IS NULL);

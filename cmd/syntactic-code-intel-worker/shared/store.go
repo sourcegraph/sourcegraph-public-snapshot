@@ -30,8 +30,14 @@ const (
 	Completed  recordState = "completed"
 )
 
-type SyntacticIndexRecord struct {
+// Unless marked otherwise, the columns in this
+// record have a special meaning assigned to them by
+// the queries dbworker performs. You can read more
+// about the different fields and what they do here:
+// https://sourcegraph.com/docs/dev/background-information/workers#database-backed-stores
+type SyntacticIndexingJob struct {
 	ID             int         `json:"id"`
+	// Which commit to index (not part of dbworker fields)
 	Commit         string      `json:"commit"`
 	QueuedAt       time.Time   `json:"queuedAt"`
 	State          recordState `json:"state"`
@@ -41,31 +47,34 @@ type SyntacticIndexRecord struct {
 	ProcessAfter   *time.Time  `json:"processAfter"`
 	NumResets      int         `json:"numResets"`
 	NumFailures    int         `json:"numFailures"`
+	// Which repository id to index (not part of dbworker fields)
 	RepositoryID   int         `json:"repositoryId"`
+	// Name of repository being indexed (not part of dbworker fields)
 	RepositoryName string      `json:"repositoryName"`
 	ShouldReindex  bool        `json:"shouldReindex"`
+	// Which user scheduled this job (not part of dbworker fields)
 	EnqueuerUserID int32       `json:"enqueuerUserID"`
 }
 
-var _ workerutil.Record = SyntacticIndexRecord{}
+var _ workerutil.Record = SyntacticIndexingJob{}
 
-func (i SyntacticIndexRecord) RecordID() int {
+func (i SyntacticIndexingJob) RecordID() int {
 	return i.ID
 }
 
-func (i SyntacticIndexRecord) RecordUID() string {
+func (i SyntacticIndexingJob) RecordUID() string {
 	return strconv.Itoa(i.ID)
 }
 
-func ScanSyntacticIndexRecord(s dbutil.Scanner) (*SyntacticIndexRecord, error) {
-	var job SyntacticIndexRecord
+func ScanSyntacticIndexRecord(s dbutil.Scanner) (*SyntacticIndexingJob, error) {
+	var job SyntacticIndexingJob
 	if err := scanSyntacticIndexRecord(&job, s); err != nil {
 		return nil, err
 	}
 	return &job, nil
 }
 
-func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error {
+func scanSyntacticIndexRecord(job *SyntacticIndexingJob, s dbutil.Scanner) error {
 
 	// Make sure this is in sync with columnExpressions below...
 	if err := s.Scan(
@@ -90,10 +99,10 @@ func scanSyntacticIndexRecord(job *SyntacticIndexRecord, s dbutil.Scanner) error
 	return nil
 }
 
-func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.Store[*SyntacticIndexRecord], error) {
+func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.Store[*SyntacticIndexingJob], error) {
 
 	// Make sure this is in sync with the columns of the
-	// syntactic_scip_indexes_with_repository_name view
+	// syntactic_scip_indexing_jobs_with_repository_name view
 	var columnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("u.id"),
 		sqlf.Sprintf("u.commit"),
@@ -111,10 +120,10 @@ func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.St
 		sqlf.Sprintf("u.enqueuer_user_id"),
 	}
 
-	storeOptions := dbworkerstore.Options[*SyntacticIndexRecord]{
-		Name:      "syntactic_scip_index_store",
-		TableName: "syntactic_scip_indexes",
-		ViewName:  "syntactic_scip_indexes_with_repository_name u",
+	storeOptions := dbworkerstore.Options[*SyntacticIndexingJob]{
+		Name:      "syntactic_scip_indexing_jobs_store",
+		TableName: "syntactic_scip_indexing_jobs",
+		ViewName:  "syntactic_scip_indexing_jobs_with_repository_name u",
 		// Using enqueuer_user_id prioritises manually scheduled indexing
 		OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
 		ColumnExpressions: columnExpressions,
@@ -141,7 +150,6 @@ func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB 
 	// This call to SetProviders is here so that calls to GetProviders don't block.
 	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
 	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-
 	ctx := context.Background()
 	db := database.NewDB(observationCtx.Logger, sqlDB)
 	go func() {
