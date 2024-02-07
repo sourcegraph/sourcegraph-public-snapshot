@@ -1,8 +1,7 @@
 .container {
-    margin: 3rem 15rem;
+    margin: 3rem auto;
     height: fit-content;
-    width: 100%;
-    // max-width: 1280px;
+    max-width: 1280px;
 }
 
 .hero {
@@ -49,7 +48,7 @@
     margin: 0 auto;
     margin-bottom: 5rem;
     max-width: 60rem;
-    box-shadow: 0px 4px 32px 0px #670BDB0A;
+    box-shadow: 0rem 0.25rem 2rem 0rem #670BDB0A;
 
     &-meta {
         display: flex;
@@ -157,7 +156,7 @@
         padding: 2rem;
         background: var(--color-bg-1);
         border-radius: 0.5rem;
-        box-shadow: 0px 4px 32px 0px #670BDB0A;
+        box-shadow: 0rem 0.25rem 2rem 0rem #670BDB0A;
     }
 
     &-title {
