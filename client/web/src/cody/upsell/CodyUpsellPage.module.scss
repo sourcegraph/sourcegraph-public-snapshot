@@ -1,10 +1,11 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .container {
+    --container-margin: 6rem;
+
     width: 100%;
-    margin: 5rem;
+    margin: var(--container-margin);
     height: fit-content;
-    max-width: 1280px;
 
     @media (--md-breakpoint-down) {
         margin: 3rem;
@@ -16,7 +17,7 @@
 }
 
 .hero {
-    margin-right: -5rem;
+    margin-right: calc(var(--container-margin) * -1);
     display: grid;
     grid-template-columns: 0.75fr 1fr;
     gap: 1.875rem;
@@ -201,23 +202,13 @@
 
         &-container {
             margin-top: 2rem;
-            background: linear-gradient(
-                90.64deg,
-                var(--logo-blue) 3.11%,
-                var(--logo-purple) 44.21%,
-                var(--logo-orange) 83.64%
-            );
+            background: linear-gradient(90.64deg, var(--logo-blue) 3.11%, var(--logo-purple) 44.21%, var(--logo-orange) 83.64%);
             border-radius: 0.5rem;
             padding: 0.0625rem;
         }
 
         &-text {
-            background: linear-gradient(
-                90.64deg,
-                var(--logo-blue) 3.11%,
-                var(--logo-purple) 44.21%,
-                var(--logo-orange) 83.64%
-            );
+            background: linear-gradient(90.64deg, var(--logo-blue) 3.11%, var(--logo-purple) 44.21%, var(--logo-orange) 83.64%);
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
