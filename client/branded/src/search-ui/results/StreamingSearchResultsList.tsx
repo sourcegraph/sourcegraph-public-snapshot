@@ -260,7 +260,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     )
 
     return (
-        <div>
+        <>
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
@@ -297,7 +297,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                     </>
                 </StreamingSearchResultFooter>
             )}
-        </div>
+        </>
     )
 }
 
