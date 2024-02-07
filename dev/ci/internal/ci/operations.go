@@ -23,9 +23,6 @@ type CoreTestOperationsOptions struct {
 	CreateBundleSizeDiff bool // for addWebAppEnterpriseBuild
 
 	IsMainBranch bool
-
-	// AspectWorkflows is set to true when we generate steps as part of the Aspect Workflows pipeline
-	AspectWorkflows bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -43,7 +40,11 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 	ops := operations.NewSet()
 
 	// Simple, fast-ish linter checks
-	ops.Append(BazelOperations(buildOpts, opts)...)
+	ops.Append(
+		bazelPrechecks(),
+		triggerBackCompatTest(buildOpts),
+		bazelGoModTidy(),
+	)
 	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))

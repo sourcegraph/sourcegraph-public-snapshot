@@ -8,10 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 )
 
-func triggerBackCompatTest(buildOpts bk.BuildOptions, isAspectWorkflows bool) func(*bk.Pipeline) {
-	if isAspectWorkflows {
-		buildOpts.Message += " (Aspect)"
-	}
 	return func(pipeline *bk.Pipeline) {
 		steps := []bk.StepOpt{
 			bk.Async(false),
@@ -20,16 +16,13 @@ func triggerBackCompatTest(buildOpts bk.BuildOptions, isAspectWorkflows bool) fu
 			bk.Build(buildOpts),
 		}
 
-		if !isAspectWorkflows {
-			steps = append(steps, bk.DependsOn("bazel-prechecks"))
-		}
 		pipeline.AddTrigger(":bazel::hourglass_flowing_sand: BackCompat Tests", "sourcegraph-backcompat", steps...)
 	}
 }
 
 func bazelGoModTidy() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.Agent("queue", "bazel"),
+		bk.Agent("queue", "aspect-small"),
 		bk.Key("bazel-go-mod"),
 		bk.Cmd("./dev/ci/bazel-gomodtidy.sh"),
 	}
