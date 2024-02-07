@@ -35,7 +35,6 @@ var Mac = []category{
 	},
 	{
 		Name:      depsBaseUtilities,
-		Enabled:   disableInCI(), // TODO remove me before merging
 		DependsOn: []string{depsHomebrew},
 		Checks: []*dependency{
 			{
@@ -169,11 +168,6 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.Combine(
-					func(ctx context.Context) error {
-						out, _ := usershell.Run(ctx, fmt.Sprintf("cat $USER/.bash_profile; echo newline; echo user $USER; echo $PATH; which psql; echo %s; cat %s", usershell.ShellConfigPath(ctx), usershell.ShellConfigPath(ctx))).String()
-						fmt.Printf("psql output is %s\n\n\n", out)
-						return nil
-					},
 					check.InPath("psql"),
 					check.CompareSemanticVersion("psql", "psql --version", ">= 15.0"),
 				)),
@@ -284,7 +278,6 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 	{
 		Name:      "Redis database",
 		DependsOn: []string{depsHomebrew},
-		Enabled:   disableInCI(), // TODO remove me before merging
 		Checks: []*dependency{
 			{
 				Name: "Start Redis",
@@ -301,7 +294,6 @@ We recommend installing it with Homebrew and starting it as a system service.`,
 	{
 		Name:      "sourcegraph.test development proxy",
 		DependsOn: []string{depsBaseUtilities},
-		Enabled:   disableInCI(), // TODO remove me before merging
 		Checks: []*dependency{
 			{
 				Name: "/etc/hosts contains sourcegraph.test",

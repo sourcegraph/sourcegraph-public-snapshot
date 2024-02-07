@@ -224,7 +224,7 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 				} else {
 					_ = usershell.Run(
 						ctx,
-						"echo -e '\nexport PATH="+matches[1],
+						"echo -e 'export PATH="+matches[1],
 						">>",
 						usershell.ShellConfigPath(ctx),
 					).Wait()
