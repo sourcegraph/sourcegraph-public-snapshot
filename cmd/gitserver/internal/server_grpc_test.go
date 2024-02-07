@@ -62,7 +62,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
-		require.Contains(t, err.Error(), "repo not cloned")
+		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
 	t.Run("checks for subrepo perms access to given path", func(t *testing.T) {
@@ -201,7 +201,7 @@ func TestGRPCServer_DefaultBranch(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
-		require.Contains(t, err.Error(), "repo not cloned")
+		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
 	t.Run("e2e", func(t *testing.T) {
@@ -263,7 +263,7 @@ func TestGRPCServer_MergeBase(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
-		require.Contains(t, err.Error(), "repo not cloned")
+		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
 	t.Run("e2e", func(t *testing.T) {
@@ -319,7 +319,7 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
-		require.Contains(t, err.Error(), "repo not cloned")
+		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
 	t.Run("checks for subrepo perms access to given path", func(t *testing.T) {
@@ -449,7 +449,7 @@ func TestGRPCServer_GetCommit(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
-		require.Contains(t, err.Error(), "repo not cloned")
+		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
 	t.Run("checks for subrepo perms access to commit", func(t *testing.T) {
