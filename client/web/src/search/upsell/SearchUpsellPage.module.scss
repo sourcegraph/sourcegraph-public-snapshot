@@ -42,8 +42,10 @@
 }
 
 .features {
+    --container-padding: 3rem;
+
     background: var(--color-bg-1);
-    padding: 3rem;
+    padding: var(--container-padding);
     border-radius: 0.5rem;
     margin: 0 auto;
     margin-bottom: 5rem;
@@ -57,8 +59,8 @@
     }
 
     &-image {
-        margin-right: -3rem;
-        margin-top: -3rem;
+        margin-right: calc(var(--container-padding) * -1);
+        margin-top: calc(var(--container-padding) * -1);
     }
 
     &-code-search-icon {

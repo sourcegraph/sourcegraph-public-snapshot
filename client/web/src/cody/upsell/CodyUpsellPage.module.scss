@@ -18,7 +18,6 @@
 .hero {
     margin-right: -5rem;
     display: grid;
-    // grid-template-columns: 1fr 1fr;
     grid-template-columns: 0.75fr 1fr;
     gap: 1.875rem;
 
@@ -70,7 +69,7 @@
         }
 
         &-text {
-            background: linear-gradient(90.64deg, #00cbec 3.11%, #c66fff 44.21%, #ff8578 83.64%);
+            background: linear-gradient(90.64deg, var(--logo-blue) 3.11%, #c66fff 44.21%, #ff8578 83.64%);
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
@@ -202,15 +201,23 @@
 
         &-container {
             margin-top: 2rem;
-            background: linear-gradient(90.64deg, #00cbec 3.11%, #a112ff 44.21%, #ff5543 83.64%);
-            // background: linear-gradient(90.64deg, var(--logo-orange) 3.11%, var(--violet-04) 83.64%);
+            background: linear-gradient(
+                90.64deg,
+                var(--logo-blue) 3.11%,
+                var(--logo-purple) 44.21%,
+                var(--logo-orange) 83.64%
+            );
             border-radius: 0.5rem;
             padding: 0.0625rem;
         }
 
         &-text {
-            // background: linear-gradient(91deg, var(--logo-orange) 3.11%, var(--logo-purple) 83.64%);
-            background: linear-gradient(90.64deg, #00cbec 3.11%, #a112ff 44.21%, #ff5543 83.64%);
+            background: linear-gradient(
+                90.64deg,
+                var(--logo-blue) 3.11%,
+                var(--logo-purple) 44.21%,
+                var(--logo-orange) 83.64%
+            );
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;

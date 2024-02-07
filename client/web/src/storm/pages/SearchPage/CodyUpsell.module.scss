@@ -6,13 +6,13 @@
     width: 100%;
     border-radius: 0.5rem;
     background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.32) 3.11%, rgba(215, 240, 253, 0.32) 83.64%),
-        linear-gradient(0deg, #f9fafb, #f9fafb);
+        linear-gradient(0deg, var(--gray-01), var(---gray-01));
     display: grid;
     grid-template-columns: 1fr 1.5fr;
     gap: 1rem;
 
     :global(.theme-dark) & {
-        background: linear-gradient(0deg, #14171f, #14171f),
+        background: linear-gradient(0deg, var(--gray-12), var(--gray-12)),
             linear-gradient(90.64deg, rgba(28, 34, 48, 0.32) 3.11%, rgba(17, 26, 40, 0.32) 83.64%);
     }
 
