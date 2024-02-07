@@ -216,13 +216,13 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 		pathAddCommandIsNext := false
 		return c.Run().StreamLines(func(line string) {
 			if pathAddCommandIsNext {
-				cmd = line
-				println("Line is: " + line + "\n\n\n")
+				cmd = strings.TrimSpace(line)
+				println("Line is: " + cmd + "\n\n\n")
 				// quick hack to ensure that if the usershell does not end with a line feed,
 				// we start our new command with a line feed.
-				if strings.HasPrefix(line, "echo '") {
+				if strings.HasPrefix(cmd, "echo '") {
 					println("Has echo true\n\n\n")
-					cmd = strings.Replace(line, "echo ", "echo -e ", 1)
+					cmd = strings.Replace(cmd, "echo ", "echo -e ", 1)
 				}
 				println("cmd is: " + cmd + "\n\n\n")
 				_ = usershell.Run(ctx, cmd).Wait()
