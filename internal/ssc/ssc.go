@@ -105,6 +105,9 @@ func (c *client) FetchSubscriptionBySAMSAccountID(ctx context.Context, samsAccou
 	case http.StatusNoContent:
 		// User is valid, but does not have an SSC subscription.
 		return nil, nil
+	case http.StatusNotFound:
+		// User is not found on SSC. This is not a valid state, but we should handle it gracefully.
+		return nil, nil
 	default:
 		return nil, errors.Errorf("unexpected status code %d", *code)
 	}
