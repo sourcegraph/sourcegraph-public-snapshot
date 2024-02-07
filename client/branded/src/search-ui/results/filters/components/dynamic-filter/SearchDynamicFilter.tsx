@@ -159,7 +159,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                                 >
                                     <SyntaxHighlightedSearchQuery query={suggestedQueryFilter} />
                                 </Button>{' '}
-                                to your original search query narrow results to that repo.
+                                to your original search query to narrow results to that repo.
                             </>
                         ) : (
                             <>
