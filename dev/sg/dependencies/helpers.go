@@ -222,7 +222,7 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 				// we start our new command with a line feed.
 				if strings.HasPrefix(cmd, "echo 'export") {
 					println("Has echo true\n\n\n")
-					cmd = strings.Replace(cmd, `echo '`, `echo '\n`, 1)
+					cmd = strings.Replace(cmd, "echo '", "echo '\n", 1)
 				}
 				println("cmd is: " + cmd + "\n\n\n")
 				_ = usershell.Run(ctx, cmd).Wait()
