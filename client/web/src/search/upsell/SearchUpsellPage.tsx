@@ -58,11 +58,18 @@ export const SearchUpsellPage: FC = () => {
                         variant="primary"
                         className="py-2 px-3 rounded mr-4"
                         target="_blank"
+                        rel="noreferrer"
                     >
                         Talk to a product expert
                     </ButtonLink>
 
-                    <ButtonLink to={findOutMoreLink} variant="secondary" className="py-2 px-3 rounded" target="_blank">
+                    <ButtonLink
+                        to={findOutMoreLink}
+                        variant="secondary"
+                        className="py-2 px-3 rounded"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
                         Find out more
                     </ButtonLink>
                 </div>
@@ -109,7 +116,11 @@ export const SearchUpsellPage: FC = () => {
                         Complete code reviews, get up to speed on unfamiliar code, and determine the impact of code
                         changes with the confidence of compiler-accurate code navigation.
                     </Text>
-                    <Link to="/help/code_navigation/explanations/introduction_to_code_navigation" target="_blank">
+                    <Link
+                        to="/help/code_navigation/explanations/introduction_to_code_navigation"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
                         Find out more about Code Navigation{' '}
                         <Icon
                             className={styles.otherIntegrationsLinkIcon}
@@ -130,6 +141,7 @@ export const SearchUpsellPage: FC = () => {
                     <Link
                         to="https://sourcegraph.com/case-studies/indeed-accelerates-development-velocity"
                         target="_blank"
+                        rel="noreferrer"
                     >
                         Read how Indeed uses Batch Changes to accelerate deployment{' '}
                         <Icon
@@ -144,14 +156,14 @@ export const SearchUpsellPage: FC = () => {
 
             <section className={styles.footer}>
                 <Text className={styles.footerText}>Code Search also works great with...</Text>
-                <Link to="/help/code_monitoring" target="_blank">
+                <Link to="/help/code_monitoring" target="_blank" rel="noreferrer">
                     Code Monitoring{' '}
                     <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Code Monitoring" />
                 </Link>
-                <Link to="/help/code_insights" target="_blank">
+                <Link to="/help/code_insights" target="_blank" rel="noreferrer">
                     Insights <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Code Insights" />
                 </Link>
-                <Link to="/help/notebooks" target="_blank">
+                <Link to="/help/notebooks" target="_blank" rel="noreferrer">
                     Notebooks <Icon svgPath={mdiOpenInNew} inline={false} aria-label="Learn more about Notebooks" />
                 </Link>
             </section>
