@@ -65,7 +65,7 @@ func (c *client) sendRequest(ctx context.Context, method string, url string, out
 	}
 	defer resp.Body.Close()
 
-	if outBody != nil {
+	if outBody != nil && resp.StatusCode == http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return &resp.StatusCode, errors.Wrap(err, "reading response")
@@ -152,12 +152,17 @@ func NewClient() (Client, error) {
 		return &client{}, errors.New("no SAMS authorization provider configured")
 	}
 
+	baseURL := sgconf.SscApiBaseUrl
+	if baseURL == "" {
+		baseURL = "https://accounts.sourcegraph.com/cody/api"
+	}
+
 	// We want this tokenSource to be long lived, so we benefit from reusing existing
 	// SAMS tokens if repeated requests are made within the token's lifetime. (Under
 	// the hood it returns an oauth2.ReuseTokenSource.)
 	tokenSource := samsConfig.TokenSource(context.Background())
 	return &client{
-		baseURL:         sgconf.SscApiBaseUrl,
+		baseURL:         baseURL,
 		samsTokenSource: tokenSource,
 	}, nil
 }

@@ -124,6 +124,13 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             return
         }
         setHasBeenVisible(true)
+
+        // This file contains some large lines, avoid stressing
+        // syntax-highlighter and the browser.
+        if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+            return
+        }
+
         const subscription = fetchHighlightedFileLineRanges(
             {
                 repoName: result.repository,

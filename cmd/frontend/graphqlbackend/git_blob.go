@@ -16,12 +16,16 @@ type GitTreeEntryBlameArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Blame(ctx context.Context, args *GitTreeEntryBlameArgs) ([]*hunkResolver, error) {
-	hr, err := r.gitserverClient.StreamBlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
+	opts := &gitserver.BlameOptions{
 		NewestCommit:     api.CommitID(r.commit.OID()),
-		StartLine:        int(args.StartLine),
-		EndLine:          int(args.EndLine),
 		IgnoreWhitespace: args.IgnoreWhitespace,
-	})
+		Range: &gitserver.BlameRange{
+			StartLine: int(args.StartLine),
+			EndLine:   int(args.EndLine),
+		},
+	}
+
+	hr, err := r.gitserverClient.StreamBlameFile(ctx, r.commit.repoResolver.RepoName(), r.Path(), opts)
 	if err != nil {
 		return nil, err
 	}

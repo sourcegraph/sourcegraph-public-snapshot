@@ -189,6 +189,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 			h.flushTickerInterval,
 			h.pingTickerInterval,
 			displayFilter,
+			args.MaxLineLen,
 			args.EnableChunkMatches,
 			logLatency,
 		)
@@ -259,6 +260,7 @@ type args struct {
 	Version                    string
 	PatternType                string
 	Display                    int
+	MaxLineLen                 int
 	EnableChunkMatches         bool
 	SearchMode                 int
 	ContextLines               *int32
@@ -289,6 +291,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
 		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
+	maxLineLen := get("max-line-len", "-1")
+	if a.MaxLineLen, err = strconv.Atoi(maxLineLen); err != nil {
+		return nil, errors.Errorf("max-line-len must be an integer, got %q: %w", display, err)
 	}
 
 	chunkMatches := get("cm", "f")
@@ -383,6 +390,7 @@ func newEventHandler(
 	flushInterval time.Duration,
 	progressInterval time.Duration,
 	displayFilter *displayFilter,
+	maxLineLen int,
 	enableChunkMatches bool,
 	logLatency func(),
 ) *eventHandler {
@@ -404,6 +412,7 @@ func newEventHandler(
 		progress:           progress,
 		progressInterval:   progressInterval,
 		displayFilter:      displayFilter,
+		maxLineLen:         maxLineLen,
 		enableChunkMatches: enableChunkMatches,
 		first:              true,
 		logLatency:         logLatency,
@@ -427,6 +436,7 @@ type eventHandler struct {
 
 	// Config params
 	enableChunkMatches bool
+	maxLineLen         int
 	flushInterval      time.Duration
 	progressInterval   time.Duration
 
@@ -478,7 +488,10 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 			continue
 		}
 
-		eventMatch := search.FromMatch(match, repoMetadata, h.enableChunkMatches)
+		eventMatch := search.FromMatch(match, repoMetadata, search.FromMatchOptions{
+			ChunkMatches:         h.enableChunkMatches,
+			MaxContentLineLength: h.maxLineLen,
+		})
 		h.matchesBuf.Append(eventMatch)
 	}
 
