@@ -55,7 +55,7 @@ func TestServeHelp(t *testing.T) {
 		if want := http.StatusTemporaryRedirect; rw.Code != want {
 			t.Errorf("got %d, want %d", rw.Code, want)
 		}
-		if got, want := rw.Header().Get("Location"), "https://docs.sourcegraph.com/@3.39/dev"; got != want {
+		if got, want := rw.Header().Get("Location"), "https://sourcegraph.com/docs/v/3.39/dev"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
@@ -72,7 +72,7 @@ func TestServeHelp(t *testing.T) {
 		if want := http.StatusTemporaryRedirect; rw.Code != want {
 			t.Errorf("got %d, want %d", rw.Code, want)
 		}
-		if got, want := rw.Header().Get("Location"), "https://docs.sourcegraph.com/foo/bar"; got != want {
+		if got, want := rw.Header().Get("Location"), "https://sourcegraph.com/docs/foo/bar"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
