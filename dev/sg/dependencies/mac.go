@@ -23,8 +23,7 @@ const (
 // Mac declares Mac dependencies.
 var Mac = []category{
 	{
-		Name:    depsHomebrew,
-		Enabled: disableInCI(), // TODO remove me before merging
+		Name: depsHomebrew,
 		Checks: []*dependency{
 			{
 				Name:        "brew",
