@@ -67,5 +67,5 @@ type AttributionSnippetThreshold {
     """
     Lower bound of lines that Cody considers for attribution search (if any).
     """
-    linesLowerBound: Int
+    linesLowerBound: Int!
 }

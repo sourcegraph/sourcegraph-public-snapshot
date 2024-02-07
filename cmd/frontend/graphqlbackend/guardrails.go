@@ -25,7 +25,7 @@ type SnippetAttributionConnectionResolver interface {
 
 type AttributionSnippetThresholdResolver interface {
 	SearchPerformed() bool
-	LinesLowerBound() *int32
+	LinesLowerBound() int32
 }
 
 type SnippetAttributionResolver interface {
