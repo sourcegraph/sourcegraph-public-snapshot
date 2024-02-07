@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 
-import { fetchEventSource } from '@microsoft/fetch-event-source'
+import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source'
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { map, throttleTime } from 'rxjs/operators'
+import { catchError, map, throttleTime } from 'rxjs/operators'
 
-import { memoizeObservable } from '@sourcegraph/common'
+import { ErrorLike, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
@@ -105,8 +105,8 @@ const fetchBlameViaStreaming = memoizeObservable(
         revision: string
         filePath: string
         sourcegraphURL: string
-    }): Observable<BlameHunkData> =>
-        new Observable<BlameHunkData>(subscriber => {
+    }): Observable<BlameHunkData | ErrorLike> =>
+        new Observable<BlameHunkData | ErrorLike>(subscriber => {
             let didEmitFirstCommitDate = false
             let firstCommitDate: Date | undefined
             let externalURLs: BlameHunkData['externalURLs']
@@ -125,6 +125,12 @@ const fetchBlameViaStreaming = memoizeObservable(
                         'X-Requested-With': 'Sourcegraph',
                         'X-Sourcegraph-Should-Trace':
                             new URLSearchParams(window.location.search).get('trace') || 'false',
+                    },
+                    async onopen(response) {
+                        if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
+                            return
+                        }
+                        throw new Error('request for blame data failed: ' + (await response.text()))
                     },
                     onmessage(event) {
                         if (event.event === 'hunk') {
@@ -162,6 +168,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                     onerror(event) {
                         // eslint-disable-next-line no-console
                         console.error(event)
+                        throw new Error(event)
                     },
                 }),
             ]).then(
@@ -177,7 +184,10 @@ const fetchBlameViaStreaming = memoizeObservable(
             )
         })
             // Throttle the results to avoid re-rendering the blame sidebar for every hunk
-            .pipe(throttleTime(1000, undefined, { leading: true, trailing: true })),
+            .pipe(
+                throttleTime(1000, undefined, { leading: true, trailing: true }),
+                catchError(error => of(error))
+            ),
     makeRepoURI
 )
 
@@ -258,9 +268,9 @@ export const useBlameHunks = (
         filePath: string
     },
     sourcegraphURL: string
-): BlameHunkData => {
+): BlameHunkData | ErrorLike => {
     const [isBlameVisible] = useBlameVisibility(isPackage)
-    const shouldFetchBlame = isBlameVisible && status !== 'initial'
+    const shouldFetchBlame = isBlameVisible
 
     const hunks = useObservable(
         useMemo(

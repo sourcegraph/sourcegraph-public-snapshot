@@ -33,6 +33,7 @@ import {
     Alert,
     Button,
     ButtonLink,
+    ErrorAlert,
     ErrorMessage,
     Icon,
     LoadingSpinner,
@@ -464,6 +465,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     enableOwnershipPanel={enableOwnershipPanel}
                 />
             )}
+            {isErrorLike(blameHunks) && <ErrorAlert error={blameHunks} />}
         </>
     )
 
@@ -608,7 +610,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
-                        blameHunks={blameHunks}
+                        blameHunks={isErrorLike(blameHunks) ? undefined : blameHunks}
                         ocgVisibility={ocgVisibility}
                         overrideBrowserSearchKeybinding={true}
                     />
