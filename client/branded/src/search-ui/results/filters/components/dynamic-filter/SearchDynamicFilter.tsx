@@ -222,12 +222,15 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
 
 function filterForSearchTerm(input: string, filterKind: Filter['kind']): string | null {
     switch (filterKind) {
-        case 'repo':
+        case 'repo': {
             return `repo:${maybeQuoteString(input)}`
-        case 'author':
+        }
+        case 'author': {
             return `author:${maybeQuoteString(input)}`
-        default:
+        }
+        default: {
             return null
+        }
     }
 }
 
