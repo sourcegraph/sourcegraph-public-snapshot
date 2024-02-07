@@ -109,11 +109,7 @@ export const SearchUpsellPage: FC = () => {
                         Complete code reviews, get up to speed on unfamiliar code, and determine the impact of code
                         changes with the confidence of compiler-accurate code navigation.
                     </Text>
-                    <Link
-                        to="/help/code_navigation/explanations/introduction_to_code_navigation"
-                        target="_blank"
-                        className={styles.otherIntegrationsLink}
-                    >
+                    <Link to="/help/code_navigation/explanations/introduction_to_code_navigation" target="_blank">
                         Find out more about Code Navigation{' '}
                         <Icon
                             className={styles.otherIntegrationsLinkIcon}
@@ -134,7 +130,6 @@ export const SearchUpsellPage: FC = () => {
                     <Link
                         to="https://sourcegraph.com/case-studies/indeed-accelerates-development-velocity"
                         target="_blank"
-                        className={styles.otherIntegrationsLink}
                     >
                         Read how Indeed uses Batch Changes to accelerate deployment{' '}
                         <Icon
