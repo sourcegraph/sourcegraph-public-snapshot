@@ -7,6 +7,7 @@ import (
 	"io"
 	"os/exec"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -131,31 +132,49 @@ type cmdReader struct {
 	logger   log.Logger
 	git      git.GitBackend
 	repoName api.RepoName
+	mu       sync.Mutex
 	closed   bool
 }
 
 func (rc *cmdReader) Read(p []byte) (n int, err error) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
 	n, err = rc.ReadCloser.Read(p)
 	if err == io.EOF {
 		rc.ReadCloser.Close()
 		rc.closed = true
 
-		if err := rc.cmd.Wait(); err != nil {
-			if checkMaybeCorruptRepo(rc.ctx, rc.logger, rc.git, rc.repoName, rc.stderr.String()) {
-				return n, common.ErrRepoCorrupted{Reason: rc.stderr.String()}
-			}
-			return n, commandFailedError(rc.ctx, err, rc.cmd, rc.stderr.Bytes())
+		if err := rc.waitCmd(); err != nil {
+			return n, err
 		}
 	}
 	return n, err
 }
 
 func (rc *cmdReader) Close() error {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
 	if rc.closed {
 		return nil
 	}
 
-	return rc.ReadCloser.Close()
+	// Close the underlying reader.
+	err := rc.ReadCloser.Close()
+
+	// And finalize the command.
+	return errors.Append(err, rc.waitCmd())
+}
+
+func (rc *cmdReader) waitCmd() error {
+	if err := rc.cmd.Wait(); err != nil {
+		if checkMaybeCorruptRepo(rc.ctx, rc.logger, rc.git, rc.repoName, rc.stderr.String()) {
+			return common.ErrRepoCorrupted{Reason: rc.stderr.String()}
+		}
+		return commandFailedError(rc.ctx, err, rc.cmd, rc.stderr.Bytes())
+	}
+	return nil
 }
 
 // limitWriter is a io.Writer that writes to an W but discards after N bytes.
