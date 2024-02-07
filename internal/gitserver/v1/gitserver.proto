@@ -112,6 +112,9 @@ service GitserverService {
 }
 
 message BlameRequest {
+  reserved 6, 7;
+  reserved "start_line", "end_line";
+
   // repo_name is the name of the repo to run the blame operation in.
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
@@ -119,8 +122,6 @@ message BlameRequest {
   string commit = 3;
   string path = 4;
   bool ignore_whitespace = 5;
-  reserved 6;
-  reserved 7;
   optional BlameRange range = 8;
 }
 
