@@ -1,12 +1,27 @@
 package guardrails
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+)
 
 type SnippetLowerBound struct {
 	linesLowerBound int
 }
 
 func NewThreshold() SnippetLowerBound {
+	// Always run in DotCom:
+	// - By the time gateway requests dotcom for snippet attribution,
+	//   the enterprise instance caller will have already determined
+	//   whether attribution search should run.
+	// - For autocomplete, attribution is turned off on dotcom,
+	//   so this is a no-op.
+	if envvar.SourcegraphDotComMode() {
+		return SnippetLowerBound{
+			linesLowerBound: 0,
+		}
+	}
 	return SnippetLowerBound{
 		linesLowerBound: 10,
 	}

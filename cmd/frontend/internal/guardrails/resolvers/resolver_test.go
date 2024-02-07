@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -73,7 +74,7 @@ func TestSuccessfulAttribution(t *testing.T) {
 		})
 	})
 
-	t.Run("search performed", func(t *testing.T) {
+	t.Run("below search lower bound", func(t *testing.T) {
 		// even if there would have been search results for short snippet.
 		attributionService.searchResult = []string{"repo1", "repo2"}
 		graphqlbackend.RunTest(t, &graphqlbackend.Test{
@@ -99,6 +100,52 @@ func TestSuccessfulAttribution(t *testing.T) {
 					"snippetThreshold": {
 						"searchPerformed": false,
 						"linesLowerBound": 10
+					}
+				}
+			}`,
+			Variables: map[string]any{
+				"snippet": `1st line
+				2nd line
+				3rd line
+				4th line
+				5th line
+				6th line
+				7th line`,
+			},
+		})
+	})
+
+	t.Run("search bounds are zero on dotcom", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(false) })
+		// even if there would have been search results for short snippet.
+		attributionService.searchResult = []string{"repo1", "repo2"}
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema:  schema,
+			Context: context.Background(),
+			Query: `
+				query SnippetAttribution($snippet: String!) {
+					snippetAttribution(snippet: $snippet) {
+						limitHit
+						nodes {
+							repositoryName
+						}
+						snippetThreshold {
+							searchPerformed
+							linesLowerBound
+						}
+					}
+				}`,
+			ExpectedResult: `{
+				"snippetAttribution": {
+					"limitHit": false,
+					"nodes": [
+						{"repositoryName": "repo1"},
+						{"repositoryName": "repo2"}
+					],
+					"snippetThreshold": {
+						"searchPerformed": true,
+						"linesLowerBound": 0
 					}
 				}
 			}`,

@@ -19,6 +19,7 @@ go_test(
     srcs = ["resolver_test.go"],
     embed = [":resolvers"],
     deps = [
+        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/guardrails/attribution",
         "//internal/database/dbmocks",
