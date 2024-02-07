@@ -422,6 +422,15 @@ commands:
     env:
       SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
+  web-standalone-http-prod:
+    description: Standalone web frontend (production) with API proxy to a configurable URL
+    cmd: pnpm --filter @sourcegraph/web serve
+    install: pnpm --filter @sourcegraph/web run build
+    env:
+      NODE_ENV: production
+      WEB_BUILDER_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
+
   web-integration-build:
     description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
@@ -1535,7 +1544,7 @@ commandsets:
 
   web-standalone-prod:
     commands:
-      - web-standalone-http
+      - web-standalone-http-prod
       - web
       - caddy
     env:
