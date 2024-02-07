@@ -90,7 +90,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     }
 
     const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
-    const hasAddedCreditCard = data.currentUser.codySubscription?.status !== CodySubscriptionStatus.PENDING
+    const hasNotAddedCreditCard = data.currentUser.codySubscription?.status === CodySubscriptionStatus.PENDING
 
     return (
         <>
@@ -232,7 +232,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     </Text>
                                 )}
                                 {isProUser ? (
-                                    arePaymentsEnabled && !hasAddedCreditCard ? (
+                                    arePaymentsEnabled && hasNotAddedCreditCard ? (
                                         <Button
                                             className="flex-1 mt-1"
                                             variant="primary"

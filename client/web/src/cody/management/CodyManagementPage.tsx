@@ -120,6 +120,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const userIsOnProTier =
         subscription.plan === CodySubscriptionPlan.PRO &&
         !(subscription.status === CodySubscriptionStatus.TRIALING && subscription.cancelAtPeriodEnd)
+    const hasNotAddedCreditCard = subscription.status === CodySubscriptionStatus.PENDING
 
     // Flag usage limits as resetting based on the current subscription's billing cycle.
     //
@@ -305,7 +306,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ))}
                         </div>
-                        {!hasTrialEnded && userIsOnProTier && (
+                        {!hasTrialEnded && userIsOnProTier && hasNotAddedCreditCard && (
                             <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
                                 <TrialPeriodIcon />
                                 <div className="mb-2 mt-4">
