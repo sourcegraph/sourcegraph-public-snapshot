@@ -250,7 +250,7 @@ const SignUpNotice: React.FunctionComponent<SignUpNoticeProps> = ({
                 to="https://sourcegraph.com/get-started?t=enterprise"
                 onClick={() => {
                     eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
-                    telemetryRecorder.recordEvent('auth.enterprise-cta', 'click', { location: 'SignInPage' })
+                    telemetryRecorder.recordEvent('auth.enterprise-cta', 'click')
                 }}
             >
                 consider Sourcegraph Enterprise

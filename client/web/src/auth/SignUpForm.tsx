@@ -118,7 +118,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 setLoading(false)
             })
             eventLogger.log('InitiateSignUp')
-            telemetryRecorder.recordEvent('auth', 'initiate', { type: V2AuthProviderTypes['builtin'] })
+            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes['builtin'] } })
         },
         [onSignUp, disabled, emailState, usernameState, passwordState]
     )
@@ -130,7 +130,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log(EventName.AUTH_INITIATED, { type }, { type })
-            telemetryRecorder.recordEvent('auth', 'initiate', { type: V2AuthProviderTypes[type] })
+            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
         },
         []
     )

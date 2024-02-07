@@ -66,7 +66,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
             { type: eventType, source: 'vs-code' },
             { type: eventType, source: 'vs-code' }
         )
-        telemetryRecorder.recordEvent('auth', 'initiate', { type: V2AuthProviderTypes[type] })
+        telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
     }
 
     const signUpForm = (

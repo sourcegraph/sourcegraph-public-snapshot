@@ -84,7 +84,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log(EventName.AUTH_INITIATED, { type: eventType }, { type: eventType })
-        telemetryRecorder.recordEvent('auth', 'initiate', { type: V2AuthProviderTypes[type] })
+        telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
     }
 
     const signUpForm = (
