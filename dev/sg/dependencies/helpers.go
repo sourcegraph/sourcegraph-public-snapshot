@@ -216,13 +216,19 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 		pathAddCommandIsNext := false
 		return c.Run().StreamLines(func(line string) {
 			if pathAddCommandIsNext {
-				cmd = strings.TrimSpace(line)
-				// quick hack to ensure that if the rc file does not end with a line feed,
-				// we start our new command with a line feed.
-				if strings.HasPrefix(cmd, "echo 'export") {
-					cmd = strings.Replace(cmd, "echo '", "echo '\n", 1)
+				matches := exportPathRegexp.FindStringSubmatch(line)
+				if len(matches) != 2 {
+					cio.Output.WriteWarningf("unexpected output from brew install: %q\n"+
+						"was not able to automatically update $PATH. Please add this to "+
+						"your path manually.", line)
+				} else {
+					_ = usershell.Run(
+						ctx,
+						"echo -e '\nexport PATH="+matches[1],
+						">>",
+						usershell.ShellConfigPath(ctx),
+					).Wait()
 				}
-				_ = usershell.Run(ctx, cmd).Wait()
 				pathAddCommandIsNext = false
 			}
 			if strings.Contains(line, "If you need to have "+formula+" first in your PATH, run:") {
@@ -232,6 +238,8 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 		})
 	}
 }
+
+var exportPathRegexp = regexp.MustCompile(`export PATH=(.*) >>`)
 
 func caskInstall(formula string) check.FixAction[CheckArgs] {
 	return createBrewInstallFix(formula, true)

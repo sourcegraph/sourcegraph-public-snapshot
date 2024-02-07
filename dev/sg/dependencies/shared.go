@@ -114,7 +114,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 	categories := category{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
-		Enabled:   enableOnlyInSourcegraphRepo(),
+		Enabled:   disableInCI(), // TODO remove me before merging
 		Checks: []*dependency{
 			{
 				Name:  "go",
@@ -225,7 +225,8 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 
 func categoryAdditionalSGConfiguration() category {
 	return category{
-		Name: "Additional sg configuration",
+		Name:    "Additional sg configuration",
+		Enabled: disableInCI(), // TODO remove me before merging
 		Checks: []*dependency{
 			{
 				Name: "Autocompletions",
