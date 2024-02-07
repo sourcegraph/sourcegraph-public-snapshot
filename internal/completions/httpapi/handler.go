@@ -255,7 +255,8 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 			l.Error("attribution error", log.Error(err))
 		}
 		f := guardrails.NoopCompletionsFilter(eventSink)
-		if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
+		if conf.GetConfigFeatures(conf.SiteConfig()).Attribution &&
+			featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
 			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
 				Sink:             eventSink,
 				Test:             test,
