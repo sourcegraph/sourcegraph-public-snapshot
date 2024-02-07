@@ -202,13 +202,23 @@
 
         &-container {
             margin-top: 2rem;
-            background: linear-gradient(90.64deg, var(--logo-blue) 3.11%, var(--logo-purple) 44.21%, var(--logo-orange) 83.64%);
+            background: linear-gradient(
+                90.64deg,
+                var(--logo-blue) 3.11%,
+                var(--logo-purple) 44.21%,
+                var(--logo-orange) 83.64%
+            );
             border-radius: 0.5rem;
             padding: 0.0625rem;
         }
 
         &-text {
-            background: linear-gradient(90.64deg, var(--logo-blue) 3.11%, var(--logo-purple) 44.21%, var(--logo-orange) 83.64%);
+            background: linear-gradient(
+                90.64deg,
+                var(--logo-blue) 3.11%,
+                var(--logo-purple) 44.21%,
+                var(--logo-orange) 83.64%
+            );
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
