@@ -41,7 +41,7 @@ func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event)
 	}
 
 	for _, path := range paths {
-		if err := notify.Watch(path, events, notify.All); err != nil {
+		if err := notify.Watch(path+"/...", events, notify.All); err != nil {
 			return nil, err
 		}
 	}
