@@ -367,6 +367,8 @@ type Client interface {
 	//
 	// If the path points to a submodule, a reader for an empty file is returned
 	// (ie. io.EOF is returned immediately).
+	//
+	// If the specified commit does not exist, a RevisionNotFoundError is returned.
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
