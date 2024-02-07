@@ -56,7 +56,7 @@ func ParseRepository(rawImg string) (*Repository, error) {
 	sanitizedImg := strings.TrimSpace(rawImg)
 	// Sometimes the rawImg from yaml can contain quotes, so we remove those as well
 	sanitizedImg = strings.Trim(sanitizedImg, `"`)
-	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(sanitizedImg))
+	ref, err := reference.ParseNormalizedNamed(sanitizedImg)
 	if err != nil {
 		return nil, err
 	}
