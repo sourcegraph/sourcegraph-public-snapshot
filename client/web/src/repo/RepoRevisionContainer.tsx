@@ -125,11 +125,15 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
-    const revisionLabel = revision
-        ? revision === resolvedRevision?.commitID
-            ? resolvedRevision?.commitID.slice(0, 7)
-            : revision
-        : resolvedRevision?.defaultBranch || <LoadingSpinner />
+    const revisionLabel = useMemo(
+        () =>
+            revision
+                ? revision === resolvedRevision?.commitID
+                    ? resolvedRevision?.commitID.slice(0, 7)
+                    : revision
+                : resolvedRevision?.defaultBranch || <LoadingSpinner />,
+        [revision, resolvedRevision]
+    )
 
     // The revision label has a max-width, an ellipsis is shown when the revision is too long.
     // In this case, we show the full revision in a tooltip.
