@@ -155,12 +155,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     </div>
                 )}
             </div>
-            <FilterTypeList
-                backendFilters={filters ?? []}
-                disabled={queryHasTypeFilter(query)}
-                selectedFilters={selectedFilters}
-                onClick={handleFilterTypeClick}
-            />
+            {!queryHasTypeFilter(query) && (
+                <FilterTypeList
+                    backendFilters={filters ?? []}
+                    disabled={queryHasTypeFilter(query)}
+                    selectedFilters={selectedFilters}
+                    onClick={handleFilterTypeClick}
+                />
+            )}
             <div className={styles.filters}>
                 {hasNoFilters && !isFilterLoadingComplete && (
                     <>
@@ -350,7 +352,7 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
             selectedFilters={selectedCountFilter}
             renderItem={commitDateFilter}
             onSelectedFilterChange={handleCountAllFilter}
-            onAddFilterToQuery={() => {}}
+            onAddFilterToQuery={() => { }}
         />
     )
 }
