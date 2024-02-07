@@ -58,6 +58,10 @@ type SnippetAttribution {
     repositoryName: String!
 }
 
+"""
+AttributionSnippetThreshold describes whether search snippet was considered
+large enough to run the search, and what are the thresholds.
+"""
 type AttributionSnippetThreshold {
     """
     Whether or not search for the snippet parameter was run.
