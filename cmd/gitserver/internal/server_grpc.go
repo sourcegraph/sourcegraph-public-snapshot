@@ -862,6 +862,10 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
+	if req.GetCommit() == "" {
+		return status.New(codes.InvalidArgument, "commit must be specified").Err()
+	}
+
 	if len(req.GetPath()) == 0 {
 		return status.New(codes.InvalidArgument, "path must be specified").Err()
 	}
@@ -891,11 +895,10 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	if !hasAccess {
 		up := &proto.UnauthorizedPayload{
 			RepoName: req.GetRepoName(),
+			Commit:   pointers.Ptr(req.GetCommit()),
 			Path:     pointers.Ptr(req.GetPath()),
 		}
-		if c := req.GetCommit(); c != "" {
-			up.Commit = &c
-		}
+
 		s, marshalErr := status.New(codes.PermissionDenied, "no access to path").WithDetails(up)
 		if marshalErr != nil {
 			gs.logger.Error("failed to marshal error", log.Error(marshalErr))
@@ -906,13 +909,42 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	r, err := backend.Blame(ctx, req.GetPath(), git.BlameOptions{
-		NewestCommit:     api.CommitID(req.GetCommit()),
+	opts := git.BlameOptions{
 		IgnoreWhitespace: req.GetIgnoreWhitespace(),
-		StartLine:        int(req.GetStartLine()),
-		EndLine:          int(req.GetEndLine()),
-	})
+	}
+
+	if r := req.GetRange(); r != nil {
+		opts.Range = &git.BlameRange{
+			StartLine: int(r.GetStartLine()),
+			EndLine:   int(r.GetEndLine()),
+		}
+	}
+
+	r, err := backend.Blame(ctx, api.CommitID(req.GetCommit()), req.GetPath(), opts)
+
 	if err != nil {
+		if os.IsNotExist(err) {
+			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+				Repo:   req.GetRepoName(),
+				Commit: req.GetCommit(),
+				Path:   req.GetPath(),
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		// TODO: Better error checking.
 		return err

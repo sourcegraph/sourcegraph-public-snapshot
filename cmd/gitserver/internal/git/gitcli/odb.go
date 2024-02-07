@@ -63,8 +63,10 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 		// are referencing a commit that does not exist.
 		// We want to return a gitdomain.RevisionNotFoundError in that case.
 		var e *CommandFailedError
-		if errors.As(err, &e) && e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("not a tree object")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
+		if errors.As(err, &e) && e.ExitStatus == 128 {
+			if bytes.Contains(e.Stderr, []byte("not a tree object")) || bytes.Contains(e.Stderr, []byte("Not a valid object name")) {
+				return "", &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
+			}
 		}
 
 		return "", err

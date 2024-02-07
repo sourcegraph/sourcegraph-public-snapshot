@@ -226,16 +226,29 @@ type HunkReader interface {
 type BlameOptions struct {
 	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
 	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
-	StartLine        int          `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
-	EndLine          int          `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+	Range            *BlameRange  `json:",omitempty" url:",omitempty"`
 }
 
 func (o *BlameOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
+	kvs := []attribute.KeyValue{
 		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
+	}
+	if o.Range != nil {
+		kvs = append(kvs, o.Range.Attrs()...)
+	}
+	return kvs
+}
+
+type BlameRange struct {
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+}
+
+func (o *BlameRange) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
 		attribute.Int("startLine", o.StartLine),
 		attribute.Int("endLine", o.EndLine),
-		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
 	}
 }
 
