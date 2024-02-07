@@ -14,12 +14,12 @@ commandTests:
     exitCode: 0
 
 fileExistenceTests:
-- name: '/opt/grafana/entry.sh'
-  path: '/opt/grafana/entry.sh'
+- name: '/entry.sh'
+  path: '/entry.sh'
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-rwxr-xr-x'
+  permissions: '-r-xr-xr-x'
 - name: 'Dashboard config'
   path: '/sg_config_grafana/provisioning/dashboards/sourcegraph/gitserver.json'
   shouldExist: true
