@@ -3,9 +3,9 @@ package gitcli
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -92,12 +92,12 @@ func (g *gitCLIBackend) verifyPathspecs(ctx context.Context, treeish string, pat
 			fileSet.Add(string(pathSegments[len(pathSegments)-1]))
 		}
 
-		pathspecsSet := collections.NewSet(pathspecs...)
+		pathspecsSet := collections.NewSet[string]()
+		for _, pathspec := range pathspecs {
+			// In case the pathspecs are PathspecLiterals
+			pathspecsSet.Add(strings.TrimPrefix(pathspec, ":(literal)"))
+		}
 		diff := pathspecsSet.Difference(fileSet)
-
-		fmt.Println("diff", diff.Values())
-		fmt.Println("pathspecs", pathspecsSet.Values())
-		fmt.Println("fileSet", fileSet.Values())
 
 		if len(diff) != 0 {
 			return &os.PathError{Op: "open", Path: diff.Values()[0], Err: os.ErrNotExist}
