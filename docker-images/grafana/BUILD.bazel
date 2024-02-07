@@ -5,7 +5,7 @@ load("//dev:oci_defs.bzl", "image_repository")
 
 filegroup(
     name = "config_files",
-    srcs = glob(["config/*"]) + ["entry.sh"],
+    srcs = ["entry.sh"],
 )
 
 pkg_tar(
