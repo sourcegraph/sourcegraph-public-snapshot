@@ -175,7 +175,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     const logAuthAndCallback = (
         type: AuthProvider['serviceType'],
         callback: (type: AuthProvider['serviceType']) => void
-    ) => {
+    ): void => {
         telemetryService.log(EventName.AUTH_INITIATED, { type, page }, { type, page })
         telemetryRecorder.recordEvent('auth', 'initiate', {
             metadata: { type: V2AuthProviderTypes[type], page: v2Pages[page] },
