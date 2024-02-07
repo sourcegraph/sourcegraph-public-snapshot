@@ -271,6 +271,9 @@ importers:
       https-proxy-agent:
         specifier: ^5.0.1
         version: 5.0.1
+      ignore:
+        specifier: ^5.3.0
+        version: 5.3.0
       is-absolute-url:
         specifier: ^3.0.3
         version: 3.0.3
@@ -3886,7 +3889,7 @@ packages:
       debug: 4.3.4
       espree: 9.6.1
       globals: 13.23.0
-      ignore: 5.2.4
+      ignore: 5.3.0
       import-fresh: 3.3.0
       js-yaml: 4.1.0
       minimatch: 3.1.2
@@ -8227,7 +8230,7 @@ packages:
       '@typescript-eslint/scope-manager': 5.4.0
       debug: 4.3.4
       eslint: 8.52.0
-      ignore: 5.2.4
+      ignore: 5.3.0
       regexpp: 3.2.0
       semver: 7.5.4
       tsutils: 3.21.0(typescript@5.2.2)
@@ -8301,7 +8304,7 @@ packages:
       stylelint: ^14.3.0
     dependencies:
       '@manypkg/find-root': 1.1.0
-      ignore: 5.2.4
+      ignore: 5.3.0
       postcss-value-parser: 4.2.0
       stylelint: 14.3.0
     dev: true
@@ -11129,7 +11132,7 @@ packages:
       debug: 4.3.4
       eslint: 8.52.0
       graphemer: 1.4.0
-      ignore: 5.2.4
+      ignore: 5.3.0
       natural-compare: 1.4.0
       semver: 7.5.4
       ts-api-utils: 1.0.3(typescript@5.2.2)
@@ -15415,7 +15418,7 @@ packages:
       glob-parent: 6.0.2
       globals: 13.23.0
       graphemer: 1.4.0
-      ignore: 5.2.4
+      ignore: 5.3.0
       imurmurhash: 0.1.4
       is-glob: 4.0.3
       is-path-inside: 3.0.3
@@ -16488,7 +16491,7 @@ packages:
       array-union: 2.1.0
       dir-glob: 3.0.1
       fast-glob: 3.2.11
-      ignore: 5.2.4
+      ignore: 5.3.0
       merge2: 1.4.1
       slash: 3.0.0
     dev: true
@@ -16499,7 +16502,7 @@ packages:
     dependencies:
       dir-glob: 3.0.1
       fast-glob: 3.2.11
-      ignore: 5.2.4
+      ignore: 5.3.0
       merge2: 1.4.1
       slash: 4.0.0
 
@@ -17278,6 +17281,11 @@ packages:
 
   /ignore@5.2.4:
     resolution: {integrity: sha512-MAb38BcSbH0eHNBxn7ql2NH/kX33OkB3lZ1BNdh7ENeRChHTYsTvWrMubiIAMNS2llXEEgZ1MUOBtXChP3kaFQ==}
+    engines: {node: '>= 4'}
+    dev: true
+
+  /ignore@5.3.0:
+    resolution: {integrity: sha512-g7dmpshy+gD7mh88OC9NwSGTKoc3kyLAZQRU1mt53Aw/vnvfXnbC+F/7F7QoYVKbV+KNvJx8wArewKy1vXMtlg==}
     engines: {node: '>= 4'}
 
   /image-size@1.0.2:
@@ -23540,7 +23548,7 @@ packages:
       globby: 11.1.0
       globjoin: 0.1.4
       html-tags: 3.1.0
-      ignore: 5.2.4
+      ignore: 5.3.0
       import-lazy: 4.0.0
       imurmurhash: 0.1.4
       is-plain-object: 5.0.0
