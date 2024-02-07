@@ -1,7 +1,6 @@
 import { type FC, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
-import classNames from 'classnames'
 
 import {
     Text,
@@ -17,6 +16,7 @@ import {
     MenuLink,
 } from '@sourcegraph/wildcard'
 
+import { CodeSearchIcon } from '../../search/upsell/CodeSearchIcon'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { IntelliJIcon } from '../upsell/IntelliJ'
 import { VSCodeIcon } from '../upsell/vs-code'
@@ -80,6 +80,16 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
                         <span>Cody for web</span>
                     </ButtonLink>
                 </section>
+            </section>
+
+            <section className={styles.dashboardUpsell}>
+                <spection className={styles.dashboardUpsellMeta}>
+                    <CodeSearchIcon />
+                    <Text className={styles.dashboardUpsellTitle}>
+                        Take control of your codebases with Code Search.
+                    </Text>
+                </spection>
+                <spection>Two</spection>
             </section>
         </section>
     )
