@@ -1,0 +1,12 @@
+.upsell {
+    background: red;
+    padding: 1.75rem 2.5rem;
+    padding-right: 1rem;
+    margin-top: 4rem;
+    max-width: 60rem;
+    width: 100%;
+    border-radius: 0.5rem;
+    background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.32) 3.11%, rgba(215, 240, 253, 0.32) 83.64%), linear-gradient(0deg, #F9FAFB, #F9FAFB);
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+}
