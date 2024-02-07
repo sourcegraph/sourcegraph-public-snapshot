@@ -53,7 +53,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
 
             setLoading(true)
             eventLogger.log('InitiateSignIn')
-            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes.builtin] } })
+            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes.builtin } })
             try {
                 const response = await fetch('/-/sign-in', {
                     credentials: 'same-origin',
