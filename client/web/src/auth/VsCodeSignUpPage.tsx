@@ -10,8 +10,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { EventName, V2AuthProviderTypes } from '../util/constants'
+import type { SourcegraphContext } from '../jscontext'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { type SignUpArguments, SignUpForm } from './SignUpForm'

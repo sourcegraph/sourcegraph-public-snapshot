@@ -12,7 +12,7 @@ import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import type { SourcegraphContext } from '../../../jscontext'
 import { EventName } from '../../../util/constants'
 
 import { GlowingCodySVG, MeetCodySVG } from './WidgetIcons'

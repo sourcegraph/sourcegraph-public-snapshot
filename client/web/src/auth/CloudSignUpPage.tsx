@@ -12,9 +12,8 @@ import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import type { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
-import type { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
-import { EventName, V2AuthProviderTypes } from '../util/constants'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { FeatureList } from './components/FeatureList'
