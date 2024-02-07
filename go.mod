@@ -31,6 +31,8 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
+
+	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240207152121-3f1b41cc8c40
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Dependency declares incorrect, old version of redigo, so we must override it: https://github.com/boj/redistore/blob/master/go.mod
@@ -42,8 +44,6 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
-
-	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240205172710-991c6ab66d41
 )
 
 // Status unclear replace directives

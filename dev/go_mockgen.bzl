@@ -1,79 +1,83 @@
-load("@aspect_bazel_lib//lib:paths.bzl", "BASH_RLOCATION_FUNCTION", "to_rlocation_path")
-load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@io_bazel_rules_go//go:def.bzl", "GoArchive")
-
-# def go_mockgen1(name, out_file, pkg, file_prefix):
-#     run_binary(
-#         name = "mockgen-{}".format(name),
-#         mnemonic = "GoMockgen",
-#         tool = "@com_github_derision_test_go_mockgen//cmd/go-mockgen:go-mockgen",
-#         args = ["--filename", out_file, "--package", pkg, "--file-prefix", file_prefix],
-#         outs = [out_file],
-#     )
+load("@io_bazel_rules_go//go:def.bzl", "GoArchive", "GoSource")
 
 #     # TODO: copy to source tree
 
-def _go_mockgen(ctx):
-    print(ctx.attr.deps[GoArchive].data.file.path)
-    print(ctx.attr.deps[GoArchive].data.importmap)
-    print(ctx.attr.deps[GoArchive].data.importpath)
-    print(ctx.attr.gomockgen.files.to_list())
-    print(paths.dirname(ctx.attr.out), ctx.attr.out)
+def _go_mockgen_run(ctx):
+    print("archive file", ctx.attr.deps[GoArchive].data.file.path)
+    print("importmap", ctx.attr.deps[GoArchive].data.importmap)
+    print("importpath", ctx.attr.deps[GoArchive].data.importpath)
+    print("gomockgen files", ctx.attr.gomockgen.files.to_list())
+    print("output dirname", paths.dirname(ctx.attr.out), "full output", ctx.attr.out)
+    print("sources", ctx.attr.deps[GoArchive].data.srcs)
+    print("direct deps", ctx.attr.deps[GoArchive].direct[0].data.file.path)
 
-    args = []
-    for src in ctx.attr.deps[GoArchive].data.srcs:
-        args.append("--sources %s" % src.path)
+    dst = ctx.actions.declare_file(ctx.attr.out)
+    print("destination", dst.path)
 
-    print(args)
+    print("stdlib", ctx.attr._go_stdlib[GoSource].stdlib.libs[0].path)
 
-    script = ctx.actions.declare_file("run_gomockgen.sh")
-
-    script_content = """\
-#!/usr/bin/env bash
-set -o errexit -o nounset -o pipefail
-
-{rlocation_fn}
-
-echo 'hello world'
-exec $(rlocation {gomockgen}) \\
-  --package {} \\
-  --import-path {} \\
-  --interfaces {} \\
-  --filename {} \\
-  --force \\
-  --disable-formatting \\
-  --for-test \\
-  --archives {} \\
-  {} \\
-  {}
-    """.format(
+    args = [
+        "--package",  # output package name
         paths.basename(paths.dirname(ctx.attr.out)),
+        "--import-path",
         ctx.attr.deps[GoArchive].data.importpath,
+        "--interfaces",
         ctx.attr.interfaces[0],
-        ctx.attr.out,
+        "--filename",
+        dst.path,
+        "--force",
+        "--disable-formatting",
+        "--for-test",
+        "--stdlibroot",
+        "{path}/{os}_{arch}".format(
+            path = ctx.attr._go_stdlib[GoSource].stdlib.libs[0].path,
+            os = ctx.attr._go_stdlib[GoSource].mode.goos,
+            arch = ctx.attr._go_stdlib[GoSource].mode.goarch,
+        ),
+        "--archives",
         "{}={}={}={}".format(
             ctx.attr.deps[GoArchive].data.importpath,
             ctx.attr.deps[GoArchive].data.importmap,
             ctx.attr.deps[GoArchive].data.file.path,
             ctx.attr.deps[GoArchive].data.file.path,
         ),
-        " \\\n  ".join(args),
-        ctx.attr.deps[GoArchive].data.importpath,
-        rlocation_fn = BASH_RLOCATION_FUNCTION,
-        gomockgen = to_rlocation_path(ctx, ctx.executable.gomockgen),
+    ]
+
+    deps = []
+    for a in ctx.attr.deps[GoArchive].direct:
+        args.append("--archives")
+        args.append("{}={}={}={}".format(
+            a.data.importpath,
+            a.data.importmap,
+            a.data.file.path,
+            a.data.file.path,
+        ))
+        deps.append(depset(direct = [a.data.file]))
+
+    for src in ctx.attr.deps[GoArchive].data.srcs:
+        args.extend(["--sources", src.path])
+        deps.append(depset(direct = [src]))
+
+    args.append(ctx.attr.deps[GoArchive].data.importpath)
+
+    ctx.actions.run(
+        mnemonic = "GoMockgen",
+        arguments = args,
+        executable = ctx.executable.gomockgen,
+        outputs = [dst],
+        inputs = depset(direct = [ctx.attr.deps[GoArchive].data.file, ctx.attr._go_stdlib[GoSource].stdlib.libs[0]], transitive = deps),
+        progress_message = "Running go-mockgen to generate %s" % dst.path,
     )
 
-    ctx.actions.write(script, script_content, is_executable = True)
-
-    rs = [script, ctx.executable.gomockgen, ctx.file._runfiles_lib]
-    rs.extend(ctx.attr.deps[GoArchive].data.srcs)
-    runfiles = ctx.runfiles(files = rs)
-    return [DefaultInfo(executable = script, runfiles = runfiles)]
+    return [
+        DefaultInfo(
+            files = depset([dst]),
+        ),
+    ]
 
 go_mockgen = rule(
-    implementation = _go_mockgen,
-    executable = True,
+    implementation = _go_mockgen_run,
     attrs = {
         "interfaces": attr.string_list(
             mandatory = True,
@@ -91,6 +95,10 @@ go_mockgen = rule(
             default = Label("@com_github_derision_test_go_mockgen//cmd/go-mockgen:go-mockgen"),
             executable = True,
             cfg = "exec",
+        ),
+        "_go_stdlib": attr.label(
+            providers = [GoSource],
+            default = Label("@io_bazel_rules_go//:stdlib"),
         ),
         "_runfiles_lib": attr.label(default = "@bazel_tools//tools/bash/runfiles", allow_single_file = True),
     },

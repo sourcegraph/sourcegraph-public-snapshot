@@ -1244,8 +1244,8 @@ def go_dependencies():
         build_file_proto_mode = "disable_global",
         importpath = "github.com/derision-test/go-mockgen",
         replace = "github.com/strum355/go-mockgen",
-        sum = "h1:MqyDwiDWQZu95yKV4ucEOHOh2IdFS/T3mI7EBhi+4B8=",
-        version = "v0.0.0-20240205172710-991c6ab66d41",
+        sum = "h1:Dup3gAgmdLe8oRshV/5mWKgcXy+gPk0n1x04b1cew/c=",
+        version = "v0.0.0-20240207152121-3f1b41cc8c40",
     )
     go_repository(
         name = "com_github_dghubble_go_twitter",
