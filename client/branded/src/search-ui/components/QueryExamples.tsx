@@ -162,7 +162,7 @@ interface QueryExampleChipProps extends QueryExample {
     onClick: (query: string) => void | undefined
 }
 
-const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
+export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
     query,
     helperText,
     className,
