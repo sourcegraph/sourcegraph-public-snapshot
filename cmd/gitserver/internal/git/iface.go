@@ -23,7 +23,9 @@ type GitBackend interface {
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
 	// Blame returns a reader for the blame info of the given path.
 	// BlameHunkReader must always be closed.
-	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
+	// If the file does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	Blame(ctx context.Context, startCommit api.CommitID, path string, opt BlameOptions) (BlameHunkReader, error)
 	// SymbolicRefHead resolves what the HEAD symbolic ref points to. This is also
 	// commonly referred to as the default branch within Sourcegraph.
 	// If short is true, the returned ref name will be shortened when possible
@@ -59,11 +61,14 @@ type GitConfigBackend interface {
 
 // BlameOptions are options for git blame.
 type BlameOptions struct {
-	NewestCommit     api.CommitID
 	IgnoreWhitespace bool
-	// 1-indexed start line (or 0 for beginning of file)
+	Range            *BlameRange
+}
+
+type BlameRange struct {
+	// 1-indexed start line
 	StartLine int
-	// 1-indexed end line (or 0 for end of file)
+	// 1-indexed end line
 	EndLine int
 }
 
