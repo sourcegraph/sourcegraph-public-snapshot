@@ -86,7 +86,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
     return (
         <>
-            <nav aria-label="Main" className={styles.nav}>
+            <nav aria-label="Main" className={classNames(styles.nav, { [styles.navWithoutMenu]: !showHamburger })}>
                 {showHamburger && (
                     <Button
                         variant="secondary"

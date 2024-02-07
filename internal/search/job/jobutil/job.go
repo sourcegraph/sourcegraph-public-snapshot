@@ -48,7 +48,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 
 	if inputs.PatternType == query.SearchTypeCodyContext {
 		if inputs.SearchMode == search.SmartSearch {
-			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
+			return nil, errors.New("The 'codycontext' patterntype is not compatible with Smart Search")
 		}
 
 		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
@@ -628,7 +628,7 @@ func mapSlice(values []string, f func(string) string) []string {
 }
 
 func toSymbolSearchRequest(f query.Flat) (*searcher.SymbolSearchRequest, error) {
-	if f.Pattern.Negated {
+	if f.Pattern != nil && f.Pattern.Negated {
 		return nil, &query.UnsupportedError{
 			Msg: "symbol search does not support negation.",
 		}

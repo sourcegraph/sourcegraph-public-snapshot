@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, H4, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Alert, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
@@ -35,8 +35,6 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
 
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
-    const licenseInfo = window.context.licenseInfo
-
     return (
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
@@ -64,20 +62,6 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 className="mb-3"
             />
 
-            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
-                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
-                    <H4>
-                        {licenseInfo.codeScaleExceededLimit ? (
-                            <>You've used all 100GiB of storage</>
-                        ) : (
-                            <>Your Sourcegraph is almost full</>
-                        )}
-                    </H4>
-                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
-                    Upgrade to <Link to="https://sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for unlimited
-                    storage for your code.
-                </Alert>
-            )}
             <SiteAdminRepositoriesContainer />
         </div>
     )

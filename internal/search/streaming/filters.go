@@ -27,6 +27,7 @@ type Filter struct {
 type FilterKind string
 
 const (
+	FilterKindType       FilterKind = "type"
 	FilterKindRepo       FilterKind = "repo"
 	FilterKindFile       FilterKind = "file"
 	FilterKindLang       FilterKind = "lang"

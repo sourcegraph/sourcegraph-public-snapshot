@@ -234,6 +234,34 @@ body > div#page {
   margin: -0.1rem;
 }
 
+/* Top Notice */
+.notice {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    position: absolute;
+    z-index: 9999;
+    background: #ec624d;
+    padding: 0.5rem;
+    text-align: center;
+    margin: 0 auto .5rem;
+    color: black;
+}
+
+.notice p {
+    text-align: center;
+    display: flex;
+    margin: 0 auto;
+    align-items: center;
+}
+
+.notice a{
+    background: black;
+    padding: 0.2rem 0.6rem;
+    border-radius: 5px;
+    margin-left: 0.5rem;
+    color: white;
+}
 /* SIDEBAR */
 body > #sidebar {
     background-color: var(--body-bg);
@@ -252,6 +280,7 @@ body > #sidebar #logo a {
     text-decoration: none;
     display: block;
     padding: 0;
+    margin-top:3rem;
 }
 body > #sidebar #logo img {
     width: 170px;

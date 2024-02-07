@@ -32,8 +32,8 @@ pkg_tar(
 )
 
 pkg_tar(
-    name = "tar_scip-treesitter",
-    srcs = ["//docker-images/syntax-highlighter/crates/scip-treesitter-cli:scip-treesitter"],
+    name = "tar_scip-syntax",
+    srcs = ["//docker-images/syntax-highlighter/crates/scip-syntax"],
     package_dir = "/usr/local/bin",
 )
 
@@ -47,7 +47,7 @@ oci_image(
     ],
     tars = [
         ":tar_syntactic-code-intel-worker",
-        "tar_scip-treesitter",
+        "tar_scip-syntax",
     ],
     user = "sourcegraph",
 )

@@ -19,8 +19,12 @@ export const FEATURE_FLAGS = [
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',
     'enable-simple-search',
+    // TODO(fkling): Remove this flag
     'enable-sveltekit',
+    // TODO(fkling): Remove this flag
     'enable-sveltekit-toggle',
+    'web-next',
+    'web-next-toggle',
     'end-user-onboarding',
     'insight-polling-enabled',
     'opencodegraph',
@@ -35,12 +39,12 @@ export const FEATURE_FLAGS = [
     'search-keyword',
     'search-input-show-history',
     'search-results-keyboard-navigation',
-    'search-simple',
     'search.newFilters',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
     'use-ssc-for-cody-subscription',
     'cody-pro-trial-ended',
+    'cody-payments-testing-mode',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

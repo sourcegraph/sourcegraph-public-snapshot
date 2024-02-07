@@ -129,14 +129,14 @@ const (
 	TriggerKindAllInViolation
 )
 
-type ServerityLevel string
+type SeverityLevel string
 
 const (
 	SeverityLevelWarning  = "WARNING"
 	SeverityLevelCritical = "CRITICAL"
 )
 
-type NotificationChannels map[ServerityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
+type NotificationChannels map[SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
 
 // Config for a Monitoring Alert Policy
 // Must define either `ThresholdAggregation` or `ResponseCodeMetric`
@@ -157,15 +157,18 @@ type Config struct {
 	// the provided set of NotificationChannels.
 	//
 	// If not provided, SeverityLevelWarning is used.
-	Severity ServerityLevel
-	// ResourceKind identifies what is being monitored.
+	Severity SeverityLevel
+
+	// ResourceKind identifies what is being monitored. Optional.
 	ResourceKind ResourceKind
 	// ResourceName is the identifier for the monitored resource of ResourceKind.
+	// Only required if ResourceKind is provided.
 	ResourceName string
 
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
 
+	// Only one of the following can be set.
 	ThresholdAggregation *ThresholdAggregation
 	ResponseCodeMetric   *ResponseCodeMetric
 }
@@ -241,7 +244,7 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 			[]string{"resource.label.database"},
 			config.ThresholdAggregation.GroupByFields...)
 
-	case CloudRunJob, CloudRedis, URLUptime, CloudSQL:
+	case CloudRunJob, CloudRedis, URLUptime, CloudSQL, "":
 		// No defaults
 
 	default:
