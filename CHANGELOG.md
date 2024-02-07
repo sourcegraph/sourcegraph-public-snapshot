@@ -17,6 +17,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+### Removed
+
+## 5.3.0
+
+### Added
+
+### Changed
+
+### Fixed
+
 - Updated dependencies to address CVE-2023-39325 and GHSA-m425-mq94-257g
 
 ### Removed
