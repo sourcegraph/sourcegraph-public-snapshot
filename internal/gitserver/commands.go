@@ -2262,23 +2262,12 @@ func (c *clientImplementor) ArchiveReader(
 	// handle any errors synchronously, similar to the HTTP implementation.
 
 	firstMessage, firstError := cli.Recv()
-	if firstError != nil && !isRevisionNotFound(firstError.Error()) {
-		// Hack: The ArchiveReader.Read() implementation handles surfacing the
-		// any "revision not found" errors returned from the invoked git binary.
-		//
-		// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-		// instead of returning it immediately.
-
-		// We return early only if this isn't a revision not found error.
-
+	if firstError != nil && !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		err := firstError
 
-		var cse *CommandStatusError
-		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
-			cancel()
-			endObservation(1, observation.Args{})
-			return nil, convertGRPCErrorToGitDomainError(err)
-		}
+		cancel()
+		endObservation(1, observation.Args{})
+		return nil, err
 	}
 
 	firstMessageRead := false
