@@ -1,6 +1,4 @@
-# Grafana image to replace the Chainguard-built image
-# This will allow us to update OS packages
-
+# From-scratch Grafana base image that doesn't use sourcegraph-base
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
