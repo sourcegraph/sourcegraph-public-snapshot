@@ -17,6 +17,7 @@ import {
     MenuLink,
 } from '@sourcegraph/wildcard'
 
+import { getLicenseFeatures } from '../../util/license'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { IntelliJIcon } from '../upsell/IntelliJ'
 import { VSCodeIcon } from '../upsell/vs-code'
@@ -52,6 +53,7 @@ interface CodyDashboardPageProps {}
 export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
     const isLightTheme = useIsLightTheme()
     const codySetupLink = 'https://docs.sourcegraph.com/cody/overview#getting-started'
+    const features = getLicenseFeatures()
     return (
         <section className={styles.dashboardContainer}>
             <section className={styles.dashboardHero}>
@@ -85,20 +87,22 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
                 </section>
             </section>
 
-            <section className={styles.dashboardUpsell}>
-                <section className={styles.dashboardUpsellMeta}>
-                    <SearchIcon />
-                    <Text className={styles.dashboardUpsellTitle}>
-                        Take control of your codebases with Code Search.
-                    </Text>
-                    <Text className={styles.dashboardUpsellDescription}>
-                        Code Search allows you to search, understand and fix code, across massive codebases. Discover
-                        vulnerabilities, improve code quality and more.
-                    </Text>
-                    <Link to="/search">Explore Code Search</Link>
+            {!features.isCodeSearchEnabled && (
+                <section className={styles.dashboardUpsell}>
+                    <section className={styles.dashboardUpsellMeta}>
+                        <SearchIcon />
+                        <Text className={styles.dashboardUpsellTitle}>
+                            Take control of your codebases with Code Search.
+                        </Text>
+                        <Text className={styles.dashboardUpsellDescription}>
+                            Code Search allows you to search, understand and fix code, across massive codebases.
+                            Discover vulnerabilities, improve code quality and more.
+                        </Text>
+                        <Link to="/search">Explore Code Search</Link>
+                    </section>
+                    <UpsellImage isLightTheme={isLightTheme} className="w-100" />
                 </section>
-                <UpsellImage isLightTheme={isLightTheme} className="w-100" />
-            </section>
+            )}
         </section>
     )
 }
