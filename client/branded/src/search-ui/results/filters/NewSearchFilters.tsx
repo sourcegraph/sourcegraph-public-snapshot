@@ -350,6 +350,7 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
             selectedFilters={selectedCountFilter}
             renderItem={commitDateFilter}
             onSelectedFilterChange={handleCountAllFilter}
+            onAddFilterToQuery={() => {}}
         />
     )
 }
