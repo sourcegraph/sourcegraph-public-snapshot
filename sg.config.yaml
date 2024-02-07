@@ -1134,16 +1134,6 @@ commandsets:
       - zoekt-web-1
       - caddy
 
-  simple:
-    requiresDevPrivate: true
-    bazelCommands:
-      - docsite
-      - worker
-      - syntax-highlighter
-    commands:
-      - web
-      - slow
-
   # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
