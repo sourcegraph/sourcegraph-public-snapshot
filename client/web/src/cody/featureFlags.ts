@@ -1,7 +1,7 @@
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 export const useArePaymentsEnabled = (): boolean => {
-    const [enabled] = useFeatureFlag('use-ssc-for-cody-subscription', false)
+    const [enabled] = useFeatureFlag('use-ssc-for-cody-subscription-on-web', false)
 
     return enabled
 }
