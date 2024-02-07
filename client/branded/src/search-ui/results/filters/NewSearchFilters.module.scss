@@ -4,7 +4,6 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     background-color: var(--code-bg);
 
     &::-webkit-scrollbar {
@@ -42,7 +41,10 @@
 }
 
 .filters {
-    margin-bottom: auto;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
 .actions {

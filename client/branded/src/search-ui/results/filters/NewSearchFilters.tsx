@@ -155,15 +155,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     </div>
                 )}
             </div>
-            {!queryHasTypeFilter(query) && (
-                <FilterTypeList
-                    backendFilters={filters ?? []}
-                    disabled={queryHasTypeFilter(query)}
-                    selectedFilters={selectedFilters}
-                    onClick={handleFilterTypeClick}
-                />
-            )}
             <div className={styles.filters}>
+                {!queryHasTypeFilter(query) && (
+                    <FilterTypeList
+                        backendFilters={filters ?? []}
+                        selectedFilters={selectedFilters}
+                        onClick={handleFilterTypeClick}
+                    />
+                )}
                 {hasNoFilters && !isFilterLoadingComplete && (
                     <>
                         <SearchFilterSkeleton />
@@ -247,9 +246,9 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     onQueryChange={onQueryChange}
                     telemetryService={telemetryService}
                 />
-            </div>
 
-            <FiltersDocFooter />
+                <FiltersDocFooter />
+            </div>
 
             <footer className={styles.actions}>
                 {selectedFilters.length > 0 && (
