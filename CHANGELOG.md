@@ -13,7 +13,25 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.3.0 (planned release date: 15th February, 2024)
+## Unreleased
+
+### Added
+
+- Add experimental support for .cody/ignore when retrieving remote context. To enable it, set `experimentalFeatures.codyContextIgnore: true` in the site configuration. [#59836](https://github.com/sourcegraph/sourcegraph/pull/59836), [#59907](https://github.com/sourcegraph/sourcegraph/pull/59907)
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 5.3.0
 
 ### Added
 
