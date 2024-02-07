@@ -2,10 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_libra
 
 go_library(
     name = "upgradetest_lib",
-    srcs = ["main.go"],
+    srcs = [
+        "main.go",
+        "tests.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/testing/tools/upgradetest",
     visibility = ["//visibility:private"],
     deps = [
+        "//lib/errors",
         "@com_github_lib_pq//:pq",
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_conc//pool",
@@ -81,8 +85,8 @@ sh_binary(
     ],
     data = [
         ":upgradetest-darwin-arm64",
-        "//cmd/migrator:image_tarball",
         "//cmd/frontend:image_tarball",
+        "//cmd/migrator:image_tarball",
         "//internal/database:generate_schemas",
     ],
 )
