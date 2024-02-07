@@ -61,6 +61,9 @@ func (c snippetAttributionConnectionResolver) LimitHit() bool {
 func (c snippetAttributionConnectionResolver) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(false)
 }
+func (c snippetAttributionConnectionResolver) SnippetThreshold() graphqlbackend.AttributionSnippetThresholdResolver {
+	return &attributionSnippetThresholdResolver{}
+}
 func (c snippetAttributionConnectionResolver) Nodes() []graphqlbackend.SnippetAttributionResolver {
 	var nodes []graphqlbackend.SnippetAttributionResolver
 	for _, name := range c.result.RepositoryNames {
@@ -73,4 +76,14 @@ type snippetAttributionResolver string
 
 func (c snippetAttributionResolver) RepositoryName() string {
 	return string(c)
+}
+
+type attributionSnippetThresholdResolver struct {
+}
+
+func (t attributionSnippetThresholdResolver) SearchPerformed() bool {
+	return true
+}
+func (t attributionSnippetThresholdResolver) LinesLowerBound() *int32 {
+	return nil
 }
