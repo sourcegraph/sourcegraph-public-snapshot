@@ -81,18 +81,9 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     })
     const invitedByUser = data?.user
 
-    const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
-        const eventType = type === 'builtin' ? 'form' : type
-        telemetryService.log(EventName.AUTH_INITIATED, { type: eventType }, { type: eventType })
-        telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
-    }
-
     const signUpForm = (
         <SignUpForm
-            onSignUp={args => {
-                logEventAndSetFlags('builtin')
-                return onSignUp(args)
-            }}
+            onSignUp={args => onSignUp(args)}
             context={{
                 authProviders: [],
                 authMinPasswordLength: context.authMinPasswordLength,
@@ -108,11 +99,14 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const renderCodeHostAuth = (): JSX.Element => (
         <>
             <ExternalsAuth
+                page="cloud-signup-page"
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
                 googleLabel="Continue with Google"
-                onClick={logEventAndSetFlags}
+                onClick={() => {}}
+                telemetryRecorder={telemetryRecorder}
+                telemetryService={telemetryService}
             />
         </>
     )

@@ -59,22 +59,9 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
 
     const assetsRoot = window.context?.assetsRoot || ''
 
-    const logEvent = (type: AuthProvider['serviceType']): void => {
-        const eventType = type === 'builtin' ? 'form' : type
-        telemetryService.log(
-            EventName.AUTH_INITIATED,
-            { type: eventType, source: 'vs-code' },
-            { type: eventType, source: 'vs-code' }
-        )
-        telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
-    }
-
     const signUpForm = (
         <SignUpForm
-            onSignUp={args => {
-                logEvent('builtin')
-                return onSignUp(args)
-            }}
+            onSignUp={args => onSignUp(args)}
             context={{
                 authProviders: [],
                 sourcegraphDotComMode: true,
@@ -90,11 +77,14 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<V
     const renderCodeHostAuth = (): JSX.Element => (
         <>
             <ExternalsAuth
+                page="vscode-signup-page"
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
                 googleLabel="Continue with Google"
-                onClick={logEvent}
+                onClick={() => {}}
+                telemetryRecorder={telemetryRecorder}
+                telemetryService={telemetryService}
             />
         </>
     )
