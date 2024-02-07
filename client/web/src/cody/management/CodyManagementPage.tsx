@@ -144,13 +144,13 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     // Correct the situation where the user is on a Cody Pro free trial, but hasn't entered
     // any subscription information into the SSC frontend. This would mean that their free
-    // trial is coming to an end on ~2/15. We need the UI to reflect this, however, because
+    // trial is coming to an end on ~2/21. We need the UI to reflect this, however, because
     // we are overloading `currentPeriodEnd` for usageRefreshTime, we do not return the
     // correct value from the backend. So we separate it out into a separate variable and
     // change its value accordingly.
-    const freeTrialEndString = 'Until Feb 14, 2024'
+    const freeTrialEndString = 'Until Feb 21, 2024'
     if (!hasTrialEnded && userIsOnProTier) {
-        codyProSubscriptionEndTime = new Date(2024, 2, 14, 12, 0, 0).toISOString()
+        codyProSubscriptionEndTime = new Date(2024, 2, 21, 12, 0, 0).toISOString()
     }
 
     return (

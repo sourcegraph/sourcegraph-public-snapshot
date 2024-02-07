@@ -224,7 +224,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         )}
                                         {/* The free trial has not ended, but we ARE accepting payments. */}
                                         {arePaymentsEnabled && !hasTrialEnded && (
-                                            <strong>Free until February 15, 2024.</strong>
+                                            <strong>Free until February 21, 2024.</strong>
                                         )}
                                         {arePaymentsEnabled && hasTrialEnded && (
                                             <strong>Billed monthly. Cancel anytime.</strong>
