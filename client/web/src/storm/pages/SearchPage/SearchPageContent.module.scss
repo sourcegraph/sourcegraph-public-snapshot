@@ -40,7 +40,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex-grow: 1;
 
     @media (--xl-breakpoint-up) {
         min-width: var(--max-homepage-container-width);
