@@ -36,7 +36,7 @@ const (
 // about the different fields and what they do here:
 // https://sourcegraph.com/docs/dev/background-information/workers#database-backed-stores
 type SyntacticIndexingJob struct {
-	ID             int         `json:"id"`
+	ID int `json:"id"`
 	// Which commit to index (not part of dbworker fields)
 	Commit         string      `json:"commit"`
 	QueuedAt       time.Time   `json:"queuedAt"`
@@ -48,12 +48,12 @@ type SyntacticIndexingJob struct {
 	NumResets      int         `json:"numResets"`
 	NumFailures    int         `json:"numFailures"`
 	// Which repository id to index (not part of dbworker fields)
-	RepositoryID   int         `json:"repositoryId"`
+	RepositoryID int `json:"repositoryId"`
 	// Name of repository being indexed (not part of dbworker fields)
-	RepositoryName string      `json:"repositoryName"`
-	ShouldReindex  bool        `json:"shouldReindex"`
+	RepositoryName string `json:"repositoryName"`
+	ShouldReindex  bool   `json:"shouldReindex"`
 	// Which user scheduled this job (not part of dbworker fields)
-	EnqueuerUserID int32       `json:"enqueuerUserID"`
+	EnqueuerUserID int32 `json:"enqueuerUserID"`
 }
 
 var _ workerutil.Record = SyntacticIndexingJob{}
