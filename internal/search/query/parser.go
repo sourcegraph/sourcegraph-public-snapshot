@@ -962,7 +962,10 @@ loop:
 			nodes = append(nodes, result...)
 		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if p.balanced <= 0 {
-				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
+				if label.IsSet(QuotesAsLiterals) {
+					return nil, errors.New("unsupported expression. The combination of parentheses in the query has an unclear meaning. Use \"...\" to quote patterns that contain parentheses")
+				}
+				return nil, errors.New("unsupported expression. The combination of parentheses in the query has an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
 			}
 			p.balanced--
 			p.heuristics |= disambiguated
