@@ -9,4 +9,43 @@
     background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.32) 3.11%, rgba(215, 240, 253, 0.32) 83.64%), linear-gradient(0deg, #F9FAFB, #F9FAFB);
     display: grid;
     grid-template-columns: 1fr 1.5fr;
+    gap: 1rem;
+
+    :global(.theme-dark) & {
+        background: linear-gradient(0deg, #14171F, #14171F), linear-gradient(90.64deg, rgba(28, 34, 48, 0.32) 3.11%, rgba(17, 26, 40, 0.32) 83.64%);
+    }
+
+    &-logo {
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    &-image {
+        filter: drop-shadow(-7px -16px 32px #a112ff24);
+    }
+
+    &-meta {
+        align-self: center;
+    }
+
+    &-title {
+        color: var(--dark-text-2);
+        font-size: 1.5rem;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+    }
+
+    &-description {
+        color: var(--dark-text);
+        font-size: 0.9375rem;
+        margin-bottom: 1.25rem;
+    }
+
+    &-link {
+        &-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+    }
 }

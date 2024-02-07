@@ -1,6 +1,11 @@
 import type { FC } from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
+
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { Link, Text, Icon } from '@sourcegraph/wildcard'
+
+import { CodyLogo } from '../../../cody/components/CodyLogo'
 
 import { MultiLineCompletion } from './MultilineCompletion'
 
@@ -10,8 +15,24 @@ export const CodyUpsell: FC = () => {
     const isLightTheme = useIsLightTheme()
     return (
         <section className={styles.upsell}>
-            <section>Cody Upsell</section>
-            <MultiLineCompletion isLightTheme={isLightTheme} className="" />
+            <section className={styles.upsellMeta}>
+                <CodyLogo withColor={true} className={styles.upsellLogo} />
+                <Text className={styles.upsellTitle}>Introducing Cody: your new AI coding assistant.</Text>
+                <Text className={styles.upsellDescription}>
+                    Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of
+                    your company’s codebase in mind.
+                </Text>
+                <Link to="https://sourcegraph.com/cody">
+                    Explore Cody{' '}
+                    <Icon
+                        className={styles.upsellLinkIcon}
+                        svgPath={mdiOpenInNew}
+                        inline={true}
+                        aria-label="Learn about Code Navigation"
+                    />
+                </Link>
+            </section>
+            <MultiLineCompletion isLightTheme={isLightTheme} className={styles.upsellImage} />
         </section>
     )
 }
