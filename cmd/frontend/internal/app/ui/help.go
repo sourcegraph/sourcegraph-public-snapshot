@@ -44,16 +44,19 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	// Note that the URI fragment (e.g., #some-section-in-doc) *should* be preserved by most user
 	// agents even though the Location HTTP response header omits it. See
 	// https://stackoverflow.com/a/2305927.
-	dest := &url.URL{
-		// TODO: test if docRevPrefix is empty
-		Path: path.Join("/", "docs", docRevPrefix, page),
-	}
+	var dest *url.URL
 	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
-		dest.Scheme = "http"
-		dest.Host = "localhost:5080" // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
+		dest = &url.URL{
+			Scheme: "http",
+			Host:   "localhost:5080", // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
+			Path:   path.Join("/", docRevPrefix, page),
+		}
 	} else {
-		dest.Scheme = "https"
-		dest.Host = "sourcegraph.com"
+		dest = &url.URL{
+			Scheme: "https",
+			Host:   "sourcegraph.com",
+			Path:   path.Join("/", "docs", docRevPrefix, page),
+		}
 	}
 
 	// Use temporary, not permanent, redirect, because the destination URL changes (depending on the
