@@ -46,7 +46,7 @@ import {
 import { useArePaymentsEnabled, useHasTrialEnded } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
-import { ProTierIcon, useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
+import { ProTierIcon } from '../subscription/CodySubscriptionPage'
 import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
@@ -66,16 +66,17 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const arePaymentsEnabled = useArePaymentsEnabled()
     const hasTrialEnded = useHasTrialEnded()
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
-    const { data: usageData } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(USER_CODY_USAGE, {})
+    const { data: usageData, error: usageDateError } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(
+        USER_CODY_USAGE,
+        {}
+    )
 
     const stats = usageData?.currentUser
     const codyCurrentPeriodChatLimit = stats?.codyCurrentPeriodChatLimit || 0
@@ -105,6 +106,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             navigate('/sign-in?returnTo=/cody/manage')
         }
     }, [data, navigate])
+
+    if (dataError || usageDateError) {
+        throw dataError || usageDateError
+    }
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
         return null
@@ -159,17 +164,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <UpgradeToProBanner
-                    userIsOnProTier={userIsOnProTier}
-                    arePaymentsEnabled={arePaymentsEnabled}
-                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
-                />
+                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} />
                 <DoNotLoseCodyProBanner
                     userIsOnProTier={userIsOnProTier}
                     arePaymentsEnabled={arePaymentsEnabled}
                     hasTrialEnded={hasTrialEnded}
                     subscriptionStatus={subscription.status}
-                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
                 />
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
@@ -189,16 +189,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         {userIsOnProTier && (
                             <div>
-                                <ButtonLink
-                                    to={
-                                        arePaymentsEnabled
-                                            ? `${manageSubscriptionRedirectURL}?pro=true`
-                                            : '/cody/subscription'
-                                    }
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                >
+                                <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
                                     Manage subscription
                                 </ButtonLink>
                             </div>
@@ -457,9 +448,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
 const UpgradeToProBanner: React.FunctionComponent<{
     userIsOnProTier: boolean
-    arePaymentsEnabled: boolean
-    manageSubscriptionRedirectURL: string
-}> = ({ userIsOnProTier, arePaymentsEnabled, manageSubscriptionRedirectURL }) =>
+}> = ({ userIsOnProTier }) =>
     userIsOnProTier ? null : (
         <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
             <div>
@@ -473,11 +462,7 @@ const UpgradeToProBanner: React.FunctionComponent<{
                 </ul>
             </div>
             <div>
-                <ButtonLink
-                    to={arePaymentsEnabled ? manageSubscriptionRedirectURL : '/cody/subscription'}
-                    variant="primary"
-                    size="sm"
-                >
+                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
                     Upgrade
                 </ButtonLink>
             </div>
@@ -489,8 +474,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
     arePaymentsEnabled: boolean
     hasTrialEnded: boolean
     subscriptionStatus: CodySubscriptionStatus
-    manageSubscriptionRedirectURL: string
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus, manageSubscriptionRedirectURL }) =>
+}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) =>
     arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING ? (
         <div
             className={classNames(
@@ -515,7 +499,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                 </div>
             </div>
             <div>
-                <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
+                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
                     Add Credit Card
                 </ButtonLink>
             </div>

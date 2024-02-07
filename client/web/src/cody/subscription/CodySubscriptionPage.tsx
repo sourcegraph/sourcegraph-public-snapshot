@@ -22,7 +22,7 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionPlan } from '../../graphql-operations'
+import { CodySubscriptionPlan, CodySubscriptionStatus } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -68,7 +68,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
@@ -81,9 +81,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         }
     }, [data, navigate])
 
+    if (dataError) {
+        throw dataError
+    }
+
     if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
         return null
     }
+
+    const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
+    const hasAddedCreditCard = data.currentUser.codySubscription?.status !== CodySubscriptionStatus.PENDING
 
     return (
         <>
@@ -224,32 +231,45 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         )}
                                     </Text>
                                 )}
-                                {data.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO ? (
-                                    <div>
-                                        <Text
-                                            className="mb-0 text-muted d-inline cursor-pointer"
-                                            size="small"
+                                {isProUser ? (
+                                    arePaymentsEnabled && !hasAddedCreditCard ? (
+                                        <Button
+                                            className="flex-1 mt-1"
+                                            variant="primary"
                                             onClick={() => {
-                                                eventLogger.log(
-                                                    EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                                    {
-                                                        tier: 'free',
-                                                    },
-                                                    {
-                                                        tier: 'free',
-                                                    }
-                                                )
-                                                if (arePaymentsEnabled) {
-                                                    window.location.href = manageSubscriptionRedirectURL
-                                                    return
-                                                }
-
-                                                setShowCancelPro(true)
+                                                eventLogger.log(EventName.CODY_SUBSCRIPTION_ADD_CREDIT_CARD_CLICKED)
+                                                window.location.href = manageSubscriptionRedirectURL
                                             }}
                                         >
-                                            {arePaymentsEnabled ? 'Manage' : 'Cancel'} subscription
-                                        </Text>
-                                    </div>
+                                            Add credit card
+                                        </Button>
+                                    ) : (
+                                        <div>
+                                            <Text
+                                                className="mb-0 text-muted d-inline cursor-pointer"
+                                                size="small"
+                                                onClick={() => {
+                                                    eventLogger.log(
+                                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
+                                                        {
+                                                            tier: 'free',
+                                                        },
+                                                        {
+                                                            tier: 'free',
+                                                        }
+                                                    )
+                                                    if (arePaymentsEnabled) {
+                                                        window.location.href = manageSubscriptionRedirectURL
+                                                        return
+                                                    }
+
+                                                    setShowCancelPro(true)
+                                                }}
+                                            >
+                                                {arePaymentsEnabled ? 'Manage' : 'Cancel'} subscription
+                                            </Text>
+                                        </div>
+                                    )
                                 ) : (
                                     <Button
                                         className="flex-1"
