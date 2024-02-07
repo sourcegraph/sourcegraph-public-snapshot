@@ -68,7 +68,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
     const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
@@ -80,6 +80,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
             navigate('/sign-in?returnTo=/cody/subscription')
         }
     }, [data, navigate])
+
+    if (dataError) {
+        throw dataError
+    }
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
         return null

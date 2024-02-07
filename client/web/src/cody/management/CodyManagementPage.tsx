@@ -71,9 +71,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
-    const { data: usageData } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(USER_CODY_USAGE, {})
+    const { data: usageData, error: usageDateError } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(
+        USER_CODY_USAGE,
+        {}
+    )
 
     const stats = usageData?.currentUser
     const codyCurrentPeriodChatLimit = stats?.codyCurrentPeriodChatLimit || 0
@@ -103,6 +106,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             navigate('/sign-in?returnTo=/cody/manage')
         }
     }, [data, navigate])
+
+    if (dataError || usageDateError) {
+        throw dataError || usageDateError
+    }
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
         return null
