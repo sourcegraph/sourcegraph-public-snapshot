@@ -118,9 +118,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 setLoading(false)
             })
             eventLogger.log('InitiateSignUp')
-            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes['builtin'] } })
+            telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes.builtin } })
         },
-        [onSignUp, disabled, emailState, usernameState, passwordState]
+        [onSignUp, disabled, emailState, usernameState, passwordState, telemetryRecorder]
     )
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
@@ -132,7 +132,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
             eventLogger.log(EventName.AUTH_INITIATED, { type }, { type })
             telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes[type] } })
         },
-        []
+        [telemetryRecorder]
     )
 
     return (
