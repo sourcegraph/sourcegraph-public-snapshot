@@ -169,7 +169,7 @@ If you've installed PostgreSQL with Homebrew that should be the case.
 If you used another method, make sure psql is available.`,
 				Check: checkAction(check.Combine(
 					func(ctx context.Context) error {
-						out, _ := usershell.Run(ctx, "cat /Users/runner/.bash_profile; echo newline; echo user $USER; which psql").String()
+						out, _ := usershell.Run(ctx, fmt.Sprintf("cat /Users/runner/.bash_profile; echo newline; echo user $USER; echo $PATH; which psql; echo %s; cat %s", usershell.ShellConfigPath(ctx), usershell.ShellConfigPath(ctx))).String()
 						fmt.Printf("psql output is %s\n\n\n", out)
 						return nil
 					},
