@@ -1,23 +1,27 @@
+import { getGraphQLClient } from '$lib/graphql'
+import { parseRepoRevision } from '$lib/shared'
+
 import type { PageLoad } from './$types'
 import { CommitsPage_CommitsQuery } from './page.gql'
 
 const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ parent }) => {
-    const { resolvedRevision, graphqlClient } = await parent()
+export const load: PageLoad = async ({ params }) => {
+    const client = await getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
 
-    const commitsQuery = graphqlClient.watchQuery({
+    const commitsQuery = client.watchQuery({
         query: CommitsPage_CommitsQuery,
         variables: {
-            repo: resolvedRevision.repo.id,
-            revspec: resolvedRevision.commitID,
+            repoName,
+            revision,
             first: PAGE_SIZE,
             afterCursor: null,
         },
         notifyOnNetworkStatusChange: true,
     })
 
-    if (!graphqlClient.readQuery({ query: CommitsPage_CommitsQuery, variables: commitsQuery.variables })) {
+    if (!client.readQuery({ query: CommitsPage_CommitsQuery, variables: commitsQuery.variables })) {
         // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
         // as soon as possible, not only after the layout subscribes to the query.
         commitsQuery.refetch()

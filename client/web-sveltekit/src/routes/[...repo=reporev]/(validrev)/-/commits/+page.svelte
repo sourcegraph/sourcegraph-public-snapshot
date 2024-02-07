@@ -86,8 +86,7 @@
     let restored = false
 
     $: commitsQuery = data.commitsQuery
-    $: commits =
-        $commitsQuery?.data.node?.__typename === 'Repository' ? $commitsQuery.data.node.commit?.ancestors : undefined
+    $: commits = $commitsQuery?.data.repository?.commit?.ancestors
     $: if (!restored) {
         restoreCommits(commits, restoredCommitCount, restoredScroller)
     }

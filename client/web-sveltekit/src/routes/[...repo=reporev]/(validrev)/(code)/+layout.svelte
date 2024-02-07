@@ -13,7 +13,6 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
-    import type { Scalars } from '$lib/graphql-operations'
     import type { GitHistory_HistoryConnection } from './layout.gql'
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
@@ -48,7 +47,7 @@
                 })
         )
 
-    async function updateFileTreeProvider(repoID: Scalars['ID']['input'], commitID: string, parentPath: string) {
+    async function updateFileTreeProvider(repoName: string, revision: string, parentPath: string) {
         const result = await data.fileTree
         if (!result) {
             treeProvider = null
@@ -57,18 +56,14 @@
         const { root, values } = result
 
         // Do nothing if update was called with new arguments in the meantime
-        if (
-            repoID !== data.resolvedRevision.repo.id ||
-            commitID !== data.resolvedRevision.commitID ||
-            parentPath !== data.parentPath
-        ) {
+        if (repoName !== data.repoName || revision !== (data.revision ?? '') || parentPath !== data.parentPath) {
             return
         }
         treeProvider = new FileTreeProvider({
             root,
             values,
-            repoID,
-            commitID,
+            repoName,
+            revision,
             loader: fileTreeLoader,
         })
     }
@@ -97,12 +92,10 @@
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
 
-    $: ({ revision, parentPath, resolvedRevision } = data)
-    $: commitID = resolvedRevision.commitID
-    $: repoID = resolvedRevision.repo.id
+    $: ({ revision = '', parentPath, repoName } = data)
     // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
     // update
-    $: updateFileTreeProvider(repoID, commitID, parentPath)
+    $: updateFileTreeProvider(repoName, revision, parentPath)
     $: commitHistoryQuery = data.commitHistory
     let commitHistory: GitHistory_HistoryConnection | null
     $: if (commitHistoryQuery) {
@@ -111,10 +104,7 @@
         // file/folder until the new commit history is loaded.
         commitHistory = null
     }
-    $: commitHistory =
-        $commitHistoryQuery?.data.node?.__typename === 'Repository'
-            ? $commitHistoryQuery.data.node.commit?.ancestors ?? null
-            : null
+    $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
