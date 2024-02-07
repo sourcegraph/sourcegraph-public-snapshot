@@ -152,14 +152,14 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
                         <div className={styles.descriptionHeader}>No matches in search results.</div>
                         {limitHit && suggestedQueryFilter ? (
                             <>
-                                Try searching in your repo explicitly by adding{' '}
+                                Try adding{' '}
                                 <Button
                                     onClick={() => onAddFilterToQuery(suggestedQueryFilter)}
                                     className={styles.zeroStateQueryButton}
                                 >
                                     <SyntaxHighlightedSearchQuery query={suggestedQueryFilter} />
                                 </Button>{' '}
-                                to your original search query.
+                                to your original search query narrow results to that repo.
                             </>
                         ) : (
                             <>
