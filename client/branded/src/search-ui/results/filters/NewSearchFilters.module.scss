@@ -4,7 +4,6 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     background-color: var(--code-bg);
 
     &::-webkit-scrollbar {
@@ -42,7 +41,10 @@
 }
 
 .filters {
-    margin-bottom: auto;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
 .actions {
@@ -78,7 +80,7 @@
     margin: 1rem 0.5rem 0.5rem 0.5rem;
 
     h1 {
-        margin-bottom:0;
+        margin-bottom: 0;
     }
 }
 
@@ -89,7 +91,7 @@
     margin: 0 0.5rem;
 
     button {
-        color:var(--text-muted);
+        color: var(--text-muted);
     }
 }
 
@@ -101,6 +103,6 @@
     color: var(--text-muted);
     background: var(--color-bg-1);
     border: 1px solid var(--border-color-2);
-    margin-left:0.5rem;
+    margin-left: 0.5rem;
     padding: 0 0.25rem;
 }

@@ -53,7 +53,7 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
     })
 
     return (
-        <>
+        <div className={styles.typeListContainer}>
             <H4 as={H2} className={styles.heading}>
                 By type
             </H4>
@@ -69,7 +69,7 @@ export const FilterTypeList: FC<SearchFilterTypesProps> = props => {
                     </li>
                 ))}
             </ul>
-        </>
+        </div>
     )
 }
 
