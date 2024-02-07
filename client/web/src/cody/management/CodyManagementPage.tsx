@@ -171,13 +171,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     subscriptionStatus={subscription.status}
                     manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
                 />
-                <RevertBackToTrialBanner
-                    userIsOnProTier={userIsOnProTier}
-                    arePaymentsEnabled={arePaymentsEnabled}
-                    hasTrialEnded={hasTrialEnded}
-                    subscriptionStatus={subscription.status}
-                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
-                />
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
@@ -524,40 +517,6 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
             <div>
                 <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
                     Add Credit Card
-                </ButtonLink>
-            </div>
-        </div>
-    ) : null
-
-const RevertBackToTrialBanner: React.FunctionComponent<{
-    userIsOnProTier: boolean
-    arePaymentsEnabled: boolean
-    hasTrialEnded: boolean
-    subscriptionStatus: CodySubscriptionStatus
-    manageSubscriptionRedirectURL: string
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus, manageSubscriptionRedirectURL }) =>
-    arePaymentsEnabled &&
-    !hasTrialEnded &&
-    userIsOnProTier &&
-    subscriptionStatus === CodySubscriptionStatus.TRIALING ? (
-        <div
-            className={classNames(
-                'd-flex justify-content-between align-items-center p-4',
-                styles.dontLoseCodyProBanner
-            )}
-        >
-            <div className="d-flex align-items-center text-dark">
-                <div className={styles.creditCardEmoji}>⚡️</div>
-                <div className="ml-3">
-                    <H3>You are subscribed to Cody Pro</H3>
-                    <Text className="mb-0">
-                        You will be charged $9 USD on <strong>Feb 15, 2024</strong>.
-                    </Text>
-                </div>
-            </div>
-            <div>
-                <ButtonLink to={manageSubscriptionRedirectURL} variant="secondary" size="sm">
-                    Revert back to trial
                 </ButtonLink>
             </div>
         </div>
