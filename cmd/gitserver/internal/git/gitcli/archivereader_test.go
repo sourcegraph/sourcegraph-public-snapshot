@@ -98,6 +98,15 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		require.Equal(t, "abcd\n", fileContents)
 	})
 
+	t.Run("read multiple files from tar archive", func(t *testing.T) {
+		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"file1", "dir1/file2", "go.mod"})
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close() })
+		tr := tar.NewReader(r)
+		contents := readFileContentsFromTar(t, tr, "dir1/file2")
+		require.Equal(t, "efgh\n", contents)
+	})
+
 	t.Run("read file in directory", func(t *testing.T) {
 		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), nil)
 		require.NoError(t, err)

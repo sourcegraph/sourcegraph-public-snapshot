@@ -3,6 +3,7 @@ package gitcli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -93,6 +94,10 @@ func (g *gitCLIBackend) verifyPathspecs(ctx context.Context, treeish string, pat
 
 		pathspecsSet := collections.NewSet(pathspecs...)
 		diff := pathspecsSet.Difference(fileSet)
+
+		fmt.Println("diff", diff.Values())
+		fmt.Println("pathspecs", pathspecsSet.Values())
+		fmt.Println("fileSet", fileSet.Values())
 
 		if len(diff) != 0 {
 			return &os.PathError{Op: "open", Path: diff.Values()[0], Err: os.ErrNotExist}
