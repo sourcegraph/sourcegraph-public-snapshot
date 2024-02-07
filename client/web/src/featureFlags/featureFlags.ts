@@ -42,8 +42,9 @@ export const FEATURE_FLAGS = [
     'search.newFilters',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'use-ssc-for-cody-subscription',
+    'use-ssc-for-cody-subscription-on-web',
     'cody-pro-trial-ended',
+    'cody-payments-testing-mode',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

@@ -1,8 +1,10 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .container {
+    --container-margin: 6rem;
+
     width: 100%;
-    margin: 5rem;
+    margin: var(--container-margin);
     height: fit-content;
 
     @media (--md-breakpoint-down) {
@@ -15,9 +17,9 @@
 }
 
 .hero {
-    margin-right: -5rem;
+    margin-right: calc(var(--container-margin) * -1);
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 0.75fr 1fr;
     gap: 1.875rem;
 
     @media (--md-breakpoint-down) {
@@ -68,7 +70,7 @@
         }
 
         &-text {
-            background: linear-gradient(90.64deg, var(--logo-orange) 3.11%, var(--violet-04) 83.64%);
+            background: linear-gradient(90.64deg, var(--logo-blue) 3.11%, #c66fff 44.21%, #ff8578 83.64%);
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
@@ -80,6 +82,7 @@
             font-size: 1.3125rem;
             font-weight: 300;
             margin-bottom: 2rem;
+            color: var(--dark-text);
         }
     }
 }
@@ -143,6 +146,7 @@
         border-radius: 0.5rem;
         padding: 2.5rem;
         font-size: 1rem;
+        box-shadow: 0 0.25rem 2rem 0 #670bdb0a;
 
         &-header {
             margin-block: 0.75rem;
@@ -161,6 +165,7 @@
         padding: 2.5rem;
         font-size: 1rem;
         height: fit-content;
+        box-shadow: 0 0.25rem 2rem 0 #670bdb0a;
 
         &-header {
             margin-block: 0.75rem;
@@ -193,16 +198,27 @@
         border-radius: 0.5rem;
         padding: 2.5rem;
         font-size: 1rem;
+        box-shadow: 0 0.25rem 2rem 0 #670bdb0a;
 
         &-container {
             margin-top: 2rem;
-            background: linear-gradient(90.64deg, var(--logo-orange) 3.11%, var(--violet-04) 83.64%);
+            background: linear-gradient(
+                90.64deg,
+                var(--logo-blue) 3.11%,
+                var(--logo-purple) 44.21%,
+                var(--logo-orange) 83.64%
+            );
             border-radius: 0.5rem;
             padding: 0.0625rem;
         }
 
         &-text {
-            background: linear-gradient(91deg, var(--logo-orange) 3.11%, var(--logo-purple) 83.64%);
+            background: linear-gradient(
+                90.64deg,
+                var(--logo-blue) 3.11%,
+                var(--logo-purple) 44.21%,
+                var(--logo-orange) 83.64%
+            );
             background-clip: text !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
@@ -222,6 +238,7 @@
         grid-template-columns: 1fr 1fr 1fr;
         gap: 2rem;
         margin-bottom: 2rem;
+        padding: 0.5rem 0;
 
         @media (--md-breakpoint-down) {
             grid-template-columns: 1fr;
@@ -230,7 +247,7 @@
 
     &-header {
         text-align: center;
-        margin: 2rem 0;
+        margin: 3rem 0;
         font-weight: 500;
         font-size: 2rem;
     }

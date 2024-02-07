@@ -314,7 +314,7 @@ type MockGitBackend struct {
 func NewMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
 		BlameFunc: &GitBackendBlameFunc{
-			defaultHook: func(context.Context, string, BlameOptions) (r0 BlameHunkReader, r1 error) {
+			defaultHook: func(context.Context, api.CommitID, string, BlameOptions) (r0 BlameHunkReader, r1 error) {
 				return
 			},
 		},
@@ -361,7 +361,7 @@ func NewMockGitBackend() *MockGitBackend {
 func NewStrictMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
 		BlameFunc: &GitBackendBlameFunc{
-			defaultHook: func(context.Context, string, BlameOptions) (BlameHunkReader, error) {
+			defaultHook: func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error) {
 				panic("unexpected invocation of MockGitBackend.Blame")
 			},
 		},
@@ -437,23 +437,23 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 // GitBackendBlameFunc describes the behavior when the Blame method of the
 // parent MockGitBackend instance is invoked.
 type GitBackendBlameFunc struct {
-	defaultHook func(context.Context, string, BlameOptions) (BlameHunkReader, error)
-	hooks       []func(context.Context, string, BlameOptions) (BlameHunkReader, error)
+	defaultHook func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error)
+	hooks       []func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error)
 	history     []GitBackendBlameFuncCall
 	mutex       sync.Mutex
 }
 
 // Blame delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitBackend) Blame(v0 context.Context, v1 string, v2 BlameOptions) (BlameHunkReader, error) {
-	r0, r1 := m.BlameFunc.nextHook()(v0, v1, v2)
-	m.BlameFunc.appendCall(GitBackendBlameFuncCall{v0, v1, v2, r0, r1})
+func (m *MockGitBackend) Blame(v0 context.Context, v1 api.CommitID, v2 string, v3 BlameOptions) (BlameHunkReader, error) {
+	r0, r1 := m.BlameFunc.nextHook()(v0, v1, v2, v3)
+	m.BlameFunc.appendCall(GitBackendBlameFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Blame method of the
 // parent MockGitBackend instance is invoked and the hook queue is empty.
-func (f *GitBackendBlameFunc) SetDefaultHook(hook func(context.Context, string, BlameOptions) (BlameHunkReader, error)) {
+func (f *GitBackendBlameFunc) SetDefaultHook(hook func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error)) {
 	f.defaultHook = hook
 }
 
@@ -461,7 +461,7 @@ func (f *GitBackendBlameFunc) SetDefaultHook(hook func(context.Context, string, 
 // Blame method of the parent MockGitBackend instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitBackendBlameFunc) PushHook(hook func(context.Context, string, BlameOptions) (BlameHunkReader, error)) {
+func (f *GitBackendBlameFunc) PushHook(hook func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -470,19 +470,19 @@ func (f *GitBackendBlameFunc) PushHook(hook func(context.Context, string, BlameO
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitBackendBlameFunc) SetDefaultReturn(r0 BlameHunkReader, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, BlameOptions) (BlameHunkReader, error) {
+	f.SetDefaultHook(func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitBackendBlameFunc) PushReturn(r0 BlameHunkReader, r1 error) {
-	f.PushHook(func(context.Context, string, BlameOptions) (BlameHunkReader, error) {
+	f.PushHook(func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBackendBlameFunc) nextHook() func(context.Context, string, BlameOptions) (BlameHunkReader, error) {
+func (f *GitBackendBlameFunc) nextHook() func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -520,10 +520,13 @@ type GitBackendBlameFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 api.CommitID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 BlameOptions
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 BlameOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 BlameHunkReader
@@ -535,7 +538,7 @@ type GitBackendBlameFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitBackendBlameFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

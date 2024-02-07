@@ -19,7 +19,7 @@
     border-radius: 0.5rem;
     border: 1px solid var(--Semantic-Border-border-color, #e6ebf2);
     max-width: 738px;
-    padding: 2.5rem !important;
+    padding: 1.5rem 2rem !important;
 
     :global(.theme-dark) & {
         border: 1px solid var(--Semantic-border-color-Dark, #262b38);
@@ -27,12 +27,12 @@
     }
     :global(.theme-light) & {
         background: linear-gradient(91deg, rgba(228, 211, 252, 0.16) 3.11%, rgba(215, 240, 253, 0.16) 83.64%), #f9fafb;
-        border: 1px solid var(--Semantic-Border-border-color, #e6ebf2);
+        // border: 1px solid var(--Semantic-Border-border-color, #e6ebf2);
     }
 }
 
 .card h2 {
-    margin-bottom: 2.5rem;
+    margin-bottom: 1rem;
 }
 
 .card ul {
@@ -40,7 +40,6 @@
 }
 
 .card p:last-child {
-    margin-top: 2rem;
     margin-left: 1rem;
 }
 
