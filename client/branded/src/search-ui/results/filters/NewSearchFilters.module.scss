@@ -69,3 +69,29 @@
     fill: none !important;
     transform: rotateX(-180deg);
 }
+
+.filter-panel-header {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-content: center;
+    margin-left: 0.25rem;
+    margin-top: 0.75rem;
+}
+
+.reset-button {
+    color: var(--color-bg-1);
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    margin-right: 0.5rem;
+}
+
+// @TODO: Jason Harris: <kbd> element is unuseable unless the following CSS selectors are present.
+// We should use these as a base for adjusting the default styling of <kbd> elements.
+.keybind {
+    font-family: var(--font-family-base);
+    margin-left: 0.25rem;
+    line-height: 1rem;
+    color: var(--text-muted);
+}

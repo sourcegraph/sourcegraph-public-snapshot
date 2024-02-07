@@ -43,10 +43,10 @@ import {
     TrialPeriodIcon,
     DashboardIcon,
 } from '../components/CodyIcon'
-import { useArePaymentsEnabled, useHasTrialEnded } from '../featurFlags'
+import { useArePaymentsEnabled, useHasTrialEnded } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
-import { ProTierIcon } from '../subscription/CodySubscriptionPage'
+import { ProTierIcon, useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
 import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
@@ -66,6 +66,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const arePaymentsEnabled = useArePaymentsEnabled()
     const hasTrialEnded = useHasTrialEnded()
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
@@ -157,18 +159,17 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} arePaymentsEnabled={arePaymentsEnabled} />
+                <UpgradeToProBanner
+                    userIsOnProTier={userIsOnProTier}
+                    arePaymentsEnabled={arePaymentsEnabled}
+                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
+                />
                 <DoNotLoseCodyProBanner
                     userIsOnProTier={userIsOnProTier}
                     arePaymentsEnabled={arePaymentsEnabled}
                     hasTrialEnded={hasTrialEnded}
                     subscriptionStatus={subscription.status}
-                />
-                <RevertBackToTrialBanner
-                    userIsOnProTier={userIsOnProTier}
-                    arePaymentsEnabled={arePaymentsEnabled}
-                    hasTrialEnded={hasTrialEnded}
-                    subscriptionStatus={subscription.status}
+                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
                 />
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
@@ -191,7 +192,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 <ButtonLink
                                     to={
                                         arePaymentsEnabled
-                                            ? 'https://accounts.sourcegraph.com/cody/subscription?pro=true'
+                                            ? `${manageSubscriptionRedirectURL}?pro=true`
                                             : '/cody/subscription'
                                     }
                                     variant="secondary"
@@ -454,10 +455,11 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     )
 }
 
-const UpgradeToProBanner: React.FunctionComponent<{ userIsOnProTier: boolean; arePaymentsEnabled: boolean }> = ({
-    userIsOnProTier,
-    arePaymentsEnabled,
-}) =>
+const UpgradeToProBanner: React.FunctionComponent<{
+    userIsOnProTier: boolean
+    arePaymentsEnabled: boolean
+    manageSubscriptionRedirectURL: string
+}> = ({ userIsOnProTier, arePaymentsEnabled, manageSubscriptionRedirectURL }) =>
     userIsOnProTier ? null : (
         <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
             <div>
@@ -472,9 +474,7 @@ const UpgradeToProBanner: React.FunctionComponent<{ userIsOnProTier: boolean; ar
             </div>
             <div>
                 <ButtonLink
-                    to={
-                        arePaymentsEnabled ? 'https://accounts.sourcegraph.com/cody/subscription' : '/cody/subscription'
-                    }
+                    to={arePaymentsEnabled ? manageSubscriptionRedirectURL : '/cody/subscription'}
                     variant="primary"
                     size="sm"
                 >
@@ -489,7 +489,8 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
     arePaymentsEnabled: boolean
     hasTrialEnded: boolean
     subscriptionStatus: CodySubscriptionStatus
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) =>
+    manageSubscriptionRedirectURL: string
+}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus, manageSubscriptionRedirectURL }) =>
     arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING ? (
         <div
             className={classNames(
@@ -514,41 +515,8 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                 </div>
             </div>
             <div>
-                <ButtonLink to="https://accounts.sourcegraph.com/cody/subscription" variant="primary" size="sm">
+                <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
                     Add Credit Card
-                </ButtonLink>
-            </div>
-        </div>
-    ) : null
-
-const RevertBackToTrialBanner: React.FunctionComponent<{
-    userIsOnProTier: boolean
-    arePaymentsEnabled: boolean
-    hasTrialEnded: boolean
-    subscriptionStatus: CodySubscriptionStatus
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) =>
-    arePaymentsEnabled &&
-    !hasTrialEnded &&
-    userIsOnProTier &&
-    subscriptionStatus === CodySubscriptionStatus.TRIALING ? (
-        <div
-            className={classNames(
-                'd-flex justify-content-between align-items-center p-4',
-                styles.dontLoseCodyProBanner
-            )}
-        >
-            <div className="d-flex align-items-center text-dark">
-                <div className={styles.creditCardEmoji}>⚡️</div>
-                <div className="ml-3">
-                    <H3>You are subscribed to Cody Pro</H3>
-                    <Text className="mb-0">
-                        You will be charged $9 USD on <strong>Feb 15, 2024</strong>.
-                    </Text>
-                </div>
-            </div>
-            <div>
-                <ButtonLink to="https://accounts.sourcegraph.com/cody/subscription" variant="secondary" size="sm">
-                    Revert back to trial
                 </ButtonLink>
             </div>
         </div>
