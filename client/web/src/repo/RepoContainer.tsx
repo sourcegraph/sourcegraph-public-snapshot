@@ -470,6 +470,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
     // must exactly match how the revision was encoded in the URL
     const repoNameAndRevision = `${repoName}${typeof rawRevision === 'string' ? `@${rawRevision}` : ''}`
+    const showAskCodyBtn = !isCodySidebarOpen && Boolean(window.context.licenseInfo?.features.cody)
 
     return (
         <>
@@ -483,7 +484,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 />
             ))}
 
-            {!isCodySidebarOpen && (
+            {showAskCodyBtn && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={1}
