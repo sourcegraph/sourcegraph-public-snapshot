@@ -218,11 +218,11 @@ func createBrewInstallFix(formula string, cask bool) check.FixAction[CheckArgs] 
 			if pathAddCommandIsNext {
 				cmd = strings.TrimSpace(line)
 				println("Line is: " + cmd + "\n\n\n")
-				// quick hack to ensure that if the usershell does not end with a line feed,
+				// quick hack to ensure that if the rc file does not end with a line feed,
 				// we start our new command with a line feed.
-				if strings.HasPrefix(cmd, "echo '") {
+				if strings.HasPrefix(cmd, "echo 'export") {
 					println("Has echo true\n\n\n")
-					cmd = strings.Replace(cmd, "echo ", "echo -e ", 1)
+					cmd = strings.Replace(cmd, `echo '`, `echo '\n`, 1)
 				}
 				println("cmd is: " + cmd + "\n\n\n")
 				_ = usershell.Run(ctx, cmd).Wait()
