@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -127,4 +128,37 @@ func TestGitCLIBackend_ReadFile(t *testing.T) {
 		// A submodule should read like an empty file for now.
 		require.Equal(t, "", string(contents))
 	})
+}
+
+func TestGitCLIBackend_ReadFile_GoroutineLeak(t *testing.T) {
+	ctx := context.Background()
+
+	// Prepare repo state:
+	backend := BackendWithRepoCommands(t,
+		// simple file
+		"echo abcd > file1",
+		"git add file1",
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	commitID, err := backend.RevParseHead(ctx)
+	require.NoError(t, err)
+
+	routinesBefore := runtime.NumGoroutine()
+
+	r, err := backend.ReadFile(ctx, commitID, "file1")
+	require.NoError(t, err)
+
+	// Read just a few bytes, but not enough to complete.
+	buf := make([]byte, 2)
+	n, err := r.Read(buf)
+	require.NoError(t, err)
+	require.Equal(t, 2, n)
+
+	// Don't complete reading all the output, instead, bail and close the reader.
+	require.NoError(t, r.Close())
+
+	// Expect no leaked routines.
+	routinesAfter := runtime.NumGoroutine()
+	require.Equal(t, routinesBefore, routinesAfter)
 }
