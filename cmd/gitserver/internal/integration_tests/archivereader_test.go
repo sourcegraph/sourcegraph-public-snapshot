@@ -85,11 +85,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 		{
 			name: "revision-not-found",
 
-			remote:      createRepoWithDotGitDir(t, root),
-			revision:    "revision-not-found",
-			clientErr:   nil,
-			readerError: &gitdomain.RevisionNotFoundError{Repo: "revision-not-found", Spec: "revision-not-found"},
-			skipReader:  true,
+			remote:   createRepoWithDotGitDir(t, root),
+			revision: "revision-not-found",
+			clientErr: &gitdomain.RevisionNotFoundError{
+				Repo: "revision-not-found",
+				Spec: "revision-not-found",
+			},
+			skipReader: true,
 		},
 	}
 
@@ -230,7 +232,7 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	t.Helper()
 	dir := filepath.Join(root, "remotes", "simple")
 
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
 
@@ -311,10 +313,10 @@ filemode=true
 	}
 	for name, data := range files {
 		name = filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(name), 0700); err != nil {
+		if err := os.MkdirAll(filepath.Dir(name), 0o700); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(name, []byte(data), 0600); err != nil {
+		if err := os.WriteFile(name, []byte(data), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
