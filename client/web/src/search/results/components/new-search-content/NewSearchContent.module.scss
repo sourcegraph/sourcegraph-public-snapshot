@@ -126,6 +126,7 @@
 .content {
     grid-area: contents;
     overflow: auto;
+    padding: 1rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;
@@ -158,6 +159,12 @@
             scrollbar-width: thin;
             scrollbar-color: var(--oc-gray-6);
         }
+    }
+
+    &--list {
+        // Compensate content parent block paddings in order
+        // to have paddings anywhere but content list with search matches
+        margin: -1rem;
     }
 }
 

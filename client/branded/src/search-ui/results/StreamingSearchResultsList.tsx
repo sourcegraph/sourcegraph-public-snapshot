@@ -88,6 +88,7 @@ export interface StreamingSearchResultsListProps
     logSearchResultClicked?: (index: number, type: string, resultsLength: number) => void
 
     enableRepositoryMetadata?: boolean
+    className?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -113,6 +114,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     logSearchResultClicked,
     enableRepositoryMetadata,
     queryExamplesPatternType = SearchPatternType.standard,
+    className,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -258,11 +260,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     )
 
     return (
-        <>
+        <div>
             <VirtualList<SearchMatch>
                 as="ol"
                 aria-label="Search results"
-                className={classNames(styles.list)}
+                className={classNames(styles.list, className)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
                 items={results?.results || []}
@@ -295,7 +297,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                     </>
                 </StreamingSearchResultFooter>
             )}
-        </>
+        </div>
     )
 }
 
