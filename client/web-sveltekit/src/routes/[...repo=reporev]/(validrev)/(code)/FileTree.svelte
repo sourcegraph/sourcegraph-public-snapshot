@@ -143,6 +143,8 @@
 <style lang="scss">
     div {
         overflow: auto;
+        // Don't scroll file/folder page when scrolling to the top or bottom of the file tree
+        overscroll-behavior-y: contain;
 
         :global(.treeitem.selectable) > :global(.label) {
             cursor: pointer;
