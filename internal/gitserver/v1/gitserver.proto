@@ -509,8 +509,9 @@ message CommitMatch {
 }
 
 enum ArchiveFormat {
-  ARCHIVE_FORMAT_ZIP = 0;
-  ARCHIVE_FORMAT_TAR = 1;
+  ARCHIVE_FORMAT_UNSPECIFIED = 0;
+  ARCHIVE_FORMAT_ZIP = 1;
+  ARCHIVE_FORMAT_TAR = 2;
 }
 
 // ArchiveRequest is set of parameters for the Archive RPC.
