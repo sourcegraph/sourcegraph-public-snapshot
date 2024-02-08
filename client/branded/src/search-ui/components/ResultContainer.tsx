@@ -75,7 +75,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
             ref={reference}
         >
             <article aria-labelledby={`result-container-${index}`}>
-                <div className={styles.header} id={`result-container-${index}`}>
+                <header className={styles.header} id={`result-container-${index}`} data-result-header={true}>
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
@@ -95,7 +95,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                         </span>
                     )}
                     {repoLastFetched && <LastSyncedIcon lastSyncedTime={repoLastFetched} className="ml-2" />}
-                </div>
+                </header>
                 {rankingDebug && <div>{rankingDebug}</div>}
                 {children && <div className={classNames(styles.result, resultClassName)}>{children}</div>}
             </article>
