@@ -58,7 +58,7 @@ describe('Repository', () => {
     })
     after(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async function() {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -69,6 +69,7 @@ describe('Repository', () => {
     afterEach(() => testContext?.dispose())
 
     async function assertSelectorHasText(selector: string, text: string) {
+        console.log("do something")
         assert.strictEqual(
             await driver.page.evaluate(
                 selector => document.querySelector<HTMLButtonElement>(selector)?.textContent,
