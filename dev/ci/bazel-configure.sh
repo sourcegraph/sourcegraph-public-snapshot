@@ -11,7 +11,7 @@ export PATH
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
-aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+aspectRC="aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 
 bazel --bazelrc="$aspectRC" run //:gazelle

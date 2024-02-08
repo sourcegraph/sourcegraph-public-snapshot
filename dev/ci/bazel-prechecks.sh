@@ -3,7 +3,7 @@
 set -eu
 EXIT_CODE=0
 
-aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+aspectRC="aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazelrc=(--bazelrc="$aspectRC")
 
