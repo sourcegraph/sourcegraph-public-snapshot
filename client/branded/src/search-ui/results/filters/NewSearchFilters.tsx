@@ -155,13 +155,14 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     </div>
                 )}
             </div>
-            <FilterTypeList
-                backendFilters={filters ?? []}
-                disabled={queryHasTypeFilter(query)}
-                selectedFilters={selectedFilters}
-                onClick={handleFilterTypeClick}
-            />
             <div className={styles.filters}>
+                {!queryHasTypeFilter(query) && (
+                    <FilterTypeList
+                        backendFilters={filters ?? []}
+                        selectedFilters={selectedFilters}
+                        onClick={handleFilterTypeClick}
+                    />
+                )}
                 {hasNoFilters && !isFilterLoadingComplete && (
                     <>
                         <SearchFilterSkeleton />
