@@ -1,26 +1,36 @@
 package auth
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 )
 
 func TestNormalizeUsername(t *testing.T) {
+	userpasswd.MockAddRandomSuffix = func(s string) (string, error) {
+		return fmt.Sprintf("%s-ubioa", s), nil
+	}
+	t.Cleanup(func() {
+		userpasswd.MockAddRandomSuffix = nil
+	})
+
 	testCases := []struct {
 		in     string
 		out    string
 		hasErr bool
 	}{
 		{in: "username", out: "username"},
-		{in: "john@gmail.com", out: "john"},
-		{in: "john.appleseed@gmail.com", out: "john.appleseed"},
-		{in: "john+test@gmail.com", out: "john-test"},
+		{in: "john@gmail.com", out: "john-ubioa"},
+		{in: "john.appleseed@gmail.com", out: "john.appleseed-ubioa"},
+		{in: "john+test@gmail.com", out: "john-test-ubioa"},
 		{in: "this@is@not-an-email", out: "this-is-not-an-email"},
 		{in: "user.na$e", out: "user.na-e"},
 		{in: "2039f0923f0", out: "2039f0923f0"},
-		{in: "john(test)@gmail.com", out: "john-test-"},
+		{in: "john(test)@gmail.com", out: "john-test-ubioa"},
 		{in: "bob!", out: "bob-"},
 		{in: "john_doe", out: "john_doe"},
 		{in: "john__doe", out: "john__doe"},
@@ -28,9 +38,7 @@ func TestNormalizeUsername(t *testing.T) {
 		{in: "__john", out: "__john"},
 		{in: "bob_", out: "bob_"},
 		{in: "bob__", out: "bob__"},
-		{in: "user_@name", out: "user_"},
-		{in: "user_@name", out: "user_"},
-		{in: "user_@name", out: "user_"},
+		{in: "user_@name", out: "user_-ubioa"},
 		{in: "1", out: "1"},
 		{in: "a", out: "a"},
 		{in: "a-", out: "a-"},
@@ -90,7 +98,7 @@ func Test_AddRandomSuffixToMakeUnique(t *testing.T) {
 	for _, tc := range testCases {
 		// Run a bunch of times to see we're getting consistent results
 		for i := 0; i < 100; i++ {
-			out, err := AddRandomSuffix(tc.username)
+			out, err := userpasswd.AddRandomSuffix(tc.username)
 			assert.NoError(t, err, tc.username)
 			assert.Len(t, out, tc.wantLength)
 			assert.True(t, IsValidUsername(out))
