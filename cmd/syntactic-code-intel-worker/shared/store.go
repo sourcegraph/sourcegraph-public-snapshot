@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"context"
 	"database/sql"
 	"strconv"
 	"time"
@@ -9,10 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -135,14 +132,6 @@ func NewStore(observationCtx *observation.Context, db *sql.DB) (dbworkerstore.St
 }
 
 func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, name)
-	if err != nil {
-		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
-	}
-
 	// This is an internal service, so we rely on the
 	// frontend to do authz checks for user requests.
 	// Authz checks are enforced by the DB layer
@@ -150,13 +139,18 @@ func mustInitializeDB(observationCtx *observation.Context, name string) *sql.DB 
 	// This call to SetProviders is here so that calls to GetProviders don't block.
 	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
 	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-	ctx := context.Background()
-	db := database.NewDB(observationCtx.Logger, sqlDB)
-	go func() {
-		for range time.NewTicker(providers.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
+
+	authz.SetProviders(true, []authz.Provider{})
+
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, name)
+
+	if err != nil {
+		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
+	}
+
 	return sqlDB
 }
