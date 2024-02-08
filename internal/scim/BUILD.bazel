@@ -60,6 +60,7 @@ go_test(
     ],
     embed = [":scim"],
     deps = [
+        "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
