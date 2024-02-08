@@ -18,19 +18,19 @@ import (
 // Note: If disableAutoGitUpdates is set in the site config, no operation is taken and
 // a NotFound error is returned.
 func (s *Server) MaybeStartClone(ctx context.Context, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool) {
-	dir := gitserverfs.RepoDirFromName(s.ReposDir, repo)
+	dir := gitserverfs.RepoDirFromName(s.reposDir, repo)
 	if repoCloned(dir) {
 		return nil, true
 	}
 
 	if conf.Get().DisableAutoGitUpdates {
-		s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+		s.logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
 		return &protocol.NotFoundPayload{}, false
 	}
 
 	cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
 	if err != nil {
-		s.Logger.Debug("error starting repo clone", log.String("repo", string(repo)), log.Error(err))
+		s.logger.Debug("error starting repo clone", log.String("repo", string(repo)), log.Error(err))
 		return &protocol.NotFoundPayload{CloneInProgress: false}, false
 	}
 

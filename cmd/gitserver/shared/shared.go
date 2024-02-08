@@ -90,10 +90,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	locker := server.NewRepositoryLocker()
-	gitserver := server.Server{
-		Logger:         logger,
-		ObservationCtx: observationCtx,
-		ReposDir:       config.ReposDir,
+	hostname := config.ExternalAddress
+	gitserver := server.NewServer(&server.ServerOpts{
+		Logger:   logger,
+		ReposDir: config.ReposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName)
 		},
@@ -112,7 +112,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				Logger:                  logger,
 			})
 		},
-		Hostname:                config.ExternalAddress,
+		Hostname:                hostname,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
@@ -122,7 +122,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			ratelimit.GitRPSLimiterBucketName,
 			ratelimit.NewGlobalRateLimiter(logger, ratelimit.GitRPSLimiterBucketName),
 		),
-	}
+	})
 
 	// Make sure we watch for config updates that affect the recordingCommandFactory.
 	go conf.Watch(func() {
@@ -138,15 +138,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	gitserver.RegisterMetrics(observationCtx, db)
 
-	// Create Handler now since it also initializes state
-	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, &gitserver), handler)
+	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver), handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -161,7 +159,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			logger,
 			db,
 			locker,
-			gitserver.Hostname,
+			hostname,
 			config.ReposDir,
 			config.SyncRepoStateInterval,
 			config.SyncRepoStateBatchSize,
@@ -178,7 +176,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.NewJanitor(
 				ctx,
 				server.JanitorConfig{
-					ShardID:                        gitserver.Hostname,
+					ShardID:                        hostname,
 					JanitorInterval:                config.JanitorInterval,
 					ReposDir:                       config.ReposDir,
 					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
@@ -199,7 +197,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		if recordable, ok := r.(recorder.Recordable); ok {
 			// Set the hostname to the shardID so we record the routines per
 			// gitserver instance.
-			recordable.SetJobName(fmt.Sprintf("gitserver %s", gitserver.Hostname))
+			recordable.SetJobName(fmt.Sprintf("gitserver %s", hostname))
 			recordable.RegisterRecorder(rec)
 			rec.Register(recordable)
 		}
