@@ -1,4 +1,5 @@
 use crate::range::Range;
+use anyhow::{Context, Result};
 use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
@@ -146,7 +147,7 @@ pub fn parse_tree<'a>(
     config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
     source: &'a str,
-) -> (Scope, usize) {
+) -> Result<(Scope, usize)> {
     let source_bytes = source.as_bytes();
     let mut cursor = tree_sitter::QueryCursor::new();
 
@@ -177,7 +178,13 @@ pub fn parse_tree<'a>(
                 .expect("capture indexes should always work");
 
             if capture_name.starts_with("descriptor") {
-                descriptors.push((capture_name, capture.node.utf8_text(source_bytes).unwrap()));
+                descriptors.push((
+                    capture_name,
+                    capture
+                        .node
+                        .utf8_text(source_bytes)
+                        .context("Unexpected non-utf-8 content. This is a tree-sitter bug")?,
+                ));
                 node = Some(capture.node);
             }
 
@@ -307,7 +314,7 @@ pub fn parse_tree<'a>(
         root.insert_global(m);
     }
 
-    (root, globals.len())
+    Ok((root, globals.len()))
 }
 
 #[cfg(test)]
@@ -322,7 +329,7 @@ pub mod test {
         let mut parser = config.get_parser();
         let tree = parser.parse(source_code.as_bytes(), None).unwrap();
 
-        let (mut scope, hint) = parse_tree(config, &tree, source_code);
+        let (mut scope, hint) = parse_tree(config, &tree, source_code).unwrap();
         scope.into_document(hint, vec![])
     }
 

@@ -70,7 +70,7 @@ fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
         let mut parser = config.get_parser();
         let tree = parser.parse(source.as_bytes(), None).unwrap();
 
-        locals::find_locals(config, &tree, &source);
+        locals::find_locals(config, &tree, &source).unwrap();
         let finish = Instant::now();
 
         timings.push(ParseTiming {
