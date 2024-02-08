@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "main.go",
         "tests.go",
+        "tests-util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/testing/tools/upgradetest",
     visibility = ["//visibility:private"],
