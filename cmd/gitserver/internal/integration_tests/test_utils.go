@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
@@ -89,7 +88,6 @@ func InitGitserver() {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
 			return vcssyncer.NewGitRepoSyncer(logger, wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),

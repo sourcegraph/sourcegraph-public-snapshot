@@ -23,9 +23,6 @@ type MockGitserverServiceClient struct {
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *GitserverServiceClientArchiveFunc
-	// BatchLogFunc is an instance of a mock function object controlling the
-	// behavior of the method BatchLog.
-	BatchLogFunc *GitserverServiceClientBatchLogFunc
 	// BlameFunc is an instance of a mock function object controlling the
 	// behavior of the method Blame.
 	BlameFunc *GitserverServiceClientBlameFunc
@@ -111,11 +108,6 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 	return &MockGitserverServiceClient{
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: func(context.Context, *v1.ArchiveRequest, ...grpc.CallOption) (r0 v1.GitserverService_ArchiveClient, r1 error) {
-				return
-			},
-		},
-		BatchLogFunc: &GitserverServiceClientBatchLogFunc{
-			defaultHook: func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (r0 *v1.BatchLogResponse, r1 error) {
 				return
 			},
 		},
@@ -257,11 +249,6 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.Archive")
 			},
 		},
-		BatchLogFunc: &GitserverServiceClientBatchLogFunc{
-			defaultHook: func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error) {
-				panic("unexpected invocation of MockGitserverServiceClient.BatchLog")
-			},
-		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: func(context.Context, *v1.BlameRequest, ...grpc.CallOption) (v1.GitserverService_BlameClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.Blame")
@@ -397,9 +384,6 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 	return &MockGitserverServiceClient{
 		ArchiveFunc: &GitserverServiceClientArchiveFunc{
 			defaultHook: i.Archive,
-		},
-		BatchLogFunc: &GitserverServiceClientBatchLogFunc{
-			defaultHook: i.BatchLog,
 		},
 		BlameFunc: &GitserverServiceClientBlameFunc{
 			defaultHook: i.Blame,
@@ -595,126 +579,6 @@ func (c GitserverServiceClientArchiveFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientArchiveFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverServiceClientBatchLogFunc describes the behavior when the
-// BatchLog method of the parent MockGitserverServiceClient instance is
-// invoked.
-type GitserverServiceClientBatchLogFunc struct {
-	defaultHook func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error)
-	hooks       []func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error)
-	history     []GitserverServiceClientBatchLogFuncCall
-	mutex       sync.Mutex
-}
-
-// BatchLog delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverServiceClient) BatchLog(v0 context.Context, v1 *v1.BatchLogRequest, v2 ...grpc.CallOption) (*v1.BatchLogResponse, error) {
-	r0, r1 := m.BatchLogFunc.nextHook()(v0, v1, v2...)
-	m.BatchLogFunc.appendCall(GitserverServiceClientBatchLogFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the BatchLog method of
-// the parent MockGitserverServiceClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverServiceClientBatchLogFunc) SetDefaultHook(hook func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BatchLog method of the parent MockGitserverServiceClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverServiceClientBatchLogFunc) PushHook(hook func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverServiceClientBatchLogFunc) SetDefaultReturn(r0 *v1.BatchLogResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverServiceClientBatchLogFunc) PushReturn(r0 *v1.BatchLogResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverServiceClientBatchLogFunc) nextHook() func(context.Context, *v1.BatchLogRequest, ...grpc.CallOption) (*v1.BatchLogResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverServiceClientBatchLogFunc) appendCall(r0 GitserverServiceClientBatchLogFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverServiceClientBatchLogFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverServiceClientBatchLogFunc) History() []GitserverServiceClientBatchLogFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverServiceClientBatchLogFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverServiceClientBatchLogFuncCall is an object that describes an
-// invocation of method BatchLog on an instance of
-// MockGitserverServiceClient.
-type GitserverServiceClientBatchLogFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.BatchLogRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.BatchLogResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitserverServiceClientBatchLogFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverServiceClientBatchLogFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
