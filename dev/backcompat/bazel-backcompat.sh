@@ -3,6 +3,7 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+
 bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
 tag="5.3.0"
@@ -18,7 +19,9 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
-  bazelrcs=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+  aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+  rosetta bazelrc > "$aspectRC"
+  bazelrcs=(--bazelrc="$aspectRC")
 else
   if [[ $EXIT_CODE -ne 0 ]]; then
     echo "The following files have changes:"

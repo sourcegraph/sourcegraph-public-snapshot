@@ -7,8 +7,7 @@ set -e
 export SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 export SRC_LOG_LEVEL=dbug
 
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  run //dev/ci/integration/executors/tester:tester
+aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+rosetta bazelrc > "$aspectRC"
+
+bazel --bazelrc="$aspectRC" run //dev/ci/integration/executors/tester:tester

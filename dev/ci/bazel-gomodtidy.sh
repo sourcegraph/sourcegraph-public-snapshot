@@ -12,12 +12,12 @@ runGoModTidy() {
   local dir
   dir=$1
   cd "$dir"
+
+  aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+  rosetta bazelrc > "$aspectRC"
+
   echo "--- :bazel: Running go mod tidy in $dir"
-  bazel \
-    --bazelrc="$root/.bazelrc" \
-    --bazelrc="$root/.aspect/bazelrc/ci.bazelrc" \
-    --bazelrc="$root/.aspect/bazelrc/ci.sourcegraph.bazelrc" \
-    run @go_sdk//:bin/go -- mod tidy
+  bazel --bazelrc="$aspectRC" run @go_sdk//:bin/go -- mod tidy
   cd -
 }
 
