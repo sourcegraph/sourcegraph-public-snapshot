@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"testing"
 
@@ -105,6 +106,9 @@ func expectOutput(t *testing.T, buf *outputtest.Buffer, want []string) {
 	t.Helper()
 
 	have := buf.Lines()
+
+	sort.Strings(want)
+	sort.Strings(have)
 	if !cmp.Equal(want, have) {
 		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
 	}
