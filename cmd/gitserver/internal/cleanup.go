@@ -50,6 +50,10 @@ type JanitorConfig struct {
 	DisableDeleteReposOnWrongShard bool
 }
 
+// Let gitserver come up healthy first, and only start the janitor after a minute
+// to let things stabilize a little bit.
+const initialJanitorWait = 1 * time.Minute
+
 func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wrexec.RecordingCommandFactory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
@@ -87,6 +91,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 		goroutine.WithName("gitserver.janitor"),
 		goroutine.WithDescription("cleans up and maintains repositories regularly"),
 		goroutine.WithInterval(cfg.JanitorInterval),
+		goroutine.WithInitialDelay(initialJanitorWait),
 	)
 }
 

@@ -34,7 +34,7 @@ func TestConfigDefaults(t *testing.T) {
 	if have, want := config.JanitorReposDesiredPercentFree, 10; have != want {
 		t.Errorf("invalid value for JanitorReposDesiredPercentFree: have=%d want=%d", have, want)
 	}
-	if have, want := config.JanitorInterval, time.Minute; have != want {
+	if have, want := config.JanitorInterval, 24*time.Hour; have != want {
 		t.Errorf("invalid value for JanitorInterval: have=%s want=%s", have, want)
 	}
 	if have, want := config.JanitorDisableDeleteReposOnWrongShard, false; have != want {

@@ -82,6 +82,6 @@ func (c *Config) Load() {
 		c.AddError(errors.Errorf("excessively high value given for SRC_REPOS_DESIRED_PERCENT_FREE: %d", c.JanitorReposDesiredPercentFree))
 	}
 
-	c.JanitorInterval = c.GetInterval("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
+	c.JanitorInterval = c.GetInterval("SRC_REPOS_JANITOR_INTERVAL", "24h", "Interval between cleanup runs")
 	c.JanitorDisableDeleteReposOnWrongShard = c.GetBool("SRC_REPOS_JANITOR_DISABLE_DELETE_REPOS_ON_WRONG_SHARD", "false", "Disable deleting repos on wrong shard")
 }
