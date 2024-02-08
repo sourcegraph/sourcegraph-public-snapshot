@@ -190,7 +190,7 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
-	ExternalURL          string          `json:"externalURL"`
+	ExternalURL          string          `json:"externalURL,omitempty"`
 	DeployType           string          `json:"deployType"`
 	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
