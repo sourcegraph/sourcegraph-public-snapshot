@@ -88,13 +88,13 @@ pub fn index_command(
     };
 
     let mut index_file = |filepath: &PathBuf| -> Result<()> {
-        let contents = std::fs::read(filepath)
+        let contents = std::fs::read_to_string(filepath)
             .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
         let relative_path = filepath
             .strip_prefix(canonical_project_root.clone())
             .expect("Failed to strip project root prefix");
 
-        match index_content(contents, p, &options) {
+        match index_content(&contents, p, &options) {
             Ok(mut document) => {
                 document.relative_path = relative_path.display().to_string();
                 index.documents.push(document);
@@ -183,21 +183,19 @@ pub fn index_command(
         .with_context(|| format!("When writing index to {}", out.display()))
 }
 
-fn index_content(contents: Vec<u8>, parser: ParserId, options: &IndexOptions) -> Result<Document> {
+fn index_content(contents: &str, parser: ParserId, options: &IndexOptions) -> Result<Document> {
     let mut document: Document;
 
     if options.analysis_mode.globals() {
-        let (mut scope, hint) =
-            get_globals(parser, &contents).ok_or(anyhow!("Failed to get globals"))??;
+        let (mut scope, hint) = get_globals(parser, contents)?;
         document = scope.into_document(hint, vec![]);
     } else {
         document = Document::new();
     }
 
     if options.analysis_mode.locals() {
-        if let Some(occurrences) = get_locals(parser, &contents) {
-            document.occurrences.extend(occurrences)
-        }
+        let occurrences = get_locals(parser, contents)?;
+        document.occurrences.extend(occurrences)
     }
 
     Ok(document)
