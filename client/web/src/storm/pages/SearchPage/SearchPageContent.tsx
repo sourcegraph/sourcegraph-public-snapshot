@@ -28,6 +28,7 @@ import styles from './SearchPageContent.module.scss'
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
@@ -148,7 +149,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     )}
                 </div>
             )}
-            <CodyUpsell />
+            <CodyUpsell isSourcegraphDotCom={isSourcegraphDotCom} />
             <SearchPageFooter />
         </div>
     )
