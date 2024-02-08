@@ -781,7 +781,7 @@ func TestNewPlanJob(t *testing.T) {
             (patternInfo.isStructural . true)
             (patternInfo.fileMatchLimit . 10000)))))))`),
 		},
-		// The next two queries show an unexpected way that a query is
+		// The next query shows an unexpected way that a query is
 		// translated into a global zoekt query, all depending on if context:
 		// is specified (which it normally is). We expect to just have one
 		// global zoekt query, but with context we do not. Recording this test
