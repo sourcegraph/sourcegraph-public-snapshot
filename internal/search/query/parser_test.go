@@ -343,6 +343,16 @@ func TestParse(t *testing.T) {
 		}
 	}
 
+	// Queries with repo
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo count:2000 internal) or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("repo:foo count:2000 internal or src"))
+
 	// Queries with context
 	autogold.Expect(value{
 		Grammar:   `(and "context:foo" "context:bar" (or (and "type:file" "a") "b"))`,
