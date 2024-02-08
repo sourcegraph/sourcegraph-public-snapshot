@@ -12,7 +12,7 @@ import {
 import classNames from 'classnames'
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
-import { Tooltip, Button, Icon, H4, H2 } from '@sourcegraph/wildcard'
+import { Button, Icon, H4, H2 } from '@sourcegraph/wildcard'
 
 import { URLQueryFilter } from '../../hooks'
 import { FilterKind } from '../../types'
