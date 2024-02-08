@@ -18,19 +18,32 @@
     import Tabs from '$lib/Tabs.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
 
+    interface Capture {
+        selectedTab: number | null
+        historyPanel: HistoryCapture
+        scrollTop: number
+    }
+
     export let data: LayoutData
 
-    export const snapshot: Snapshot<{ selectedTab: number | null; historyPanel: HistoryCapture }> = {
+    export const snapshot: Snapshot<Capture> = {
         capture() {
             return {
                 selectedTab,
                 historyPanel: historyPanel?.capture(),
+                // This works because this specific page is fully scrollable
+                scrollTop: window.scrollY,
             }
         },
         async restore(data) {
             selectedTab = data.selectedTab
-            // Wait until DOM was updated to possibly show the history panel
+            // Wait until DOM was updated
             await tick()
+            // `restore` is called before `afterNavigate`, which resets the scroll position
+            // Restore the scroll position after the componentent was updated
+            window.scrollTo(0, data.scrollTop)
+
+            // Restore history panel state if it is open
             if (data.historyPanel) {
                 historyPanel?.restore(data.historyPanel)
             }
@@ -96,6 +109,7 @@
     let treeProvider: FileTreeProvider | null = null
     let selectedTab: number | null = null
     let historyPanel: HistoryPanel
+    let rootElement: HTMLElement | null = null
 
     $: ({ revision, parentPath, resolvedRevision } = data)
     $: commitID = resolvedRevision.commitID
@@ -126,12 +140,29 @@
     })
 
     afterNavigate(() => {
-        // Prevents SvelteKit from resetting the scroll position to the top
+        // When navigating to a new page we want to ensure two things:
+        // - The file sidebar doesn't move. It feels bad when you clicked on a file entry
+        //   and the click target moves away because the page is scrolled all the way to the top.
+        // - The beginning of the content should be visible (e.g. the top of the file or the
+        //   top of the file table).
+        // In other words, we want to scroll to the top but not all the way
+
+        // Prevents SvelteKit from resetting the scroll position to the very top of the page
         disableScrollHandling()
+
+        if (rootElement) {
+            // Because the whole page is scrollable we can get the current scroll position from
+            // the window object
+            const top = rootElement.offsetTop
+            if (window.scrollY > top) {
+                // Reset scroll to top of the content
+                window.scrollTo(0, top)
+            }
+        }
     })
 </script>
 
-<section>
+<section bind:this={rootElement}>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
         <h3>
             <SidebarToggleButton />&nbsp; Files
