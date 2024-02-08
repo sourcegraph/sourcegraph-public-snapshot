@@ -30,23 +30,22 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 }
 
 func bazelCmd(args ...string) string {
-	// TODO(burmudar): update to use rosetta rc
+	genBazelRC, bazelrc := aspectBazelRC()
 	pre := []string{
+		genBazelRC,
 		"bazel",
-		"--bazelrc=.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		fmt.Sprintf("--bazelrc=%s", bazelrc),
 	}
 	Cmd := append(pre, args...)
 	return strings.Join(Cmd, " ")
 }
 
 func bazelStampedCmd(args ...string) string {
+	genBazelRC, bazelrc := aspectBazelRC()
 	pre := []string{
+		genBazelRC,
 		"bazel",
-		"--bazelrc=.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		fmt.Sprintf("--bazelrc=%s", bazelrc),
 	}
 	post := []string{
 		"--stamp",
@@ -58,13 +57,20 @@ func bazelStampedCmd(args ...string) string {
 	return strings.Join(cmd, " ")
 }
 
+func aspectBazelRC() (string, string) {
+	path := "/tmp/aspect-generated.bazelrc"
+	cmd := fmt.Sprintf("rosetta bazelrc > %s", path)
+
+	return cmd, path
+}
+
 // TODO(burmudar): do we remove this?
 func bazelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-prechecks"),
 		bk.SoftFail(100),
-		bk.Agent("queue", "bazel"),
-		bk.ArtifactPaths("./bazel-configure.diff", "./sg"),
+		bk.Agent("queue", "aspect-default"),
+		bk.ArtifactPaths("./sg"),
 		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
 				Type:         bk.AnnotationTypeError,
