@@ -351,14 +351,3 @@ config_setting(
         "//:sg_msp": "True",
     },
 )
-
-load("//dev:go_mockgen.bzl", "go_mockgen")
-
-go_mockgen(
-    name = "sample_text",
-    out = "cmd/gitserver/internal/mocks_test.go",
-    interfaces = [
-        "service",
-    ],
-    deps = "//cmd/gitserver/internal",
-)

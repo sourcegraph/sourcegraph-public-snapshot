@@ -475,7 +475,3 @@ filegroup(
     strip_prefix = "sourcegraph-extensions-bundles-5.0.1",
     url = "https://github.com/sourcegraph/sourcegraph-extensions-bundles/archive/v5.0.1.zip",
 )
-
-load("//dev:go_mockgen.bzl", "go_mockgen_config")
-
-go_mockgen_config(name = "go_mockgen_config")
