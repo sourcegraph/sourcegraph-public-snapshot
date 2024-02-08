@@ -7,7 +7,7 @@ import { SearchPageContent, getShouldShowAddCodeHostWidget } from './SearchPageC
 
 export const SearchPage: FC = () => {
     const { data } = usePreloadedQueryData()
-    const { authenticatedUser } = useLegacyContext_onlyInStormRoutes()
+    const { authenticatedUser, isSourcegraphDotCom } = useLegacyContext_onlyInStormRoutes()
 
     const shouldShowAddCodeHostWidget = getShouldShowAddCodeHostWidget({
         isAddCodeHostWidgetEnabled: !!data?.codehostWidgetFlag,
@@ -15,5 +15,10 @@ export const SearchPage: FC = () => {
         externalServicesCount: data?.externalServices.totalCount,
     })
 
-    return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
+    return (
+        <SearchPageContent
+            shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+        />
+    )
 }
