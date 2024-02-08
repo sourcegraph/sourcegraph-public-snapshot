@@ -4,8 +4,7 @@
     list-style: none;
     gap: 0.15rem;
     margin: 0;
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: 0.25rem 0.5rem;
 
     &-item {
         width: 100%;
@@ -28,4 +27,8 @@
             background-color: var(--color-bg-3) !important;
         }
     }
+}
+
+.heading {
+    margin: 0 1rem;
 }

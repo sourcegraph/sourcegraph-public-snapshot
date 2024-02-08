@@ -2128,6 +2128,18 @@
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "sams.server": {
+          "type": "string",
+          "description": "The server URL for SAMS instance."
+        },
+        "sams.clientID": {
+          "type": "string",
+          "description": "The clientID for SAMS instance."
+        },
+        "sams.clientSecret": {
+          "type": "string",
+          "description": "The clientSecret for SAMS instance."
+        },
         "minimumExternalAccountAge": {
           "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
           "type": "integer",

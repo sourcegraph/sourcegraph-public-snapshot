@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -9,5 +10,19 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//cmd/frontend/internal/guardrails/attribution",
+        "//internal/guardrails",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = ["resolver_test.go"],
+    embed = [":resolvers"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/guardrails/attribution",
+        "//internal/database/dbmocks",
+        "@com_github_stretchr_testify//require",
     ],
 )

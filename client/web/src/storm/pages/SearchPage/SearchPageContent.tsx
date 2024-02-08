@@ -19,6 +19,7 @@ import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
+import { CodyUpsell } from './CodyUpsell'
 import { KeywordSearchCtaSection } from './KeywordSearchCtaSection'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
@@ -147,7 +148,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     )}
                 </div>
             )}
-
+            <CodyUpsell />
             <SearchPageFooter />
         </div>
     )
