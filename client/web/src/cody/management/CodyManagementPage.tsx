@@ -497,7 +497,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                             ) : (
                                 <span>
                                     Enter your credit card details now and keep your subscription after your trial ends.
-                                    You will only be charged on <strong>Feb 15, 2024</strong>.
+                                    You will only be charged on <strong>Feb 21, 2024</strong>.
                                 </span>
                             )}
                         </Text>
