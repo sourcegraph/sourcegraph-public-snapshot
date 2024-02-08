@@ -4,13 +4,14 @@ package internal
 
 import (
 	"context"
+	"io"
+	"sync"
+
 	log "github.com/sourcegraph/log"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	trace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"io"
-	"sync"
 )
 
 // MockService is a mock implementation of the service interface (from the

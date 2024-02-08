@@ -14,7 +14,9 @@ def _go_mockgen_run(ctx):
         "--filename",
         dst.path,
         "--force",
-        "--disable-formatting",
+        # "--disable-formatting",
+        "--goimports",
+        ctx.executable._goimports.path,
         "--stdlibroot",
         "{path}/{os}_{arch}".format(
             path = ctx.attr._go_stdlib[GoSource].stdlib.libs[0].path,
@@ -50,8 +52,9 @@ def _go_mockgen_run(ctx):
     ctx.actions.run(
         mnemonic = "GoMockgen",
         arguments = args,
-        executable = ctx.executable.gomockgen,
+        executable = ctx.executable._gomockgen,
         outputs = [dst],
+        tools = [ctx.executable._goimports],
         inputs = depset(direct = [ctx.attr.deps[GoArchive].data.file, ctx.attr._go_stdlib[GoSource].stdlib.libs[0]], transitive = deps),
         progress_message = "Running go-mockgen to generate %s" % dst.short_path,
     )
@@ -77,8 +80,13 @@ go_mockgen_generate = rule(
         "out": attr.string(
             mandatory = True,
         ),
-        "gomockgen": attr.label(
+        "_gomockgen": attr.label(
             default = Label("@com_github_derision_test_go_mockgen//cmd/go-mockgen:go-mockgen"),
+            executable = True,
+            cfg = "exec",
+        ),
+        "_goimports": attr.label(
+            default = Label("@org_golang_x_tools//cmd/goimports:goimports"),
             executable = True,
             cfg = "exec",
         ),
