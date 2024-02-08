@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/stretchr/testify/require"
 )
 
 func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexingJob) {
@@ -57,9 +58,8 @@ func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexi
 			index.EnqueuerUserID,
 		)
 
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting index: %s", err)
-		}
+		_, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...)
+		require.NoError(t, err, "unexpected error while inserting index")
 	}
 }
 
@@ -79,9 +79,8 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 		deletedAt,
 		false,
 	)
-	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting repository: %s", err)
-	}
+	_, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...)
+	require.NoError(t, err, "unexpected error while upserting repository")
 
 	status := "cloned"
 	if strings.HasPrefix(name, "DELETED-") {
@@ -92,9 +91,9 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 		status,
 		id,
 	)
-	if _, err := db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting gitserver repository: %s", err)
-	}
+
+	_, err = db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...)
+	require.NoError(t, err, "unexpected error while upserting gitserver repository")
 }
 
 func makeCommit(i int) string {

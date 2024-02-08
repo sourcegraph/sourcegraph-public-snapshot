@@ -27,10 +27,6 @@ type Config struct {
 
 const DefaultPort = 3188
 
-func scopedEnv(name string) string {
-	return "SYNTACTIC_CODE_INTEL_" + name
-}
-
 func (c *IndexingWorkerConfig) Load() {
 
 	c.PollInterval = c.GetInterval("SYNTACTIC_CODE_INTEL_INDEXING_POLL_INTERVAL", "1s", "Interval between queries to the repository queue")

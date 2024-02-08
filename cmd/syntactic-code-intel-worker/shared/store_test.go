@@ -29,10 +29,8 @@ func TestIndexingWorkerStore(t *testing.T) {
 	db := database.NewDB(observationContext.Logger, sqlDB)
 
 	store, err := NewStore(observationContext, sqlDB)
+	require.NoError(t, err, "unexpected error creating dbworker stores")
 
-	if err != nil {
-		t.Fatalf("unexpected error creating dbworker store: %s", err)
-	}
 	ctx := context.Background()
 
 	initCount, _ := store.QueuedCount(ctx, true)
