@@ -1235,7 +1235,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "syntactic_scip_index_id_seq",
+      "Name": "syntactic_scip_indexing_jobs_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -26519,7 +26519,7 @@
           "Index": 1,
           "TypeName": "bigint",
           "IsNullable": false,
-          "Default": "",
+          "Default": "nextval('syntactic_scip_indexing_jobs_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

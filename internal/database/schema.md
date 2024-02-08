@@ -4029,9 +4029,9 @@ Foreign-key constraints:
 
 # Table "public.syntactic_scip_indexing_jobs"
 ```
-         Column         |           Type           | Collation | Nullable |    Default     
-------------------------+--------------------------+-----------+----------+----------------
- id                     | bigint                   |           | not null | 
+         Column         |           Type           | Collation | Nullable |                         Default                          
+------------------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id                     | bigint                   |           | not null | nextval('syntactic_scip_indexing_jobs_id_seq'::regclass)
  commit                 | text                     |           | not null | 
  queued_at              | timestamp with time zone |           | not null | now()
  state                  | text                     |           | not null | 'queued'::text

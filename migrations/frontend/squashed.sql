@@ -4676,14 +4676,14 @@ COMMENT ON COLUMN syntactic_scip_indexing_jobs.execution_logs IS 'An array of [l
 
 COMMENT ON COLUMN syntactic_scip_indexing_jobs.enqueuer_user_id IS 'ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest';
 
-CREATE SEQUENCE syntactic_scip_index_id_seq
+CREATE SEQUENCE syntactic_scip_indexing_jobs_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE syntactic_scip_index_id_seq OWNED BY syntactic_scip_indexing_jobs.id;
+ALTER SEQUENCE syntactic_scip_indexing_jobs_id_seq OWNED BY syntactic_scip_indexing_jobs.id;
 
 CREATE VIEW syntactic_scip_indexing_jobs_with_repository_name AS
  SELECT u.id,
@@ -5309,6 +5309,8 @@ ALTER TABLE ONLY security_event_logs ALTER COLUMN id SET DEFAULT nextval('securi
 ALTER TABLE ONLY settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq'::regclass);
 
 ALTER TABLE ONLY survey_responses ALTER COLUMN id SET DEFAULT nextval('survey_responses_id_seq'::regclass);
+
+ALTER TABLE ONLY syntactic_scip_indexing_jobs ALTER COLUMN id SET DEFAULT nextval('syntactic_scip_indexing_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
 
