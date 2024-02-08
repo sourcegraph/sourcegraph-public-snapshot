@@ -11,11 +11,10 @@ export PATH
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  run //:gazelle
+aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+rosetta bazelrc > "$aspectRC"
+
+bazel --bazelrc="$aspectRC" run //:gazelle
 
 if [ "${CI:-}" ]; then
   git ls-files --exclude-standard --others | xargs git add --intent-to-add || true

@@ -2,7 +2,9 @@
 
 set -o errexit -o nounset -o pipefail
 
-bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+rosetta bazelrc > "$aspectRC"
+bazelrc=(--bazelrc="$aspectRC")
 
 echo "--- :bazel: Build sg cli"
 bazel "${bazelrc[@]}" build //dev/sg:sg
