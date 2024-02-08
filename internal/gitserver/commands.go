@@ -2214,9 +2214,9 @@ const (
 
 func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
 	switch pf {
-	case proto.ArchiveFormat_ZIP:
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
 		return ArchiveFormatZip
-	case proto.ArchiveFormat_TAR:
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
 		return ArchiveFormatTar
 	default:
 		panic(fmt.Sprintf("unknown archive format: %v", pf))
@@ -2226,9 +2226,9 @@ func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
 func (f ArchiveFormat) ToProto() proto.ArchiveFormat {
 	switch f {
 	case ArchiveFormatZip:
-		return proto.ArchiveFormat_ZIP
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP
 	case ArchiveFormatTar:
-		return proto.ArchiveFormat_TAR
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_TAR
 	default:
 		panic(fmt.Sprintf("unknown archive format: %v", f))
 	}
