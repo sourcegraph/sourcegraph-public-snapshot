@@ -5,6 +5,7 @@
         "value": "a",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"
@@ -24,6 +25,7 @@
         "value": "b",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"
@@ -43,6 +45,7 @@
         "value": "c",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"
@@ -62,6 +65,7 @@
         "value": "d",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Literal",
           "QuotesAsLiterals",
           "Standard"

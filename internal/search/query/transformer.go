@@ -159,6 +159,15 @@ func Hoist(nodes []Node) ([]Node, error) {
 	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
 		if i == 0 {
+			// Handles the case "(and parameter expression)"
+			if parameter, ok := node.(Parameter); ok && expression.Kind == And {
+				hoisted, err := Hoist(NewOperator(expression.Operands[1:], expression.Kind))
+				if err != nil {
+					return nil, err
+				}
+				return append([]Node{parameter}, hoisted...), nil
+			}
+
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
 			if err != nil || patternPart == nil {
 				return nil, errors.New("could not partition first expression")
