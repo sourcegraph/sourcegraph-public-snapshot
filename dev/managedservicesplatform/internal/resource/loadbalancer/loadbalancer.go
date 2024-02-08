@@ -2,16 +2,20 @@ package loadbalancer
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computebackendservice"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobalforwardingrule"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computemanagedsslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeregionnetworkendpointgroup"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesecuritypolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
+
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare/datacloudflareipranges"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,6 +37,11 @@ type Config struct {
 	// or computemanagedsslcertificate.ComputeManagedSslCertificate. It's used
 	// by the loadbalancer's HTTPS proxy.
 	SSLCertificate SSLCertificate
+
+	// CloudflareProxied is true when environments[].domain.cloudflare.proxied is true
+	CloudflareProxied bool
+	// Production is true if environments[].category is `internal` or `external` but not `test`
+	Production bool
 }
 
 type SSLCertificate interface {
@@ -86,7 +95,12 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			PortName: pointers.Ptr("http"),
 
 			// TODO: Parameterize with cloudflaresecuritypolicy as needed
-			SecurityPolicy: nil,
+			SecurityPolicy: func() *string {
+				if config.CloudflareProxied && config.Production {
+					return cloudArmorAllowOnlyCloudflareEdge(scope, id.Group("cf-policy"), config)
+				}
+				return nil
+			}(),
 
 			Backend: []*computebackendservice.ComputeBackendServiceBackend{{
 				Group: endpointGroup.Id(),
@@ -159,4 +173,51 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	return &Output{
 		ExternalAddress: externalAddress,
 	}, nil
+}
+
+// cloudArmorAllowOnlyCloudflareEdge defines a security policy which only allows traffic from Cloudflare edge IPs
+func cloudArmorAllowOnlyCloudflareEdge(scope constructs.Construct, id resourceid.ID, config Config) *string {
+	securityPolicy := computesecuritypolicy.NewComputeSecurityPolicy(scope, id.TerraformID("security-policy"), &computesecuritypolicy.ComputeSecurityPolicyConfig{
+		Name:    pointers.Stringf("%s-security-policy", *config.TargetService.Name()),
+		Project: pointers.Ptr(config.ProjectID),
+		Rule: []computesecuritypolicy.ComputeSecurityPolicyRule{
+			{
+				Description: pointers.Ptr("Deny All"),
+				Action:      pointers.Ptr("deny(403)"),
+				Priority:    pointers.Ptr(2147483647.0),
+				Match: &computesecuritypolicy.ComputeSecurityPolicyRuleMatch{
+					VersionedExpr: pointers.Ptr("SRC_IPS_V1"),
+					Config: &computesecuritypolicy.ComputeSecurityPolicyRuleMatchConfig{
+						SrcIpRanges: pointers.Ptr(pointers.Slice([]string{"*"})),
+					},
+				},
+			},
+		},
+	})
+
+	ips := datacloudflareipranges.NewDataCloudflareIpRanges(scope, id.TerraformID("ip-ranges"), &datacloudflareipranges.DataCloudflareIpRangesConfig{})
+
+	// Hack because Sort returns *[]*string but Chunklist wants *[]interface{}
+	var sortedIPs []any
+	for _, val := range *cdktf.Fn_Sort(ips.Ipv4CidrBlocks()) {
+		sortedIPs = append(sortedIPs, any(val))
+	}
+
+	// Add Dyanmic block override to add new rules for chunks of 10 CIDRs (max per rule)
+	securityPolicy.AddOverride(pointers.Ptr("dynamic.rule"), &map[string]any{
+		"for_each": cdktf.Fn_Chunklist(pointers.Ptr(sortedIPs), pointers.Ptr(10.0)),
+		"content": &map[string]any{
+			"description": "Allow Cloudflare edge nodes ${rule.key}",
+			"action":      "allow",
+			"priority":    "${4000 + rule.key}",
+			"match": map[string]any{
+				"versioned_expr": "SRC_IPS_V1",
+				"config": map[string]any{
+					"src_ip_ranges": "${rule.value}",
+				},
+			},
+		},
+	})
+
+	return securityPolicy.Name()
 }
