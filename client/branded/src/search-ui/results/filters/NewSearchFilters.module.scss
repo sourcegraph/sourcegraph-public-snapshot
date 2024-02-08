@@ -49,7 +49,7 @@
     position: sticky;
     bottom: 0;
     margin-top: -0.5rem;
-    padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+    padding: 1rem 0.75rem;
     border-top: 1px solid var(--border-color);
     background-color: var(--code-bg);
 
@@ -75,23 +75,31 @@
     flex-flow: row nowrap;
     justify-content: space-between;
     align-content: center;
-    margin-left: 0.25rem;
-    margin-top: 0.75rem;
+    margin: 1rem 0.5rem 0.5rem 0.5rem;
+
+    h1 {
+        margin-bottom: 0;
+    }
 }
 
 .reset-button {
-    color: var(--color-bg-1);
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    margin-right: 0.5rem;
+    margin: 0 0.5rem;
+
+    button {
+        color: var(--text-muted);
+    }
 }
 
 // @TODO: Jason Harris: <kbd> element is unuseable unless the following CSS selectors are present.
 // We should use these as a base for adjusting the default styling of <kbd> elements.
 .keybind {
     font-family: var(--font-family-base);
-    margin-left: 0.25rem;
-    line-height: 1rem;
     color: var(--text-muted);
+    background: var(--color-bg-1);
+    border: 1px solid var(--border-color-2);
+    margin-left: 0.5rem;
+    padding: 0 0.25rem;
 }
