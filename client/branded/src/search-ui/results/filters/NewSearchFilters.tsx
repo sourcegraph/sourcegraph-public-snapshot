@@ -246,9 +246,9 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     onQueryChange={onQueryChange}
                     telemetryService={telemetryService}
                 />
-
-                <FiltersDocFooter />
             </div>
+
+            <FiltersDocFooter />
 
             <footer className={styles.actions}>
                 {selectedFilters.length > 0 && (
