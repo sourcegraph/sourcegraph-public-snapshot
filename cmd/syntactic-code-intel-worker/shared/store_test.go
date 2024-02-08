@@ -84,4 +84,8 @@ func TestIndexingWorkerStore(t *testing.T) {
 	require.Equal(t, "salty/empanadas", record2.RepositoryName)
 	require.Equal(t, "deadbeefdeadbeefdeadbeefdeadbeefdead2222", record2.Commit)
 
+	_, hasRecord, err = store.Dequeue(ctx, "worker2", nil)
+	require.NoError(t, err)
+	require.False(t, hasRecord)
+
 }
