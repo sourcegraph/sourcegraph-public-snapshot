@@ -22,16 +22,16 @@ CREATE TABLE IF NOT EXISTS syntactic_scip_indexing_jobs (
 );
 
 
-CREATE INDEX syntactic_scip_indexing_jobs_dequeue_order_idx
+CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_dequeue_order_idx
     ON syntactic_scip_indexing_jobs
     USING btree (((enqueuer_user_id > 0)) DESC, queued_at DESC, id)
     WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
 
-CREATE INDEX syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id);
+CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id);
 
-CREATE INDEX syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);
+CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);
 
-CREATE INDEX syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);
+CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);
 
 
 CREATE SEQUENCE IF NOT EXISTS syntactic_scip_index_id_seq
