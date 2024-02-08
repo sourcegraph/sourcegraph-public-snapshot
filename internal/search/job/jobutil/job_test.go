@@ -781,11 +781,6 @@ func TestNewPlanJob(t *testing.T) {
             (patternInfo.isStructural . true)
             (patternInfo.fileMatchLimit . 10000)))))))`),
 		},
-		// The next two queries show an unexpected way that a query is
-		// translated into a global zoekt query, all depending on if context:
-		// is specified (which it normally is). We expect to just have one
-		// global zoekt query, but with context we do not. Recording this test
-		// to capture the current inefficiency.
 		{
 			query:      `context:global (foo AND bar AND baz) OR "foo bar baz"`,
 			protocol:   search.Streaming,
@@ -796,18 +791,18 @@ func TestNewPlanJob(t *testing.T) {
     (query . )
     (originalQuery . )
     (patternType . keyword)
-    (OR
-      (TIMEOUT
-        (timeout . 20s)
-        (LIMIT
-          (limit . 10000)
-          (PARALLEL
-            (ZOEKTGLOBALTEXTSEARCH
-              (query . (and substr:"foo" substr:"bar" substr:"baz"))
-              (type . text)
-              (repoOpts.searchContextSpec . global))
-            (REPOSCOMPUTEEXCLUDED
-              (repoOpts.searchContextSpec . global))
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 10000)
+        (PARALLEL
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . (or (and substr:"foo" substr:"bar" substr:"baz") substr:"foo bar baz"))
+            (type . text)
+            (repoOpts.searchContextSpec . global))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.searchContextSpec . global))
+          (OR
             (AND
               (LIMIT
                 (limit . 40000)
@@ -826,22 +821,11 @@ func TestNewPlanJob(t *testing.T) {
                 (REPOSEARCH
                   (repoOpts.repoFilters . [baz])
                   (repoOpts.searchContextSpec . global)
-                  (repoNamePatterns . [(?i)baz])))))))
-      (TIMEOUT
-        (timeout . 20s)
-        (LIMIT
-          (limit . 10000)
-          (PARALLEL
-            (SEQUENTIAL
-              (ensureUnique . false)
-              (ZOEKTGLOBALTEXTSEARCH
-                (query . substr:"foo bar baz")
-                (type . text))
-              (REPOSEARCH
-                (repoOpts.repoFilters . [foo bar baz])
-                (repoNamePatterns . [(?i)foo bar baz])))
-            REPOSCOMPUTEEXCLUDED
-            NOOP))))))`),
+                  (repoNamePatterns . [(?i)baz]))))
+            (REPOSEARCH
+              (repoOpts.repoFilters . [foo bar baz])
+              (repoOpts.searchContextSpec . global)
+              (repoNamePatterns . [(?i)foo bar baz]))))))))`),
 		},
 	}
 
