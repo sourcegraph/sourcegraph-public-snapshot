@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -23,15 +24,19 @@ import { translateToQuery } from './translateToQuery'
 import searchPageStyles from '../../storm/pages/SearchPage/SearchPageContent.module.scss'
 import styles from './CodySearchPage.module.scss'
 
-interface CodeSearchPageProps {
+interface CodeSearchPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     telemetryService: TelemetryService
 }
 
-export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ authenticatedUser }) => {
+export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
+    authenticatedUser,
+    telemetryRecorder,
+}) => {
     useEffect(() => {
         eventLogger.logPageView('CodySearch')
-    }, [])
+        telemetryRecorder.recordEvent('cody.search', 'view')
+    }, [telemetryRecorder])
 
     const navigate = useNavigate()
 
@@ -50,6 +55,12 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
 
     const [loading, setLoading] = useState(false)
 
+    // Mapping for telemetry
+    const failureReasons = {
+        untranslateable: 0,
+        unreachable: 1,
+    }
+
     const onSubmit = useCallback(() => {
         const sanitizedInput = input.trim()
         const dotcomHost = DOTCOM_URL.href
@@ -64,6 +75,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
             !isPrivateInstance ? { input: sanitizedInput } : null,
             !isPrivateInstance ? { input: sanitizedInput } : null
         )
+        // TODO VERIFY WE DONT WANT THE INPUT?
+        telemetryRecorder.recordEvent('cody.search', 'submit')
         setLoading(true)
         translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
@@ -75,6 +88,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null
                     )
+                    // TODO VERIFY WE DONT WANT THE INPUT?
+                    telemetryRecorder.recordEvent('cody.search', 'success')
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
@@ -86,10 +101,15 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null
                     )
+                    // TODO VERIFY WE DONT WANT THE INPUT?
+                    telemetryRecorder.recordEvent('cody.search', 'fail', {
+                        metadata: { reason: failureReasons.untranslateable },
+                    })
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
             error => {
+                telemetryRecorder.recordEvent('cody.search', 'fail')
                 eventLogger.log(
                     'web:codySearch:submitFailed',
                     !isPrivateInstance
@@ -107,11 +127,14 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                           }
                         : null
                 )
+                telemetryRecorder.recordEvent('cody.search', 'fail', {
+                    metadata: { reason: failureReasons.unreachable },
+                })
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
         )
-    }, [navigate, input, authenticatedUser, setCodySearchInput])
+    }, [navigate, input, authenticatedUser, setCodySearchInput, telemetryRecorder])
 
     const isLightTheme = useIsLightTheme()
 

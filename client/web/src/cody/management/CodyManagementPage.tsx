@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     ButtonLink,
     H1,
@@ -51,7 +52,7 @@ import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscripti
 
 import styles from './CodyManagementPage.module.scss'
 
-interface CodyManagementPageProps {
+interface CodyManagementPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
@@ -59,6 +60,7 @@ interface CodyManagementPageProps {
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
+    telemetryRecorder,
 }) => {
     const parameters = useSearchParameters()
 
@@ -69,7 +71,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
-    }, [utm_source])
+        telemetryRecorder.recordEvent('cody.management', 'view')
+    }, [utm_source, telemetryRecorder])
 
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
@@ -460,7 +463,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     ))}
                 </div>
             </Page>
-            <CodyOnboarding authenticatedUser={authenticatedUser} />
+            <CodyOnboarding authenticatedUser={authenticatedUser} telemetryRecorder={telemetryRecorder} />
         </>
     )
 }

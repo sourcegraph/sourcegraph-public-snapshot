@@ -1,3 +1,5 @@
+// TODO UPDATE THIS FILE ONCE SRC/AUTH IS MERGED
+
 import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
