@@ -18,7 +18,7 @@ func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexi
 			index.Commit = makeCommit(index.ID)
 		}
 		if index.State == "" {
-			index.State = "completed"
+			index.State = Completed
 		}
 		if index.RepositoryID == 0 {
 			index.RepositoryID = 50
