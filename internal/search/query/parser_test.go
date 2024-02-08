@@ -343,15 +343,45 @@ func TestParse(t *testing.T) {
 		}
 	}
 
-	// Queries with repo
+	// Queries with top-level parentheses, to mirror what we receive from client
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("(repo:foo count:2000 internal or src)"))
+	autogold.Expect(value{
+		Grammar:   `(and "lang:C++" "type:path" (or (and "repo:foo" "count:2000" "internal") "src"))`,
+		Heuristic: `(and "lang:C++" "type:path" "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("(repo:foo count:2000 internal or src) lang:C++ type:path"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal" "limit") "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("((repo:foo count:2000 internal and limit) or src)"))
+	autogold.Expect(value{
+		Grammar:   `(and "lang:C++" "type:path" (or (and "repo:foo" "count:2000" "internal" "limit") "src"))`,
+		Heuristic: "Same",
+	}).Equal(t, test("((repo:foo count:2000 internal and limit) or src) lang:C++ type:path"))
+
+	// More queries with repo
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("repo:foo count:2000 internal or src"))
 	autogold.Expect(value{
 		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
 		Heuristic: "Same",
 	}).Equal(t, test("(repo:foo count:2000 internal) or src"))
 	autogold.Expect(value{
-		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
-		Heuristic: `(and "repo:foo" "count:2000" (or "internal" "src"))`,
-	}).Equal(t, test("repo:foo count:2000 internal or src"))
+		Grammar:   `(or (and "repo:foo" "count:2000" (concat "internal" "limit")) "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo count:2000 internal limit) or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal" "limit") "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo count:2000 internal and limit) or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal" "limit") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or (and "internal" "limit") "src"))`,
+	}).Equal(t, test("repo:foo count:2000 internal and limit or src"))
 
 	// Queries with context
 	autogold.Expect(value{
