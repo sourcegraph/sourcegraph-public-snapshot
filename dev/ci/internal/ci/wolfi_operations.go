@@ -74,10 +74,10 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 	stepKey := sanitizeStepKey(fmt.Sprintf("package-dependency-%s", target))
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
-			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
+		pipeline.AddStep(fmt.Sprintf(":clown: :package: Package dependency '%s'", target),
+			bk.Cmd(fmt.Sprintf(`echo --- DRY RUN: ./dev/ci/scripts/wolfi/build-package.sh %s"`, target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", "aspect-default"),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		)
@@ -89,7 +89,7 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
 			bk.Cmd("./dev/ci/scripts/wolfi/build-repo-index.sh"),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", "aspect-default"),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
 			bk.Key("buildRepoIndex"),
@@ -102,7 +102,8 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 
 	return func(pipeline *bk.Pipeline) {
 
-		cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
+		//cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
+		cmd := fmt.Sprintf(`echo "--- DRY RUN: ./dev/ci/scripts/wolfi/build-base-image.sh %s %s"`, target, tag)
 		opts := []bk.StepOpt{
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
@@ -112,7 +113,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 				},
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", "aspect-default"),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		}
@@ -122,7 +123,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 		}
 
 		pipeline.AddStep(
-			fmt.Sprintf(":octopus: Build Wolfi base image '%s'", target),
+			fmt.Sprintf(":clown::octopus: Build Wolfi base image '%s'", target),
 			opts...,
 		)
 	}, stepKey
@@ -134,7 +135,7 @@ func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
 		pipeline.AddStep(":octopus: All base images built",
 			bk.Cmd("echo 'All base images built'"),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", "aspect-default"),
 			// Depend on all previous package building steps
 			bk.DependsOn(baseImageKeys...),
 			bk.Key("buildAllBaseImages"),
@@ -339,9 +340,10 @@ func wolfiGenerateBaseImagePR() *operations.Set {
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
-				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
-				bk.Agent("queue", "bazel"),
+			pipeline.AddStep(":clown::whale::hash: Update Base Image Hashes",
+				//bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
+				bk.Cmd(`echo "--- DRY RUN: wolfiGEnerateBaseImagePR"`),
+				bk.Agent("queue", "aspect-default"),
 				bk.DependsOn("buildAllBaseImages"),
 				bk.Key("updateBaseImageHashes"),
 			)

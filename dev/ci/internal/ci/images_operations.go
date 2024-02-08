@@ -26,6 +26,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
 
+		pipeline.AddStep(fmt.Sprintf(":clown::docker: publishFinalDockerImage"),
+			bk.Cmd(`echo "--- DRY RUN: skipping publishFinalDockerImage"`),
+		)
+		return
+
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
 			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
@@ -74,8 +79,7 @@ func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
 
 // Used in default run type
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	// TODO: what is the depKey for the aspect build?
-	depKey := "bazel-tests"
+	depKey := "__main__::test"
 	return bazelPushImagesCmd(version, false, bk.DependsOn(depKey))
 }
 
@@ -85,7 +89,7 @@ func bazelPushImagesNoTest(version string) func(*bk.Pipeline) {
 }
 
 func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
-	stepName := ":bazel::docker: Push final images"
+	stepName := ":clown: DRY :bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
 
@@ -102,9 +106,9 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 				bk.Key(stepKey),
 				bk.Env("PUSH_VERSION", version),
 				bk.Env("CANDIDATE_ONLY", candidate),
-				bazelApplyPrecheckChanges(),
-				bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
-				bk.Cmd("./dev/ci/push_all.sh"),
+				bk.Cmd(`echo "--- DRY RUN: bazel-push-images`),
+				// bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
+				// bk.Cmd("./dev/ci/push_all.sh"),
 			)...,
 		)
 	}
