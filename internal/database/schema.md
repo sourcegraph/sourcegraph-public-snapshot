@@ -4049,8 +4049,14 @@ Foreign-key constraints:
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
  enqueuer_user_id       | integer                  |           | not null | 0
+Indexes:
+    "syntactic_scip_indexing_jobs_pkey" PRIMARY KEY, btree (id)
+    "syntactic_scip_indexing_jobs_dequeue_order_idx" btree ((enqueuer_user_id > 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text
+    "syntactic_scip_indexing_jobs_queued_at_id" btree (queued_at DESC, id)
+    "syntactic_scip_indexing_jobs_repository_id_commit" btree (repository_id, commit)
+    "syntactic_scip_indexing_jobs_state" btree (state)
 Check constraints:
-    "syntactic_scip_indexing_jobs_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
+    "syntactic_scip_indexing_jobs_commit_valid_chars" CHECK (commit ~ '^[a-f0-9]{40}$'::text)
 
 ```
 

@@ -4665,7 +4665,7 @@ CREATE TABLE syntactic_scip_indexing_jobs (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     enqueuer_user_id integer DEFAULT 0 NOT NULL,
-    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
+    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-f0-9]{40}$'::text))
 );
 
 COMMENT ON TABLE syntactic_scip_indexing_jobs IS 'Stores metadata about a code intel syntactic index job.';
@@ -5818,6 +5818,9 @@ ALTER TABLE ONLY settings
 ALTER TABLE ONLY survey_responses
     ADD CONSTRAINT survey_responses_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY syntactic_scip_indexing_jobs
+    ADD CONSTRAINT syntactic_scip_indexing_jobs_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY team_members
     ADD CONSTRAINT team_members_team_id_user_id_key PRIMARY KEY (team_id, user_id);
 
@@ -6360,6 +6363,14 @@ CREATE INDEX settings_user_id_idx ON settings USING btree (user_id);
 CREATE UNIQUE INDEX sub_repo_permissions_repo_id_user_id_version_uindex ON sub_repo_permissions USING btree (repo_id, user_id, version);
 
 CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id);
+
+CREATE INDEX syntactic_scip_indexing_jobs_dequeue_order_idx ON syntactic_scip_indexing_jobs USING btree (((enqueuer_user_id > 0)) DESC, queued_at DESC, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
+
+CREATE INDEX syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id);
+
+CREATE INDEX syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);
+
+CREATE INDEX syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);
 
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 

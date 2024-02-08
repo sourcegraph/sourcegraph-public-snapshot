@@ -1,6 +1,6 @@
 
 CREATE TABLE IF NOT EXISTS syntactic_scip_indexing_jobs (
-    id bigint NOT NULL,
+    id bigint NOT NULL PRIMARY KEY,
     commit text NOT NULL,
     queued_at timestamp with time zone DEFAULT now() NOT NULL,
     state text DEFAULT 'queued'::text NOT NULL,
@@ -18,8 +18,21 @@ CREATE TABLE IF NOT EXISTS syntactic_scip_indexing_jobs (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     enqueuer_user_id integer DEFAULT 0 NOT NULL,
-    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
+    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-f0-9]{40}$'::text))
 );
+
+
+CREATE INDEX syntactic_scip_indexing_jobs_dequeue_order_idx
+    ON syntactic_scip_indexing_jobs
+    USING btree (((enqueuer_user_id > 0)) DESC, queued_at DESC, id)
+    WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
+
+CREATE INDEX syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id);
+
+CREATE INDEX syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);
+
+CREATE INDEX syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);
+
 
 CREATE SEQUENCE IF NOT EXISTS syntactic_scip_index_id_seq
     START WITH 1
