@@ -69,7 +69,7 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 
 	deletedAt := sqlf.Sprintf("NULL")
 	if strings.HasPrefix(name, "DELETED-") {
-		deletedAt = sqlf.Sprintf("%s", "2020-04-20 15:29:17 +0000 UTC")
+		deletedAt = sqlf.Sprintf("%s", "2024-02-08 15:06:50.973329+00")
 	}
 	insertRepoQuery := sqlf.Sprintf(
 		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,

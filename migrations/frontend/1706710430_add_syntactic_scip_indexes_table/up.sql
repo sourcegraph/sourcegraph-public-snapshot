@@ -1,6 +1,6 @@
 
 CREATE TABLE IF NOT EXISTS syntactic_scip_indexing_jobs (
-    id bigint NOT NULL PRIMARY KEY,
+    id bigserial NOT NULL PRIMARY KEY,
     commit text NOT NULL,
     queued_at timestamp with time zone DEFAULT now() NOT NULL,
     state text DEFAULT 'queued'::text NOT NULL,
@@ -32,16 +32,6 @@ CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_queued_at_id ON syntacti
 CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);
 
 CREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);
-
-
-CREATE SEQUENCE IF NOT EXISTS syntactic_scip_index_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE syntactic_scip_index_id_seq OWNED BY syntactic_scip_indexing_jobs.id;
 
 COMMENT ON TABLE syntactic_scip_indexing_jobs IS 'Stores metadata about a code intel syntactic index job.';
 
