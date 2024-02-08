@@ -308,7 +308,14 @@ type Client interface {
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
 
 	// ListBranches returns a list of all branches in the repository.
-	ListBranches(ctx context.Context, repo api.RepoName) ([]*gitdomain.Branch, error)
+	ListBranches(ctx context.Context, repo api.RepoName) ([]*gitdomain.Ref, error)
+
+	// ListTags returns a list of all tags in the repository.
+	ListTags(ctx context.Context, repo api.RepoName) ([]*gitdomain.Ref, error)
+
+	// TagsContainingCommit returns all the tags that contain the given commit in their
+	// history.
+	TagsContainingCommit(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.Ref, error)
 
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)
@@ -377,9 +384,6 @@ type Client interface {
 
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
-
-	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
 
 	// ListDirectoryChildren fetches the list of children under the given directory
 	// names. The result is a map keyed by the directory names with the list of files

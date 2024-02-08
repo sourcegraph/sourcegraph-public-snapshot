@@ -1136,66 +1136,6 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	return childrenMap
 }
 
-// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
-	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.StringSlice("commitObjs", commitObjs),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
-	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
-	// using committerdate).
-	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
-
-	for _, commit := range commitObjs {
-		args = append(args, "--points-at", commit)
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	return parseTags(out)
-}
-
-func parseTags(in []byte) ([]*gitdomain.Tag, error) {
-	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
-	if len(in) == 0 {
-		return nil, nil // no tags
-	}
-	lines := bytes.Split(in, []byte("\n"))
-	tags := make([]*gitdomain.Tag, len(lines))
-	for i, line := range lines {
-		parts := bytes.SplitN(line, []byte("\x00"), 3)
-		if len(parts) != 3 {
-			return nil, errors.Errorf("invalid git tag list output line: %q", line)
-		}
-
-		tag := &gitdomain.Tag{
-			Name:     string(parts[1]),
-			CommitID: api.CommitID(parts[0]),
-		}
-
-		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
-		if err == nil {
-			tag.CreatorDate = time.Unix(date, 0).UTC()
-		}
-
-		tags[i] = tag
-	}
-	return tags, nil
-}
-
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	ctx, _, endObservation := c.operations.getDefaultBranch.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -2349,77 +2289,11 @@ func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) Com
 	return opt
 }
 
-// ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Branch, err error) {
-	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs:             []attribute.KeyValue{repo.Attr()},
-	})
-	defer endObservation(1, observation.Args{})
-
-	refs, err := c.showRef(ctx, repo, "--heads")
-	if err != nil {
-		return nil, err
-	}
-
-	var branches []*gitdomain.Branch
-	for _, ref := range refs {
-		name := strings.TrimPrefix(ref.Name, "refs/heads/")
-		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
-		branches = append(branches, branch)
-	}
-	return branches, nil
-}
-
 type byteSlices [][]byte
 
 func (p byteSlices) Len() int           { return len(p) }
 func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-// ListRefs returns a list of all refs in the repository.
-func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
-	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	return c.showRef(ctx, repo)
-}
-
-func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args ...string) ([]gitdomain.Ref, error) {
-	cmdArgs := append([]string{"show-ref"}, args...)
-	cmd := c.gitCommand(repo, cmdArgs...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		// Exit status of 1 and no output means there were no
-		// results. This is not a fatal error.
-		if cmd.ExitStatus() == 1 && len(out) == 0 {
-			return nil, nil
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
-	lines := bytes.Split(out, []byte("\n"))
-	sort.Sort(byteSlices(lines)) // sort for consistency
-	refs := make([]gitdomain.Ref, len(lines))
-	for i, line := range lines {
-		if len(line) <= 41 {
-			return nil, errors.New("unexpectedly short (<=41 bytes) line in `git show-ref ...` output")
-		}
-		id := line[:40]
-		name := line[41:]
-		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
-	}
-	return refs, nil
-}
 
 // rel strips the leading "/" prefix from the path string, effectively turning
 // an absolute path into one relative to the root directory. A path that is just
@@ -2432,4 +2306,111 @@ func rel(path string) string {
 		return "."
 	}
 	return strings.TrimPrefix(path, "/")
+}
+
+func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Ref, err error) {
+	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
+	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
+	// using committerdate).
+	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
+
+	for _, commit := range commitObjs {
+		args = append(args, "--points-at", commit)
+	}
+
+	cmd := c.gitCommand(repo, args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	return parseTags(out)
+}
+
+func parseTags(in []byte) ([]*gitdomain.Tag, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+	if len(in) == 0 {
+		return nil, nil // no tags
+	}
+	lines := bytes.Split(in, []byte("\n"))
+	tags := make([]*gitdomain.Tag, len(lines))
+	for i, line := range lines {
+		parts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(parts) != 3 {
+			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+		}
+
+		tag := &gitdomain.Tag{
+			Name:     string(parts[1]),
+			CommitID: api.CommitID(parts[0]),
+		}
+
+		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		if err == nil {
+			tag.CreatorDate = time.Unix(date, 0).UTC()
+		}
+
+		tags[i] = tag
+	}
+	return tags, nil
+}
+
+// ListBranches returns a list of all branches in the repository.
+func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Ref, err error) {
+	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs:             []attribute.KeyValue{repo.Attr()},
+	})
+	defer endObservation(1, observation.Args{})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.ListRefs(ctx, &proto.ListRefsRequest{
+		RepoName:  string(repo),
+		HeadsOnly: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetRefs(), nil
+}
+
+// ListRefs returns a list of all refs in the repository.
+func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
+	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			repo.Attr(),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.ListRefs(ctx, &proto.ListRefsRequest{
+		RepoName: string(repo),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetRefs(), nil
 }

@@ -270,13 +270,6 @@ func (p *ContributorCount) String() string {
 	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
 }
 
-// A Tag is a VCS tag.
-type Tag struct {
-	Name         string `json:"Name,omitempty"`
-	api.CommitID `json:"CommitID,omitempty"`
-	CreatorDate  time.Time
-}
-
 // Ref describes a Git ref.
 type Ref struct {
 	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
@@ -287,14 +280,6 @@ type Ref struct {
 type BehindAhead struct {
 	Behind uint32 `json:"Behind,omitempty"`
 	Ahead  uint32 `json:"Ahead,omitempty"`
-}
-
-// A Branch is a git branch.
-type Branch struct {
-	// Name is the name of this branch.
-	Name string `json:"Name,omitempty"`
-	// Head is the commit ID of this branch's head commit.
-	Head api.CommitID `json:"Head,omitempty"`
 }
 
 // EnsureRefPrefix checks whether the ref is a full ref and contains the

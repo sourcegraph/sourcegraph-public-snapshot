@@ -3,8 +3,10 @@ package gitcli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -97,4 +99,35 @@ func (r *closingFileReader) Close() error {
 	err := r.ReadCloser.Close()
 	r.onClose()
 	return err
+}
+
+func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args ...string) ([]gitdomain.Ref, error) {
+	cmdArgs := append([]string{"show-ref"}, args...)
+	cmd := c.gitCommand(repo, cmdArgs...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		// Exit status of 1 and no output means there were no
+		// results. This is not a fatal error.
+		if cmd.ExitStatus() == 1 && len(out) == 0 {
+			return nil, nil
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
+	lines := bytes.Split(out, []byte("\n"))
+	sort.Sort(byteSlices(lines)) // sort for consistency
+	refs := make([]gitdomain.Ref, len(lines))
+	for i, line := range lines {
+		if len(line) <= 41 {
+			return nil, errors.New("unexpectedly short (<=41 bytes) line in `git show-ref ...` output")
+		}
+		id := line[:40]
+		name := line[41:]
+		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
+	}
+	return refs, nil
 }

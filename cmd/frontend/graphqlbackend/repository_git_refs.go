@@ -50,7 +50,8 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 
 			filtered := branches[:0]
 			for _, branch := range branches {
-				if strings.Contains(strings.ToLower(branch.Name), query) {
+				name := strings.TrimPrefix(branch.Name, "refs/reads")
+				if strings.Contains(strings.ToLower(name), query) {
 					filtered = append(filtered, branch)
 				}
 			}
