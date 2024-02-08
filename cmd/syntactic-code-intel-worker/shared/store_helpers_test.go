@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -70,7 +69,7 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 
 	deletedAt := sqlf.Sprintf("NULL")
 	if strings.HasPrefix(name, "DELETED-") {
-		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
+		deletedAt = sqlf.Sprintf("%s", "2020-04-20 15:29:17 +0000 UTC")
 	}
 	insertRepoQuery := sqlf.Sprintf(
 		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
