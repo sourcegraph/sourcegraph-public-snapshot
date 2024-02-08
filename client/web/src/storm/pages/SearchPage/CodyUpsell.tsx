@@ -20,7 +20,7 @@ export const CodyUpsell: FC = () => {
                     Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of
                     your company’s codebase in mind.
                 </Text>
-                <Link to="/cody">Explore Cody</Link>
+                <Link to="https://sourcegraph.com/cody?utm_source=server">Explore Cody</Link>
             </section>
             <MultiLineCompletion isLightTheme={isLightTheme} className={styles.upsellImage} />
         </section>
