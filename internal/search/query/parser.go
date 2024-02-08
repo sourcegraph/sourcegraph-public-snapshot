@@ -965,7 +965,6 @@ loop:
 				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
 			}
 			p.balanced--
-			p.heuristics |= disambiguated
 			if len(nodes) == 0 {
 				// We parsed "()".
 				if isSet(p.heuristics, emptyParens) {
@@ -979,6 +978,9 @@ loop:
 			break loop
 		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
+			if p.balanced > 0 {
+				p.heuristics = p.heuristics &^ disambiguated
+			}
 			break loop
 		case p.matchUnaryKeyword(NOT):
 			start := p.pos
