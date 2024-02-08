@@ -49,7 +49,12 @@ export interface CodyChatStore
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
-    logTranscriptEvent: (v1EventLabel: string, feature: string, action: string, eventProperties?: { [key: string]: any }) => void
+    logTranscriptEvent: (
+        v1EventLabel: string,
+        feature: string,
+        action: string,
+        eventProperties?: { [key: string]: any }
+    ) => void
     initializeNewChat: () => void
 }
 
@@ -171,7 +176,7 @@ export const useCodyChat = ({
                 return
             }
             eventLogger.log(v1EventLabel, { transcriptId: transcript.id, ...eventProperties })
-            telemetryRecorder.recordEvent(feature, action, { metadata: { transcriptId: transcript.id }})
+            telemetryRecorder.recordEvent(feature, action, { metadata: { transcriptId: transcript.id } })
         },
         [transcript]
     )
@@ -288,7 +293,7 @@ export const useCodyChat = ({
                 await updateTranscriptInHistory(transcript)
             }
 
-            logTranscriptEvent(EventName.CODY_CHAT_SUBMIT, , 'cody-chat', 'submit')
+            logTranscriptEvent(EventName.CODY_CHAT_SUBMIT, 'cody-chat', 'submit')
             return transcript
         },
         [submitMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
@@ -415,7 +420,9 @@ export const useCodyChat = ({
         logTranscriptEvent(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
-                : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED, 'cody-chat.inferred-repo', action
+                : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED,
+            'cody-chat.inferred-repo',
+            action
         )
 
         toggleIncludeInferredRepositoryInternal()
@@ -433,7 +440,9 @@ export const useCodyChat = ({
         logTranscriptEvent(
             scope.includeInferredFile
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
-                : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED, 'cody-chat.inferred-file', action
+                : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED,
+            'cody-chat.inferred-file',
+            action
         )
 
         toggleIncludeInferredFileInternal()
