@@ -2,7 +2,7 @@
 
 set -e
 
-aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+aspectRC="aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 bazelrc=(--bazelrc="$aspectRC")
 

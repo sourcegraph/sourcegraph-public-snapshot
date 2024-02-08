@@ -19,7 +19,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 fi
 
 if [[ ${CI:-} == "true" ]]; then
-  aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+  aspectRC="aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
   bazelrcs=(--bazelrc="$aspectRC")
 else

@@ -3,6 +3,8 @@
 set -eu
 EXIT_CODE=0
 
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+
 # go mod tidy gets run in different subdirectories
 # so the bazelrc files are looked up relative to that,
 # but we need to check from root
@@ -13,7 +15,7 @@ runGoModTidy() {
   dir=$1
   cd "$dir"
 
-  aspectRC="$(mktemp -t "aspect-generated.bazelrc.XXXXXX")"
+  aspectRC="aspect-generated.bazelrc"
   rosetta bazelrc > "$aspectRC"
 
   echo "--- :bazel: Running go mod tidy in $dir"
