@@ -230,7 +230,7 @@ impl TreeSitterLanguageName {
             let parser = self.parser_id();
             if let Some(parser) = parser {
                 // TODO: Could probably write this in a much better way.
-                let mut local_occs = crate::get_locals(parser, code.as_bytes()).unwrap_or_default();
+                let mut local_occs = crate::get_locals(parser, &code).unwrap_or_default();
 
                 // Get ranges in reverse order, because we're going to pop off the back of the list.
                 //  (that's why we're sorting the opposite way of the document occurrences above).
