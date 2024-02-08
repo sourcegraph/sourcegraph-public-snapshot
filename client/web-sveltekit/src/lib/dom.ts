@@ -175,15 +175,20 @@ export const computeFit: Action<HTMLElement, void, ComputeFitAttributes> = node 
  * See https://github.com/sveltejs/svelte/issues/3105
  */
 export const classNames: Action<HTMLElement, string | string[]> = (node, classes) => {
-    classes = (Array.isArray(classes) ? classes : [classes]).filter(Boolean)
+    // Converts the input to an array of non-empty strings.
+    // Empty strings are not valid inputs for classList and would throw an error.
+    function clean(classes: string | string[]): string[] {
+        return (Array.isArray(classes) ? classes : [classes]).filter(cls => cls.trim().length > 0)
+    }
+
+    classes = clean(classes)
     node.classList.add(...classes)
 
     return {
         update(newClasses) {
-            newClasses = (Array.isArray(newClasses) ? newClasses : [newClasses]).filter(Boolean)
             node.classList.remove(...classes)
-            node.classList.add(...newClasses)
-            classes = newClasses
+            classes = clean(newClasses)
+            node.classList.add(...classes)
         },
         destroy() {
             node.classList.remove(...classes)
