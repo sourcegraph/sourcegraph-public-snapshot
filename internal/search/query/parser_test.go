@@ -711,7 +711,7 @@ func TestParseParensKeyword(t *testing.T) {
 	// unbalanced parentheses
 	autogold.Expect(`"("`).Equal(t, test("("))
 	autogold.Expect(`"(()"`).Equal(t, test("(()"))
-	autogold.Expect("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("())"))
+	autogold.Expect(`unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`).Equal(t, test("())"))
 	autogold.Expect(`"foo("`).Equal(t, test("foo("))
 
 	// unescaped quotes

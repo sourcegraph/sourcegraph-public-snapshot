@@ -9,8 +9,14 @@ import { MultiLineCompletion } from './MultilineCompletion'
 
 import styles from './CodyUpsell.module.scss'
 
-export const CodyUpsell: FC = () => {
+interface CodyUpsellProps {
+    isSourcegraphDotCom: boolean
+}
+
+export const CodyUpsell: FC<CodyUpsellProps> = ({ isSourcegraphDotCom }) => {
     const isLightTheme = useIsLightTheme()
+    // On DotCom, we want to redirect to the PLG page. On Enterprise instances, we redirect to their Cody dashboard page.
+    const exploreCodyLink = isSourcegraphDotCom ? 'https://sourcegraph.com/cody?utm_source=server' : '/cody'
     return (
         <section className={styles.upsell}>
             <section className={styles.upsellMeta}>
@@ -20,7 +26,7 @@ export const CodyUpsell: FC = () => {
                     Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of
                     your company’s codebase in mind.
                 </Text>
-                <Link to="/cody">Explore Cody</Link>
+                <Link to={exploreCodyLink}>Explore Cody</Link>
             </section>
             <MultiLineCompletion isLightTheme={isLightTheme} className={styles.upsellImage} />
         </section>

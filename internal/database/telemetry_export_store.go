@@ -19,20 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// FeatureFlagTelemetryExport enables telemetry export by allowing events to be
-// queued for export via (TelemetryEventsExportQueueStore).QueueForExport
-//
-// It now defaults to 'true' as of 5.2.1.
-// TODO(5.2.2): Remove this flag entirely.
-const FeatureFlagTelemetryExport = "telemetry-export"
 
 var counterQueuedEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
@@ -125,15 +117,6 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 	defer tr.EndWithErr(&err)
 
 	logger := trace.Logger(ctx, s.logger)
-
-	// Check FeatureFlagTelemetryExport, defaulting to true if there are no
-	// flags or the export flag is not present. This is currently only intended
-	// as an escape hatch.
-	// TODO(5.2.2): Remove this feature flag.
-	if flags := featureflag.FromContext(ctx); flags != nil && !flags.GetBoolOr(FeatureFlagTelemetryExport, true) {
-		tr.SetAttributes(attribute.Bool("flag-enabled", false))
-		return nil
-	}
 
 	// 🚨 SECURITY: Respect export mode carefully.
 	switch s.getExportMode() {

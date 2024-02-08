@@ -41,7 +41,7 @@ fn parse_files(config: &LocalConfiguration, root: &Path, dir: &Path) -> Vec<Docu
             .parse(contents.as_bytes(), None)
             .expect("to parse the tree");
 
-        let occs = find_locals(config, &tree, contents.as_bytes());
+        let occs = find_locals(config, &tree, &contents).unwrap();
 
         let mut doc = Document::new();
         doc.language = "go".to_string();

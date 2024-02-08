@@ -69,6 +69,7 @@ const CodySubscriptionPage = lazyComponent(
     'CodySubscriptionPage'
 )
 const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
+const CodyDashboardPage = lazyComponent(() => import('./cody/dashboard/CodyDashboardPage'), 'CodyDashboardPage')
 const OwnPage = lazyComponent(() => import('./enterprise/own/OwnPage'), 'OwnPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
@@ -361,12 +362,7 @@ export const routes: RouteObject[] = [
     ...communitySearchContextsRoutes,
     {
         path: PageRoutes.Cody,
-        element: (
-            <LegacyRoute
-                render={() => <CodyUpsellPage />}
-                condition={({ licenseFeatures }) => !licenseFeatures.isCodyEnabled}
-            />
-        ),
+        element: <LegacyRoute render={props => <CodyDashboardOrUpsellPage {...props} />} />,
     },
     // this should be the last route to be regustered because it's a catch all route
     // when the instance has the code search feature.
@@ -401,9 +397,17 @@ function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Eleme
 }
 
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
-    const { isCodyEnabled, isCodeSearchEnabled } = props.licenseFeatures
-    if (isCodyEnabled && !isCodeSearchEnabled) {
+    const { isCodeSearchEnabled } = props.licenseFeatures
+    if (!isCodeSearchEnabled) {
         return <SearchUpsellPage />
     }
     return <SearchPageWrapper {...props} />
+}
+
+function CodyDashboardOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
+    const { isCodyEnabled } = props.licenseFeatures
+    if (!isCodyEnabled) {
+        return <CodyUpsellPage />
+    }
+    return <CodyDashboardPage {...props} />
 }

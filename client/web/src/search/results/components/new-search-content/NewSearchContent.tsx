@@ -257,7 +257,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         aria-label="Aggregation results panel"
-                        className="mt-3"
                         onQuerySubmit={onQuerySubmit}
                         telemetryService={telemetryService}
                     />
@@ -323,6 +322,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             logSearchResultClicked={onLogSearchResultClick}
                             queryExamplesPatternType={patternType}
+                            className={styles.contentList}
                         />
                     </>
                 )}
