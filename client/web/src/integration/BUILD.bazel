@@ -118,6 +118,7 @@ mocha_test(
     flaky = True,
     is_percy_enabled = True,
     tags = [
+        "no-cache",
         "no-sandbox",
         "requires-network",
     ],
