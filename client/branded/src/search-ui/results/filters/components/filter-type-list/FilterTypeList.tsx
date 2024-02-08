@@ -124,7 +124,6 @@ const FilterTypeButton: FC<FilterTypeButtonProps> = props => {
                 [styles.typeListItemSelected]: selected,
             })}
             onClick={() => onClick(filter, selected)}
-            ref={null}
         >
             <Icon svgPath={FILTER_TYPE_ICONS[filter.label]} aria-hidden={true} />
             <span className={styles.typeListItemText}>{filter.label}</span>
