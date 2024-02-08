@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- The search bar now supports keyword search by default, which ANDs terms together instead of searching literally as before. The behavior can be disabled through a toggle on the search results page. [#58815](https://github.com/sourcegraph/sourcegraph/issues/58815)
 - The `has.topic` filter now supports filtering by Gitlab topics. [#57649](https://github.com/sourcegraph/sourcegraph/pull/57649)
 - Batch Changes now allows changesets to be exported in CSV and JSON format. [#56721](https://github.com/sourcegraph/sourcegraph/pull/56721)
 - Supports custom ChatCompletion models in Cody clients for dotcom users. [#58158](https://github.com/sourcegraph/sourcegraph/pull/58158)
