@@ -322,7 +322,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	// ensure env correctly initialized, always use latest migrator for drift check,
 	// this allows us to avoid issues from changes in migrators invocation
 	if err := validateDBs(ctx, &test, initVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestStableVersion.String()), networkName, dbs, false); err != nil {
-		test.AddError(errors.Newf("🚨 Initializing env in multiversion test failed: %w", err))
+		test.AddError(errors.Newf("🚨 Initializing env in autoupgrade test failed: %w", err))
 		return test
 	}
 

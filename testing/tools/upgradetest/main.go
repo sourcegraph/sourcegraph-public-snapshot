@@ -185,7 +185,6 @@ func main() {
 					// Run Standard Upgrade Tests in goroutines. The current limit is set as 10 concurrent goroutines per test type (std, mvu, auto). This is to address
 					// dynamic port allocation issues that occur in docker when creating many bridge networks, but tests begin to fail when a sufficient number of
 					// goroutines are running on local machine. We may tune this in CI.
-					// TODO this should likely be made an env var or something to make it easy to swamp out depending on the test box.
 					stdTestPool := pool.New().WithMaxGoroutines(cCtx.Int("max-routines")).WithErrors()
 					for _, version := range stdVersions {
 						version := version
@@ -309,7 +308,7 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, targetVersion, latestStableVersion, _, _, autoVersions, err := getVersions(cCtx)
+					latestMinorVersion, latestStableVersion, targetVersion, _, _, autoVersions, err := getVersions(cCtx)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -317,6 +316,7 @@ func main() {
 
 					fmt.Println("Latest stable release version: ", latestStableVersion)
 					fmt.Println("Latest minor version: ", latestMinorVersion)
+					fmt.Println("Target version: ", targetVersion)
 					fmt.Println("Auto Versions:", autoVersions)
 
 					// initialize test results

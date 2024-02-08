@@ -211,7 +211,3 @@ server_integration_test(
         "no-sandbox",
     ],
 )
-
-migration_test_binary(
-    target_version = "5.1.0",
-)
