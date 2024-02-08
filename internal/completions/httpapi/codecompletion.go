@@ -45,12 +45,6 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB, test guardrail
 
 func allowedCustomModel(model string) string {
 	switch model {
-	// These virtual model strings allow the server to choose the model.
-	// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
-	case "fireworks/starcoder-16b":
-		return "fireworks/" + fireworks.Starcoder16b
-	case "fireworks/starcoder-7b":
-		return "fireworks/" + fireworks.Starcoder7b
 	case "fireworks/starcoder",
 		"fireworks/" + fireworks.Starcoder16b,
 		"fireworks/" + fireworks.Starcoder7b,

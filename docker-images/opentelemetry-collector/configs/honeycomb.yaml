@@ -18,24 +18,31 @@ exporters:
     endpoint: "api.honeycomb.io:443"
     headers:
       "x-honeycomb-team": "$HONEYCOMB_API_KEY"
-  otlp/webapp:
-    endpoint: "api.honeycomb.io:443"
-    headers:
-      "x-honeycomb-team": "$HONEYCOMB_API_KEY_WEBAPP"
 
 processors:
-  filter/webapp: # You can include certain traces
-    spans:
-      include:
-        match_type: strict
-        services:
-          - web-app
-  filter/exc-webapp: # You can exclude certain traces
-      spans:
-        exclude:
-          match_type: strict
-          services:
-            - web-app
+  tail_sampling:
+    decision_wait: 30s
+    num_traces: 100000
+    expected_new_traces_per_sec: 10 # We currently have about ~700k events per day
+    policies:
+      name: and
+      type: and
+      and:
+        and_sub_policy:
+          # Only track events that originate from the completion provider
+          - name: is-completion-event
+            type: ottl_condition
+            ottl_condition:
+              error_mode: ignore
+              span:
+                - "name == \"autocomplete.provideInlineCompletionItems\""
+          # Only track spans that were manually marked as to be sampled by the client
+          - name: is-sampled
+            type: ottl_condition
+            ottl_condition:
+              error_mode: ignore
+              span:
+                - "attributes[\"sampled\"] == true"
 
 extensions:
   health_check:
@@ -45,11 +52,8 @@ extensions:
 service:
   extensions: [health_check,zpages]
   pipelines:
-    traces/webapp: # Only traces for the service web-app will be allowed through this pipeline
+    traces/autocomplete:
+      processors:
+        - tail_sampling
       receivers: [otlp]
-      processors: [filter/webapp]
-      exporters: [otlp/webapp]
-    traces/all: # All traces except web-app is allowed through the pipeline
-      receivers: [otlp]
-      processors: [filter/exc-webapp]
       exporters: [otlp]
