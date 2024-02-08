@@ -76,7 +76,11 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     data-test-active={isItemSelected}
                                 >
                                     <MenuButton
-                                        className={classNames(navItemStyles.itemFocusable, styles.button)}
+                                        className={classNames(
+                                            navItemStyles.itemFocusable,
+                                            styles.button,
+                                            styles.button // another fake change
+                                        )}
                                         aria-label={isExpanded ? `Hide ${name} menu` : `Show ${name} menu`}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>

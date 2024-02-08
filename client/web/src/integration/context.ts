@@ -50,7 +50,6 @@ export const createWebIntegrationTestContext = async ({
     customContext = {},
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
     const config = getConfig('disableAppAssetsMocking')
-    console.log('this is a pointless log to force the test to run')
 
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
