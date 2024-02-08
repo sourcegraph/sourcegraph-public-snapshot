@@ -1,5 +1,24 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_mockgen.bzl", "go_mockgen")
+
+go_mockgen(
+    name = "sample_text",
+    out = "mocks_test.go",
+    interfaces = [
+        "Store",
+        "SiteConfigQuerier",
+    ],
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [
+        "//internal/codeintel/ranking/internal/store",
+        "//internal/conf/conftypes",
+    ],
+)
 
 go_library(
     name = "ranking",

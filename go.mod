@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.21
+go 1.21.4
 
 // Permanent replace directives
 // ============================
@@ -31,7 +31,6 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-
 	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240207152121-3f1b41cc8c40
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
@@ -229,8 +228,6 @@ require (
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.16.0
 	golang.org/x/time v0.5.0
-	// golang.org/x/tools should not be upgraded until https://github.com/bazelbuild/bazel-gazelle/issues/1579
-	// is resolved.
 	golang.org/x/tools v0.17.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.156.0

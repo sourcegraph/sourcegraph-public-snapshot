@@ -6,7 +6,12 @@ go_mockgen(
     name = "sample_text",
     out = "mocks_test.go",
     interfaces = ["service"],
-    deps = ":internal",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":internal"],
 )
 
 go_library(

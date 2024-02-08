@@ -1243,6 +1243,10 @@ def go_dependencies():
         name = "com_github_derision_test_go_mockgen",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/derision-test/go-mockgen",
+        patch_args = ["-p1"],
+        patches = [
+            "//third_party/com_github_strum355_gomockgen:debug.patch",
+        ],
         replace = "github.com/strum355/go-mockgen",
         sum = "h1:Dup3gAgmdLe8oRshV/5mWKgcXy+gPk0n1x04b1cew/c=",
         version = "v0.0.0-20240207152121-3f1b41cc8c40",
@@ -7498,6 +7502,13 @@ def go_dependencies():
         importpath = "golang.org/x/tools",
         sum = "h1:FvmRgNOcs3kOa+T20R1uhfP9F6HgG2mfxDv1vrx1Htc=",
         version = "v0.17.0",
+    )
+    go_repository(
+        name = "org_golang_x_tools_go_vcs",
+        build_file_proto_mode = "disable_global",
+        importpath = "golang.org/x/tools/go/vcs",
+        sum = "h1:cOIJqWBl99H1dH5LWizPa+0ImeeJq3t3cJjaeOWUAL4=",
+        version = "v0.1.0-deprecated",
     )
     go_repository(
         name = "org_golang_x_xerrors",

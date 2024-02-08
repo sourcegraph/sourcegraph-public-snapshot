@@ -1,0 +1,248 @@
+diff --git a/cmd/go-mockgen/archive.go b/cmd/go-mockgen/archive.go
+index 7663519..fc97255 100644
+--- a/cmd/go-mockgen/archive.go
++++ b/cmd/go-mockgen/archive.go
+@@ -61,43 +61,44 @@ func parseArchive(a string) (archive, error) {
+ 	}, nil
+ }
+
+-func PackagesArchive(p loadParams) ([]*internal.GoPackage, error) {
+-	files := make([]*ast.File, 0, len(p.sources))
+-	for _, src := range p.sources {
+-		f, err := parser.ParseFile(p.fset, src, nil, parser.ParseComments)
+-		if err != nil {
+-			return nil, fmt.Errorf("error parsing %q: %v", src, err)
++func PackagesArchive(p loadParams) (packages []*internal.GoPackage, err error) {
++	for _, importpath := range p.importPaths {
++		files := make([]*ast.File, 0, len(p.sources))
++		for _, src := range p.sources[importpath] {
++			f, err := parser.ParseFile(p.fset, src, nil, parser.ParseComments)
++			if err != nil {
++				return nil, fmt.Errorf("error parsing %q: %v", src, err)
++			}
++			files = append(files, f)
+ 		}
+-		files = append(files, f)
+-	}
+
+-	// Build an importer using the imports map built by reading dependency
+-	// archives, and use it to build the *types.Package and *types.Info for the
+-	// source files.
+-	imp, err := newImporter(p.fset, p.archives, p.stdlibRoot)
+-	if err != nil {
+-		return nil, err
+-	}
+-	conf := types.Config{Importer: imp}
+-	typesInfo := &types.Info{
+-		Types:      make(map[ast.Expr]types.TypeAndValue),
+-		Defs:       make(map[*ast.Ident]types.Object),
+-		Uses:       make(map[*ast.Ident]types.Object),
+-		Implicits:  make(map[ast.Node]types.Object),
+-		Selections: make(map[*ast.SelectorExpr]*types.Selection),
+-		Scopes:     make(map[ast.Node]*types.Scope),
+-	}
+-	pkg, err := conf.Check(p.importPaths[0], p.fset, files, typesInfo)
+-	if err != nil {
+-		return nil, fmt.Errorf("error building pkg %q: %v", p.importPaths[0], err)
+-	}
+-	return []*internal.GoPackage{
+-		{
++		// Build an importer using the imports map built by reading dependency
++		// archives, and use it to build the *types.Package and *types.Info for the
++		// source files.
++		imp, err := newImporter(p.fset, p.archives, p.stdlibRoot)
++		if err != nil {
++			return nil, err
++		}
++		conf := types.Config{Importer: imp}
++		typesInfo := &types.Info{
++			Types:      make(map[ast.Expr]types.TypeAndValue),
++			Defs:       make(map[*ast.Ident]types.Object),
++			Uses:       make(map[*ast.Ident]types.Object),
++			Implicits:  make(map[ast.Node]types.Object),
++			Selections: make(map[*ast.SelectorExpr]*types.Selection),
++			Scopes:     make(map[ast.Node]*types.Scope),
++		}
++		pkg, err := conf.Check(importpath, p.fset, files, typesInfo)
++		if err != nil {
++			return nil, fmt.Errorf("error building pkg %q: %v", importpath, err)
++		}
++		packages = append(packages, &internal.GoPackage{
+ 			PkgPath:         pkg.Path(),
+-			CompiledGoFiles: p.sources,
++			CompiledGoFiles: p.sources[importpath],
+ 			Syntax:          files,
+ 			Types:           pkg,
+ 			TypesInfo:       typesInfo,
+-		},
+-	}, nil
++		})
++	}
++	return
+ }
+diff --git a/cmd/go-mockgen/args.go b/cmd/go-mockgen/args.go
+index ac0e58b..93bfd0e 100644
+--- a/cmd/go-mockgen/args.go
++++ b/cmd/go-mockgen/args.go
+@@ -84,7 +84,7 @@ func parseFlags() (*generation.Options, error) {
+ 	app.Flag("build-constraints", "Build constraints that are added to each generated file.").StringVar(&opts.ContentOptions.BuildConstraints)
+
+ 	app.Flag("archives", "Values of the format IMPORTPATHS=IMPORTMAP=FILE=EXPORT, where IMPORTPATHS is a colon-delimited list of import paths, IMPORTMAP is the import path of the archive, FILE is the archive file path, and EXPORT is the export file path.").StringsVar(&opts.PackageOptions[0].Archives)
+-	app.Flag("sources", "When using gcexportdata archives, specifies the filepaths to the sources to be parsed").StringsVar(&opts.PackageOptions[0].Sources)
++	app.Flag("source-files", "Values of the format IMPORTPATH=FILE, where IMPORTPATH is the import path of FILE, when using gcexportdata archives, specifies the filepaths to the sources to be parsed").StringsVar(&opts.PackageOptions[0].Sources)
+ 	app.Flag("stdlibroot", "When using gcexportdata archives, specifies the path containing archive files for the Go stdlib").StringVar(&opts.PackageOptions[0].StdlibRoot)
+
+ 	if _, err := app.Parse(os.Args[1:]); err != nil {
+@@ -130,6 +130,10 @@ func parseManifest() ([]*generation.Options, error) {
+ 			opts.ForTest = true
+ 		}
+
++		if len(opts.Paths) > 0 && len(opts.Archives) > 0 {
++			return nil, fmt.Errorf("multiple import paths and archives are mutually exclusive")
++		}
++
+ 		// Canonicalization
+ 		paths := opts.Paths
+ 		if opts.Path != "" {
+@@ -143,11 +147,15 @@ func parseManifest() ([]*generation.Options, error) {
+
+ 		var packageOptions []generation.PackageOptions
+ 		if len(opts.Sources) > 0 {
+-			if len(opts.Paths) > 0 || len(opts.Interfaces) > 0 {
+-				return nil, fmt.Errorf("sources and path/paths/interfaces are mutually exclusive")
++			if len(opts.Paths) > 0 || len(opts.Interfaces) > 0 || opts.Path != "" || len(opts.Archives) > 0 || len(opts.SourceFiles) > 0 {
++				return nil, fmt.Errorf("sources and path/paths/interfaces/archives/sourcefiles are mutually exclusive")
+ 			}
+
+ 			for _, source := range opts.Sources {
++				if len(source.Paths) > 0 && len(source.Archives) > 0 {
++					return nil, fmt.Errorf("multiple import paths and archives are mutually exclusive")
++				}
++
+ 				// Canonicalization
+ 				paths := source.Paths
+ 				if source.Path != "" {
+@@ -159,6 +167,9 @@ func parseManifest() ([]*generation.Options, error) {
+ 					Interfaces:  source.Interfaces,
+ 					Exclude:     source.Exclude,
+ 					Prefix:      source.Prefix,
++					Archives:    opts.Archives,
++					Sources:     opts.SourceFiles,
++					StdlibRoot:  payload.StdlibRoot,
+ 				})
+ 			}
+ 		} else {
+@@ -167,6 +178,9 @@ func parseManifest() ([]*generation.Options, error) {
+ 				Interfaces:  opts.Interfaces,
+ 				Exclude:     opts.Exclude,
+ 				Prefix:      opts.Prefix,
++				Archives:    opts.Archives,
++				Sources:     opts.SourceFiles,
++				StdlibRoot:  payload.StdlibRoot,
+ 			})
+ 		}
+
+@@ -207,6 +221,8 @@ type yamlPayload struct {
+ 	ForTest           bool     `yaml:"for-test"`
+ 	FilePrefix        string   `yaml:"file-prefix"`
+
++	StdlibRoot string `yaml:"stdlib-root"`
++
+ 	Mocks []yamlMock `yaml:"mocks"`
+ }
+
+@@ -214,6 +230,8 @@ type yamlMock struct {
+ 	Path              string       `yaml:"path"`
+ 	Paths             []string     `yaml:"paths"`
+ 	Sources           []yamlSource `yaml:"sources"`
++	SourceFiles       []string     `yaml:"source-files"`
++	Archives          []string     `yaml:"archives"`
+ 	Package           string       `yaml:"package"`
+ 	Interfaces        []string     `yaml:"interfaces"`
+ 	Exclude           []string     `yaml:"exclude"`
+@@ -230,11 +248,13 @@ type yamlMock struct {
+ }
+
+ type yamlSource struct {
+-	Path       string   `yaml:"path"`
+-	Paths      []string `yaml:"paths"`
+-	Interfaces []string `yaml:"interfaces"`
+-	Exclude    []string `yaml:"exclude"`
+-	Prefix     string   `yaml:"prefix"`
++	Path        string   `yaml:"path"`
++	Paths       []string `yaml:"paths"`
++	Interfaces  []string `yaml:"interfaces"`
++	Exclude     []string `yaml:"exclude"`
++	Prefix      string   `yaml:"prefix"`
++	SourceFiles []string `yaml:"source-files"`
++	Archives    []string `yaml:"archives"`
+ }
+
+ func readManifest() (yamlPayload, error) {
+diff --git a/cmd/go-mockgen/main.go b/cmd/go-mockgen/main.go
+index 99eb342..7924d5b 100644
+--- a/cmd/go-mockgen/main.go
++++ b/cmd/go-mockgen/main.go
+@@ -46,22 +46,34 @@ func mainErr() error {
+ 		return err
+ 	}
+
+-	var importPaths []string
++	var (
++		importPaths []string
++		archives    []archive
++		// map of import path to sources
++		sources = make(map[string][]string)
++	)
+ 	for _, opts := range allOptions {
+ 		for _, packageOpts := range opts.PackageOptions {
+ 			importPaths = append(importPaths, packageOpts.ImportPaths...)
++			for _, sourcefile := range packageOpts.Sources {
++				split := strings.Split(sourcefile, "=")
++				if len(split) == 2 {
++					sources[split[0]] = append(sources[split[0]], split[1])
++				} else {
++					// pre-validated in args.go#parseManifest
++					sources[packageOpts.ImportPaths[0]] = append(sources[packageOpts.ImportPaths[0]], sourcefile)
++				}
++			}
++			for _, archive := range packageOpts.Archives {
++				a, err := parseArchive(archive)
++				if err != nil {
++					return err
++				}
++				archives = append(archives, a)
++			}
+ 		}
+ 	}
+
+-	archives := make([]archive, 0, len(allOptions[0].PackageOptions[0].Archives))
+-	for _, archive := range allOptions[0].PackageOptions[0].Archives {
+-		a, err := parseArchive(archive)
+-		if err != nil {
+-			return err
+-		}
+-		archives = append(archives, a)
+-	}
+-
+ 	log.Printf("loading data for %d packages\n", len(importPaths))
+
+ 	pkgs, err := loadPackages(loadParams{
+@@ -69,7 +81,7 @@ func mainErr() error {
+ 		importPaths: importPaths,
+ 		// gcexportdata
+ 		archives:   archives,
+-		sources:    allOptions[0].PackageOptions[0].Sources,
++		sources:    sources,
+ 		stdlibRoot: allOptions[0].PackageOptions[0].StdlibRoot,
+ 	})
+ 	if err != nil {
+@@ -114,7 +126,7 @@ type loadParams struct {
+
+ 	// gcexportdata specific params
+ 	archives   []archive
+-	sources    []string
++	sources    map[string][]string
+ 	stdlibRoot string
+ }
+
