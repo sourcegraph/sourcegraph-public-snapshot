@@ -37,6 +37,12 @@ func main() {
 						EnvVars:  []string{"VERSION"},
 						Required: true,
 					},
+					&cli.IntFlag{
+						Name:    "max-routines",
+						Aliases: []string{"mr"},
+						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
+						Value:   10,
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -86,7 +92,7 @@ func main() {
 					}
 
 					// Run all test types
-					testPool := pool.New().WithMaxGoroutines(10).WithErrors()
+					testPool := pool.New().WithMaxGoroutines(cCtx.Int("max-routines")).WithErrors()
 					for _, version := range versions {
 						version := version
 						if slices.Contains(knownBugVersions, version.Version.String()) {
@@ -145,6 +151,12 @@ func main() {
 						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
 						EnvVars: []string{"VERSION"},
 					},
+					&cli.IntFlag{
+						Name:    "max-routines",
+						Aliases: []string{"mr"},
+						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
+						Value:   10,
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -174,7 +186,7 @@ func main() {
 					// dynamic port allocation issues that occur in docker when creating many bridge networks, but tests begin to fail when a sufficient number of
 					// goroutines are running on local machine. We may tune this in CI.
 					// TODO this should likely be made an env var or something to make it easy to swamp out depending on the test box.
-					stdTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+					stdTestPool := pool.New().WithMaxGoroutines(cCtx.Int("max-routines")).WithErrors()
 					for _, version := range stdVersions {
 						version := version
 						if slices.Contains(knownBugVersions, version.String()) {
@@ -185,7 +197,6 @@ func main() {
 							start := time.Now()
 							result := standardUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
-							result.DisplayLog() // DEBUG
 							results.AddStdTest(result)
 							return nil
 						})
@@ -211,6 +222,12 @@ func main() {
 						Aliases: []string{"sv"},
 						Usage:   "stamp-version is the version frontend:candidate and  migrator:candidate are set as. If the $VERSION env var is set this flag inherits that value.",
 						EnvVars: []string{"VERSION"},
+					},
+					&cli.IntFlag{
+						Name:    "max-routines",
+						Aliases: []string{"mr"},
+						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
+						Value:   10,
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
@@ -238,7 +255,7 @@ func main() {
 					var results TestResults
 
 					// Run MVU Upgrade Tests
-					mvuTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+					mvuTestPool := pool.New().WithMaxGoroutines(cCtx.Int("max-routines")).WithErrors()
 					for _, version := range mvuVersions {
 						version := version
 						if slices.Contains(knownBugVersions, version.String()) {
@@ -275,6 +292,12 @@ func main() {
 						EnvVars:  []string{"VERSION"},
 						Required: true,
 					},
+					&cli.IntFlag{
+						Name:    "max-routines",
+						Aliases: []string{"mr"},
+						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
+						Value:   10,
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -300,7 +323,7 @@ func main() {
 					var results TestResults
 
 					// Run Autoupgrade Tests
-					autoTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
+					autoTestPool := pool.New().WithMaxGoroutines(cCtx.Int("max-routines")).WithErrors()
 					for _, version := range autoVersions {
 						version := version
 						if slices.Contains(knownBugVersions, version.String()) {
@@ -312,7 +335,6 @@ func main() {
 							result := autoUpgradeTest(ctx, version, targetVersion, latestStableVersion)
 							result.Runtime = time.Since(start)
 							results.AddAutoTest(result)
-							result.DisplayLog() // DEBUG
 							return nil
 						})
 					}
