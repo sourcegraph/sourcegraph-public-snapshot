@@ -12,9 +12,7 @@
     flex-wrap: wrap;
 
     position: sticky;
-    // Compensate content parent block paddings in order
-    // to have paddings anywhere but content list with search matches
-    top: -1rem;
+    top: 0;
 
     z-index: 1; // Show on top of search result contents
 
