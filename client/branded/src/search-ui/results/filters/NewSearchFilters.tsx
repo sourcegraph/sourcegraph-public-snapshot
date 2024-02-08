@@ -137,7 +137,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     return (
         <div className={styles.scrollWrapper}>
             <div className={styles.filterPanelHeader}>
-                <H3 as={H1} className="ml-2 mt-2">
+                <H3 as={H1} className="px-2 py-1">
                     Filter results
                 </H3>
                 {selectedFilters.length !== 0 && (
