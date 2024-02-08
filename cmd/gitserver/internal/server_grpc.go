@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -177,10 +178,12 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	ctx := ss.Context()
 
+	format := gitserver.ArchiveFormatFromProto(req.GetFormat())
+
 	// Log which which actor is accessing the repo.
 	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
-		log.String("format", req.GetFormat()),
+		log.String("format", string(format)),
 		log.Strings("path", req.GetPathspecs()),
 	)
 
@@ -192,13 +195,8 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return status.Error(codes.InvalidArgument, "empty repo")
 	}
 
-	if req.GetFormat() == "" {
-		return status.Error(codes.InvalidArgument, "empty format")
-	}
-
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
-	format := git.ArchiveFormat(req.GetFormat())
 
 	// Ensure that the repo is cloned and if not start a background clone, then
 	// return a well-known NotFound payload error.

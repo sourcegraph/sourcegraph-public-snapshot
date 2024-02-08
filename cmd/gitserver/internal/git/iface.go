@@ -5,16 +5,8 @@ import (
 	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-)
-
-type ArchiveFormat string
-
-const (
-	// ArchiveFormatZip indicates a zip archive is desired.
-	ArchiveFormatZip ArchiveFormat = "zip"
-	// ArchiveFormatTar indicates a tar archive is desired.
-	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
 // GitBackend is the interface through which operations on a git repository can
@@ -54,7 +46,7 @@ type GitBackend interface {
 	//
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	// If any pathspec does not exist, a os.PathError is returned.
-	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error)
+	ArchiveReader(ctx context.Context, format gitserver.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will

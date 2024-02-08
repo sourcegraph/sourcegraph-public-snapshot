@@ -2212,6 +2212,28 @@ const (
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
+func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
+	switch pf {
+	case proto.ArchiveFormat_ZIP:
+		return ArchiveFormatZip
+	case proto.ArchiveFormat_TAR:
+		return ArchiveFormatTar
+	default:
+		panic(fmt.Sprintf("unknown archive format: %v", pf))
+	}
+}
+
+func (f ArchiveFormat) ToProto() proto.ArchiveFormat {
+	switch f {
+	case ArchiveFormatZip:
+		return proto.ArchiveFormat_ZIP
+	case ArchiveFormatTar:
+		return proto.ArchiveFormat_TAR
+	default:
+		panic(fmt.Sprintf("unknown archive format: %v", f))
+	}
+}
+
 // ArchiveReader streams back the file contents of an archived git repo.
 func (c *clientImplementor) ArchiveReader(
 	ctx context.Context,

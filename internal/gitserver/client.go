@@ -582,7 +582,7 @@ func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
 	return &proto.ArchiveRequest{
 		Repo:      repo,
 		Treeish:   o.Treeish,
-		Format:    string(o.Format),
+		Format:    o.Format.ToProto(),
 		Pathspecs: protoPathSpecs,
 	}
 }

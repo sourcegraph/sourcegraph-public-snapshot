@@ -7,13 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error) {
+func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format gitserver.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error) {
 	if err := g.verifyPathspecs(ctx, treeish, pathspecs); err != nil {
 		return nil, err
 	}
@@ -37,10 +37,10 @@ func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFor
 	}, nil
 }
 
-func buildArchiveArgs(format git.ArchiveFormat, treeish string, pathspecs []string) []string {
+func buildArchiveArgs(format gitserver.ArchiveFormat, treeish string, pathspecs []string) []string {
 	args := []string{"archive", "--worktree-attributes", "--format=" + string(format)}
 
-	if format == git.ArchiveFormatZip {
+	if format == gitserver.ArchiveFormatZip {
 		args = append(args, "-0")
 	}
 

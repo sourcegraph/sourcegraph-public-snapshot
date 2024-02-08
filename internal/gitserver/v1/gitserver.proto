@@ -508,14 +508,19 @@ message CommitMatch {
   repeated string modified_files = 9;
 }
 
+enum ArchiveFormat {
+  ZIP = 0;
+  TAR = 1;
+}
+
 // ArchiveRequest is set of parameters for the Archive RPC.
 message ArchiveRequest {
   // repo is the name of the repo to be archived
   string repo = 1;
   // treeish is the tree or commit to produce an archive for
   string treeish = 2;
-  // format is the format of the resulting archive (usually "tar" or "zip")
-  string format = 3;
+  // format is the format of the resulting archive (either ZIP or TAR)
+  ArchiveFormat format = 3;
   // pathspecs is the list of pathspecs to include in the archive. If empty, all
   // pathspecs are included.
   repeated string pathspecs = 4;
