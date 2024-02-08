@@ -38,6 +38,18 @@ func TestIndexingWorkerStore(t *testing.T) {
 	require.Equal(t, 0, initCount)
 
 	insertIndexRecords(t, db,
+		// Even though this record is the oldest in the queue,
+		// it is associated with a deleted repository.
+		// The view that we use for dequeuing should not return this
+		// record at all, and the first one should still be the record with ID=1
+		SyntacticIndexingJob{
+			ID:             500,
+			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead3333",
+			RepositoryID:   4,
+			RepositoryName: "DELETED-org/repo",
+			State:          Queued,
+			QueuedAt:       time.Now().Add(time.Second * -100),
+		},
 		SyntacticIndexingJob{
 			ID:             1,
 			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdead1111",
