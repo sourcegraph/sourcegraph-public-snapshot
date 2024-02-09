@@ -88,10 +88,9 @@ func NewHandler(
 				usedTokens         int = -1
 			)
 			defer func() {
-				upstreamLatency := time.Since(upstreamStarted)
 				o := overhead.FromContext(r.Context())
 				o.Feature = codygateway.FeatureEmbeddings
-				o.UpstreamLatency = upstreamLatency
+				o.UpstreamLatency = upstreamFinished
 				o.Provider = c.ProviderName()
 				o.Stream = false
 
