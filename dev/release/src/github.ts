@@ -368,11 +368,11 @@ async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Pro
     const milestone = milestones.data.filter(milestone => milestone.title === milestoneTitle)
     return milestone.length > 0
         ? {
-              number: milestone[0].number,
-              url: milestone[0].html_url,
-              owner,
-              repo,
-          }
+            number: milestone[0].number,
+            url: milestone[0].html_url,
+            owner,
+            repo,
+        }
         : null
 }
 
@@ -540,9 +540,9 @@ export async function cloneRepo(
     const checkoutCommand =
         revisionExists === true
             ? // for an existing branch - fetch fails if we are already checked out, so ignore errors optimistically
-              `git fetch ${fetchFlags} origin ${checkout.revision}:${checkout.revision} || true ; git checkout ${checkout.revision}`
+            `git fetch ${fetchFlags} origin ${checkout.revision}:${checkout.revision} || true ; git checkout ${checkout.revision}`
             : // create from HEAD and publish base branch if it does not yet exist
-              `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
+            `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
 
     // PERF: if we have a local clone using reference avoids needing to fetch
     // all the objects from the remote. We assume the local clone will exist
@@ -668,7 +668,7 @@ export async function createLatestRelease(
         return ''
     }
 
-    const updateURL = 'https://docs.sourcegraph.com/admin/updates'
+    const updateURL = 'https://sourcegraph.com/docs/admin/updates'
     const releasePostURL = `https://sourcegraph.com/blog/release/${release.major}.${release.minor}` // CI:URL_OK
 
     const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {

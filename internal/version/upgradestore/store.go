@@ -66,14 +66,14 @@ SELECT version FROM versions WHERE service = %s
 `
 
 // ValidateUpgrade enforces our documented upgrade policy and will return an error (performing no side-effects)
-// if the upgrade is between two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
+// if the upgrade is between two unsupported versions. See https://sourcegraph.com/docs/admin/updates.
 func (s *store) ValidateUpgrade(ctx context.Context, service, version string) error {
 	return s.updateServiceVersion(ctx, service, version, false)
 }
 
 // UpdateServiceVersion updates the latest version for the given Sourcegraph service. This method also enforces
 // our documented upgrade policy and will return an error (performing no side-effects) if the upgrade is between
-// two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
+// two unsupported versions. See https://sourcegraph.com/docs/admin/updates.
 func (s *store) UpdateServiceVersion(ctx context.Context, version string) error {
 	return s.updateServiceVersion(ctx, "frontend", version, true)
 }
@@ -122,7 +122,7 @@ WHERE versions.version = %s
 
 // SetServiceVersion updates the latest version for the given Sourcegraph service. This method also enforces
 // our documented upgrade policy and will return an error (performing no side-effects) if the upgrade is between
-// two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
+// two unsupported versions. See https://sourcegraph.com/docs/admin/updates.
 func (s *store) SetServiceVersion(ctx context.Context, version string) error {
 	return s.db.Exec(ctx, sqlf.Sprintf(setServiceVersionQuery, version, time.Now().UTC(), "frontend"))
 }
