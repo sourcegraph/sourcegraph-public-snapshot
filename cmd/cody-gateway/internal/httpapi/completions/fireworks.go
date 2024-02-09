@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -135,33 +134,7 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderCommunitySingleTenantPercent, fireworks.Starcoder16bSingleTenant, multiTenantModel)
 	}
 }
-func (f *FireworksHandlerMethods) getRequestMetadata(ctx context.Context, logger log.Logger, act *actor.Actor, feature codygateway.Feature, body fireworksRequest) (model string, additionalMetadata map[string]any) {
-	// Check that this is a code completion request and that the actor is a PLG user
-	if feature == codygateway.FeatureCodeCompletions && f.config.LogSelfServeCodeCompletionRequests && act.IsDotComActor() {
-		// LogEvent is a channel send (not an external request), so should be ok here
-		if err := f.eventLogger.LogEvent(
-			ctx,
-			events.Event{
-				Name:       codygateway.EventNameCodeCompletionLogged,
-				Source:     act.Source.Name(),
-				Identifier: act.ID,
-				Metadata: map[string]any{
-					"request": map[string]any{
-						"prompt":      body.Prompt,
-						"model":       body.Model,
-						"max_tokens":  body.MaxTokens,
-						"temperature": body.Temperature,
-						"top_p":       body.TopP,
-						"n":           body.N,
-						"stream":      body.Stream,
-						"echo":        body.Echo,
-						"stop":        body.Stop,
-					},
-				},
-			}); err != nil {
-			logger.Error("failed to log event", log.Error(err))
-		}
-	}
+func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
