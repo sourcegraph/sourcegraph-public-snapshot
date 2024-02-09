@@ -23,10 +23,7 @@ func legacyBuildCandidateDockerImages(apps []string, version string, tag string,
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("VERSION", version),
 			bk.Agent("queue", "aspect-default"),
-			bk.Cmd(`echo "--- DRY RUN: legacyBuildCandidateDockerImages"`),
 		)
-		pipeline.AddStep(":clown_face: :bazel::docker: :construction: Build Docker images", cmds...)
-		return
 
 		// Allow all build scripts to emit info annotations
 		// TODO(JH) probably remove
@@ -109,11 +106,7 @@ func legacyBuildCandidateDockerImage(app string, version string, tag string, rt 
 			bk.Key(candidateImageStepKey(app)),
 			bk.Env("VERSION", version),
 			bk.Agent("queue", "aspect-default"),
-			bk.Cmd(`echo "--- DRY RUN: legacyBuildCandidateDockerImages"`),
 		)
-		pipeline.AddStep(fmt.Sprintf(":clown_face: :older_man::docker: :construction: Build %s", app), cmds...)
-
-		return
 
 		// Allow all build scripts to emit info annotations
 		// TODO(JH) probably remove
