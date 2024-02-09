@@ -459,17 +459,15 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 		return errors.Append(errs, err)
 	}
 
-	getAllAppInstallations := func() ([]*github.Installation, error) {
-		var allInstallations []*github.Installation
-		for page := 0; ; page++ {
-			installationPage, hasNextPage, err := client.GetAppInstallations(ctx, page)
+	getAllAppInstallations := func() (allInstallations []*github.Installation, err error) {
+		hasNextPage := true
+		for page := 1; hasNextPage; page++ {
+			var installations []*github.Installation
+			installations, hasNextPage, err = client.GetAppInstallations(ctx, page)
 			if err != nil {
 				return nil, err
 			}
-			allInstallations = append(allInstallations, installationPage...)
-			if !hasNextPage {
-				break
-			}
+			allInstallations = append(allInstallations, installations...)
 		}
 		return allInstallations, nil
 	}
