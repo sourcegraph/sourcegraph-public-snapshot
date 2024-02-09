@@ -11,6 +11,7 @@ import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Button, Icon, H2, H4, Input, LanguageIcon, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { codeHostIcon } from '../../../../components'
+import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { URLQueryFilter } from '../../hooks'
 import { DynamicFilterBadge } from '../DynamicFilterBadge'
 
@@ -48,6 +49,8 @@ interface SearchDynamicFilterProps {
      * @param nextQuery
      */
     onSelectedFilterChange: (filterKind: Filter['kind'], filters: URLQueryFilter[]) => void
+
+    onAddFilterToQuery: (newFilter: string) => void
 }
 
 /**
@@ -61,6 +64,7 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
     selectedFilters,
     renderItem,
     onSelectedFilterChange,
+    onAddFilterToQuery,
 }) => {
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -109,6 +113,12 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
         ? filteredFilters.slice(0, MAX_FILTERS_NUMBER)
         : filteredFilters.slice(0, DEFAULT_FILTERS_NUMBER)
 
+    // HACK(camdencheek): we limit the number of filters of each type to 1000, so if we get
+    // exactly 1000 filters, assume that we hit that limit. Ideally, we wouldn't hard-code this
+    // and the backend would tell us whether we hit that limit.
+    const limitHit = filters?.some(filter => !filter.exhaustive) || filters?.length === 1000
+    const suggestedQueryFilter = filterForSearchTerm(searchTerm, filterKind)
+
     return (
         <div className={styles.root}>
             {title && (
@@ -139,12 +149,31 @@ export const SearchDynamicFilter: FC<SearchDynamicFilterProps> = ({
 
                 {filtersToShow.length === 0 && (
                     <small className={styles.description}>
-                        <b>We couldn’t return a {filterKind} that matched your filter input.</b> Try a more expansive
-                        search{' '}
-                        <Button onClick={handleZeroStateButtonClick} className={styles.zeroStateSearchButton}>
-                            using the search bar
-                        </Button>{' '}
-                        above.
+                        <div className={styles.descriptionHeader}>No matches in search results.</div>
+                        {limitHit && suggestedQueryFilter ? (
+                            <>
+                                Try adding{' '}
+                                <Button
+                                    onClick={() => onAddFilterToQuery(suggestedQueryFilter)}
+                                    className={styles.zeroStateQueryButton}
+                                >
+                                    <SyntaxHighlightedSearchQuery query={suggestedQueryFilter} />
+                                </Button>{' '}
+                                to your original search query to narrow results to that repo.
+                            </>
+                        ) : (
+                            <>
+                                Try expanding your search using the{' '}
+                                <Button
+                                    variant="link"
+                                    onClick={handleZeroStateButtonClick}
+                                    className={styles.zeroStateSearchButton}
+                                >
+                                    search bar
+                                </Button>{' '}
+                                above.
+                            </>
+                        )}
                     </small>
                 )}
             </ul>
@@ -189,6 +218,27 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
             </Button>
         </li>
     )
+}
+
+function filterForSearchTerm(input: string, filterKind: Filter['kind']): string | null {
+    switch (filterKind) {
+        case 'repo': {
+            return `repo:${maybeQuoteString(input)}`
+        }
+        case 'author': {
+            return `author:${maybeQuoteString(input)}`
+        }
+        default: {
+            return null
+        }
+    }
+}
+
+function maybeQuoteString(input: string): string {
+    if (input.match(/\s/)) {
+        return `"${input.replaceAll('"', '\\"')}"`
+    }
+    return input
 }
 
 function filtersEqual(a: URLQueryFilter, b: URLQueryFilter): boolean {
