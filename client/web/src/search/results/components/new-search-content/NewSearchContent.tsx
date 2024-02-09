@@ -407,6 +407,7 @@ const FilePreviewPanel: FC<FilePreviewPanelProps> = props => {
         <Panel
             defaultSize={300}
             minSize={256}
+            maxSize={600}
             position="right"
             storageKey="file preview"
             ariaLabel="File sidebar"
