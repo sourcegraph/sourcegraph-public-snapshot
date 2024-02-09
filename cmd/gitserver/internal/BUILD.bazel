@@ -2,17 +2,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_defs.bzl", "go_test")
 load("//dev:go_mockgen.bzl", "go_mockgen")
 
-go_mockgen(
-    name = "sample_text",
-    out = "mocks_test.go",
-    manifests = [
-        "//:mockgen.yaml",
-        "//:mockgen.test.yaml",
-        "//:mockgen.temp.yaml",
-    ],
-    deps = [":internal"],
-)
-
 go_library(
     name = "internal",
     srcs = [
@@ -164,4 +153,15 @@ go_test(
         "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":internal"],
 )

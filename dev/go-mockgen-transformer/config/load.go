@@ -1,4 +1,4 @@
-package main
+package config
 
 //
 // TODO: expose this directly in go-mockgen
@@ -6,11 +6,12 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
 
-type yamlPayload struct {
+type YamlPayload struct {
 	// Meta options
 	IncludeConfigPaths []string `yaml:"include-config-paths,omitempty"`
 
@@ -26,13 +27,13 @@ type yamlPayload struct {
 
 	StdlibRoot string `yaml:"stdlib-root,omitempty"`
 
-	Mocks []yamlMock `yaml:"mocks,omitempty"`
+	Mocks []YamlMock `yaml:"mocks,omitempty"`
 }
 
-type yamlMock struct {
+type YamlMock struct {
 	Path              string       `yaml:"path,omitempty"`
 	Paths             []string     `yaml:"paths,omitempty"`
-	Sources           []yamlSource `yaml:"sources,omitempty"`
+	Sources           []YamlSource `yaml:"sources,omitempty"`
 	SourceFiles       []string     `yaml:"source-files,omitempty"`
 	Archives          []string     `yaml:"archives,omitempty"`
 	Package           string       `yaml:"package,omitempty"`
@@ -50,7 +51,7 @@ type yamlMock struct {
 	FilePrefix        string       `yaml:"file-prefix,omitempty"`
 }
 
-type yamlSource struct {
+type YamlSource struct {
 	Path        string   `yaml:"path,omitempty"`
 	Paths       []string `yaml:"paths,omitempty"`
 	Interfaces  []string `yaml:"interfaces,omitempty"`
@@ -59,36 +60,36 @@ type yamlSource struct {
 	SourceFiles []string `yaml:"source-files,omitempty"`
 }
 
-func readManifest() (yamlPayload, error) {
-	contents, err := os.ReadFile("mockgen.yaml")
+func ReadManifest(configPath string) (YamlPayload, error) {
+	contents, err := os.ReadFile(configPath)
 	if err != nil {
-		return yamlPayload{}, err
+		return YamlPayload{}, err
 	}
 
-	var payload yamlPayload
+	var payload YamlPayload
 	if err := yaml.Unmarshal(contents, &payload); err != nil {
-		return yamlPayload{}, err
+		return YamlPayload{}, err
 	}
 
 	for _, path := range payload.IncludeConfigPaths {
-		payload, err = readIncludeConfig(payload, path)
+		payload, err = readIncludeConfig(payload, filepath.Join(filepath.Dir(configPath), path))
 		if err != nil {
-			return yamlPayload{}, err
+			return YamlPayload{}, err
 		}
 	}
 
 	return payload, nil
 }
 
-func readIncludeConfig(payload yamlPayload, path string) (yamlPayload, error) {
+func readIncludeConfig(payload YamlPayload, path string) (YamlPayload, error) {
 	contents, err := os.ReadFile(path)
 	if err != nil {
-		return yamlPayload{}, err
+		return YamlPayload{}, err
 	}
 
-	var mocks []yamlMock
+	var mocks []YamlMock
 	if err := yaml.Unmarshal(contents, &mocks); err != nil {
-		return yamlPayload{}, err
+		return YamlPayload{}, err
 	}
 
 	payload.Mocks = append(payload.Mocks, mocks...)

@@ -212,6 +212,7 @@ gazelle_binary(
         # Gazelle-buf does not include the Go plugin by default, so we have to add it
         # ourselves.
         "@bazel_gazelle//language/go:go_default_library",
+        "//dev/go-mockgen-gazelle:go-mockgen-gazelle",
         # Bundled with aspect-cli, but we're missing out on buf that way
         "@aspect_cli//gazelle/js:js",
         # Loads the Buf extension

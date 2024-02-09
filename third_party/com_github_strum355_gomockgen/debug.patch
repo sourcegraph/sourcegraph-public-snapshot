@@ -1,8 +1,8 @@
 diff --git a/cmd/go-mockgen/archive.go b/cmd/go-mockgen/archive.go
-index 7663519..fc97255 100644
+index 7663519..6f12aee 100644
 --- a/cmd/go-mockgen/archive.go
 +++ b/cmd/go-mockgen/archive.go
-@@ -61,43 +61,44 @@ func parseArchive(a string) (archive, error) {
+@@ -61,43 +61,46 @@ func parseArchive(a string) (archive, error) {
  	}, nil
  }
 
@@ -54,7 +54,9 @@ index 7663519..fc97255 100644
 +		if err != nil {
 +			return nil, err
 +		}
-+		conf := types.Config{Importer: imp}
++		conf := types.Config{Importer: imp, Error: func(err error) {
++			fmt.Println(err)
++		}}
 +		typesInfo := &types.Info{
 +			Types:      make(map[ast.Expr]types.TypeAndValue),
 +			Defs:       make(map[*ast.Ident]types.Object),
@@ -228,7 +230,7 @@ index ac0e58b..75fb178 100644
  			return yamlPayload{}, err
  		}
 diff --git a/cmd/go-mockgen/main.go b/cmd/go-mockgen/main.go
-index 99eb342..cab97ae 100644
+index 99eb342..a824753 100644
 --- a/cmd/go-mockgen/main.go
 +++ b/cmd/go-mockgen/main.go
 @@ -46,22 +46,34 @@ func mainErr() error {
@@ -305,3 +307,17 @@ index 99eb342..cab97ae 100644
  	}
 
  	pkgs, err := packages.Load(&packages.Config{Mode: packages.NeedName | packages.NeedImports | packages.NeedSyntax | packages.NeedTypes | packages.NeedDeps}, params.importPaths...)
+@@ -135,7 +151,12 @@ func loadPackages(params loadParams) ([]*internal.GoPackage, error) {
+ 	ipkgs := make([]*internal.GoPackage, 0, len(pkgs))
+ 	for _, pkg := range pkgs {
+ 		if len(pkg.Errors) > 0 {
+-			return nil, pkg.Errors[0]
++			var errString string
++			for _, err := range pkg.Errors {
++				errString += err.Error() + "\n"
++			}
++			errString = strings.TrimSpace(errString)
++			return nil, errors.New(errString)
+ 		}
+ 		ipkgs = append(ipkgs, internal.NewPackage(pkg))
+ 	}

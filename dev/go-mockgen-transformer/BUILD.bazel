@@ -2,13 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "go-mockgen-transformer_lib",
-    srcs = [
-        "load.go",
-        "main.go",
-    ],
+    srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/go-mockgen-transformer",
     visibility = ["//visibility:private"],
-    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
+    deps = [
+        "//dev/go-mockgen-transformer/config",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
 )
 
 go_binary(

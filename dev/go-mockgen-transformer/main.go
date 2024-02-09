@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/sourcegraph/sourcegraph/dev/go-mockgen-transformer/config"
 )
 
 type sliceFlag []string
@@ -21,7 +23,7 @@ func (i *sliceFlag) Set(value string) error {
 }
 
 func main() {
-	payload, err := readManifest()
+	payload, err := config.ReadManifest("mockgen.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +57,7 @@ func main() {
 	}
 
 	outputPayload := payload
-	outputPayload.Mocks = []yamlMock{}
+	outputPayload.Mocks = []config.YamlMock{}
 	// extract the mock configuration for the specific file we want to generate mocks for.
 	for _, mock := range payload.Mocks {
 		if mock.Filename == *finalGeneratedFile {
@@ -63,7 +65,7 @@ func main() {
 			// but we prefix the filename with _ so we can copy from the output base
 			// into the source tree.
 			mock.Filename = *intermediaryGeneratedFile
-			outputPayload.Mocks = []yamlMock{mock}
+			outputPayload.Mocks = []config.YamlMock{mock}
 			break
 		}
 	}
