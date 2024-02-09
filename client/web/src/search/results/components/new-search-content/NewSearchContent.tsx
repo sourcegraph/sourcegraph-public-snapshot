@@ -271,19 +271,21 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                             patternType={patternType}
                             caseSensitive={caseSensitive}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            className="m-2"
                         />
 
                         {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
-                            <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
+                            <SmartSearch
+                                alert={results?.alert}
+                                onDisableSmartSearch={onDisableSmartSearch}
+                                className="m-2"
+                            />
                         )}
 
-                        <GettingStartedTour.Info
-                            className="mt-2 mb-3"
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
+                        <GettingStartedTour.Info className="m-2" isSourcegraphDotCom={props.isSourcegraphDotCom} />
 
                         {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
-                            <div className={styles.alertArea}>
+                            <div className={classNames(styles.alertArea, 'm-2')}>
                                 {results?.alert?.kind === 'unowned-results' ? (
                                     <UnownedResultsAlert
                                         alertTitle={results.alert.title}
