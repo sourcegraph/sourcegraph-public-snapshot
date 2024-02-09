@@ -74,8 +74,8 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 	stepKey := sanitizeStepKey(fmt.Sprintf("package-dependency-%s", target))
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":clown_face: :package: Package dependency '%s'", target),
-			bk.Cmd(fmt.Sprintf(`echo --- DRY RUN: ./dev/ci/scripts/wolfi/build-package.sh %s"`, target)),
+		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
+			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "aspect-default"),
 			bk.Key(stepKey),
@@ -103,7 +103,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 	return func(pipeline *bk.Pipeline) {
 
 		//cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
-		cmd := fmt.Sprintf(`echo "--- DRY RUN: ./dev/ci/scripts/wolfi/build-base-image.sh %s %s"`, target, tag)
+		cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
 		opts := []bk.StepOpt{
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{

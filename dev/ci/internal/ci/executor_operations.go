@@ -19,10 +19,7 @@ func bazelBuildExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			bk.Cmd(`echo "--- DRY RUN: bazelBuildExecutorVM"`),
 		}
-		pipeline.AddStep(":clown_face: :bazel::packer: :construction: Build executor image", stepOpts...)
-		return
 
 		cmd := bazelStampedCmd("run //cmd/executor/vm-image:ami.build")
 
@@ -46,9 +43,8 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			bk.Cmd(`echo "--- DRY RUN: bazelPublishExecutorVM"`),
 		}
-		pipeline.AddStep(":clown_face: :bazel::packer: :construction: Build executor image", stepOpts...)
+		pipeline.AddStep(":bazel::packer: :construction: Build executor image", stepOpts...)
 
 		cmd := bazelStampedCmd("run //cmd/executor/vm-image:ami.push")
 
@@ -74,10 +70,9 @@ func bazelBuildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			bk.Cmd(`echo "--- DRY RUN: bazelBuildExecutorDockerMirror"`),
-			//bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.build")),
+			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.build")),
 		}
-		pipeline.AddStep(":clown_face: :bazel::packer: :construction: Build docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":bazel::packer: :construction: Build docker registry mirror image", stepOpts...)
 	}
 }
 
@@ -91,10 +86,9 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			bk.Cmd(`echo "--- DRY RUN: bazelPublishExecutorDockerMirror"`),
-			//bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.push")),
+			bk.Cmd(bazelStampedCmd("run //cmd/executor/docker-mirror:ami.push")),
 		}
-		pipeline.AddStep(":clown_face: :packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
 	}
 }
 
@@ -104,10 +98,9 @@ func bazelPublishExecutorBinary(c Config) operations.Operation {
 			bk.Agent("queue", "aspect-default"),
 			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
-			bk.Cmd(`echo "--- DRY RUN: bazelPublishExecutorBinary"`),
-			//bk.Cmd(bazelStampedCmd(`run //cmd/executor:binary.push`)),
+			bk.Cmd(bazelStampedCmd(`run //cmd/executor:binary.push`)),
 		}
-		pipeline.AddStep(":clown_face: :bazel::arrow_heading_up: Publish executor binary", stepOpts...)
+		pipeline.AddStep(":bazel::arrow_heading_up: Publish executor binary", stepOpts...)
 	}
 }
 
@@ -143,7 +136,7 @@ func executorImageFamilyForConfig(c Config) string {
 
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":clown_face: :bazel::docker::packer: Executors E2E",
+		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Agent("queue", "aspect-default"),
@@ -156,8 +149,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 			// This enable the executor to reach the dind container
 			// for docker commands.
 			bk.Env("DOCKER_GATEWAY_HOST", "172.17.0.1"),
-			bk.Cmd(`echo "--- DRY RUN: executorsE2E"`),
-			//bk.Cmd("dev/ci/integration/executors/run.sh"),
+			bk.Cmd("dev/ci/integration/executors/run.sh"),
 			bk.ArtifactPaths("./*.log"),
 		)
 	}
