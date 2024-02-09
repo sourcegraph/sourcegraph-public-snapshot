@@ -9,7 +9,6 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 
@@ -226,7 +225,7 @@ func (a *AnthropicHandlerMethods) transformBody(body *anthropicRequest, identifi
 		UserID: identifier,
 	}
 }
-func (a *AnthropicHandlerMethods) getRequestMetadata(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body anthropicRequest) (model string, additionalMetadata map[string]any) {
+func (a *AnthropicHandlerMethods) getRequestMetadata(body anthropicRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{
 		"stream":               body.Stream,
 		"max_tokens_to_sample": body.MaxTokensToSample,
