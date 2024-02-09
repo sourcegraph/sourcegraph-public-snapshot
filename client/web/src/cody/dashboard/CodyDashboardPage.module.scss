@@ -51,7 +51,7 @@
     }
 
     &-text {
-        color: var(--dark-text);
+        color: var(--text-body);
     }
 
     &-onboarding {
@@ -120,7 +120,7 @@
         }
 
         &-title {
-            color: var(--dark-text-2);
+            color: var(--text-title);
             font-weight: 500;
             font-size: 1.5rem;
             margin-top: 1rem;
@@ -130,7 +130,7 @@
         &-description {
             font-size: 0.9375rem;
             font-weight: 400;
-            color: var(--dark-text);
+            color: var(--text-body);
             margin-bottom: 1.25rem;
         }
     }
