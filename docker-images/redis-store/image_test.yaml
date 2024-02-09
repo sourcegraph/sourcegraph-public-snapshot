@@ -6,6 +6,11 @@ commandTests:
     args:
       - --version
 
+  - name: "readiness script available"
+    command: "/usr/local/bin/readiness.sh"
+    expectedError: ["Could not connect to Redis"]
+    exitCode: 1
+
   - name: "not running as root"
     command: "/usr/bin/id"
     args:
@@ -24,14 +29,6 @@ commandTests:
       - -g
     expectedOutput: ["^1000\n"]
     exitCode: 0
-  - name: "redis-cli readiness check available"
-    command: "redis-cli"
-    args:
-      - --raw
-      - incr
-      - ping
-    expectedError: ["Could not connect to Redis"]
-    exitCode: 1
 
 fileExistenceTests:
 - name: '/etc/redis/redis.conf'
