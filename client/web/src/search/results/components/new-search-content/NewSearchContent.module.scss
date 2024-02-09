@@ -160,8 +160,11 @@
         }
     }
 
-    &-padding-wrapper {
-        padding: 1rem;
+    &-meta-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem;
 
         &:empty {
             display: none;

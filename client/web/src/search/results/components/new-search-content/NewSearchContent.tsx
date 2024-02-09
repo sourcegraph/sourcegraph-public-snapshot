@@ -259,12 +259,12 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         aria-label="Aggregation results panel"
                         onQuerySubmit={onQuerySubmit}
                         telemetryService={telemetryService}
-                        className={styles.contentPaddingWrapper}
+                        className="m-3"
                     />
                 )}
 
                 {aggregationUIMode !== AggregationUIMode.SearchPage && (
-                    <div className={styles.contentPaddingWrapper}>
+                    <div className={styles.contentMetaInfo}>
                         <DidYouMean
                             telemetryService={props.telemetryService}
                             query={submittedURLQuery}
@@ -283,7 +283,7 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         />
 
                         {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
-                            <div className={classNames(styles.alertArea, 'mt-4')}>
+                            <div className={styles.alertArea}>
                                 {results?.alert?.kind === 'unowned-results' ? (
                                     <UnownedResultsAlert
                                         alertTitle={results.alert.title}
