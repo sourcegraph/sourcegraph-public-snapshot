@@ -4,16 +4,26 @@ load("//dev:oci_defs.bzl", "image_repository")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 
 filegroup(
-    name = "redis_deps",
+    name = "redis_config",
     srcs = [
-        "readiness.sh",
         "redis.conf",
     ],
 )
 
+filegroup(
+    name = "redis_readiness",
+    srcs = [
+        "readiness.sh",
+    ],
+    visibility = ["//docker-images/redis-cache:__pkg__"],
+)
+
 pkg_tar(
     name = "redis_tarball",
-    srcs = [":redis_deps"],
+    srcs = [
+        ":redis_config",
+        ":redis_readiness",
+    ],
     modes = {
         "/etc/redis/redis.conf": "0644",
         "/usr/local/bin/readiness.sh": "0755",
