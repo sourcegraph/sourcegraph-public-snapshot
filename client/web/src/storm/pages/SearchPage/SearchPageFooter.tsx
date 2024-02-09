@@ -19,25 +19,25 @@ export const SearchPageFooter: FC = () => {
         (): { name: string; href: string }[] =>
             isSourcegraphDotCom
                 ? [
-                      {
-                          name: 'Docs',
-                          href: 'https://docs.sourcegraph.com/',
-                      },
-                      { name: 'About', href: 'https://sourcegraph.com' },
-                      {
-                          name: 'Cody',
-                          href: 'https://sourcegraph.com/cody',
-                      },
-                      {
-                          name: 'Enterprise',
-                          href: 'https://sourcegraph.com/get-started?t=enterprise',
-                      },
-                      {
-                          name: 'Security',
-                          href: 'https://sourcegraph.com/security',
-                      },
-                      { name: 'Discord', href: 'https://srcgr.ph/discord-server' },
-                  ]
+                    {
+                        name: 'Docs',
+                        href: 'https://sourcegraph.com/docs',
+                    },
+                    { name: 'About', href: 'https://sourcegraph.com' },
+                    {
+                        name: 'Cody',
+                        href: 'https://sourcegraph.com/cody',
+                    },
+                    {
+                        name: 'Enterprise',
+                        href: 'https://sourcegraph.com/get-started?t=enterprise',
+                    },
+                    {
+                        name: 'Security',
+                        href: 'https://sourcegraph.com/security',
+                    },
+                    { name: 'Discord', href: 'https://srcgr.ph/discord-server' },
+                ]
                 : [],
         [isSourcegraphDotCom]
     )

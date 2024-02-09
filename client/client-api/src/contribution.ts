@@ -57,7 +57,7 @@ export interface ActionContribution {
      * a noop.
      *
      * See "[Builtin commands](../../../../doc/extensions/authoring/builtin_commands.md)" (online at
-     * https://docs.sourcegraph.com/extensions/authoring/builtin_commands) for documentation on
+     * https://sourcegraph.com/docs/extensions/authoring/builtin_commands) for documentation on
      * builtin client commands.
      *
      * Extensions: The command must be registered (unless it is a builtin command). Extensions can
@@ -162,8 +162,8 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
      * 4. Optional: 'json' if the client should parse the 2nd argument using JSON.parse before inserting the value
      */
     commandArguments:
-        | [KeyPath, TemplateExpression | number | boolean | object | any[] | null]
-        | [KeyPath, TemplateExpression, null, TemplateExpression<'json'>]
+    | [KeyPath, TemplateExpression | number | boolean | object | any[] | null]
+    | [KeyPath, TemplateExpression, null, TemplateExpression<'json'>]
 }
 
 /**
@@ -253,7 +253,7 @@ export enum ContributableMenu {
 /**
  * MenuContributions describes the menu items contributed by an extension.
  */
-export interface MenuContributions extends Partial<Record<ContributableMenu, MenuItemContribution[]>> {}
+export interface MenuContributions extends Partial<Record<ContributableMenu, MenuItemContribution[]>> { }
 
 /**
  * MenuItemContribution is a menu item contributed by an extension.

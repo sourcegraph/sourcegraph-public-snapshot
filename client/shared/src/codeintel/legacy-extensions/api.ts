@@ -11,7 +11,7 @@ import type { Settings, SettingsCascade } from '../../settings/settings'
  * inside a text file.
  */
 export class Location {
-    constructor(public readonly uri: URL, public readonly range?: Range) {}
+    constructor(public readonly uri: URL, public readonly range?: Range) { }
 }
 
 /**
@@ -32,7 +32,7 @@ export interface TextDocument {
      * The text contents of the text document.
      *
      * When using the [Sourcegraph browser
-     * extension](https://docs.sourcegraph.com/integration/browser_extension), the value is
+     * extension](https://sourcegraph.com/docs/integration/browser_extension), the value is
      * `undefined` because determining the text contents (in general) is not possible without
      * additional access to the code host API. In the future, this limitation may be removed.
      */

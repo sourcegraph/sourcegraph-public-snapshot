@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <a href="https://docs.sourcegraph.com">Docs</a> •
+    <a href="https://sourcegraph.com/docs">Docs</a> •
     <a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CONTRIBUTING.md">Contributing</a> •
     <a href="https://twitter.com/sourcegraph">Twitter</a> •
     <a href="https://discord.gg/s2qDtYGnAE">Discord</a>
