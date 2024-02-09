@@ -894,7 +894,7 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 // GetAppInstallations fetches a list of GitHub App instalaltions for the
 // authenticated GitHub App.
 //
-// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
+// API docs: https://docs.github.com/en/rest/apps/apps#list-installations-for-the-authenticated-app
 func (c *V3Client) GetAppInstallations(ctx context.Context, page int) (ins []*github.Installation, hasNextPage bool, _ error) {
 	respState, err := c.get(ctx, fmt.Sprintf("app/installations?page=%d", page), &ins)
 	if err != nil {
