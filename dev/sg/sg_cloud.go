@@ -24,7 +24,7 @@ var cloudCommand = &cli.Command{
 	Usage: "Install and work with Sourcegraph Cloud tools",
 	Description: `Learn more about Sourcegraph Cloud:
 
-- Product: https://docs.sourcegraph.com/cloud
+- Product: https://sourcegraph.com/docs/cloud
 - Handbook: https://handbook.sourcegraph.com/departments/cloud/
 `,
 	Category: category.Company,
