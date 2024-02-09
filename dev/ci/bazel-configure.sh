@@ -11,10 +11,12 @@ export PATH
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
-aspectRC="aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
-
-bazel --bazelrc="$aspectRC" run //:gazelle
+# This fails using rosetta binary, so we just use our normal bazelrc's
+bazel \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  run //:gazelle
 
 if [ "${CI:-}" ]; then
   git ls-files --exclude-standard --others | xargs git add --intent-to-add || true
