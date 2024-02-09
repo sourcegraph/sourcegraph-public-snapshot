@@ -12,7 +12,7 @@ import (
 
 // URL returns the docs URL for the given docs page. This should be used instead of manually constructing a docs URL
 // because it points to the docs for the current version of the instance.
-func URL(page string) *url.URL {
+func URL(page string) string {
 	versionStr := version.Version()
 
 	// For release builds, use the version string. Otherwise, don't use any
@@ -34,6 +34,7 @@ func URL(page string) *url.URL {
 	// agents even though the Location HTTP response header omits it. See
 	// https://stackoverflow.com/a/2305927.
 	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
+		return "http://localhost:5080" + page
 		return &url.URL{
 			Scheme: "http",
 			Host:   "localhost:5080", // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK

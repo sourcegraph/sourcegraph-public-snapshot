@@ -62,7 +62,7 @@ export function getEditorSettingsErrorMessage(
     editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string
 ): string | undefined {
-    const learnMoreURL = 'https://docs.sourcegraph.com/integration/open_in_editor'
+    const learnMoreURL = 'https://sourcegraph.com/docs/integration/open_in_editor'
 
     if (!editorSettings) {
         return `Add \`openInEditor\` to your user settings to open files in the editor. [Learn more](${learnMoreURL})`
@@ -76,9 +76,8 @@ export function getEditorSettingsErrorMessage(
 
     // Skip this check on Windows because path.isAbsolute only checks Linux and macOS compatible paths reliably
     if (!isProjectPathValid(projectPath)) {
-        return `\`projectPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${
-            new URL('/user/settings', sourcegraphBaseUrl).href
-        }).`
+        return `\`projectPaths.default\` (or your current OS-specific setting) \`${projectPath}\` is not an absolute path. Please correct the error in your [user settings](${new URL('/user/settings', sourcegraphBaseUrl).href
+            }).`
     }
 
     if (!editorSettings.editorIds?.length) {
@@ -88,8 +87,7 @@ export function getEditorSettingsErrorMessage(
 
     if (validEditorCount !== editorSettings.editorIds.length) {
         return (
-            `Setting \`editorIds\` must be set to a valid array of values in your [user settings](${
-                new URL('/user/settings', sourcegraphBaseUrl).href
+            `Setting \`editorIds\` must be set to a valid array of values in your [user settings](${new URL('/user/settings', sourcegraphBaseUrl).href
             }) to open files. Supported editors: ` + supportedEditors.map(editor => editor.id).join(', ')
         )
     }

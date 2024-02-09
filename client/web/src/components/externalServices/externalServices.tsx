@@ -125,10 +125,10 @@ function editWithComment(config: string, path: JSONPath, value: any, comment: st
 
 const editorActionComments = {
     enablePermissions:
-        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the site config (https://docs.sourcegraph.com/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
+        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the site config (https://sourcegraph.com/docs/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
     enforcePermissionsOAuth: `// Prerequisite: you must first update the site configuration to
       // include GitLab OAuth as an auth provider.
-      // See https://docs.sourcegraph.com/admin/auth#gitlab for instructions.`,
+      // See https://sourcegraph.com/docs/admin/auth#gitlab for instructions.`,
     enforcePermissionsSSO: `// Prerequisite: You need a sudo-level access token. If you can configure
     // GitLab as an OAuth identity provider for Sourcegraph, we recommend that
     // option instead.
@@ -136,9 +136,9 @@ const editorActionComments = {
     // 1. Ensure the personal access token in this config has admin privileges
     //    (https://docs.gitlab.com/ee/api/#sudo).
     // 2. Update the site configuration to include the SSO auth provider for GitLab
-    //    (https://docs.sourcegraph.com/admin/auth).
+    //    (https://sourcegraph.com/docs/admin/auth).
     // 3. Update the fields below to match the properties of this auth provider
-    //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
+    //    (https://sourcegraph.com/docs/admin/permissions).`,
 }
 
 const Field: React.FunctionComponent<{ children: React.ReactNode | string | string[] }> = props => (
@@ -291,16 +291,16 @@ const GitLabInstructions: React.FunctionComponent<{ isSelfManaged: boolean }> = 
 const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     ...(isEnterprise
         ? [
-              {
-                  id: 'setURL',
-                  label: 'Set GitHub URL',
-                  run: (config: string) => {
-                      const value = 'https://github.example.com'
-                      const edits = modify(config, ['url'], value, defaultModificationOptions)
-                      return { edits, selectText: value }
-                  },
-              },
-          ]
+            {
+                id: 'setURL',
+                label: 'Set GitHub URL',
+                run: (config: string) => {
+                    const value = 'https://github.example.com'
+                    const edits = modify(config, ['url'], value, defaultModificationOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ]
         : []),
     {
         id: 'setAccessToken',
@@ -401,16 +401,16 @@ const gitHubAppEditorActions = (): EditorAction[] => {
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     ...(isSelfManaged
         ? [
-              {
-                  id: 'setURL',
-                  label: 'Set GitLab URL',
-                  run: (config: string) => {
-                      const value = 'https://gitlab.example.com'
-                      const edits = modify(config, ['url'], value, defaultModificationOptions)
-                      return { edits, selectText: value }
-                  },
-              },
-          ]
+            {
+                id: 'setURL',
+                label: 'Set GitLab URL',
+                run: (config: string) => {
+                    const value = 'https://gitlab.example.com'
+                    const edits = modify(config, ['url'], value, defaultModificationOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ]
         : []),
     {
         id: 'setAccessToken',
@@ -467,25 +467,25 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
     ...(isSelfManaged
         ? [
-              {
-                  id: 'addInternalProjects',
-                  label: 'Add internal projects',
-                  run: (config: string) => {
-                      const value = 'projects?visibility=internal'
-                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
-                      return { edits, selectText: value }
-                  },
-              },
-              {
-                  id: 'addPrivateProjects',
-                  label: 'Add private projects',
-                  run: (config: string) => {
-                      const value = 'projects?visibility=private'
-                      const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
-                      return { edits, selectText: value }
-                  },
-              },
-          ]
+            {
+                id: 'addInternalProjects',
+                label: 'Add internal projects',
+                run: (config: string) => {
+                    const value = 'projects?visibility=internal'
+                    const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'addPrivateProjects',
+                label: 'Add private projects',
+                run: (config: string) => {
+                    const value = 'projects?visibility=private'
+                    const edits = modify(config, ['projectQuery', -1], value, defaultModificationOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ]
         : []),
     {
         id: 'excludeProject',
@@ -498,67 +498,67 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
     ...(isSelfManaged
         ? [
-              {
-                  id: 'enforcePermissionsOAuth',
-                  label: 'Enforce permissions (OAuth)',
-                  run: (config: string) => {
-                      const value = {
-                          identityProvider: {
-                              COMMENT_SENTINEL: true,
-                              type: 'oauth',
-                          },
-                      }
-                      const comment = editorActionComments.enforcePermissionsOAuth
-                      const edit = editWithComment(config, ['authorization'], value, comment)
-                      return { edits: [edit], selectText: comment }
-                  },
-              },
-              {
-                  id: 'enforcePermissionsSudo',
-                  label: 'Enforce permissions (sudo)',
-                  run: (config: string) => {
-                      const value = {
-                          COMMENT_SENTINEL: true,
-                          identityProvider: {
-                              type: 'external',
-                              authProviderID: '<configID field of the auth provider>',
-                              authProviderType: '<type field of the auth provider>',
-                              gitlabProvider:
-                                  '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
-                          },
-                      }
-                      const comment = editorActionComments.enforcePermissionsSSO
-                      const edit = editWithComment(config, ['authorization'], value, comment)
-                      return { edits: [edit], selectText: comment }
-                  },
-              },
-              {
-                  id: 'setSelfSignedCert',
-                  label: 'Set internal or self-signed certificate',
-                  run: (config: string) => {
-                      const value = '<certificate>'
-                      const edits = modify(config, ['certificate'], value, defaultModificationOptions)
-                      return { edits, selectText: value }
-                  },
-              },
-          ]
+            {
+                id: 'enforcePermissionsOAuth',
+                label: 'Enforce permissions (OAuth)',
+                run: (config: string) => {
+                    const value = {
+                        identityProvider: {
+                            COMMENT_SENTINEL: true,
+                            type: 'oauth',
+                        },
+                    }
+                    const comment = editorActionComments.enforcePermissionsOAuth
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
+            {
+                id: 'enforcePermissionsSudo',
+                label: 'Enforce permissions (sudo)',
+                run: (config: string) => {
+                    const value = {
+                        COMMENT_SENTINEL: true,
+                        identityProvider: {
+                            type: 'external',
+                            authProviderID: '<configID field of the auth provider>',
+                            authProviderType: '<type field of the auth provider>',
+                            gitlabProvider:
+                                '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
+                        },
+                    }
+                    const comment = editorActionComments.enforcePermissionsSSO
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
+            {
+                id: 'setSelfSignedCert',
+                label: 'Set internal or self-signed certificate',
+                run: (config: string) => {
+                    const value = '<certificate>'
+                    const edits = modify(config, ['certificate'], value, defaultModificationOptions)
+                    return { edits, selectText: value }
+                },
+            },
+        ]
         : [
-              {
-                  id: 'enforcePermissionsOAuth',
-                  label: 'Enforce permissions',
-                  run: (config: string) => {
-                      const value = {
-                          identityProvider: {
-                              COMMENT_SENTINEL: true,
-                              type: 'oauth',
-                          },
-                      }
-                      const comment = editorActionComments.enforcePermissionsOAuth
-                      const edit = editWithComment(config, ['authorization'], value, comment)
-                      return { edits: [edit], selectText: comment }
-                  },
-              },
-          ]),
+            {
+                id: 'enforcePermissionsOAuth',
+                label: 'Enforce permissions',
+                run: (config: string) => {
+                    const value = {
+                        identityProvider: {
+                            COMMENT_SENTINEL: true,
+                            type: 'oauth',
+                        },
+                    }
+                    const comment = editorActionComments.enforcePermissionsOAuth
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
+        ]),
     {
         id: 'addWebhooks',
         label: 'Add webhook',
@@ -1146,7 +1146,7 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     defaultConfig: `{
   // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
   // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
+  // https://sourcegraph.com/docs/admin/external_service/phabricator#configuration
 
   "url": "https://phabricator.example.com",
   "token": "",

@@ -16,6 +16,9 @@ import (
 func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 
+	// Note that the URI fragment (e.g., #some-section-in-doc) *should* be preserved by most user
+	// agents even though the Location HTTP response header omits it. See
+	// https://stackoverflow.com/a/2305927.
 	dest := docs.URL(page)
 	log.Scoped("serveHelp").Info("redirecting to docs", log.String("url", dest.String()))
 
