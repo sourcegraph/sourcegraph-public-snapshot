@@ -26,7 +26,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		// devImage := images.DevRegistryImage(app, "")
 		// publishImage := images.PublishedRegistryImage(app, "")
 
-		pipeline.AddStep(":clown::docker: publishFinalDockerImage",
+		pipeline.AddStep(":clown_face::docker: publishFinalDockerImage",
 			bk.Cmd(`echo "--- DRY RUN: skipping publishFinalDockerImage"`),
 		)
 		//nolint:S1023
@@ -90,12 +90,12 @@ func bazelPushImagesNoTest(version string) func(*bk.Pipeline) {
 }
 
 func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
-	stepName := ":clown: DRY :bazel::docker: Push final images"
+	stepName := ":clown_face:: DRY :bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
 
 	if isCandidate {
-		stepName = ":bazel::docker: Push candidate Images"
+		stepName = ":clown_face::bazel::docker: Push candidate Images"
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
@@ -107,7 +107,7 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 				bk.Key(stepKey),
 				bk.Env("PUSH_VERSION", version),
 				bk.Env("CANDIDATE_ONLY", candidate),
-				bk.Cmd(`echo "--- DRY RUN: bazel-push-images`),
+				bk.Cmd(`echo "--- DRY RUN: bazel-push-images"`),
 				// bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
 				// bk.Cmd("./dev/ci/push_all.sh"),
 			)...,
