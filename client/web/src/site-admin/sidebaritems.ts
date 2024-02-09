@@ -33,6 +33,10 @@ const analyticsGroup: SiteAdminSideBarGroup = {
             condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
+            label: 'Cody',
+            to: '/site-admin/analytics/cody',
+        },
+        {
             label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
             condition: ({ license }) => license.isCodeSearchEnabled,
