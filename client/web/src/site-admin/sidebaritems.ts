@@ -35,6 +35,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Cody',
             to: '/site-admin/analytics/cody',
+            condition: ({ license }) => license.isCodyEnabled,
         },
         {
             label: 'Code navigation',
