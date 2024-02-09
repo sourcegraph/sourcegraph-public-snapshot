@@ -89,13 +89,22 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query:   `file:"\\.go(?m:$)" file:"\\.go(?m:$)"`,
 		},
 		{
-			Name:    "Languages get passed as lang: query",
+			Name:    "Language get passed as lang: query",
+			Type:    search.TextRequest,
+			Pattern: `lang:go`,
+			Features: search.Features{
+				ContentBasedLangFilters: true,
+			},
+			Query: `lang:Go`,
+		},
+		{
+			Name:    "Multiple languages get passed as lang queries",
 			Type:    search.TextRequest,
 			Pattern: `lang:go lang:typescript`,
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			Query: `lang:Go or lang:Typescript`,
+			Query: `lang:Go lang:Typescript`,
 		},
 		{
 			Name:    "Excluded languages get passed as lang: query",
@@ -104,7 +113,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			Query: `lang:Go -(lang:Typescript or lang:markdown)`,
+			Query: `lang:Go -lang:Typescript -lang:markdown`,
 		},
 		{
 			Name:    "Mixed file and lang filters",
@@ -113,7 +122,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
-			Query: `file:"\\.go(?m:$)" (lang:Go or lang:Typescript)`,
+			Query: `file:"\\.go(?m:$)" lang:Go lang:Typescript`,
 		},
 	}
 	for _, tt := range cases {

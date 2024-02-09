@@ -37,19 +37,21 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
+
 	// Handle lang: and -lang: filters.
 	// By default, languages are converted to file filters. When the 'search-content-based-lang-detection'
 	// feature is enabled, we use Zoekt's native language filters, which are based on the actual language
 	// of the file (as determined by go-enry).
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	if feat.ContentBasedLangFilters {
-		if len(langInclude) > 0 {
-			filters := toLangFilters(langInclude)
-			and = append(and, &zoekt.Or{Children: filters})
+		for _, lang := range langInclude {
+			and = append(and, toLangFilter(lang))
 		}
 		if len(langExclude) > 0 {
-			filters := toLangFilters(langExclude)
-			and = append(and, &zoekt.Not{Child: &zoekt.Or{Children: filters}})
+			for _, lang := range langExclude {
+				filter := toLangFilter(lang)
+				and = append(and, &zoekt.Not{Child: filter})
+			}
 		}
 	} else {
 		filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
@@ -85,13 +87,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
 }
 
-func toLangFilters(langs []string) []zoekt.Q {
-	var filters []zoekt.Q
-	for _, lang := range langs {
-		lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
-		filters = append(filters, &zoekt.Language{Language: lang})
-	}
-	return filters
+func toLangFilter(lang string) zoekt.Q {
+	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
+	return &zoekt.Language{Language: lang}
 }
 
 func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoekt.Q {
