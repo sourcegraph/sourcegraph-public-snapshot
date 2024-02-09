@@ -6,8 +6,8 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
-    useRef,
     useMemo,
+    useRef,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
@@ -38,7 +38,7 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Icon, H2, H4, useScrollManager, Panel, useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Icon, Link, Panel, useLocalStorage, useScrollManager } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { useKeywordSearch } from '../../../../featureFlags/useFeatureFlag'
@@ -251,80 +251,84 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
             />
 
             <div className={styles.content} ref={containerRef}>
-                {aggregationUIMode === AggregationUIMode.SearchPage && (
-                    <SearchAggregationResult
-                        query={submittedURLQuery}
-                        patternType={patternType}
-                        caseSensitive={caseSensitive}
-                        aria-label="Aggregation results panel"
-                        onQuerySubmit={onQuerySubmit}
-                        telemetryService={telemetryService}
-                    />
-                )}
-
-                {aggregationUIMode !== AggregationUIMode.SearchPage && (
-                    <>
-                        <DidYouMean
-                            telemetryService={props.telemetryService}
+                <div className={styles.contentPaddingWrapper}>
+                    {aggregationUIMode === AggregationUIMode.SearchPage && (
+                        <SearchAggregationResult
                             query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-
-                        {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
-                            <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
-                        )}
-
-                        <GettingStartedTour.Info
-                            className="mt-2 mb-3"
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
-
-                        {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
-                            <div className={classNames(styles.alertArea, 'mt-4')}>
-                                {results?.alert?.kind === 'unowned-results' ? (
-                                    <UnownedResultsAlert
-                                        alertTitle={results.alert.title}
-                                        alertDescription={results.alert.description}
-                                        queryState={queryState}
-                                        patternType={patternType}
-                                        caseSensitive={caseSensitive}
-                                        selectedSearchContextSpec={props.selectedSearchContextSpec}
-                                    />
-                                ) : (
-                                    <SearchAlert
-                                        alert={results.alert}
-                                        caseSensitive={caseSensitive}
-                                        patternType={patternType}
-                                    />
-                                )}
-                            </div>
-                        )}
-
-                        <StreamingSearchResultsList
+                            aria-label="Aggregation results panel"
+                            onQuerySubmit={onQuerySubmit}
                             telemetryService={telemetryService}
-                            platformContext={platformContext}
-                            settingsCascade={settingsCascade}
-                            searchContextsEnabled={searchContextsEnabled}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            enableRepositoryMetadata={enableRepositoryMetadata}
-                            results={results}
-                            allExpanded={allExpanded}
-                            executedQuery={location.search}
-                            prefetchFileEnabled={true}
-                            prefetchFile={prefetchFile}
-                            enableKeyboardNavigation={true}
-                            showQueryExamplesOnNoResultsPage={true}
-                            queryState={queryState}
-                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            selectedSearchContextSpec={selectedSearchContextSpec}
-                            logSearchResultClicked={onLogSearchResultClick}
-                            queryExamplesPatternType={patternType}
-                            className={styles.contentList}
                         />
-                    </>
+                    )}
+
+                    {aggregationUIMode !== AggregationUIMode.SearchPage && (
+                        <>
+                            <DidYouMean
+                                telemetryService={props.telemetryService}
+                                query={submittedURLQuery}
+                                patternType={patternType}
+                                caseSensitive={caseSensitive}
+                                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            />
+
+                            {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
+                                <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
+                            )}
+
+                            <GettingStartedTour.Info
+                                className="mt-2 mb-3"
+                                isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            />
+
+                            {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
+                                <div className={classNames(styles.alertArea, 'mt-4')}>
+                                    {results?.alert?.kind === 'unowned-results' ? (
+                                        <UnownedResultsAlert
+                                            alertTitle={results.alert.title}
+                                            alertDescription={results.alert.description}
+                                            queryState={queryState}
+                                            patternType={patternType}
+                                            caseSensitive={caseSensitive}
+                                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                                        />
+                                    ) : (
+                                        <SearchAlert
+                                            alert={results.alert}
+                                            caseSensitive={caseSensitive}
+                                            patternType={patternType}
+                                        />
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {aggregationUIMode !== AggregationUIMode.SearchPage && (
+                    <StreamingSearchResultsList
+                        telemetryService={telemetryService}
+                        platformContext={platformContext}
+                        settingsCascade={settingsCascade}
+                        searchContextsEnabled={searchContextsEnabled}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        enableRepositoryMetadata={enableRepositoryMetadata}
+                        results={results}
+                        allExpanded={allExpanded}
+                        executedQuery={location.search}
+                        prefetchFileEnabled={true}
+                        prefetchFile={prefetchFile}
+                        enableKeyboardNavigation={true}
+                        showQueryExamplesOnNoResultsPage={true}
+                        queryState={queryState}
+                        buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                        selectedSearchContextSpec={selectedSearchContextSpec}
+                        logSearchResultClicked={onLogSearchResultClick}
+                        queryExamplesPatternType={patternType}
+                        className={styles.contentList}
+                    />
                 )}
             </div>
 
