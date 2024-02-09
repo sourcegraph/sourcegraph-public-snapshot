@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -560,7 +561,14 @@ func NormalizeUsername(name string) (string, error) {
 
 	// If the username is an email address, extract the username part.
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
-		name = name[:i]
+		// NOTE: When we derive the username from the email address, it is high chance
+		// that the username is not unique, so we always append a random suffix to the
+		// username.
+		var err error
+		name, err = AddRandomSuffix(name[:i])
+		if err != nil {
+			return "", errors.Wrap(err, "add random suffix")
+		}
 	}
 
 	// Replace all non-alphanumeric characters with a dash.
@@ -588,3 +596,27 @@ var (
 	consecutivePeriodsDashes = lazyregexp.New(`[\-\.]{2,}`)
 	sequencesToTrim          = lazyregexp.New(`(^[\-\.])|(\.$)|`)
 )
+
+var MockAddRandomSuffix func(string) (string, error)
+
+// AddRandomSuffix appends a random 5-character lowercase alphabetical suffix (like "-lbwwt")
+// to the username to avoid collisions. If the username already ends with a dash, it is not
+// added again.
+func AddRandomSuffix(username string) (string, error) {
+	if MockAddRandomSuffix != nil {
+		return MockAddRandomSuffix(username)
+	}
+
+	b := make([]byte, 5)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	for i, c := range b {
+		b[i] = "abcdefghijklmnopqrstuvwxyz"[c%26]
+	}
+	if len(username) == 0 || username[len(username)-1] == '-' {
+		return username + string(b), nil
+	}
+	return username + "-" + string(b), nil
+}

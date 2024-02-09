@@ -33,11 +33,11 @@ func TestProductNameWithBrand(t *testing.T) {
 		{licenseTags: []string{"plan:enterprise-0", "dev", "trial"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
 		{licenseTags: []string{"plan:enterprise-0", "internal"}, want: "Sourcegraph Enterprise (internal use only)"},
 
-		{licenseTags: []string{"plan:enterprise-1"}, want: "Sourcegraph Enterprise"},
-		{licenseTags: []string{"plan:enterprise-1", "trial"}, want: "Sourcegraph Enterprise (trial)"},
-		{licenseTags: []string{"plan:enterprise-1", "dev"}, want: "Sourcegraph Enterprise (dev use only)"},
-		{licenseTags: []string{"plan:enterprise-1", "dev", "trial"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
-		{licenseTags: []string{"plan:enterprise-1", "internal"}, want: "Sourcegraph Enterprise (internal use only)"},
+		{licenseTags: []string{"plan:enterprise-1"}, want: "Code Search Enterprise"},
+		{licenseTags: []string{"plan:enterprise-1", "trial"}, want: "Code Search Enterprise (trial)"},
+		{licenseTags: []string{"plan:enterprise-1", "dev"}, want: "Code Search Enterprise (dev use only)"},
+		{licenseTags: []string{"plan:enterprise-1", "dev", "trial"}, want: "Code Search Enterprise (trial, dev use only)"},
+		{licenseTags: []string{"plan:enterprise-1", "internal"}, want: "Code Search Enterprise (internal use only)"},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("licenseTags=%v", test.licenseTags), func(t *testing.T) {

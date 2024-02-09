@@ -374,6 +374,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1.2-cyan",
 			"anthropic/claude-instant-1.2",
 			"fireworks/starcoder",
+			"fireworks/" + fireworks.Llama213bCode,
 			// TODO: Remove the specific model identifiers below when Cody Gateway for PLG was updated.
 			"fireworks/" + fireworks.Starcoder16b,
 			"fireworks/" + fireworks.Starcoder7b,
