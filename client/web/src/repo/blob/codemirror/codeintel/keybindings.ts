@@ -135,7 +135,7 @@ const theme = EditorView.theme({
         },
     },
     '.cm-selectionLayer .cm-selectionBackground': {
-        background: 'var(--code-selection-bg-2)',
+        background: 'var(--code-selection-bg-2) !important',
     },
 })
 
