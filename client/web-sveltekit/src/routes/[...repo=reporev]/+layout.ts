@@ -1,7 +1,7 @@
-import { redirect, error, type Redirect } from '@sveltejs/kit'
+import { redirect, error } from '@sveltejs/kit'
 
 import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
-import type { GraphQLClient } from '$lib/graphql'
+import { getGraphQLClient, type GraphQLClient } from '$lib/graphql'
 import {
     CloneInProgressError,
     RepoNotFoundError,
@@ -14,7 +14,7 @@ import {
 } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { ResolveRepoRevison, ResolvedRepository } from './layout.gql'
+import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
 
 export interface ResolvedRevision {
     repo: ResolvedRepository
@@ -22,8 +22,8 @@ export interface ResolvedRevision {
     defaultBranch: string
 }
 
-export const load: LayoutLoad = async ({ parent, params, url, depends }) => {
-    const { graphqlClient: client } = await parent()
+export const load: LayoutLoad = async ({ params, url, depends }) => {
+    const client = await getGraphQLClient()
 
     // This allows other places to reload all repo related data by calling
     // invalidate('repo:root')
@@ -43,7 +43,7 @@ export const load: LayoutLoad = async ({ parent, params, url, depends }) => {
         const redirect = isRepoSeeOtherErrorLike(repoError)
 
         if (redirect) {
-            throw redirectToExternalHost(redirect, url)
+            redirectToExternalHost(redirect, url)
         }
 
         // TODO: use differenr error codes for different types of errors
@@ -65,13 +65,13 @@ export const load: LayoutLoad = async ({ parent, params, url, depends }) => {
     }
 }
 
-function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): Redirect {
+function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): never {
     const externalHostURL = new URL(externalRedirectURL)
     const redirectURL = new URL(currentURL)
     // Preserve the path of the current URL and redirect to the repo on the external host.
     redirectURL.host = externalHostURL.host
     redirectURL.protocol = externalHostURL.protocol
-    return redirect(303, redirectURL.toString())
+    redirect(303, redirectURL.toString())
 }
 
 async function resolveRepoRevision({
@@ -83,21 +83,18 @@ async function resolveRepoRevision({
     repoName: string
     revision?: string
 }): Promise<ResolvedRevision> {
+    // See if we have a cached response
     let data = client.readQuery({
-        query: ResolveRepoRevison,
+        query: ResolveRepoRevision,
         variables: {
             repoName,
             revision,
         },
     })
-    if (
-        !data ||
-        (data.repositoryRedirect?.__typename === 'Repository' && data.repositoryRedirect.commit?.oid !== revision)
-    ) {
-        // We always refetch data when 'revision' is a "symbolic" revision (e.g. a tag or branch name)
+    if (shouldResolveRepositoryInformation(data)) {
         data = await client
             .query({
-                query: ResolveRepoRevison,
+                query: ResolveRepoRevision,
                 variables: {
                     repoName,
                     revision,
@@ -141,4 +138,24 @@ async function resolveRepoRevision({
         commitID: commit.oid,
         defaultBranch,
     }
+}
+
+/**
+ * We want to resolve the repository and revision information in two cases:
+ * - The data is not available yet
+ * - The repository is being cloned or the clone is in progress
+ *
+ * In all other cases, we can use the cached data. That means if the URL specifies a
+ * "symbolic" revspec (e.g. a branch or tag name), we will resolve that revspec to the
+ * corresponding commit ID only once.
+ * This ensures consistentcy as the user navigates to and away from the repository page.
+ */
+function shouldResolveRepositoryInformation(data: ResolveRepoRevisionResult | null): boolean {
+    if (!data) {
+        return true
+    }
+    if (data.repositoryRedirect?.__typename === 'Repository') {
+        return data.repositoryRedirect.mirrorInfo.cloneInProgress || !data.repositoryRedirect.mirrorInfo.cloned
+    }
+    return false
 }
