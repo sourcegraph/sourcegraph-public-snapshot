@@ -7,6 +7,7 @@ test.beforeEach(({ sg }) => {
         {
             __typename: 'Repository',
             id: '1',
+            name: repoName,
             description: 'Example description',
             mirrorInfo: {
                 cloned: true,
@@ -54,15 +55,14 @@ test.beforeEach(({ sg }) => {
     ])
 
     sg.mockOperations({
-        ResolveRepoRevison: ({ repoName }) => ({
+        ResolveRepoRevison: () => ({
             repositoryRedirect: {
                 id: '1',
-                name: repoName,
             },
         }),
-        TreeEntries: ({ repoID }) => ({
-            node: {
-                id: repoID,
+        TreeEntries: () => ({
+            repository: {
+                id: '1',
             },
         }),
         RepoPageReadmeQuery: ({ repoID, path }) => ({
@@ -115,8 +115,7 @@ test('repo description', async ({ page, sg }) => {
     // Shows the repo description if there is no readme file in the repo root
     sg.mockOperations({
         TreeEntries: () => ({
-            node: {
-                __typename: 'Repository',
+            repository: {
                 commit: {
                     tree: {
                         isRoot: true,
@@ -135,8 +134,7 @@ test('repo description', async ({ page, sg }) => {
 test('history panel', async ({ page, sg }) => {
     sg.mockOperations({
         GitHistoryQuery: () => ({
-            node: {
-                __typename: 'Repository',
+            repository: {
                 id: '1',
                 commit: {
                     ancestors: {

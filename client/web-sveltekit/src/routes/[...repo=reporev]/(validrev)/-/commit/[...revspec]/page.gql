@@ -1,36 +1,32 @@
-query CommitPage_CommitQuery($repo: ID!, $revspec: String!) {
-    node(id: $repo) {
-        ... on Repository {
+query CommitPage_CommitQuery($repoName: String!, $revspec: String!) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
             id
-            commit(rev: $revspec) {
+            oid
+            parents {
                 id
                 oid
-                parents {
-                    id
-                    oid
-                    abbreviatedOID
-                    canonicalURL
-                }
-
-                ...Commit
+                abbreviatedOID
+                canonicalURL
             }
+
+            ...Commit
         }
     }
 }
 
-query CommitPage_DiffQuery($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
-    node(id: $repo) {
-        ... on Repository {
-            id
-            comparison(base: $base, head: $head) {
-                fileDiffs(first: $first, after: $after) {
-                    nodes {
-                        ...FileDiff_Diff
-                    }
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
+query CommitPage_DiffQuery($repoName: String!, $base: String, $head: String, $first: Int, $after: String) {
+    repository(name: $repoName) {
+        id
+        comparison(base: $base, head: $head) {
+            fileDiffs(first: $first, after: $after) {
+                nodes {
+                    ...FileDiff_Diff
+                }
+                pageInfo {
+                    endCursor
+                    hasNextPage
                 }
             }
         }

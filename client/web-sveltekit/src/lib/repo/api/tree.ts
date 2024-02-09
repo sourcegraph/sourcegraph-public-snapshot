@@ -7,11 +7,11 @@ import type { TreeProvider } from '$lib/TreeView'
 const MAX_FILE_TREE_ENTRIES = 1000
 
 const treeEntriesQuery = gql`
-    query TreeEntries($repoID: ID!, $commitID: String!, $filePath: String!, $first: Int) {
-        node(id: $repoID) {
+    query TreeEntries($repoName: String!, $revision: String!, $filePath: String!, $first: Int) {
+        repository(name: $repoName) {
             id
             ... on Repository {
-                commit(rev: $commitID) {
+                commit(rev: $revision) {
                     ...GitCommitFieldsWithTree
                 }
             }
@@ -48,10 +48,10 @@ export async function fetchTreeEntries(args: TreeEntriesVariables): Promise<GitC
         }
         // mightContainPrivateInfo: true,
     )
-    if (data.node?.__typename !== 'Repository' || !data.node.commit) {
+    if (!data.repository?.commit) {
         throw new Error('Unable to fetch repository information')
     }
-    return data.node.commit
+    return data.repository.commit
 }
 
 export const NODE_LIMIT: unique symbol = Symbol()
@@ -62,17 +62,17 @@ type ExpandableFileTreeNodeValues = TreeEntryFields
 export type FileTreeNodeValue = ExpandableFileTreeNodeValues | typeof NODE_LIMIT
 
 export async function fetchSidebarFileTree({
-    repoID,
-    commitID,
+    repoName,
+    revision,
     filePath,
 }: {
-    repoID: Scalars['ID']['input']
-    commitID: string
+    repoName: Scalars['ID']['input']
+    revision: string
     filePath: string
 }): Promise<{ root: TreeRoot; values: FileTreeNodeValue[] }> {
     const result = await fetchTreeEntries({
-        repoID,
-        commitID,
+        repoName,
+        revision,
         filePath,
         first: MAX_FILE_TREE_ENTRIES,
     })
@@ -88,8 +88,8 @@ export async function fetchSidebarFileTree({
 }
 
 export type FileTreeLoader = (args: {
-    repoID: Scalars['ID']['input']
-    commitID: string
+    repoName: string
+    revision: string
     filePath: string
     parent?: FileTreeProvider
 }) => Promise<FileTreeProvider>
@@ -97,8 +97,8 @@ export type FileTreeLoader = (args: {
 interface FileTreeProviderArgs {
     root: NonNullable<GitCommitFieldsWithTree['tree']>
     values: FileTreeNodeValue[]
-    repoID: Scalars['ID']['input']
-    commitID: string
+    repoName: string
+    revision: string
     loader: FileTreeLoader
     parent?: TreeProvider<FileTreeNodeValue>
 }
@@ -110,8 +110,8 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         return this.args.root
     }
 
-    public getRepoID(): Scalars['ID']['input'] {
-        return this.args.repoID
+    public getRepoName(): string {
+        return this.args.repoName
     }
 
     public getEntries(): FileTreeNodeValue[] {
@@ -130,8 +130,8 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         }
 
         return this.args.loader({
-            repoID: this.args.repoID,
-            commitID: this.args.commitID,
+            repoName: this.args.repoName,
+            revision: this.args.revision,
             filePath: entry.path,
             parent: this,
         })
@@ -140,8 +140,8 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
     public async fetchParent(): Promise<FileTreeProvider> {
         const parentPath = dirname(this.args.root.path)
         return this.args.loader({
-            repoID: this.args.repoID,
-            commitID: this.args.commitID,
+            repoName: this.args.repoName,
+            revision: this.args.revision,
             filePath: parentPath,
         })
     }
