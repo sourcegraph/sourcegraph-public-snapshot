@@ -59,22 +59,14 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
             return
         }
 
-        eventLogger.log(
-            'web:codySearch:submit',
-            !isPrivateInstance ? { input: sanitizedInput } : null,
-            !isPrivateInstance ? { input: sanitizedInput } : null
-        )
+        eventLogger.log('web:codySearch:submit')
         setLoading(true)
         translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
                 setLoading(false)
 
                 if (query) {
-                    eventLogger.log(
-                        'web:codySearch:submitSucceeded',
-                        !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
-                        !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null
-                    )
+                    eventLogger.log('web:codySearch:submitSucceeded')
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
@@ -83,8 +75,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                 } else {
                     eventLogger.log(
                         'web:codySearch:submitFailed',
-                        !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
-                        !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null
+                        !isPrivateInstance ? { reason: 'untranslatable' } : null,
+                        !isPrivateInstance ? { reason: 'untranslatable' } : null
                     )
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
@@ -92,20 +84,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
             error => {
                 eventLogger.log(
                     'web:codySearch:submitFailed',
-                    !isPrivateInstance
-                        ? {
-                              input: sanitizedInput,
-                              reason: 'unreachable',
-                              error: error?.message,
-                          }
-                        : null,
-                    !isPrivateInstance
-                        ? {
-                              input: sanitizedInput,
-                              reason: 'unreachable',
-                              error: error?.message,
-                          }
-                        : null
+                    !isPrivateInstance ? { reason: 'unreachable' } : null,
+                    !isPrivateInstance ? { reason: 'unreachable' } : null
                 )
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
