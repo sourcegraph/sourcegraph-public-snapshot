@@ -36,10 +36,10 @@
                 padding: 0,
             },
             '&.cm-focused .cm-selectionLayer .cm-selectionBackground': {
-                backgroundColor: 'var(--code-selection-bg-2)',
+                backgroundColor: 'var(--code-selection-bg-2) !important',
             },
             '.cm-selectionLayer .cm-selectionBackground': {
-                backgroundColor: 'var(--code-selection-bg)',
+                backgroundColor: 'var(--code-selection-bg) !important',
             },
         }),
         defaultTheme,

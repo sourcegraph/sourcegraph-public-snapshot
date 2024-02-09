@@ -130,17 +130,17 @@ export const ALL_PLANS: Plan[] = [
         ],
     },
     {
-        name: 'Code Intelligence Platform (aka enterprise-1)',
+        name: 'Code Search Enterprise (aka enterprise-1)',
         label: 'enterprise-1',
         additionalTags: [TAG_TRIAL, TAG_AIR_GAPPED, TAG_DISABLE_TELEMETRY_EXPORT, TAG_TRUEUP, TAG_DEV, TAG_INTERNAL],
     },
     {
-        name: 'Cody Only Enterprise',
+        name: 'Cody Enterprise',
         label: 'cody-enterprise-0',
         additionalTags: [TAG_TRIAL, TAG_AIR_GAPPED, TAG_DISABLE_TELEMETRY_EXPORT, TAG_TRUEUP, TAG_DEV, TAG_INTERNAL],
     },
     {
-        name: 'Code AI Enterprise',
+        name: 'Code Intelligence Platform',
         label: 'code-ai-enterprise-0',
         additionalTags: [TAG_TRIAL, TAG_AIR_GAPPED, TAG_DISABLE_TELEMETRY_EXPORT, TAG_TRUEUP, TAG_DEV, TAG_INTERNAL],
     },

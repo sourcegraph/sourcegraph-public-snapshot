@@ -46,7 +46,7 @@ import {
 import { useArePaymentsEnabled, useHasTrialEnded } from '../featureFlags'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
-import { ProTierIcon } from '../subscription/CodySubscriptionPage'
+import { ProTierIcon, useCodyPaymentsUrl } from '../subscription/CodySubscriptionPage'
 import { CHANGE_CODY_PLAN, USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
@@ -475,34 +475,42 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
     arePaymentsEnabled: boolean
     hasTrialEnded: boolean
     subscriptionStatus: CodySubscriptionStatus
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) =>
-    arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING ? (
-        <div
-            className={classNames(
-                'd-flex justify-content-between align-items-center p-4',
-                styles.dontLoseCodyProBanner
-            )}
-        >
-            <div className="d-flex align-items-center text-dark">
-                <div className={styles.creditCardEmoji}>💳</div>
-                <div className="ml-3">
-                    <H3>Don't lose Cody Pro</H3>
-                    <Text className="mb-0">
-                        {hasTrialEnded ? (
-                            <span>Enter your credit card details now and keep your Pro subscription.</span>
-                        ) : (
-                            <span>
-                                Enter your credit card details now and keep your subscription after your trial ends. You
-                                will only be charged on <strong>Feb 15, 2024</strong>.
-                            </span>
-                        )}
-                    </Text>
+}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) => {
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
+
+    if (arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING) {
+        return (
+            <div
+                className={classNames(
+                    'd-flex justify-content-between align-items-center p-4',
+                    styles.dontLoseCodyProBanner
+                )}
+            >
+                <div className="d-flex align-items-center text-dark">
+                    <div className={styles.creditCardEmoji}>💳</div>
+                    <div className="ml-3">
+                        <H3>Don't lose Cody Pro</H3>
+                        <Text className="mb-0">
+                            {hasTrialEnded ? (
+                                <span>Enter your credit card details now and keep your Pro subscription.</span>
+                            ) : (
+                                <span>
+                                    Enter your credit card details now and keep your subscription after your trial ends.
+                                    You will only be charged on <strong>Feb 21, 2024</strong>.
+                                </span>
+                            )}
+                        </Text>
+                    </div>
+                </div>
+                <div>
+                    <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
+                        Add Credit Card
+                    </ButtonLink>
                 </div>
             </div>
-            <div>
-                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
-                    Add Credit Card
-                </ButtonLink>
-            </div>
-        </div>
-    ) : null
+        )
+    }
+
+    return null
+}
