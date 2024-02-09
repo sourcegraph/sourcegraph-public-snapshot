@@ -24,6 +24,14 @@ commandTests:
       - -g
     expectedOutput: ["^1000\n"]
     exitCode: 0
+  - name: "redis-cli readiness check available"
+    command: "redis-cli"
+    args:
+      - --raw
+      - incr
+      - ping
+    expectedError: ["Could not connect to Redis"]
+    exitCode: 1
 
 fileExistenceTests:
 - name: '/etc/redis/redis.conf'
