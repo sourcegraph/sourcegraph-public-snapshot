@@ -105,6 +105,12 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Backend: []*computebackendservice.ComputeBackendServiceBackend{{
 				Group: endpointGroup.Id(),
 			}},
+			// Removing the security policy is an in place operation
+			// As such we need to update the backend to remove the security policy
+			// before the security policy can be destroyed.
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				CreateBeforeDestroy: pointers.Ptr(true),
+			},
 		})
 
 	// Enable routing requests to the backend service working serving traffic
