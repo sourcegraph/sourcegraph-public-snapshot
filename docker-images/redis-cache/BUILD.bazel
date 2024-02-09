@@ -8,11 +8,18 @@ filegroup(
     srcs = ["redis.conf"],
 )
 
+filegroup(
+    name = "redis_readiness",
+    srcs = [
+        "readiness.sh",
+    ],
+)
+
 pkg_tar(
     name = "redis_tarball",
     srcs = [
         ":redis_conf",
-        "//docker-images/redis-store:redis_readiness",
+        ":redis_readiness",
     ],
     modes = {
         "/etc/redis/redis.conf": "0644",

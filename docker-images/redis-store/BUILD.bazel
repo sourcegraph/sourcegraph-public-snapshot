@@ -15,7 +15,6 @@ filegroup(
     srcs = [
         "readiness.sh",
     ],
-    visibility = ["//docker-images/redis-cache:__pkg__"],
 )
 
 pkg_tar(
