@@ -47,11 +47,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		for _, lang := range langInclude {
 			and = append(and, toLangFilter(lang))
 		}
-		if len(langExclude) > 0 {
-			for _, lang := range langExclude {
-				filter := toLangFilter(lang)
-				and = append(and, &zoekt.Not{Child: filter})
-			}
+		for _, lang := range langExclude {
+			filter := toLangFilter(lang)
+			and = append(and, &zoekt.Not{Child: filter})
 		}
 	} else {
 		filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
