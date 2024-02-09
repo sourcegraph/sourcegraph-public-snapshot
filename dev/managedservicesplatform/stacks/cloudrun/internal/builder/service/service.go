@@ -279,7 +279,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			Region:            vars.GCPRegion,
 			TargetService:     svc,
 			SSLCertificate:    sslCertificate,
-			CloudflareProxied: *domain.Cloudflare.Proxied,
+			CloudflareProxied: domain.Cloudflare.ShouldProxy(),
 			Production: vars.Environment.Category == spec.EnvironmentCategoryExternal ||
 				vars.Environment.Category == spec.EnvironmentCategoryInternal,
 		})
