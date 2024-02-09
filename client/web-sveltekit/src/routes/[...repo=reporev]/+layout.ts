@@ -14,7 +14,7 @@ import {
 } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { ResolveRepoRevison, ResolvedRepository } from './layout.gql'
+import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
 
 export interface ResolvedRevision {
     repo: ResolvedRepository
@@ -83,21 +83,18 @@ async function resolveRepoRevision({
     repoName: string
     revision?: string
 }): Promise<ResolvedRevision> {
+    // See if we have a cached response
     let data = client.readQuery({
-        query: ResolveRepoRevison,
+        query: ResolveRepoRevision,
         variables: {
             repoName,
             revision,
         },
     })
-    if (
-        !data ||
-        (data.repositoryRedirect?.__typename === 'Repository' && data.repositoryRedirect.commit?.oid !== revision)
-    ) {
-        // We always refetch data when 'revision' is a "symbolic" revision (e.g. a tag or branch name)
+    if (shouldResolveRepositoryInformation(data)) {
         data = await client
             .query({
-                query: ResolveRepoRevison,
+                query: ResolveRepoRevision,
                 variables: {
                     repoName,
                     revision,
@@ -141,4 +138,24 @@ async function resolveRepoRevision({
         commitID: commit.oid,
         defaultBranch,
     }
+}
+
+/**
+ * We want to resolve the repository and revision information in two cases:
+ * - The data is not available yet
+ * - The repository is being cloned or the clone is in progress
+ *
+ * In all other cases, we can use the cached data. That means if the URL specifies a
+ * "symbolic" revspec (e.g. a branch or tag name), we will resolve that revspec to the
+ * corresponding commit ID only once.
+ * This ensures consistentcy as the user navigates to and away from the repository page.
+ */
+function shouldResolveRepositoryInformation(data: ResolveRepoRevisionResult | null): boolean {
+    if (!data) {
+        return true
+    }
+    if (data.repositoryRedirect?.__typename === 'Repository') {
+        return data.repositoryRedirect.mirrorInfo.cloneInProgress || !data.repositoryRedirect.mirrorInfo.cloned
+    }
+    return false
 }

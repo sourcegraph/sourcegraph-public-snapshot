@@ -1,4 +1,5 @@
 import { getGraphQLClient } from '$lib/graphql'
+import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
@@ -6,15 +7,16 @@ import { CommitsPage_CommitsQuery } from './page.gql'
 
 const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ parent, params }) => {
     const client = await getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = await resolveRevision(parent, revision)
 
     const commitsQuery = client.watchQuery({
         query: CommitsPage_CommitsQuery,
         variables: {
             repoName,
-            revision,
+            revision: resolvedRevision,
             first: PAGE_SIZE,
             afterCursor: null,
         },

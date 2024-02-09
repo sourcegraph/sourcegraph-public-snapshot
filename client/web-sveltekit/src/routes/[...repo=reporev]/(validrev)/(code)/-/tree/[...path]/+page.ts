@@ -1,18 +1,20 @@
 import { getGraphQLClient } from '$lib/graphql'
 import { fetchTreeEntries } from '$lib/repo/api/tree'
 import { findReadme } from '$lib/repo/tree'
+import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { TreePageCommitInfoQuery, TreePageReadmeQuery } from './page.gql'
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ parent, params }) => {
     const client = await getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = await resolveRevision(parent, revision)
 
     const treeEntries = fetchTreeEntries({
         repoName,
-        revision,
+        revision: resolvedRevision,
         filePath: params.path,
         first: null,
     }).then(
@@ -28,7 +30,7 @@ export const load: PageLoad = async ({ params }) => {
                 query: TreePageCommitInfoQuery,
                 variables: {
                     repoName,
-                    revision,
+                    revision: resolvedRevision,
                     filePath: params.path,
                     first: null,
                 },
@@ -49,7 +51,7 @@ export const load: PageLoad = async ({ params }) => {
                     query: TreePageReadmeQuery,
                     variables: {
                         repoName,
-                        revision,
+                        revision: resolvedRevision,
                         path: readme.path,
                     },
                 })

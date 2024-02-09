@@ -1,13 +1,15 @@
 import { getGraphQLClient } from '$lib/graphql'
+import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { BlobDiffQuery, BlobPageQuery, BlobSyntaxHighlightQuery } from './page.gql'
 
-export const load: PageLoad = async ({ params, url }) => {
+export const load: PageLoad = async ({ parent, params, url }) => {
     const revisionToCompare = url.searchParams.get('rev')
     const graphqlClient = await getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = await resolveRevision(parent, revision)
 
     return {
         filePath: params.path,
@@ -16,7 +18,7 @@ export const load: PageLoad = async ({ params, url }) => {
                 query: BlobPageQuery,
                 variables: {
                     repoName,
-                    revspec: revision,
+                    revspec: resolvedRevision,
                     path: params.path,
                 },
             })
@@ -31,7 +33,7 @@ export const load: PageLoad = async ({ params, url }) => {
                 query: BlobSyntaxHighlightQuery,
                 variables: {
                     repoName,
-                    revspec: revision,
+                    revspec: resolvedRevision,
                     path: params.path,
                     disableTimeout: false,
                 },
