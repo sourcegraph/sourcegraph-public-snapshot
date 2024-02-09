@@ -416,7 +416,6 @@ export const useCodyChat = ({
 
     const toggleIncludeInferredRepository = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
         const action = scope.includeInferredRepository ? 'disabled' : 'enabled'
-        // TODO CHECK THIS AGAINST SLACK THREAD
         logTranscriptEvent(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
