@@ -83,6 +83,12 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query:   `file:"\\.go(?m:$)"`,
 		},
 		{
+			Name:    "Languages get passed as file filter",
+			Type:    search.TextRequest,
+			Pattern: `file:\.go$ lang:go`,
+			Query:   `file:"\\.go(?m:$)" file:"\\.go(?m:$)"`,
+		},
+		{
 			Name:    "Languages get passed as lang: query",
 			Type:    search.TextRequest,
 			Pattern: `lang:go lang:typescript`,
