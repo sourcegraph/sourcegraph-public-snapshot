@@ -117,7 +117,6 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	if body.N > 1 {
 		body.N = 1
 	}
-
 	// Enterprise virtual model string
 	if body.Model == "starcoder" {
 		body.Model = pickModelBasedOnTrafficSplit(f.config.StarcoderEnterpriseSingleTenantPercent, fireworks.Starcoder16bSingleTenant, fireworks.Starcoder16b)
