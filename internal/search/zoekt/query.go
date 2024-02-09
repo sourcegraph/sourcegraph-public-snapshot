@@ -38,9 +38,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
-	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
-	// more precise language metadata based on file contents analyzed by go-enry, so it's
-	// useful to pass lang: queries down.
+	// By default, languages are converted to file filters. When the 'search-content-based-lang-detection'
+	// feature is enabled, we use Zoekt's native language filters, which are based on the actual language
+	// of the file (as determined by go-enry).
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	if feat.ContentBasedLangFilters {
 		if len(langInclude) > 0 {
