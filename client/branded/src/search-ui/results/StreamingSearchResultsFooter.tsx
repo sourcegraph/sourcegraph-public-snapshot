@@ -7,29 +7,30 @@ import { Alert, LoadingSpinner, Code, Text, H2, H3, ErrorAlert } from '@sourcegr
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
-import styles from './StreamingSearchResultsList.module.scss'
+import styles from './StreamingSearchResultsFooter.module.scss'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<
     React.PropsWithChildren<{
         results?: AggregateStreamingSearchResults
         children?: React.ReactChild | React.ReactChild[]
+        className?: string
     }>
-> = ({ results, children }) => {
+> = ({ results, children, className }) => {
     const skippedDisplay =
         results?.state === 'complete' && results.progress.skipped.find(skipped => skipped.reason.includes('display'))
     const resultLimitHit =
         results?.state === 'complete' && results.progress.skipped.some(skipped => skipped.reason.includes('-limit'))
 
     return (
-        <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
+        <div className={classNames(className, styles.root)}>
             {(!results || results?.state === 'loading') && (
-                <div className="text-center my-4" data-testid="loading-container">
+                <div className="text-center" data-testid="loading-container">
                     <LoadingSpinner />
                 </div>
             )}
 
             {results?.state === 'complete' && results?.results.length > 0 && (
-                <StreamingProgressCount progress={results.progress} state={results.state} className="mt-4 mb-2" />
+                <StreamingProgressCount progress={results.progress} state={results.state} />
             )}
 
             {results?.state === 'error' && (
@@ -37,17 +38,15 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
             )}
 
             {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
-                <div className="pr-3 mt-3 align-self-stretch">
-                    <Alert variant="info">
-                        <H3 as={H2} className="m-0 py-1">
-                            No results matched your search.
-                        </H3>
-                    </Alert>
-                </div>
+                <Alert variant="info">
+                    <H3 as={H2} className="m-0 py-1">
+                        No results matched your search.
+                    </H3>
+                </Alert>
             )}
 
             {(skippedDisplay || resultLimitHit) && (
-                <Alert className="d-flex flex-column m-3" variant="info">
+                <Alert className="d-flex flex-column" variant="info">
                     {skippedDisplay && (
                         <Text className="m-0">
                             <strong>Display limit hit.</strong> {skippedDisplay.message}
@@ -61,6 +60,8 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
                     )}
                 </Alert>
             )}
+
+            {children}
         </div>
     )
 }
