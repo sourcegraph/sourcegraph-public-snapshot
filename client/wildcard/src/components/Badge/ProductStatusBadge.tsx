@@ -64,14 +64,14 @@ export const ProductStatusBadge = React.forwardRef(function ProductStatusBadge(p
         props.status === 'beta'
             ? 'This feature is currently in beta'
             : props.status === 'experimental'
-                ? 'This feature is experimental'
-                : props.status === 'wip'
-                    ? 'This feature is a work in progress'
-                    : props.status === 'new'
-                        ? 'This feature is new'
-                        : props.status === 'private-beta'
-                            ? 'This feature is in private beta'
-                            : ''
+            ? 'This feature is experimental'
+            : props.status === 'wip'
+            ? 'This feature is a work in progress'
+            : props.status === 'new'
+            ? 'This feature is new'
+            : props.status === 'private-beta'
+            ? 'This feature is in private beta'
+            : ''
     const status = props.status === 'private-beta' ? 'private beta' : props.status
 
     if ('linkToDocs' in props) {

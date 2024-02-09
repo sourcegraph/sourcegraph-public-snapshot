@@ -11,7 +11,7 @@ import type { Settings, SettingsCascade } from '../../settings/settings'
  * inside a text file.
  */
 export class Location {
-    constructor(public readonly uri: URL, public readonly range?: Range) { }
+    constructor(public readonly uri: URL, public readonly range?: Range) {}
 }
 
 /**
