@@ -91,6 +91,7 @@ type typeVersion struct {
 
 // Known bug versions
 // versions 4.1.0 to v4.4.2 are affected by a known bug in MVU if initialized in these versions: https://github.com/sourcegraph/sourcegraph/pull/46969
+// versions 5.1.6 to v5.1.9 are affected by a known bug in MVU in which a migration was incorrectly backported introducing drift
 var knownBugVersions = []string{
 	"4.1.0",
 	"4.1.1",
@@ -103,6 +104,11 @@ var knownBugVersions = []string{
 	"4.4.0",
 	"4.4.1",
 	"4.4.2",
+
+	// "5.1.6", // known bug in MVU, standard upgrades unaffected
+	// "5.1.7",
+	// "5.1.8",
+	// "5.1.9",
 }
 
 // PrintSimpleResults prints a quick view of test results, on an errored test only the first line of the error is printed.

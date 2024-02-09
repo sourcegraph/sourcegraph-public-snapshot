@@ -41,4 +41,4 @@ sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 - Make it so it can fail early if needed perhaps?
 - Print stuff (fail/pass/errs) as it goes through.
 - test OOB migrations by seeding data.
-- definition file for tests with known bugs and tests to be run
+- read known bug versions from file, improve visability of known bugs versions, and select by test type
