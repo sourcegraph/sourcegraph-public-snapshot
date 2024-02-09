@@ -162,6 +162,10 @@
 
     &-padding-wrapper {
         padding: 1rem;
+
+        &:empty {
+            display: none;
+        }
     }
 }
 

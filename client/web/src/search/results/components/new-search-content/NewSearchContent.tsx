@@ -251,60 +251,59 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
             />
 
             <div className={styles.content} ref={containerRef}>
-                <div className={styles.contentPaddingWrapper}>
-                    {aggregationUIMode === AggregationUIMode.SearchPage && (
-                        <SearchAggregationResult
+                {aggregationUIMode === AggregationUIMode.SearchPage && (
+                    <SearchAggregationResult
+                        query={submittedURLQuery}
+                        patternType={patternType}
+                        caseSensitive={caseSensitive}
+                        aria-label="Aggregation results panel"
+                        onQuerySubmit={onQuerySubmit}
+                        telemetryService={telemetryService}
+                        className={styles.contentPaddingWrapper}
+                    />
+                )}
+
+                {aggregationUIMode !== AggregationUIMode.SearchPage && (
+                    <div className={styles.contentPaddingWrapper}>
+                        <DidYouMean
+                            telemetryService={props.telemetryService}
                             query={submittedURLQuery}
                             patternType={patternType}
                             caseSensitive={caseSensitive}
-                            aria-label="Aggregation results panel"
-                            onQuerySubmit={onQuerySubmit}
-                            telemetryService={telemetryService}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
-                    )}
 
-                    {aggregationUIMode !== AggregationUIMode.SearchPage && (
-                        <>
-                            <DidYouMean
-                                telemetryService={props.telemetryService}
-                                query={submittedURLQuery}
-                                patternType={patternType}
-                                caseSensitive={caseSensitive}
-                                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            />
+                        {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
+                            <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
+                        )}
 
-                            {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
-                                <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
-                            )}
+                        <GettingStartedTour.Info
+                            className="mt-2 mb-3"
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
 
-                            <GettingStartedTour.Info
-                                className="mt-2 mb-3"
-                                isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            />
-
-                            {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
-                                <div className={classNames(styles.alertArea, 'mt-4')}>
-                                    {results?.alert?.kind === 'unowned-results' ? (
-                                        <UnownedResultsAlert
-                                            alertTitle={results.alert.title}
-                                            alertDescription={results.alert.description}
-                                            queryState={queryState}
-                                            patternType={patternType}
-                                            caseSensitive={caseSensitive}
-                                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                                        />
-                                    ) : (
-                                        <SearchAlert
-                                            alert={results.alert}
-                                            caseSensitive={caseSensitive}
-                                            patternType={patternType}
-                                        />
-                                    )}
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
+                        {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
+                            <div className={classNames(styles.alertArea, 'mt-4')}>
+                                {results?.alert?.kind === 'unowned-results' ? (
+                                    <UnownedResultsAlert
+                                        alertTitle={results.alert.title}
+                                        alertDescription={results.alert.description}
+                                        queryState={queryState}
+                                        patternType={patternType}
+                                        caseSensitive={caseSensitive}
+                                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                                    />
+                                ) : (
+                                    <SearchAlert
+                                        alert={results.alert}
+                                        caseSensitive={caseSensitive}
+                                        patternType={patternType}
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {aggregationUIMode !== AggregationUIMode.SearchPage && (
                     <StreamingSearchResultsList
