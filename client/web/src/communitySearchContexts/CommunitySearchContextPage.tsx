@@ -32,7 +32,7 @@ const specTypes: { [k in CommunitySearchContextSpecs]: number } = {
     backstage: 0,
     chakraui: 1,
     cncf: 2,
-    temporal: 3,
+    temporalio: 3,
     o3de: 4,
     stackStorm: 5,
     kubernetes: 6,
