@@ -74,7 +74,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
 
     const onAddInstallation = async (app: NonNullable<GitHubAppByIDResult['gitHubApp']>): Promise<void> => {
         try {
-            const req = await fetch(`/.auth/githubapp/state?id=${app?.id}&domain=${app?.domain}`)
+            const req = await fetch(`/githubapp/state?id=${app?.id}&domain=${app?.domain}`)
             const state = await req.text()
             const trailingSlash = app.appURL.endsWith('/') ? '' : '/'
             window.location.assign(`${app.appURL}${trailingSlash}installations/new?state=${state}`)

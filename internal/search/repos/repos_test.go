@@ -1,11 +1,13 @@
 package repos
 
 import (
+	stdcmp "cmp"
 	"context"
 	"flag"
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -14,7 +16,6 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -537,11 +538,11 @@ func TestResolverIterateRepoRevs(t *testing.T) {
 			var want []RepoRevSpecs
 			want = append(want, tc.want...)
 
-			less := func(a, b RepoRevSpecs) bool {
-				return a.Repo.ID < b.Repo.ID
+			compare := func(a, b RepoRevSpecs) int {
+				return stdcmp.Compare(a.Repo.ID, b.Repo.ID)
 			}
-			slices.SortFunc(got, less)
-			slices.SortFunc(want, less)
+			slices.SortFunc(got, compare)
+			slices.SortFunc(want, compare)
 
 			if diff := cmp.Diff(got, want); diff != "" {
 				t.Errorf("unexpected (-have, +want):\n%s", diff)
@@ -654,11 +655,18 @@ func TestRepoHasFileContent(t *testing.T) {
 		},
 	}
 	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatch func(*protocol.FileMatch)) (limitHit bool, err error) {
+		var pattern string
+		if pt, ok := p.Query.(*protocol.PatternNode); ok {
+			pattern = pt.Value
+		} else {
+			return false, errors.New("expected a simple regex pattern")
+		}
+
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
 				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
 					for line := range lines {
-						if p.Pattern == line || p.Pattern == "" {
+						if pattern == line || pattern == "" {
 							onMatch(&protocol.FileMatch{})
 						}
 					}

@@ -91,8 +91,17 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 			return
 		}
 
-		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
+		if r.commitErr != nil && errors.HasType(r.commitErr, &gitdomain.RevisionNotFoundError{}) {
+			// If the commit is not found, attempt to do a ensure revision call.
+			_, err := r.gitserverClient.ResolveRevision(ctx, r.gitRepo, string(r.oid), gitserver.ResolveRevisionOptions{})
+			if err != nil {
+				r.logger.Error("failed to resolve commit", log.Error(err), log.String("oid", string(r.oid)))
+			} else {
+				// Try again to resolve the commit.
+				r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
+			}
+		}
 	})
 	return r.commit, r.commitErr
 }
@@ -215,12 +224,11 @@ func (r *GitCommitResolver) CanonicalURL() string {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	repo, err := r.repoResolver.getRepo(ctx)
+	linker, err := r.repoResolver.getLinker(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
+	return linker.Commit(api.CommitID(r.oid)), nil
 }
 
 type TreeArgs struct {

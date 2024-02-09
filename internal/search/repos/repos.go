@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -841,9 +841,11 @@ func (r *Resolver) filterRepoHasFileContent(
 
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, searcherGRPCConnectionCache *defaults.ConnectionCache, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
 	patternInfo := search.TextPatternInfo{
-		Pattern:               args.Content,
-		IsNegated:             args.Negated,
-		IsRegExp:              true,
+		Query: &protocol.PatternNode{
+			Value:     args.Content,
+			IsNegated: args.Negated,
+			IsRegExp:  true,
+		},
 		IsCaseSensitive:       false,
 		FileMatchLimit:        1,
 		PatternMatchesContent: true,
@@ -1045,7 +1047,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 				matched = append(matched, rev)
 			}
 		}
-		slices.SortFunc(matched, query.RevisionSpecifier.Less)
+		slices.SortFunc(matched, query.RevisionSpecifier.Compare)
 		return
 	}
 
@@ -1054,7 +1056,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
-	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
+	slices.SortFunc(clashing, query.RevisionSpecifier.Compare)
 	return
 }
 

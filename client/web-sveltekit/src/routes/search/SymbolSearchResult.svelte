@@ -1,9 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import { getSymbolIconPath } from '$lib/search/symbolIcons'
     import type { SymbolMatch } from '$lib/shared'
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
@@ -12,6 +10,7 @@
     import CodeHostIcon from './CodeHostIcon.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
+    import SymbolKind from '$lib/search/SymbolKind.svelte'
 
     export let result: SymbolMatch
 
@@ -20,14 +19,12 @@
         endLine: symbol.line,
     }))
 
-    let hasBeenVisible = false
-    let highlightedHTMLRows: string[][] = []
-    async function onIntersection(event: { detail: boolean }) {
-        if (hasBeenVisible) {
-            return
-        }
-        hasBeenVisible = true
-        highlightedHTMLRows = await fetchFileRangeMatches({ result, ranges: ranges })
+    let visible = false
+    let highlightedHTMLRows: Promise<string[][]> | undefined
+    $: if (visible) {
+        // We rely on fetchFileRangeMatches to cache the result for us so that repeated
+        // calls will not result in repeated network requests.
+        highlightedHTMLRows = fetchFileRangeMatches({ result, ranges: ranges })
     }
 </script>
 
@@ -40,19 +37,21 @@
         {/if}
     </svelte:fragment>
     <svelte:fragment slot="body">
-        <div use:observeIntersection on:intersecting={onIntersection}>
+        <div use:observeIntersection on:intersecting={event => (visible = event.detail)}>
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <div class="symbol-icon--kind-{symbol.kind.toLowerCase()}">
-                            <Icon svgPath={getSymbolIconPath(symbol.kind)} inline />
+                        <div class="symbol-kind">
+                            <SymbolKind symbolKind={symbol.kind} />
                         </div>
-                        <CodeExcerpt
-                            startLine={symbol.line - 1}
-                            plaintextLines={['']}
-                            highlightedHTMLRows={highlightedHTMLRows[index]}
-                            --background-color="transparent"
-                        />
+                        {#await highlightedHTMLRows then result}
+                            <CodeExcerpt
+                                startLine={symbol.line - 1}
+                                plaintextLines={['']}
+                                highlightedHTMLRows={result?.[index]}
+                                --background-color="transparent"
+                            />
+                        {/await}
                     </div>
                 </a>
             {/each}
@@ -61,18 +60,20 @@
 </SearchResult>
 
 <style lang="scss">
-    @import '@sourcegraph/shared/src/symbols/SymbolIcon.module.scss';
-
     .result {
         display: flex;
         align-items: center;
         width: 100%;
         background-color: var(--code-bg);
-        padding: 0.25rem;
+        padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
     }
 
-    a {
+    .symbol-kind {
+        margin-right: 0.5rem;
+    }
+
+    a:hover {
         text-decoration: none;
     }
 </style>

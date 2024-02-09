@@ -21,7 +21,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 		events          []SearchEvent
 		wantFilterValue string
 		wantFilterCount int
-		wantFilterKind  string
+		wantFilterKind  FilterKind
 	}{
 		{
 			name: "CommitMatch",
@@ -63,17 +63,15 @@ func TestSearchFiltersUpdate(t *testing.T) {
 		},
 		{
 			name: "RepoMatch",
-			events: []SearchEvent{
-				{
-					Results: []result.Match{
-						&result.RepoMatch{
-							Name: "foo",
-						},
+			events: []SearchEvent{{
+				Results: []result.Match{
+					&result.RepoMatch{
+						Name: "foo",
 					},
 				},
-			},
-			wantFilterValue: "repo:^foo$",
-			wantFilterKind:  "repo",
+			}},
+			wantFilterValue: "type:repo",
+			wantFilterKind:  "type",
 			wantFilterCount: 1,
 		},
 		{
@@ -92,6 +90,24 @@ func TestSearchFiltersUpdate(t *testing.T) {
 			},
 			wantFilterValue: "repo:^foo$",
 			wantFilterKind:  "repo",
+			wantFilterCount: 2,
+		},
+		{
+			name: "FileMatch, lang: filter",
+			events: []SearchEvent{
+				{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: "testing.yaml",
+							},
+							ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 2)}},
+						},
+					},
+				},
+			},
+			wantFilterValue: "lang:yaml",
+			wantFilterKind:  "lang",
 			wantFilterCount: 2,
 		},
 		{

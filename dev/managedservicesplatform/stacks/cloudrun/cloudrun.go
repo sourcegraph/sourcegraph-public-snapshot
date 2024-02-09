@@ -3,14 +3,19 @@ package cloudrun
 import (
 	"bytes"
 	"html/template"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganization"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryteam"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/key"
+	sentryproject "github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/project"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
@@ -27,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/dynamicvariables"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/sentryprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/internal/builder"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/internal/builder/job"
@@ -37,7 +43,10 @@ import (
 )
 
 type CrossStackOutput struct {
-	RedisInstanceID *string
+	DiagnosticsSecret  *random.Output
+	RedisInstanceID    *string
+	CloudSQLInstanceID *string
+	SentryProject      sentryproject.Project
 }
 
 type Variables struct {
@@ -68,6 +77,8 @@ var (
 
 const tfVarKeyResolvedImageTag = "resolved_image_tag"
 
+const SentryOrganization = "sourcegraph"
+
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
 // monolithic stack that encompasses all the core components of an MSP service,
 // including networking and dependencies like Redis.
@@ -82,6 +93,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		dynamicvariables.With(vars.StableGenerate, func() (stack.TFVars, error) {
 			resolvedImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
 			return stack.TFVars{tfVarKeyResolvedImageTag: resolvedImageTag}, err
+		}),
+		sentryprovider.With(gsmsecret.DataConfig{
+			Secret:    googlesecretsmanager.SecretSentryAuthToken,
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
 		}))
 	if err != nil {
 		return nil, err
@@ -114,6 +129,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	if dnsName != "" {
 		cloudRunBuilder.AddEnv("EXTERNAL_DNS_NAME", dnsName)
 	}
+
+	// Add environment ID env var
+	cloudRunBuilder.AddEnv("ENVIRONMENT_ID", vars.Environment.ID)
 
 	// Add user-configured env vars
 	if err := addContainerEnvVars(cloudRunBuilder, vars.Environment.Env, vars.Environment.SecretEnv, envVariablesData{
@@ -187,6 +205,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		sslCertDirs = append(sslCertDirs, "/etc/ssl/custom-certs")
 	}
 
+	var cloudSQLInstanceID *string
 	if vars.Environment.Resources != nil && vars.Environment.Resources.PostgreSQL != nil {
 		pgSpec := *vars.Environment.Resources.PostgreSQL
 		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
@@ -210,6 +229,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Cloud SQL instance")
 		}
+
+		cloudSQLInstanceID = sqlInstance.Instance.Id()
 
 		// Add parameters required for authentication
 		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
@@ -260,6 +281,44 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		}
 	}
 
+	// Sentry
+	var sentryProject sentryproject.Project
+	{
+		id := id.Group("sentry")
+		// Get the Sentry organization
+		organization := datasentryorganization.NewDataSentryOrganization(stack, id.TerraformID("organization"), &datasentryorganization.DataSentryOrganizationConfig{
+			Slug: pointers.Ptr(SentryOrganization),
+		})
+
+		// Get the Sourcegraph team - we don't use individual owner teams
+		// because it's hard to tell whether they already exist or not, and
+		// it's not really important enough to force operators to create a
+		// team by hand. We depend on Opsgenie teams for concrete ownership
+		// instead.
+		sentryTeam := datasentryteam.NewDataSentryTeam(stack, id.TerraformID("team"), &datasentryteam.DataSentryTeamConfig{
+			Organization: organization.Id(),
+			Slug:         pointers.Ptr("sourcegraph"),
+		})
+
+		// Create the project
+		sentryProject = sentryproject.NewProject(stack, id.TerraformID("project"), &sentryproject.ProjectConfig{
+			Organization: organization.Id(),
+			Name:         pointers.Stringf("%s - %s", vars.Service.GetName(), vars.Environment.ID),
+			Slug:         pointers.Stringf("%s-%s", vars.Service.ID, vars.Environment.ID),
+			Teams:        &[]*string{sentryTeam.Slug()},
+			DefaultRules: pointers.Ptr(false),
+		})
+
+		// Create a DSN
+		key := key.NewKey(stack, id.TerraformID("dsn"), &key.KeyConfig{
+			Organization: organization.Id(),
+			Project:      sentryProject.Slug(),
+			Name:         pointers.Ptr("Managed Servcies Platform"),
+		})
+
+		cloudRunBuilder.AddEnv("SENTRY_DSN", *key.DsnPublic())
+	}
+
 	// Finalize output of builder
 	cloudRunBuilder.AddEnv("SSL_CERT_DIR", strings.Join(sslCertDirs, ":"))
 	cloudRunResource, err := cloudRunBuilder.Build(stack, builder.Variables{
@@ -291,7 +350,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	locals.Add("image_tag", *imageTag.StringValue,
 		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
-		RedisInstanceID: redisInstanceID,
+		DiagnosticsSecret:  diagnosticsSecret,
+		RedisInstanceID:    redisInstanceID,
+		CloudSQLInstanceID: cloudSQLInstanceID,
+		SentryProject:      sentryProject,
 	}, nil
 }
 

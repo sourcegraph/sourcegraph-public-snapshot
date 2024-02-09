@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -15,9 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/conc/pool"
@@ -63,9 +59,9 @@ var _ Client = &clientImplementor{}
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
-	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
-	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
+	AddrForRepo(ctx context.Context, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
 	// GetAddressWithClient returns the address and client for a gitserver instance.
@@ -78,12 +74,8 @@ type ClientSource interface {
 func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
-		logger: logger,
-		scope:  scope,
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               scope,
 		operations:          getOperations(),
 		clientSource:        conns,
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -95,12 +87,8 @@ func NewTestClient(t testing.TB) TestClient {
 	logger := logtest.Scoped(t)
 
 	return &clientImplementor{
-		logger: logger,
-		scope:  fmt.Sprintf("gitserver.test.%s", t.Name()),
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               fmt.Sprintf("gitserver.test.%s", t.Name()),
 		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -196,10 +184,6 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
-	// userAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	userAgent string
-
 	// the current scope of the client.
 	scope string
 
@@ -221,7 +205,6 @@ func (c *clientImplementor) Scoped(scope string) Client {
 	return &clientImplementor{
 		logger:       c.logger,
 		scope:        appendScope(c.scope, scope),
-		userAgent:    c.userAgent,
 		operations:   c.operations,
 		clientSource: c.clientSource,
 	}
@@ -234,15 +217,39 @@ func appendScope(existing, new string) string {
 	return existing + "." + new
 }
 
-type RawBatchLogResult struct {
-	Stdout string
-	Error  error
-}
-type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
-
 type HunkReader interface {
-	Read() (*Hunk, error)
+	Read() (*gitdomain.Hunk, error)
 	Close() error
+}
+
+// BlameOptions configures a blame.
+type BlameOptions struct {
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	Range            *BlameRange  `json:",omitempty" url:",omitempty"`
+}
+
+func (o *BlameOptions) Attrs() []attribute.KeyValue {
+	kvs := []attribute.KeyValue{
+		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
+	}
+	if o.Range != nil {
+		kvs = append(kvs, o.Range.Attrs()...)
+	}
+	return kvs
+}
+
+type BlameRange struct {
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+}
+
+func (o *BlameRange) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("startLine", o.StartLine),
+		attribute.Int("endLine", o.EndLine),
+	}
 }
 
 type CommitLog struct {
@@ -271,11 +278,6 @@ type Client interface {
 
 	// ArchiveReader streams back the file contents of an archived git repo.
 	ArchiveReader(ctx context.Context, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
-
-	// BatchLog invokes the given callback with the `git log` output for a batch of repository
-	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
-	// to abort processing further results.
-	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
 	// StreamBlameFile returns Git blame information about a file in a streaming fashion.
 	StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error)
@@ -306,10 +308,10 @@ type Client interface {
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
 
 	// ListBranches returns a list of all branches in the repository.
-	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error)
+	ListBranches(ctx context.Context, repo api.RepoName) ([]*gitdomain.Branch, error)
 
-	// MergeBase returns the merge base commit for the specified commits.
-	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
+	// MergeBase returns the merge base commit sha for the specified revspecs.
+	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)
 
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
@@ -326,8 +328,7 @@ type Client interface {
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
-	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
-	// into an equivalent set of commit hashes
+	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes.
 	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
@@ -358,6 +359,14 @@ type Client interface {
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
+	//
+	// If you just need to check a file's existence, use Stat, not a file reader.
+	//
+	// If the file doesn't exist, the returned error will pass the os.IsNotExist()
+	// check.
+	//
+	// If the path points to a submodule, a reader for an empty file is returned
+	// (ie. io.EOF is returned immediately).
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -382,36 +391,15 @@ type Client interface {
 	// longer required.
 	Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error)
 
-	// ReadFile returns the full contents of the named file at commit.
-	// (If you just need to check a file's existence, use Stat, not ReadFile.)
-	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
-
 	// BranchesContaining returns a map from branch names to branch tip hashes for
 	// each branch containing the given commit.
+	// The returned branches will be in short form (e.g. "master" instead of
+	// "refs/heads/master").
 	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error)
 
 	// RefDescriptions returns a map from commits to descriptions of the tip of each
 	// branch and tag of the given repository.
 	RefDescriptions(ctx context.Context, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
-
-	// CommitExists determines if the given commit exists in the given repository.
-	CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error)
-
-	// CommitsExist determines if the given commits exists in the given repositories. This function returns
-	// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
-	// exists.
-	CommitsExist(ctx context.Context, repoCommits []api.RepoCommit) ([]bool, error)
-
-	// Head determines the tip commit of the default branch for the given repository.
-	// If no HEAD revision exists for the given repository (which occurs with empty
-	// repositories), a false-valued flag is returned along with a nil error and
-	// empty revision.
-	Head(ctx context.Context, repo api.RepoName) (string, bool, error)
-
-	// CommitDate returns the time that the given commit was committed. If the given
-	// revision does not exist, a false-valued flag is returned along with a nil
-	// error and zero-valued time.
-	CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will
@@ -419,6 +407,9 @@ type Client interface {
 	// many commits will be returned.
 	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
 
+	// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
+	// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
+	// into component parts separately.
 	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
 
 	// CommitsUniqueToBranch returns a map from commits that exist on a particular
@@ -429,24 +420,12 @@ type Client interface {
 	// all commits reachable from HEAD.
 	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 
-	// LsFiles returns the output of `git ls-files`
+	// LsFiles returns the output of `git ls-files`.
 	LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
-	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
-	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
-	// their associated repository or commit are unresolvable.
-	//
-	// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
-	// resulting commit to be nil, but not fail the entire operation.
-	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
-
-	// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
+	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.
-	//
-	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
-	// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
-	// the repository or if the commit must be fetched from the remote.
-	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
+	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (*gitdomain.Commit, error)
 
 	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
@@ -461,9 +440,6 @@ type Client interface {
 	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
 	// onCommit function for each.
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
-
-	// Addrs returns a list of gitserver addresses associated with the Sourcegraph instance.
-	Addrs() []string
 
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
@@ -568,22 +544,12 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 	return resp, nil
 }
 
-func (c *clientImplementor) Addrs() []string {
-	address := c.clientSource.Addresses()
-
-	addrs := make([]string, 0, len(address))
-	for _, addr := range address {
-		addrs = append(addrs, addr.Address())
-	}
-	return addrs
-}
-
 func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	return c.clientSource.AddrForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.AddrForRepo(ctx, repo)
 }
 
 func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.ClientForRepo(ctx, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -632,15 +598,6 @@ func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
 		Treeish:   o.Treeish,
 		Format:    string(o.Format),
 		Pathspecs: protoPathSpecs,
-	}
-}
-
-type BatchLogOptions protocol.BatchLogRequest
-
-func (opts BatchLogOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.Int("numRepoCommits", len(opts.RepoCommits)),
-		attribute.String("Format", opts.Format),
 	}
 }
 
@@ -704,7 +661,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	req := &proto.ExecRequest{
 		Repo:      string(repoName),
 		Args:      stringsToByteSlices(c.args[1:]),
-		Stdin:     c.stdin,
 		NoTimeout: c.noTimeout,
 
 		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
@@ -717,92 +673,23 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	}
 	r := streamio.NewReader(func() ([]byte, error) {
 		msg, err := stream.Recv()
-		if status.Code(err) == codes.Canceled {
-			return nil, context.Canceled
-		} else if err != nil {
+		if err != nil {
 			return nil, err
 		}
 		return msg.GetData(), nil
 	})
 
-	return &readCloseWrapper{r: r, closeFn: done}, nil
+	return &readCloseWrapper{Reader: r, closeFn: done}, nil
 }
 
 type readCloseWrapper struct {
-	r       io.Reader
+	io.Reader
 	closeFn func()
-}
-
-func (r *readCloseWrapper) Read(p []byte) (int, error) {
-	n, err := r.r.Read(p)
-	if err != nil {
-		err = convertGRPCErrorToGitDomainError(err)
-	}
-
-	return n, err
 }
 
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-// convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
-// If the error is not a GRPC error, it is returned as-is.
-func convertGRPCErrorToGitDomainError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		switch payload := detail.(type) {
-
-		case *proto.ExecStatusPayload:
-			return &CommandStatusError{
-				Message:    st.Message(),
-				Stderr:     payload.Stderr,
-				StatusCode: payload.StatusCode,
-			}
-
-		case *proto.NotFoundPayload:
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(payload.Repo),
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			}
-		}
-	}
-
-	return err
-}
-
-type CommandStatusError struct {
-	Message    string
-	StatusCode int32
-	Stderr     string
-}
-
-func (c *CommandStatusError) Error() string {
-	stderr := c.Stderr
-	if len(stderr) > 100 {
-		stderr = stderr[:100] + "... (truncated)"
-	}
-	if c.Message != "" {
-		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
-	}
-	if c.StatusCode != 0 {
-		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
-	}
-	return stderr
 }
 
 func isRevisionNotFound(err string) bool {
@@ -832,14 +719,17 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	cs, err := client.Search(ctx, args.ToProto())
 	if err != nil {
-		return false, convertGitserverError(err)
+		return false, err
 	}
 
 	limitHit := false
 	for {
 		msg, err := cs.Recv()
 		if err != nil {
-			return limitHit, convertGitserverError(err)
+			if errors.Is(err, io.EOF) {
+				return limitHit, nil
+			}
+			return limitHit, err
 		}
 
 		switch m := msg.Message.(type) {
@@ -853,194 +743,10 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 }
 
-func convertGitserverError(err error) error {
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		if notFound, ok := detail.(*proto.NotFoundPayload); ok {
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(notFound.GetRepo()),
-				CloneProgress:   notFound.GetCloneProgress(),
-				CloneInProgress: notFound.GetCloneInProgress(),
-			}
-		}
-	}
-
-	return err
-}
-
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_client_deadline_exceeded",
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
-
-// BatchLog invokes the given callback with the `git log` output for a batch of repository
-// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
-// to abort processing further results.
-func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs(), MetricLabelValues: []string{c.scope}})
-	defer endObservation(1, observation.Args{})
-
-	type clientAndError struct {
-		client  proto.GitserverServiceClient
-		dialErr error // non-nil if there was an error dialing the client
-	}
-
-	// Make a request to a single gitserver shard and feed the results to the user-supplied
-	// callback. This function is invoked multiple times (and concurrently) in the loops below
-	// this function definition.
-	performLogRequestToShard := func(ctx context.Context, addr string, grpcClient clientAndError, repoCommits []api.RepoCommit) (err error) {
-		var numProcessed int
-		repoNames := repoNamesFromRepoCommits(repoCommits)
-
-		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
-			MetricLabelValues: []string{c.scope},
-			Attrs: []attribute.KeyValue{
-				attribute.String("addr", addr),
-				attribute.Int("numRepos", len(repoNames)),
-				attribute.Int("numRepoCommits", len(repoCommits)),
-			},
-		})
-		defer func() {
-			endObservation(1, observation.Args{
-				Attrs: []attribute.KeyValue{
-					attribute.Int("numProcessed", numProcessed),
-				},
-			})
-		}()
-
-		request := protocol.BatchLogRequest{
-			RepoCommits: repoCommits,
-			Format:      opts.Format,
-		}
-
-		var response protocol.BatchLogResponse
-
-		client, err := grpcClient.client, grpcClient.dialErr
-		if err != nil {
-			return err
-		}
-
-		resp, err := client.BatchLog(ctx, request.ToProto())
-		if err != nil {
-			return err
-		}
-
-		response.FromProto(resp)
-		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-
-		for _, result := range response.Results {
-			var err error
-			if result.CommandError != "" {
-				err = errors.New(result.CommandError)
-			}
-
-			rawResult := RawBatchLogResult{
-				Stdout: result.CommandOutput,
-				Error:  err,
-			}
-			if err := callback(result.RepoCommit, rawResult); err != nil {
-				return errors.Wrap(err, "commitLogCallback")
-			}
-
-			numProcessed++
-		}
-
-		return nil
-	}
-
-	// Construct batches of requests keyed by the address of the server that will receive the batch.
-	// The results from gitserver will have to be re-interlaced before returning to the client, so we
-	// don't need to be particularly concerned about order here.
-
-	batches := make(map[string][]api.RepoCommit, len(opts.RepoCommits))
-	addrsByName := make(map[api.RepoName]string, len(opts.RepoCommits))
-
-	for _, repoCommit := range opts.RepoCommits {
-		addr, ok := addrsByName[repoCommit.Repo]
-		if !ok {
-			addr = c.AddrForRepo(ctx, repoCommit.Repo)
-			addrsByName[repoCommit.Repo] = addr
-		}
-
-		batches[addr] = append(batches[addr], api.RepoCommit{
-			Repo:     repoCommit.Repo,
-			CommitID: repoCommit.CommitID,
-		})
-	}
-
-	// Perform each batch request concurrently up to a maximum limit of 32 requests
-	// in-flight at one time.
-	//
-	// This limit will be useless in practice most of the  time as we should only be
-	// making one request per shard and instances should _generally_ have fewer than
-	// 32 gitserver shards. This condition is really to catch unexpected bad behavior.
-	// At the time this limit was chosen, we have 20 gitserver shards on our Cloud
-	// environment, which holds a large proportion of GitHub repositories.
-	//
-	// This operation returns partial results in the case of a malformed or missing
-	// repository or a bad commit reference, but does not attempt to return partial
-	// results when an entire shard is down. Any of these operations failing will
-	// cause an error to be returned from the entire BatchLog function.
-
-	sem := semaphore.NewWeighted(int64(32))
-	g, ctx := errgroup.WithContext(ctx)
-
-	for addr, repoCommits := range batches {
-		// avoid capturing loop variable below
-		addr, repoCommits := addr, repoCommits
-
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return err
-		}
-
-		client, err := c.ClientForRepo(ctx, repoCommits[0].Repo)
-		if err != nil {
-			err = errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
-		}
-
-		ce := clientAndError{client: client, dialErr: err}
-
-		g.Go(func() (err error) {
-			defer sem.Release(1)
-
-			return performLogRequestToShard(ctx, addr, ce, repoCommits)
-		})
-	}
-
-	return g.Wait()
-}
-
-func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
-	repoNames := make([]string, 0, len(repoCommits))
-	repoNameSet := make(map[api.RepoName]struct{}, len(repoCommits))
-
-	for _, rc := range repoCommits {
-		if _, ok := repoNameSet[rc.Repo]; ok {
-			continue
-		}
-
-		repoNameSet[rc.Repo] = struct{}{}
-		repoNames = append(repoNames, string(rc.Repo))
-	}
-
-	return repoNames
-}
 
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {
@@ -1201,7 +907,7 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	})
 	defer endObservation(1, observation.Args{})
 
-	numPossibleShards := len(c.Addrs())
+	numPossibleShards := len(c.clientSource.Addresses())
 
 	shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 	for _, r := range repos {
@@ -1226,7 +932,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		req := req
 		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
 			return client.RepoCloneProgress(ctx, req)
-
 		})
 	}
 
@@ -1239,13 +944,11 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 	}
 	for _, r := range res {
-
 		for repo, info := range r.Results {
 			var rp protocol.RepoCloneProgress
 			rp.FromProto(info)
 			result.Results[api.RepoName(repo)] = &rp
 		}
-
 	}
 
 	return result, nil
@@ -1595,7 +1298,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 
 	grpcResp, err := client.GetObject(ctx, req.ToProto())
 	if err != nil {
-
 		return nil, err
 	}
 
@@ -1639,10 +1341,6 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 	for _, r := range revSpecs {
 		if r.RevSpec != "" {
 			args = append(args, r.RevSpec)
-		} else if r.RefGlob != "" {
-			args = append(args, "--glob="+r.RefGlob)
-		} else if r.ExcludeRefGlob != "" {
-			args = append(args, "--exclude="+r.ExcludeRefGlob)
 		} else {
 			args = append(args, "HEAD")
 		}

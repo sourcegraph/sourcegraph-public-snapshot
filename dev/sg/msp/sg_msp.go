@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/run"
 
@@ -145,14 +147,15 @@ sg msp init -owner core-services -name "MSP Example Service" msp-example
 				return ss
 			}),
 			Action: func(c *cli.Context) error {
+				if c.Args().Len() != 2 {
+					return errors.Newf("exactly 2 arguments required, '<service ID>' and '<env ID>' - " +
+						" this command is for adding an environment to an existing service, did you mean to use 'sg msp init' instead?")
+				}
 				svc, err := useServiceArgument(c)
 				if err != nil {
 					return err
 				}
-				envID := c.Args().Get(1)
-				if envID == "" {
-					return errors.New("second argument <environment ID> is required")
-				}
+				envID := c.Args().Get(1) // we already validate 2 arguments
 				if existing := svc.GetEnvironment(envID); existing != nil {
 					return errors.Newf("environment %q already exists", envID)
 				}
@@ -211,8 +214,8 @@ sg msp generate -all <service>
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
-					Usage: "Disable updating of any values that are evaluated at generation time",
-					Value: false,
+					Usage: "Configure updating of any values that are evaluated at generation time",
+					Value: true,
 				},
 			},
 			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
@@ -359,7 +362,7 @@ The '-handbook-path' flag can also be used to specify where sourcegraph/handbook
 						for _, s := range services {
 							svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 							if err != nil {
-								return err
+								return errors.Wrapf(err, "load service %q", s)
 							}
 							serviceSpecs = append(serviceSpecs, svc)
 							doc, err := operationdocs.Render(*svc, opts)
@@ -723,6 +726,47 @@ Supports completions on services and environments.`,
 						return nil
 					},
 				},
+			},
+		},
+		{
+			Name:   "fleet",
+			Usage:  "Summarize aspects of the MSP fleet",
+			Before: msprepo.UseManagedServicesRepo,
+			Action: func(c *cli.Context) error {
+				services, err := msprepo.ListServices()
+				if err != nil {
+					return err
+				}
+
+				var environmentCount int
+				categories := make(map[spec.EnvironmentCategory]int)
+				teams := make(map[string]int)
+				for _, s := range services {
+					svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
+					if err != nil {
+						return err
+					}
+					for _, t := range svc.Service.Owners {
+						teams[t] += 1
+					}
+					for _, e := range svc.Environments {
+						environmentCount += 1
+						categories[e.Category] += 1
+					}
+				}
+
+				teamNames := maps.Keys(teams)
+				sort.Strings(teamNames)
+				summary := fmt.Sprintf(`Managed Services Platform fleet summary:
+
+- %d services
+- %d teams (%s)
+- %d environments
+`, len(services), len(teams), strings.Join(teamNames, ", "), environmentCount)
+				for category, count := range categories {
+					summary += fmt.Sprintf("\t- %s environments: %d\n", category, count)
+				}
+				return std.Out.WriteMarkdown(summary)
 			},
 		},
 		{

@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/log"
 
@@ -58,7 +59,8 @@ var splitOptions = codeintelContext.SplitOptions{
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) (err error) {
 	embeddingsConfig := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if embeddingsConfig == nil {
-		return errors.New("embeddings are not configured or disabled")
+		logger.Warn("embeddings are not configured or disabled")
+		return nil
 	}
 
 	ctx = featureflag.WithFlags(ctx, h.db.FeatureFlags())
@@ -239,7 +241,12 @@ type revisionFetcher struct {
 }
 
 func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
-	return r.gitserver.ReadFile(ctx, r.repo, r.revision, fileName)
+	fr, err := r.gitserver.NewFileReader(ctx, r.repo, r.revision, fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer fr.Close()
+	return io.ReadAll(fr)
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {

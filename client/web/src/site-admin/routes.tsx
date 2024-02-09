@@ -26,6 +26,7 @@ const AnalyticsExtensionsPage = lazyComponent(
     'AnalyticsExtensionsPage'
 )
 const AnalyticsUsersPage = lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
+const AnalyticsCodyPage = lazyComponent(() => import('./analytics/AnalyticsCodyPage'), 'AnalyticsCodyPage')
 const AnalyticsCodeInsightsPage = lazyComponent(
     () => import('./analytics/AnalyticsCodeInsightsPage'),
     'AnalyticsCodeInsightsPage'
@@ -202,10 +203,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: () => <AnalyticsSearchPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/code-intel',
         render: () => <AnalyticsCodeIntelPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/analytics/extensions',
@@ -214,6 +217,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/users',
         render: () => <AnalyticsUsersPage />,
+    },
+    {
+        path: '/analytics/cody',
+        render: () => <AnalyticsCodyPage />,
     },
     {
         path: '/analytics/code-insights',
@@ -228,6 +235,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: () => <AnalyticsNotebooksPage />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/configuration',
@@ -380,17 +388,17 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/dotcom/product/subscriptions/:subscriptionUUID',
-        render: () => <DotComSiteAdminProductSubscriptionPage />,
+        render: props => <DotComSiteAdminProductSubscriptionPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/subscriptions',
-        render: () => <SiteAdminProductSubscriptionsPage />,
+        render: props => <SiteAdminProductSubscriptionsPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/dotcom/product/licenses',
-        render: () => <SiteAdminLicenseKeyLookupPage />,
+        render: props => <SiteAdminLicenseKeyLookupPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
@@ -456,11 +464,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
+        condition: ({ license }) => license.isCodeSearchEnabled,
     },
     {
         path: '/lsif-uploads/:id',

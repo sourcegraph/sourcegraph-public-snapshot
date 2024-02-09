@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -35,6 +36,20 @@ type usageStats struct {
 	characters int
 	// tokens is the number of tokens consumed in the input or response.
 	tokens int
+}
+
+// Hop-by-Hop headers that should not be copied when proxying upstream requests
+// List from https://cs.opensource.google/go/go/+/master:src/net/http/httputil/reverseproxy.go;l=294;drc=7abeefd2b1a03932891e581f1f90656ffebebce4
+var hopHeaders = map[string]struct{}{
+	"Connection":          {},
+	"Proxy-Connection":    {}, // non-standard but still sent by libcurl and rejected by e.g. google
+	"Keep-Alive":          {},
+	"Proxy-Authenticate":  {},
+	"Proxy-Authorization": {},
+	"Te":                  {}, // canonicalized version of "TE"
+	"Trailer":             {}, // not Trailers per URL above; https://www.rfc-editor.org/errata_search.php?eid=4522
+	"Transfer-Encoding":   {},
+	"Upgrade":             {},
 }
 
 // upstreamHandlerMethods declares a set of methods that are used throughout the
@@ -64,7 +79,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata(context.Context, log.Logger, *actor.Actor, codygateway.Feature, ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata(ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -232,7 +247,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, feature, body)
+			model, requestMetadata := methods.getRequestMetadata(body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -332,6 +347,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			defer func() { _ = resp.Body.Close() }()
 			// Forward upstream http headers.
 			for k, vv := range resp.Header {
+				if _, ok := hopHeaders[http.CanonicalHeaderKey(k)]; ok {
+					// do not forward
+					continue
+				}
 				for _, v := range vv {
 					w.Header().Add(k, v)
 				}
@@ -415,6 +434,11 @@ func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[s
 func isAllowedModel(allowedModels []string, model string) bool {
 	for _, m := range allowedModels {
 		if strings.EqualFold(m, model) {
+			return true
+		}
+
+		// Expand virtual model names
+		if m == "fireworks/starcoder" && (model == "fireworks/"+fireworks.Starcoder7b || model == "fireworks/"+fireworks.Starcoder16b || model == "fireworks/"+fireworks.Starcoder16bSingleTenant) {
 			return true
 		}
 	}

@@ -14,6 +14,7 @@ import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
 
 import styles from './FileMatchChildren.module.scss'
+import resultStyles from './ResultContainer.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     result: ContentMatch
@@ -53,40 +54,38 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     }, [telemetryService])
 
     return (
-        <div
-            className={styles.fileMatchChildren}
-            data-testid="file-match-children"
-            data-selectable-search-results-group="true"
-        >
+        <div data-testid="file-match-children" data-selectable-search-results-group="true">
             {grouped.length > 0 &&
                 grouped.map(group => (
                     <div
                         key={`linematch:${getFileMatchUrl(result)}${group.startLine}:${group.endLine}`}
-                        className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
+                        data-href={createCodeExcerptLink(group)}
+                        className={classNames(
+                            'test-file-match-children-item',
+                            styles.chunk,
+                            resultStyles.clickable,
+                            resultStyles.focusableBlock,
+                            resultStyles.horizontalDividerBetween
+                        )}
+                        onClick={navigateToFile}
+                        onMouseUp={navigateToFileOnMiddleMouseButtonClick}
+                        onKeyDown={navigateToFile}
+                        data-testid="file-match-children-item"
+                        tabIndex={0}
+                        role="link"
+                        data-selectable-search-result="true"
                     >
-                        <div
-                            data-href={createCodeExcerptLink(group)}
-                            className={classNames('test-file-match-children-item', styles.item, styles.itemClickable)}
-                            onClick={navigateToFile}
-                            onMouseUp={navigateToFileOnMiddleMouseButtonClick}
-                            onKeyDown={navigateToFile}
-                            data-testid="file-match-children-item"
-                            tabIndex={0}
-                            role="link"
-                            data-selectable-search-result="true"
-                        >
-                            <CodeExcerpt
-                                repoName={result.repository}
-                                commitID={result.commit || ''}
-                                filePath={result.path}
-                                startLine={group.startLine}
-                                endLine={group.endLine}
-                                highlightRanges={group.matches}
-                                plaintextLines={group.plaintextLines}
-                                highlightedLines={group.highlightedHTMLRows}
-                                onCopy={logEventOnCopy}
-                            />
-                        </div>
+                        <CodeExcerpt
+                            repoName={result.repository}
+                            commitID={result.commit || ''}
+                            filePath={result.path}
+                            startLine={group.startLine}
+                            endLine={group.endLine}
+                            highlightRanges={group.matches}
+                            plaintextLines={group.plaintextLines}
+                            highlightedLines={group.highlightedHTMLRows}
+                            onCopy={logEventOnCopy}
+                        />
                     </div>
                 ))}
         </div>

@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -18,39 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// ServiceOpts configures Service.
-type ServiceOpts struct {
-	// SearchClient is used to find attribution on the local instance.
-	SearchClient client.SearchClient
-
-	// SourcegraphDotComClient is a graphql client that is queried if
-	// federating out to sourcegraph.com is enabled.
-	SourcegraphDotComClient dotcom.Client
-
-	// SourcegraphDotComFederate is true if this instance should also federate
-	// to sourcegraph.com.
-	SourcegraphDotComFederate bool
-}
-
 // Service is for the attribution service which searches for matches on
 // snippets of code.
-//
-// Use NewService to construct this value.
-type Service struct {
-	ServiceOpts
-
-	operations *operations
-}
-
-// NewService returns a service configured with observationCtx.
-//
-// Note: this registers metrics so should only be called once with the same
-// observationCtx.
-func NewService(observationCtx *observation.Context, opts ServiceOpts) *Service {
-	return &Service{
-		operations:  newOperations(observationCtx),
-		ServiceOpts: opts,
-	}
+type Service interface {
+	SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error)
 }
 
 // SnippetAttributions is holds the collection of attributions for a snippet.
@@ -79,9 +49,32 @@ type SnippetAttributions struct {
 	LimitHit bool
 }
 
+type Uninitialized struct{}
+
+func (_ Uninitialized) SnippetAttribution(context.Context, string, int) (result *SnippetAttributions, err error) {
+	return nil, errors.New("Attribution is not initialized. Please update site config.")
+}
+
+// gatewayProxy is a Service that proxies requests to cody gateway.
+type gatewayProxy struct {
+	client     codygateway.Client
+	operations *operations
+}
+
+// NewGatewayProxy returns an attribution service that proxies to a gateway request.
+//
+// Note: this registers metrics so should only be called once with the same
+// observationCtx.
+func NewGatewayProxy(observationCtx *observation.Context, client codygateway.Client) Service {
+	return &gatewayProxy{
+		operations: newOperations(observationCtx),
+		client:     client,
+	}
+}
+
 // SnippetAttribution will search the instances indexed code for code matching
 // snippet and return the attribution results.
-func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+func (c *gatewayProxy) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
 	ctx, traceLogger, endObservation := c.operations.snippetAttribution.With(ctx, &err, observation.Args{
 		Attrs: []attribute.KeyValue{
 			attribute.Int("snippet.len", len(snippet)),
@@ -89,84 +82,34 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		},
 	})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
-
-	limitHitErr := errors.New("limit hit error")
-	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(nil)
-
-	// we massage results in this function and possibly cancel if we can stop
-	// looking.
-	truncateAtLimit := func(result *SnippetAttributions) {
-		if result == nil {
-			return
-		}
-		if limit <= len(result.RepositoryNames) {
-			result.LimitHit = true
-			result.RepositoryNames = result.RepositoryNames[:limit]
-		}
-		if result.LimitHit {
-			cancel(limitHitErr)
-		}
-	}
-
-	// TODO(keegancsmith) how should we handle partial errors?
-	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
-
-	//  We don't use NewWithResults since we want local results to come before dotcom
-	var local, dotcom *SnippetAttributions
-
-	p.Go(func(ctx context.Context) error {
-		var err error
-		local, err = c.snippetAttributionLocal(ctx, snippet, limit)
-		truncateAtLimit(local)
-		return err
-	})
-
-	if c.SourcegraphDotComFederate {
-		p.Go(func(ctx context.Context) error {
-			var err error
-			dotcom, err = c.snippetAttributionDotCom(ctx, snippet, limit)
-			truncateAtLimit(dotcom)
-			return err
-		})
-	}
-
-	if err := p.Wait(); err != nil && context.Cause(ctx) != limitHitErr {
+	attribution, err := c.client.Attribution(ctx, snippet, limit)
+	if err != nil {
 		return nil, err
 	}
-
-	var agg SnippetAttributions
-	seen := map[string]struct{}{}
-	for _, result := range []*SnippetAttributions{local, dotcom} {
-		if result == nil {
-			continue
-		}
-
-		// Limitation: We just add to TotalCount even though that may mean we
-		// overcount (both dotcom and local instance have the repo)
-		agg.TotalCount += result.TotalCount
-		agg.LimitHit = agg.LimitHit || result.LimitHit
-		for _, name := range result.RepositoryNames {
-			if _, ok := seen[name]; ok {
-				// We have already counted this repo in the above TotalCount
-				// increment, so undo that.
-				agg.TotalCount--
-				continue
-			}
-			seen[name] = struct{}{}
-			agg.RepositoryNames = append(agg.RepositoryNames, name)
-		}
-	}
-
-	// we call truncateAtLimit on the aggregated result to ensure we only
-	// return upto limit. Note this function will call cancel but that is fine
-	// since we just return after this.
-	truncateAtLimit(&agg)
-
-	return &agg, nil
+	return &SnippetAttributions{
+		RepositoryNames: attribution.Repositories,
+		TotalCount:      len(attribution.Repositories), // TODO: Remove total count.
+		LimitHit:        attribution.LimitHit,
+	}, nil
 }
 
-func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+type localSearch struct {
+	client     client.SearchClient
+	operations *operations
+}
+
+// NewLocalSearch returns an attribution service that searches this instance.
+//
+// Note: this registers metrics so should only be called once with the same
+// observationCtx.
+func NewLocalSearch(observationCtx *observation.Context, client client.SearchClient) Service {
+	return &localSearch{
+		operations: newOperations(observationCtx),
+		client:     client,
+	}
+}
+
+func (c *localSearch) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
 	ctx, traceLogger, endObservation := c.operations.snippetAttributionLocal.With(ctx, &err, observation.Args{})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
 
@@ -179,7 +122,7 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 	patternType := "literal"
 	searchQuery := fmt.Sprintf("type:file select:repo index:only case:yes count:%d content:%q", limit, snippet)
 
-	inputs, err := c.SearchClient.Plan(
+	inputs, err := c.client.Plan(
 		ctx,
 		version,
 		&patternType,
@@ -206,7 +149,7 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		repoNames []string
 		limitHit  bool
 	)
-	_, err = c.SearchClient.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
+	_, err = c.client.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -236,26 +179,5 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		RepositoryNames: repoNames,
 		TotalCount:      totalCount,
 		LimitHit:        limitHit,
-	}, nil
-}
-
-func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
-	ctx, traceLogger, endObservation := c.operations.snippetAttributionDotCom.With(ctx, &err, observation.Args{})
-	defer endObservationWithResult(traceLogger, endObservation, &result)()
-
-	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	var repoNames []string
-	for _, node := range resp.SnippetAttribution.Nodes {
-		repoNames = append(repoNames, node.RepositoryName)
-	}
-
-	return &SnippetAttributions{
-		RepositoryNames: repoNames,
-		TotalCount:      resp.SnippetAttribution.TotalCount,
-		LimitHit:        resp.SnippetAttribution.LimitHit,
 	}, nil
 }

@@ -3,12 +3,12 @@ package jobutil
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -173,15 +173,18 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 	// For each pattern specified by file:contains.content(), run a search at
 	// the commit to ensure that the file does, in fact, contain that content.
-	// We cannot do this all at once because searcher does not support complex patterns.
-	// Additionally, we cannot do this in advance because we don't know which commit
-	// we are searching at until we get a result.
+	// We cannot do this in advance because we don't know which commit we are
+	// searching at until we get a result.
+	//
+	// Note: now that searcher supports 'or' patterns, we could combine this into a single query.
 	matchedFileCounts := make(map[string]int)
 	for _, includePattern := range j.includePatterns {
 		patternInfo := search.TextPatternInfo{
-			Pattern:               includePattern,
+			Query: &protocol.PatternNode{
+				Value:    includePattern,
+				IsRegExp: true,
+			},
 			IsCaseSensitive:       j.caseSensitive,
-			IsRegExp:              true,
 			FileMatchLimit:        99999999,
 			Index:                 query.No,
 			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
@@ -218,8 +221,10 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch, matchedFileCounts map[string]int) result.Match {
 	// Ensure the matched ranges are sorted by start offset
-	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) bool {
-		return a.Start.Offset < b.End.Offset
+	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) int {
+		// TODO(keegancsmith) I changed this from b.End to b.Start since that
+		// matches the comment above.
+		return a.Start.Compare(b.Start)
 	})
 
 	// Convert each file diff to a string so we know how much we are removing if we drop that file

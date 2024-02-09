@@ -131,7 +131,7 @@ const quoted =
         return {
             type: 'success',
             // end + 1 as `end` is currently the index of the quote in the string.
-            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true),
+            term: createLiteral(input.slice(start + 1, end), { start, end: end + 1 }, true, delimiter),
         }
     }
 
@@ -347,6 +347,17 @@ const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: '
 
 const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
+const scanBalancedParens: Scanner<Pattern> = (input, start) => {
+    const scanner = scanToken(/\(\s*\)/, (value, range): Literal => ({ type: 'literal', value, quoted: false, range }))
+    const result = scanner(input, start)
+    if (result.type === 'success') {
+        // Hack: hard code '()' as this is how the backend interprets parenthesis without content. This only affects
+        // the tooltip.
+        return createPattern('()', result.term.range, PatternKind.Literal, result.term.quoted, result.term.quotes)
+    }
+    return result
+}
+
 /**
  * Returns a {@link Scanner} that succeeds if `scanTerm` succeeds,
  * followed by `scanNext`.
@@ -424,7 +435,8 @@ const createPattern = (
     value: string,
     range: CharacterRange,
     kind: PatternKind,
-    delimited?: boolean
+    delimited?: boolean,
+    delimiter?: string
 ): ScanSuccess<Pattern> => ({
     type: 'success',
     term: {
@@ -433,6 +445,7 @@ const createPattern = (
         kind,
         value,
         delimited,
+        delimiter,
     },
 })
 
@@ -446,11 +459,11 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
  */
 export const toPatternResult =
-    (scanner: Scanner<Literal>, kind: PatternKind, delimited = false): Scanner<Pattern> =>
+    (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> =>
     (input, start) => {
         const result = scanner(input, start)
         if (result.type === 'success') {
-            return createPattern(result.term.value, result.term.range, kind, result.term.quoted)
+            return createPattern(result.term.value, result.term.range, kind, result.term.quoted, result.term.quotes)
         }
         return result
     }
@@ -512,9 +525,9 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
 }
 
 /**
- * scanNewStandardRC1 is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
+ * scanKeyword is like {@LINK scanStandard} except that quoted tokens are interpreted literally.
  */
-const scanNewStandardRC1 = (query: string): ScanResult<Token[]> => {
+const scanKeyword = (query: string): ScanResult<Token[]> => {
     const tokenScanner = [
         keyword,
         filter,
@@ -527,7 +540,7 @@ const scanNewStandardRC1 = (query: string): ScanResult<Token[]> => {
         toPatternResult(quoted('"'), PatternKind.Literal),
         toPatternResult(quoted("'"), PatternKind.Literal),
         toPatternResult(quoted('/'), PatternKind.Regexp),
-        toPatternResult(scanBalancedLiteral, PatternKind.Literal),
+        scanBalancedParens,
     ]
 
     const scan = zeroOrMore(
@@ -570,11 +583,11 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword: {
+        case SearchPatternType.codycontext: {
             return scanStandard(query)
         }
-        case SearchPatternType.newStandardRC1: {
-            return scanNewStandardRC1(query)
+        case SearchPatternType.keyword: {
+            return scanKeyword(query)
         }
         case SearchPatternType.literal: {
             patternKind = PatternKind.Literal

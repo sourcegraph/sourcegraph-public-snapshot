@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -317,6 +318,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 
+	cloudSiteConfig := cloud.SiteConfig()
+	if cloudSiteConfig.SiteConfigAllowlistEnabled() && !actor.FromContext(ctx).SourcegraphOperator {
+		if p, ok := allowEdit(prev.Site, unredacted, cloudSiteConfig.SiteConfigAllowlist.Paths); !ok {
+			return false, cloudSiteConfig.SiteConfigAllowlistOnError(p)
+		}
+	}
+
 	prev.Site = unredacted
 
 	server := globals.ConfigurationServerFrontendOnly
@@ -588,7 +596,10 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	return !isAdmin
 }
 
-func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool {
+	enabled, _ := cody.IsCodyEnabled(ctx, r.db)
+	return enabled
+}
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
 	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
@@ -607,18 +618,17 @@ func (r *siteResolver) CodyConfigFeatures(ctx context.Context) *codyConfigFeatur
 	return &codyConfigFeaturesResolver{config: c}
 }
 
-func (c *codyConfigFeaturesResolver) Chat() bool { return c.config.Chat }
+type codyConfigFeaturesResolver struct {
+	config *conftypes.ConfigFeatures
+}
 
+func (c *codyConfigFeaturesResolver) Chat() bool         { return c.config.Chat }
 func (c *codyConfigFeaturesResolver) AutoComplete() bool { return c.config.AutoComplete }
-
-func (c *codyConfigFeaturesResolver) Commands() bool { return c.config.Commands }
+func (c *codyConfigFeaturesResolver) Commands() bool     { return c.config.Commands }
+func (c *codyConfigFeaturesResolver) Attribution() bool  { return c.config.Attribution }
 
 type codyLLMConfigurationResolver struct {
 	config *conftypes.CompletionsConfig
-}
-
-type codyConfigFeaturesResolver struct {
-	config *conftypes.ConfigFeatures
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
@@ -640,11 +650,24 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 }
 
 func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.CompletionModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.config.CompletionModelMaxTokens != 0 {
 		max := int32(c.config.CompletionModelMaxTokens)
 		return &max
 	}
 	return nil
+}
+
+func allowEdit(before, after string, allowlist []string) ([]string, bool) {
+	var notAllowed []string
+	changes := conf.Diff(before, after)
+	for key := range changes {
+		for _, p := range allowlist {
+			if key != p {
+				notAllowed = append(notAllowed, key)
+			}
+		}
+	}
+	return notAllowed, len(notAllowed) == 0
 }

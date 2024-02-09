@@ -1,6 +1,7 @@
 <svelte:options immutable />
 
 <script context="module" lang="ts">
+    export type SearchResultsCapture = number
     interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
@@ -16,7 +17,6 @@
     import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { preserveScrollPosition } from '$lib/app'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
@@ -33,11 +33,22 @@
     import Icon from '$lib/Icon.svelte'
     import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
     import CodeHostIcon from './CodeHostIcon.svelte'
+    import SymbolKind from '$lib/search/SymbolKind.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
     export let queryFilters: string
     export let queryState: QueryStateStore
+
+    export function capture(): SearchResultsCapture {
+        return resultContainer?.scrollTop ?? 0
+    }
+
+    export function restore(capture?: SearchResultsCapture): void {
+        if (resultContainer) {
+            resultContainer.scrollTop = capture ?? 0
+        }
+    }
 
     let resultContainer: HTMLElement | null = null
 
@@ -59,14 +70,6 @@
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    let scrollTop: number = 0
-    preserveScrollPosition(
-        position => (scrollTop = position ?? 0),
-        () => resultContainer?.scrollTop
-    )
-    $: if (resultContainer) {
-        resultContainer.scrollTop = scrollTop ?? 0
-    }
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -109,7 +112,7 @@
 </svelte:head>
 
 <div class="search">
-    <SearchInput {queryState} showSmartSearchButton />
+    <SearchInput {queryState} />
 </div>
 
 <div class="search-results">
@@ -120,13 +123,16 @@
                 {#each resultTypeFilter as filter}
                     <li class:selected={filter.isSelected(queryFromURL)}>
                         <a
-                            href={getQueryURL({
-                                searchMode: $queryState.searchMode,
-                                patternType: $queryState.patternType,
-                                caseSensitive: $queryState.caseSensitive,
-                                searchContext: $queryState.searchContext,
-                                query: filter.getQuery($queryState.query),
-                            })}
+                            href={getQueryURL(
+                                {
+                                    searchMode: $queryState.searchMode,
+                                    patternType: $queryState.patternType,
+                                    caseSensitive: $queryState.caseSensitive,
+                                    searchContext: $queryState.searchContext,
+                                    query: filter.getQuery($queryState.query),
+                                },
+                                true
+                            )}
                         >
                             <Icon svgPath={filter.icon} inline aria-hidden="true" />
                             {filter.label}
@@ -137,12 +143,57 @@
         </div>
         {#if hasFilters}
             <div class="section">
-                <h4>Filter results</h4>
+                {#if filters['symbol type'].length > 0}
+                    <Section
+                        items={filters['symbol type']}
+                        title="By symbol type"
+                        filterPlaceholder="Filter symbol types"
+                        showFilter
+                        {queryFilters}
+                    >
+                        <svelte:fragment slot="label" let:label>
+                            <SymbolKind symbolKind={label.toUpperCase()} />
+                            {label}
+                        </svelte:fragment>
+                    </Section>
+                {/if}
+                {#if filters.author.length > 0}
+                    <Section
+                        items={filters.author}
+                        title="By author"
+                        filterPlaceholder="Filter authors"
+                        showFilter
+                        {queryFilters}
+                    />
+                {/if}
+                {#if filters['commit date'].length > 0}
+                    <Section items={filters['commit date']} title="By commit date" {queryFilters}>
+                        <svelte:fragment slot="label" let:label let:value>
+                            <span class="commit-date-label">
+                                {label}
+                                <small><pre>{value}</pre></small>
+                            </span>
+                        </svelte:fragment>
+                    </Section>
+                {/if}
                 {#if filters.lang.length > 0}
-                    <Section items={filters.lang} title="By languages" {queryFilters} />
+                    <Section
+                        items={filters.lang}
+                        title="By language"
+                        showFilter
+                        filterPlaceholder="Filter languages"
+                        {queryFilters}
+                    />
                 {/if}
                 {#if filters.repo.length > 0}
-                    <Section items={filters.repo} title="By repositories" {queryFilters}>
+                    <Section
+                        items={filters.repo}
+                        title="By repository"
+                        showFilter
+                        filterPlaceholder="Filter repositories"
+                        preprocessLabel={displayRepoName}
+                        {queryFilters}
+                    >
                         <svelte:fragment slot="label" let:label>
                             <CodeHostIcon repository={label} />
                             {displayRepoName(label)}
@@ -150,7 +201,10 @@
                     </Section>
                 {/if}
                 {#if filters.file.length > 0}
-                    <Section items={filters.file} title="By paths" {queryFilters} />
+                    <Section items={filters.file} title="By file" {queryFilters} />
+                {/if}
+                {#if filters.utility.length > 0}
+                    <Section items={filters.utility} title="Utility" {queryFilters} />
                 {/if}
             </div>
         {/if}
@@ -178,11 +232,16 @@
         </aside>
         {#if resultsToShow}
             <ol>
-                {#each resultsToShow as result}
+                {#each resultsToShow as result, i}
                     {@const component = getSearchResultComponent(result)}
-                    <li><svelte:component this={component} {result} /></li>
+                    {#if i === resultsToShow.length - 1}
+                        <li use:observeIntersection on:intersecting={loadMore}>
+                            <svelte:component this={component} {result} />
+                        </li>
+                    {:else}
+                        <li><svelte:component this={component} {result} /></li>
+                    {/if}
                 {/each}
-                <div use:observeIntersection on:intersecting={loadMore} />
             </ol>
             {#if resultsToShow.length === 0 && !loading}
                 <div class="no-result">
@@ -221,7 +280,7 @@
         }
 
         .section {
-            padding: 1rem;
+            padding: 1rem 0.5rem 1rem 1rem;
             border-top: 1px solid var(--border-color);
 
             &:first-child {
@@ -316,5 +375,10 @@
         .icon {
             flex-shrink: 0;
         }
+    }
+
+    pre {
+        // Overwrites global default
+        margin-bottom: 0;
     }
 </style>

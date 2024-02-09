@@ -59,6 +59,8 @@ env:
       { "Name": "embeddings", "Host": "127.0.0.1:6099" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
       { "Name": "zoekt-index-1", "Host": "127.0.0.1:6073" },
+      { "Name": "syntactic-code-intel-worker-0", "Host": "127.0.0.1:6075" },
+      { "Name": "syntactic-code-intel-worker-1", "Host": "127.0.0.1:6076" },
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
@@ -182,7 +184,7 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
-    env: &gitserverenv
+    env:
       HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
@@ -197,7 +199,6 @@ commands:
   gitserver-0:
     <<: *gitserver_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
@@ -206,7 +207,6 @@ commands:
   gitserver-1:
     <<: *gitserver_template
     env:
-      <<: *gitserverenv
       GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
@@ -280,6 +280,7 @@ commands:
         -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
         --entrypoint /usr/local/bin/qdrant \
         sourcegraph/qdrant:insiders
+
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -562,6 +563,46 @@ commands:
       - internal
       - cmd/precise-code-intel-worker
       - lib/codeintel
+
+  syntactic-codeintel-worker-template: &syntactic_codeintel_worker_template
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/syntactic-code-intel-worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      if [ ! -f $(./dev/scip-syntax-install.sh which) ]; then
+        echo "Building scip-syntax"
+        ./dev/scip-syntax-install.sh
+      fi
+
+      echo "Building codeintel-outkline-scip-worker"
+      go build -gcflags="$GCFLAGS" -o .bin/syntactic-code-intel-worker github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker
+    checkBinary: .bin/syntactic-code-intel-worker
+    watch:
+      - lib
+      - internal
+      - cmd/syntactic-code-intel-worker
+      - lib/codeintel
+    env:
+      SCIP_SYNTAX_PATH: dev/scip-syntax-dev
+
+  syntactic-code-intel-worker-0:
+    <<: *syntactic_codeintel_worker_template
+    env:
+      SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6075
+
+  syntactic-code-intel-worker-1:
+    <<: *syntactic_codeintel_worker_template
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/syntactic-code-intel-worker
+    env:
+      SYNTACTIC_CODE_INTEL_WORKER_ADDR: 127.0.0.1:6076
+
+
 
   executor-template:
     &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
@@ -1039,6 +1080,7 @@ bazelCommands:
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
+
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1085,7 +1127,8 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1109,7 +1152,8 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite
+      # TODO https://github.com/sourcegraph/devx-support/issues/537
+      # - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1192,6 +1236,25 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
+
+  codeintel-syntactic:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - web
+      - worker
+      - blobstore
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
+      - syntactic-code-intel-worker-0
+      - syntactic-code-intel-worker-1
+
 
   codeintel:
     requiresDevPrivate: true
@@ -1581,13 +1644,13 @@ tests:
       else
         BAZEL_FLAGS=""
       fi
-      bazel test //testing:e2e_test $BAZEL_FLAGS --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY
+      bazel test //testing:e2e_test $BAZEL_FLAGS --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY
 
   bazel-web-integration:
     cmd: |
       export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
       export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
-      bazel test //client/web/src/integration:integration-tests --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY --define=PERCY_TOKEN=$PERCY_TOKEN
+      bazel test //client/web/src/integration:integration-tests --action_env=HEADLESS=false --action_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --action_env=GH_TOKEN=$GH_TOKEN --action_env=DISPLAY=$DISPLAY --action_env=PERCY_TOKEN=$PERCY_TOKEN
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest

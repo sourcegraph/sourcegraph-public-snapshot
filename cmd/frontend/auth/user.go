@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -195,6 +195,14 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
 		user, err := users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		// We re-try creation with a different username with random suffix if the first one is taken.
+		if database.IsUsernameExists(err) {
+			op.UserProps.Username, err = userpasswd.AddRandomSuffix(op.UserProps.Username)
+			if err != nil {
+				return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
+			}
+			user, err = users.CreateWithExternalAccount(ctx, op.UserProps, acct)
+		}
 
 		switch {
 		case database.IsUsernameExists(err):
@@ -369,40 +377,5 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 	}
 
-	addCodyProForTestUsers(ctx, db, userID, logger)
 	return newUserSaved, userID, "", nil
-}
-
-// addCodyProForTestUsers adds the cody-pro feature flag for users who are on the
-// "exempted from the minimum external account age" list
-// This is temporary for testing before 2023-12-14
-func addCodyProForTestUsers(ctx context.Context, db database.DB, userID int32, logger sglog.Logger) {
-	dc := conf.Get().Dotcom
-	if dc == nil {
-		return
-	}
-
-	verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userID, OnlyVerified: true})
-	if err != nil {
-		return
-	}
-
-	exempted := false
-	for _, exemptedEmail := range dc.MinimumExternalAccountAgeExemptList {
-		for _, verifiedEmail := range verifiedEmails {
-			if verifiedEmail.Email == exemptedEmail {
-				exempted = true
-				break
-			}
-		}
-		if exempted {
-			break
-		}
-	}
-	if exempted {
-		_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "cody-pro", Value: true, UserID: &userID})
-		if err != nil {
-			logger.Error("failed to create feature flag override", sglog.Error(err))
-		}
-	}
 }

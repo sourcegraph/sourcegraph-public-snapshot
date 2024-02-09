@@ -415,10 +415,11 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 				Symbols:      symbols,
 				PathMatches:  pathMatches,
 				File: result.File{
-					InputRev: &inputRev,
-					CommitID: api.CommitID(file.Version),
-					Repo:     repo,
-					Path:     file.FileName,
+					InputRev:        &inputRev,
+					CommitID:        api.CommitID(file.Version),
+					Repo:            repo,
+					Path:            file.FileName,
+					PreciseLanguage: file.Language,
 				},
 			}
 			if debug := file.Debug; debug != "" {
@@ -531,10 +532,11 @@ func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, pathRegexps []*regex
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
-		Path:     file.FileName,
-		Repo:     repoName,
-		CommitID: api.CommitID(file.Version),
-		InputRev: &inputRev,
+		Path:            file.FileName,
+		Repo:            repoName,
+		CommitID:        api.CommitID(file.Version),
+		InputRev:        &inputRev,
+		PreciseLanguage: file.Language,
 	}
 
 	symbols := make([]*result.SymbolMatch, 0, len(file.ChunkMatches))

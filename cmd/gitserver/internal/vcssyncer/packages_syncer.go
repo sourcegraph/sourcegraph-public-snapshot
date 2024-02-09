@@ -95,7 +95,7 @@ func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, remote
 	// Next, initialize a bare repo in that tmp path.
 	tryWrite(s.logger, progressWriter, "Creating bare repo\n")
 	if err := git.MakeBareRepo(ctx, tmpPath); err != nil {
-		return &common.GitCommandError{Err: err}
+		return err
 	}
 	tryWrite(s.logger, progressWriter, "Created bare repo at %s\n", tmpPath)
 

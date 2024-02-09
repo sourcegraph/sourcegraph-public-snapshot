@@ -14,7 +14,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -122,26 +121,16 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	}}
 	eventsToExport := []string{"1", "2"}
 
-	t.Run("feature flag off", func(t *testing.T) {
-		// Context with FF disabled.
-		ff := featureflag.NewMemoryStore(
-			nil, nil, map[string]bool{FeatureFlagTelemetryExport: false})
-		ctx := featureflag.WithFlags(context.Background(), ff)
-
-		require.NoError(t, store.QueueForExport(ctx, events))
-		export, err := store.ListForExport(ctx, 100)
-		require.NoError(t, err)
-		assert.Len(t, export, 0)
-	})
-
 	t.Run("QueueForExport", func(t *testing.T) {
 		require.NoError(t, store.QueueForExport(ctx, events))
 	})
 
 	t.Run("CountUnexported", func(t *testing.T) {
-		count, err := store.CountUnexported(ctx)
+		count, oldest, err := store.CountUnexported(ctx)
 		require.NoError(t, err)
-		require.Equal(t, count, int64(3))
+		assert.Equal(t, count, int64(3))
+		// First sample event is the oldest
+		assert.Equal(t, events[0].Timestamp.AsTime(), oldest)
 	})
 
 	t.Run("ListForExport", func(t *testing.T) {
@@ -216,9 +205,31 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		assert.Equal(t, "3", export[0].GetId())
 	})
 
+	t.Run("after export: CountUnexported", func(t *testing.T) {
+		count, oldest, err := store.CountUnexported(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, count, int64(1))
+		// The third event is the only one left now
+		assert.Equal(t, events[len(events)-1].Timestamp.AsTime(), oldest)
+	})
+
 	t.Run("after export: DeleteExported", func(t *testing.T) {
 		affected, err := store.DeletedExported(ctx, time.Now())
 		require.NoError(t, err)
 		assert.Equal(t, int(affected), len(eventsToExport))
+	})
+
+	t.Run("mark all as exported", func(t *testing.T) {
+		// Only the third event is left
+		err := store.MarkAsExported(ctx, []string{"3"})
+		require.NoError(t, err)
+	})
+
+	t.Run("after all are exported: CountUnexported", func(t *testing.T) {
+		count, oldest, err := store.CountUnexported(ctx)
+		require.NoError(t, err)
+		// No events are lift
+		assert.Equal(t, count, int64(0))
+		assert.True(t, oldest.IsZero())
 	})
 }

@@ -13,30 +13,34 @@ func TestRenderIndexPage(t *testing.T) {
 	services := []*spec.Spec{
 		{
 			Service: spec.ServiceSpec{
-				ID:     "service-1",
-				Name:   pointers.Ptr("Service 1"),
-				Owners: []string{"team-a"},
+				ID:          "service-1",
+				Description: "Test service for MSP",
+				Name:        pointers.Ptr("Service 1"),
+				Owners:      []string{"team-a"},
 			},
 		},
 		{
 			Service: spec.ServiceSpec{
-				ID:     "service-2",
-				Name:   pointers.Ptr("Service 2"),
-				Owners: []string{"team-a"},
+				ID:          "service-2",
+				Description: "Another test service for MSP",
+				Name:        pointers.Ptr("Service 2"),
+				Owners:      []string{"team-a"},
 			},
 		},
 		{
 			Service: spec.ServiceSpec{
-				ID:     "service-3",
-				Name:   pointers.Ptr("Service 3"),
-				Owners: []string{"team-b"},
+				ID:          "service-3",
+				Description: "Yet another test service for MSP",
+				Name:        pointers.Ptr("Service 3"),
+				Owners:      []string{"team-b"},
 			},
 		},
 		{
 			Service: spec.ServiceSpec{
-				ID:     "service-4",
-				Name:   pointers.Ptr("Service 4"),
-				Owners: []string{"team-a", "team-b"},
+				ID:          "service-4",
+				Description: "ALSO a test service for MSP",
+				Name:        pointers.Ptr("Service 4"),
+				Owners:      []string{"team-a", "team-b"},
 			},
 		},
 	}

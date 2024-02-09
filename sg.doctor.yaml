@@ -10,6 +10,16 @@ diagnostics:
       cmd: git rev-parse HEAD
     - name: show os kernel
       cmd: uname -a
+  disk:
+    - name: disk usage of ~/.sourcegraph/
+      cmd: du -sh ~/.sourcegraph/
+    - name: disk usage of client/web/dist
+      cmd: du -sh client/web/dist
+    - name: repos in ~/.sourcegraph/
+      cmd: |
+        find ~/.sourcegraph/repos -type d -maxdepth 2 -type d
+        find ~/.sourcegraph/repos_1 -type d -maxdepth 2 -type d
+        find ~/.sourcegraph/repos_2 -type d -maxdepth 2 -type d
   bazel:
     - name: architecture
       cmd: file -L $(which bazel)

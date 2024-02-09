@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sams",
+    srcs = [
+        "auth.go",
+        "client.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/sams",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authbearer",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//clientcredentials",
+    ],
+)

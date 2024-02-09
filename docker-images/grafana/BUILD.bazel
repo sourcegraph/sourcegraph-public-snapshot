@@ -5,7 +5,7 @@ load("//dev:oci_defs.bzl", "image_repository")
 
 filegroup(
     name = "config_files",
-    srcs = glob(["config/*"]) + ["entry.sh"],
+    srcs = ["entry.sh"],
 )
 
 pkg_tar(
@@ -15,7 +15,11 @@ pkg_tar(
         "//docker-images/grafana/config",
     ],
     remap_paths = {
-        "docker-images/grafana/config": "/sg_config_grafana",
+        "/grafana.ini": "/sg_config_grafana/grafana.ini",
+        "/grafana-single-container.ini": "/sg_config_grafana/grafana-single-container.ini",
+        "/sourcegraph.yaml": "/sg_config_grafana/provisioning/dashboards/sourcegraph.yaml",
+        "/datasources.yaml": "/sg_config_grafana/provisioning/datasources/datasources.yaml",
+        "/sample.yaml": "/sg_config_grafana/provisioning/notifiers/sample.yaml",
     },
 )
 

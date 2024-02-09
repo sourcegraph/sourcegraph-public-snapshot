@@ -43,17 +43,6 @@
 
         // .title-inner
         overflow-wrap: anywhere;
-
-        // .muted-repo-file-link
-        color: var(--text-muted);
-
-        :global(a) {
-            color: var(--text-muted);
-
-            &:hover {
-                color: var(--text-muted);
-            }
-        }
     }
 
     .info {

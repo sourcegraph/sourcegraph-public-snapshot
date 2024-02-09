@@ -81,7 +81,7 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		testTokenID, testTokenValue, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b", "c"}, "n0", creator.ID)
+		testTokenID, testTokenValue, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b", "c"}, "n0", creator.ID, time.Now().Add(time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}

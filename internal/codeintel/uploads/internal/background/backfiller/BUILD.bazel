@@ -15,6 +15,7 @@ go_library(
         "//internal/codeintel/uploads/internal/store",
         "//internal/env",
         "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
         "//internal/goroutine",
         "//lib/errors",
     ],

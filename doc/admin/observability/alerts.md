@@ -229,40 +229,6 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 
 <br />
 
-## frontend: blob_load_latency
-
-<p class="subtitle">90th percentile blob load latency over 10m</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> frontend: 5s+ 90th percentile blob load latency over 10m for 10m0s
-
-**Next steps**
-
-- When this alert fires, calls to the blob route are slow to return a response. The UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.
-- Confirm that the Sourcegraph gitserver and frontend services have enough CPU/memory using the provisioning panels.
-- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Check that gitserver containers have enough CPU/memory and are not getting throttled.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_frontend_blob_load_latency"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))) >= 5)`
-
-</details>
-
-<br />
-
 ## frontend: 99th_percentile_search_codeintel_request_duration
 
 <p class="subtitle">99th percentile code-intel successful search request duration over 5m</p>
@@ -639,7 +605,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~"(sourcegraph-)?frontend"}[1m]))) >= 300)`
 
 </details>
 
@@ -1508,39 +1474,6 @@ Generated query for warning alert: `max((sum(src_gitserver_clone_queue)) >= 25)`
 
 <br />
 
-## gitserver: repository_existence_check_queue_size
-
-<p class="subtitle">repository existence check queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> gitserver: 25+ repository existence check queue size
-
-**Next steps**
-
-- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-- **Check the gitserver logs for more information.**
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-repository-existence-check-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_repository_existence_check_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 25)`
-
-</details>
-
-<br />
-
 ## gitserver: gitserver_site_configuration_duration_since_last_successful_update_by_instance
 
 <p class="subtitle">maximum duration since last successful site configuration update (all "gitserver" instances)</p>
@@ -1567,7 +1500,7 @@ Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 2
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*gitserver"}[1m]))) >= 300)`
 
 </details>
 
@@ -2288,7 +2221,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(pgsql|codein
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
 
 **Next steps**
 
@@ -2300,7 +2233,7 @@ count being required for the volume of uploads.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_precise-code-intel-worker_codeintel_upload_queued_max_age"
+  "warning_precise-code-intel-worker_codeintel_upload_queued_max_age"
 ]
 ```
 
@@ -2309,7 +2242,7 @@ count being required for the volume of uploads.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})) >= 18000)`
+Generated query for warning alert: `max((max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})) >= 18000)`
 
 </details>
 
@@ -3144,9 +3077,9 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*redis-store"}
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-upload-janitor"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-upload-janitor"})) == 1)`
 
 </details>
 
@@ -3182,9 +3115,9 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-commitgraph-updater"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-commitgraph-updater"})) == 1)`
 
 </details>
 
@@ -3220,9 +3153,9 @@ Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) == 1)`
+Generated query for warning alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) == 1)`
 
-Generated query for critical alert: `(min((sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job="worker",job_name="codeintel-autoindexing-scheduler"})) == 1)`
+Generated query for critical alert: `(min((sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) < 1)) or (absent(sum(src_worker_jobs{job=~"^worker.*",job_name="codeintel-autoindexing-scheduler"})) == 1)`
 
 </details>
 
@@ -3765,7 +3698,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~"^worker.*"}[1m]))) >= 300)`
 
 </details>
 
@@ -4497,7 +4430,7 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*repo-updater"}[1m]))) >= 300)`
 
 </details>
 
@@ -4942,7 +4875,7 @@ Generated query for warning alert: `max((sum by (code) (increase(searcher_servic
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*searcher"}[1m]))) >= 300)`
 
 </details>
 
@@ -5327,7 +5260,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) /
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*symbols"}[1m]))) >= 300)`
 
 </details>
 
@@ -7710,7 +7643,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds{job=~".*embeddings"}[1m]))) >= 300)`
 
 </details>
 
@@ -8068,4 +8001,3 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*embeddings"})
 </details>
 
 <br />
-

@@ -2,6 +2,7 @@ package linters
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/run"
 
@@ -18,9 +19,15 @@ var prettier = &linter{
 		// pnpm can easily deadlock itself, so we serialize runs of pnpm-run.sh.
 		runScriptSerializedMu.Lock()
 		defer runScriptSerializedMu.Unlock()
-		return root.Run(run.Cmd(ctx, "dev/ci/pnpm-run.sh format:check")).
-			Pipeline(pnpmInstallFilter()).
-			StreamLines(out.Write)
+		if os.Getenv("CI") != "true" {
+			return root.Run(run.Cmd(ctx, "dev/ci/pnpm-run.sh format:check")).
+				Pipeline(pnpmInstallFilter()).
+				StreamLines(out.Write)
+		} else {
+			return root.Run(run.Cmd(ctx, "dev/ci/pnpm-run.sh format:ci")).
+				Pipeline(pnpmInstallFilter()).
+				StreamLines(out.Write)
+		}
 	},
 	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
 		// pnpm can easily deadlock itself, so we serialize runs of pnpm-run.sh.

@@ -499,7 +499,7 @@ describe('Repository component', () => {
                 await link.click()
 
                 const selectedLine = await driver.page.waitForSelector(
-                    `[data-testid="repo-blob"] .cm-line:nth-child(${line}).selected-line`
+                    `[data-testid="repo-blob"] .cm-line:nth-child(${line})[data-testid="selected-line"]`
                 )
                 expect(selectedLine).not.toBeNull()
             })

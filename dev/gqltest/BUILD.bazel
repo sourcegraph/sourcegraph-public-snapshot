@@ -35,6 +35,7 @@ go_test(
         "//internal/gqltestutil",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_graph_gophers_graphql_go//relay",

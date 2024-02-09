@@ -17,21 +17,21 @@ func TestBuildFilter(t *testing.T) {
 		{
 			name: "Service Metric",
 			config: Config{
-				ServiceName: "my-service-name",
-				ServiceKind: CloudRunService,
+				ResourceName: "my-service-name",
+				ResourceKind: CloudRunService,
 				ThresholdAggregation: &ThresholdAggregation{
 					Filters: map[string]string{
 						"metric.type": "run.googleapis.com/container/startup_latencies",
 					},
 				},
 			},
-			want: autogold.Expect(`metric.type = "run.googleapis.com/container/startup_latencies" AND resource.type = "cloud_run_revision" AND resource.labels.service_name = "my-service-name"`),
+			want: autogold.Expect(`metric.type = "run.googleapis.com/container/startup_latencies" AND resource.type = "cloud_run_revision" AND resource.labels.service_name = starts_with("my-service-name")`),
 		},
 		{
 			name: "Job Metric",
 			config: Config{
-				ServiceName: "my-job-name",
-				ServiceKind: CloudRunJob,
+				ResourceName: "my-job-name",
+				ResourceKind: CloudRunJob,
 				ThresholdAggregation: &ThresholdAggregation{
 					Filters: map[string]string{
 						"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
@@ -39,7 +39,7 @@ func TestBuildFilter(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Expect(`metric.labels.result = "failed" AND metric.type = "run.googleapis.com/job/completed_task_attempt_count" AND resource.type = "cloud_run_job" AND resource.labels.job_name = "my-job-name"`),
+			want: autogold.Expect(`metric.labels.result = "failed" AND metric.type = "run.googleapis.com/job/completed_task_attempt_count" AND resource.type = "cloud_run_job" AND resource.labels.job_name = starts_with("my-job-name")`),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestResponseCodeBuilder(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := responseCodeBuilder(&Config{
-				ServiceName:        "test-service",
+				ResourceName:       "test-service",
 				ResponseCodeMetric: &tc.ResponseCodeMetric,
 			})
 			tc.want.Equal(t, got)

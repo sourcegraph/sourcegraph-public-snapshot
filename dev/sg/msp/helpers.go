@@ -29,7 +29,11 @@ func useServiceArgument(c *cli.Context) (*spec.Spec, error) {
 	}
 	serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
 
-	return spec.Open(serviceSpecPath)
+	s, err := spec.Open(serviceSpecPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "load service %q", serviceID)
+	}
+	return s, nil
 }
 
 // useServiceAndEnvironmentArguments retrieves the service and environment specs
@@ -124,7 +128,7 @@ func generateTerraform(serviceID string, opts generateTerraformOptions) error {
 
 	service, err := spec.Open(serviceSpecPath)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "load service %q", serviceID)
 	}
 
 	var envs []spec.EnvironmentSpec

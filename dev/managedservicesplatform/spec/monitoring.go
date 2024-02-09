@@ -13,6 +13,9 @@ var codeClassPattern = regexp.MustCompile(`\dx+`)
 type MonitoringSpec struct {
 	// Alerts is a list of alert configurations for the deployment
 	Alerts MonitoringAlertsSpec `yaml:"alerts"`
+	// Nobl9 determines whether to provision a Nobl9 project.
+	// Currently for trial purposes only
+	Nobl9 bool `yaml:"nobl9"`
 }
 
 func (s *MonitoringSpec) Validate() []error {
@@ -31,7 +34,7 @@ type MonitoringAlertsSpec struct {
 type ResponseCodeRatioAlertSpec struct {
 	ID           string   `yaml:"id"`
 	Name         string   `yaml:"name"`
-	Description  *string  `yaml:"description,omitempty"`
+	Description  string   `yaml:"description,omitempty"`
 	Code         *int     `yaml:"code,omitempty"`
 	CodeClass    *string  `yaml:"codeClass,omitempty"`
 	ExcludeCodes []string `yaml:"excludeCodes,omitempty"`
