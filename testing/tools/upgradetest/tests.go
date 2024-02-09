@@ -47,7 +47,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, targetVersion, latest
 	var cleanFrontend func()
 	cleanFrontend, err = startFrontend(fctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
-		test.AddError(errors.Newf("🚨 failed to start candidate frontend: %w", err))
+		test.AddError(errors.Newf("🚨 candidate frontend error: %w", err))
 		cleanFrontend()
 		return test
 	}
@@ -117,7 +117,7 @@ func multiversionUpgradeTest(ctx context.Context, initVersion, targetVersion, la
 	var cleanFrontend func()
 	cleanFrontend, err = startFrontend(ctx, test, "frontend", "candidate", networkName, false, dbs)
 	if err != nil {
-		test.AddError(errors.Newf("🚨 failed to start candidate frontend: %w", err))
+		test.AddError(errors.Newf("🚨 candidate frontend error: %w", err))
 		cleanFrontend()
 		return test
 	}
@@ -164,7 +164,7 @@ func autoUpgradeTest(ctx context.Context, initVersion, targetVersion, latestStab
 	var cleanFrontend func()
 	cleanFrontend, err = startFrontend(fctx, test, "frontend", "candidate", networkName, true, dbs)
 	if err != nil {
-		test.AddError(errors.Newf("🚨 failed to start candidate frontend: %w", err))
+		test.AddError(errors.Newf("🚨 candidate frontend error: %w", err))
 		cleanFrontend()
 		return test
 	}

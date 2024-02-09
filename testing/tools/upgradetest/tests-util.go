@@ -111,7 +111,7 @@ func (r *TestResults) PrintSimpleResults() {
 		stdRes := []string{}
 		for _, test := range r.StandardUpgradeTests {
 			if 0 < len(test.Errors) {
-				stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
+				stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version.String(), test.Runtime))
 			}
@@ -123,7 +123,7 @@ func (r *TestResults) PrintSimpleResults() {
 		mvuRes := []string{}
 		for _, test := range r.MVUUpgradeTests {
 			if 0 < len(test.Errors) {
-				mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
+				mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
 			}
@@ -135,7 +135,7 @@ func (r *TestResults) PrintSimpleResults() {
 		autoRes := []string{}
 		for _, test := range r.AutoupgradeTests {
 			if 0 < len(test.Errors) {
-				autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[0]))
+				autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s\n%s", test.Version.String(), test.Runtime, test.Errors[len(test.Errors)-1]))
 			} else {
 				autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version.String(), test.Runtime))
 			}
@@ -462,8 +462,8 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 }
 
 // startFrontend starts a frontend container and polls the pgsql database for certain states. When the state conditions are startFrontend returns a cleanup function that will stop and remove the frontend container.
-// - checks for existence of site-config
 // - checks that the version is set in pgsql
+// - checks for existence of site-config
 // - Optionally sets the auto upgrade env var to true or false.
 func startFrontend(ctx context.Context, test Test, image, version, networkName string, auto bool, dbs []*testDB) (cleanup func(), err error) {
 	stamp := ctx.Value(stampVersionKey{})
@@ -496,7 +496,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	// construct docker command for running frontend container
 	baseString := []string{
 		"docker", "run",
-		"--detach",
+		// "--detach",
 		"--platform", "linux/amd64",
 		"--name", fmt.Sprintf("%s_frontend_%x", test.Type, hash),
 	}
@@ -518,13 +518,13 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	baseString = append(baseString, envString...)
 	cmdString = append(baseString, cmdString...)
 
-	// Start the frontend container
-	out, err := run.Cmd(ctx, cmdString...).Run().String()
-	if err != nil {
-		test.AddError(errors.Newf("🚨 failed to start frontend: %w", err))
-		return cleanup, err
-	}
-	test.AddLog(fmt.Sprintf("frontend startup logs: %s", out))
+	// Start the frontend container in goroutine to get logs
+	errChan := make(chan error)
+	go func() {
+		if _, err := run.Cmd(ctx, cmdString...).Run().String(); err != nil {
+			errChan <- err
+		}
+	}()
 
 	// poll db until initial versions.version is set
 	setInitTimeout, cancel := context.WithTimeout(ctx, time.Second*60)
@@ -540,10 +540,13 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	// Poll till versions.version is set
 	for {
 		select {
-		case <-ctx.Done():
-			return cleanup, setInitTimeout.Err()
 		case <-setInitTimeout.Done():
-			return cleanup, setInitTimeout.Err()
+			out, err := run.Cmd(ctx, "docker", "logs", fmt.Sprintf("%s_frontend_%x", test.Type, hash)).Run().String()
+			if err != nil {
+				test.AddError(errors.Newf("🚨 failed to get frontend logs on ctx timeout: %w", err))
+			}
+			err = errors.Newf("frontend container timed out during polling: \n%s", out)
+			return cleanup, err
 		default:
 		}
 		// check version string set
@@ -573,7 +576,12 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	for {
 		select {
 		case <-setInitTimeout.Done():
-			return cleanup, setInitTimeout.Err()
+			out, err := run.Cmd(ctx, "docker", "logs", fmt.Sprintf("%s_frontend_%x", test.Type, hash)).Run().String()
+			if err != nil {
+				test.AddError(errors.Newf("🚨 failed to get frontend logs on ctx timeout: %w", err))
+			}
+			err = errors.Newf("frontend container timed out during polling: \n%s", out)
+			return cleanup, err
 		default:
 		}
 		// check version string set
