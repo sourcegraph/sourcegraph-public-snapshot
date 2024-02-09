@@ -328,7 +328,6 @@ export const NewSearchContent: FC<NewSearchContentProps> = props => {
                         selectedSearchContextSpec={selectedSearchContextSpec}
                         logSearchResultClicked={onLogSearchResultClick}
                         queryExamplesPatternType={patternType}
-                        className={styles.contentList}
                     />
                 )}
             </div>
