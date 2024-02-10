@@ -124,7 +124,6 @@ func (g *gomockgen) GenerateRules(args language.GenerateArgs) language.GenerateR
 
 		slices.Sort(targets)
 		targets = slices.Compact(targets)
-		fmt.Println(targets)
 
 		multirunRule := rule.NewRule("multirun", "go_mockgen")
 		multirunRule.SetAttr("commands", targets)

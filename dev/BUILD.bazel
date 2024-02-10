@@ -110,7 +110,7 @@ multirun(
         "//internal/uploadstore:generate_mocks",
         "//internal/workerutil/dbworker/store/mocks:generate_mocks",
         "//internal/workerutil:generate_mocks",
-        # TODO: this list doesn't get smaller, why
-    ],
+        "//lib/background:generate_mocks",
+    ],  # TODO: this list doesn't get smaller, why
     jobs = 1,
 )
