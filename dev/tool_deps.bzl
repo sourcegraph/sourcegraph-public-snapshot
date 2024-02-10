@@ -7,7 +7,6 @@ SRC_CLI_VERSION = "5.2.1"
 CTAGS_VERSION = "6.0.0.2783f009"
 PACKER_VERSION = "1.8.3"
 P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
-YQ_VERSION = "v4.40.5"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -170,24 +169,5 @@ def tool_deps():
         name = "p4-fusion-darwin-arm64",
         sha256 = "f97942e145902e682a5c1bc2608071a24d17bf943f35faaf18f359cbbaacddcd",
         url = "https://storage.googleapis.com/p4-fusion/aarch64-darwin/dist/p4-fusion-{0}".format(P4_FUSION_VERSION),
-        executable = True,
-    )
-
-    http_file(
-        name = "yq-linux-amd64",
-        integrity = "sha256-DWqvHPRKjRj7x+0O8U9zWo340uMUxMwPAkLTXApEDJU=",
-        url = "https://github.com/mikefarah/yq/releases/download/{0}/yq_linux_amd64".format(YQ_VERSION),
-        executable = True,
-    )
-
-    http_file(
-        name = "yq-darwin-amd64",
-        url = "https://github.com/mikefarah/yq/releases/download/{0}/yq_darwin_amd64".format(YQ_VERSION),
-        executable = True,
-    )
-
-    http_file(
-        name = "yq-darwin-arm64",
-        url = "https://github.com/mikefarah/yq/releases/download/{0}/yq_darwin_arm64".format(YQ_VERSION),
         executable = True,
     )
