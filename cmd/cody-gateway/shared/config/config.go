@@ -43,9 +43,8 @@ type Config struct {
 
 	BigQuery struct {
 		ProjectID string
-
-		Dataset string
-		Table   string
+		Dataset   string
+		Table     string
 
 		EventBufferSize    int
 		EventBufferWorkers int
@@ -104,7 +103,7 @@ func (c *Config) Load() {
 	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
 		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
 	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
-		"The Sourcegraph.com access token to be used. If not provided, dotcom-based actor sources will be disabled.")
+		"Cooldown period for refreshing the actor info from dotcom.")
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
