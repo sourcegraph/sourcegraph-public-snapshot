@@ -109,7 +109,14 @@ type GitserverServiceClient interface {
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
 	// ListRefs returns a list of all the refs known to the repository, this includes
-	// heads, tags, and other potential refs.
+	// heads, tags, and other potential refs, but filters can be applied.
+	//
+	// The refs are ordered in the following order:
+	// HEAD first, if part of the result set.
+	// The rest will be ordered by creation date, in descending order, i.e., newest
+	// first.
+	// If two resources are created at the same timestamp, the records are ordered
+	// alphabetically.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
@@ -593,7 +600,14 @@ type GitserverServiceServer interface {
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
 	// ListRefs returns a list of all the refs known to the repository, this includes
-	// heads, tags, and other potential refs.
+	// heads, tags, and other potential refs, but filters can be applied.
+	//
+	// The refs are ordered in the following order:
+	// HEAD first, if part of the result set.
+	// The rest will be ordered by creation date, in descending order, i.e., newest
+	// first.
+	// If two resources are created at the same timestamp, the records are ordered
+	// alphabetically.
 	//
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.

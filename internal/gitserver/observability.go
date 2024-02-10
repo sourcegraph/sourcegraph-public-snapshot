@@ -21,9 +21,7 @@ type operations struct {
 	getBehindAhead           *observation.Operation
 	getCommit                *observation.Operation
 	hasCommitAfter           *observation.Operation
-	listBranches             *observation.Operation
 	listRefs                 *observation.Operation
-	listTags                 *observation.Operation
 	lstat                    *observation.Operation
 	mergeBase                *observation.Operation
 	newFileReader            *observation.Operation
@@ -119,9 +117,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getBehindAhead:           op("GetBehindAhead"),
 		getCommit:                op("GetCommit"),
 		hasCommitAfter:           op("HasCommitAfter"),
-		listBranches:             op("ListBranches"),
 		listRefs:                 op("ListRefs"),
-		listTags:                 op("ListTags"),
 		lstat:                    subOp("lStat"),
 		mergeBase:                op("MergeBase"),
 		newFileReader:            op("NewFileReader"),
