@@ -293,6 +293,8 @@ github.com/bazelbuild/bazel-gazelle v0.35.0 h1:Bvg+zEHWYwWrhJT4WxyvcU3y1DEJpT/Xl
 github.com/bazelbuild/bazel-gazelle v0.35.0/go.mod h1:o2+s90f3w3U6jjw0gcdok0EJOfNK0AK/9RyVP7QkRDk=
 github.com/bazelbuild/buildtools v0.0.0-20231115204819-d4c9dccdfbb1 h1:2Gc2Q6hVR1SJ8bBI9Ybzoggp8u/ED2WkM4MfvEIn9+c=
 github.com/bazelbuild/buildtools v0.0.0-20231115204819-d4c9dccdfbb1/go.mod h1:689QdV3hBP7Vo9dJMmzhoYIyo/9iMhEmHkJcnaPRCbo=
+github.com/bazelbuild/rules_go v0.44.0 h1:uJStI9o5obVWSwquy9WxKNWfZxf2sKA2rpEsX6x5RVM=
+github.com/bazelbuild/rules_go v0.44.0/go.mod h1:z7Y8GZ90V4mwgYizbNbEQKmOmx93Q3Btcel4vX7pXoc=
 github.com/becheran/wildmatch-go v1.0.0 h1:mE3dGGkTmpKtT4Z+88t8RStG40yN9T+kFEGj2PZFSzA=
 github.com/becheran/wildmatch-go v1.0.0/go.mod h1:gbMvj0NtVdJ15Mg/mH9uxk2R1QCistMyU7d9KFzroX4=
 github.com/beevik/etree v1.1.0/go.mod h1:r8Aw8JqVegEf0w2fDnATrX9VpkMcyFeM0FhwO62wh+A=
@@ -313,6 +315,8 @@ github.com/bits-and-blooms/bitset v1.8.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
 github.com/bmatcuk/doublestar v1.3.4 h1:gPypJ5xD31uhX6Tf54sDPUOBXTqKH4c9aPY66CyQrS0=
 github.com/bmatcuk/doublestar v1.3.4/go.mod h1:wiQtGV+rzVYxB7WIlirSN++5HPtPlXEo9MEoZQC/PmE=
+github.com/bmatcuk/doublestar/v4 v4.6.1 h1:FH9SifrbvJhnlQpztAx++wlkk70QBf0iBWDwNy7PA4I=
+github.com/bmatcuk/doublestar/v4 v4.6.1/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTSPVIjEY1Wr7jzc=
 github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff h1:RmdPFa+slIr4SCBg4st/l/vZWVe9QJKMXGO60Bxbe04=
 github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff/go.mod h1:+RTT1BOk5P97fT2CiHkbFQwkK3mjsFAP6zCYV2aXtjw=
 github.com/bradfitz/gomemcache v0.0.0-20170208213004-1952afaa557d/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
@@ -1708,8 +1712,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/strum355/go-mockgen v0.0.0-20240207152121-3f1b41cc8c40 h1:Dup3gAgmdLe8oRshV/5mWKgcXy+gPk0n1x04b1cew/c=
-github.com/strum355/go-mockgen v0.0.0-20240207152121-3f1b41cc8c40/go.mod h1:89jHE4KrusV6kCx9JPn5nkD7kfGD+4gtvp+ApO0lc/E=
+github.com/strum355/go-mockgen v0.0.0-20240210001918-99bfe9548e56 h1:7H9Wnfn7spynoZ53W4OX8v1usPE4UocRnwlAW4kNV/U=
+github.com/strum355/go-mockgen v0.0.0-20240210001918-99bfe9548e56/go.mod h1:89jHE4KrusV6kCx9JPn5nkD7kfGD+4gtvp+ApO0lc/E=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=

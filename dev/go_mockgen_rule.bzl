@@ -28,13 +28,15 @@ def _go_mockgen_run(ctx):
     deps = []
     for dep in ctx.attr.deps:
         for a in dep[GoArchive].direct:
-            transformer_args.append("--archives={}={}={}={}".format(
-                a.data.importpath,
+            transformer_args.append("--archives=%s=%s" % (
                 a.data.importmap,
-                a.data.file.path,
-                a.data.file.path,
+                # (anecdotaly) export_file is a .x file and file is a .a file. See here for more info on this
+                # https://github.com/bazelbuild/rules_go/issues/1803
+                # and here for further reading on the compiler side of things
+                # https://groups.google.com/g/golang-codereviews/c/UXJeeuTS7oQ
+                a.data.export_file.path if a.data.export_file else a.data.file.path,
             ))
-            deps.append(depset(direct = [a.data.file]))
+            deps.append(depset(direct = [a.data.export_file if a.data.export_file else a.data.file]))
 
     for dep in ctx.attr.deps:
         for src in dep[GoArchive].data.srcs:

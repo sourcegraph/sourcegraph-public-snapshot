@@ -37,7 +37,7 @@ func main() {
 	flag.StringVar(&payload.Goimports, "goimports", "./bin/.goimports", "Path to goimports binary")
 	flag.StringVar(&payload.StdlibRoot, "stdlibroot", "", "Path to the root of the Go compiled stdlib")
 	flag.Var(&sourceFiles, "source-files", "Values of the format IMPORTPATH=FILE, where IMPORTPATH is the import path for FILE")
-	flag.Var(&archives, "archives", "Values of the format W=X=Y=Z, where ARCHIVE is the path to the archive")
+	flag.Var(&archives, "archives", "Values of the format IMPORTPATH=ARCHIVE, where ARCHIVE is the path to the archive for the given IMPORTPATH")
 	flag.Parse()
 
 	payload.IncludeConfigPaths = []string{}
@@ -100,6 +100,4 @@ func main() {
 	if _, err := f.Write(out); err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Successfully transformed go-mockgen config")
 }

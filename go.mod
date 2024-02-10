@@ -31,7 +31,7 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240207152121-3f1b41cc8c40
+	github.com/derision-test/go-mockgen => github.com/strum355/go-mockgen v0.0.0-20240210001918-99bfe9548e56
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Dependency declares incorrect, old version of redigo, so we must override it: https://github.com/boj/redistore/blob/master/go.mod

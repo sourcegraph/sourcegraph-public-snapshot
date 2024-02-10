@@ -1276,8 +1276,8 @@ def go_dependencies():
             "//third_party/com_github_strum355_gomockgen:debug.patch",
         ],
         replace = "github.com/strum355/go-mockgen",
-        sum = "h1:Dup3gAgmdLe8oRshV/5mWKgcXy+gPk0n1x04b1cew/c=",
-        version = "v0.0.0-20240207152121-3f1b41cc8c40",
+        sum = "h1:7H9Wnfn7spynoZ53W4OX8v1usPE4UocRnwlAW4kNV/U=",
+        version = "v0.0.0-20240210001918-99bfe9548e56",
     )
     go_repository(
         name = "com_github_dghubble_go_twitter",
