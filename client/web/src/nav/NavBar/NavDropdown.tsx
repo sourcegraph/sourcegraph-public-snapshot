@@ -8,7 +8,7 @@ import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } fro
 
 import { MobileNavGroupContext, NavItem, NavLink, type NavLinkProps } from '.'
 
-import styles from './NavDropdown.module.scss'
+import navDropdownSyles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
 
 export interface NavDropdownItem {
@@ -60,7 +60,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
     return (
         <>
             {!mobileNav ? (
-                <NavItem className={styles.wrapper}>
+                <NavItem className={navDropdownSyles.wrapper}>
                     <Menu>
                         {({ isExpanded }) => (
                             <>
@@ -76,7 +76,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     data-test-active={isItemSelected}
                                 >
                                     <MenuButton
-                                        className={classNames(navItemStyles.itemFocusable, styles.button)}
+                                        className={classNames(navItemStyles.itemFocusable, navDropdownSyles.button)}
                                         aria-label={isExpanded ? `Hide ${name} menu` : `Show ${name} menu`}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
@@ -101,7 +101,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     </MenuButton>
                                 </div>
 
-                                <MenuList className={styles.menuList} targetPadding={EMPTY_RECTANGLE}>
+                                <MenuList className={navDropdownSyles.menuList} targetPadding={EMPTY_RECTANGLE}>
                                     {homeItem && (
                                         <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path}>
                                             {homeItem.content}
@@ -129,7 +129,11 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                     {/* Render the rest of the items and indent them to indicate a hierarchical structure */}
                     {items.map(item => (
                         <NavItem key={item.path}>
-                            <NavLink to={item.path} className={styles.nestedItem} external={item.target === '_blank'}>
+                            <NavLink
+                                to={item.path}
+                                className={navDropdownSyles.nestedItem}
+                                external={item.target === '_blank'}
+                            >
                                 {item.content}
                             </NavLink>
                         </NavItem>

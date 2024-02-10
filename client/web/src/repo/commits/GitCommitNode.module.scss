@@ -163,20 +163,24 @@
     justify-content: unset;
 
     &-sha {
-        display: flex;
-        align-items: center;
-        font-size: 0.875rem;
-        margin: 0;
-        margin-left: 0.25rem;
-        padding: 0;
+        &#{&} {
+            display: flex;
+            align-items: center;
+            font-size: 0.875rem;
+            margin: 0;
+            margin-left: 0.25rem;
+            padding: 0;
+        }
     }
 
     &-copy {
-        font-size: 0.6875rem;
-        padding: 0.25rem;
+        &#{&} {
+            font-size: 0.6875rem;
+            padding: 0.25rem;
 
-        &:not(:hover) {
-            opacity: 0.8;
+            &:not(:hover) {
+                opacity: 0.8;
+            }
         }
     }
 

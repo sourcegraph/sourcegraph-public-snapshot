@@ -21,6 +21,7 @@ async function startDevProxyServer({
 }: DevelopmentServerInit): Promise<void> {
     const { proxyRoutes, ...proxyMiddlewareOptions } = getAPIProxySettings({
         apiURL,
+        isProd: process.env.NODE_ENV === 'production',
         getLocalIndexHTML(jsContextScript) {
             return getIndexHTML({ manifest: getWebBuildManifest(), jsContextScript })
         },

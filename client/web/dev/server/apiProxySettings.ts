@@ -11,6 +11,7 @@ const PROXY_ROUTES = ['/.api', '/search/stream', '/-', '/.auth']
 
 interface GetAPIProxySettingsOptions {
     apiURL: string
+    isProd: boolean
 
     /**
      * Use the remote `window.context` as the basis for our local `window.context`, so that most
@@ -23,9 +24,7 @@ interface ProxySettings extends Options {
     proxyRoutes: string[]
 }
 
-export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxySettings {
-    const { apiURL, getLocalIndexHTML } = options
-
+export function getAPIProxySettings({ apiURL, isProd, getLocalIndexHTML }: GetAPIProxySettingsOptions): ProxySettings {
     return {
         // Proxy '' (for index.html).
         proxyRoutes: [...PROXY_ROUTES, ''],
@@ -38,6 +37,11 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
         cookieDomainRewrite: '',
         // Prevent automatic call of res.end() in `onProxyRes`. It is handled by `responseInterceptor`.
         selfHandleResponse: true,
+        // When production, proxy asset requests to vite server
+        router: req => {
+            if (isProd && req.path.startsWith('/.assets')) return 'http://127.0.0.1:5173'
+            return apiURL
+        },
         // eslint-disable-next-line @typescript-eslint/require-await
         onProxyRes: conditionalResponseInterceptor(STREAMING_ENDPOINTS, async (responseBuffer, proxyRes) => {
             // Propagate cookies to enable authentication on the remote server.

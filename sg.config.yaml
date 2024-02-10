@@ -404,12 +404,20 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: pnpm --filter @sourcegraph/web run dev --clearScreen=false
+    cmd: pnpm --filter @sourcegraph/web run serve:dev --clearScreen=false
     install: |
       pnpm install
       pnpm run generate
     env:
       ENABLE_OPEN_TELEMETRY: true
+
+  vite-assets:
+    description: Runs vite simply as a static file server
+    cmd: pnpm --filter @sourcegraph/web run serve:prod --clearScreen=false
+    # install: pnpm build-web
+    env:
+      ENABLE_OPEN_TELEMETRY: true
+      NODE_ENV: production
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
@@ -425,7 +433,6 @@ commands:
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
     cmd: pnpm --filter @sourcegraph/web serve
-    install: pnpm --filter @sourcegraph/web run build
     env:
       NODE_ENV: production
       WEB_BUILDER_SERVE_INDEX: true
@@ -1539,7 +1546,7 @@ commandsets:
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
-      - web
+      - vite-assets
       - caddy
     env:
       NODE_ENV: production

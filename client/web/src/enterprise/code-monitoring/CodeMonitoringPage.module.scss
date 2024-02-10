@@ -1,0 +1,5 @@
+@import 'wildcard/src/global-styles/nav.scss';
+
+.nav-link.nav-link {
+    @extend .nav-link;
+}
