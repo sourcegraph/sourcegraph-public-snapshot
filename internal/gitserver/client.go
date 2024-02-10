@@ -260,6 +260,16 @@ type CommitLog struct {
 	ChangedFiles []string
 }
 
+// ListRefsOpts are additional options passed to ListRefs.
+type ListRefsOpts struct {
+	// If true, only heads are returned. Can be combined with TagsOnly.
+	HeadsOnly bool
+	// If true, only tags are returned. Can be combined with HeadsOnly.
+	TagsOnly bool
+	// If set, only return refs that point at the given commit sha.
+	PointsAtCommit api.CommitID
+}
+
 type Client interface {
 	// Scoped adds a usage scope to the client and returns a new client with that scope.
 	// Usage scopes should be descriptive and be lowercase plaintext, eg. batches.reconciler.
@@ -305,17 +315,11 @@ type Client interface {
 	IsRepoCloneable(context.Context, api.RepoName) error
 
 	// ListRefs returns a list of all refs in the repository.
-	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
+	ListRefs(ctx context.Context, repo api.RepoName, opt ListRefsOpts) ([]gitdomain.Ref, error)
 
-	// ListBranches returns a list of all branches in the repository.
-	ListBranches(ctx context.Context, repo api.RepoName) ([]*gitdomain.Ref, error)
-
-	// ListTags returns a list of all tags in the repository.
-	ListTags(ctx context.Context, repo api.RepoName) ([]*gitdomain.Ref, error)
-
-	// TagsContainingCommit returns all the tags that contain the given commit in their
-	// history.
-	TagsContainingCommit(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.Ref, error)
+	// // TagsContainingCommit returns all the tags that contain the given commit in their
+	// // history.
+	// TagsContainingCommit(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]*gitdomain.Ref, error)
 
 	// MergeBase returns the merge base commit sha for the specified revspecs.
 	MergeBase(ctx context.Context, repo api.RepoName, base, head string) (api.CommitID, error)

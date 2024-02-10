@@ -15,7 +15,7 @@ import (
 func TestCommit(t *testing.T) {
 	ctx := context.Background()
 	gsClient := gitserver.NewMockClient()
-	gsClient.ListTagsFunc.SetDefaultReturn([]*gitdomain.Tag{
+	gsClient.ListRefsFunc.SetDefaultReturn([]gitdomain.Ref{
 		{Name: "v1"}, {Name: "v2"}, {Name: "v3"}, {Name: "v4"}, {Name: "v5"},
 	}, nil)
 
@@ -34,7 +34,7 @@ func TestCommit(t *testing.T) {
 		}
 	}
 
-	if len(gsClient.ListTagsFunc.History()) != 1 {
+	if len(gsClient.ListRefsFunc.History()) != 1 {
 		t.Fatalf("expected function to be memoized")
 	}
 }

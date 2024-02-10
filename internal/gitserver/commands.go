@@ -25,6 +25,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -2308,90 +2309,8 @@ func rel(path string) string {
 	return strings.TrimPrefix(path, "/")
 }
 
-func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Ref, err error) {
-	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
-	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
-	// using committerdate).
-	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
-
-	for _, commit := range commitObjs {
-		args = append(args, "--points-at", commit)
-	}
-
-	cmd := c.gitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	return parseTags(out)
-}
-
-func parseTags(in []byte) ([]*gitdomain.Tag, error) {
-	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
-	if len(in) == 0 {
-		return nil, nil // no tags
-	}
-	lines := bytes.Split(in, []byte("\n"))
-	tags := make([]*gitdomain.Tag, len(lines))
-	for i, line := range lines {
-		parts := bytes.SplitN(line, []byte("\x00"), 3)
-		if len(parts) != 3 {
-			return nil, errors.Errorf("invalid git tag list output line: %q", line)
-		}
-
-		tag := &gitdomain.Tag{
-			Name:     string(parts[1]),
-			CommitID: api.CommitID(parts[0]),
-		}
-
-		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
-		if err == nil {
-			tag.CreatorDate = time.Unix(date, 0).UTC()
-		}
-
-		tags[i] = tag
-	}
-	return tags, nil
-}
-
-// ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName) (_ []*gitdomain.Ref, err error) {
-	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs:             []attribute.KeyValue{repo.Attr()},
-	})
-	defer endObservation(1, observation.Args{})
-
-	client, err := c.clientSource.ClientForRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := client.ListRefs(ctx, &proto.ListRefsRequest{
-		RepoName:  string(repo),
-		HeadsOnly: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res.GetRefs(), nil
-}
-
 // ListRefs returns a list of all refs in the repository.
-func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
+func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName, opt ListRefsOpts) (_ []gitdomain.Ref, err error) {
 	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
@@ -2405,8 +2324,14 @@ func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ 
 		return nil, err
 	}
 
+	mask, err := fieldmaskpb.New(&proto.BlameResponse{}, "hunk.start_line")
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := client.ListRefs(ctx, &proto.ListRefsRequest{
 		RepoName: string(repo),
+		Mask:     mask,
 	})
 	if err != nil {
 		return nil, err
