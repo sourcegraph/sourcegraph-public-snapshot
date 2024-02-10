@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
@@ -43,9 +44,9 @@ func NewHandler(
 		rateLimitNotifier,
 		codygateway.FeatureEmbeddings,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 			act := actor.FromContext(r.Context())
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
-
 			// This will never be nil as the rate limiter middleware checks this before.
 			// TODO: Should we read the rate limit from context, and store it in the rate
 			// limiter to make this less dependent on these two logics to remain the same?
@@ -87,6 +88,12 @@ func NewHandler(
 				usedTokens         int = -1
 			)
 			defer func() {
+				o := overhead.FromContext(r.Context())
+				o.Feature = codygateway.FeatureEmbeddings
+				o.UpstreamLatency = upstreamFinished
+				o.Provider = c.ProviderName()
+				o.Stream = false
+
 				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
 					span.SetAttributes(
 						attribute.Int("upstreamStatusCode", upstreamStatusCode),

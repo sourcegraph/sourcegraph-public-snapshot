@@ -213,7 +213,8 @@ const DynamicFilterItem: FC<DynamicFilterItemProps> = props => {
                 onClick={() => onClick(filter, selected)}
             >
                 <span className={styles.itemText}>{renderItem ? renderItem(filter, selected) : filter.label}</span>
-                <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />
+                {/* NOTE: filter.count should _only_ be zero for the synthetic count filter. */}
+                {filter.count > 0 && <DynamicFilterBadge exhaustive={filter.exhaustive} count={filter.count} />}
                 {selected && <Icon svgPath={mdiClose} aria-hidden={true} className="ml-1 flex-shrink-0" />}
             </Button>
         </li>

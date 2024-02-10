@@ -94,13 +94,6 @@
     }
 }
 
-// @TODO: Jason Harris: <kbd> element is unuseable unless the following CSS selectors are present.
-// We should use these as a base for adjusting the default styling of <kbd> elements.
 .keybind {
-    font-family: var(--font-family-base);
-    color: var(--text-muted);
-    background: var(--color-bg-1);
-    border: 1px solid var(--border-color-2);
     margin-left: 0.5rem;
-    padding: 0 0.25rem;
 }

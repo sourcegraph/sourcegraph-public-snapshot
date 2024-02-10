@@ -22,9 +22,10 @@ type Config struct {
 	DiagnosticsSecret string
 
 	Dotcom struct {
-		URL          string
-		AccessToken  string
-		InternalMode bool
+		URL                          string
+		AccessToken                  string
+		InternalMode                 bool
+		ActorRefreshCoolDownInterval time.Duration
 	}
 
 	Anthropic AnthropicConfig
@@ -76,8 +77,6 @@ type AnthropicConfig struct {
 type FireworksConfig struct {
 	AllowedModels                          []string
 	AccessToken                            string
-	LogSelfServeCodeCompletionRequests     bool
-	DisableSingleTenant                    bool
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
 }
@@ -103,6 +102,8 @@ func (c *Config) Load() {
 	}
 	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
 		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
+	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
+		"Cooldown period for refreshing the actor info from dotcom.")
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
@@ -162,8 +163,6 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/mixtral-8x7b-instruct",
 		}, ","),
 		"Fireworks models that can be used."))
-	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
-	c.Fireworks.DisableSingleTenant = c.GetBool("CODY_GATEWAY_FIREWORKS_DISABLE_SINGLE_TENANT", "false", "Whether we should disable single tenant models for Fireworks.")
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}
