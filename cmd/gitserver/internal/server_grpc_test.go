@@ -266,6 +266,23 @@ func TestGRPCServer_MergeBase(t *testing.T) {
 		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
+	t.Run("revision not found", func(t *testing.T) {
+		svc := NewMockService()
+		svc.MaybeStartCloneFunc.SetDefaultReturn(nil, true)
+		gs := &grpcServer{
+			svc: svc,
+			getBackendFunc: func(common.GitDir, api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.MergeBaseFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "b2"})
+				return b
+			},
+		}
+		_, err := gs.MergeBase(ctx, &v1.MergeBaseRequest{RepoName: "therepo", Base: []byte("master"), Head: []byte("b2")})
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+		require.Contains(t, err.Error(), "revision not found")
+	})
 	t.Run("e2e", func(t *testing.T) {
 		svc := NewMockService()
 		// Repo is cloned, proceed!
