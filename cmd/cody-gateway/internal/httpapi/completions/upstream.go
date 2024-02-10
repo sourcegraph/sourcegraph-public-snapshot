@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
@@ -263,7 +264,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			var (
-				upstreamStarted        = time.Now()
+				upstreamStarted    = time.Now()
+				upstreamLatency    time.Duration
 				upstreamStatusCode int = -1
 				// resolvedStatusCode is the status code that we returned to the
 				// client - in most case it is the same as upstreamStatusCode,
@@ -295,6 +297,12 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						delete(usageData, k)
 					}
 				}
+				o := overhead.FromContext(r.Context())
+				o.Feature = feature
+				o.UpstreamLatency = upstreamLatency
+				o.Provider = upstreamName
+				o.Stream = body.ShouldStream()
+
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
@@ -307,7 +315,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							"provider": upstreamName,
 
 							// Request details
-							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+							"upstream_request_duration_ms": upstreamLatency.Milliseconds(),
 							"upstream_status_code":         upstreamStatusCode,
 							"resolved_status_code":         resolvedStatusCode,
 
@@ -404,6 +412,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				}
 			}
 			_, _ = io.Copy(responseWriter, respBody)
+			// record latency of upstream request after we read the whole response, but without recording the time we spend parsing it in parseResponseAndUsage()
+			upstreamLatency = time.Since(upstreamStarted)
 
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.
