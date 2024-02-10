@@ -392,6 +392,7 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.0.1 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
