@@ -37,10 +37,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -1462,61 +1460,6 @@ type CommitsOptions struct {
 	NameOnly bool
 }
 
-var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
-
-// getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
-	if honey.Enabled() && recordGetCommitQueries {
-		defer func() {
-			ev := honey.NewEvent("getCommit")
-			ev.SetSampleRate(10) // 1 in 10
-			ev.AddField("repo", repo)
-			ev.AddField("commit", id)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-
-			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
-			ev.AddField("query", q)
-
-			if err != nil {
-				ev.AddField("error", err.Error())
-			}
-
-			_ = ev.Send()
-		}()
-	}
-
-	if err := checkSpecArgSafety(string(id)); err != nil {
-		return nil, err
-	}
-
-	commitOptions := CommitsOptions{
-		Range:            string(id),
-		N:                1,
-		NoEnsureRevision: true,
-	}
-	commitOptions = addNameOnly(commitOptions, c.subRepoPermsChecker)
-
-	commits, err := c.commitLog(ctx, repo, commitOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(commits) == 0 {
-		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
-	}
-	if len(commits) != 1 {
-		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
-	}
-
-	return commits[0], nil
-}
-
-// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
-// exists.
-//
-// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
-// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
-// the repository or if the commit must be fetched from the remote.
 func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1527,7 +1470,20 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 	})
 	defer endObservation(1, observation.Args{})
 
-	return c.getCommit(ctx, repo, id)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.GetCommit(ctx, &proto.GetCommitRequest{
+		RepoName: string(repo),
+		Commit:   string(id),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.CommitFromProto(res.GetCommit()), nil
 }
 
 // Commits returns all commits matching the options.
@@ -1545,7 +1501,21 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	return c.commitLog(ctx, repo, opt)
+
+	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
+
+	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
+		return c.getMoreCommits(ctx, repo, opt, filtered)
+	}
+	return filtered, err
 }
 
 func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
@@ -1718,26 +1688,6 @@ func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, rep
 
 func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
-}
-
-// commitLog returns a list of commits.
-//
-// The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
-	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering commits")
-	}
-
-	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
-		return c.getMoreCommits(ctx, repo, opt, filtered)
-	}
-	return filtered, err
 }
 
 func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {

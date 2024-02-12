@@ -848,6 +848,84 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	}, nil
 }
 
+func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest) (*proto.GetCommitResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("commit", req.GetCommit()),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetCommit() == "" {
+		return nil, status.New(codes.InvalidArgument, "commit must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+
+	// Ensure that the repo is cloned and if not start a background clone, then
+	// return a well-known NotFound payload error.
+	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
+		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
+			CloneInProgress: notFoundPayload.CloneInProgress,
+			CloneProgress:   notFoundPayload.CloneProgress,
+			Repo:            req.GetRepoName(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.Err()
+	}
+
+	subRepoPermsEnabled, err := authz.SubRepoEnabledForRepo(ctx, gs.subRepoChecker, repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	commit, err := backend.GetCommit(ctx, api.CommitID(req.GetCommit()), subRepoPermsEnabled)
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	hasAccess, err := hasAccessToCommit(ctx, repoName, commit.ModifiedFiles, gs.subRepoChecker)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasAccess {
+		s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+			Repo: req.GetRepoName(),
+			Spec: req.GetCommit(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.Err()
+	}
+
+	return &proto.GetCommitResponse{
+		Commit: commit.ToProto(),
+	}, nil
+}
+
 func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_BlameServer) error {
 	ctx := ss.Context()
 
@@ -1127,6 +1205,29 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	_, err = io.Copy(w, r)
 	return err
+}
+
+func hasAccessToCommit(ctx context.Context, repoName api.RepoName, files []string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	if len(files) == 0 {
+		return true, nil // If commit has no files, assume user has access to view the commit.
+	}
+
+	if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repoName); err != nil {
+		return false, err
+	} else if !enabled {
+		return true, nil
+	}
+
+	a := actor.FromContext(ctx)
+	for _, fileName := range files {
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
+			return false, err
+		} else if hasAccess {
+			// if the user has access to one file modified in the commit, they have access to view the commit
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (gs *grpcServer) P4Exec(_ *proto.P4ExecRequest, _ proto.GitserverService_P4ExecServer) error {
