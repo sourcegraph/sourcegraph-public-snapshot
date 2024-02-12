@@ -209,7 +209,8 @@ func cloudArmorAllowOnlyCloudflareEdge(scope constructs.Construct, id resourceid
 		sortedIPs = append(sortedIPs, any(val))
 	}
 
-	// Add Dyanmic block override to add new rules for chunks of 10 CIDRs (max per rule)
+	// Add Dynamic block override to add new rules for chunks of 10 CIDRs (max per rule)
+	// We need to use cdktf.Fn_Chunklist because we don't know the set of Cloudflare IP ranges ahead of time
 	securityPolicy.AddOverride(pointers.Ptr("dynamic.rule"), &map[string]any{
 		"for_each": cdktf.Fn_Chunklist(pointers.Ptr(sortedIPs), pointers.Ptr(10.0)),
 		"content": &map[string]any{
