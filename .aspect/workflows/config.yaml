@@ -31,6 +31,12 @@ tasks:
       include_eternal_tests: true
       targets:
         - //...
+        # exclude testing as it is executed in a seperate job
+        - -//testing/...
+  - test:
+      include_eternal_tests: true
+      targets:
+        - //testing/...
         # This target should only really run when on main which we aren't handling. For the time being while we
         # evaluate Aspect Workflows it is ok
         # TODO(burmudar): Let this only run on main branch

@@ -8,8 +8,6 @@ PATH="$(dirname "${runfiles_dir}/${GO}"):${PATH}"
 # Remove bazelisk from path
 PATH=$(echo "${PATH}" | awk -v RS=: -v ORS=: '/bazelisk/ {next} {print}')
 export PATH
-# Allow Aspect to re-enter again
-export ASPECT_REENTRANT=
 
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
@@ -17,7 +15,7 @@ bazel \
   --bazelrc=.bazelrc \
   --bazelrc=.aspect/bazelrc/ci.bazelrc \
   --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  configure
+  run //:gazelle
 
 if [ "${CI:-}" ]; then
   git ls-files --exclude-standard --others | xargs git add --intent-to-add || true

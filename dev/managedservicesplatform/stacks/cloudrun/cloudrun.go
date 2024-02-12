@@ -3,12 +3,12 @@ package cloudrun
 import (
 	"bytes"
 	"html/template"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 

@@ -4,7 +4,6 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "internal",
     srcs = [
-        "batchlog.go",
         "cleanup.go",
         "clone.go",
         "disk.go",
@@ -12,7 +11,6 @@ go_library(
         "gitservice.go",
         "list_gitolite.go",
         "lock.go",
-        "p4exec.go",
         "patch.go",
         "repo_info.go",
         "search.go",
@@ -82,7 +80,6 @@ go_library(
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
         "@org_golang_x_sync//errgroup",
-        "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],
 )
@@ -95,7 +92,6 @@ go_test(
         "list_gitolite_test.go",
         "main_test.go",
         "mocks_test.go",
-        "p4exec_test.go",
         "repo_info_test.go",
         "server_grpc_test.go",
         "server_test.go",
@@ -110,7 +106,6 @@ go_test(
     ],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/git",
         "//cmd/gitserver/internal/git/gitcli",
         "//cmd/gitserver/internal/gitserverfs",
@@ -138,7 +133,6 @@ go_test(
         "//internal/vcs",
         "//internal/wrexec",
         "//lib/errors",
-        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_google_go_cmp//cmp",
@@ -150,7 +144,6 @@ go_test(
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
         "@org_golang_google_protobuf//types/known/timestamppb",
-        "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],
 )

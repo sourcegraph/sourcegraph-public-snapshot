@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -66,9 +68,35 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
 		db := mockDB(defaultUserPerms)
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false for unauthenticated actor")
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false for unauthenticated actor")
+		require.Equal(t, "not authenticated", reason)
+	})
+
+	t.Run("disabled by license", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				CodyEnabled: &truePtr,
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+
+		oldMock := licensing.MockCheckFeature
+		licensing.MockCheckFeature = func(feature licensing.Feature) error {
+			return licensing.NewFeatureNotActivatedError("no cody for you")
 		}
+		t.Cleanup(func() {
+			licensing.MockCheckFeature = oldMock
+		})
+
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		db := mockDB(defaultUserPerms)
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false for authenticated actor with license disabling cody")
+		require.Equal(t, "instance license does not allow cody", reason)
 	})
 
 	t.Run("no RBAC, Authenticated user", func(t *testing.T) {
@@ -84,9 +112,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if !IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return true for authenticated actor")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.True(t, enabled, "Expected IsCodyEnabled to return true for authenticated actor")
+		require.Equal(t, "", reason)
 	})
 
 	t.Run("no RBAC, Enabled cody, but not completions", func(t *testing.T) {
@@ -102,9 +130,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if !IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return true without completions")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.True(t, enabled, "Expected IsCodyEnabled to return true without completions")
+		require.Equal(t, "", reason)
 	})
 
 	t.Run("no RBAC, Disabled cody", func(t *testing.T) {
@@ -120,9 +148,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false when cody is disabled")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false when cody is disabled")
+		require.Equal(t, "cody is disabled", reason)
 	})
 
 	t.Run("no RBAC, No cody config, default value", func(t *testing.T) {
@@ -137,9 +165,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false when cody is not configured")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false when cody is not configured")
+		require.Equal(t, "cody is disabled", reason)
 	})
 
 	t.Run("no RBAC, Cody.RestrictUsersFeatureFlag", func(t *testing.T) {
@@ -158,14 +186,15 @@ func TestIsCodyEnabled(t *testing.T) {
 			db := mockDB(defaultUserPerms)
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
-			if IsCodyEnabled(ctx, db) {
-				t.Error("Expected IsCodyEnabled to return false for unauthenticated user with cody.restrictUsersFeatureFlag enabled")
-			}
+			enabled, reason := IsCodyEnabled(ctx, db)
+			require.False(t, enabled, "Expected IsCodyEnabled to return false for unauthenticated user with cody.restrictUsersFeatureFlag enabled")
+			require.Equal(t, "not authenticated", reason)
+
 			ctx = context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if IsCodyEnabled(ctx, db) {
-				t.Error("Expected IsCodyEnabled to return false for authenticated user when cody.restrictUsersFeatureFlag is set and no feature flag is present for the user")
-			}
+			enabled, reason = IsCodyEnabled(ctx, db)
+			require.False(t, enabled, "Expected IsCodyEnabled to return false for authenticated user when cody.restrictUsersFeatureFlag is set and no feature flag is present for the user")
+			require.Equal(t, "cody is restricted to feature flag but feature flag is not enabled", reason)
 		})
 		t.Run("feature flag enabled", func(t *testing.T) {
 			conf.Mock(&conf.Unified{
@@ -183,13 +212,14 @@ func TestIsCodyEnabled(t *testing.T) {
 			ctx := context.Background()
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"cody": true}, map[string]bool{"cody": true}, nil))
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
-			if IsCodyEnabled(ctx, db) {
-				t.Error("Expected IsCodyEnabled to return false when cody feature flag is enabled")
-			}
+			enabled, reason := IsCodyEnabled(ctx, db)
+			require.False(t, enabled, "Expected IsCodyEnabled to return false when cody feature flag is enabled")
+			require.Equal(t, "not authenticated", reason)
+
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if !IsCodyEnabled(ctx, db) {
-				t.Error("Expected IsCodyEnabled to return true when cody feature flag is enabled")
-			}
+			enabled, reason = IsCodyEnabled(ctx, db)
+			require.True(t, enabled, "Expected IsCodyEnabled to return true when cody feature flag is enabled")
+			require.Equal(t, "", reason)
 		})
 	})
 
@@ -207,9 +237,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
 		db := mockDB(defaultUserPerms)
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false for unauthenticated actor")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false for unauthenticated actor")
+		require.Equal(t, "not authenticated", reason)
 	})
 
 	t.Run("RBAC, Authenticated user", func(t *testing.T) {
@@ -226,9 +256,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if !IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return true for authenticated actor")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.True(t, enabled, "Expected IsCodyEnabled to return true for authenticated actor")
+		require.Equal(t, "", reason)
 	})
 
 	t.Run("RBAC, Disabled cody", func(t *testing.T) {
@@ -245,9 +275,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false when cody is disabled")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false when cody is disabled")
+		require.Equal(t, "cody is disabled", reason)
 	})
 
 	t.Run("RBAC, No cody config, default value", func(t *testing.T) {
@@ -262,9 +292,9 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(defaultUserPerms)
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false when cody is not configured")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false when cody is not configured")
+		require.Equal(t, "cody is disabled", reason)
 	})
 
 	t.Run("RBAC, No cody permissions", func(t *testing.T) {
@@ -279,8 +309,8 @@ func TestIsCodyEnabled(t *testing.T) {
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		db := mockDB(nil) // Cody access permission not granted
-		if IsCodyEnabled(ctx, db) {
-			t.Error("Expected IsCodyEnabled to return false when user does not have cody access permission")
-		}
+		enabled, reason := IsCodyEnabled(ctx, db)
+		require.False(t, enabled, "Expected IsCodyEnabled to return false when user does not have cody access permission")
+		require.Equal(t, "cody is disabled", reason)
 	})
 }

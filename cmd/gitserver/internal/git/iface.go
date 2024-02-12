@@ -23,7 +23,9 @@ type GitBackend interface {
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
 	// Blame returns a reader for the blame info of the given path.
 	// BlameHunkReader must always be closed.
-	Blame(ctx context.Context, path string, opt BlameOptions) (BlameHunkReader, error)
+	// If the file does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	Blame(ctx context.Context, startCommit api.CommitID, path string, opt BlameOptions) (BlameHunkReader, error)
 	// SymbolicRefHead resolves what the HEAD symbolic ref points to. This is also
 	// commonly referred to as the default branch within Sourcegraph.
 	// If short is true, the returned ref name will be shortened when possible
@@ -38,6 +40,11 @@ type GitBackend interface {
 	// If the path points to a submodule, an empty reader is returned and no error.
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	ReadFile(ctx context.Context, commit api.CommitID, path string) (io.ReadCloser, error)
+	// GetCommit retrieves the commit with the given ID from the git ODB.
+	// If includeModifiedFiles is true, the returned GitCommitWithFiles will contain
+	// the list of all files touched in this commit.
+	// If the commit doesn't exist, a RevisionNotFoundError is returned.
+	GetCommit(ctx context.Context, commit api.CommitID, includeModifiedFiles bool) (*GitCommitWithFiles, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -59,11 +66,14 @@ type GitConfigBackend interface {
 
 // BlameOptions are options for git blame.
 type BlameOptions struct {
-	NewestCommit     api.CommitID
 	IgnoreWhitespace bool
-	// 1-indexed start line (or 0 for beginning of file)
+	Range            *BlameRange
+}
+
+type BlameRange struct {
+	// 1-indexed start line
 	StartLine int
-	// 1-indexed end line (or 0 for end of file)
+	// 1-indexed end line
 	EndLine int
 }
 
@@ -72,4 +82,12 @@ type BlameHunkReader interface {
 	// Consume the next hunk. io.EOF is returned at the end of the stream.
 	Read() (*gitdomain.Hunk, error)
 	Close() error
+}
+
+// GitCommitWithFiles wraps a gitdomain.Commit and adds a list of modified files.
+// Modified files are only populated when requested.
+// This data is required for sub repo permission filtering.
+type GitCommitWithFiles struct {
+	*gitdomain.Commit
+	ModifiedFiles []string
 }

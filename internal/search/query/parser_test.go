@@ -40,7 +40,7 @@ func TestParseParameterList(t *testing.T) {
 	}
 
 	test := func(input string) value {
-		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
+		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | balancedPattern | allowDanglingParens}
 		result, err := parser.parseLeaves(Regexp)
 		if err != nil {
 			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
@@ -343,6 +343,68 @@ func TestParse(t *testing.T) {
 		}
 	}
 
+	// Queries with top-level parentheses, to mirror what we receive from client
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("(repo:foo count:2000 internal or src)"))
+	autogold.Expect(value{
+		Grammar:   `(and "lang:C++" "type:path" (or (and "repo:foo" "count:2000" "internal") "src"))`,
+		Heuristic: `(and "lang:C++" "type:path" "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("(repo:foo count:2000 internal or src) lang:C++ type:path"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal" "limit") "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("((repo:foo count:2000 internal and limit) or src)"))
+	autogold.Expect(value{
+		Grammar:   `(and "lang:C++" "type:path" (or (and "repo:foo" "count:2000" "internal" "limit") "src"))`,
+		Heuristic: "Same",
+	}).Equal(t, test("((repo:foo count:2000 internal and limit) or src) lang:C++ type:path"))
+
+	// More queries with repo
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or "internal" "src"))`,
+	}).Equal(t, test("repo:foo count:2000 internal or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal") "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo count:2000 internal) or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" (concat "internal" "limit")) "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo count:2000 internal limit) or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal" "limit") "src")`,
+		Heuristic: "Same",
+	}).Equal(t, test("(repo:foo count:2000 internal and limit) or src"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "repo:foo" "count:2000" "internal" "limit") "src")`,
+		Heuristic: `(and "repo:foo" "count:2000" (or (and "internal" "limit") "src"))`,
+	}).Equal(t, test("repo:foo count:2000 internal and limit or src"))
+
+	// Queries with context
+	autogold.Expect(value{
+		Grammar:   `(and "context:foo" "context:bar" (or (and "type:file" "a") "b"))`,
+		Heuristic: `(and "context:foo" "context:bar" "type:file" (or "a" "b"))`,
+	}).Equal(t, test("context:foo context:bar (type:file a or b)"))
+	autogold.Expect(value{
+		Grammar:   `(and "context:foo" "lang:go" (or (and "type:file" "a") "b"))`,
+		Heuristic: `(and "context:foo" "lang:go" "type:file" (or "a" "b"))`,
+	}).Equal(t, test("context:foo lang:go (type:file a or b) "))
+	autogold.Expect(value{
+		Grammar:   `(and "context:global" (or (and "type:file" "a") "b"))`,
+		Heuristic: `(and "context:global" "type:file" (or "a" "b"))`,
+	}).Equal(t, test("context:global (type:file a or b)"))
+	autogold.Expect(value{
+		Grammar:   `(or (and "context:foo" "type:file" "a") "b")`,
+		Heuristic: `(and "context:foo" "type:file" (or "a" "b"))`,
+	}).Equal(t, test("context:foo type:file a or b"))
+
+	// Groups containing operators.
+	autogold.Expect(value{Grammar: `(or (and "type:file" "a") "b")`, Heuristic: `(and "type:file" (or "a" "b"))`}).Equal(t, test("(type:file a or b)"))
+	autogold.Expect(value{Grammar: `(or (and "type:file" "a") "b")`, Heuristic: "Same"}).Equal(t, test("(type:file a) or b"))
+
 	autogold.Expect(value{Grammar: "", Heuristic: "Same"}).Equal(t, test(""))
 	autogold.Expect(value{Grammar: "", Heuristic: "Same"}).Equal(t, test("             "))
 	autogold.Expect(value{Grammar: `"a"`, Heuristic: "Same"}).Equal(t, test("a"))
@@ -625,7 +687,7 @@ func TestDelimited(t *testing.T) {
 
 func TestMergePatterns(t *testing.T) {
 	test := func(input string) string {
-		p := &parser{buf: []byte(input), heuristics: parensAsPatterns}
+		p := &parser{buf: []byte(input), heuristics: parensAsPatterns | balancedPattern}
 		nodes, err := p.parseLeaves(Regexp)
 		got := nodes[0].(Pattern).Annotation.Range.String()
 		if err != nil {
@@ -650,6 +712,79 @@ func TestMatchUnaryKeyword(t *testing.T) {
 	autogold.Expect("false").Equal(t, test("fooNOT bar", 3))
 	autogold.Expect("false").Equal(t, test("NOTbar", 0))
 	autogold.Expect("true").Equal(t, test("(not bar)", 1))
+}
+
+func TestParseParensKeyword(t *testing.T) {
+	test := func(input string) string {
+		plan, err := Pipeline(
+			Init(input, SearchTypeKeyword),
+		)
+		if err != nil {
+			return err.Error()
+		}
+
+		return plan.ToQ().String()
+	}
+
+	// parens as grouping
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo and bar and bas"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo and bar) and bas"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo bar bas"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo bar) bas"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo (bar bas)"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo bar bas)"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo) bar bas"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo (bar) bas"))
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo bar (bas)"))
+
+	// not
+	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo and not bar"))
+	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo (not bar)"))
+	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo not bar"))
+
+	// literal
+	autogold.Expect(`(and "(foo bar)" "bas")`).Equal(t, test(`"(foo bar)" bas`))
+
+	// mix implicit AND and explicit OR
+	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo bar) and bas"))
+	autogold.Expect(`(or (and "foo" "bar") "bas")`).Equal(t, test("(foo bar) or bas"))
+	autogold.Expect(`(and (or "foo" "bar") "bas")`).Equal(t, test(`(foo or bar) bas`))
+	autogold.Expect(`(and (or "foo" "bar") "bas" "qux")`).Equal(t, test(`(foo or bar) bas qux`))
+
+	// nested
+	autogold.Expect(`(and "foo" "bar" (or "bas" "qux"))`).Equal(t, test("foo (bar (bas or qux))"))
+	autogold.Expect(`(and (or "foo" "bas") (or "bar" "qux") "hoge")`).Equal(t, test("(foo or bas) (bar or qux) hoge"))
+	autogold.Expect(`(or "foo" (and "bas" "qux" (or "hoge" "fuga")))`).Equal(t, test("(foo or (bas and qux and (hoge or fuga)))"))
+	autogold.Expect(`(or (and "foo" "bas") (and "hoge" "fuga"))`).Equal(t, test("(foo and bas) or (hoge and fuga)"))
+
+	// regex
+	autogold.Expect(`(and "foo" "ba.*" "bas")`).Equal(t, test("(foo /ba.*/) bas"))
+	autogold.Expect(`(and (or "foo" "bar") "bas")`).Equal(t, test("(foo or /bar/) and bas"))
+
+	// function signatures
+	autogold.Expect(`(and "func()" "error")`).Equal(t, test("func() error"))
+	autogold.Expect(`(and "func(a int, b bool)" "error")`).Equal(t, test("func(a int, b bool) error"))
+
+	// parentheses
+	autogold.Expect(`"()"`).Equal(t, test("()"))
+	autogold.Expect(`(and "()" "=>" "{}")`).Equal(t, test("() => {}"))
+	autogold.Expect(`(and "err" "error," "ok" "bool")`).Equal(t, test("(err error, ok bool)"))
+
+	// unbalanced parentheses
+	autogold.Expect(`"("`).Equal(t, test("("))
+	autogold.Expect(`"(()"`).Equal(t, test("(()"))
+	autogold.Expect(`unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`).Equal(t, test("())"))
+	autogold.Expect(`"foo("`).Equal(t, test("foo("))
+
+	// unescaped quotes
+	autogold.Expect(`"\""`).Equal(t, test(`"`))
+	autogold.Expect(`""`).Equal(t, test(`""`))
+	autogold.Expect(`"\"\"\""`).Equal(t, test(`"""`))
+	autogold.Expect(`"\"\"\"\""`).Equal(t, test(`""""`))
+	autogold.Expect(`"\"\"\"\"\""`).Equal(t, test(`"""""`))
+	autogold.Expect(`"\"\"foo\""`).Equal(t, test(`""foo"`))
+	autogold.Expect(`"\"\"foo\"\""`).Equal(t, test(`""foo""`))
+	autogold.Expect(`"\"foo\"bar\"bas\""`).Equal(t, test(`"foo"bar"bas"`))
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
@@ -677,16 +812,16 @@ func TestParseAndOrLiteral(t *testing.T) {
 	autogold.Expect(`(and "repo:foo" (or "foo(" "bar(")) (HeuristicHoisted,Literal)`).Equal(t, test("repo:foo foo( or bar("))
 	autogold.Expect(`(concat "x" "or") (Literal)`).Equal(t, test("x or"))
 	autogold.Expect(`(and "repo:foo" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("repo:foo (x"))
-	autogold.Expect(`(or "x" "bar()") (Literal)`).Equal(t, test("(x or bar() )"))
+	autogold.Expect(`(or "x" "bar()") (HeuristicHoisted,Literal)`).Equal(t, test("(x or bar() )"))
 	autogold.Expect(`"(x" (HeuristicDanglingParens,Literal)`).Equal(t, test("(x"))
 	autogold.Expect(`(or "x" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("x or (x"))
 	autogold.Expect(`(or "(y" "(z") (HeuristicDanglingParens,Literal)`).Equal(t, test("(y or (z"))
 	autogold.Expect(`(and "repo:foo" "(lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp)"))
 	autogold.Expect(`(and "repo:foo" "(lisp lisp())") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp lisp())"))
-	autogold.Expect(`(and "repo:foo" (or "lisp" "lisp")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp)"))
-	autogold.Expect(`(and "repo:foo" (or "lisp" "lisp()")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp())"))
+	autogold.Expect(`(and "repo:foo" (or "lisp" "lisp")) (HeuristicHoisted,Literal)`).Equal(t, test("repo:foo (lisp or lisp)"))
+	autogold.Expect(`(and "repo:foo" (or "lisp" "lisp()")) (HeuristicHoisted,Literal)`).Equal(t, test("repo:foo (lisp or lisp())"))
 	autogold.Expect(`(and "repo:foo" (or "(lisp" "lisp()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("repo:foo (lisp or lisp()"))
-	autogold.Expect(`(or "y" "bar()") (Literal)`).Equal(t, test("(y or bar())"))
+	autogold.Expect(`(or "y" "bar()") (HeuristicHoisted,Literal)`).Equal(t, test("(y or bar())"))
 	autogold.Expect(`(or "((x" "bar(") (HeuristicDanglingParens,Literal)`).Equal(t, test("((x or bar("))
 	autogold.Expect(" (None)").Equal(t, test(""))
 	autogold.Expect(" (None)").Equal(t, test(" "))
@@ -738,7 +873,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo bar)) and baz`))
 	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo (bar and baz))`))
 	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo (bar and (baz)))`))
-	autogold.Expect(`(and "repo:foo" "bar(" "baz()") (Literal)`).Equal(t, test(`repo:foo (bar( and baz())`))
+	autogold.Expect(`(and "repo:foo" "bar(" "baz()") (HeuristicHoisted,Literal)`).Equal(t, test(`repo:foo (bar( and baz())`))
 	autogold.Expect(`"\"quoted\"" (Literal)`).Equal(t, test(`"quoted"`))
 	autogold.Expect("ERROR: it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries").Equal(t, test(`not (stocks or stonks)`))
 

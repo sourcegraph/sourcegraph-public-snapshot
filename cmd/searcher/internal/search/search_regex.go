@@ -18,18 +18,24 @@ import (
 
 func regexSearchBatch(
 	ctx context.Context,
-	m matchTree,
-	pm *pathMatcher,
+	p *protocol.PatternInfo,
 	zf *zipFile,
-	limit int,
-	patternMatchesContent, patternMatchesPaths bool,
-	isCaseSensitive bool,
 	contextLines int32,
-) ([]protocol.FileMatch, bool, error) {
-	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
+) ([]protocol.FileMatch, error) {
+	m, err := toMatchTree(p.Query, p.IsCaseSensitive)
+	if err != nil {
+		return nil, err
+	}
+
+	pm, err := toPathMatcher(p)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel, sender := newLimitedStreamCollector(ctx, p.Limit)
 	defer cancel()
-	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isCaseSensitive, sender, contextLines)
-	return sender.collected, sender.LimitHit(), err
+	err = regexSearch(ctx, m, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, contextLines)
+	return sender.collected, err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using m.

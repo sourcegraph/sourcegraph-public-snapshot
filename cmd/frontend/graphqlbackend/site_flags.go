@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
@@ -49,12 +50,12 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	// If a license exists, warnings never need to be shown.
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !IsFreePlan(info) {
+	info, err := getConfiguredProductLicenseInfo()
+	if err != nil {
 		return false, err
 	}
-	// If OSS, warnings never need to be shown.
-	if NoLicenseWarningUserCount == nil {
+	// Only show alert if the license is a free plan.
+	if !info.Plan.IsFree() {
 		return false, nil
 	}
 
@@ -68,7 +69,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	return *NoLicenseWarningUserCount <= int32(userCount), nil
+	return licensing.NoLicenseWarningUserCount <= int32(userCount), nil
 }
 
 func (r *siteResolver) ExternalServicesFromFile() bool { return envvar.ExtsvcConfigFile() != "" }

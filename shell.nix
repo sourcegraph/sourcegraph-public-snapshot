@@ -27,9 +27,6 @@ let
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
     unset TMPDIR TMP
-    if [ "$1" == "configure" ]; then
-      exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
-    fi
     exec ${pkgs.bazel_7}/bin/bazel "$@"
   '');
   bazel-watcher = writeShellScriptBin "ibazel" ''
@@ -112,13 +109,14 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
     rustfmt
     libiconv
     clippy
+
+    bazel-buildtools
   ] ++ lib.optional hostPlatform.isLinux (with pkgs; [
     # bazel via nix is broken on MacOS for us. Lets just rely on bazelisk from brew.
     # special sauce bazel stuff.
     bazelisk # needed to please sg, but not used directly by us
     bazel-fhs
     bazel-watcher
-    bazel-buildtools
   ]) ++ lib.optional hostPlatform.isMacOS [ bazel-wrapper ];
 
   # Startup postgres, redis & set nixos specific stuff
@@ -139,12 +137,12 @@ mkShell.override { stdenv = if hostPlatform.isMacOS then pkgs.clang11Stdenv else
   # Some of the bazel actions require some tools assumed to be in the PATH defined by the "strict action env" that we enable
   # through --incompatible_strict_action_env. We can poke a custom PATH through with --action_env=PATH=$BAZEL_ACTION_PATH.
   # See https://sourcegraph.com/github.com/bazelbuild/bazel@6.1.2/-/blob/src/main/java/com/google/devtools/build/lib/bazel/rules/BazelRuleClassProvider.java?L532-547
-  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bashInteractive stdenv.cc coreutils unzip zip curl gzip gnutar gnugrep gnused git patch openssh findutils perl python39 which postgresql_13 ];
+  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bashInteractive stdenv.cc coreutils unzip zip curl gzip gnutar gnugrep gnused git patch openssh findutils perl python39 which postgresql_13 docker-credential-helpers ];
 
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
   USE_BAZEL_VERSION = if hostPlatform.isMacOS then "" else pkgs.bazel_7.version;
 
-  LIBTOOL = if hostPlatform.isMacOS then "${pkgs.libtool}" else "";
+  LIBTOOL = if hostPlatform.isMacOS then "/usr/bin/libtool" else "";
 }

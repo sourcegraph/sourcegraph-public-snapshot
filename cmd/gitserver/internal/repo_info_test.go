@@ -58,15 +58,12 @@ func testDeleteRepo(t *testing.T, deletedInDB bool) {
 
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	// We need some of the side effects here
-	_ = s.Handler()
-
 	// This will perform an initial clone
 	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
-	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
+	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.reposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -100,7 +97,7 @@ func testDeleteRepo(t *testing.T, deletedInDB bool) {
 	// Now we can delete it
 	require.NoError(t, deleteRepo(ctx, logger, db, "", reposDir, dbRepo.Name))
 
-	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
+	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.reposDir, repoName).Path("."))
 	if size != 0 {
 		t.Fatalf("Size should be 0, got %d", size)
 	}

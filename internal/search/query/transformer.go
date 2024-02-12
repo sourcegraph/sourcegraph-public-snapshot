@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -158,6 +159,15 @@ func Hoist(nodes []Node) ([]Node, error) {
 	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
 		if i == 0 {
+			// Handles the case "(and parameter expression)"
+			if parameter, ok := node.(Parameter); ok && expression.Kind == And {
+				hoisted, err := Hoist(NewOperator(expression.Operands[1:], expression.Kind))
+				if err != nil {
+					return nil, err
+				}
+				return append([]Node{parameter}, hoisted...), nil
+			}
+
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
 			if err != nil || patternPart == nil {
 				return nil, errors.New("could not partition first expression")
@@ -377,12 +387,8 @@ func space(patterns []Pattern) []Node {
 }
 
 // and concatenates patterns with AND.
-func and(patterns []Pattern) []Node {
-	p := make([]Node, 0, len(patterns))
-	for _, pattern := range patterns {
-		p = append(p, pattern)
-	}
-	return NewOperator(p, And)
+func and(patterns []Node) []Node {
+	return NewOperator(patterns, And)
 }
 
 // substituteConcat returns a function that concatenates all contiguous patterns
@@ -427,6 +433,50 @@ func substituteConcat(callback func([]Pattern) []Node) func([]Node) []Node {
 							ps = []Pattern{}
 						}
 						newNode = append(newNode, substituteNodes([]Node{node})...)
+					}
+					if len(ps) > 0 {
+						newNode = append(newNode, callback(ps)...)
+					}
+				} else {
+					newNode = append(newNode, NewOperator(substituteNodes(v.Operands), v.Kind)...)
+				}
+			}
+		}
+		return newNode
+	}
+	return substituteNodes
+}
+
+// substituteConcatForKeyword returns a function that replaces concat with the
+// result of callback. Unlike substituteConcat, this function allows "OR" and
+// "AND" operators to be nested inside "CONCAT".
+func substituteConcatForKeyword(callback func([]Node) []Node) func([]Node) []Node {
+	isPattern := func(node Node) bool {
+		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
+			return true
+		}
+		return false
+	}
+
+	// define a recursive function to close over callback and isPattern.
+	var substituteNodes func(nodes []Node) []Node
+	substituteNodes = func(nodes []Node) []Node {
+		var newNode []Node
+		for _, node := range nodes {
+			switch v := node.(type) {
+			case Parameter, Pattern:
+				newNode = append(newNode, node)
+			case Operator:
+				if v.Kind == Concat {
+					// Merge consecutive patterns.
+					var ps []Node
+					for _, node := range v.Operands {
+						if isPattern(node) {
+							ps = append(ps, node)
+							continue
+						} else {
+							ps = append(ps, substituteNodes([]Node{node})...)
+						}
 					}
 					if len(ps) > 0 {
 						newNode = append(newNode, callback(ps)...)
@@ -618,55 +668,51 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
 }
 
-// ExperimentalPhraseBoost appends a phrase query to the original query but only
-// if the original query consists of a single top-level AND expression. The
-// purpose is to improve ranking of exact matches by adding a phrase
-// query for the entire query string.
+// ExperimentalPhraseBoost returns a transformation on basic queries that
+// appends a phrase query to the original query but only if the original query
+// consists of a single top-level AND expression. The purpose is to improve
+// ranking of exact matches by adding a phrase query for the entire query
+// string.
 //
 // Example:
 //
-//	foo bar -> (or (and foo bar) ("foo bar"))
-func ExperimentalPhraseBoost(node Node) Node {
-	if node == nil {
-		return nil
-	}
-
-	if n, ok := node.(Operator); ok && n.Kind == And {
-		// Gate on the number of operands. We don't want to add a phrase query for very
-		// short queries.
-		if len(n.Operands) < 3 {
-			return n
+//	foo bar bas -> (or (and foo bar bas) ("foo bar bas"))
+func ExperimentalPhraseBoost(logger sglog.Logger, originalQuery string) BasicPass {
+	return func(basic Basic) Basic {
+		if basic.Pattern == nil {
+			return basic
 		}
 
-		concat := ""
-		// Check if all operands are patterns and not negated.
-		for _, child := range n.Operands {
-			c, isPattern := child.(Pattern)
-			if !isPattern {
-				return n
+		if n, ok := basic.Pattern.(Operator); ok && n.Kind == And {
+			// Gate on the number of operands. We don't want to add a phrase query for very
+			// short queries.
+			if len(n.Operands) < 3 {
+				return basic
 			}
-			// In practice, a user would probably catch this case because we highlight NOT
-			// in the input bar.
-			if c.Negated {
-				return n
-			}
-			// TODO: be smarter about spaces. The original query may have multiple spaces
-			// separating words.
-			concat += c.Value + " "
-		}
-		concat = strings.TrimSpace(concat)
 
-		return Operator{
-			Kind: Or,
-			Operands: []Node{
-				Pattern{
-					Value:      concat,
-					Annotation: Annotation{Labels: Boost},
+			phrase := ""
+			for _, child := range n.Operands {
+				c, isPattern := child.(Pattern)
+				if !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
+					return basic
+				}
+
+				phrase += c.Value + " "
+			}
+			phrase = strings.TrimSpace(phrase)
+
+			basic.Pattern = Operator{
+				Kind: Or,
+				Operands: []Node{
+					Pattern{
+						Value:      phrase,
+						Annotation: Annotation{Labels: Boost | Literal | QuotesAsLiterals | Standard},
+					},
+					n,
 				},
-				n,
-			},
+			}
 		}
-	}
 
-	return node
+		return basic
+	}
 }

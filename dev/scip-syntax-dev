@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# Wrapper for `scip-syntax` similar to `dev/scip-ctags-dev`.
+#
+# To use an alternate scip-syntax binary for development, invoke
+# `SCIP_SYNTAX_PATH=path/to/scip-syntax sg start`.
+
+root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
+TARGET=$("$root/dev/scip-syntax-install.sh" which)
+
+if [ ! -f "${TARGET}" ]; then
+    echo "scip-syntax is not installed, please run ./dev/scip-syntax-install.sh"
+    echo "Alternatively you can use SCIP_SYNTAX=path/to/scip-syntax to use your own binary."
+    exit 1
+else
+  ${TARGET} "$@"
+fi

@@ -7,8 +7,8 @@ commandTests:
       - key: "SANITY_CHECK"
         value: "true"
 
-  - name: "scip treesitter binary is runnable"
-    command: "/usr/local/bin/scip-treesitter"
+  - name: "scip-syntax binary is runnable"
+    command: "/usr/local/bin/scip-syntax"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"

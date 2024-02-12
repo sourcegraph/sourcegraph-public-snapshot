@@ -4027,6 +4027,47 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.syntactic_scip_indexing_jobs"
+```
+         Column         |           Type           | Collation | Nullable |                         Default                          
+------------------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id                     | bigint                   |           | not null | nextval('syntactic_scip_indexing_jobs_id_seq'::regclass)
+ commit                 | text                     |           | not null | 
+ queued_at              | timestamp with time zone |           | not null | now()
+ state                  | text                     |           | not null | 'queued'::text
+ failure_message        | text                     |           |          | 
+ started_at             | timestamp with time zone |           |          | 
+ finished_at            | timestamp with time zone |           |          | 
+ repository_id          | integer                  |           | not null | 
+ process_after          | timestamp with time zone |           |          | 
+ num_resets             | integer                  |           | not null | 0
+ num_failures           | integer                  |           | not null | 0
+ execution_logs         | json[]                   |           |          | 
+ commit_last_checked_at | timestamp with time zone |           |          | 
+ worker_hostname        | text                     |           | not null | ''::text
+ last_heartbeat_at      | timestamp with time zone |           |          | 
+ cancel                 | boolean                  |           | not null | false
+ should_reindex         | boolean                  |           | not null | false
+ enqueuer_user_id       | integer                  |           | not null | 0
+Indexes:
+    "syntactic_scip_indexing_jobs_pkey" PRIMARY KEY, btree (id)
+    "syntactic_scip_indexing_jobs_dequeue_order_idx" btree ((enqueuer_user_id > 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text
+    "syntactic_scip_indexing_jobs_queued_at_id" btree (queued_at DESC, id)
+    "syntactic_scip_indexing_jobs_repository_id_commit" btree (repository_id, commit)
+    "syntactic_scip_indexing_jobs_state" btree (state)
+Check constraints:
+    "syntactic_scip_indexing_jobs_commit_valid_chars" CHECK (commit ~ '^[a-f0-9]{40}$'::text)
+
+```
+
+Stores metadata about a code intel syntactic index job.
+
+**commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**enqueuer_user_id**: ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest
+
+**execution_logs**: An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.
+
 # Table "public.team_members"
 ```
    Column   |           Type           | Collation | Nullable | Default 
@@ -4983,6 +5024,31 @@ Foreign-key constraints:
  SELECT global_state.site_id,
     global_state.initialized
    FROM global_state;
+```
+
+# View "public.syntactic_scip_indexing_jobs_with_repository_name"
+
+## View query:
+
+```sql
+ SELECT u.id,
+    u.commit,
+    u.queued_at,
+    u.state,
+    u.failure_message,
+    u.started_at,
+    u.finished_at,
+    u.repository_id,
+    u.process_after,
+    u.num_resets,
+    u.num_failures,
+    u.execution_logs,
+    u.should_reindex,
+    u.enqueuer_user_id,
+    r.name AS repository_name
+   FROM (syntactic_scip_indexing_jobs u
+     JOIN repo r ON ((r.id = u.repository_id)))
+  WHERE (r.deleted_at IS NULL);
 ```
 
 # View "public.tracking_changeset_specs_and_changesets"

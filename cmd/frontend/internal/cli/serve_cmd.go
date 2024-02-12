@@ -365,7 +365,6 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
-		enterprise.NewGitHubAppSetupHandler,
 	)
 	if err != nil {
 		return nil, errors.Errorf("create external HTTP handler: %v", err)

@@ -5,7 +5,10 @@
         "value": "sancerre",
         "negated": false,
         "labels": [
-          "Literal"
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
         ],
         "range": {
           "start": {
@@ -22,6 +25,7 @@
         "value": "pouilly-fume",
         "negated": false,
         "labels": [
+          "HeuristicHoisted",
           "Regexp"
         ],
         "range": {

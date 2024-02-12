@@ -69,7 +69,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	db := newMockDB()
 	ctx := context.Background()
 
-	s := server.Server{
+	s := server.NewServer(&server.ServerOpts{
 		Logger:   logger,
 		ReposDir: filepath.Join(root, "repos"),
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
@@ -86,10 +86,10 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
-	}
+	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)

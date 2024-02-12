@@ -96,7 +96,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 	runArchiveReaderTestfunc := func(t *testing.T, mkClient func(t *testing.T, addrs []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
 			// Setup: Prepare the test Gitserver server + register the gRPC server
-			s := &server.Server{
+			s := server.NewServer(&server.ServerOpts{
 				Logger:   logtest.Scoped(t),
 				ReposDir: filepath.Join(root, "repos"),
 				DB:       newMockDB(),
@@ -115,7 +115,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  server.NewRepositoryLocker(),
 				RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
-			}
+			})
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
 

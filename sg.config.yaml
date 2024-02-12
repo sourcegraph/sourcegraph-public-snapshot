@@ -99,10 +99,6 @@ env:
   # Required for upload of search job results
   SEARCH_JOBS_UPLOAD_AWS_ENDPOINT: http://localhost:9000
 
-  # Disable auto-indexing the CNCF repo group (this only works in Cloud)
-  # This setting will be going away soon
-  DISABLE_CNCF: notonmybox
-
   # Point code insights to the `frontend` database in development
   CODEINSIGHTS_PGPORT: $PGPORT
   CODEINSIGHTS_PGHOST: $PGHOST
@@ -573,9 +569,9 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      if [ ! -f $(./dev/scip-treesitter-install.sh which) ]; then
-        echo "Building scip-treesitter"
-        ./dev/scip-treesitter-install.sh
+      if [ ! -f $(./dev/scip-syntax-install.sh which) ]; then
+        echo "Building scip-syntax"
+        ./dev/scip-syntax-install.sh
       fi
 
       echo "Building codeintel-outkline-scip-worker"
@@ -587,7 +583,7 @@ commands:
       - cmd/syntactic-code-intel-worker
       - lib/codeintel
     env:
-      SCIP_TREESITTER_PATH: dev/scip-treesitter-dev
+      SCIP_SYNTAX_PATH: dev/scip-syntax-dev
 
   syntactic-code-intel-worker-0:
     <<: *syntactic_codeintel_worker_template
@@ -1246,8 +1242,12 @@ commandsets:
       - git
     commands:
       - frontend
+      - web
       - worker
       - blobstore
+      - repo-updater
+      - gitserver-0
+      - gitserver-1
       - syntactic-code-intel-worker-0
       - syntactic-code-intel-worker-1
 

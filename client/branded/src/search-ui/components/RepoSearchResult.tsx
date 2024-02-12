@@ -12,7 +12,7 @@ import { Icon, Link, Text } from '@sourcegraph/wildcard'
 import { metadataToTag, TagList, topicToTag } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
-import styles from './SearchResult.module.scss'
+import styles from './ResultContainer.module.scss'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 

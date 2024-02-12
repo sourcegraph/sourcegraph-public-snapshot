@@ -123,15 +123,26 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
-			if err != nil {
-				log15.Error("Failed to get provider.", "error", err)
-				http.Error(w, safeErrMsg, http.StatusInternalServerError)
-				return
-			}
+			// NOTE: Within the Sourcegraph application, we have been using both the
+			// "redirect" and "returnTo" query parameters inconsistently, and some of the
+			// usages are also on the client side (Cody clients). If we ever settle on one
+			// and updated all usages on both server and client side, we need to make sure
+			// to have a grace period (e.g. 3 months) for the client side because we have no
+			// control over when users will actually upgrade their clients.
 			redirect := r.URL.Query().Get("redirect")
 			if redirect == "" {
 				redirect = r.URL.Query().Get("returnTo")
+			}
+
+			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
+			if errors.Is(err, errNoSuchProvider) {
+				log15.Warn("Failed to get provider.", "error", err)
+				http.Redirect(w, r, "/sign-in?returnTo="+redirect, http.StatusFound)
+				return
+			} else if err != nil {
+				log15.Error("Failed to get provider.", "error", err)
+				http.Error(w, safeErrMsg, http.StatusInternalServerError)
+				return
 			}
 			RedirectToAuthRequest(w, r, p, redirect)
 			return
@@ -428,7 +439,16 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	// validating the response to the ID Token request. We re-use the Authn request
 	// state as the nonce.
 	//
+	// The "prompt=login" asks the OP to prompt the user for re-authentication.
+	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)), http.StatusFound)
+	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)) + "&prompt=login"
+	// Pass along the prompt_auth to OP for the specific type of authentication to
+	// use, e.g. "github", "gitlab", "google".
+	promptAuth := r.URL.Query().Get("prompt_auth")
+	if promptAuth != "" {
+		authURL += "&prompt_auth=" + promptAuth
+	}
+	http.Redirect(w, r, authURL, http.StatusFound)
 }
