@@ -144,6 +144,29 @@ func (gs *grpcServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*pr
 }
 
 func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
+	// Log which actor is accessing the repo.
+	args := byteSlicesToStrings(req.GetArgs())
+	cmd := ""
+	if len(args) > 0 {
+		cmd = args[0]
+		args = args[1:]
+	}
+
+	accesslog.Record(ss.Context(), req.GetRepo(),
+		log.String("cmd", cmd),
+		log.Strings("args", args),
+	)
+
+	if req.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepo())
+
+	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+		return err
+	}
+
 	internalReq := protocol.ExecRequest{
 		Repo:      api.RepoName(req.GetRepo()),
 		Args:      byteSlicesToStrings(req.GetArgs()),
@@ -158,19 +181,6 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 			Data: p,
 		})
 	})
-
-	// Log which actor is accessing the repo.
-	args := byteSlicesToStrings(req.GetArgs())
-	cmd := ""
-	if len(args) > 0 {
-		cmd = args[0]
-		args = args[1:]
-	}
-
-	accesslog.Record(ss.Context(), req.GetRepo(),
-		log.String("cmd", cmd),
-		log.Strings("args", args),
-	)
 
 	return gs.doExec(ss.Context(), &internalReq, w)
 }
@@ -189,6 +199,16 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	if req.GetRepo() == "" || req.GetFormat() == "" {
 		return status.Error(codes.InvalidArgument, "empty repo or format")
+	}
+
+	if req.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepo())
+
+	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+		return err
 	}
 
 	execReq := &protocol.ExecRequest{
@@ -230,18 +250,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 func (gs *grpcServer) doExec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) error {
 	execStatus, err := gs.svc.Exec(ctx, req, w)
 	if err != nil {
-		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{
-				Repo:            string(req.Repo),
-				CloneInProgress: v.Payload.CloneInProgress,
-				CloneProgress:   v.Payload.CloneProgress,
-			})
-			if err != nil {
-				gs.logger.Error("failed to marshal status", log.Error(err))
-				return err
-			}
-			return s.Err()
-		} else if errors.Is(err, gitcli.ErrBadGitCommand) {
+		if errors.Is(err, gitcli.ErrBadGitCommand) {
 			return status.New(codes.InvalidArgument, "invalid command").Err()
 		} else if ctxErr := ctx.Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
@@ -332,18 +341,8 @@ func (gs *grpcServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 	repoName := api.RepoName(req.GetRepo())
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ss.Context(), repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepo(),
-		})
-		if err != nil {
-			return err
-		}
-		return s.Err()
+	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
+		return err
 	}
 
 	onMatch := func(match *protocol.CommitMatch) error {
@@ -817,18 +816,8 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
 	}
 
 	// TODO: This should be included in requests where we do ensure the revision exists.
@@ -866,18 +855,8 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
 	}
 
 	subRepoPermsEnabled, err := authz.SubRepoEnabledForRepo(ctx, gs.subRepoChecker, repoName)
@@ -951,18 +930,8 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return err
-		}
-		return s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return err
 	}
 
 	// First, verify that the actor has access to the given path.
@@ -1061,18 +1030,8 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
 	}
 
 	backend := gs.getBackendFunc(repoDir, repoName)
@@ -1132,18 +1091,8 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 	repoName := api.RepoName(req.GetRepoName())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
-	// Ensure that the repo is cloned and if not start a background clone, then
-	// return a well-known NotFound payload error.
-	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repoName); !cloned {
-		s, err := status.New(codes.NotFound, "repo not cloned").WithDetails(&proto.RepoNotFoundPayload{
-			CloneInProgress: notFoundPayload.CloneInProgress,
-			CloneProgress:   notFoundPayload.CloneProgress,
-			Repo:            req.GetRepoName(),
-		})
-		if err != nil {
-			return err
-		}
-		return s.Err()
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return err
 	}
 
 	// First, verify that the actor has access to the given path.
@@ -1205,6 +1154,24 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	_, err = io.Copy(w, r)
 	return err
+}
+
+func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {
+	// Ensure that the repo is cloned and if not start a background clone, then
+	// return a well-known NotFound payload error.
+	if notFoundPayload, cloned := gs.svc.MaybeStartClone(ctx, repo); !cloned {
+		s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{
+			CloneInProgress: notFoundPayload.CloneInProgress,
+			CloneProgress:   notFoundPayload.CloneProgress,
+			Repo:            string(repo),
+		})
+		if err != nil {
+			return err
+		}
+		return s.Err()
+	}
+
+	return nil
 }
 
 func hasAccessToCommit(ctx context.Context, repoName api.RepoName, files []string, checker authz.SubRepoPermissionChecker) (bool, error) {
