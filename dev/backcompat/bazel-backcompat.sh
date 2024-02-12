@@ -31,7 +31,6 @@ fi
 echo "--- :git::rewind: checkout v${tag}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
 git checkout --force "v${tag}"
-
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
 git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
