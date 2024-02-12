@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -33,6 +34,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// Generate a random archive format.
+func (f ArchiveFormat) Generate(rand *rand.Rand, _ int) reflect.Value {
+	choices := []ArchiveFormat{ArchiveFormatZip, ArchiveFormatTar}
+	index := rand.Intn(len(choices))
+
+	return reflect.ValueOf(choices[index])
+}
 
 func TestParseShortLog(t *testing.T) {
 	tests := []struct {
@@ -2053,9 +2062,9 @@ func TestArchiveReaderForRepo(t *testing.T) {
 	repo := &types.Repo{Name: repoName, ID: 1}
 
 	opts := ArchiveOptions{
-		Format:    ArchiveFormatZip,
-		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
+		Format:  ArchiveFormatZip,
+		Treeish: commitID,
+		Paths:   []string{"."},
 	}
 	client := NewTestClient(t).WithClientSource(source)
 	readCloser, err := client.ArchiveReader(context.Background(), repo.Name, opts)

@@ -58,6 +58,19 @@ type GitserverServiceClient interface {
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
+	// Archive creates an archive for the given treeish in the given format.
+	// If paths are specified, only those paths are included in the archive.
+	//
+	// If subrepo permissions are enabled for the repo, no archive will be created
+	// for non-internal actors and an unimplemented error will be returned. We can
+	// currently not filter parts of the archive, so this would be considered leaking
+	// information.
+	//
+	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	// Deprecated: Do not use.
 	P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error)
@@ -535,6 +548,19 @@ type GitserverServiceServer interface {
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
+	// Archive creates an archive for the given treeish in the given format.
+	// If paths are specified, only those paths are included in the archive.
+	//
+	// If subrepo permissions are enabled for the repo, no archive will be created
+	// for non-internal actors and an unimplemented error will be returned. We can
+	// currently not filter parts of the archive, so this would be considered leaking
+	// information.
+	//
+	// If the given treeish does not exist, an error with a RevisionNotFoundPayload
+	// is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	// Deprecated: Do not use.
 	P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error

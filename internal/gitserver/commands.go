@@ -8,12 +8,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math/rand"
 	"net/mail"
 	"os"
 	stdlibpath "path"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -2193,24 +2191,14 @@ const (
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
-// Generate a random archive format.
-func (f ArchiveFormat) Generate(rand *rand.Rand, _ int) reflect.Value {
-	choices := []ArchiveFormat{ArchiveFormatZip, ArchiveFormatTar}
-	index := rand.Intn(len(choices))
-
-	return reflect.ValueOf(choices[index])
-}
-
-var ErrUnknownArchiveFormat = errors.New("unknown archive format")
-
-func ArchiveFormatFromProto(pf proto.ArchiveFormat) (ArchiveFormat, error) {
+func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
 	switch pf {
 	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
-		return ArchiveFormatZip, nil
+		return ArchiveFormatZip
 	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
-		return ArchiveFormatTar, nil
+		return ArchiveFormatTar
 	default:
-		return "", ErrUnknownArchiveFormat
+		return ""
 	}
 }
 
@@ -2221,7 +2209,7 @@ func (f ArchiveFormat) ToProto() proto.ArchiveFormat {
 	case ArchiveFormatTar:
 		return proto.ArchiveFormat_ARCHIVE_FORMAT_TAR
 	default:
-		panic(fmt.Sprintf("unknown archive format: %v", f))
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_UNSPECIFIED
 	}
 }
 

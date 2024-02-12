@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -46,14 +45,13 @@ type GitBackend interface {
 	// the list of all files touched in this commit.
 	// If the commit doesn't exist, a RevisionNotFoundError is returned.
 	GetCommit(ctx context.Context, commit api.CommitID, includeModifiedFiles bool) (*GitCommitWithFiles, error)
-
 	// ArchiveReader returns a reader for an archive in the given format.
-	// Treeish is the tree or commit to archive, and pathspecs is the list of
-	// pathspecs to include in the archive. If empty, all pathspecs are included.
+	// Treeish is the tree or commit to archive, and paths is the list of
+	// paths to include in the archive. If empty, all paths are included.
 	//
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	// If any pathspec does not exist, a os.PathError is returned.
-	ArchiveReader(ctx context.Context, format gitserver.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error)
+	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -100,3 +98,14 @@ type GitCommitWithFiles struct {
 	*gitdomain.Commit
 	ModifiedFiles []string
 }
+
+// ArchiveFormat indicates the desired format of the archive as an enum.
+type ArchiveFormat string
+
+const (
+	// ArchiveFormatZip indicates a zip archive is desired.
+	ArchiveFormatZip ArchiveFormat = "zip"
+
+	// ArchiveFormatTar indicates a tar archive is desired.
+	ArchiveFormatTar ArchiveFormat = "tar"
+)

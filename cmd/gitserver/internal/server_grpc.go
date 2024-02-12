@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -161,23 +161,31 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	ctx := ss.Context()
 
 	if req.GetRepo() == "" {
-		return status.Error(codes.InvalidArgument, "empty repo")
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
-	format, err := gitserver.ArchiveFormatFromProto(req.GetFormat())
-	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+	if req.GetTreeish() == "" {
+		return status.New(codes.InvalidArgument, "treeish must be specified").Err()
+	}
+
+	var format git.ArchiveFormat
+	switch req.GetFormat() {
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
+		format = git.ArchiveFormatZip
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
+		format = git.ArchiveFormatTar
+	default:
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("unknown archive format %q", req.GetFormat()))
 	}
 
 	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Log which which actor is accessing the repo.
 	accesslog.Record(ctx, req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
 		log.String("format", string(format)),
-		log.Strings("path", req.GetPathspecs()),
+		log.Strings("path", req.GetPaths()),
 	)
 
 	repoName := api.RepoName(req.GetRepo())
@@ -206,28 +214,27 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	backend := gs.getBackendFunc(repoDir, repoName)
 
-	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), req.GetPathspecs())
+	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), req.GetPaths())
 	if err != nil {
 		if os.IsNotExist(err) {
+			var path string
 			var pathError *os.PathError
-			var s *status.Status
 			if errors.As(err, &pathError) {
-				s, err = status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
-					Repo:   string(repoName),
-					Commit: string(req.GetTreeish()),
-					Path:   pathError.Path,
-				})
-			} else {
-				s, err = status.New(codes.NotFound, "repo not found").WithDetails(&proto.RepoNotFoundPayload{
-					Repo: string(repoName),
-				})
+				path = pathError.Path
 			}
+			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+				Repo: string(repoName),
+				// TODO: I'm not sure this should be allowed, a treeish is not necessarily
+				// a commit.
+				Commit: string(req.GetTreeish()),
+				Path:   path,
+			})
 			if err != nil {
-				gs.logger.Error("failed to marshal status", log.Error(err))
 				return err
 			}
 			return s.Err()
 		}
+
 		var e *gitdomain.RevisionNotFoundError
 		if errors.As(err, &e) {
 			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
@@ -239,6 +246,7 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 			}
 			return s.Err()
 		}
+
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		// TODO: Better error checking.
 		return err

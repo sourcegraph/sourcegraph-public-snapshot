@@ -9,10 +9,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/require"
 )
 
 func readFileContentsFromTar(t *testing.T, tr *tar.Reader, name string) string {
@@ -47,17 +48,17 @@ func readFileContentsFromZip(t *testing.T, zr *zip.Reader, name string) string {
 
 func TestGitCLIBackend_buildArchiveArgs(t *testing.T) {
 	t.Run("no pathspecs", func(t *testing.T) {
-		args := buildArchiveArgs(gitserver.ArchiveFormatTar, "HEAD", nil)
+		args := buildArchiveArgs(git.ArchiveFormatTar, "HEAD", nil)
 		require.Equal(t, []string{"archive", "--worktree-attributes", "--format=tar", "HEAD", "--"}, args)
 	})
 
 	t.Run("with pathspecs", func(t *testing.T) {
-		args := buildArchiveArgs(gitserver.ArchiveFormatTar, "HEAD", []string{"file1", "file2"})
+		args := buildArchiveArgs(git.ArchiveFormatTar, "HEAD", []string{"file1", "file2"})
 		require.Equal(t, []string{"archive", "--worktree-attributes", "--format=tar", "HEAD", "--", "file1", "file2"}, args)
 	})
 
 	t.Run("zip adds -0", func(t *testing.T) {
-		args := buildArchiveArgs(gitserver.ArchiveFormatZip, "HEAD", nil)
+		args := buildArchiveArgs(git.ArchiveFormatZip, "HEAD", nil)
 		require.Equal(t, []string{"archive", "--worktree-attributes", "--format=zip", "-0", "HEAD", "--"}, args)
 	})
 }
@@ -99,7 +100,7 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 	})
 
 	t.Run("read multiple files from tar archive using PathspecLiteral", func(t *testing.T) {
-		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{string(gitdomain.PathspecLiteral("file1")), string(gitdomain.PathspecLiteral("dir1/file2"))})
+		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"file1", "dir1/file2"})
 		require.NoError(t, err)
 		t.Cleanup(func() { r.Close() })
 		tr := tar.NewReader(r)

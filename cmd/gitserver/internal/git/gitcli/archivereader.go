@@ -5,20 +5,19 @@ import (
 	"context"
 	"io"
 	"os"
-	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format gitserver.ArchiveFormat, treeish string, pathspecs []string) (io.ReadCloser, error) {
-	if err := g.verifyPathspecs(ctx, treeish, pathspecs); err != nil {
+func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format git.ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error) {
+	if err := g.verifyPaths(ctx, treeish, paths); err != nil {
 		return nil, err
 	}
 
-	archiveArgs := buildArchiveArgs(format, treeish, pathspecs)
+	archiveArgs := buildArchiveArgs(format, treeish, paths)
 	cmd, cancel, err := g.gitCommand(ctx, archiveArgs...)
 	if err != nil {
 		cancel()
@@ -37,22 +36,31 @@ func (g *gitCLIBackend) ArchiveReader(ctx context.Context, format gitserver.Arch
 	}, nil
 }
 
-func buildArchiveArgs(format gitserver.ArchiveFormat, treeish string, pathspecs []string) []string {
+func buildArchiveArgs(format git.ArchiveFormat, treeish string, paths []string) []string {
 	args := []string{"archive", "--worktree-attributes", "--format=" + string(format)}
 
-	if format == gitserver.ArchiveFormatZip {
+	if format == git.ArchiveFormatZip {
 		args = append(args, "-0")
 	}
 
 	args = append(args, treeish, "--")
-	args = append(args, pathspecs...)
+	for _, p := range paths {
+		args = append(args, pathspecLiteral(p))
+	}
 
 	return args
 }
 
-func (g *gitCLIBackend) verifyPathspecs(ctx context.Context, treeish string, pathspecs []string) error {
+// pathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
+// characters.
+//
+// See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
+func pathspecLiteral(s string) string { return ":(literal)" + s }
+
+func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
 	args := []string{"ls-tree", treeish, "--"}
-	args = append(args, pathspecs...)
+	// TODO: Can this work? These are potentially using `*` characters etc.
+	args = append(args, paths...)
 	cmd, cancel, err := g.gitCommand(ctx, args...)
 	defer cancel()
 	if err != nil {
@@ -79,12 +87,12 @@ func (g *gitCLIBackend) verifyPathspecs(ctx context.Context, treeish string, pat
 	}
 
 	// Check if the resulting objects match the requested
-	// pathspecs. If not, one or more of the requested
+	// paths. If not, one or more of the requested
 	// file paths don't exist.
-	if len(pathspecs) != 0 {
-		paths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
+	if len(paths) != 0 {
+		gotPaths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
 		fileSet := collections.NewSet[string]()
-		for _, p := range paths {
+		for _, p := range gotPaths {
 			if len(p) == 0 {
 				continue
 			}
@@ -92,12 +100,11 @@ func (g *gitCLIBackend) verifyPathspecs(ctx context.Context, treeish string, pat
 			fileSet.Add(string(pathSegments[len(pathSegments)-1]))
 		}
 
-		pathspecsSet := collections.NewSet[string]()
-		for _, pathspec := range pathspecs {
-			// In case the pathspecs are PathspecLiterals
-			pathspecsSet.Add(strings.TrimPrefix(pathspec, ":(literal)"))
+		pathsSet := collections.NewSet[string]()
+		for _, path := range paths {
+			pathsSet.Add(path)
 		}
-		diff := pathspecsSet.Difference(fileSet)
+		diff := pathsSet.Difference(fileSet)
 
 		if len(diff) != 0 {
 			return &os.PathError{Op: "open", Path: diff.Values()[0], Err: os.ErrNotExist}
