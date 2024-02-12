@@ -1,23 +1,17 @@
-import type { KeyArgsFunction, KeySpecifier } from '@apollo/client/cache/inmemory/policies'
 import {
-    gql,
     ApolloClient,
     InMemoryCache,
     createHttpLink,
     from,
     type HttpOptions,
     type NormalizedCacheObject,
-    type OperationVariables,
-    type QueryOptions,
-    type DocumentNode,
-    type FetchPolicy,
-    type FieldPolicy,
 } from '@apollo/client/core/index'
 import { trimEnd, once } from 'lodash'
 
 import { dev } from '$app/environment'
-import { createAggregateError } from '$lib/common'
 import { GRAPHQL_URI, checkOk } from '$lib/http-client'
+
+import { getHeaders } from './shared'
 
 interface BuildGraphQLUrlOptions {
     request?: string
@@ -32,80 +26,18 @@ function buildGraphQLUrl({ request, baseUrl }: BuildGraphQLUrlOptions): string {
     return baseUrl ? new URL(trimEnd(baseUrl, '/') + apiURL).href : apiURL
 }
 
-function getHeaders(): { [header: string]: string } {
-    const headers: { [header: string]: string } = {
-        ...window?.context?.xhrHeaders,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-    }
-    const parameters = new URLSearchParams(window.location.search)
-    const trace = parameters.get('trace')
-    if (trace) {
-        headers['X-Sourcegraph-Should-Trace'] = trace
-    }
-    const feat = parameters.getAll('feat')
-    if (feat.length) {
-        headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
-    }
-    return headers
-}
 const customFetch: HttpOptions['fetch'] = (uri, options) => fetch(uri, options).then(checkOk)
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
 /**
- * Creates a field policy for a list-like forward connections. It concatenates the
- * incoming nodes with the existing nodes, and updates the pageInfo.
+ * @deprecated Use `getGraphQLClient` from @lib/graphql instead.
+ *
+ * This is only used for compatibility with APIs that expect an ApolloClient.
  */
-function listLikeForwardConnection({ keyArgs }: { keyArgs: KeySpecifier | KeyArgsFunction | false }): FieldPolicy {
-    return {
-        keyArgs,
-
-        merge(existing, incoming) {
-            if (!existing) {
-                return incoming
-            }
-
-            if (existing.pageInfo.endCursor === incoming.pageInfo.endCursor) {
-                // If the endCursor is the same, we assume that the incoming
-                // nodes are the same as the existing nodes. This can happen
-                // when the same query is executed multiple times in a row.
-                // In this case, we return the existing nodes to prevent
-                // incorrect cache updates.
-                return existing
-            }
-
-            return {
-                ...incoming,
-                nodes: [...existing.nodes, ...incoming.nodes],
-            }
-        },
-    }
-}
-
-export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
+export const getGraphQLClient = once((): GraphQLClient => {
     const cache = new InMemoryCache({
         typePolicies: {
-            GitCommit: {
-                fields: {
-                    ancestors: listLikeForwardConnection({
-                        keyArgs: args => {
-                            // This key function treats an empty path the same as an
-                            // omitted path.
-                            // keyArgs: ['query', 'path', 'follow', 'after'],
-                            const keyArgs: Record<string, any> = {}
-                            if (args) {
-                                for (const key of ['query', 'path', 'follow', 'after']) {
-                                    if (key in args && (key !== 'path' || args[key] !== '')) {
-                                        keyArgs[key] = args[key]
-                                    }
-                                }
-                            }
-                            return JSON.stringify(keyArgs)
-                        },
-                    }),
-                },
-            },
             GitTree: {
                 // GitTree object's don't have an ID, but canonicalURL is unique
                 keyFields: ['canonicalURL'],
@@ -132,13 +64,6 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
             Person: {
                 merge: true,
             },
-            RepositoryComparison: {
-                fields: {
-                    fileDiffs: listLikeForwardConnection({
-                        keyArgs: ['paths'],
-                    }),
-                },
-            },
         },
         possibleTypes: {
             TreeEntry: ['GitTree', 'GitBlob'],
@@ -161,19 +86,3 @@ export const getGraphQLClient = once(async (): Promise<GraphQLClient> => {
         ]),
     })
 })
-
-export async function query<T, V extends OperationVariables = OperationVariables>(
-    query: DocumentNode,
-    variables?: V,
-    options?: Omit<QueryOptions<T, V>, 'query' | 'variables'>
-): Promise<T> {
-    return (await getGraphQLClient()).query<T, V>({ query, variables, ...options }).then(result => {
-        if (result.errors && result.errors.length > 0) {
-            throw createAggregateError(result.errors)
-        }
-        return result.data
-    })
-}
-
-export type { FetchPolicy }
-export { gql }

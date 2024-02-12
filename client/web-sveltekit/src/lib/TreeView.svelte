@@ -26,8 +26,22 @@
 
     export let treeProvider: TreeProvider<N>
 
+    /**
+     * Scroll the selected item into view.
+     * If the selected item cannot be found it will try again up to 5 times.
+     */
     export function scrollSelectedItemIntoView() {
-        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'nearest' })
+        let tries = 5
+        ;(function scrollIntoView() {
+            const selectedItem = treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')
+            if (!selectedItem) {
+                if (tries-- > 0) {
+                    setTimeout(scrollIntoView, 10)
+                }
+                return
+            }
+            selectedItem.scrollIntoView({ block: 'nearest' })
+        })()
     }
 
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()
@@ -242,6 +256,9 @@
         <TreeNode {entry} {treeProvider}>
             <svelte:fragment let:entry let:toggle let:expanded>
                 <slot {entry} {toggle} {expanded} />
+            </svelte:fragment>
+            <svelte:fragment slot="error" let:error>
+                <slot name="error" {error} />
             </svelte:fragment>
         </TreeNode>
     {/each}

@@ -13,7 +13,7 @@
     import { submitSearch, type QueryStateStore } from '../state'
     import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
     import { createSuggestionsSource } from '$lib/web'
-    import { gql, query } from '$lib/graphql'
+    import { query, type DocumentInput } from '$lib/graphql'
     import Suggestions from './Suggestions.svelte'
     import { user } from '$lib/stores'
 
@@ -99,8 +99,10 @@
         }),
     ]
 
-    function graphqlQuery<T, V extends Record<string, any>>(request: string, variables: V) {
-        return query<T, V>(gql(request), variables)
+    async function graphqlQuery<T, V extends Record<string, any>>(request: DocumentInput, variables: V) {
+        const result = await query<T, V>(request, variables)
+        // This is a hack to make urlq work with the API that createSuggestionsSource expects
+        return result.data ?? ({} as any)
     }
 </script>
 

@@ -421,20 +421,20 @@ export class GraphQLMockServer {
         return `${type.name}:${keyValue}`
     }
 
-    private resolveObject(type: GraphQLObjectType, value: ObjectMock = {}): ObjectMock {
+    private resolveObject(type: GraphQLObjectType, override: ObjectMock = {}): ObjectMock {
         const keyFieldName = this.options.typePolicies?.[type.name]?.keyField ?? 'id'
         let keyFieldType = type.getFields()[keyFieldName]?.type
         if (isNonNullType(keyFieldType)) {
             keyFieldType = keyFieldType.ofType
         }
         if (!keyFieldType || !isScalarType(keyFieldType)) {
-            return value
+            return { ...override }
         }
-        const key = value[keyFieldName]
+        const key = override[keyFieldName]
         const cacheKey = this.getCacheKey(type, String(key))
 
         const obj = this.objectStore.get(cacheKey)
-        return obj ? { ...obj, ...value } : { ...value }
+        return obj ? { ...obj, ...override } : { ...override }
     }
 
     /**

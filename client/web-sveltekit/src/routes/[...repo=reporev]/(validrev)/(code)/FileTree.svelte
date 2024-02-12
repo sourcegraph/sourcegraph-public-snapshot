@@ -5,7 +5,7 @@
     import { onMount } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
-    import { getFileIconInfo } from '$lib/wildcard'
+    import { getFileIconInfo, Alert } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
@@ -13,6 +13,7 @@
     import { createForwardStore } from '$lib/utils'
     import { replaceRevisionInURL } from '$lib/web'
 
+    export let repoName: string
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
     export let revision: string
@@ -81,17 +82,15 @@
     }
 
     let treeView: TreeView<FileTreeNodeValue>
-    let repoName = treeProvider.getRepoName()
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
-    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoName()))
+    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
-    $: repoName = treeProvider.getRepoName()
     $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
@@ -137,14 +136,15 @@
                 </a>
             {/if}
         </svelte:fragment>
+        <Alert slot="error" let:error variant="danger">
+            Unable to fetch file tree data: {error.message}
+        </Alert>
     </TreeView>
 </div>
 
 <style lang="scss">
     div {
         overflow: auto;
-        // Don't scroll file/folder page when scrolling to the top or bottom of the file tree
-        overscroll-behavior-y: contain;
 
         :global(.treeitem.selectable) > :global(.label) {
             cursor: pointer;
