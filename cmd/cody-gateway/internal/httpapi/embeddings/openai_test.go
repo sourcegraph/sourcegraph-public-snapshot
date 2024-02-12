@@ -66,7 +66,7 @@ func Benchmark_JsonParsing_Response(b *testing.B) {
 			b.Run("v2", func(b *testing.B) {
 				for i := 0; i < b.N; i++ {
 					var resp openaiEmbeddingsResponse
-					err := jsonv2.Unmarshal(dat, &resp)
+					err := jsonv2.UnmarshalRead(bytes.NewReader(dat), &resp)
 					if err != nil {
 						b.Fatal(err)
 					}
