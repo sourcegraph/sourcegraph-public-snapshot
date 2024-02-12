@@ -363,7 +363,8 @@ type Client interface {
 	// If you just need to check a file's existence, use Stat, not a file reader.
 	//
 	// If the file doesn't exist, the returned error will pass the os.IsNotExist()
-	// check.
+	// check. Subrepo permissions are respected by this method and if no access
+	// is granted, the error will also pass the os.IsNotExist() check.
 	//
 	// If the path points to a submodule, a reader for an empty file is returned
 	// (ie. io.EOF is returned immediately).
