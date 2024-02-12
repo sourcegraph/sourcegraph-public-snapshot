@@ -4,6 +4,13 @@ type RolloutSpec struct {
 	// Stages specifies the order and environments through which releases
 	// progress.
 	Stages []RolloutStageSpec `yaml:"stages"`
+	// Suspended prevents releases and rollouts from being created, rolled back,
+	// etc using this rollout pipeline pipeline: https://cloud.google.com/deploy/docs/suspend-pipeline
+	//
+	// Set to true to prevent all deployments from being created through Cloud
+	// Deploy. Note that this does NOT prevent manual deploys from happening
+	// directly in Cloud Run.
+	Suspended *bool `yaml:"suspended,omitempty"`
 }
 
 func (r *RolloutSpec) GetStageByEnvironment(id string) *RolloutStageSpec {
@@ -27,7 +34,11 @@ type RolloutStageSpec struct {
 // RolloutPipelineConfiguration is rendered from BuildPipelineConfiguration for use in
 // stacks.
 type RolloutPipelineConfiguration struct {
+	// Stages is evaluated from OriginalSpec.Stages to include attributes
+	// required to actually configure the stages.
 	Stages []rolloutPipelineTargetConfiguration
+
+	OriginalSpec RolloutSpec
 }
 
 // rolloutPipelineTargetConfiguration is an internal type that extends
@@ -60,6 +71,7 @@ func (s Spec) BuildRolloutPipelineConfiguration(env EnvironmentSpec) *RolloutPip
 		})
 	}
 	return &RolloutPipelineConfiguration{
-		Stages: targets,
+		Stages:       targets,
+		OriginalSpec: *s.Rollout,
 	}
 }

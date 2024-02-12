@@ -405,10 +405,13 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// before creating targets will fail.
 		_, _ = deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
 			Location: rolloutLocation,
-			Name:     fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
+
+			Name: fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
 			Description: fmt.Sprintf("Rollout delivery pipeline for %s",
 				vars.Service.GetName()),
-			Stages: stageTargets,
+
+			Stages:    stageTargets,
+			Suspended: pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.Suspended),
 
 			// Make it so that our Cloud Run service is up before we
 			// configure the rollout pipeline

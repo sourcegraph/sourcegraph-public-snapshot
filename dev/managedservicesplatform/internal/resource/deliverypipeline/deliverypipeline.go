@@ -11,6 +11,8 @@ import (
 )
 
 type Config struct {
+	// Location currently must also be the location of all targets being
+	// deployed by this pipeline.
 	Location string
 
 	Name        string
@@ -18,6 +20,9 @@ type Config struct {
 
 	// Stages lists target IDs in order.
 	Stages []string
+	// Suspended prevents releases and rollouts from being created, rolled back,
+	// etc using this pipeline: https://cloud.google.com/deploy/docs/suspend-pipeline
+	Suspended bool
 
 	DependsOn []cdktf.ITerraformDependable
 }
@@ -34,6 +39,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 			Name:        &config.Name,
 			Description: &config.Description,
+			Suspended:   &config.Suspended,
 
 			SerialPipeline: &clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipeline{
 				Stages: pointers.Ptr(newStages(config)),
