@@ -53,11 +53,11 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
             }
 
             eventLogger.log('OkUnlockAccount')
-            props.telemetryRecorder.recordEvent('auth.unlock-account', 'success')
+            props.telemetryRecorder.recordEvent('auth.unlockAccount', 'success')
         } catch (error) {
             setError(error)
             eventLogger.log('KoUnlockAccount')
-            props.telemetryRecorder.recordEvent('auth.unlock-account', 'fail')
+            props.telemetryRecorder.recordEvent('auth.unlockAccount', 'fail')
         } finally {
             setLoading(false)
         }
@@ -68,7 +68,7 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
             return
         }
         eventLogger.logPageView('UnlockUserAccountRequest', null, false)
-        props.telemetryRecorder.recordEvent('auth.unlock-account', 'view')
+        props.telemetryRecorder.recordEvent('auth.unlockAccount', 'view')
 
         unlockAccount().catch(error => {
             setError(error)

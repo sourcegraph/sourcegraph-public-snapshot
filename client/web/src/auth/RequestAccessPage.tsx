@@ -125,7 +125,7 @@ export interface RequestAccessPageProps extends TelemetryV2Props {}
 export const RequestAccessPage: React.FunctionComponent<RequestAccessPageProps> = ({ telemetryRecorder }) => {
     useEffect(() => {
         eventLogger.logPageView('RequestAccessPage')
-        telemetryRecorder.recordEvent('auth.request-access-page', 'view')
+        telemetryRecorder.recordEvent('auth.requestAccess', 'view')
     }, [telemetryRecorder])
     const location = useLocation()
     const navigate = useNavigate()

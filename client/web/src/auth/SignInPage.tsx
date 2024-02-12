@@ -41,7 +41,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const { context, authenticatedUser } = props
     useEffect(() => {
         eventLogger.logViewEvent('SignIn', null, false)
-        props.telemetryRecorder.recordEvent('auth.sign-in', 'view')
+        props.telemetryRecorder.recordEvent('auth.signIn', 'view')
     }, [props.telemetryRecorder])
 
     const location = useLocation()
@@ -250,7 +250,7 @@ const SignUpNotice: React.FunctionComponent<SignUpNoticeProps> = ({
                 to="https://sourcegraph.com/get-started?t=enterprise"
                 onClick={() => {
                     eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
-                    telemetryRecorder.recordEvent('auth.enterprise-cta', 'click')
+                    telemetryRecorder.recordEvent('auth.enterpriseCTA', 'click')
                 }}
             >
                 consider Sourcegraph Enterprise

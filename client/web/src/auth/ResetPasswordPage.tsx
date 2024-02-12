@@ -96,7 +96,7 @@ class ResetPasswordInitForm extends React.PureComponent<TelemetryV2Props, ResetP
     private handleSubmitResetPasswordInit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         this.setState({ submitOrError: 'loading' })
-        this.props.telemetryRecorder.recordEvent('auth.reset-password.init', 'submit')
+        this.props.telemetryRecorder.recordEvent('auth.resetPassword.init', 'submit')
         fetch('/-/reset-password-init', {
             credentials: 'same-origin',
             method: 'POST',
@@ -196,7 +196,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 
     private handleSubmitResetPassword = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        this.props.telemetryRecorder.recordEvent('auth.reset-password', 'submit')
+        this.props.telemetryRecorder.recordEvent('auth.resetPassword', 'submit')
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-code', {
             credentials: 'same-origin',
@@ -240,7 +240,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
 
     React.useEffect(() => {
         eventLogger.logViewEvent('ResetPassword', false)
-        props.telemetryRecorder.recordEvent('auth.reset-password', 'view')
+        props.telemetryRecorder.recordEvent('auth.resetPassword', 'view')
     }, [props.telemetryRecorder])
 
     let body: JSX.Element

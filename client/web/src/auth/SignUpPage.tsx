@@ -50,7 +50,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
-        telemetryRecorder.recordEvent('auth.sign-up', 'view', {
+        telemetryRecorder.recordEvent('auth.signUp', 'view', {
             metadata: { 'invited-by-user': invitedBy !== null ? 1 : 0 },
         })
 
@@ -89,7 +89,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             const source = query.get('editor') === 'vscode' ? 'ide_extension' : 'web'
             telemetryService.log(EventName.SIGNUP_COMPLETED, { source }, { source })
             const v2Source = query.get('editor') === 'vscode' ? 0 : 1
-            telemetryRecorder.recordEvent('auth.signup', 'complete', { metadata: { source: v2Source } })
+            telemetryRecorder.recordEvent('auth.signUp', 'complete', { metadata: { source: v2Source } })
 
             // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
             window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
