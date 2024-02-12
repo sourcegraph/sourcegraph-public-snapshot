@@ -109,6 +109,44 @@ service GitserverService {
   rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetCommit gets a commit from the repo ODB.
+  // The endpoint will verify that the user is allowed to view the given commit.
+  //
+  // If subrepo permissions are enabled for the repo. If access is denied, an error
+  // with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+  //
+  // If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc GetCommit(GetCommitRequest) returns (GetCommitResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message GetCommitRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  string commit = 3;
+}
+
+message GetCommitResponse {
+  GitCommit commit = 1;
+}
+
+message GitCommit {
+  string oid = 1;
+  GitSignature author = 2;
+  GitSignature committer = 3;
+  string message = 4;
+  repeated string parents = 5;
+}
+
+message GitSignature {
+  string name = 1;
+  string email = 2;
+  google.protobuf.Timestamp date = 3;
 }
 
 message BlameRequest {

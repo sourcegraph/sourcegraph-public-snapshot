@@ -99,10 +99,6 @@ env:
   # Required for upload of search job results
   SEARCH_JOBS_UPLOAD_AWS_ENDPOINT: http://localhost:9000
 
-  # Disable auto-indexing the CNCF repo group (this only works in Cloud)
-  # This setting will be going away soon
-  DISABLE_CNCF: notonmybox
-
   # Point code insights to the `frontend` database in development
   CODEINSIGHTS_PGPORT: $PGPORT
   CODEINSIGHTS_PGHOST: $PGHOST

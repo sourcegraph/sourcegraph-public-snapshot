@@ -244,6 +244,7 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 		proto.GitserverService_MergeBase_FullMethodName:     logger.Scoped("merge-base.accesslog"),
 		proto.GitserverService_Blame_FullMethodName:         logger.Scoped("blame.accesslog"),
 		proto.GitserverService_DefaultBranch_FullMethodName: logger.Scoped("default-branch.accesslog"),
+		proto.GitserverService_GetCommit_FullMethodName:     logger.Scoped("get-commit.accesslog"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)

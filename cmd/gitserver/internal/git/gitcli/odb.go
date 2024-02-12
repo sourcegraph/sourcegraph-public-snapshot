@@ -5,11 +5,138 @@ import (
 	"context"
 	"io"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, includeModifiedFiles bool) (*git.GitCommitWithFiles, error) {
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	args := buildGetCommitArgs(commit, includeModifiedFiles)
+
+	cmd, cancel, err := g.gitCommand(ctx, args...)
+	defer cancel()
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := g.runGitCommand(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	rawCommit, err := io.ReadAll(r)
+	if err != nil {
+		// If exit code is 128 and `fatal: bad object` is part of stderr, most likely we
+		// are referencing a commit that does not exist.
+		// We want to return a gitdomain.RevisionNotFoundError in that case.
+		var e *CommandFailedError
+		if errors.As(err, &e) && e.ExitStatus == 128 && bytes.Contains(e.Stderr, []byte("fatal: bad object")) {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: string(commit)}
+		}
+
+		return nil, err
+	}
+
+	c, err := parseCommitLogOutput(bytes.TrimPrefix(rawCommit, []byte{'\x1e'}))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse commit log output")
+	}
+	return c, nil
+}
+
+func buildGetCommitArgs(commit api.CommitID, includeModifiedFiles bool) []string {
+	args := []string{"log", logFormatWithoutRefs, "-n", "1"}
+	if includeModifiedFiles {
+		args = append(args, "--name-only")
+	}
+	args = append(args, string(commit))
+	return args
+}
+
+const (
+	partsPerCommit = 10 // number of \x00-separated fields per commit
+
+	// This format string has 10 parts:
+	//  1) oid
+	//  2) author name
+	//  3) author email
+	//  4) author time
+	//  5) committer name
+	//  6) committer email
+	//  7) committer time
+	//  8) message body
+	//  9) parent hashes
+	// 10) modified files (optional)
+	//
+	// Each commit starts with an ASCII record separator byte (0x1E), and
+	// each field of the commit is separated by a null byte (0x00).
+	//
+	// Refs are slow, and are intentionally not included because they are usually not needed.
+	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+)
+
+func parseCommitLogOutput(rawCommit []byte) (*git.GitCommitWithFiles, error) {
+	parts := bytes.Split(rawCommit, []byte{'\x00'})
+	if len(parts) != partsPerCommit {
+		return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
+	}
+
+	return parseCommitFromLog(parts)
+}
+
+// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
+// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
+// logFormatFlag.
+func parseCommitFromLog(parts [][]byte) (*git.GitCommitWithFiles, error) {
+	// log outputs are newline separated, so all but the 1st commit ID part
+	// has an erroneous leading newline.
+	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
+	commitID := api.CommitID(parts[0])
+
+	authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
+	if err != nil {
+		return nil, errors.Errorf("parsing git commit author time: %s", err)
+	}
+	committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
+	if err != nil {
+		return nil, errors.Errorf("parsing git commit committer time: %s", err)
+	}
+
+	var parents []api.CommitID
+	if parentPart := parts[8]; len(parentPart) > 0 {
+		parentIDs := bytes.Split(parentPart, []byte{' '})
+		parents = make([]api.CommitID, len(parentIDs))
+		for i, id := range parentIDs {
+			parents[i] = api.CommitID(id)
+		}
+	}
+
+	var fileNames []string
+	if fileOut := string(bytes.TrimSpace(parts[9])); fileOut != "" {
+		fileNames = strings.Split(fileOut, "\n")
+	}
+
+	return &git.GitCommitWithFiles{
+		Commit: &gitdomain.Commit{
+			ID:        commitID,
+			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
+			Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
+			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
+			Parents:   parents,
+		},
+		ModifiedFiles: fileNames,
+	}, nil
+}
 
 func (g *gitCLIBackend) ReadFile(ctx context.Context, commit api.CommitID, path string) (io.ReadCloser, error) {
 	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {

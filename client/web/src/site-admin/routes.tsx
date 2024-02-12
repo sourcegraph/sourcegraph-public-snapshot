@@ -221,6 +221,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/cody',
         render: () => <AnalyticsCodyPage />,
+        condition: ({ license }) => license.isCodyEnabled,
     },
     {
         path: '/analytics/code-insights',
