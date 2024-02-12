@@ -13,27 +13,27 @@
 </script>
 
 <script lang="ts">
+    import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
+    import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import Section from '$lib/search/dynamicFilters/Section.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { resultTypeFilter } from '$lib/search/sidebar'
     import { submitSearch, type QueryStateStore, getQueryURL } from '$lib/search/state'
+    import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { groupFilters } from '$lib/search/utils'
+    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch, type Progress } from '$lib/shared'
 
-    import Section from './SidebarSection.svelte'
-    import StreamingProgress from './StreamingProgress.svelte'
+    import CodeHostIcon from './CodeHostIcon.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
-    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
-    import CodeHostIcon from './CodeHostIcon.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import StreamingProgress from './StreamingProgress.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
