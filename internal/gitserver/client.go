@@ -578,9 +578,14 @@ func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
 		pathSpecs = append(pathSpecs, gitdomain.Pathspec(path))
 	}
 
+	format, err := ArchiveFormatFromProto(x.GetFormat())
+	if err != nil {
+		panic(err.Error())
+	}
+
 	*o = ArchiveOptions{
 		Treeish:   x.GetTreeish(),
-		Format:    ArchiveFormat(x.GetFormat()),
+		Format:    format,
 		Pathspecs: pathSpecs,
 	}
 }

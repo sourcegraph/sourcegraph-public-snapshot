@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"net/mail"
 	"os"
 	stdlibpath "path"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -2229,6 +2231,14 @@ const (
 	// ArchiveFormatTar indicates a tar archive is desired.
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
+
+// Generate a random archive format.
+func (f ArchiveFormat) Generate(rand *rand.Rand, _ int) reflect.Value {
+	choices := []ArchiveFormat{ArchiveFormatZip, ArchiveFormatTar}
+	index := rand.Intn(len(choices))
+
+	return reflect.ValueOf(choices[index])
+}
 
 var ErrUnknownArchiveFormat = errors.New("unknown archive format")
 
