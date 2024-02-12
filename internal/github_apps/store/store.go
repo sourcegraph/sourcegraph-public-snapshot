@@ -477,9 +477,11 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 		logger.Error("Fetching App Installations from GitHub", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
 		errs = errors.Append(errs, err)
 
-		// This likely means the App has been deleted from GitHub, so we should remove all
-		// installations of it from our database, if we have any.
-		if len(dbInstallations) == 0 {
+		// if the error from github is 404 then it means the GitHub app has been deleted. If not, we return
+		// the error and preserve whatever installations we have in the database.
+		// Sample:
+		// {"error": "request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found", "appName": "BolJHI COMMIT SIgn", "id": 1}
+		if !strings.Contains(err.Error(), "returned status 404: Integration not found") {
 			return errs
 		}
 
