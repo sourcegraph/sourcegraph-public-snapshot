@@ -201,7 +201,7 @@ func cloudArmorAllowOnlyCloudflareEdge(scope constructs.Construct, id resourceid
 		},
 	})
 
-	ips := datacloudflareipranges.NewDataCloudflareIpRanges(scope, id.TerraformID("ip-ranges"), &datacloudflareipranges.DataCloudflareIpRangesConfig{})
+	ips := datacloudflareipranges.NewDataCloudflareIpRanges(scope, id.TerraformID("cf-ip-ranges"), &datacloudflareipranges.DataCloudflareIpRangesConfig{})
 
 	// Hack because Sort returns *[]*string but Chunklist wants *[]interface{}
 	var sortedIPs []any
