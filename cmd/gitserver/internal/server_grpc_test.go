@@ -439,7 +439,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		require.ErrorContains(t, err, "empty repo")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo"}, mockSS)
-		require.ErrorContains(t, err, "empty format")
+		require.ErrorContains(t, err, "unknown archive format")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {

@@ -2230,14 +2230,16 @@ const (
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
-func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
+var ErrUnknownArchiveFormat = errors.New("unknown archive format")
+
+func ArchiveFormatFromProto(pf proto.ArchiveFormat) (ArchiveFormat, error) {
 	switch pf {
 	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
-		return ArchiveFormatZip
+		return ArchiveFormatZip, nil
 	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
-		return ArchiveFormatTar
+		return ArchiveFormatTar, nil
 	default:
-		panic(fmt.Sprintf("unknown archive format: %v", pf))
+		return "", ErrUnknownArchiveFormat
 	}
 }
 

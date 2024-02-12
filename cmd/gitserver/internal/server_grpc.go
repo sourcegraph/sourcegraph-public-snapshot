@@ -178,7 +178,18 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	ctx := ss.Context()
 
-	format := gitserver.ArchiveFormatFromProto(req.GetFormat())
+	if req.GetRepo() == "" {
+		return status.Error(codes.InvalidArgument, "empty repo")
+	}
+
+	format, err := gitserver.ArchiveFormatFromProto(req.GetFormat())
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
 
 	// Log which which actor is accessing the repo.
 	accesslog.Record(ctx, req.GetRepo(),
@@ -186,14 +197,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		log.String("format", string(format)),
 		log.Strings("path", req.GetPathspecs()),
 	)
-
-	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if req.GetRepo() == "" {
-		return status.Error(codes.InvalidArgument, "empty repo")
-	}
 
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
@@ -975,7 +978,6 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	}
 
 	r, err := backend.Blame(ctx, api.CommitID(req.GetCommit()), req.GetPath(), opts)
-
 	if err != nil {
 		if os.IsNotExist(err) {
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
