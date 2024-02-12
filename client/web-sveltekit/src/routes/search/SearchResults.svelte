@@ -22,9 +22,9 @@
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Section from '$lib/search/dynamicFilters/Section.svelte'
+    import TypeSection from '$lib/search/dynamicFilters/TypeSection.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { resultTypeFilter } from '$lib/search/sidebar'
-    import { submitSearch, type QueryStateStore, getQueryURL } from '$lib/search/state'
+    import { submitSearch, type QueryStateStore } from '$lib/search/state'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { groupFilters } from '$lib/search/utils'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
@@ -118,28 +118,7 @@
 <div class="search-results">
     <aside class="sidebar" style:width={sidebarWidth}>
         <div class="section">
-            <!-- TODO: a11y -->
-            <ul>
-                {#each resultTypeFilter as filter}
-                    <li class:selected={filter.isSelected(queryFromURL)}>
-                        <a
-                            href={getQueryURL(
-                                {
-                                    searchMode: $queryState.searchMode,
-                                    patternType: $queryState.patternType,
-                                    caseSensitive: $queryState.caseSensitive,
-                                    searchContext: $queryState.searchContext,
-                                    query: filter.getQuery($queryState.query),
-                                },
-                                true
-                            )}
-                        >
-                            <Icon svgPath={filter.icon} inline aria-hidden="true" />
-                            {filter.label}
-                        </a>
-                    </li>
-                {/each}
-            </ul>
+            <TypeSection {queryFromURL} {queryState} />
         </div>
         {#if hasFilters}
             <div class="section">
@@ -278,51 +257,18 @@
             white-space: nowrap;
             margin-bottom: 1rem;
         }
+    }
 
-        .section {
-            padding: 1rem 0.5rem 1rem 1rem;
-            border-top: 1px solid var(--border-color);
+    .section {
+        padding: 1rem 0.5rem 1rem 1rem;
+        border-top: 1px solid var(--border-color);
 
-            &:first-child {
-                border-top: none;
-            }
-
-            &:last-child {
-                margin-top: auto;
-            }
+        &:first-child {
+            border-top: none;
         }
 
-        ul {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-
-            a {
-                flex: 1;
-                color: var(--sidebar-text-color);
-                text-decoration: none;
-                padding: 0.25rem 0.5rem;
-                border-radius: var(--border-radius);
-                // Controls icon color
-                --color: var(--icon-color);
-
-                &:hover {
-                    background-color: var(--secondary-4);
-                }
-            }
-
-            li {
-                display: flex;
-                white-space: nowrap;
-
-                &.selected {
-                    a {
-                        background-color: var(--primary);
-                        color: var(--primary-4);
-                        --color: var(--primary-4);
-                    }
-                }
-            }
+        &:last-child {
+            margin-top: auto;
         }
     }
 
