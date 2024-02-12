@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -74,6 +75,9 @@ Available categories:
 	- all: catch-all for all of the above
 
 If no categories are referenced, then 'builds' is assumed as the default.`,
+			BashComplete: completions.CompleteArgs(func() (options []string) {
+				return append(maps.Keys(bzlgenTargets), "all")
+			}),
 			Before: func(ctx *cli.Context) error {
 				for _, arg := range ctx.Args().Slice() {
 					if _, ok := bzlgenTargets[arg]; !ok && arg != "all" {
