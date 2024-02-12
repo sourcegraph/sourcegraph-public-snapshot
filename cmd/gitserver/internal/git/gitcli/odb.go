@@ -22,13 +22,7 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 
 	args := buildGetCommitArgs(commit, includeModifiedFiles)
 
-	cmd, cancel, err := g.gitCommand(ctx, args...)
-	defer cancel()
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := g.runGitCommand(ctx, cmd)
+	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {
 		return nil, err
 	}
@@ -151,34 +145,13 @@ func (g *gitCLIBackend) ReadFile(ctx context.Context, commit api.CommitID, path 
 		return nil, err
 	}
 
-	cmd, cancel, err := g.gitCommand(ctx, "cat-file", "-p", string(blobOID))
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-
-	r, err := g.runGitCommand(ctx, cmd)
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-
-	return &closingFileReader{
-		ReadCloser: r,
-		onClose:    cancel,
-	}, nil
+	return g.NewCommand(ctx, WithArguments("cat-file", "-p", string(blobOID)))
 }
 
 var errIsSubmodule = errors.New("blob is a submodule")
 
 func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, path string) (api.CommitID, error) {
-	cmd, cancel, err := g.gitCommand(ctx, "ls-tree", string(commit), "--", path)
-	defer cancel()
-	if err != nil {
-		return "", err
-	}
-
-	out, err := g.runGitCommand(ctx, cmd)
+	out, err := g.NewCommand(ctx, WithArguments("ls-tree", string(commit), "--", path))
 	if err != nil {
 		return "", err
 	}
@@ -213,15 +186,4 @@ func (g *gitCLIBackend) getBlobOID(ctx context.Context, commit api.CommitID, pat
 		return "", errIsSubmodule
 	}
 	return api.CommitID(fields[2]), nil
-}
-
-type closingFileReader struct {
-	io.ReadCloser
-	onClose func()
-}
-
-func (r *closingFileReader) Close() error {
-	err := r.ReadCloser.Close()
-	r.onClose()
-	return err
 }
