@@ -28,14 +28,6 @@ func (s *Server) MaybeStartClone(ctx context.Context, repo api.RepoName) (notFou
 		return &protocol.NotFoundPayload{}, false
 	}
 
-	cloneProgress, cloneInProgress := s.Locker.Status(dir)
-	if cloneInProgress {
-		return &protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		}, false
-	}
-
 	cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
 	if err != nil {
 		s.Logger.Debug("error starting repo clone", log.String("repo", string(repo)), log.Error(err))

@@ -516,12 +516,6 @@ func (s *Server) RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	return resp
 }
 
-type NotFoundError struct {
-	Payload *protocol.NotFoundPayload
-}
-
-func (e *NotFoundError) Error() string { return "not found" }
-
 type execStatus struct {
 	ExitStatus int
 	Stderr     string
@@ -545,7 +539,6 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	var status string
 	var execErr error
 	var exitStatus int = executil.UnsetExitStatus
 	ensureRevisionStatus := "noop"
@@ -570,7 +563,6 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 		defer func() {
 			tr.AddEvent(
 				"done",
-				attribute.String("status", status),
 				attribute.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
@@ -578,7 +570,7 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd).Dec()
-			execDuration.WithLabelValues(cmd, status).Observe(duration.Seconds())
+			execDuration.WithLabelValues(cmd).Observe(duration.Seconds())
 
 			var cmdDuration time.Duration
 			var fetchDuration time.Duration
@@ -601,7 +593,6 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("exit_status", exitStatus)
-				ev.AddField("status", status)
 				if execErr != nil {
 					ev.AddField("error", execErr.Error())
 				}
@@ -630,16 +621,6 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 				}
 			}
 		}()
-	}
-
-	if notFoundPayload, cloned := s.MaybeStartClone(ctx, repoName); !cloned {
-		if notFoundPayload.CloneInProgress {
-			status = "clone-in-progress"
-		} else {
-			status = "repo-not-found"
-		}
-
-		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
 	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
@@ -679,7 +660,6 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 		commandFailedErr := &gitcli.CommandFailedError{}
 		if errors.As(execErr, &commandFailedErr) {
 			exitStatus = commandFailedErr.ExitStatus
-			status = strconv.Itoa(exitStatus)
 			return execStatus{
 				ExitStatus: commandFailedErr.ExitStatus,
 				Stderr:     string(commandFailedErr.Stderr),
@@ -690,7 +670,6 @@ func (s *Server) Exec(ctx context.Context, req *protocol.ExecRequest, w io.Write
 	}
 
 	exitStatus = 0
-	status = strconv.Itoa(exitStatus)
 
 	return execStatus{ExitStatus: exitStatus}, nil
 }
@@ -834,15 +813,6 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	})
 
 	return "", nil
-}
-
-func (s *Server) P4Exec(_ context.Context, logger log.Logger, _ *p4ExecRequest, _ io.Writer) execStatus {
-	logger.Error("p4exec has been deprecated and removed on gitserver")
-
-	return execStatus{
-		ExitStatus: 1,
-		Err:        errors.New("p4exec has been deprecated and removed on gitserver"),
-	}
 }
 
 func (s *Server) doClone(
@@ -1176,7 +1146,7 @@ var (
 		Name:    "src_gitserver_exec_duration_seconds",
 		Help:    "gitserver.GitCommand latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
-	}, []string{"cmd", "status"})
+	}, []string{"cmd"})
 
 	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_search_running",

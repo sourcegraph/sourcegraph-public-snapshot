@@ -41,6 +41,11 @@ type GitBackend interface {
 	// If the path points to a submodule, an empty reader is returned and no error.
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	ReadFile(ctx context.Context, commit api.CommitID, path string) (io.ReadCloser, error)
+	// GetCommit retrieves the commit with the given ID from the git ODB.
+	// If includeModifiedFiles is true, the returned GitCommitWithFiles will contain
+	// the list of all files touched in this commit.
+	// If the commit doesn't exist, a RevisionNotFoundError is returned.
+	GetCommit(ctx context.Context, commit api.CommitID, includeModifiedFiles bool) (*GitCommitWithFiles, error)
 
 	// ArchiveReader returns a reader for an archive in the given format.
 	// Treeish is the tree or commit to archive, and pathspecs is the list of
@@ -86,4 +91,12 @@ type BlameHunkReader interface {
 	// Consume the next hunk. io.EOF is returned at the end of the stream.
 	Read() (*gitdomain.Hunk, error)
 	Close() error
+}
+
+// GitCommitWithFiles wraps a gitdomain.Commit and adds a list of modified files.
+// Modified files are only populated when requested.
+// This data is required for sub repo permission filtering.
+type GitCommitWithFiles struct {
+	*gitdomain.Commit
+	ModifiedFiles []string
 }
