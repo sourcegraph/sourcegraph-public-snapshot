@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -98,14 +99,14 @@ func (b *observableBackend) MergeBase(ctx context.Context, baseRevspec, headRevs
 	return b.backend.MergeBase(ctx, baseRevspec, headRevspec)
 }
 
-func (b *observableBackend) Blame(ctx context.Context, path string, opt BlameOptions) (_ BlameHunkReader, err error) {
+func (b *observableBackend) Blame(ctx context.Context, commit api.CommitID, path string, opt BlameOptions) (_ BlameHunkReader, err error) {
 	// TODO: Reporting of `err` is not correct here, the errors from reader are NOT
 	// considered.
 	ctx, _, endObservation := b.operations.configGet.With(ctx, &err, observation.Args{})
 
 	concurrentOps.WithLabelValues("Blame").Inc()
 
-	hr, err := b.backend.Blame(ctx, path, opt)
+	hr, err := b.backend.Blame(ctx, commit, path, opt)
 	if err != nil {
 		endObservation(1, observation.Args{})
 		concurrentOps.WithLabelValues("Blame").Dec()
@@ -154,6 +155,21 @@ func (b *observableBackend) RevParseHead(ctx context.Context) (_ api.CommitID, e
 	defer concurrentOps.WithLabelValues("RevParseHead").Dec()
 
 	return b.backend.RevParseHead(ctx)
+}
+
+func (b *observableBackend) GetCommit(ctx context.Context, commit api.CommitID, includeModifiedFiles bool) (_ *GitCommitWithFiles, err error) {
+	ctx, _, endObservation := b.operations.getCommit.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.Bool("includeModifiedFiles", includeModifiedFiles),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("GetCommit").Inc()
+	defer concurrentOps.WithLabelValues("GetCommit").Dec()
+
+	return b.backend.GetCommit(ctx, commit, includeModifiedFiles)
 }
 
 func (b *observableBackend) ReadFile(ctx context.Context, commit api.CommitID, path string) (_ io.ReadCloser, err error) {
@@ -228,6 +244,7 @@ type operations struct {
 	revParseHead    *observation.Operation
 	readFile        *observation.Operation
 	exec            *observation.Operation
+	getCommit       *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -263,6 +280,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		revParseHead:    op("rev-parse-head"),
 		readFile:        op("read-file"),
 		exec:            op("exec"),
+		getCommit:       op("get-commit"),
 	}
 }
 
