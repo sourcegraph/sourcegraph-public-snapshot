@@ -32,7 +32,7 @@ import (
 )
 
 type service interface {
-	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
+	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	Exec(ctx context.Context, req *protocol.ExecRequest, w io.Writer) (execStatus, error)
 	MaybeStartClone(ctx context.Context, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool)
@@ -93,47 +93,40 @@ func (gs *grpcServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) 
 }
 
 func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
-	var (
-		metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
-		patch    []byte
-	)
-	receivedMetadata := false
+	var metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
 
-	for {
+	firstMsg, err := s.Recv()
+	if err != nil {
+		return err
+	}
+
+	switch firstMsg.Payload.(type) {
+	case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
+		metadata = firstMsg.GetMetadata()
+	default:
+		return status.New(codes.InvalidArgument, "must send metadata event first").Err()
+	}
+
+	patchReader := streamio.NewReader(func() ([]byte, error) {
 		msg, err := s.Recv()
-		if errors.Is(err, io.EOF) {
-			break
-		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		switch msg.Payload.(type) {
-		case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
-			if receivedMetadata {
-				return status.Errorf(codes.InvalidArgument, "received metadata more than once")
-			}
-			metadata = msg.GetMetadata()
-			receivedMetadata = true
-
 		case *proto.CreateCommitFromPatchBinaryRequest_Patch_:
-			m := msg.GetPatch()
-			patch = append(patch, m.GetData()...)
-
-		case nil:
-			continue
-
+			return msg.GetPatch().GetData(), nil
 		default:
-			return status.Errorf(codes.InvalidArgument, "got malformed message %T", msg.Payload)
+			return nil, status.New(codes.InvalidArgument, "must only send patch events after metadata").Err()
 		}
-	}
+	})
 
 	var r protocol.CreateCommitFromPatchRequest
-	r.FromProto(metadata, patch)
-	_, resp := gs.svc.CreateCommitFromPatch(s.Context(), r)
-	res, err := resp.ToProto()
-	if err != nil {
-		return err.ToStatus().Err()
+	r.FromProto(metadata)
+	resp := gs.svc.CreateCommitFromPatch(s.Context(), r, patchReader)
+	res, patchErr := resp.ToProto()
+	if patchErr != nil {
+		return patchErr.ToStatus().Err()
 	}
 
 	return s.SendAndClose(res)

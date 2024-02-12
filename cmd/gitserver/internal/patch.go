@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,7 +35,7 @@ import (
 
 var patchID uint64
 
-func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse {
 	logger := s.Logger.Scoped("createCommitFromPatch").
 		With(
 			log.String("repo", string(req.Repo)),
@@ -52,7 +52,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		repoGitDir = filepath.Join(s.ReposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 			resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: repo does not exist"))
-			return http.StatusInternalServerError, resp
+			return resp
 		}
 	}
 
@@ -77,7 +77,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		if err != nil {
 			logger.Error("Failed to get remote refs", log.Error(err))
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
-			return http.StatusInternalServerError, resp
+			return resp
 		}
 
 		retry := 1
@@ -99,7 +99,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if err != nil {
 		logger.Error("Failed to get remote URL", log.Error(err))
 		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	redactor := urlredactor.New(remoteURL)
@@ -117,7 +117,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	tmpRepoDir, err := gitserverfs.TempDir(s.ReposDir, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 	defer cleanUpTmpRepo(logger, tmpRepoDir)
 
@@ -164,7 +164,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Env = append(os.Environ(), tmpGitPathEnv)
 
 	if _, err := run(cmd, "init tmp repo"); err != nil {
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "reset", "-q", string(req.BaseCommit))
@@ -175,7 +175,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		logger.Error("Failed to base the temporary repo on the base revision",
 			log.String("output", string(out)),
 		)
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
@@ -183,11 +183,11 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
-	cmd.Stdin = bytes.NewReader(req.Patch)
+	cmd.Stdin = patchReader
 
 	if out, err := run(cmd, "applying patch"); err != nil {
 		logger.Error("Failed to apply patch", log.String("output", string(out)))
-		return http.StatusBadRequest, resp
+		return resp
 	}
 
 	messages := req.CommitInfo.Messages
@@ -234,7 +234,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if out, err := run(cmd, "committing patch"); err != nil {
 		logger.Error("Failed to commit patch.", log.String("output", string(out)))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
@@ -245,7 +245,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	out, err := cmd.Output()
 	if err != nil {
 		resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: retrieving new commit id"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 	cmtHash := strings.TrimSpace(string(out))
 
@@ -274,7 +274,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	})
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "copying git objects"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	if req.Push != nil {
@@ -284,7 +284,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 			cid, err := s.shelveChangelist(ctx, req, cmtHash, remoteURL, tmpGitPathEnv, altObjectsEnv)
 			if err != nil {
 				resp.SetError(repo, "", "", err)
-				return http.StatusInternalServerError, resp
+				return resp
 			}
 
 			resp.ChangelistId = cid
@@ -303,7 +303,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 				agent, err := sshagent.New(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 				if err != nil {
 					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
-					return http.StatusInternalServerError, resp
+					return resp
 				}
 				go agent.Listen()
 				// Make sure we shut this down once we're done.
@@ -319,7 +319,7 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 			if out, err = run(cmd, "pushing ref"); err != nil {
 				logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
-				return http.StatusInternalServerError, resp
+				return resp
 			}
 		}
 	}
@@ -331,11 +331,11 @@ func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		if out, err = run(cmd, "creating ref"); err != nil {
 			logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
-			return http.StatusInternalServerError, resp
+			return resp
 		}
 	}
 
-	return http.StatusOK, resp
+	return resp
 }
 
 // repoRemoteRefs returns a map containing ref + commit pairs from the

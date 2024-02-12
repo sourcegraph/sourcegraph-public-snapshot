@@ -70,7 +70,7 @@ func NewMockService() *MockService {
 			},
 		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (r0 int, r1 protocol.CreateCommitFromPatchResponse) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) (r0 protocol.CreateCommitFromPatchResponse) {
 				return
 			},
 		},
@@ -127,7 +127,7 @@ func NewStrictMockService() *MockService {
 			},
 		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
 				panic("unexpected invocation of MockService.CreateCommitFromPatch")
 			},
 		},
@@ -175,7 +175,7 @@ func NewStrictMockService() *MockService {
 type surrogateMockService interface {
 	BatchGitLogInstrumentedHandler(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
 	CloneRepo(context.Context, api.RepoName, CloneOptions) (string, error)
-	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
+	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	Exec(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	LogIfCorrupt(context.Context, api.RepoName, error)
@@ -448,24 +448,24 @@ func (c ServiceCloneRepoFuncCall) Results() []interface{} {
 // CreateCommitFromPatch method of the parent MockService instance is
 // invoked.
 type ServiceCreateCommitFromPatchFunc struct {
-	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
-	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
+	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
+	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	history     []ServiceCreateCommitFromPatchFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateCommitFromPatch delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockService) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	r0, r1 := m.CreateCommitFromPatchFunc.nextHook()(v0, v1)
-	m.CreateCommitFromPatchFunc.appendCall(ServiceCreateCommitFromPatchFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockService) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest, v2 io.Reader) protocol.CreateCommitFromPatchResponse {
+	r0 := m.CreateCommitFromPatchFunc.nextHook()(v0, v1, v2)
+	m.CreateCommitFromPatchFunc.appendCall(ServiceCreateCommitFromPatchFuncCall{v0, v1, v2, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // CreateCommitFromPatch method of the parent MockService instance is
 // invoked and the hook queue is empty.
-func (f *ServiceCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)) {
+func (f *ServiceCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse) {
 	f.defaultHook = hook
 }
 
@@ -473,7 +473,7 @@ func (f *ServiceCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Cont
 // CreateCommitFromPatch method of the parent MockService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ServiceCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)) {
+func (f *ServiceCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -481,20 +481,20 @@ func (f *ServiceCreateCommitFromPatchFunc) PushHook(hook func(context.Context, p
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ServiceCreateCommitFromPatchFunc) SetDefaultReturn(r0 int, r1 protocol.CreateCommitFromPatchResponse) {
-	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-		return r0, r1
+func (f *ServiceCreateCommitFromPatchFunc) SetDefaultReturn(r0 protocol.CreateCommitFromPatchResponse) {
+	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceCreateCommitFromPatchFunc) PushReturn(r0 int, r1 protocol.CreateCommitFromPatchResponse) {
-	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-		return r0, r1
+func (f *ServiceCreateCommitFromPatchFunc) PushReturn(r0 protocol.CreateCommitFromPatchResponse) {
+	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
+		return r0
 	})
 }
 
-func (f *ServiceCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+func (f *ServiceCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -533,24 +533,24 @@ type ServiceCreateCommitFromPatchFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 protocol.CreateCommitFromPatchRequest
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 io.Reader
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 protocol.CreateCommitFromPatchResponse
+	Result0 protocol.CreateCommitFromPatchResponse
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ServiceCreateCommitFromPatchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ServiceCreateCommitFromPatchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // ServiceExecFunc describes the behavior when the Exec method of the parent
