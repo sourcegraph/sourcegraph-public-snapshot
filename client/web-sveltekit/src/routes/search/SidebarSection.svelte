@@ -7,6 +7,7 @@
     import { Badge, Button } from '$lib/wildcard'
     import { mdiClose } from '@mdi/js'
     import { pluralize } from '$lib/common'
+    import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
 
     export let items: SidebarFilter[]
     export let title: string
@@ -36,6 +37,7 @@
         } else {
             url.searchParams.delete('filters')
         }
+        url.searchParams.set(USE_CLIENT_CACHE_QUERY_PARAMETER, '') // Enforce use of client-side caching
         return url.toString()
     }
 

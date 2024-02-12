@@ -8,10 +8,6 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
-  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -109,19 +105,63 @@ service GitserverService {
   rpc ReadFile(ReadFileRequest) returns (stream ReadFileResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetCommit gets a commit from the repo ODB.
+  // The endpoint will verify that the user is allowed to view the given commit.
+  //
+  // If subrepo permissions are enabled for the repo. If access is denied, an error
+  // with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+  //
+  // If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc GetCommit(GetCommitRequest) returns (GetCommitResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
-message BlameRequest {
+message GetCommitRequest {
   // repo_name is the name of the repo to run the blame operation in.
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
-  // commit is the commit to start the blame operation in. If not given, the latest
-  // HEAD is used.
-  optional string commit = 3;
+  string commit = 3;
+}
+
+message GetCommitResponse {
+  GitCommit commit = 1;
+}
+
+message GitCommit {
+  string oid = 1;
+  GitSignature author = 2;
+  GitSignature committer = 3;
+  string message = 4;
+  repeated string parents = 5;
+}
+
+message GitSignature {
+  string name = 1;
+  string email = 2;
+  google.protobuf.Timestamp date = 3;
+}
+
+message BlameRequest {
+  reserved 6, 7;
+  reserved "start_line", "end_line";
+
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // commit is the commit sha to start the blame operation at.
+  string commit = 3;
   string path = 4;
   bool ignore_whitespace = 5;
-  optional uint32 start_line = 6;
-  optional uint32 end_line = 7;
+  optional BlameRange range = 8;
+}
+
+message BlameRange {
+  uint32 start_line = 1;
+  uint32 end_line = 2;
 }
 
 message BlameResponse {
@@ -182,44 +222,6 @@ message DiskInfoResponse {
 
   // percent_used is the percent of disk space used on a gitserver instance.
   float percent_used = 3;
-}
-
-// BatchLogRequest is a request to execute a `git log` command inside a set of
-// git repositories present on the target shard.
-message BatchLogRequest {
-  // repo_commits is the list of repositories and commits to run the git log
-  // command on.
-  repeated RepoCommit repo_commits = 1 [deprecated = true];
-  // format is the entire `--format=<format>` argument to git log. This value is
-  // expected to be non-empty.
-  string format = 2 [deprecated = true];
-}
-
-// BatchLogResponse contains the results of the BatchLog request.
-message BatchLogResponse {
-  // results is the list of results for each repository and commit pair from the
-  // input of a BatchLog request.
-  repeated BatchLogResult results = 1 [deprecated = true];
-}
-
-// BatchLogResult is the result that associates a repository and commit pair
-// from the input of a BatchLog request with the result of the associated git
-// log command.
-message BatchLogResult {
-  // repo_commit is the repository and commit pair from the input of a BatchLog
-  // request.
-  RepoCommit repo_commit = 1 [deprecated = true];
-  // command_output is the output of the git log command.
-  string command_output = 2 [deprecated = true];
-  // command_error is an optional error message if the git log command
-  // encountered an error.
-  optional string command_error = 3 [deprecated = true];
-}
-
-// RepoCommit is the represention of a repository and commit pair.
-message RepoCommit {
-  string repo = 1 [deprecated = true];
-  string commit = 2 [deprecated = true];
 }
 
 message PatchCommitInfo {

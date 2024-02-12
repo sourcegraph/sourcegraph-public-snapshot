@@ -40,15 +40,19 @@ type perforceDepotSyncer struct {
 	// P4Home is a directory we will pass to `git p4` commands as the
 	// $HOME directory as it requires this to write cache data.
 	P4Home string
+
+	// reposDir is the directory where repositories are cloned.
+	reposDir string
 }
 
-func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, connection *schema.PerforceConnection, p4Home string) VCSSyncer {
+func NewPerforceDepotSyncer(logger log.Logger, r *wrexec.RecordingCommandFactory, connection *schema.PerforceConnection, reposDir, p4Home string) VCSSyncer {
 	return &perforceDepotSyncer{
 		logger:                  logger.Scoped("PerforceDepotSyncer"),
 		recordingCommandFactory: r,
 		MaxChanges:              int(connection.MaxChanges),
 		P4Client:                connection.P4Client,
 		FusionConfig:            configureFusionClient(connection),
+		reposDir:                reposDir,
 		P4Home:                  p4Home,
 	}
 }
@@ -64,12 +68,21 @@ func (s *perforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 		return errors.Wrap(err, "invalid perforce remote URL")
 	}
 
-	return perforce.IsDepotPathCloneable(ctx, s.P4Home, host, username, password, path)
+	return perforce.IsDepotPathCloneable(ctx, perforce.IsDepotPathCloneableArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
+		P4Port:   host,
+		P4User:   username,
+		P4Passwd: password,
+
+		DepotPath: path,
+	})
 }
 
 // Clone writes a Perforce depot into tmpPath, using a Perforce-to-git-conversion.
 // It reports redacted progress logs via the progressWriter.
-func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, _ common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
 	// First, make sure the tmpPath exists.
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
@@ -82,7 +95,14 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 
 	// First, do a quick check if we can reach the Perforce server.
 	tryWrite(s.logger, progressWriter, "Checking Perforce server connection\n")
-	err = perforce.P4TestWithTrust(ctx, s.P4Home, p4port, p4user, p4passwd)
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+	})
 	if err != nil {
 		return errors.Wrap(err, "verifying connection to perforce server")
 	}
@@ -99,7 +119,7 @@ func (s *perforceDepotSyncer) Clone(ctx context.Context, repo api.RepoName, remo
 		args = append(args, depot+"@all", tmpPath)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
-	cmd.Env = s.p4CommandEnv(p4port, p4user, p4passwd)
+	cmd.Env = s.p4CommandEnv(tmpPath, p4port, p4user, p4passwd)
 
 	redactor := urlredactor.New(remoteURL)
 	wrCmd := s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, repo, cmd).WithRedactorFunc(redactor.Redact)
@@ -180,7 +200,14 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	}
 
 	// First, do a quick check if we can reach the Perforce server.
-	err = perforce.P4TestWithTrust(ctx, s.P4Home, p4port, p4user, p4passwd)
+	err = perforce.P4TestWithTrust(ctx, perforce.P4TestWithTrustArguments{
+		ReposDir: s.reposDir,
+		P4Home:   s.P4Home,
+
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying connection to perforce server")
 	}
@@ -195,7 +222,7 @@ func (s *perforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 		cmd = wrexec.CommandContext(ctx, nil, "git", args...)
 	}
-	cmd.Env = s.p4CommandEnv(p4port, p4user, p4passwd)
+	cmd.Env = s.p4CommandEnv(string(dir), p4port, p4user, p4passwd)
 	dir.Set(cmd.Cmd)
 
 	// TODO(keegancsmith)(indradhanush) This is running a remote command and
@@ -241,12 +268,13 @@ func (s *perforceDepotSyncer) p4CommandOptions() []string {
 	return flags
 }
 
-func (s *perforceDepotSyncer) p4CommandEnv(p4port, p4user, p4passwd string) []string {
+func (s *perforceDepotSyncer) p4CommandEnv(cmdCWD, p4port, p4user, p4passwd string) []string {
 	env := append(
 		os.Environ(),
 		"P4PORT="+p4port,
 		"P4USER="+p4user,
 		"P4PASSWD="+p4passwd,
+		"P4CLIENTPATH="+cmdCWD,
 	)
 
 	if s.P4Client != "" {

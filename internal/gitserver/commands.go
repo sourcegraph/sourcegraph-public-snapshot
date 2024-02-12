@@ -37,12 +37,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type DiffOptions struct {
@@ -403,7 +400,7 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
 	} else if !hasAccess {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
 	}
 	args := []string{"diff", sourceCommit, targetCommit, "--", path}
 	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
@@ -808,17 +805,15 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 	req := &proto.BlameRequest{
 		RepoName:         string(repo),
+		Commit:           string(opt.NewestCommit),
 		Path:             path,
 		IgnoreWhitespace: opt.IgnoreWhitespace,
 	}
-	if opt.NewestCommit != "" {
-		req.Commit = pointers.Ptr(string(opt.NewestCommit))
-	}
-	if opt.StartLine != 0 {
-		req.StartLine = pointers.Ptr(uint32(opt.StartLine))
-	}
-	if opt.EndLine != 0 {
-		req.EndLine = pointers.Ptr(uint32(opt.EndLine))
+	if opt.Range != nil {
+		req.Range = &proto.BlameRange{
+			StartLine: uint32(opt.Range.StartLine),
+			EndLine:   uint32(opt.Range.EndLine),
+		}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -833,40 +828,49 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	// ie. permission denied errors or invalid git command.
 	firstHunkResp, err := cli.Recv()
 	if err != nil {
-		cancel()
-		endObservation(1, observation.Args{})
-
-		if s, ok := status.FromError(err); ok {
+		s, ok := status.FromError(err)
+		if ok {
 			if s.Code() == codes.PermissionDenied {
-				return nil, os.ErrNotExist
+				cancel()
+				endObservation(1, observation.Args{})
+				return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+			}
+
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						endObservation(1, observation.Args{})
+						return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+					}
+				}
 			}
 		}
 
-		return nil, err
+		if err != io.EOF {
+			cancel()
+			endObservation(1, observation.Args{})
+			return nil, err
+		}
 	}
 
+	var hunk *proto.BlameHunk
+	if firstHunkResp != nil {
+		hunk = firstHunkResp.GetHunk()
+	}
 	return &grpcBlameHunkReader{
-		firstHunk:      firstHunkResp.GetHunk(),
+		firstHunk:      hunk,
+		firstHunkErr:   err,
 		c:              cli,
 		cancel:         cancel,
 		endObservation: func() { endObservation(1, observation.Args{}) },
 	}, nil
 }
 
-type errUnauthorizedStreamBlame struct {
-	Repo api.RepoName
-}
-
-func (e errUnauthorizedStreamBlame) Unauthorized() bool {
-	return true
-}
-
-func (e errUnauthorizedStreamBlame) Error() string {
-	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
-}
-
 type grpcBlameHunkReader struct {
 	firstHunk      *proto.BlameHunk
+	firstHunkErr   error
 	firstHunkRead  bool
 	c              proto.GitserverService_BlameClient
 	cancel         context.CancelFunc
@@ -876,6 +880,9 @@ type grpcBlameHunkReader struct {
 func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 	if !r.firstHunkRead {
 		r.firstHunkRead = true
+		if r.firstHunkErr != nil {
+			return nil, r.firstHunkErr
+		}
 		return gitdomain.HunkFromBlameProto(r.firstHunk), nil
 	}
 	p, err := r.c.Recv()
@@ -1210,17 +1217,12 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 		RepoName: string(repo),
 	})
 	if err != nil {
-		s, ok := status.FromError(err)
-		if ok {
-			if s.Code() == codes.NotFound {
-				for _, d := range s.Details() {
-					switch d.(type) {
-					// If we fail to get the default branch due to cloning or being empty, we return nothing.
-					case *proto.RepoNotFoundPayload, *proto.RevisionNotFoundPayload:
-						return "", "", nil
-					}
-				}
-			}
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if errors.HasType(err, &gitdomain.RepoNotExistError{}) {
+			return "", "", nil
+		}
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
 		}
 		return "", "", err
 	}
@@ -1358,7 +1360,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 				cancel()
 				err = firstRespErr
 				endObservation(1, observation.Args{})
-				return nil, os.ErrNotExist
+				return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 			}
 			if s.Code() == codes.NotFound {
 				for _, d := range s.Details() {
@@ -1367,10 +1369,16 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 						cancel()
 						err = firstRespErr
 						endObservation(1, observation.Args{})
-						return nil, os.ErrNotExist
+						return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 					}
 				}
 			}
+		}
+		if errors.HasType(firstRespErr, &gitdomain.RevisionNotFoundError{}) {
+			cancel()
+			err = firstRespErr
+			endObservation(1, observation.Args{})
+			return nil, err
 		}
 	}
 
@@ -1463,61 +1471,6 @@ type CommitsOptions struct {
 	NameOnly bool
 }
 
-var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
-
-// getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
-	if honey.Enabled() && recordGetCommitQueries {
-		defer func() {
-			ev := honey.NewEvent("getCommit")
-			ev.SetSampleRate(10) // 1 in 10
-			ev.AddField("repo", repo)
-			ev.AddField("commit", id)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-
-			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
-			ev.AddField("query", q)
-
-			if err != nil {
-				ev.AddField("error", err.Error())
-			}
-
-			_ = ev.Send()
-		}()
-	}
-
-	if err := checkSpecArgSafety(string(id)); err != nil {
-		return nil, err
-	}
-
-	commitOptions := CommitsOptions{
-		Range:            string(id),
-		N:                1,
-		NoEnsureRevision: true,
-	}
-	commitOptions = addNameOnly(commitOptions, c.subRepoPermsChecker)
-
-	commits, err := c.commitLog(ctx, repo, commitOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(commits) == 0 {
-		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
-	}
-	if len(commits) != 1 {
-		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
-	}
-
-	return commits[0], nil
-}
-
-// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
-// exists.
-//
-// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
-// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
-// the repository or if the commit must be fetched from the remote.
 func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -1528,7 +1481,20 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 	})
 	defer endObservation(1, observation.Args{})
 
-	return c.getCommit(ctx, repo, id)
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.GetCommit(ctx, &proto.GetCommitRequest{
+		RepoName: string(repo),
+		Commit:   string(id),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.CommitFromProto(res.GetCommit()), nil
 }
 
 // Commits returns all commits matching the options.
@@ -1546,7 +1512,21 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	return c.commitLog(ctx, repo, opt)
+
+	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
+
+	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
+		return c.getMoreCommits(ctx, repo, opt, filtered)
+	}
+	return filtered, err
 }
 
 func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
@@ -1709,7 +1689,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
+	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec, NoEnsureRevision: true}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -1719,26 +1699,6 @@ func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, rep
 
 func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
-}
-
-// commitLog returns a list of commits.
-//
-// The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
-	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered, err := filterCommits(ctx, c.subRepoPermsChecker, wrappedCommits, repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering commits")
-	}
-
-	if needMoreCommits(filtered, wrappedCommits, opt, c.subRepoPermsChecker) {
-		return c.getMoreCommits(ctx, repo, opt, filtered)
-	}
-	return filtered, err
 }
 
 func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
@@ -2301,12 +2261,12 @@ func (c *clientImplementor) ArchiveReader(
 
 		// We return early only if this isn't a revision not found error.
 
-		err := convertGRPCErrorToGitDomainError(firstError)
+		err := firstError
 
 		var cse *CommandStatusError
 		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 			cancel()
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 	}
 
@@ -2328,7 +2288,7 @@ func (c *clientImplementor) ArchiveReader(
 		// Receive the next message from the stream.
 		msg, err := stream.Recv()
 		if err != nil {
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 
 		// Return the data from the received message.
@@ -2336,7 +2296,7 @@ func (c *clientImplementor) ArchiveReader(
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{r: r, closeFn: cancel},
+		base: &readCloseWrapper{Reader: r, closeFn: cancel},
 		repo: repo,
 		spec: options.Treeish,
 	}, nil

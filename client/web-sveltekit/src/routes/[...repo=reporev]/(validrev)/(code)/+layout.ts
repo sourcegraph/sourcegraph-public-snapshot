@@ -1,7 +1,9 @@
 import { dirname } from 'path'
 
 import { browser } from '$app/environment'
+import { getGraphQLClient } from '$lib/graphql'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 import { GitHistoryQuery } from './layout.gql'
@@ -27,22 +29,23 @@ if (browser) {
 }
 
 export const load: LayoutLoad = async ({ parent, params }) => {
-    const { resolvedRevision, repoName, graphqlClient } = await parent()
+    const client = await getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const parentPath = getRootPath(repoName, params.path ? dirname(params.path) : REPO_ROOT)
 
     // Fetches the most recent commits for current blob, tree or repo root
-    const commitHistory = graphqlClient.watchQuery({
+    const commitHistory = client.watchQuery({
         query: GitHistoryQuery,
         variables: {
-            repo: resolvedRevision.repo.id,
-            revspec: resolvedRevision.commitID,
+            repoName,
+            revspec: revision,
             filePath: params.path ?? '',
             first: HISTORY_COMMITS_PER_PAGE,
             afterCursor: null,
         },
         notifyOnNetworkStatusChange: true,
     })
-    if (!graphqlClient.readQuery({ query: GitHistoryQuery, variables: commitHistory.variables })) {
+    if (!client.readQuery({ query: GitHistoryQuery, variables: commitHistory.variables })) {
         // Eagerly fetch data if it isn't in the cache already. This ensures that the data is fetched
         // as soon as possible, not only after the layout subscribes to the query.
         commitHistory.refetch()
@@ -52,8 +55,8 @@ export const load: LayoutLoad = async ({ parent, params }) => {
         parentPath,
         commitHistory,
         fileTree: fetchSidebarFileTree({
-            repoID: resolvedRevision.repo.id,
-            commitID: resolvedRevision.commitID,
+            repoName,
+            revision,
             filePath: parentPath,
         }),
     }

@@ -145,9 +145,9 @@ func (r *globalRateLimiter) newTimer(d time.Duration) (<-chan time.Time, func() 
 }
 
 func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
-	metricLimiterAttempts.Inc()
-	metricLimiterWaiting.Inc()
-	defer metricLimiterWaiting.Dec()
+	metricLimiterAttempts.WithLabelValues(r.bucketName).Inc()
+	metricLimiterWaiting.WithLabelValues(r.bucketName).Inc()
+	defer metricLimiterWaiting.WithLabelValues(r.bucketName).Dec()
 	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
@@ -176,7 +176,7 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 		n,
 	)
 	if err != nil {
-		metricLimiterFailedAcquire.Inc()
+		metricLimiterFailedAcquire.WithLabelValues(r.bucketName).Inc()
 		r.logger.Error("failed to acquire global rate limiter, falling back to default in-memory limiter", log.Error(err))
 		// If using the real global limiter fails, we fall back to the in-memory registry
 		// of rate limiters. This rate limiter is NOT synced across services, so when these
@@ -552,17 +552,17 @@ func kv() redispool.KeyValue {
 
 // metrics.
 var (
-	metricLimiterAttempts = promauto.NewCounter(prometheus.CounterOpts{
+	metricLimiterAttempts = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_globallimiter_attempts",
 		Help: "Incremented each time we request a token from a rate limiter.",
-	})
-	metricLimiterWaiting = promauto.NewGauge(prometheus.GaugeOpts{
+	}, []string{"bucket"})
+	metricLimiterWaiting = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_globallimiter_waiting",
 		Help: "Number of rate limiter requests that are pending.",
-	})
+	}, []string{"bucket"})
 	// TODO: Once we add Grafana dashboards, add an alert on this metric.
-	metricLimiterFailedAcquire = promauto.NewCounter(prometheus.CounterOpts{
+	metricLimiterFailedAcquire = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_globallimiter_failed_acquire",
 		Help: "Incremented each time requesting a token from a rate limiter fails after retries.",
-	})
+	}, []string{"bucket"})
 )

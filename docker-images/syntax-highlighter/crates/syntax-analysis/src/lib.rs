@@ -1,6 +1,6 @@
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use scip::types::Occurrence;
-use tree_sitter_all_languages::BundledParser;
+use tree_sitter_all_languages::ParserId;
 
 pub mod ctags;
 pub mod globals;
@@ -12,21 +12,24 @@ pub mod snapshot;
 pub mod tree_sitter_ext;
 pub mod ts_scip;
 
-pub fn get_globals(
-    parser: BundledParser,
-    source_bytes: &[u8],
-) -> Option<Result<(globals::Scope, usize)>> {
-    let config = languages::get_tag_configuration(parser)?;
+pub fn get_globals(parser: ParserId, source: &str) -> Result<(globals::Scope, usize)> {
+    let config = languages::get_tag_configuration(parser)
+        .ok_or_else(|| anyhow!("No tag configuration for language: {parser:?}"))?;
     let mut parser = config.get_parser();
-    let tree = parser.parse(source_bytes, None).unwrap();
-    Some(globals::parse_tree(config, &tree, source_bytes))
+    let tree = parser
+        .parse(source.as_bytes(), None)
+        .ok_or(anyhow!("Failed to parse when extracting globals"))?;
+    globals::parse_tree(config, &tree, source).context("when extracting globals")
 }
 
-pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Vec<Occurrence>> {
-    let config = languages::get_local_configuration(parser)?;
+pub fn get_locals(parser: ParserId, source: &str) -> Result<Vec<Occurrence>> {
+    let config = languages::get_local_configuration(parser)
+        .ok_or_else(|| anyhow!("No local configuration for language: {parser:?}"))?;
     let mut parser = config.get_parser();
-    let tree = parser.parse(source_bytes, None)?;
-    Some(locals::find_locals(config, &tree, source_bytes))
+    let tree = parser
+        .parse(source.as_bytes(), None)
+        .ok_or(anyhow!("Failed to parse when extracting locals"))?;
+    locals::find_locals(config, &tree, source).context("when extracting locals")
 }
 
 #[cfg(test)]
@@ -34,7 +37,7 @@ mod test {
     use std::{io::BufWriter, path::Path};
 
     use crate::snapshot::dump_document;
-    use tree_sitter_all_languages::BundledParser;
+    use tree_sitter_all_languages::ParserId;
 
     use crate::ctags::generate_tags;
 
@@ -52,12 +55,10 @@ mod test {
                     .expect("to have extension")
                     .to_str()
                     .expect("to have valid utf8 string");
-                let parser =
-                    BundledParser::get_parser_from_extension(extension).expect("to have parser");
+                let parser = ParserId::from_file_extension(extension).expect("to have parser");
                 let config =
                     crate::languages::get_tag_configuration(parser).expect("to have rust parser");
-                let doc = crate::globals::test::parse_file_for_lang(config, &source_code)
-                    .expect("to parse document");
+                let doc = crate::globals::test::parse_file_for_lang(config, &source_code);
                 let dumped = dump_document(&doc, &source_code).expect("to dumb document");
                 insta::assert_snapshot!(dumped_name, dumped);
             }
@@ -73,7 +74,7 @@ mod test {
                 let ctags_name = format!("tags_snapshot_{filename}");
                 let contents = include_str!(concat!("../testdata/", $filename));
 
-                generate_tags(&mut buf_writer, filename.to_string(), contents.as_bytes());
+                generate_tags(&mut buf_writer, filename.to_string(), contents);
                 insta::assert_snapshot!(ctags_name, String::from_utf8_lossy(buf_writer.buffer()));
             }
         };

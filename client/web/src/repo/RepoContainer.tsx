@@ -57,6 +57,7 @@ import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
+import { getLicenseFeatures } from '../util/license'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -470,6 +471,8 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
     // must exactly match how the revision was encoded in the URL
     const repoNameAndRevision = `${repoName}${typeof rawRevision === 'string' ? `@${rawRevision}` : ''}`
+    const licenseFeatures = getLicenseFeatures()
+    const showAskCodyBtn = licenseFeatures.isCodyEnabled && !isCodySidebarOpen
 
     return (
         <>
@@ -483,7 +486,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 />
             ))}
 
-            {!isCodySidebarOpen && (
+            {showAskCodyBtn && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={1}

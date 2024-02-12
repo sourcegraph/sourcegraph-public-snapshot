@@ -1,13 +1,4 @@
-export enum SearchFilterType {
-    Code = 'Code',
-    Repositories = 'Repositories',
-    Paths = 'Paths',
-    Symbols = 'Symbols',
-    Commits = 'Commits',
-    Diffs = 'Diffs',
-}
-
-export enum FiltersType {
+export enum FilterKind {
     SymbolKind = 'symbol type',
     Language = 'lang',
     Author = 'author',
@@ -16,46 +7,65 @@ export enum FiltersType {
     File = 'file',
     Utility = 'utility',
 
-    // Synthetic filter, lives only on the client
+    // Synthetic filters, lives only on the client
     Count = 'count',
+    Type = 'type',
 }
 
-export const SEARCH_TYPES_TO_FILTER_TYPES: Record<SearchFilterType, `${FiltersType}`[]> = {
-    [SearchFilterType.Code]: [
-        FiltersType.Language,
-        FiltersType.Repository,
-        FiltersType.File,
-        FiltersType.Utility,
-        FiltersType.Count,
+export const DYNAMIC_FILTER_KINDS = [
+    FilterKind.SymbolKind,
+    FilterKind.Language,
+    FilterKind.Author,
+    FilterKind.Repository,
+    FilterKind.CommitDate,
+    FilterKind.File,
+]
+
+export enum SearchTypeFilter {
+    Code = 'Code',
+    Repositories = 'Repositories',
+    Paths = 'Paths',
+    Symbols = 'Symbols',
+    Commits = 'Commits',
+    Diffs = 'Diffs',
+}
+
+export const SEARCH_TYPES_TO_FILTER_TYPES: Record<`${SearchTypeFilter}`, `${FilterKind}`[]> = {
+    [SearchTypeFilter.Code]: [
+        FilterKind.Language,
+        FilterKind.Repository,
+        FilterKind.File,
+        FilterKind.Utility,
+        FilterKind.Count,
     ],
-    [SearchFilterType.Repositories]: [FiltersType.Repository, FiltersType.Utility, FiltersType.Count],
-    [SearchFilterType.Paths]: [
-        FiltersType.Language,
-        FiltersType.Repository,
-        FiltersType.File,
-        FiltersType.Utility,
-        FiltersType.Count,
+    [SearchTypeFilter.Repositories]: [FilterKind.Utility, FilterKind.Count],
+    [SearchTypeFilter.Paths]: [
+        FilterKind.Language,
+        FilterKind.Repository,
+        FilterKind.File,
+        FilterKind.Utility,
+        FilterKind.Count,
     ],
-    [SearchFilterType.Symbols]: [
-        FiltersType.SymbolKind,
-        FiltersType.Language,
-        FiltersType.Repository,
-        FiltersType.File,
-        FiltersType.Utility,
-        FiltersType.Count,
+    [SearchTypeFilter.Symbols]: [
+        FilterKind.SymbolKind,
+        FilterKind.Language,
+        FilterKind.Repository,
+        FilterKind.File,
+        FilterKind.Utility,
+        FilterKind.Count,
     ],
-    [SearchFilterType.Commits]: [
-        FiltersType.Author,
-        FiltersType.Repository,
-        FiltersType.CommitDate,
-        FiltersType.Utility,
-        FiltersType.Count,
+    [SearchTypeFilter.Commits]: [
+        FilterKind.Author,
+        FilterKind.Repository,
+        FilterKind.CommitDate,
+        FilterKind.Utility,
+        FilterKind.Count,
     ],
-    [SearchFilterType.Diffs]: [
-        FiltersType.Author,
-        FiltersType.Repository,
-        FiltersType.CommitDate,
-        FiltersType.Utility,
-        FiltersType.Count,
+    [SearchTypeFilter.Diffs]: [
+        FilterKind.Author,
+        FilterKind.Repository,
+        FilterKind.CommitDate,
+        FilterKind.Utility,
+        FilterKind.Count,
     ],
 }

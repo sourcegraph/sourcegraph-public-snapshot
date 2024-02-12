@@ -1,9 +1,3 @@
-export const mockLicenseContext = {
-    licenseInfo: {
-        knownLicenseTags: ['plan:enterprise-1', 'batch-changes', 'true-up', 'trial'],
-    },
-} as any
-
 export const mockLicense = {
     id: '1a8239d8-756c-472a-968b-6a3843625699',
     info: {

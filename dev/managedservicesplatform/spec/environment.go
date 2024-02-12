@@ -79,6 +79,9 @@ type EnvironmentSpec struct {
 	// Resources configures additional resources that a service may depend on.
 	Resources *EnvironmentResourcesSpec `yaml:"resources,omitempty"`
 
+	// Alerting configures alerting and notifications for the environment.
+	Alerting *EnvironmentAlertingSpec `yaml:"alerting,omitempty"`
+
 	// AllowDestroys, if false, configures Terraform lifecycle guards against
 	// deletion of potentially critical resources. This includes things like the
 	// environment project and databases, and also guards against the deletion
@@ -146,6 +149,10 @@ func (c EnvironmentCategory) Validate() error {
 		return errors.Newf("invalid category %q", c)
 	}
 	return nil
+}
+
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
 }
 
 type EnvironmentDeploySpec struct {
@@ -322,6 +329,10 @@ type EnvironmentInstancesResourcesSpec struct {
 	// Memory specifies the memory available to each instance. Must be between
 	// 512MiB and 32GiB.
 	Memory string `yaml:"memory"`
+	// CloudRunGeneration is either 1 or 2, corresponding to the generations
+	// outlined in https://cloud.google.com/run/docs/about-execution-environments.
+	// By default, we use the Cloud Run default.
+	CloudRunGeneration *int `yaml:"cloudRunGeneration,omitempty"`
 }
 
 func (s *EnvironmentInstancesResourcesSpec) Validate() []error {
@@ -393,10 +404,21 @@ type EnvironmentInstancesScalingSpec struct {
 	// times. Set this to >0 to avoid service warm-up delays.
 	MinCount int `yaml:"minCount"`
 	// MaxCount is the maximum number of instances that Cloud Run is allowed to
-	// scale up to.
+	// scale up to. When this value is >= the default of 5, then we also provision
+	// an alert that fires when Cloud Run scaling approaches the max instance
+	// count.
 	//
 	// If not provided, the default is 5.
 	MaxCount *int `yaml:"maxCount,omitempty"`
+}
+
+// GetMaxCount returns nil if no scaling options are relevant, or the default,
+// or the max value.
+func (e *EnvironmentInstancesScalingSpec) GetMaxCount() *int {
+	if e == nil {
+		return nil
+	}
+	return pointers.Ptr(pointers.Deref(e.MaxCount, 5)) // builder.DefaultMaxInstances
 }
 
 type EnvironmentServiceAuthenticationSpec struct {
@@ -604,6 +626,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
 	// per vCPU.
 	MemoryGB *int `yaml:"memoryGB,omitempty"`
+	// Defaults to whatever CloudSQL provides. Must be between 14 and 262143.
+	MaxConnections *int `yaml:"maxConnections,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
@@ -719,4 +743,12 @@ func (s *EnvironmentResourceBigQueryDatasetSpec) LoadSchemas(dir string) error {
 // LoadSchemas will ensure that each table has a corresponding schema file.
 func (s *EnvironmentResourceBigQueryDatasetSpec) GetSchema(tableID string) []byte {
 	return s.rawSchemaFiles[tableID]
+}
+
+type EnvironmentAlertingSpec struct {
+	// Opsgenie, if true, disables suppression of Opsgenie alerts. Note that
+	// only critical alerts are delivered to Opsgenie - this is a curated set
+	// of alerts that are considered high-signal indicators that something is
+	// definitely wrong with your service.
+	Opsgenie *bool `yaml:"opsgenie,omitempty"`
 }

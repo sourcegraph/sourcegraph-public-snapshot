@@ -11,10 +11,8 @@ import (
 	"io"
 	"sync"
 
-	log "github.com/sourcegraph/log"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	trace "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -22,10 +20,6 @@ import (
 // package github.com/sourcegraph/sourcegraph/cmd/gitserver/internal) used
 // for unit testing.
 type MockService struct {
-	// BatchGitLogInstrumentedHandlerFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// BatchGitLogInstrumentedHandler.
-	BatchGitLogInstrumentedHandlerFunc *ServiceBatchGitLogInstrumentedHandlerFunc
 	// CloneRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method CloneRepo.
 	CloneRepoFunc *ServiceCloneRepoFunc
@@ -44,9 +38,6 @@ type MockService struct {
 	// MaybeStartCloneFunc is an instance of a mock function object
 	// controlling the behavior of the method MaybeStartClone.
 	MaybeStartCloneFunc *ServiceMaybeStartCloneFunc
-	// P4ExecFunc is an instance of a mock function object controlling the
-	// behavior of the method P4Exec.
-	P4ExecFunc *ServiceP4ExecFunc
 	// RepoUpdateFunc is an instance of a mock function object controlling
 	// the behavior of the method RepoUpdate.
 	RepoUpdateFunc *ServiceRepoUpdateFunc
@@ -59,18 +50,13 @@ type MockService struct {
 // return zero values for all results, unless overwritten.
 func NewMockService() *MockService {
 	return &MockService{
-		BatchGitLogInstrumentedHandlerFunc: &ServiceBatchGitLogInstrumentedHandlerFunc{
-			defaultHook: func(context.Context, *v1.BatchLogRequest) (r0 *v1.BatchLogResponse, r1 error) {
-				return
-			},
-		},
 		CloneRepoFunc: &ServiceCloneRepoFunc{
 			defaultHook: func(context.Context, api.RepoName, CloneOptions) (r0 string, r1 error) {
 				return
 			},
 		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (r0 int, r1 protocol.CreateCommitFromPatchResponse) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) (r0 protocol.CreateCommitFromPatchResponse) {
 				return
 			},
 		},
@@ -94,11 +80,6 @@ func NewMockService() *MockService {
 				return
 			},
 		},
-		P4ExecFunc: &ServiceP4ExecFunc{
-			defaultHook: func(context.Context, log.Logger, *p4ExecRequest, io.Writer) (r0 execStatus) {
-				return
-			},
-		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
 			defaultHook: func(*protocol.RepoUpdateRequest) (r0 protocol.RepoUpdateResponse) {
 				return
@@ -116,18 +97,13 @@ func NewMockService() *MockService {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockService() *MockService {
 	return &MockService{
-		BatchGitLogInstrumentedHandlerFunc: &ServiceBatchGitLogInstrumentedHandlerFunc{
-			defaultHook: func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-				panic("unexpected invocation of MockService.BatchGitLogInstrumentedHandler")
-			},
-		},
 		CloneRepoFunc: &ServiceCloneRepoFunc{
 			defaultHook: func(context.Context, api.RepoName, CloneOptions) (string, error) {
 				panic("unexpected invocation of MockService.CloneRepo")
 			},
 		},
 		CreateCommitFromPatchFunc: &ServiceCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
 				panic("unexpected invocation of MockService.CreateCommitFromPatch")
 			},
 		},
@@ -151,11 +127,6 @@ func NewStrictMockService() *MockService {
 				panic("unexpected invocation of MockService.MaybeStartClone")
 			},
 		},
-		P4ExecFunc: &ServiceP4ExecFunc{
-			defaultHook: func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus {
-				panic("unexpected invocation of MockService.P4Exec")
-			},
-		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
 			defaultHook: func(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 				panic("unexpected invocation of MockService.RepoUpdate")
@@ -173,14 +144,12 @@ func NewStrictMockService() *MockService {
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal). It is
 // redefined here as it is unexported in the source package.
 type surrogateMockService interface {
-	BatchGitLogInstrumentedHandler(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
 	CloneRepo(context.Context, api.RepoName, CloneOptions) (string, error)
-	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
+	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	Exec(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)
 	IsRepoCloneable(context.Context, api.RepoName) (protocol.IsRepoCloneableResponse, error)
 	LogIfCorrupt(context.Context, api.RepoName, error)
 	MaybeStartClone(context.Context, api.RepoName) (*protocol.NotFoundPayload, bool)
-	P4Exec(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus
 	RepoUpdate(*protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	SearchWithObservability(context.Context, trace.Trace, *protocol.SearchRequest, func(*protocol.CommitMatch) error) (bool, error)
 }
@@ -189,9 +158,6 @@ type surrogateMockService interface {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockServiceFrom(i surrogateMockService) *MockService {
 	return &MockService{
-		BatchGitLogInstrumentedHandlerFunc: &ServiceBatchGitLogInstrumentedHandlerFunc{
-			defaultHook: i.BatchGitLogInstrumentedHandler,
-		},
 		CloneRepoFunc: &ServiceCloneRepoFunc{
 			defaultHook: i.CloneRepo,
 		},
@@ -210,9 +176,6 @@ func NewMockServiceFrom(i surrogateMockService) *MockService {
 		MaybeStartCloneFunc: &ServiceMaybeStartCloneFunc{
 			defaultHook: i.MaybeStartClone,
 		},
-		P4ExecFunc: &ServiceP4ExecFunc{
-			defaultHook: i.P4Exec,
-		},
 		RepoUpdateFunc: &ServiceRepoUpdateFunc{
 			defaultHook: i.RepoUpdate,
 		},
@@ -220,118 +183,6 @@ func NewMockServiceFrom(i surrogateMockService) *MockService {
 			defaultHook: i.SearchWithObservability,
 		},
 	}
-}
-
-// ServiceBatchGitLogInstrumentedHandlerFunc describes the behavior when the
-// BatchGitLogInstrumentedHandler method of the parent MockService instance
-// is invoked.
-type ServiceBatchGitLogInstrumentedHandlerFunc struct {
-	defaultHook func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
-	hooks       []func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
-	history     []ServiceBatchGitLogInstrumentedHandlerFuncCall
-	mutex       sync.Mutex
-}
-
-// BatchGitLogInstrumentedHandler delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockService) BatchGitLogInstrumentedHandler(v0 context.Context, v1 *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-	r0, r1 := m.BatchGitLogInstrumentedHandlerFunc.nextHook()(v0, v1)
-	m.BatchGitLogInstrumentedHandlerFunc.appendCall(ServiceBatchGitLogInstrumentedHandlerFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// BatchGitLogInstrumentedHandler method of the parent MockService instance
-// is invoked and the hook queue is empty.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) SetDefaultHook(hook func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BatchGitLogInstrumentedHandler method of the parent MockService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) PushHook(hook func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) SetDefaultReturn(r0 *v1.BatchLogResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) PushReturn(r0 *v1.BatchLogResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) nextHook() func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) appendCall(r0 ServiceBatchGitLogInstrumentedHandlerFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ServiceBatchGitLogInstrumentedHandlerFuncCall objects describing the
-// invocations of this function.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) History() []ServiceBatchGitLogInstrumentedHandlerFuncCall {
-	f.mutex.Lock()
-	history := make([]ServiceBatchGitLogInstrumentedHandlerFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ServiceBatchGitLogInstrumentedHandlerFuncCall is an object that describes
-// an invocation of method BatchGitLogInstrumentedHandler on an instance of
-// MockService.
-type ServiceBatchGitLogInstrumentedHandlerFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.BatchLogRequest
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.BatchLogResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ServiceBatchGitLogInstrumentedHandlerFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ServiceBatchGitLogInstrumentedHandlerFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ServiceCloneRepoFunc describes the behavior when the CloneRepo method of
@@ -448,24 +299,24 @@ func (c ServiceCloneRepoFuncCall) Results() []interface{} {
 // CreateCommitFromPatch method of the parent MockService instance is
 // invoked.
 type ServiceCreateCommitFromPatchFunc struct {
-	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
-	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)
+	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
+	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	history     []ServiceCreateCommitFromPatchFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateCommitFromPatch delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockService) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	r0, r1 := m.CreateCommitFromPatchFunc.nextHook()(v0, v1)
-	m.CreateCommitFromPatchFunc.appendCall(ServiceCreateCommitFromPatchFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockService) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest, v2 io.Reader) protocol.CreateCommitFromPatchResponse {
+	r0 := m.CreateCommitFromPatchFunc.nextHook()(v0, v1, v2)
+	m.CreateCommitFromPatchFunc.appendCall(ServiceCreateCommitFromPatchFuncCall{v0, v1, v2, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // CreateCommitFromPatch method of the parent MockService instance is
 // invoked and the hook queue is empty.
-func (f *ServiceCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)) {
+func (f *ServiceCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse) {
 	f.defaultHook = hook
 }
 
@@ -473,7 +324,7 @@ func (f *ServiceCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Cont
 // CreateCommitFromPatch method of the parent MockService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ServiceCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse)) {
+func (f *ServiceCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -481,20 +332,20 @@ func (f *ServiceCreateCommitFromPatchFunc) PushHook(hook func(context.Context, p
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ServiceCreateCommitFromPatchFunc) SetDefaultReturn(r0 int, r1 protocol.CreateCommitFromPatchResponse) {
-	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-		return r0, r1
+func (f *ServiceCreateCommitFromPatchFunc) SetDefaultReturn(r0 protocol.CreateCommitFromPatchResponse) {
+	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceCreateCommitFromPatchFunc) PushReturn(r0 int, r1 protocol.CreateCommitFromPatchResponse) {
-	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-		return r0, r1
+func (f *ServiceCreateCommitFromPatchFunc) PushReturn(r0 protocol.CreateCommitFromPatchResponse) {
+	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
+		return r0
 	})
 }
 
-func (f *ServiceCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+func (f *ServiceCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -533,24 +384,24 @@ type ServiceCreateCommitFromPatchFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 protocol.CreateCommitFromPatchRequest
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 io.Reader
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 protocol.CreateCommitFromPatchResponse
+	Result0 protocol.CreateCommitFromPatchResponse
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ServiceCreateCommitFromPatchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ServiceCreateCommitFromPatchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // ServiceExecFunc describes the behavior when the Exec method of the parent
@@ -982,116 +833,6 @@ func (c ServiceMaybeStartCloneFuncCall) Args() []interface{} {
 // invocation.
 func (c ServiceMaybeStartCloneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// ServiceP4ExecFunc describes the behavior when the P4Exec method of the
-// parent MockService instance is invoked.
-type ServiceP4ExecFunc struct {
-	defaultHook func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus
-	hooks       []func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus
-	history     []ServiceP4ExecFuncCall
-	mutex       sync.Mutex
-}
-
-// P4Exec delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockService) P4Exec(v0 context.Context, v1 log.Logger, v2 *p4ExecRequest, v3 io.Writer) execStatus {
-	r0 := m.P4ExecFunc.nextHook()(v0, v1, v2, v3)
-	m.P4ExecFunc.appendCall(ServiceP4ExecFuncCall{v0, v1, v2, v3, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the P4Exec method of the
-// parent MockService instance is invoked and the hook queue is empty.
-func (f *ServiceP4ExecFunc) SetDefaultHook(hook func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// P4Exec method of the parent MockService instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ServiceP4ExecFunc) PushHook(hook func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ServiceP4ExecFunc) SetDefaultReturn(r0 execStatus) {
-	f.SetDefaultHook(func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceP4ExecFunc) PushReturn(r0 execStatus) {
-	f.PushHook(func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus {
-		return r0
-	})
-}
-
-func (f *ServiceP4ExecFunc) nextHook() func(context.Context, log.Logger, *p4ExecRequest, io.Writer) execStatus {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ServiceP4ExecFunc) appendCall(r0 ServiceP4ExecFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ServiceP4ExecFuncCall objects describing
-// the invocations of this function.
-func (f *ServiceP4ExecFunc) History() []ServiceP4ExecFuncCall {
-	f.mutex.Lock()
-	history := make([]ServiceP4ExecFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ServiceP4ExecFuncCall is an object that describes an invocation of method
-// P4Exec on an instance of MockService.
-type ServiceP4ExecFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 log.Logger
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *p4ExecRequest
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 io.Writer
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 execStatus
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ServiceP4ExecFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ServiceP4ExecFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // ServiceRepoUpdateFunc describes the behavior when the RepoUpdate method

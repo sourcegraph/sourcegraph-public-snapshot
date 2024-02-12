@@ -8,14 +8,26 @@ filegroup(
     srcs = ["redis.conf"],
 )
 
+filegroup(
+    name = "redis_readiness",
+    srcs = [
+        "readiness.sh",
+    ],
+)
+
 pkg_tar(
     name = "redis_tarball",
-    srcs = [":redis_conf"],
+    srcs = [
+        ":redis_conf",
+        ":redis_readiness",
+    ],
     modes = {
         "/etc/redis/redis.conf": "0644",
+        "/usr/local/bin/readiness.sh": "0755",
     },
     remap_paths = {
         "/redis.conf": "/etc/redis/redis.conf",
+        "/readiness.sh": "/usr/local/bin/readiness.sh",
     },
 )
 
