@@ -17,7 +17,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -38,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -47,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Test struct {
@@ -931,140 +927,6 @@ func TestSyncRepoState(t *testing.T) {
 			t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
 		}
 	})
-}
-
-type BatchLogTest struct {
-	Name         string
-	Request      *v1.BatchLogRequest
-	ExpectedCode codes.Code
-	ExpectedBody *proto.BatchLogResponse
-}
-
-func TestHandleBatchLog(t *testing.T) {
-	originalRepoCloned := repoCloned
-	repoCloned = func(dir common.GitDir) bool {
-		return dir == "github.com/foo/bar/.git" || dir == "github.com/foo/baz/.git" || dir == "github.com/foo/bonk/.git"
-	}
-	t.Cleanup(func() { repoCloned = originalRepoCloned })
-
-	executil.UpdateRunCommandMock(func(ctx context.Context, cmd *exec.Cmd) (int, error) {
-		for _, v := range cmd.Args {
-			if strings.HasPrefix(v, "dumbmilk") {
-				return 128, errors.New("test error")
-			}
-		}
-
-		cmd.Stdout.Write([]byte(fmt.Sprintf("stdout<%s:%s>", cmd.Dir, strings.Join(cmd.Args, " "))))
-		return 0, nil
-	})
-	t.Cleanup(func() { executil.UpdateRunCommandMock(nil) })
-
-	tests := []BatchLogTest{
-		{
-			Name:         "empty",
-			Request:      &v1.BatchLogRequest{},
-			ExpectedCode: codes.OK,
-			ExpectedBody: &proto.BatchLogResponse{},
-		},
-		{
-			Name: "all resolved",
-			Request: &v1.BatchLogRequest{
-				RepoCommits: []*v1.RepoCommit{
-					{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
-					{Repo: "github.com/foo/baz", Commit: "deadbeef2"},
-					{Repo: "github.com/foo/bonk", Commit: "deadbeef3"},
-				},
-				Format: "--format=test",
-			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: &proto.BatchLogResponse{
-				Results: []*proto.BatchLogResult{
-					{
-						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
-						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-					},
-					{
-						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/baz", Commit: "deadbeef2"},
-						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --name-only --format=test deadbeef2>",
-					},
-					{
-						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bonk", Commit: "deadbeef3"},
-						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --name-only --format=test deadbeef3>",
-					},
-				},
-			},
-		},
-		{
-			Name: "partially resolved",
-			Request: &v1.BatchLogRequest{
-				RepoCommits: []*v1.RepoCommit{
-					{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
-					{Repo: "github.com/foo/baz", Commit: "dumbmilk1"},
-					{Repo: "github.com/foo/honk", Commit: "deadbeef3"},
-				},
-				Format: "--format=test",
-			},
-			ExpectedCode: codes.OK,
-			ExpectedBody: &proto.BatchLogResponse{
-				Results: []*proto.BatchLogResult{
-					{
-						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/bar", Commit: "deadbeef1"},
-						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-					},
-					{
-						// git directory found, but cmd.Run returned error
-						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/baz", Commit: "dumbmilk1"},
-						CommandOutput: "",
-						CommandError:  pointers.Ptr("test error"),
-					},
-					{
-						// no .git directory here
-						RepoCommit:    &proto.RepoCommit{Repo: "github.com/foo/honk", Commit: "deadbeef3"},
-						CommandOutput: "",
-						CommandError:  pointers.Ptr("repo not found"),
-					},
-				},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			server := &Server{
-				Logger:                  logtest.Scoped(t),
-				ObservationCtx:          observation.TestContextTB(t),
-				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
-				DB:                      dbmocks.NewMockDB(),
-				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
-				Locker:                  NewRepositoryLocker(),
-				GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-					return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
-				},
-			}
-			// Initialize side-effects.
-			_ = server.Handler()
-
-			gs := NewGRPCServer(server)
-
-			res, err := gs.BatchLog(context.Background(), test.Request)
-
-			if test.ExpectedCode == codes.OK && err != nil {
-				t.Fatal(err)
-			}
-
-			if test.ExpectedCode != codes.OK {
-				if err == nil {
-					t.Fatal("expected error to be returned")
-				}
-				s, ok := status.FromError(err)
-				require.True(t, ok)
-				require.Equal(t, test.ExpectedCode, s.Code())
-				return
-			}
-
-			require.Equal(t, test.ExpectedBody, res)
-		})
-	}
 }
 
 func TestLogIfCorrupt(t *testing.T) {

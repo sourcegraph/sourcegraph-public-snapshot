@@ -22,7 +22,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -180,10 +179,6 @@ type Server struct {
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
-
-	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
-	// maximum number of Git subprocesses are active for all /batch-log requests combined.
-	GlobalBatchLogSemaphore *semaphore.Weighted
 
 	// RecordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a

@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
-	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
@@ -116,7 +115,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Hostname:                config.ExternalAddress,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
