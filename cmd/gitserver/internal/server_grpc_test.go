@@ -450,7 +450,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
-		require.Contains(t, err.Error(), "repo not cloned")
+		require.Contains(t, err.Error(), "repo not found")
 		mockassert.Called(t, svc.MaybeStartCloneFunc)
 	})
 	t.Run("checks if sub-repo perms are enabled for repo", func(t *testing.T) {
