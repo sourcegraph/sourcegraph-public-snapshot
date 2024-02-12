@@ -38,7 +38,10 @@ sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 ## TODO
 - Test things in CI
 - Log levels
+  - Optional container logs indentation formating
+  - On Error log depths
+  - Streaming log behavior
+    - Print stuff (fail/pass/errs) as it goes through.
 - Make it so it can fail early if needed perhaps?
-- Print stuff (fail/pass/errs) as it goes through.
 - test OOB migrations by seeding data.
 - read known bug versions from file, improve visability of known bugs versions, and select by test type

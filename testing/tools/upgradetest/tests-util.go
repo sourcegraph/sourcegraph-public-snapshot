@@ -112,6 +112,8 @@ var knownBugVersions = []string{
 }
 
 // PrintSimpleResults prints a quick view of test results, on an errored test only the first line of the error is printed.
+//
+// TODO: this needs to implement optional indenting on anything that emits container logs
 func (r *TestResults) PrintSimpleResults() {
 	if len(r.StandardUpgradeTests) != 0 {
 		stdRes := []string{}
@@ -551,7 +553,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 			if err != nil {
 				test.AddError(errors.Newf("🚨 failed to get frontend logs on ctx timeout: %w", err))
 			}
-			err = errors.Newf("frontend container timed out during polling: \n%s", out)
+			err = errors.Newf("frontend container timed out during polling version update: \n%s", out)
 			return cleanup, err
 		default:
 		}
@@ -586,7 +588,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 			if err != nil {
 				test.AddError(errors.Newf("🚨 failed to get frontend logs on ctx timeout: %w", err))
 			}
-			err = errors.Newf("frontend container timed out during polling: \n%s", out)
+			err = errors.Newf("frontend container timed out during polling site-config initialization: \n%s", out)
 			return cleanup, err
 		default:
 		}
@@ -679,13 +681,21 @@ func newContainerHash() ([]byte, error) {
 	return hash, nil
 }
 
-// getVersions returns the latest minor semver version, as well as the latest full semver version.
+// handleVersions returns the latest minor semver version, as well as the latest full semver version.
 //
 // Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
 // so we reduce the scope of the test, to cover only v3.39 and forward, for MVU and Auto upgrade testing.
-func getVersions(cCtx *cli.Context) (latestMinor, latestFull, targetVersion *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
+func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []string) (latestMinor, latestFull, targetVersion *semver.Version, stdVersions, mvuVersions, autoVersions []*semver.Version, err error) {
 	ctx := cCtx.Context
 
+	// Set target version to VERSION stamp if frontend and migrator are set at a stamped version, otherwise set it to 0.0.0+dev
+	if cCtx.String("stamp-version") != "" {
+		targetVersion = semver.MustParse(cCtx.String("stamp-version"))
+	} else {
+		targetVersion = semver.MustParse("0.0.0+dev") // If no stamp version is set, we assume version is in dev
+	}
+
+	// Sort latest stable release tags
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
 		"--format", "'%(refname:short)'",
@@ -700,7 +710,7 @@ func getVersions(cCtx *cli.Context) (latestMinor, latestFull, targetVersion *sem
 
 	// Get valid tags
 	for _, tag := range tags {
-		v, err := semver.NewVersion(tag)
+		v, err := semver.NewVersion(tag) // Parse tags for valid semver
 		if err != nil {
 			continue // skip non-matching tags
 		}
@@ -731,12 +741,21 @@ func getVersions(cCtx *cli.Context) (latestMinor, latestFull, targetVersion *sem
 		}
 	}
 
-	// Get range for standardUpgrade test pool and MVU test pool
+	// Std versions tests are all versions within a minor version of the release candidate, all others are MVU.
+	// Auto upgrade takes all types.
+	var std *semver.Constraints
+	// If target version assign tests types accordingly otherwise treat candidate release as a new patch version and assign upgrade test tyes accordingly.
+	if targetVersion != semver.MustParse("0.0.0+dev") {
+		std, err = semver.NewConstraint(fmt.Sprintf(">= %d.%d.x", targetVersion.Major(), targetVersion.Minor()-1))
+	} else {
+		std, err = semver.NewConstraint(fmt.Sprintf(">= %d.%d.x", latestMinorVer.Major(), latestMinorVer.Minor()-1))
+	}
+	if err != nil {
+		fmt.Println("🚨 failed to collect versions for standard upgrade test: ", err)
+	}
+
+	// Assign versions to test type
 	for _, tag := range validTags {
-		std, err := semver.NewConstraint(fmt.Sprintf(">= %d.%d.x", latestMinorVer.Major(), latestMinorVer.Minor()-1))
-		if err != nil {
-			fmt.Println("🚨 failed to collect versions for standard upgrade test: ", err)
-		}
 		// Sort versions into those for the standard test (one minor version behind the latest release candidate), and those for multiversion testing.
 		if std.Check(tag) {
 			stdVersions = append(stdVersions, tag)
@@ -747,18 +766,49 @@ func getVersions(cCtx *cli.Context) (latestMinor, latestFull, targetVersion *sem
 		autoVersions = append(autoVersions, tag)
 	}
 
+	// Overide test version assignment if version override flags supplied
+	tmpVersions := []*semver.Version{}
+	if overrideStd != nil {
+		for _, tag := range overrideStd {
+			v, err := semver.NewVersion(tag)
+			if err != nil {
+				err = errors.Wrap(err, "failed to parse version supplied by standard-version")
+				return nil, nil, nil, nil, nil, nil, err
+			}
+			tmpVersions = append(tmpVersions, v)
+		}
+		stdVersions = tmpVersions
+	}
+	if overrideMVU != nil {
+		tmpVersions = []*semver.Version{}
+		for _, tag := range overrideMVU {
+			v, err := semver.NewVersion(tag)
+			if err != nil {
+				err = errors.Wrap(err, "failed to parse version supplied by multi-version")
+				return nil, nil, nil, nil, nil, nil, err
+			}
+			tmpVersions = append(tmpVersions, v)
+		}
+		mvuVersions = tmpVersions
+	}
+	if overrideAuto != nil {
+		tmpVersions = []*semver.Version{}
+		for _, tag := range overrideAuto {
+			v, err := semver.NewVersion(tag)
+			if err != nil {
+				err = errors.Wrap(err, "failed to parse version supplied by auto-version")
+				return nil, nil, nil, nil, nil, nil, err
+			}
+			tmpVersions = append(tmpVersions, v)
+		}
+		autoVersions = tmpVersions
+	}
+
 	if latestMinorVer == nil {
 		return nil, nil, nil, nil, nil, nil, errors.New("No valid minor semver tags found")
 	}
 	if latestFullVer == nil {
 		return nil, nil, nil, nil, nil, nil, errors.New("No valid full semver tags found")
-	}
-
-	// Set target version to VERSION stamp if frontend and migrator are set at a stamped version, otherwise set it to 0.0.0+dev
-	if cCtx.String("stamp-version") != "" {
-		targetVersion = semver.MustParse(cCtx.String("stamp-version"))
-	} else {
-		targetVersion = semver.MustParse("0.0.0+dev") // If no stamp version is set, we assume version is in dev
 	}
 
 	return latestMinorVer, latestFullVer, targetVersion, stdVersions, mvuVersions, autoVersions, nil

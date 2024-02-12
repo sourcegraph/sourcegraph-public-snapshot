@@ -43,6 +43,21 @@ func main() {
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
 						Value:   10,
 					},
+					&cli.StringSliceFlag{
+						Name:    "standard-versions",
+						Aliases: []string{"svs"},
+						Usage:   "Override automatic version selection and set standard versions to test.",
+					},
+					&cli.StringSliceFlag{
+						Name:    "mvu-versions",
+						Aliases: []string{"mvs"},
+						Usage:   "Override automatic version selection and set mvu versions to test.",
+					},
+					&cli.StringSliceFlag{
+						Name:    "auto-versions",
+						Aliases: []string{"avs"},
+						Usage:   "Override automatic version selection and set auto versions to test.",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -54,7 +69,7 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := getVersions(cCtx)
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, mvuVersions, autoVersions, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), cCtx.StringSlice("mvu-versions"), cCtx.StringSlice("auto-versions"))
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -66,6 +81,9 @@ func main() {
 					fmt.Println("Standard Versions:", stdVersions)
 					fmt.Println("Multiversion Versions:", mvuVersions)
 					fmt.Println("Autoupgrade Versions:", autoVersions)
+					fmt.Println(">>>>> Standard Versions: ", cCtx.StringSlice("standard-versions")) // DEBUG
+					fmt.Println(">>>>> MVU Versions: ", cCtx.StringSlice("mvu-versions"))           // DEBUG
+					fmt.Println(">>>>> Auto Versions: ", cCtx.StringSlice("auto-versions"))         // DEBUG
 
 					// initialize test results
 					var results TestResults
@@ -157,6 +175,11 @@ func main() {
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
 						Value:   10,
 					},
+					&cli.StringSliceFlag{
+						Name:    "standard-versions",
+						Aliases: []string{"svs"},
+						Usage:   "Override automatic version selection and set standard versions to test.",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -168,7 +191,7 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, _, _, err := getVersions(cCtx)
+					latestMinorVersion, latestStableVersion, targetVersion, stdVersions, _, _, err := handleVersions(cCtx, cCtx.StringSlice("standard-versions"), nil, nil)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -228,6 +251,11 @@ func main() {
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
 						Value:   10,
 					},
+					&cli.StringSliceFlag{
+						Name:    "mvu-versions",
+						Aliases: []string{"mvs"},
+						Usage:   "Override automatic version selection and set mvu versions to test.",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -239,7 +267,7 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, _, mvuVersions, _, err := getVersions(cCtx)
+					latestMinorVersion, latestStableVersion, targetVersion, _, mvuVersions, _, err := handleVersions(cCtx, nil, cCtx.StringSlice("mvu-versions"), nil)
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
@@ -297,6 +325,11 @@ func main() {
 						Usage:   "Maximum number of tests to run concurrently. Sets goroutine pool limit.\n Defaults to 10.",
 						Value:   10,
 					},
+					&cli.StringSliceFlag{
+						Name:    "auto-versions",
+						Aliases: []string{"avs"},
+						Usage:   "Override automatic version selection and set auto versions to test.",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					ctx := context.WithValue(cCtx.Context, stampVersionKey{}, cCtx.String("stamp-version"))
@@ -308,7 +341,7 @@ func main() {
 					}
 
 					// Get init versions to use for initializing upgrade environments for tests
-					latestMinorVersion, latestStableVersion, targetVersion, _, _, autoVersions, err := getVersions(cCtx)
+					latestMinorVersion, latestStableVersion, targetVersion, _, _, autoVersions, err := handleVersions(cCtx, nil, nil, cCtx.StringSlice("auto-versions"))
 					if err != nil {
 						fmt.Println("🚨 Error: failed to get test version ranges: ", err)
 						os.Exit(1)
