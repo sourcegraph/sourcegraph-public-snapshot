@@ -44,13 +44,13 @@ type service interface {
 
 func NewGRPCServer(server *Server) proto.GitserverServiceServer {
 	return &grpcServer{
-		logger:         server.Logger,
-		reposDir:       server.ReposDir,
-		db:             server.DB,
-		hostname:       server.Hostname,
+		logger:         server.logger,
+		reposDir:       server.reposDir,
+		db:             server.db,
+		hostname:       server.hostname,
 		subRepoChecker: authz.DefaultSubRepoPermsChecker,
-		locker:         server.Locker,
-		getBackendFunc: server.GetBackendFunc,
+		locker:         server.locker,
+		getBackendFunc: server.getBackendFunc,
 		svc:            server,
 	}
 }

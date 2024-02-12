@@ -21,6 +21,10 @@ func HTTPMiddleware(apiHistogram metric.Int64Histogram, handler http.Handler) ht
 
 		latency := time.Since(start)
 		o := FromContext(r.Context())
+		if string(o.Feature) == "" {
+			// don't report overhead for requests that don't have a feature
+			return
+		}
 		overheadMs := latency.Milliseconds() - o.UpstreamLatency.Milliseconds()
 		apiHistogram.Record(context.Background(), overheadMs, metric.WithAttributeSet(attribute.NewSet(
 			attribute.String("provider", o.Provider),

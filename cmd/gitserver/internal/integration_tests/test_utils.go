@@ -28,7 +28,6 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -75,10 +74,9 @@ func InitGitserver() {
 	})
 	db.ReposFunc.SetDefaultReturn(r)
 
-	s := server.Server{
-		Logger:         sglog.Scoped("server"),
-		ObservationCtx: &observation.TestContext,
-		ReposDir:       filepath.Join(root, "repos"),
+	s := server.NewServer(&server.ServerOpts{
+		Logger:   sglog.Scoped("server"),
+		ReposDir: filepath.Join(root, "repos"),
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(&t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
@@ -92,10 +90,10 @@ func InitGitserver() {
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
-	}
+	})
 
 	grpcServer := defaults.NewServer(logger)
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{

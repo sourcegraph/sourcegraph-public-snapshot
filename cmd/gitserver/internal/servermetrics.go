@@ -19,19 +19,19 @@ import (
 
 func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
 	if runtime.GOOS != "windows" {
-		registerEchoMetric(s.Logger)
+		registerEchoMetric(s.logger)
 	} else {
 		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
-		s.Logger.Warn("Disabling 'echo' metric")
+		s.logger.Warn("Disabling 'echo' metric")
 	}
 
 	// report the size of the repos dir
-	logger := s.Logger
+	logger := s.logger
 	opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
-	m := mountinfo.NewCollector(logger, opts, map[string]string{"reposDir": s.ReposDir})
+	m := mountinfo.NewCollector(logger, opts, map[string]string{"reposDir": s.reposDir})
 	observationCtx.Registerer.MustRegister(m)
 
-	metrics.MustRegisterDiskMonitor(s.ReposDir)
+	metrics.MustRegisterDiskMonitor(s.reposDir)
 
 	// TODO: Start removal of these.
 	// TODO(keegan) these are older names for the above disk metric. Keeping
@@ -41,9 +41,9 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_available",
 		Help: "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
-		usage, err := du.New(s.ReposDir)
+		usage, err := du.New(s.reposDir)
 		if err != nil {
-			s.Logger.Error("error getting disk usage info", log.Error(err))
+			s.logger.Error("error getting disk usage info", log.Error(err))
 			return 0
 		}
 		return float64(usage.Available())
@@ -54,9 +54,9 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_total",
 		Help: "Amount of total disk space in the repos directory.",
 	}, func() float64 {
-		usage, err := du.New(s.ReposDir)
+		usage, err := du.New(s.reposDir)
 		if err != nil {
-			s.Logger.Error("error getting disk usage info", log.Error(err))
+			s.logger.Error("error getting disk usage info", log.Error(err))
 			return 0
 		}
 		return float64(usage.Size())
