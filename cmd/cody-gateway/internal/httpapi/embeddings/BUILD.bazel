@@ -31,11 +31,15 @@ go_library(
 go_test(
     name = "embeddings_test",
     srcs = ["openai_test.go"],
+    data = glob(["testdata/**"]),
     embed = [":embeddings"],
     deps = [
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
         "//lib/errors",
+        "@com_github_go_json_experiment_json//:go_default_library",
+        "@com_github_json_iterator_go//:go",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )
