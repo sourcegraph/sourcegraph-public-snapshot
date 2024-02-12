@@ -26,7 +26,7 @@ trap ctrl_c INT
 function build_scip_syntax {
   cd docker-images/syntax-highlighter/crates/scip-syntax
   cargo build --bin scip-syntax --target-dir target
-  cp ./target/release/scip-syntax "$TARGET"
+  cp ./target/debug/scip-syntax "$TARGET"
 }
 
 build_scip_syntax

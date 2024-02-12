@@ -68,6 +68,7 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger cmdlogger.Logger, spec 
 		"Running command",
 		log.String("key", spec.Key),
 		log.String("workingDir", spec.Dir),
+		log.String("image", spec.Image),
 	)
 
 	// Check if we can even run the command.

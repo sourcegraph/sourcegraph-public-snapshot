@@ -235,7 +235,7 @@ body > div#page {
 }
 
 /* Top Notice */
-.notice {
+/* .notice {
     display: flex;
     flex-direction: row;
     width: 100%;
@@ -246,22 +246,22 @@ body > div#page {
     text-align: center;
     margin: 0 auto .5rem;
     color: black;
-}
+} */
 
-.notice p {
+/* .notice p {
     text-align: center;
     display: flex;
     margin: 0 auto;
     align-items: center;
-}
+} */
 
-.notice a{
+/* .notice a{
     background: black;
     padding: 0.2rem 0.6rem;
     border-radius: 5px;
     margin-left: 0.5rem;
     color: white;
-}
+} */
 /* SIDEBAR */
 body > #sidebar {
     background-color: var(--body-bg);

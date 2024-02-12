@@ -201,11 +201,11 @@ require (
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.92.0
 	go.opentelemetry.io/collector/receiver v0.92.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.92.0
-	go.opentelemetry.io/contrib/detectors/gcp v1.21.1
+	go.opentelemetry.io/contrib/detectors/gcp v1.22.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.1
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.47.0
-	go.opentelemetry.io/contrib/propagators/jaeger v1.21.1
-	go.opentelemetry.io/contrib/propagators/ot v1.21.1
+	go.opentelemetry.io/contrib/propagators/jaeger v1.22.0
+	go.opentelemetry.io/contrib/propagators/ot v1.22.0
 	go.opentelemetry.io/otel v1.22.0
 	go.opentelemetry.io/otel/bridge/opentracing v1.22.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0
@@ -214,7 +214,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.22.0
 	go.opentelemetry.io/otel/metric v1.22.0
 	go.opentelemetry.io/otel/sdk v1.22.0
-	go.opentelemetry.io/otel/sdk/metric v1.21.0
+	go.opentelemetry.io/otel/sdk/metric v1.22.0
 	go.opentelemetry.io/otel/trace v1.22.0
 	go.opentelemetry.io/proto/otlp v1.1.0
 	go.uber.org/atomic v1.11.0
@@ -267,7 +267,6 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mroth/weightedrand/v2 v2.0.1
-	github.com/nxadm/tail v1.4.11
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pkoukk/tiktoken-go v0.1.6
 	github.com/prometheus/statsd_exporter v0.22.7
@@ -393,7 +392,6 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
-	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
 

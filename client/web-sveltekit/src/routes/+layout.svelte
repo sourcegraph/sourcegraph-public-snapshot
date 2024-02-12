@@ -8,6 +8,7 @@
     import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage, temporarySetting } from '$lib/temporarySettings'
     import { setThemeFromString } from '$lib/theme'
+    import { classNames } from '$lib/dom'
 
     import Header from './Header.svelte'
 
@@ -89,28 +90,24 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app" class:overflowHidden={!$scrollAll}>
-    <InfoBanner />
-    <Header authenticatedUser={$user} />
+<svelte:body use:classNames={$scrollAll ? '' : 'overflowHidden'} />
 
-    <main bind:this={main}>
-        <slot />
-    </main>
-</div>
+<InfoBanner />
+<Header authenticatedUser={$user} />
+
+<main bind:this={main}>
+    <slot />
+</main>
 
 <style lang="scss">
-    .app {
+    :global(body.overflowHidden) {
         display: flex;
         flex-direction: column;
         height: 100vh;
-        overflow-y: auto;
+        overflow: hidden;
 
-        &.overflowHidden {
-            overflow: hidden;
-
-            main {
-                overflow-y: auto;
-            }
+        main {
+            overflow-y: auto;
         }
     }
 

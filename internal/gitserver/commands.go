@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type DiffOptions struct {
@@ -401,7 +400,7 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
 	} else if !hasAccess {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
 	}
 	args := []string{"diff", sourceCommit, targetCommit, "--", path}
 	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
@@ -806,17 +805,15 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 	req := &proto.BlameRequest{
 		RepoName:         string(repo),
+		Commit:           string(opt.NewestCommit),
 		Path:             path,
 		IgnoreWhitespace: opt.IgnoreWhitespace,
 	}
-	if opt.NewestCommit != "" {
-		req.Commit = pointers.Ptr(string(opt.NewestCommit))
-	}
-	if opt.StartLine != 0 {
-		req.StartLine = pointers.Ptr(uint32(opt.StartLine))
-	}
-	if opt.EndLine != 0 {
-		req.EndLine = pointers.Ptr(uint32(opt.EndLine))
+	if opt.Range != nil {
+		req.Range = &proto.BlameRange{
+			StartLine: uint32(opt.Range.StartLine),
+			EndLine:   uint32(opt.Range.EndLine),
+		}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -834,8 +831,29 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		cancel()
 		endObservation(1, observation.Args{})
 
-		if s, ok := status.FromError(err); ok && s.Code() == codes.PermissionDenied {
-			return nil, os.ErrNotExist
+		s, ok := status.FromError(err)
+		if !ok {
+			cancel()
+			endObservation(1, observation.Args{})
+
+			return nil, err
+		}
+
+		if s.Code() == codes.PermissionDenied {
+			cancel()
+			endObservation(1, observation.Args{})
+			return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+		}
+
+		if s.Code() == codes.NotFound {
+			for _, d := range s.Details() {
+				switch d.(type) {
+				case *proto.FileNotFoundPayload:
+					cancel()
+					endObservation(1, observation.Args{})
+					return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+				}
+			}
 		}
 
 		return nil, err
@@ -1337,7 +1355,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 				cancel()
 				err = firstRespErr
 				endObservation(1, observation.Args{})
-				return nil, os.ErrNotExist
+				return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 			}
 			if s.Code() == codes.NotFound {
 				for _, d := range s.Details() {
@@ -1346,7 +1364,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 						cancel()
 						err = firstRespErr
 						endObservation(1, observation.Args{})
-						return nil, os.ErrNotExist
+						return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 					}
 				}
 			}

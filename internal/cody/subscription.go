@@ -14,7 +14,7 @@ import (
 )
 
 // featureFlagUseSCCForSubscription determines if we should attempt to lookup subscription data from SSC.
-const featureFlagUseSCCForSubscription = "use-ssc-for-cody-subscription"
+const featureFlagUseSCCForSubscription = "use-ssc-for-cody-subscription-on-web"
 
 // featureFlagCodyProTrialEnded indicates if the Cody Pro "Free Trial"  has ended.
 // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)

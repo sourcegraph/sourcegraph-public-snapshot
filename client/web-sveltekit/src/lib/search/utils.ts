@@ -20,6 +20,7 @@ type FilterGroups = Record<Filter['kind'], Filter[]>
 
 export function groupFilters(filters: Filter[] | null | undefined): FilterGroups {
     const groupedFilters: FilterGroups = {
+        type: [],
         file: [],
         repo: [],
         lang: [],

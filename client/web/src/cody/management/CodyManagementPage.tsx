@@ -66,16 +66,17 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const arePaymentsEnabled = useArePaymentsEnabled()
     const hasTrialEnded = useHasTrialEnded()
-    const codyPaymentsUrl = useCodyPaymentsUrl()
-    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
-    const { data: usageData } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(USER_CODY_USAGE, {})
+    const { data: usageData, error: usageDateError } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(
+        USER_CODY_USAGE,
+        {}
+    )
 
     const stats = usageData?.currentUser
     const codyCurrentPeriodChatLimit = stats?.codyCurrentPeriodChatLimit || 0
@@ -106,6 +107,10 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
+    if (dataError || usageDateError) {
+        throw dataError || usageDateError
+    }
+
     if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
         return null
     }
@@ -115,6 +120,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     const userIsOnProTier =
         subscription.plan === CodySubscriptionPlan.PRO &&
         !(subscription.status === CodySubscriptionStatus.TRIALING && subscription.cancelAtPeriodEnd)
+    const hasNotAddedCreditCard = subscription.status === CodySubscriptionStatus.PENDING
 
     // Flag usage limits as resetting based on the current subscription's billing cycle.
     //
@@ -138,13 +144,13 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     // Correct the situation where the user is on a Cody Pro free trial, but hasn't entered
     // any subscription information into the SSC frontend. This would mean that their free
-    // trial is coming to an end on ~2/15. We need the UI to reflect this, however, because
+    // trial is coming to an end on ~2/21. We need the UI to reflect this, however, because
     // we are overloading `currentPeriodEnd` for usageRefreshTime, we do not return the
     // correct value from the backend. So we separate it out into a separate variable and
     // change its value accordingly.
-    const freeTrialEndString = 'Until Feb 14, 2024'
+    const freeTrialEndString = 'Until Feb 21, 2024'
     if (!hasTrialEnded && userIsOnProTier) {
-        codyProSubscriptionEndTime = new Date(2024, 2, 14, 12, 0, 0).toISOString()
+        codyProSubscriptionEndTime = new Date(2024, 2, 21, 12, 0, 0).toISOString()
     }
 
     return (
@@ -159,17 +165,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                <UpgradeToProBanner
-                    userIsOnProTier={userIsOnProTier}
-                    arePaymentsEnabled={arePaymentsEnabled}
-                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
-                />
+                <UpgradeToProBanner userIsOnProTier={userIsOnProTier} />
                 <DoNotLoseCodyProBanner
                     userIsOnProTier={userIsOnProTier}
                     arePaymentsEnabled={arePaymentsEnabled}
                     hasTrialEnded={hasTrialEnded}
                     subscriptionStatus={subscription.status}
-                    manageSubscriptionRedirectURL={manageSubscriptionRedirectURL}
                 />
 
                 <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
@@ -189,16 +190,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         {userIsOnProTier && (
                             <div>
-                                <ButtonLink
-                                    to={
-                                        arePaymentsEnabled
-                                            ? `${manageSubscriptionRedirectURL}?pro=true`
-                                            : '/cody/subscription'
-                                    }
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                >
+                                <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
                                     Manage subscription
                                 </ButtonLink>
                             </div>
@@ -314,7 +306,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     </Text>
                                 ))}
                         </div>
-                        {!hasTrialEnded && userIsOnProTier && (
+                        {!hasTrialEnded && userIsOnProTier && hasNotAddedCreditCard && (
                             <div className="d-flex flex-column align-items-center flex-grow-1 p-3 border-left">
                                 <TrialPeriodIcon />
                                 <div className="mb-2 mt-4">
@@ -457,9 +449,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
 const UpgradeToProBanner: React.FunctionComponent<{
     userIsOnProTier: boolean
-    arePaymentsEnabled: boolean
-    manageSubscriptionRedirectURL: string
-}> = ({ userIsOnProTier, arePaymentsEnabled, manageSubscriptionRedirectURL }) =>
+}> = ({ userIsOnProTier }) =>
     userIsOnProTier ? null : (
         <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
             <div>
@@ -473,11 +463,7 @@ const UpgradeToProBanner: React.FunctionComponent<{
                 </ul>
             </div>
             <div>
-                <ButtonLink
-                    to={arePaymentsEnabled ? manageSubscriptionRedirectURL : '/cody/subscription'}
-                    variant="primary"
-                    size="sm"
-                >
+                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
                     Upgrade
                 </ButtonLink>
             </div>
@@ -489,35 +475,42 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
     arePaymentsEnabled: boolean
     hasTrialEnded: boolean
     subscriptionStatus: CodySubscriptionStatus
-    manageSubscriptionRedirectURL: string
-}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus, manageSubscriptionRedirectURL }) =>
-    arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING ? (
-        <div
-            className={classNames(
-                'd-flex justify-content-between align-items-center p-4',
-                styles.dontLoseCodyProBanner
-            )}
-        >
-            <div className="d-flex align-items-center text-dark">
-                <div className={styles.creditCardEmoji}>💳</div>
-                <div className="ml-3">
-                    <H3>Don't lose Cody Pro</H3>
-                    <Text className="mb-0">
-                        {hasTrialEnded ? (
-                            <span>Enter your credit card details now and keep your Pro subscription.</span>
-                        ) : (
-                            <span>
-                                Enter your credit card details now and keep your subscription after your trial ends. You
-                                will only be charged on <strong>Feb 15, 2024</strong>.
-                            </span>
-                        )}
-                    </Text>
+}> = ({ userIsOnProTier, arePaymentsEnabled, hasTrialEnded, subscriptionStatus }) => {
+    const codyPaymentsUrl = useCodyPaymentsUrl()
+    const manageSubscriptionRedirectURL = `${codyPaymentsUrl}/cody/subscription`
+
+    if (arePaymentsEnabled && userIsOnProTier && subscriptionStatus === CodySubscriptionStatus.PENDING) {
+        return (
+            <div
+                className={classNames(
+                    'd-flex justify-content-between align-items-center p-4',
+                    styles.dontLoseCodyProBanner
+                )}
+            >
+                <div className="d-flex align-items-center text-dark">
+                    <div className={styles.creditCardEmoji}>💳</div>
+                    <div className="ml-3">
+                        <H3>Don't lose Cody Pro</H3>
+                        <Text className="mb-0">
+                            {hasTrialEnded ? (
+                                <span>Enter your credit card details now and keep your Pro subscription.</span>
+                            ) : (
+                                <span>
+                                    Enter your credit card details now and keep your subscription after your trial ends.
+                                    You will only be charged on <strong>Feb 21, 2024</strong>.
+                                </span>
+                            )}
+                        </Text>
+                    </div>
+                </div>
+                <div>
+                    <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
+                        Add Credit Card
+                    </ButtonLink>
                 </div>
             </div>
-            <div>
-                <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
-                    Add Credit Card
-                </ButtonLink>
-            </div>
-        </div>
-    ) : null
+        )
+    }
+
+    return null
+}

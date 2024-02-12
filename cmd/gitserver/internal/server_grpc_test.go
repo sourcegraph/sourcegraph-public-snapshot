@@ -47,7 +47,10 @@ func TestGRPCServer_Blame(t *testing.T) {
 		err := gs.Blame(&v1.BlameRequest{RepoName: "", Path: "thepath"}, mockSS)
 		require.ErrorContains(t, err, "repo must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
-		err = gs.Blame(&v1.BlameRequest{RepoName: "therepo", Path: ""}, mockSS)
+		err = gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: ""}, mockSS)
+		require.ErrorContains(t, err, "commit must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+		err = gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: ""}, mockSS)
 		require.ErrorContains(t, err, "path must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
@@ -55,7 +58,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		svc := NewMockService()
 		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
 		gs := &grpcServer{svc: svc}
-		err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Path: "thepath"}, mockSS)
+		err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -81,7 +84,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 
 		t.Run("subrepo perms are not enabled", func(t *testing.T) {
 			srp.EnabledFunc.SetDefaultReturn(false)
-			err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Path: "thepath"}, mockSS)
+			err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
 			assert.NoError(t, err)
 			mockassert.Called(t, srp.EnabledFunc)
 		})
@@ -89,7 +92,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		t.Run("subrepo perms are enabled, permission granted", func(t *testing.T) {
 			srp.EnabledFunc.SetDefaultReturn(true)
 			srp.PermissionsFunc.SetDefaultReturn(authz.Read, nil)
-			err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Path: "thepath"}, mockSS)
+			err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
 			assert.NoError(t, err)
 			mockassert.Called(t, srp.EnabledFunc)
 			mockassert.Called(t, srp.PermissionsFunc)
@@ -98,7 +101,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		t.Run("subrepo perms are enabled, permission denied", func(t *testing.T) {
 			srp.EnabledFunc.SetDefaultReturn(true)
 			srp.PermissionsFunc.SetDefaultReturn(authz.None, nil)
-			err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Path: "thepath"}, mockSS)
+			err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
 			require.Error(t, err)
 			mockassert.Called(t, srp.EnabledFunc)
 			mockassert.Called(t, srp.PermissionsFunc)
@@ -116,7 +119,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		hr := git.NewMockBlameHunkReader()
 		hr.ReadFunc.PushReturn(&gitdomain.Hunk{CommitID: "deadbeef"}, nil)
 		hr.ReadFunc.PushReturn(nil, io.EOF)
-		b.BlameFunc.SetDefaultReturn(hr, nil)
+		b.BlameFunc.PushReturn(hr, nil)
 		gs := &grpcServer{
 			subRepoChecker: srp,
 			svc:            svc,
@@ -128,6 +131,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		cli := spawnServer(t, gs)
 		r, err := cli.Blame(context.Background(), &v1.BlameRequest{
 			RepoName: "therepo",
+			Commit:   "deadbeef",
 			Path:     "thepath",
 		})
 		require.NoError(t, err)
@@ -135,7 +139,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 			msg, err := r.Recv()
 			if err != nil {
 				if err == io.EOF {
-					return
+					break
 				}
 				require.NoError(t, err)
 			}
@@ -149,6 +153,34 @@ func TestGRPCServer_Blame(t *testing.T) {
 			}, msg, cmpopts.IgnoreUnexported(proto.BlameResponse{}, proto.BlameHunk{}, proto.BlameAuthor{}, timestamppb.Timestamp{})); diff != "" {
 				t.Fatalf("unexpected response (-want +got):\n%s", diff)
 			}
+		}
+
+		{
+			b.BlameFunc.PushReturn(nil, &os.PathError{Op: "open", Path: "thepath", Err: os.ErrNotExist})
+			r, err = cli.Blame(context.Background(), &v1.BlameRequest{
+				RepoName: "therepo",
+				Commit:   "deadbeef",
+				Path:     "thepath",
+			})
+			require.NoError(t, err)
+
+			_, err := r.Recv()
+			assertGRPCStatusCode(t, err, codes.NotFound)
+			assertHasGRPCErrorDetailOfType(t, err, &proto.FileNotFoundPayload{})
+		}
+
+		{
+			b.BlameFunc.PushReturn(nil, &gitdomain.RevisionNotFoundError{Repo: "therepo", Spec: "deadbeef"})
+			r, err = cli.Blame(context.Background(), &v1.BlameRequest{
+				RepoName: "therepo",
+				Commit:   "deadbeef",
+				Path:     "thepath",
+			})
+			require.NoError(t, err)
+
+			_, err := r.Recv()
+			assertGRPCStatusCode(t, err, codes.NotFound)
+			assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
 		}
 	})
 }
