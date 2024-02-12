@@ -45,6 +45,7 @@ var bzlgenTargets = map[string]bzlgenTarget{
 
 var bazelCommand = &cli.Command{
 	Name:            "bazel",
+	Aliases:         []string{"bz"},
 	SkipFlagParsing: true,
 	HideHelpCommand: true,
 	Usage:           "Proxies the bazel CLI with custom commands for local dev convenience",
