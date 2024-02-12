@@ -2233,6 +2233,26 @@ func TestClient_StreamBlameFile(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, os.IsNotExist(err))
 	})
+	t.Run("empty blame doesn't fail", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				bc := NewMockGitserverService_BlameClient()
+				bc.RecvFunc.PushReturn(nil, io.EOF)
+				c.BlameFunc.SetDefaultReturn(bc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
+		require.NoError(t, err)
+		h, err := r.Read()
+		require.Equal(t, io.EOF, err)
+		require.Nil(t, h)
+		require.NoError(t, r.Close())
+	})
 }
 
 func TestClient_GetDefaultBranch(t *testing.T) {
@@ -2394,6 +2414,45 @@ func TestClient_NewFileReader(t *testing.T) {
 		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
 		require.Error(t, err)
 		require.True(t, os.IsNotExist(err))
+	})
+	t.Run("revision not found errors are returned early", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{})
+				require.NoError(t, err)
+				rfc.RecvFunc.PushReturn(nil, s.Err())
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("empty file", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				rfc := NewMockGitserverService_ReadFileClient()
+				rfc.RecvFunc.PushReturn(nil, io.EOF)
+				c.ReadFileFunc.SetDefaultReturn(rfc, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		r, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
+		require.NoError(t, err)
+		content, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.Empty(t, content)
+		require.NoError(t, r.Close())
 	})
 }
 

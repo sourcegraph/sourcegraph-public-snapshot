@@ -828,39 +828,40 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	// ie. permission denied errors or invalid git command.
 	firstHunkResp, err := cli.Recv()
 	if err != nil {
-		cancel()
-		endObservation(1, observation.Args{})
-
 		s, ok := status.FromError(err)
-		if !ok {
-			cancel()
-			endObservation(1, observation.Args{})
+		if ok {
+			if s.Code() == codes.PermissionDenied {
+				cancel()
+				endObservation(1, observation.Args{})
+				return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+			}
 
-			return nil, err
-		}
-
-		if s.Code() == codes.PermissionDenied {
-			cancel()
-			endObservation(1, observation.Args{})
-			return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
-		}
-
-		if s.Code() == codes.NotFound {
-			for _, d := range s.Details() {
-				switch d.(type) {
-				case *proto.FileNotFoundPayload:
-					cancel()
-					endObservation(1, observation.Args{})
-					return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						endObservation(1, observation.Args{})
+						return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+					}
 				}
 			}
 		}
 
-		return nil, err
+		if err != io.EOF {
+			cancel()
+			endObservation(1, observation.Args{})
+			return nil, err
+		}
 	}
 
+	var hunk *proto.BlameHunk
+	if firstHunkResp != nil {
+		hunk = firstHunkResp.GetHunk()
+	}
 	return &grpcBlameHunkReader{
-		firstHunk:      firstHunkResp.GetHunk(),
+		firstHunk:      hunk,
+		firstHunkErr:   err,
 		c:              cli,
 		cancel:         cancel,
 		endObservation: func() { endObservation(1, observation.Args{}) },
@@ -869,6 +870,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 type grpcBlameHunkReader struct {
 	firstHunk      *proto.BlameHunk
+	firstHunkErr   error
 	firstHunkRead  bool
 	c              proto.GitserverService_BlameClient
 	cancel         context.CancelFunc
@@ -878,6 +880,9 @@ type grpcBlameHunkReader struct {
 func (r *grpcBlameHunkReader) Read() (_ *gitdomain.Hunk, err error) {
 	if !r.firstHunkRead {
 		r.firstHunkRead = true
+		if r.firstHunkErr != nil {
+			return nil, r.firstHunkErr
+		}
 		return gitdomain.HunkFromBlameProto(r.firstHunk), nil
 	}
 	p, err := r.c.Recv()
@@ -1368,6 +1373,12 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 					}
 				}
 			}
+		}
+		if errors.HasType(firstRespErr, &gitdomain.RevisionNotFoundError{}) {
+			cancel()
+			err = firstRespErr
+			endObservation(1, observation.Args{})
+			return nil, err
 		}
 	}
 
