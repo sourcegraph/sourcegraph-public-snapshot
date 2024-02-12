@@ -31,7 +31,6 @@ type handler struct {
 	db                     database.DB
 	uploadStore            uploadstore.Store
 	gitserverClient        gitserver.Client
-	getQdrantInserter      func() (db.VectorInserter, error)
 	contextService         embed.ContextService
 	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 	rankingService         *ranking.Service
