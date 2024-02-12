@@ -68,12 +68,8 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 }
 
 // Used in default run type
-func bazelPushImagesCandidates(version string, isAspectBuild bool) func(*bk.Pipeline) {
-	depKey := "bazel-tests"
-	if isAspectBuild {
-		depKey = "__main__::test"
-	}
-	return bazelPushImagesCmd(version, true, depKey)
+func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true)
 }
 
 // Used in default run type
@@ -82,15 +78,15 @@ func bazelPushImagesFinal(version string, isAspectBuild bool) func(*bk.Pipeline)
 	if isAspectBuild {
 		depKey = "__main__::test"
 	}
-	return bazelPushImagesCmd(version, false, depKey)
+	return bazelPushImagesCmd(version, false, bk.DependsOn(depKey))
 }
 
 // Used in CandidateNoTest run type
 func bazelPushImagesNoTest(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, "pipeline-gen")
+	return bazelPushImagesCmd(version, false)
 }
 
-func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*bk.Pipeline) {
+func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) func(*bk.Pipeline) {
 	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
@@ -103,14 +99,15 @@ func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*b
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
-			bk.Agent("queue", "bazel"),
-			bk.DependsOn(depKey),
-			bk.Key(stepKey),
-			bk.Env("PUSH_VERSION", version),
-			bk.Env("CANDIDATE_ONLY", candidate),
-			bazelApplyPrecheckChanges(),
-			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
-			bk.Cmd("./dev/ci/push_all.sh"),
+			append(opts,
+				bk.Agent("queue", "bazel"),
+				bk.Key(stepKey),
+				bk.Env("PUSH_VERSION", version),
+				bk.Env("CANDIDATE_ONLY", candidate),
+				bazelApplyPrecheckChanges(),
+				bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
+				bk.Cmd("./dev/ci/push_all.sh"),
+			)...,
 		)
 	}
 }

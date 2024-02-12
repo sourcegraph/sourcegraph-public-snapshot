@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -420,6 +421,7 @@ func Test_allowEdit(t *testing.T) {
 			got, ok := allowEdit(tt.before, tt.after, tt.allowlist)
 			require.Equal(t, tt.ok, ok)
 			if !ok {
+				sort.Strings(got)
 				tt.want.Equal(t, got)
 			}
 		})

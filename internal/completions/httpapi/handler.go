@@ -69,14 +69,15 @@ func newCompletionsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		if isEnabled := cody.IsCodyEnabled(ctx, db); !isEnabled {
-			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
+		if isEnabled, reason := cody.IsCodyEnabled(ctx, db); !isEnabled {
+			http.Error(w, fmt.Sprintf("cody is not enabled: %s", reason), http.StatusUnauthorized)
 			return
 		}
 
 		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+			return
 		}
 
 		var requestParams types.CodyCompletionRequestParameters
@@ -254,7 +255,8 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 			l.Error("attribution error", log.Error(err))
 		}
 		f := guardrails.NoopCompletionsFilter(eventSink)
-		if featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", false) {
+		if cf := conf.GetConfigFeatures(conf.SiteConfig()); cf != nil && cf.Attribution &&
+			featureflag.FromContext(ctx).GetBoolOr("autocomplete-attribution", true) {
 			ff, err := guardrails.NewCompletionsFilter(guardrails.CompletionsFilterConfig{
 				Sink:             eventSink,
 				Test:             test,

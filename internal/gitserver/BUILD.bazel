@@ -39,7 +39,6 @@ go_library(
         "//internal/search/streaming/http",
         "//internal/trace",
         "//lib/errors",
-        "//lib/pointers",
         "@com_github_go_git_go_git_v5//plumbing/format/config",
         "@com_github_golang_groupcache//lru",
         "@com_github_prometheus_client_golang//prometheus",
@@ -53,7 +52,6 @@ go_library(
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//status",
-        "@org_golang_x_exp//slices",
     ],
 )
 

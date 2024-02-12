@@ -11,6 +11,7 @@
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
 use crate::languages::LocalConfiguration;
 use crate::tree_sitter_ext::NodeExt;
+use anyhow::{Context, Result};
 use core::cmp::Ordering;
 use core::ops::Range;
 use id_arena::{Arena, Id};
@@ -45,9 +46,9 @@ const MAX_SCOPE_DEPTH: i32 = 10000;
 pub fn find_locals(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
-    source_bytes: &[u8],
-) -> Vec<Occurrence> {
-    let resolver = LocalResolver::new(source_bytes);
+    source: &str,
+) -> Result<Vec<Occurrence>> {
+    let resolver = LocalResolver::new(source);
     resolver.process(config, tree, None)
 }
 
@@ -246,11 +247,11 @@ impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
 }
 
 impl<'a> LocalResolver<'a> {
-    fn new(source_bytes: &'a [u8]) -> Self {
+    fn new(source: &'a str) -> Self {
         LocalResolver {
             arena: Arena::new(),
             interner: StringInterner::default(),
-            source_bytes,
+            source_bytes: source.as_bytes(),
             definition_id_supply: 0,
             skip_references_at_offsets: HashSet::new(),
             skip_occurrences_at_offsets: HashSet::new(),
@@ -451,7 +452,8 @@ impl<'a> LocalResolver<'a> {
         scope: ScopeId<'a>,
         references_iter: &mut Iter<'b, RefCapture<'a>>,
         f: F,
-    ) where
+    ) -> Result<()>
+    where
         F: Fn(&RefCapture<'a>) -> bool,
         'a: 'b,
     {
@@ -460,7 +462,7 @@ impl<'a> LocalResolver<'a> {
                 ref_capture
                     .node
                     .utf8_text(self.source_bytes)
-                    .expect("non utf-8 variable name"),
+                    .context("Unexpected non-utf-8 content. This is a tree-sitter bug")?,
             );
             let reference = Reference {
                 node: ref_capture.node,
@@ -469,6 +471,7 @@ impl<'a> LocalResolver<'a> {
             };
             self.add_reference(scope, reference)
         }
+        Ok(())
     }
 
     fn add_defs_while<'b, F>(
@@ -476,7 +479,8 @@ impl<'a> LocalResolver<'a> {
         scope: ScopeId<'a>,
         definitions_iter: &mut Iter<'b, DefCapture<'a>>,
         f: F,
-    ) where
+    ) -> Result<()>
+    where
         F: Fn(&DefCapture<'a>) -> bool,
         'a: 'b,
     {
@@ -485,7 +489,7 @@ impl<'a> LocalResolver<'a> {
                 def_capture
                     .node
                     .utf8_text(self.source_bytes)
-                    .expect("non utf-8 variable name"),
+                    .context("Unexpected non-utf-8 content. This is a tree-sitter bug")?,
             );
             self.add_definition(
                 scope,
@@ -495,6 +499,7 @@ impl<'a> LocalResolver<'a> {
                 def_capture.is_def_ref,
             )
         }
+        Ok(())
     }
 
     fn collect_captures(
@@ -530,7 +535,11 @@ impl<'a> LocalResolver<'a> {
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
-                        hoist = Some(prop.value.as_ref().unwrap().to_string());
+                        if let Some(hoist_target) = prop.value.as_ref() {
+                            hoist = Some(hoist_target.to_string());
+                        } else {
+                            debug_assert!(false, "hoist _must_ be targeting a scope level");
+                        }
                     }
                     definitions.push(DefCapture {
                         hoist,
@@ -562,7 +571,7 @@ impl<'a> LocalResolver<'a> {
     /// Build a tree of scopes for pre-order traversal by sorting scopes, definitions
     /// and references. Definitions and references are added or hoisted to the
     /// closest enclosing scope as appropriate.
-    fn build_tree(&mut self, top_scope: ScopeId<'a>, captures: Captures<'a>) {
+    fn build_tree(&mut self, top_scope: ScopeId<'a>, captures: Captures<'a>) -> Result<()> {
         let Captures {
             mut scopes,
             mut definitions,
@@ -588,10 +597,10 @@ impl<'a> LocalResolver<'a> {
                 let scope_end_byte = self.end_byte(current_scope);
                 self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                     def_capture.node.start_byte() < scope_end_byte
-                });
+                })?;
                 self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
                     ref_capture.node.start_byte() < scope_end_byte
-                });
+                })?;
 
                 if let Some(parent_scope) = self[current_scope].parent {
                     current_scope = parent_scope
@@ -605,10 +614,10 @@ impl<'a> LocalResolver<'a> {
             let new_scope_start = scope_node.start_byte();
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < new_scope_start
-            });
+            })?;
             self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
                 ref_capture.node.start_byte() < new_scope_start
-            });
+            })?;
 
             let new_scope = self.arena.alloc(Scope::new(
                 scope_kind.to_string(),
@@ -631,10 +640,10 @@ impl<'a> LocalResolver<'a> {
             let scope_end_byte = self.end_byte(current_scope);
             self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < scope_end_byte
-            });
+            })?;
             self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
                 ref_capture.node.start_byte() < scope_end_byte
-            });
+            })?;
 
             if let Some(parent) = self[current_scope].parent {
                 current_scope = parent
@@ -652,6 +661,7 @@ impl<'a> LocalResolver<'a> {
             references_iter.next().is_none(),
             "Should've entered all references into the tree"
         );
+        Ok(())
     }
 
     /// Walks up the scope tree and tries to find the definition for a given name
@@ -718,7 +728,7 @@ impl<'a> LocalResolver<'a> {
         config: &'a LocalConfiguration,
         tree: &'a tree_sitter::Tree,
         test_writer: Option<&mut dyn Write>,
-    ) -> Vec<Occurrence> {
+    ) -> Result<Vec<Occurrence>> {
         // First we collect all captures from the tree-sitter locals query
         let captures = self.collect_captures(config, tree, self.source_bytes);
 
@@ -726,7 +736,7 @@ impl<'a> LocalResolver<'a> {
         let top_scope = self
             .arena
             .alloc(Scope::new("global".to_string(), tree.root_node(), None));
-        self.build_tree(top_scope, captures);
+        self.build_tree(top_scope, captures)?;
         match test_writer {
             None => {}
             Some(w) => self.print_scope(w, top_scope, 0),
@@ -734,7 +744,7 @@ impl<'a> LocalResolver<'a> {
         // Finally we resolve all references against that tree structure
         self.resolve_references();
 
-        self.occurrences
+        Ok(self.occurrences)
     }
 }
 
@@ -764,12 +774,12 @@ mod test {
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
-        let resolver = LocalResolver::new(source_bytes);
+        let resolver = LocalResolver::new(source_code);
         let mut tree_output = String::new();
         let occ = resolver.process(config, &tree, Some(&mut tree_output));
 
         let mut doc = Document::new();
-        doc.occurrences = occ;
+        doc.occurrences = occ.unwrap();
         doc.symbols = doc
             .occurrences
             .iter()

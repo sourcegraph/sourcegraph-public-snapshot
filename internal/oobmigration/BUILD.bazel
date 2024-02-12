@@ -41,7 +41,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_x_exp//slices",
     ],
 )
 

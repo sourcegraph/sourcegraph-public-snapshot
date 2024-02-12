@@ -117,7 +117,6 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_x_exp//maps",
-        "@org_golang_x_exp//slices",
         "@org_golang_x_mod//semver",
         "@org_golang_x_oauth2//:oauth2",
         "@org_golang_x_text//cases",

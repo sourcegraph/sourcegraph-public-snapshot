@@ -66,7 +66,7 @@ func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Gro
 		},
 
 		QueueSize: NoAlertsOption("none"),
-		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual((time.Hour * 5).Seconds()), `
+		QueueMaxAge: WarningOption(monitoring.Alert().GreaterOrEqual((time.Hour * 5).Seconds()), `
 			An alert here could be indicative of a few things: an upload surfacing a pathological performance characteristic,
 			precise-code-intel-worker being underprovisioned for the required upload processing throughput, or a higher replica
 			count being required for the volume of uploads.

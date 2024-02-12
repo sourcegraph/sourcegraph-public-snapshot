@@ -16,12 +16,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (g *gitCLIBackend) Blame(ctx context.Context, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+func (g *gitCLIBackend) Blame(ctx context.Context, startCommit api.CommitID, path string, opt git.BlameOptions) (git.BlameHunkReader, error) {
+	if err := checkSpecArgSafety(string(startCommit)); err != nil {
 		return nil, err
 	}
 
-	cmd, cancel, err := g.gitCommand(ctx, buildBlameArgs(path, opt)...)
+	// Verify that the blob exists.
+	_, err := g.getBlobOID(ctx, startCommit, path)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd, cancel, err := g.gitCommand(ctx, buildBlameArgs(startCommit, path, opt)...)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -36,18 +42,15 @@ func (g *gitCLIBackend) Blame(ctx context.Context, path string, opt git.BlameOpt
 	return newBlameHunkReader(r, cancel), nil
 }
 
-func buildBlameArgs(path string, opt git.BlameOptions) []string {
+func buildBlameArgs(startCommit api.CommitID, path string, opt git.BlameOptions) []string {
 	args := []string{"blame", "--porcelain", "--incremental"}
 	if opt.IgnoreWhitespace {
 		args = append(args, "-w")
 	}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	if opt.Range != nil {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.Range.StartLine, opt.Range.EndLine))
 	}
-	if opt.NewestCommit != "" {
-		args = append(args, string(opt.NewestCommit))
-	}
-	args = append(args, "--", filepath.ToSlash(path))
+	args = append(args, string(startCommit), "--", filepath.ToSlash(path))
 	return args
 }
 

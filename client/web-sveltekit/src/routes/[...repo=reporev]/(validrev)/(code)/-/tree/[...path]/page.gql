@@ -5,31 +5,26 @@ fragment TreePage_TreeWithCommitInfo on GitTree {
     }
 }
 
-query TreePageCommitInfoQuery($repoID: ID!, $commitID: String!, $filePath: String!, $first: Int) {
-    node(id: $repoID) {
-        __typename
+query TreePageCommitInfoQuery($repoName: String!, $revision: String!, $filePath: String!, $first: Int) {
+    repository(name: $repoName) {
         id
-        ... on Repository {
-            commit(rev: $commitID) {
-                id
-                tree(path: $filePath) {
-                    ...TreePage_TreeWithCommitInfo
-                }
+        commit(rev: $revision) {
+            id
+            tree(path: $filePath) {
+                ...TreePage_TreeWithCommitInfo
             }
         }
     }
 }
 
-query TreePageReadmeQuery($repoID: ID!, $revspec: String!, $path: String!) {
-    node(id: $repoID) {
-        ... on Repository {
+query TreePageReadmeQuery($repoName: String!, $revision: String!, $path: String!) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revision) {
             id
-            commit(rev: $revspec) {
-                id
-                blob(path: $path) {
-                    canonicalURL # key field
-                    ...RepoPage_Readme
-                }
+            blob(path: $path) {
+                canonicalURL # key field
+                ...RepoPage_Readme
             }
         }
     }
