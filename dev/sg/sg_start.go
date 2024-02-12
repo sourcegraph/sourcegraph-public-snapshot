@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -176,6 +178,8 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
+var sgOnce sync.Once
+
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
 	if err != nil {
@@ -301,21 +305,52 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
+	exceptList := exceptServices.Value()
+	exceptSet := make(map[string]interface{}, len(exceptList))
+	for _, svc := range exceptList {
+		exceptSet[svc] = struct{}{}
 	}
 
-	cmds, err := getCommands(set.Commands, set, conf.Commands)
-	if err != nil {
-		return err
+	onlyList := onlyServices.Value()
+	onlySet := make(map[string]interface{}, len(onlyList))
+	for _, svc := range onlyList {
+		onlySet[svc] = struct{}{}
 	}
 
-	bcmds, err := getCommands(set.BazelCommands, set, conf.BazelCommands)
-	if err != nil {
-		return err
+	cmds := make([]run.Command, 0, len(set.Commands))
+	for _, name := range set.Commands {
+		cmd, ok := conf.Commands[name]
+		if !ok {
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
+		}
+
+		if _, excluded := exceptSet[name]; excluded {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.Name))
+			continue
+		}
+
+		// No --only specified, just add command
+		if len(onlySet) == 0 {
+			cmds = append(cmds, cmd)
+		} else {
+			if _, inSet := onlySet[name]; inSet {
+				cmds = append(cmds, cmd)
+			} else {
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.Name))
+			}
+		}
+
 	}
 
+	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
+	for _, name := range set.BazelCommands {
+		bcmd, ok := conf.BazelCommands[name]
+		if !ok {
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
+		}
+
+		bcmds = append(bcmds, bcmd)
+	}
 	if len(cmds) == 0 && len(bcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
@@ -331,77 +366,20 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	installers := make([]run.Installer, 0, len(cmds)+1)
-	for _, cmd := range cmds {
-		installers = append(installers, cmd)
-	}
-
-	var ibazel *run.IBazel
-	if len(bcmds) > 0 {
-		ibazel, err = run.NewIBazel(bcmds, repoRoot)
-		if err != nil {
-			return err
-		}
-		defer ibazel.Close()
-		installers = append(installers, ibazel)
-	}
-	if err := run.Install(ctx, env, verbose, installers...); err != nil {
+	// First we build everything once, to ensure all binaries are present.
+	if err := run.BazelBuild(ctx, bcmds...); err != nil {
 		return err
 	}
 
-	if ibazel != nil {
-		ibazel.StartOutput()
-	}
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error {
+		return run.Commands(ctx, env, verbose, cmds...)
+	})
+	p.Go(func(ctx context.Context) error {
+		return run.BazelCommands(ctx, env, verbose, bcmds...)
+	})
 
-	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
-	for _, cmd := range bcmds {
-		configCmds = append(configCmds, cmd)
-	}
-
-	for _, cmd := range cmds {
-		configCmds = append(configCmds, cmd)
-	}
-	return run.Commands(ctx, env, verbose, configCmds...)
-}
-
-func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
-	exceptList := exceptServices.Value()
-	exceptSet := make(map[string]interface{}, len(exceptList))
-	for _, svc := range exceptList {
-		exceptSet[svc] = struct{}{}
-	}
-
-	onlyList := onlyServices.Value()
-	onlySet := make(map[string]interface{}, len(onlyList))
-	for _, svc := range onlyList {
-		onlySet[svc] = struct{}{}
-	}
-
-	cmds := make([]T, 0, len(commands))
-	for _, name := range commands {
-		cmd, ok := conf[name]
-		if !ok {
-			return nil, errors.Errorf("command %q not found in commandset %q", name, set.Name)
-		}
-
-		if _, excluded := exceptSet[name]; excluded {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.GetName()))
-			continue
-		}
-
-		// No --only specified, just add command
-		if len(onlySet) == 0 {
-			cmds = append(cmds, cmd)
-		} else {
-			if _, inSet := onlySet[name]; inSet {
-				cmds = append(cmds, cmd)
-			} else {
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.GetName()))
-			}
-		}
-
-	}
-	return cmds, nil
+	return p.Wait()
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

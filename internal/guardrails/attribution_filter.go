@@ -2,7 +2,6 @@ package guardrails
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -156,7 +155,7 @@ func (a *completionsFilter) send(e types.CompletionResponse) error {
 // it for attribution search. At this point we run attribution search for
 // snippets 10 lines long or longer.
 func (a *completionsFilter) smallEnough(e types.CompletionResponse) bool {
-	return strings.Count(e.Completion, "\n") < 9
+	return !NewThreshold().ShouldSearch(e.Completion)
 }
 
 // getMostRecentCompletion returns the last completion event to be fed to `Send`.

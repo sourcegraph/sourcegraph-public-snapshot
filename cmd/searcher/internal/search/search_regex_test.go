@@ -226,17 +226,8 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	}
 	b.ReportAllocs()
 
+	p.Limit = 99999999
 	err := validateParams(p)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	m, err := toMatchTree(p.Query, p.IsCaseSensitive)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	pm, err := toPathMatcher(&p.PatternInfo)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -257,7 +248,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearchBatch(ctx, m, pm, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, 0)
+		_, err := regexSearchBatch(ctx, &p.PatternInfo, zf, 0)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -358,7 +349,12 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fileMatches, limitHit, err := regexSearchBatch(context.Background(), m, pm, zf, maxMatches, true, false, false, 0)
+	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), maxMatches)
+	defer cancel()
+	err = regexSearch(ctx, m, pm, zf, true, false, false, sender, 0)
+	fileMatches := sender.collected
+	limitHit := sender.LimitHit()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -403,18 +399,14 @@ func TestPathMatches(t *testing.T) {
 		Query: &protocol.PatternNode{
 			Value: "",
 		},
-		IncludePatterns: []string{"a", "b"},
-	}
-	m, err := toMatchTree(patternInfo.Query, patternInfo.IsCaseSensitive)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pm, err := toPathMatcher(patternInfo)
-	if err != nil {
-		t.Fatal(err)
+		IncludePatterns:       []string{"a", "b"},
+		PatternMatchesContent: true,
+		PatternMatchesPath:    true,
+		IsCaseSensitive:       false,
+		Limit:                 10,
 	}
 
-	fileMatches, _, err := regexSearchBatch(context.Background(), m, pm, zf, 10, true, true, false, 0)
+	fileMatches, err := regexSearchBatch(context.Background(), patternInfo, zf, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -644,15 +636,19 @@ func TestRegexSearch(t *testing.T) {
 			wantFm: []protocol.FileMatch{{Path: "a.go"}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, _, err := regexSearchBatch(tt.args.ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, 0)
+			ctx, cancel, sender := newLimitedStreamCollector(tt.args.ctx, tt.args.limit)
+			defer cancel()
+			err := regexSearch(ctx, tt.args.m, tt.args.pm, tt.args.zf, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false, sender, 0)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotFm, tt.wantFm) {
-				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
+			if !reflect.DeepEqual(sender.collected, tt.wantFm) {
+				t.Errorf("regexSearch() gotFm = %v, want %v", sender.collected, tt.wantFm)
 			}
 		})
 	}

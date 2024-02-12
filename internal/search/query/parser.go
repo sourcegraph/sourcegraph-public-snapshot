@@ -167,6 +167,9 @@ type parser struct {
 	pos        int
 	balanced   int
 	leafParser SearchType
+
+	seenRightParen bool
+	seenOr         bool
 }
 
 func (p *parser) done() bool {
@@ -954,7 +957,9 @@ loop:
 			// group as part of an and/or expression.
 			_ = p.expect(LPAREN) // Guaranteed to succeed.
 			p.balanced++
-			p.heuristics |= disambiguated
+			if p.seenOr {
+				p.heuristics |= disambiguated
+			}
 			result, err := p.parseOr()
 			if err != nil {
 				return nil, err
@@ -962,10 +967,13 @@ loop:
 			nodes = append(nodes, result...)
 		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if p.balanced <= 0 {
+				if label.IsSet(QuotesAsLiterals) {
+					return nil, errors.New("unsupported expression. The combination of parentheses in the query has an unclear meaning. Use \"...\" to quote patterns that contain parentheses")
+				}
 				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
 			}
 			p.balanced--
-			p.heuristics |= disambiguated
+			p.seenRightParen = true
 			if len(nodes) == 0 {
 				// We parsed "()".
 				if isSet(p.heuristics, emptyParens) {
@@ -977,8 +985,15 @@ loop:
 				}
 			}
 			break loop
-		case p.matchKeyword(AND), p.matchKeyword(OR):
+		case p.matchKeyword(AND):
 			// Caller advances.
+			break loop
+		case p.matchKeyword(OR):
+			// Caller advances.
+			p.seenOr = true
+			if p.seenRightParen {
+				p.heuristics |= disambiguated
+			}
 			break loop
 		case p.matchUnaryKeyword(NOT):
 			start := p.pos

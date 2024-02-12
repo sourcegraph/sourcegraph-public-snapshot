@@ -135,12 +135,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 				cfg.Dotcom.InternalMode,
 				cfg.ActorConcurrencyLimit,
 			),
-			dotcomuser.NewSource(obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
-				dotcomClient,
-				cfg.ActorConcurrencyLimit,
-				rs,
-			),
+			dotcomuser.NewSource(obctx.Logger, rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())), dotcomClient, cfg.ActorConcurrencyLimit, rs, cfg.Dotcom.ActorRefreshCoolDownInterval),
 		)
 	} else {
 		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")

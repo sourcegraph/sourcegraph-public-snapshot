@@ -275,10 +275,12 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 
 		// Create load-balancer pointing to Cloud Run service
 		lb, err := loadbalancer.New(stack, resourceid.New("loadbalancer"), loadbalancer.Config{
-			ProjectID:      vars.GCPProjectID,
-			Region:         vars.GCPRegion,
-			TargetService:  svc,
-			SSLCertificate: sslCertificate,
+			ProjectID:         vars.GCPProjectID,
+			Region:            vars.GCPRegion,
+			TargetService:     svc,
+			SSLCertificate:    sslCertificate,
+			CloudflareProxied: domain.Cloudflare.ShouldProxy(),
+			Production:        vars.Environment.Category.IsProduction(),
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "loadbalancer.New")
