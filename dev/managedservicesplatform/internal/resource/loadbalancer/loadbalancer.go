@@ -189,7 +189,7 @@ func cloudArmorAllowOnlyCloudflareEdge(scope constructs.Construct, id resourceid
 		Rule: []computesecuritypolicy.ComputeSecurityPolicyRule{
 			{
 				Description: pointers.Ptr("Deny All"),
-				Action:      pointers.Ptr("deny(403)"),
+				Action:      pointers.Ptr("deny(403)"), // deny with status 403
 				Priority:    pointers.Ptr(2147483647.0),
 				Match: &computesecuritypolicy.ComputeSecurityPolicyRuleMatch{
 					VersionedExpr: pointers.Ptr("SRC_IPS_V1"),
