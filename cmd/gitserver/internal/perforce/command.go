@@ -22,8 +22,6 @@ type p4Options struct {
 	stdin  io.Reader // alternative stdin for the command
 	stdout io.Writer // alternative stdout for the command
 	stderr io.Writer // alternative stderr for the command
-
-	logger log.Logger // logger to use for the command
 }
 
 type P4OptionFunc func(*p4Options)

@@ -159,6 +159,52 @@ type Commit struct {
 	Parents []api.CommitID `json:"Parents,omitempty"`
 }
 
+func (c *Commit) ToProto() *proto.GitCommit {
+	parents := make([]string, len(c.Parents))
+	for i, p := range c.Parents {
+		parents[i] = string(p)
+	}
+
+	return &proto.GitCommit{
+		Oid:     string(c.ID),
+		Message: string(c.Message),
+		Parents: parents,
+		Author: &proto.GitSignature{
+			Name:  c.Author.Name,
+			Email: c.Author.Email,
+			Date:  timestamppb.New(c.Author.Date),
+		},
+		Committer: &proto.GitSignature{
+			Name:  c.Committer.Name,
+			Email: c.Committer.Email,
+			Date:  timestamppb.New(c.Committer.Date),
+		},
+	}
+}
+
+func CommitFromProto(p *proto.GitCommit) *Commit {
+	parents := make([]api.CommitID, len(p.GetParents()))
+	for i, p := range p.GetParents() {
+		parents[i] = api.CommitID(p)
+	}
+
+	return &Commit{
+		ID:      api.CommitID(p.GetOid()),
+		Message: Message(p.GetMessage()),
+		Author: Signature{
+			Name:  p.GetAuthor().GetName(),
+			Email: p.GetAuthor().GetEmail(),
+			Date:  p.GetAuthor().GetDate().AsTime(),
+		},
+		Committer: &Signature{
+			Name:  p.GetCommitter().GetName(),
+			Email: p.GetCommitter().GetEmail(),
+			Date:  p.GetCommitter().GetDate().AsTime(),
+		},
+		Parents: parents,
+	}
+}
+
 // Message represents a git commit message
 type Message string
 

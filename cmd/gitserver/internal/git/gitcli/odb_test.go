@@ -10,6 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -161,4 +163,93 @@ func TestGitCLIBackend_ReadFile_GoroutineLeak(t *testing.T) {
 	// Expect no leaked routines.
 	routinesAfter := runtime.NumGoroutine()
 	require.Equal(t, routinesBefore, routinesAfter)
+}
+
+func TestRepository_GetCommit(t *testing.T) {
+	ctx := context.Background()
+
+	// Prepare repo state:
+	backend := BackendWithRepoCommands(t,
+		// simple file
+		"echo abcd > file1",
+		"git add file1",
+		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
+		"echo efgh > file2",
+		"git add file2",
+		"git commit -m commit2 --author='Foo Author <foo@sourcegraph.com>'",
+	)
+
+	commitID, err := backend.RevParseHead(ctx)
+	require.NoError(t, err)
+
+	t.Run("non existent commit", func(t *testing.T) {
+		_, err := backend.GetCommit(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", false)
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	t.Run("read commit", func(t *testing.T) {
+		c, err := backend.GetCommit(ctx, commitID, false)
+		require.NoError(t, err)
+		require.Equal(t, &git.GitCommitWithFiles{
+			Commit: &gitdomain.Commit{
+				ID:      commitID,
+				Message: "commit2",
+				Author: gitdomain.Signature{
+					Name:  "Foo Author",
+					Email: "foo@sourcegraph.com",
+					Date:  c.Author.Date, // Hard to test
+				},
+				Committer: &gitdomain.Signature{
+					Name:  "a",
+					Email: "a@a.com",
+					Date:  c.Committer.Date, // Hard to test
+				},
+				Parents: []api.CommitID{"405b565ed446e271bc1998a91dbf4fb50dbfabfe"},
+			},
+		}, c)
+
+		c2, err := backend.GetCommit(ctx, c.Parents[0], false)
+		require.NoError(t, err)
+		require.Equal(t, &git.GitCommitWithFiles{
+			Commit: &gitdomain.Commit{
+				ID:      c.Parents[0],
+				Message: "commit",
+				Author: gitdomain.Signature{
+					Name:  "Foo Author",
+					Email: "foo@sourcegraph.com",
+					Date:  c2.Author.Date, // Hard to test
+				},
+				Committer: &gitdomain.Signature{
+					Name:  "a",
+					Email: "a@a.com",
+					Date:  c2.Committer.Date, // Hard to test
+				},
+				Parents: nil,
+			},
+		}, c2)
+	})
+
+	t.Run("include modified files", func(t *testing.T) {
+		c, err := backend.GetCommit(ctx, commitID, true)
+		require.NoError(t, err)
+		require.Equal(t, &git.GitCommitWithFiles{
+			Commit: &gitdomain.Commit{
+				ID:      commitID,
+				Message: "commit2",
+				Author: gitdomain.Signature{
+					Name:  "Foo Author",
+					Email: "foo@sourcegraph.com",
+					Date:  c.Author.Date, // Hard to test
+				},
+				Committer: &gitdomain.Signature{
+					Name:  "a",
+					Email: "a@a.com",
+					Date:  c.Committer.Date, // Hard to test
+				},
+				Parents: []api.CommitID{"405b565ed446e271bc1998a91dbf4fb50dbfabfe"},
+			},
+			ModifiedFiles: []string{"file2"},
+		}, c)
+	})
 }
