@@ -49,7 +49,7 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 
 	c, err := parseCommitLogOutput(bytes.TrimPrefix(rawCommit, []byte{'\x1e'}))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to parse commit log output")
 	}
 	return c, nil
 }
