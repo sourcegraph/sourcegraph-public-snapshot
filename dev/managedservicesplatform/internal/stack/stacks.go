@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"golang.org/x/exp/maps"
@@ -116,6 +117,29 @@ func (l *StackLocals) Add(name string, value string, description string) {
 			ID:        stacks.OutputSecretID(l.s.Name, name),
 			ProjectID: project,
 			Value:     value,
+		})
+	}
+}
+
+// AddSlice is the same as Add, but accepts a slice instead. The value is
+// represented as a comma-separated string in GSM.
+func (l *StackLocals) AddSlice(name string, value []string, description string) {
+	id := resourceid.New("output")
+	_ = cdktf.NewTerraformOutput(l.s.Stack,
+		id.TerraformID(name),
+		&cdktf.TerraformOutputConfig{
+			Value:       value,
+			Sensitive:   pointers.Ptr(false),
+			Description: &description,
+		})
+	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
+
+	// If MetadataKeyStackLocalsGSMProjectID is set, emit to GSM
+	if project, ok := l.s.Metadata[MetadataKeyStackLocalsGSMProjectID]; ok {
+		_ = gsmsecret.New(l.s.Stack, id.Group("gsm").Group(name), gsmsecret.Config{
+			ID:        stacks.OutputSecretID(l.s.Name, name),
+			ProjectID: project,
+			Value:     strings.Join(value, ","),
 		})
 	}
 }
