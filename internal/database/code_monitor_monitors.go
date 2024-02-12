@@ -149,10 +149,10 @@ type ListMonitorsOpts struct {
 func (o ListMonitorsOpts) Conds() *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.UserID != nil {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", *o.UserID))
+		conds = append(conds, sqlf.Sprintf("cm_monitors.namespace_user_id = %s", *o.UserID))
 	}
 	if o.After != nil {
-		conds = append(conds, sqlf.Sprintf("cm.monitors.id > %s", *o.After))
+		conds = append(conds, sqlf.Sprintf("cm_monitors.id > %s", *o.After))
 	}
 	if o.SkipOrphaned {
 		conds = append(conds, sqlf.Sprintf("users.deleted_at IS NULL"))
