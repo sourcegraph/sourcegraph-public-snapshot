@@ -1520,6 +1520,7 @@ ts_project(
         "src/site-admin/analytics/AnalyticsCodeInsightsPage/queries.ts",
         "src/site-admin/analytics/AnalyticsCodeIntelPage/index.tsx",
         "src/site-admin/analytics/AnalyticsCodeIntelPage/queries.ts",
+        "src/site-admin/analytics/AnalyticsCodyPage/index.tsx",
         "src/site-admin/analytics/AnalyticsExtensionsPage/index.tsx",
         "src/site-admin/analytics/AnalyticsExtensionsPage/queries.ts",
         "src/site-admin/analytics/AnalyticsNotebooksPage/index.tsx",
