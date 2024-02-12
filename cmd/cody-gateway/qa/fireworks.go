@@ -17,7 +17,7 @@ func (fc FireworksGatewayFeatureClient) GetRequest(f codygateway.Feature, req *h
 		body := fmt.Sprintf(`{
 			"prompt":"def bubble_sort(arr):\n>",
 			"maxTokensToSample":30,
-			"model":"accounts/fireworks/models/starcoder-16b-w8a16",
+			"model":"starcoder",
 			"temperature":0.2,
 			"topP":0.95,
 			"stream":%t
