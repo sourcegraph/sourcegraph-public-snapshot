@@ -136,11 +136,9 @@ func TestExecRequest(t *testing.T) {
 	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	reposDir := t.TempDir()
-	s := &Server{
-		Logger:            logtest.Scoped(t),
-		ObservationCtx:    observation.TestContextTB(t),
-		ReposDir:          reposDir,
-		skipCloneForTests: true,
+	s := NewServer(&ServerOpts{
+		Logger:   logtest.Scoped(t),
+		ReposDir: reposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			backend := git.NewMockGitBackend()
 			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
@@ -184,9 +182,9 @@ func TestExecRequest(t *testing.T) {
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
-	}
-	// Initialize side-effects.
-	_ = s.Handler()
+	})
+
+	s.skipCloneForTests = true
 
 	gs := NewGRPCServer(s)
 
@@ -299,10 +297,9 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	obctx := observation.TestContextTB(t)
 
 	cloneQueue := NewCloneQueue(obctx, list.New())
-	s := &Server{
-		Logger:         logger,
-		ObservationCtx: obctx,
-		ReposDir:       repoDir,
+	s := NewServer(&ServerOpts{
+		Logger:   logger,
+		ReposDir: repoDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
 		},
@@ -315,13 +312,14 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
-		ctx:                     ctx,
 		Locker:                  NewRepositoryLocker(),
-		cloneLimiter:            limiter.NewMutable(1),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
-	}
+	})
+
+	s.ctx = ctx
+	s.cloneLimiter = limiter.NewMutable(1)
 
 	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)
 	p.Start()
@@ -392,7 +390,7 @@ func TestCloneRepo(t *testing.T) {
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
 	for i := 0; i < 1000; i++ {
-		_, cloning := s.Locker.Status(repoDir)
+		_, cloning := s.locker.Status(repoDir)
 		if !cloning {
 			break
 		}
@@ -506,7 +504,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			s.GetVCSSyncer = tc.getVCSSyncer
+			s.getVCSSyncer = tc.getVCSSyncer
 			_, _ = s.CloneRepo(ctx, repoName, CloneOptions{
 				Block: true,
 			})
@@ -556,19 +554,16 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	// We need the side effects here
-	_ = s.Handler()
-
 	// Confirm that failing to clone the repo stores the error
-	oldRemoveURLFunc := s.GetRemoteURLFunc
-	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
+	oldRemoveURLFunc := s.getRemoteURLFunc
+	s.getRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
 	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
-	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
+	size := gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.reposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -594,12 +589,12 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// This will perform an initial clone
-	s.GetRemoteURLFunc = oldRemoveURLFunc
+	s.getRemoteURLFunc = oldRemoveURLFunc
 	s.RepoUpdate(&protocol.RepoUpdateRequest{
 		Repo: repoName,
 	})
 
-	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path("."))
+	size = gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.reposDir, repoName).Path("."))
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -657,7 +652,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
 		CloneStatus:   types.CloneStatusCloned,
-		RepoSizeBytes: gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.ReposDir, repoName).Path(".")), // we compute the new size
+		RepoSizeBytes: gitserverfs.DirSize(gitserverfs.RepoDirFromName(s.reposDir, repoName).Path(".")), // we compute the new size
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
@@ -739,7 +734,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		_, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
 		require.NoError(t, err)
 
-		dst := gitserverfs.RepoDirFromName(s.ReposDir, repoName)
+		dst := gitserverfs.RepoDirFromName(s.reposDir, repoName)
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
@@ -769,7 +764,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		dst := gitserverfs.RepoDirFromName(s.ReposDir, "example.com/foo/bar")
+		dst := gitserverfs.RepoDirFromName(s.reposDir, "example.com/foo/bar")
 
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
@@ -863,7 +858,7 @@ func TestSyncRepoState(t *testing.T) {
 	hostname := "test"
 
 	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
-	s.Hostname = hostname
+	s.hostname = hostname
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -888,7 +883,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = syncRepoState(ctx, logger, db, s.Locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+	err = syncRepoState(ctx, logger, db, s.locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -913,7 +908,7 @@ func TestSyncRepoState(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = syncRepoState(ctx, logger, db, s.Locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		err = syncRepoState(ctx, logger, db, s.locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -942,7 +937,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 	repoName := api.RepoName("example.com/bar/foo")
 	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
-	s.Hostname = hostname
+	s.hostname = hostname
 
 	t.Run("git corruption output creates corruption log", func(t *testing.T) {
 		dbRepo := &types.Repo{
@@ -966,7 +961,7 @@ func TestLogIfCorrupt(t *testing.T) {
 			Reason: stdErr,
 		})
 
-		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+		fromDB, err := s.db.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
 		assert.Len(t, fromDB.CorruptionLogs, 1)
 		assert.Contains(t, fromDB.CorruptionLogs[0].Reason, stdErr)
@@ -990,7 +985,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		s.LogIfCorrupt(ctx, repoName, errors.New("Brought to you by Horsegraph"))
 
-		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+		fromDB, err := s.db.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
 		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
