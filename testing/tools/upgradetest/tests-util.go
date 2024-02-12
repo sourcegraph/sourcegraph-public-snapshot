@@ -745,13 +745,13 @@ func handleVersions(cCtx *cli.Context, overrideStd, overrideMVU, overrideAuto []
 	// Auto upgrade takes all types.
 	var std *semver.Constraints
 	// If target version assign tests types accordingly otherwise treat candidate release as a new patch version and assign upgrade test tyes accordingly.
-	if targetVersion != semver.MustParse("0.0.0+dev") {
+	if targetVersion.String() != "0.0.0+dev" {
 		std, err = semver.NewConstraint(fmt.Sprintf(">= %d.%d.x", targetVersion.Major(), targetVersion.Minor()-1))
 	} else {
 		std, err = semver.NewConstraint(fmt.Sprintf(">= %d.%d.x", latestMinorVer.Major(), latestMinorVer.Minor()-1))
 	}
 	if err != nil {
-		fmt.Println("🚨 failed to collect versions for standard upgrade test: ", err)
+		return nil, nil, nil, nil, nil, nil, errors.Wrap(err, "🚨 failed to collect versions for standard upgrade test: ")
 	}
 
 	// Assign versions to test type

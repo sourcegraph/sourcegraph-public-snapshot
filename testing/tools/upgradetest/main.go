@@ -81,9 +81,6 @@ func main() {
 					fmt.Println("Standard Versions:", stdVersions)
 					fmt.Println("Multiversion Versions:", mvuVersions)
 					fmt.Println("Autoupgrade Versions:", autoVersions)
-					fmt.Println(">>>>> Standard Versions: ", cCtx.StringSlice("standard-versions")) // DEBUG
-					fmt.Println(">>>>> MVU Versions: ", cCtx.StringSlice("mvu-versions"))           // DEBUG
-					fmt.Println(">>>>> Auto Versions: ", cCtx.StringSlice("auto-versions"))         // DEBUG
 
 					// initialize test results
 					var results TestResults
