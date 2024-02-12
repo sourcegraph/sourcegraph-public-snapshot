@@ -40,6 +40,8 @@ func TestConfig_Load(t *testing.T) {
 			return "10"
 		case "EXECUTOR_MAX_ACTIVE_TIME":
 			return "1h"
+		case "EXECUTOR_ENABLE_JOB_AUDIT_LOGGING":
+			return "true"
 		case "EXECUTOR_KUBERNETES_CONFIG_PATH":
 			return "/foo/bar"
 		case "EXECUTOR_KUBERNETES_NODE_NAME":
@@ -82,6 +84,7 @@ func TestConfig_Load(t *testing.T) {
 
 	assert.Equal(t, "EXECUTOR_FRONTEND_URL", cfg.FrontendURL)
 	assert.Equal(t, "EXECUTOR_FRONTEND_PASSWORD", cfg.FrontendAuthorizationToken)
+	assert.True(t, cfg.EnableJobAuditLogging)
 	assert.Equal(t, "EXECUTOR_QUEUE_NAME", cfg.QueueName)
 	assert.Equal(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNamesStr)
 	assert.Equal(t, 10*time.Second, cfg.QueuePollInterval)
@@ -192,6 +195,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 
 	assert.Empty(t, cfg.FrontendURL)
 	assert.Empty(t, cfg.FrontendAuthorizationToken)
+	assert.False(t, cfg.EnableJobAuditLogging)
 	assert.Empty(t, cfg.QueueName)
 	assert.Empty(t, cfg.QueueNamesStr)
 	assert.Equal(t, time.Second, cfg.QueuePollInterval)

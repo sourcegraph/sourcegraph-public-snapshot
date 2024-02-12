@@ -28,7 +28,7 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     parseQueryAndHash,
     toPrettyBlobURL,
@@ -228,6 +228,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
+    const isLightTheme = useIsLightTheme()
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
@@ -351,7 +352,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         Boolean(ocgVisibility)
     )
 
-    const { theme } = useTheme()
+    const themeExtension = useCompartment(
+        editorRef,
+        useMemo(() => EditorView.darkTheme.of(!isLightTheme), [isLightTheme])
+    )
 
     const extensions = useMemo(
         () => [
@@ -400,7 +404,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialState: searchPanelConfig,
                 navigate,
             }),
-            EditorView.theme({}, { dark: theme === Theme.Dark }),
+            themeExtension,
         ],
         // A couple of values are not dependencies (hasPin and position) because those are updated in effects
         // further below. However, they are still needed here because we need to
@@ -420,6 +424,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             wrapCodeSettings,
             blobProps,
             pinnedTooltip,
+            themeExtension,
         ]
     )
 

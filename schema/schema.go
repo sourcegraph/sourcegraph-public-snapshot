@@ -66,6 +66,14 @@ type AnnotationsResult struct {
 	Items []*OpenCodeGraphItem `json:"items"`
 }
 
+// AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
+type AttributionGateway struct {
+	// AccessToken description: Only for use to override token for attribution gateway access. If 'licenseKey' is set, a default access token is generated.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Endpoint description: Endpoint where Cody gateway can be accessed for attribution.
+	Endpoint string `json:"endpoint,omitempty"`
+}
+
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
@@ -89,7 +97,7 @@ type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
 	Allow string `json:"allow,omitempty"`
 	// AllowNoExpiration description: Allows new tokens to be created without specifying an expiration.
-	AllowNoExpiration bool `json:"allowNoExpiration,omitempty"`
+	AllowNoExpiration *bool `json:"allowNoExpiration,omitempty"`
 	// DefaultExpirationDays description: The default duration selection when creating a new access token. This value will be added to the expirationOptionDays if it is not already present
 	DefaultExpirationDays *int `json:"defaultExpirationDays,omitempty"`
 	// ExpirationOptionDays description: Options users will see for the number of days until token expiration. The defaultExpirationDays will be added to the list if not already present.
@@ -690,6 +698,12 @@ type Dotcom struct {
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
+	// SamsClientID description: The clientID for SAMS instance.
+	SamsClientID string `json:"sams.clientID,omitempty"`
+	// SamsClientSecret description: The clientSecret for SAMS instance.
+	SamsClientSecret string `json:"sams.clientSecret,omitempty"`
+	// SamsServer description: The server URL for SAMS instance.
+	SamsServer string `json:"sams.server,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
@@ -2642,6 +2656,8 @@ type SiteConfiguration struct {
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
 	// AttributionEnabled description: Enable/Disable attribution search for Cody-generated snippets
 	AttributionEnabled *bool `json:"attribution.enabled,omitempty"`
+	// AttributionGateway description: Use this gateway parameters for customers that bring their own key. Otherwise gateway endpoint is used.
+	AttributionGateway *AttributionGateway `json:"attribution.gateway,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
 	AuthAccessRequest *AuthAccessRequest `json:"auth.accessRequest,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -2961,6 +2977,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	}
 	delete(m, "RedirectUnsupportedBrowser")
 	delete(m, "attribution.enabled")
+	delete(m, "attribution.gateway")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
 	delete(m, "auth.allowedIpAddress")

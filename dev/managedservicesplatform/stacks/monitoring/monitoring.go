@@ -103,7 +103,8 @@ type Variables struct {
 	// If Redis is enabled we configure alerts for it
 	RedisInstanceID *string
 	// If CloudSQL is enabled we configure alerts for it
-	CloudSQLInstanceID *string
+	CloudSQLInstanceID    *string
+	CloudSQLMaxConections *int
 	// ServiceHealthProbes is used to determine the threshold for service
 	// startup latency alerts.
 	ServiceHealthProbes *spec.EnvironmentServiceHealthProbesSpec
@@ -150,8 +151,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Prepare GCP monitoring channels on which to notify on when an alert goes
 	// off.
-	channels := make(map[alertpolicy.ServerityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
-	addChannel := func(level alertpolicy.ServerityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
+	channels := make(map[alertpolicy.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
+	addChannel := func(level alertpolicy.SeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
 		channels[level] = append(channels[level], c)
 	}
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -15,11 +16,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
@@ -79,7 +80,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata(context.Context, log.Logger, *actor.Actor, codygateway.Feature, ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata(ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -247,7 +248,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, feature, body)
+			model, requestMetadata := methods.getRequestMetadata(body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -263,7 +264,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			var (
-				upstreamStarted        = time.Now()
+				upstreamStarted    = time.Now()
+				upstreamLatency    time.Duration
 				upstreamStatusCode int = -1
 				// resolvedStatusCode is the status code that we returned to the
 				// client - in most case it is the same as upstreamStatusCode,
@@ -295,6 +297,12 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						delete(usageData, k)
 					}
 				}
+				o := overhead.FromContext(r.Context())
+				o.Feature = feature
+				o.UpstreamLatency = upstreamLatency
+				o.Provider = upstreamName
+				o.Stream = body.ShouldStream()
+
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
@@ -307,7 +315,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							"provider": upstreamName,
 
 							// Request details
-							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+							"upstream_request_duration_ms": upstreamLatency.Milliseconds(),
 							"upstream_status_code":         upstreamStatusCode,
 							"resolved_status_code":         resolvedStatusCode,
 
@@ -404,6 +412,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				}
 			}
 			_, _ = io.Copy(responseWriter, respBody)
+			// record latency of upstream request after we read the whole response, but without recording the time we spend parsing it in parseResponseAndUsage()
+			upstreamLatency = time.Since(upstreamStarted)
 
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.

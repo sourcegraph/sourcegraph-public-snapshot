@@ -290,6 +290,9 @@ function PurposeStep({
                     onFormSubmitted={() => {
                         onNext()
                     }}
+                    onFormLoadError={() => {
+                        onNext()
+                    }}
                     userId={authenticatedUser.id}
                     userEmail={primaryEmail}
                     masterFormName="qualificationSurvey"

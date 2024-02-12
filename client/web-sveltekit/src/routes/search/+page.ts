@@ -100,7 +100,7 @@ export const load: PageLoad = ({ url, depends }) => {
         let {
             query = '',
             searchMode,
-            patternType = SearchPatternType.literal,
+            patternType = SearchPatternType.keyword,
             caseSensitive,
             filters: queryFilters,
         } = parsedQuery

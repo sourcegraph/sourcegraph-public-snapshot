@@ -3,6 +3,7 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
@@ -254,9 +254,12 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		ID:            s.Uuid,
 		Name:          name,
 		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
-		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
-		LastUpdated:   &now,
-		Source:        source,
+		EndpointAccess: map[string]bool{
+			"/v1/attribution": !disallowedLicense && !s.IsArchived,
+		},
+		RateLimits:  map[codygateway.Feature]actor.RateLimit{},
+		LastUpdated: &now,
+		Source:      source,
 	}
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {

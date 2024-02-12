@@ -14,7 +14,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
@@ -121,18 +120,6 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 3, 0, 0, 0, time.UTC)),
 	}}
 	eventsToExport := []string{"1", "2"}
-
-	t.Run("feature flag off", func(t *testing.T) {
-		// Context with FF disabled.
-		ff := featureflag.NewMemoryStore(
-			nil, nil, map[string]bool{FeatureFlagTelemetryExport: false})
-		ctx := featureflag.WithFlags(context.Background(), ff)
-
-		require.NoError(t, store.QueueForExport(ctx, events))
-		export, err := store.ListForExport(ctx, 100)
-		require.NoError(t, err)
-		assert.Len(t, export, 0)
-	})
 
 	t.Run("QueueForExport", func(t *testing.T) {
 		require.NoError(t, store.QueueForExport(ctx, events))

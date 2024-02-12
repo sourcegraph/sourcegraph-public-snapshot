@@ -42,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type DiffOptions struct {
@@ -403,7 +402,7 @@ func (c *clientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 	if hasAccess, err := authz.FilterActorPath(ctx, c.subRepoPermsChecker, a, repo, path); err != nil {
 		return nil, err
 	} else if !hasAccess {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
 	}
 	args := []string{"diff", sourceCommit, targetCommit, "--", path}
 	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
@@ -808,17 +807,15 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 
 	req := &proto.BlameRequest{
 		RepoName:         string(repo),
+		Commit:           string(opt.NewestCommit),
 		Path:             path,
 		IgnoreWhitespace: opt.IgnoreWhitespace,
 	}
-	if opt.NewestCommit != "" {
-		req.Commit = pointers.Ptr(string(opt.NewestCommit))
-	}
-	if opt.StartLine != 0 {
-		req.StartLine = pointers.Ptr(uint32(opt.StartLine))
-	}
-	if opt.EndLine != 0 {
-		req.EndLine = pointers.Ptr(uint32(opt.EndLine))
+	if opt.Range != nil {
+		req.Range = &proto.BlameRange{
+			StartLine: uint32(opt.Range.StartLine),
+			EndLine:   uint32(opt.Range.EndLine),
+		}
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -836,9 +833,28 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		cancel()
 		endObservation(1, observation.Args{})
 
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.PermissionDenied {
-				return nil, os.ErrNotExist
+		s, ok := status.FromError(err)
+		if !ok {
+			cancel()
+			endObservation(1, observation.Args{})
+
+			return nil, err
+		}
+
+		if s.Code() == codes.PermissionDenied {
+			cancel()
+			endObservation(1, observation.Args{})
+			return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+		}
+
+		if s.Code() == codes.NotFound {
+			for _, d := range s.Details() {
+				switch d.(type) {
+				case *proto.FileNotFoundPayload:
+					cancel()
+					endObservation(1, observation.Args{})
+					return nil, &os.PathError{Op: "open", Path: path, Err: os.ErrNotExist}
+				}
 			}
 		}
 
@@ -851,18 +867,6 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 		cancel:         cancel,
 		endObservation: func() { endObservation(1, observation.Args{}) },
 	}, nil
-}
-
-type errUnauthorizedStreamBlame struct {
-	Repo api.RepoName
-}
-
-func (e errUnauthorizedStreamBlame) Unauthorized() bool {
-	return true
-}
-
-func (e errUnauthorizedStreamBlame) Error() string {
-	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
 }
 
 type grpcBlameHunkReader struct {
@@ -1210,17 +1214,12 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 		RepoName: string(repo),
 	})
 	if err != nil {
-		s, ok := status.FromError(err)
-		if ok {
-			if s.Code() == codes.NotFound {
-				for _, d := range s.Details() {
-					switch d.(type) {
-					// If we fail to get the default branch due to cloning or being empty, we return nothing.
-					case *proto.RepoNotFoundPayload, *proto.RevisionNotFoundPayload:
-						return "", "", nil
-					}
-				}
-			}
+		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		if errors.HasType(err, &gitdomain.RepoNotExistError{}) {
+			return "", "", nil
+		}
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
 		}
 		return "", "", err
 	}
@@ -1358,7 +1357,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 				cancel()
 				err = firstRespErr
 				endObservation(1, observation.Args{})
-				return nil, os.ErrNotExist
+				return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 			}
 			if s.Code() == codes.NotFound {
 				for _, d := range s.Details() {
@@ -1367,7 +1366,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 						cancel()
 						err = firstRespErr
 						endObservation(1, observation.Args{})
-						return nil, os.ErrNotExist
+						return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
 					}
 				}
 			}
@@ -1709,7 +1708,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, repo api.RepoNam
 }
 
 func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string) (bool, error) {
-	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
+	if commits, err := c.Commits(ctx, repo, CommitsOptions{After: date, Range: revspec, NoEnsureRevision: true}); err != nil {
 		return false, err
 	} else if len(commits) > 0 {
 		return true, nil
@@ -2301,12 +2300,12 @@ func (c *clientImplementor) ArchiveReader(
 
 		// We return early only if this isn't a revision not found error.
 
-		err := convertGRPCErrorToGitDomainError(firstError)
+		err := firstError
 
 		var cse *CommandStatusError
 		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 			cancel()
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 	}
 
@@ -2328,7 +2327,7 @@ func (c *clientImplementor) ArchiveReader(
 		// Receive the next message from the stream.
 		msg, err := stream.Recv()
 		if err != nil {
-			return nil, convertGRPCErrorToGitDomainError(err)
+			return nil, err
 		}
 
 		// Return the data from the received message.
@@ -2336,7 +2335,7 @@ func (c *clientImplementor) ArchiveReader(
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{r: r, closeFn: cancel},
+		base: &readCloseWrapper{Reader: r, closeFn: cancel},
 		repo: repo,
 		spec: options.Treeish,
 	}, nil

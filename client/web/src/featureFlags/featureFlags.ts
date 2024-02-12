@@ -4,11 +4,6 @@ import type { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } 
 
 // A union of all feature flags we currently have.
 export const FEATURE_FLAGS = [
-    'ab-email-verification-alert',
-    'ab-visitor-tour-with-notebooks',
-    'accessible-file-tree',
-    'accessible-file-tree-always-load-ancestors',
-    'accessible-symbol-tree',
     'admin-analytics-cache-disabled',
     'admin-onboarding',
     'auditlog-expansion',
@@ -19,8 +14,12 @@ export const FEATURE_FLAGS = [
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',
     'enable-simple-search',
+    // TODO(fkling): Remove this flag
     'enable-sveltekit',
+    // TODO(fkling): Remove this flag
     'enable-sveltekit-toggle',
+    'web-next',
+    'web-next-toggle',
     'end-user-onboarding',
     'insight-polling-enabled',
     'opencodegraph',
@@ -29,18 +28,13 @@ export const FEATURE_FLAGS = [
     'plg-enable-add-codehost-widget',
     'quick-start-tour-for-authenticated-users',
     'repository-metadata',
-    'search-boost-phrase',
     'search-content-based-lang-detection',
     'search-debug',
-    'search-keyword',
-    'search-input-show-history',
-    'search-results-keyboard-navigation',
-    'search-simple',
-    'search.newFilters',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'use-ssc-for-cody-subscription',
+    'use-ssc-for-cody-subscription-on-web',
     'cody-pro-trial-ended',
+    'cody-payments-testing-mode',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

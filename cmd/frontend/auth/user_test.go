@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -70,11 +71,11 @@ func TestGetAndSaveUser(t *testing.T) {
 		CreateIfNotExist: true,
 	}
 
-	mockAddRandomSuffix = func(s string) (string, error) {
+	userpasswd.MockAddRandomSuffix = func(s string) (string, error) {
 		return fmt.Sprintf("%s-ubioa", s), nil
 	}
 	t.Cleanup(func() {
-		mockAddRandomSuffix = nil
+		userpasswd.MockAddRandomSuffix = nil
 	})
 
 	mainCase := outerCase{

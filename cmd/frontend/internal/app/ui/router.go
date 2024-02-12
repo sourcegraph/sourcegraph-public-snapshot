@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -106,6 +107,9 @@ func InitRouter(db database.DB) {
 
 	r.Path("/sign-in").Methods(http.MethodGet, http.MethodHead).Name(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
+
+	ghAppRouter := r.PathPrefix("/githubapp/").Subrouter()
+	githubapp.SetupGitHubAppRoutes(ghAppRouter, db)
 
 	// Basic pages with static titles
 	for _, p := range []struct {
