@@ -51,11 +51,6 @@ func (r *automaticRetryClient) Exec(ctx context.Context, in *proto.ExecRequest, 
 	return r.base.Exec(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.BatchLog(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.DiskInfo(ctx, in, opts...)

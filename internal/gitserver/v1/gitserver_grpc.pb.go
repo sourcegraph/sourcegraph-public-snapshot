@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_BatchLog_FullMethodName                    = "/gitserver.v1.GitserverService/BatchLog"
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
@@ -52,8 +51,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
-	// Deprecated: Do not use.
-	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
@@ -127,16 +124,6 @@ type gitserverServiceClient struct {
 
 func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClient {
 	return &gitserverServiceClient{cc}
-}
-
-// Deprecated: Do not use.
-func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error) {
-	out := new(BatchLogResponse)
-	err := c.cc.Invoke(ctx, GitserverService_BatchLog_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error) {
@@ -541,8 +528,6 @@ func (c *gitserverServiceClient) GetCommit(ctx context.Context, in *GetCommitReq
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
-	// Deprecated: Do not use.
-	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
@@ -615,9 +600,6 @@ type GitserverServiceServer interface {
 type UnimplementedGitserverServiceServer struct {
 }
 
-func (UnimplementedGitserverServiceServer) BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchLog not implemented")
-}
 func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
 }
@@ -707,24 +689,6 @@ type UnsafeGitserverServiceServer interface {
 
 func RegisterGitserverServiceServer(s grpc.ServiceRegistrar, srv GitserverServiceServer) {
 	s.RegisterService(&GitserverService_ServiceDesc, srv)
-}
-
-func _GitserverService_BatchLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchLogRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).BatchLog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_BatchLog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).BatchLog(ctx, req.(*BatchLogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -1228,10 +1192,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "BatchLog",
-			Handler:    _GitserverService_BatchLog_Handler,
-		},
 		{
 			MethodName: "DiskInfo",
 			Handler:    _GitserverService_DiskInfo_Handler,

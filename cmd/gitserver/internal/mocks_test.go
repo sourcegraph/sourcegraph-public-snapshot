@@ -13,7 +13,6 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	trace "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -21,10 +20,6 @@ import (
 // package github.com/sourcegraph/sourcegraph/cmd/gitserver/internal) used
 // for unit testing.
 type MockService struct {
-	// BatchGitLogInstrumentedHandlerFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// BatchGitLogInstrumentedHandler.
-	BatchGitLogInstrumentedHandlerFunc *ServiceBatchGitLogInstrumentedHandlerFunc
 	// CloneRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method CloneRepo.
 	CloneRepoFunc *ServiceCloneRepoFunc
@@ -55,11 +50,6 @@ type MockService struct {
 // return zero values for all results, unless overwritten.
 func NewMockService() *MockService {
 	return &MockService{
-		BatchGitLogInstrumentedHandlerFunc: &ServiceBatchGitLogInstrumentedHandlerFunc{
-			defaultHook: func(context.Context, *v1.BatchLogRequest) (r0 *v1.BatchLogResponse, r1 error) {
-				return
-			},
-		},
 		CloneRepoFunc: &ServiceCloneRepoFunc{
 			defaultHook: func(context.Context, api.RepoName, CloneOptions) (r0 string, r1 error) {
 				return
@@ -107,11 +97,6 @@ func NewMockService() *MockService {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockService() *MockService {
 	return &MockService{
-		BatchGitLogInstrumentedHandlerFunc: &ServiceBatchGitLogInstrumentedHandlerFunc{
-			defaultHook: func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-				panic("unexpected invocation of MockService.BatchGitLogInstrumentedHandler")
-			},
-		},
 		CloneRepoFunc: &ServiceCloneRepoFunc{
 			defaultHook: func(context.Context, api.RepoName, CloneOptions) (string, error) {
 				panic("unexpected invocation of MockService.CloneRepo")
@@ -159,7 +144,6 @@ func NewStrictMockService() *MockService {
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal). It is
 // redefined here as it is unexported in the source package.
 type surrogateMockService interface {
-	BatchGitLogInstrumentedHandler(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
 	CloneRepo(context.Context, api.RepoName, CloneOptions) (string, error)
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest, io.Reader) protocol.CreateCommitFromPatchResponse
 	Exec(context.Context, *protocol.ExecRequest, io.Writer) (execStatus, error)
@@ -174,9 +158,6 @@ type surrogateMockService interface {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockServiceFrom(i surrogateMockService) *MockService {
 	return &MockService{
-		BatchGitLogInstrumentedHandlerFunc: &ServiceBatchGitLogInstrumentedHandlerFunc{
-			defaultHook: i.BatchGitLogInstrumentedHandler,
-		},
 		CloneRepoFunc: &ServiceCloneRepoFunc{
 			defaultHook: i.CloneRepo,
 		},
@@ -202,118 +183,6 @@ func NewMockServiceFrom(i surrogateMockService) *MockService {
 			defaultHook: i.SearchWithObservability,
 		},
 	}
-}
-
-// ServiceBatchGitLogInstrumentedHandlerFunc describes the behavior when the
-// BatchGitLogInstrumentedHandler method of the parent MockService instance
-// is invoked.
-type ServiceBatchGitLogInstrumentedHandlerFunc struct {
-	defaultHook func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
-	hooks       []func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)
-	history     []ServiceBatchGitLogInstrumentedHandlerFuncCall
-	mutex       sync.Mutex
-}
-
-// BatchGitLogInstrumentedHandler delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockService) BatchGitLogInstrumentedHandler(v0 context.Context, v1 *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-	r0, r1 := m.BatchGitLogInstrumentedHandlerFunc.nextHook()(v0, v1)
-	m.BatchGitLogInstrumentedHandlerFunc.appendCall(ServiceBatchGitLogInstrumentedHandlerFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// BatchGitLogInstrumentedHandler method of the parent MockService instance
-// is invoked and the hook queue is empty.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) SetDefaultHook(hook func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BatchGitLogInstrumentedHandler method of the parent MockService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) PushHook(hook func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) SetDefaultReturn(r0 *v1.BatchLogResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) PushReturn(r0 *v1.BatchLogResponse, r1 error) {
-	f.PushHook(func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) nextHook() func(context.Context, *v1.BatchLogRequest) (*v1.BatchLogResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) appendCall(r0 ServiceBatchGitLogInstrumentedHandlerFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ServiceBatchGitLogInstrumentedHandlerFuncCall objects describing the
-// invocations of this function.
-func (f *ServiceBatchGitLogInstrumentedHandlerFunc) History() []ServiceBatchGitLogInstrumentedHandlerFuncCall {
-	f.mutex.Lock()
-	history := make([]ServiceBatchGitLogInstrumentedHandlerFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ServiceBatchGitLogInstrumentedHandlerFuncCall is an object that describes
-// an invocation of method BatchGitLogInstrumentedHandler on an instance of
-// MockService.
-type ServiceBatchGitLogInstrumentedHandlerFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v1.BatchLogRequest
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v1.BatchLogResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ServiceBatchGitLogInstrumentedHandlerFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ServiceBatchGitLogInstrumentedHandlerFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ServiceCloneRepoFunc describes the behavior when the CloneRepo method of
