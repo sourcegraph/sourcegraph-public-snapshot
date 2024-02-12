@@ -100,31 +100,32 @@ func (b *observableBackend) MergeBase(ctx context.Context, baseRevspec, headRevs
 }
 
 func (b *observableBackend) Blame(ctx context.Context, commit api.CommitID, path string, opt BlameOptions) (_ BlameHunkReader, err error) {
-	// TODO: Reporting of `err` is not correct here, the errors from reader are NOT
-	// considered.
-	ctx, _, endObservation := b.operations.configGet.With(ctx, &err, observation.Args{})
+	ctx, errCollector, endObservation := b.operations.blame.WithErrors(ctx, &err, observation.Args{})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	concurrentOps.WithLabelValues("Blame").Inc()
 
 	hr, err := b.backend.Blame(ctx, commit, path, opt)
 	if err != nil {
-		endObservation(1, observation.Args{})
 		concurrentOps.WithLabelValues("Blame").Dec()
+		cancel()
 		return nil, err
 	}
 
 	return &observableBlameHunkReader{
 		inner: hr,
-		endObservation: func() {
-			endObservation(1, observation.Args{})
+		onClose: func(err error) {
 			concurrentOps.WithLabelValues("Blame").Dec()
+			errCollector.Collect(&err)
+			cancel()
 		},
 	}, nil
 }
 
 type observableBlameHunkReader struct {
-	inner          BlameHunkReader
-	endObservation func()
+	inner   BlameHunkReader
+	onClose func(err error)
 }
 
 func (hr *observableBlameHunkReader) Read() (*gitdomain.Hunk, error) {
@@ -133,7 +134,7 @@ func (hr *observableBlameHunkReader) Read() (*gitdomain.Hunk, error) {
 
 func (hr *observableBlameHunkReader) Close() error {
 	err := hr.inner.Close()
-	hr.endObservation()
+	hr.onClose(err)
 	return err
 }
 
@@ -173,54 +174,56 @@ func (b *observableBackend) GetCommit(ctx context.Context, commit api.CommitID, 
 }
 
 func (b *observableBackend) ReadFile(ctx context.Context, commit api.CommitID, path string) (_ io.ReadCloser, err error) {
-	// TODO: Reporting of `err` is not correct here, the errors from reader are NOT
-	// considered.
-	ctx, _, endObservation := b.operations.readFile.With(ctx, &err, observation.Args{})
+	ctx, errCollector, endObservation := b.operations.readFile.WithErrors(ctx, &err, observation.Args{})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	concurrentOps.WithLabelValues("ReadFile").Inc()
 
 	r, err := b.backend.ReadFile(ctx, commit, path)
 	if err != nil {
-		endObservation(1, observation.Args{})
 		concurrentOps.WithLabelValues("ReadFile").Dec()
+		cancel()
 		return nil, err
 	}
 
 	return &observableReadCloser{
 		inner: r,
-		endObservation: func() {
-			endObservation(1, observation.Args{})
+		endObservation: func(err error) {
 			concurrentOps.WithLabelValues("ReadFile").Dec()
+			errCollector.Collect(&err)
+			cancel()
 		},
 	}, nil
 }
 
 func (b *observableBackend) Exec(ctx context.Context, args ...string) (_ io.ReadCloser, err error) {
-	// TODO: Reporting of `err` is not correct here, the errors from reader are NOT
-	// considered.
-	ctx, _, endObservation := b.operations.exec.With(ctx, &err, observation.Args{})
+	ctx, errCollector, endObservation := b.operations.exec.WithErrors(ctx, &err, observation.Args{})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	concurrentOps.WithLabelValues("Exec").Inc()
 
 	r, err := b.backend.Exec(ctx, args...)
 	if err != nil {
-		endObservation(1, observation.Args{})
 		concurrentOps.WithLabelValues("Exec").Dec()
+		cancel()
 		return nil, err
 	}
 
 	return &observableReadCloser{
 		inner: r,
-		endObservation: func() {
-			endObservation(1, observation.Args{})
+		endObservation: func(err error) {
 			concurrentOps.WithLabelValues("Exec").Dec()
+			errCollector.Collect(&err)
+			cancel()
 		},
 	}, nil
 }
 
 type observableReadCloser struct {
 	inner          io.ReadCloser
-	endObservation func()
+	endObservation func(err error)
 }
 
 func (r *observableReadCloser) Read(p []byte) (int, error) {
@@ -229,7 +232,7 @@ func (r *observableReadCloser) Read(p []byte) (int, error) {
 
 func (r *observableReadCloser) Close() error {
 	err := r.inner.Close()
-	r.endObservation()
+	r.endObservation(err)
 	return err
 }
 
