@@ -40,19 +40,17 @@ type service interface {
 	RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
-
-	BatchGitLogInstrumentedHandler(ctx context.Context, req *proto.BatchLogRequest) (resp *proto.BatchLogResponse, err error)
 }
 
 func NewGRPCServer(server *Server) proto.GitserverServiceServer {
 	return &grpcServer{
-		logger:         server.Logger,
-		reposDir:       server.ReposDir,
-		db:             server.DB,
-		hostname:       server.Hostname,
+		logger:         server.logger,
+		reposDir:       server.reposDir,
+		db:             server.db,
+		hostname:       server.hostname,
 		subRepoChecker: authz.DefaultSubRepoPermsChecker,
-		locker:         server.Locker,
-		getBackendFunc: server.GetBackendFunc,
+		locker:         server.locker,
+		getBackendFunc: server.getBackendFunc,
 		svc:            server,
 	}
 }
@@ -72,24 +70,6 @@ type grpcServer struct {
 }
 
 var _ proto.GitserverServiceServer = &grpcServer{}
-
-func (gs *grpcServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
-	// Validate request parameters
-	if len(req.GetRepoCommits()) == 0 { //nolint:staticcheck
-		return &proto.BatchLogResponse{}, nil
-	}
-	if !strings.HasPrefix(req.GetFormat(), "--format=") { //nolint:staticcheck
-		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
-	}
-
-	// Handle unexpected error conditions
-	resp, err := gs.svc.BatchGitLogInstrumentedHandler(ctx, req)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return resp, nil
-}
 
 func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
 	var metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
