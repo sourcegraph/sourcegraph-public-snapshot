@@ -151,6 +151,10 @@ func (c EnvironmentCategory) Validate() error {
 	return nil
 }
 
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
+}
+
 type EnvironmentDeploySpec struct {
 	Type         EnvironmentDeployType                  `yaml:"type"`
 	Manual       *EnvironmentDeployManualSpec           `yaml:"manual,omitempty"`

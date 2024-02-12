@@ -38,13 +38,13 @@ const setupOptions: SetupOption[] = [
         icon: <VSCodeIcon className={styles.linkSelectorIcon} />,
         maker: 'Microsoft',
         name: 'VSCode',
-        setupLink: 'https://docs.sourcegraph.com/cody/overview/install-vscode',
+        setupLink: 'https://sourcegraph.com/docs/cody/clients/install-vscode',
     },
     {
         icon: <IntelliJIcon className={styles.linkSelectorIcon} />,
         maker: 'Jetbrains',
         name: 'IntelliJ',
-        setupLink: 'https://docs.sourcegraph.com/cody/overview/install-jetbrains',
+        setupLink: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
     },
 ]
 
@@ -52,7 +52,7 @@ interface CodyDashboardPageProps {}
 
 export const CodyDashboardPage: FC<CodyDashboardPageProps> = () => {
     const isLightTheme = useIsLightTheme()
-    const codySetupLink = 'https://docs.sourcegraph.com/cody/overview#getting-started'
+    const codySetupLink = 'https://sourcegraph.com/docs/cody'
     const features = getLicenseFeatures()
     return (
         <section className={styles.dashboardContainer}>

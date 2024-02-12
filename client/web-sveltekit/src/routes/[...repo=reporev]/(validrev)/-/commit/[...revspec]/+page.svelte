@@ -24,8 +24,8 @@
     let loading = true
     let expandedDiffs = new Map<number, boolean>()
 
-    $: fileDiffConnection = $diff?.data.node?.__typename === 'Repository' ? $diff.data.node.comparison.fileDiffs : null
-    $: if ($diff?.data.node) {
+    $: fileDiffConnection = $diff?.data.repository?.comparison.fileDiffs ?? null
+    $: if ($diff?.data.repository) {
         loading = false
     }
 

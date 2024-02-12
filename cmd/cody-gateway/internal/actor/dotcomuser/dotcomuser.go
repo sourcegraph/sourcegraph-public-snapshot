@@ -36,10 +36,6 @@ const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 15 * time.Minute
-	// defaultRefreshInterval is used for updates, which is also called when a
-	// user's rate limit is hit, so we don't want to update every time. We use
-	// a shorter interval than the default in this case.
-	defaultRefreshInterval = 5 * time.Minute
 )
 
 type Source struct {
@@ -48,17 +44,19 @@ type Source struct {
 	dotcom            graphql.Client
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 	usageStore        limiter.RedisStore
+	coolDownInterval  time.Duration
 }
 
 var _ actor.SourceUpdater = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore, coolDownInterval time.Duration) *Source {
 	return &Source{
 		log:               logger.Scoped("dotcomuser"),
 		cache:             cache,
 		dotcom:            dotComClient,
 		concurrencyConfig: concurrencyConfig,
 		usageStore:        usageStore,
+		coolDownInterval:  coolDownInterval,
 	}
 }
 
@@ -69,9 +67,9 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 }
 
 func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
-	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < defaultRefreshInterval {
+	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < s.coolDownInterval {
 		return actor.ErrActorRecentlyUpdated{
-			RetryAt: act.LastUpdated.Add(defaultRefreshInterval),
+			RetryAt: act.LastUpdated.Add(s.coolDownInterval),
 		}
 	}
 
