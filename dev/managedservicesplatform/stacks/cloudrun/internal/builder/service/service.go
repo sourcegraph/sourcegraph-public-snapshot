@@ -280,8 +280,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			TargetService:     svc,
 			SSLCertificate:    sslCertificate,
 			CloudflareProxied: domain.Cloudflare.ShouldProxy(),
-			Production: vars.Environment.Category == spec.EnvironmentCategoryExternal ||
-				vars.Environment.Category == spec.EnvironmentCategoryInternal,
+			Production:        vars.Environment.Category.IsProduction(),
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "loadbalancer.New")

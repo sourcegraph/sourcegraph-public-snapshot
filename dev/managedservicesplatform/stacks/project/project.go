@@ -129,7 +129,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}
 
 				// For security purposes enable audit logging for production projects (external and internal)
-				if vars.Category == spec.EnvironmentCategoryExternal || vars.Category == spec.EnvironmentCategoryInternal {
+				if vars.Category.IsProduction() {
 					labels["collect-security-audit-logs"] = pointers.Ptr("true")
 				}
 
