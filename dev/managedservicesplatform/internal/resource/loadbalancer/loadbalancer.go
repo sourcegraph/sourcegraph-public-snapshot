@@ -94,7 +94,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Protocol: pointers.Ptr("HTTP"),
 			PortName: pointers.Ptr("http"),
 
-			// TODO: Parameterize with cloudflaresecuritypolicy as needed
 			SecurityPolicy: func() *string {
 				if config.CloudflareProxied && config.Production {
 					return cloudArmorAllowOnlyCloudflareEdge(scope, id.Group("cf-policy"), config)
@@ -186,8 +185,13 @@ func cloudArmorAllowOnlyCloudflareEdge(scope constructs.Construct, id resourceid
 	securityPolicy := computesecuritypolicy.NewComputeSecurityPolicy(scope, id.TerraformID("security-policy"), &computesecuritypolicy.ComputeSecurityPolicyConfig{
 		Name:    pointers.Stringf("%s-security-policy", *config.TargetService.Name()),
 		Project: pointers.Ptr(config.ProjectID),
+		// Rules are evaluated from highest priority (lowest numerically) to lowest priority (highest numerically) in order.
+		// It is necessary to have a default rule with priority 2147483647 and CIDR match * to handle all traffic not matched by higher priority rules.
+		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_security_policy#rule
 		Rule: []computesecuritypolicy.ComputeSecurityPolicyRule{
 			{
+				// Default rule for all unmatched traffic (not from CF IPs)
+				// Allowlist for CF IPs defined using Override below
 				Description: pointers.Ptr("Deny All"),
 				Action:      pointers.Ptr("deny(403)"), // deny with status 403
 				Priority:    pointers.Ptr(2147483647.0),
