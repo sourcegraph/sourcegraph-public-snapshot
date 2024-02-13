@@ -62,16 +62,16 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			defer cancel()
 			info, err2 := db.GitserverRepos().GetByName(ctx, args.Repo)
 			if err2 != nil {
-				err = errors.New("Processing symbols using the SQLite backend is taking a while. If this repository is ~1GB+, enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip).")
+				err = errors.New("Processing symbols using the SQLite backend is taking a while. If this repository is ~1GB+, enable [Rockskip](https://sourcegraph.com/docs/code_navigation/explanations/rockskip).")
 				return
 			}
 			size := info.RepoSizeBytes
 
 			help := ""
 			if size > 1_000_000_000 {
-				help = "Enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)."
+				help = "Enable [Rockskip](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)."
 			} else if size > 100_000_000 {
-				help = "If this persists, enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)."
+				help = "If this persists, enable [Rockskip](https://sourcegraph.com/docs/code_navigation/explanations/rockskip)."
 			} else {
 				help = "If this persists, make sure the symbols service has an SSD, a few GHz of CPU, and a few GB of RAM."
 			}
