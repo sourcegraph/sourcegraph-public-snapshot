@@ -58,6 +58,19 @@ func BenchmarkSearchRegex_large_fixed_casesensitive(b *testing.B) {
 	})
 }
 
+func BenchmarkSearchRegex_large_empty_pattern(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			IncludePatterns: []string{".*"},
+			Query: &protocol.PatternNode{
+				Value: "",
+			},
+		},
+	})
+}
+
 func BenchmarkSearchRegex_large_re_dotstar(b *testing.B) {
 	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
