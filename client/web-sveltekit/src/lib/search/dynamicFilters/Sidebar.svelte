@@ -11,9 +11,7 @@
 
     export let streamFilters: Filter[]
     export let selectedFilters: URLQueryFilter[]
-    export let size: number
 
-    $: width = `max(100px, min(50%, ${size * 100}%))`
     $: filters = groupFilters(streamFilters, selectedFilters)
     $: typeFilters = staticTypeFilters.map(staticTypeFilter => {
         const selectedOrStreamFilter = filters.type.find(typeFilter => typeFilter.label === staticTypeFilter.label)
@@ -26,7 +24,7 @@
     })
 </script>
 
-<aside class="sidebar" style:width>
+<aside class="sidebar">
     <h3>Filter results</h3>
     <Section items={typeFilters} title="By type" showAll>
         <svelte:fragment slot="label" let:label>

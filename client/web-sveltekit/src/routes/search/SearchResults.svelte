@@ -50,6 +50,7 @@
     let resultContainer: HTMLElement | null = null
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
+    $: sidebarWidth = `max(100px, min(50%, ${$sidebarSize * 100}%))`
 
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
@@ -112,7 +113,9 @@
 </div>
 
 <div class="search-results">
-    <DynamicFiltersSidebar size={$sidebarSize} {selectedFilters} {streamFilters} />
+    <div style:width={sidebarWidth}>
+        <DynamicFiltersSidebar {selectedFilters} {streamFilters} />
+    </div>
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
         <aside class="actions">
