@@ -383,10 +383,6 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 		config.ResponseCodeMetric.Duration = pointers.Ptr("60s")
 	}
 
-	// TODO: Why don't we just ask the spec to provide a usable name, or don't
-	// provide a name at all and generate it ourselves? For now, we reassign to
-	// match existing behaviour.
-	config.Name = fmt.Sprintf("High Ratio of %s Responses", config.Name)
 	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope,
 		id.TerraformID(config.ID), &monitoringalertpolicy.MonitoringAlertPolicyConfig{
 			Project:     pointers.Ptr(config.ProjectID),
@@ -410,7 +406,7 @@ func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, co
 				},
 			},
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
-				AutoClose: pointers.Ptr("604800s"),
+				AutoClose: pointers.Ptr("86400s"),
 			},
 			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
 		})
