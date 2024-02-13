@@ -246,7 +246,7 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 		}()
 		start := time.Now()
 		eventSink := func(e types.CompletionResponse) error {
-				return writeEvent("completion", e)
+			return writeEvent("completion", e)
 		}
 		attributionErrorLog := func(err error) {
 			l := trace.Logger(ctx, logger)
@@ -336,9 +336,9 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 		if f != nil { // if autocomplete-attribution enabled
 			if err := f.WaitDone(ctx); err != nil {
 				l := trace.Logger(ctx, logger)
-					if err := writeEvent("error", map[string]string{"error": err.Error()}); err != nil {
-						l.Error("error reporting streaming completion error", log.Error(err))
-					}
+				if err := writeEvent("error", map[string]string{"error": err.Error()}); err != nil {
+					l.Error("error reporting streaming completion error", log.Error(err))
+				}
 			}
 		}
 	}
