@@ -83,6 +83,9 @@ type PatternInfo struct {
 	// glob or Go regexp that represents multiple such patterns ANDed together.
 	IncludePatterns []string
 
+	IncludeLangs []string
+	ExcludeLangs []string
+
 	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
 	// and IncludePatterns are case sensitive.
 	PathPatternsAreCaseSensitive bool

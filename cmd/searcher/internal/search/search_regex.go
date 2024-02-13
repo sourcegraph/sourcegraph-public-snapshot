@@ -27,6 +27,7 @@ func regexSearchBatch(
 		return nil, err
 	}
 
+	lm := toLangMatcher(p)
 	pm, err := toPathMatcher(p)
 	if err != nil {
 		return nil, err
@@ -34,7 +35,7 @@ func regexSearchBatch(
 
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, p.Limit)
 	defer cancel()
-	err = regexSearch(ctx, m, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, contextLines)
+	err = regexSearch(ctx, m, pm, lm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, contextLines)
 	return sender.collected, err
 }
 
@@ -56,6 +57,7 @@ func regexSearch(
 	ctx context.Context,
 	m matchTree,
 	pm *pathMatcher,
+	lm langMatcher,
 	zf *zipFile,
 	patternMatchesContent, patternMatchesPaths bool,
 	isCaseSensitive bool,
@@ -108,6 +110,12 @@ func regexSearch(
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
 		l := fileLoader{zf: zf, isCaseSensitive: isCaseSensitive}
+		var f *srcFile
+		getContent := func() ([]byte, error) {
+			l.load(f)
+			return l.fileBuf, nil
+		}
+
 		g.Go(func() error {
 			for !contextCanceled.Load() {
 				idx := int(lastFileIdx.Inc())
@@ -115,21 +123,29 @@ func regexSearch(
 					return nil
 				}
 
-				f := &files[idx]
+				f = &files[idx]
 
-				// decide whether to process, record that decision
+				// Apply path filters
 				if !pm.Matches(f.Name) {
+					filesSkipped.Inc()
+					continue
+				}
+
+				// Apply language filters
+				if !lm.Matches(f.Name, getContent) {
 					filesSkipped.Inc()
 					continue
 				}
 				filesSearched.Inc()
 
+				// Check pattern against file path and contents
 				match := false
 				fm := protocol.FileMatch{
 					Path:     f.Name,
 					LimitHit: false,
 				}
 
+				// Check if the pattern matches
 				if patternMatchesPaths {
 					match = m.MatchesString(f.Name)
 				}
@@ -183,6 +199,8 @@ type fileLoader struct {
 	fileBuf      []byte
 	fileMatchBuf []byte
 
+	prevFile *srcFile
+
 	// scratchBuf is reused between file searches to avoid
 	// re-allocating. It is only used if we need to transform the input
 	// before matching. For example we lower case the input in the case of
@@ -191,9 +209,12 @@ type fileLoader struct {
 }
 
 func (l *fileLoader) load(f *srcFile) {
+	if f == l.prevFile {
+		return
+	}
+
 	l.fileBuf = l.zf.DataFor(f)
 	l.fileMatchBuf = l.fileBuf
-
 	if !l.isCaseSensitive {
 		// If we are ignoring case, we transform the input instead of
 		// relying on the regular expression engine which can be

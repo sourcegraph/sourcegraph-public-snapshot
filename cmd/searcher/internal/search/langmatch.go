@@ -1,0 +1,61 @@
+package search
+
+import (
+	"slices"
+
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
+)
+
+// langMatcher checks whether a file matches the 'include' and 'exclude
+// language filters
+type langMatcher interface {
+	// Matches checks whether a file's language matches. It accepts a callback
+	// to fetch the content to avoid loading content when it's not needed.
+	Matches(path string, getContent func() ([]byte, error)) bool
+}
+
+type allLangMatcher struct{}
+
+func (am *allLangMatcher) Matches(_ string, _ func() ([]byte, error)) bool {
+	return true
+}
+
+// enryLangMatcher uses go-ery to check whether files match the language
+// filters. IncludeLangs and ExcludeLangs are expected to be valid languages,
+// like from the output of enry.GetLanguagesByAlias.
+type enryLangMatcher struct {
+	IncludeLangs []string
+	ExcludeLangs []string
+}
+
+func (em *enryLangMatcher) Matches(path string, getContent func() ([]byte, error)) bool {
+	// We use Sourcegraph's wrapper around enry because it supports lazily fetching
+	// content and contains some optimizations for ambiguous extensions.
+	langs, err := languages.GetLanguages(path, getContent)
+
+	// In practice err will always be nil, because we never error when fetching content
+	if len(langs) == 0 || err != nil {
+		return false
+	}
+
+	lang := langs[0]
+	for _, includeLang := range em.IncludeLangs {
+		if lang != includeLang {
+			return false
+		}
+	}
+	return !slices.Contains(em.ExcludeLangs, lang)
+}
+
+func toLangMatcher(p *protocol.PatternInfo) langMatcher {
+	// If there are no language filters, avoid all path and content checks.
+	if len(p.IncludeLangs)+len(p.ExcludeLangs) == 0 {
+		return &allLangMatcher{}
+	}
+
+	return &enryLangMatcher{
+		IncludeLangs: p.IncludeLangs,
+		ExcludeLangs: p.ExcludeLangs,
+	}
+}
