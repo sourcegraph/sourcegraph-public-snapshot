@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
@@ -698,6 +700,7 @@ func TestSyncInstallations(t *testing.T) {
 		githubClient       *mockGitHubClient
 		expectedInstallIDs []int
 		app                ghtypes.GitHubApp
+		expectedErr        string
 	}{
 		{
 			name: "no installations",
@@ -772,6 +775,22 @@ func TestSyncInstallations(t *testing.T) {
 				PrivateKey: "private-key",
 			},
 		},
+		{
+			name: "deleted github app",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{}, false, errors.New("request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found"))
+				return client
+			}(),
+			expectedInstallIDs: []int{},
+			expectedErr:        "request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found",
+			app: ghtypes.GitHubApp{
+				AppID:      5,
+				Name:       "Test Deleted GitHub App",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -803,7 +822,12 @@ func TestSyncInstallations(t *testing.T) {
 			}
 
 			errs := store.SyncInstallations(ctx, app, logger, tc.githubClient)
-			require.NoError(t, errs)
+
+			if tc.expectedErr != "" {
+				require.Error(t, errs, tc.expectedErr)
+			} else {
+				require.NoError(t, errs)
+			}
 
 			installations, err := store.GetInstallations(ctx, tc.app.AppID)
 			require.NoError(t, err)
