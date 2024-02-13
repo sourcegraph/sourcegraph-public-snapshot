@@ -1111,7 +1111,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                     version,
                     'internal/database/migration/shared/data/cmd/generator/consts.go'
                 ),
-                'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+                `bazel run //dev:write_all_generated`,
             ]
             const srcCliSteps = await bakeSrcCliSteps(config)
 
@@ -1136,7 +1136,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             }
 
             const sets = await createChangesets({
-                requiredCommands: ['comby', 'go'],
+                requiredCommands: ['comby', 'go', 'bazel'],
                 changes: [
                     {
                         ...prDetails,
