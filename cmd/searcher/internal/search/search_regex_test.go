@@ -70,7 +70,7 @@ func BenchmarkSearchRegex_large_empty_pattern(b *testing.B) {
 	})
 }
 
-func BenchmarkSearchRegex_large_lang_filters(b *testing.B) {
+func BenchmarkSearchRegex_large_lang_filter_common(b *testing.B) {
 	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
@@ -78,6 +78,19 @@ func BenchmarkSearchRegex_large_lang_filters(b *testing.B) {
 			IncludeLangs: []string{"Go"},
 			Query: &protocol.PatternNode{
 				Value: "error handler",
+			},
+		},
+	})
+}
+
+func BenchmarkSearchRegex_large_lang_filter_uncommon(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			IncludeLangs: []string{"C"},
+			Query: &protocol.PatternNode{
+				Value: "errorr",
 			},
 		},
 	})
@@ -657,6 +670,7 @@ func TestLangFilters(t *testing.T) {
 	zipData, _ := createZip(map[string]string{
 		"a.go":      "aaaaa11111",
 		"README.md": "important info on go",
+		"file.m":    "[x,y,z] = sphere; \nr = 2;\nsurf(x*r,y*r,z*r)\naxis equal",
 	})
 	file, _ := mockZipFile(zipData)
 
@@ -737,6 +751,34 @@ func TestLangFilters(t *testing.T) {
 				zf: file,
 			},
 			wantFm: []protocol.FileMatch{{Path: "README.md"}},
+		},
+		{
+			name: "include filter with ambiguous extension",
+			args: args{
+				ctx: context.Background(),
+				p: &protocol.PatternInfo{
+					Query:                 &protocol.PatternNode{Value: ""},
+					IncludeLangs:          []string{"MATLAB"},
+					PatternMatchesPath:    false,
+					PatternMatchesContent: true,
+				},
+				zf: file,
+			},
+			wantFm: []protocol.FileMatch{{Path: "file.m"}},
+		},
+		{
+			name: "include filter with ambiguous extension and no matches",
+			args: args{
+				ctx: context.Background(),
+				p: &protocol.PatternInfo{
+					Query:                 &protocol.PatternNode{Value: ""},
+					IncludeLangs:          []string{"Objective-C"},
+					PatternMatchesPath:    false,
+					PatternMatchesContent: true,
+				},
+				zf: file,
+			},
+			wantFm: nil,
 		},
 	}
 

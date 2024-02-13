@@ -6,6 +6,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 type pathMatcher struct {
@@ -54,8 +55,15 @@ func toPathMatcher(p *protocol.PatternInfo) (*pathMatcher, error) {
 	}
 
 	var include []*regexp.Regexp
-	for _, p := range p.IncludePaths {
-		include = append(include, compile(p))
+	for _, pattern := range p.IncludePaths {
+		include = append(include, compile(pattern))
+	}
+
+	// As an optimization, add the language filters as path patterns since they're
+	// faster to check than calling go-enry. This is not necessary for correctness.
+	for _, lang := range p.IncludeLangs {
+		pattern := query.LangToFileRegexp(lang)
+		include = append(include, compile(pattern))
 	}
 
 	var exclude *regexp.Regexp
