@@ -147,9 +147,7 @@ func NewHandler(
 		)
 		compress, err := httpcompression.DefaultAdapter() // Use the default configuration
 		if err != nil {
-			if err != nil {
-				return nil, errors.Wrap(err, "init compression for Embeddings")
-			}
+			return nil, errors.Wrap(err, "init compression for Embeddings")
 		}
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			overhead.HTTPMiddleware(latencyHistogram,
