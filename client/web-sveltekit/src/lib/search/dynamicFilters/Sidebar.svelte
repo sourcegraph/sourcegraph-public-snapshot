@@ -15,10 +15,8 @@
 
     $: width = `max(100px, min(50%, ${size * 100}%))`
     $: filters = groupFilters(streamFilters, selectedFilters)
-    $: console.log(filters)
     $: typeFilters = staticTypeFilters.map(staticTypeFilter => {
         const selectedOrStreamFilter = filters.type.find(typeFilter => typeFilter.label === staticTypeFilter.label)
-        console.log({ staticTypeFilter, selectedOrStreamFilter })
         return {
             ...staticTypeFilter,
             count: selectedOrStreamFilter?.count,
@@ -26,7 +24,6 @@
             selected: selectedOrStreamFilter?.selected || false,
         }
     })
-    $: console.log(typeFilters)
 </script>
 
 <aside class="sidebar" style:width>
