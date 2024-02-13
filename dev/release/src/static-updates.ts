@@ -49,16 +49,25 @@ export async function bakeAWSExecutorsSteps(config: ReleaseConfig): Promise<void
         title: `executor: v${next.version}`,
         commitMessage: `executor: v${next.version}`,
     }
+    /*
+      TODO prepare-release.sh commits and pushes the change, but
+      createChangesets expects to do this. This needs to be fixed before the
+      next minor release. I propose making prepare-release not commit and
+      push. Or even better just get rid of it since its an overengineered
+      wrapper around a single sed call. Then you can also remove the unshallow
+      call.
+    */
     const sets = await createChangesets({
         requiredCommands: [],
         changes: [
             {
                 ...prDetails,
-                repo: 'sourcegraph',
-                owner: 'terraform-aws-executors',
+                owner: 'sourcegraph',
+                repo: 'terraform-aws-executors',
                 base: 'master',
                 head: `release/prepare-${next.version}`,
-                edits: [`./prepare-release.sh ${next.version}`],
+                // prepare-release.sh needs full history to read tags
+                edits: ['git fetch --unshallow', `./prepare-release.sh ${next.version}`],
                 labels: [releaseBlockerLabel],
                 draft: true,
             },
@@ -87,6 +96,14 @@ export async function bakeGoogleExecutorsSteps(config: ReleaseConfig): Promise<v
         title: `executor: v${next.version}`,
         commitMessage: `executor: v${next.version}`,
     }
+    /*
+      TODO prepare-release.sh commits and pushes the change, but
+      createChangesets expects to do this. This needs to be fixed before the
+      next minor release. I propose making prepare-release not commit and
+      push. Or even better just get rid of it since its an overengineered
+      wrapper around a single sed call. Then you can also remove the unshallow
+      call.
+    */
     const sets = await createChangesets({
         requiredCommands: [],
         changes: [
@@ -96,7 +113,8 @@ export async function bakeGoogleExecutorsSteps(config: ReleaseConfig): Promise<v
                 owner: 'sourcegraph',
                 base: 'master',
                 head: `release/prepare-${next.version}`,
-                edits: [`./prepare-release.sh ${next.version}`],
+                // prepare-release.sh needs full history to read tags
+                edits: ['git fetch --unshallow', `./prepare-release.sh ${next.version}`],
                 labels: [releaseBlockerLabel],
                 draft: true,
             },
