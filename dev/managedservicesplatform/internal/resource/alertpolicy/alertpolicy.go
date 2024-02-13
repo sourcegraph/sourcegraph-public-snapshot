@@ -207,10 +207,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	if config.Description == "" {
 		return nil, errors.New("Description is required")
 	} else {
-		config.Description = fmt.Sprintf(`%s
-
-See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s for service and infrastructure access details.
-If you need additional assistance, reach out to #discuss-core-services.`,
+		config.Description = fmt.Sprintf("%s\n\n%s",
 			config.Description,
 			DescriptionSuffix(config.Service.ID, config.EnvironmentID))
 	}
