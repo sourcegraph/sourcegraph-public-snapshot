@@ -742,7 +742,6 @@ cc @${release.captainGitHubUsername}
                             // Update Sourcegraph versions in installation guides
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
-                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./docs/admin/executors/deploy_executors_kubernetes.mdx`,
                             // Update fork variables in installation guides
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
 
