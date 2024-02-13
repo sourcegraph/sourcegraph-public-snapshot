@@ -668,7 +668,7 @@ export async function createLatestRelease(
         return ''
     }
 
-    const updateURL = 'https://docs.sourcegraph.com/admin/updates'
+    const updateURL = 'https://sourcegraph.com/docs/admin/updates'
     const releasePostURL = `https://sourcegraph.com/blog/release/${release.major}.${release.minor}` // CI:URL_OK
 
     const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {
