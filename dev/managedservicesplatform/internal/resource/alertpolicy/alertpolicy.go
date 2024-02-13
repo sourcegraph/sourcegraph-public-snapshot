@@ -136,6 +136,15 @@ const (
 	SeverityLevelCritical = "CRITICAL"
 )
 
+// DescriptionSuffix points to the service page and environment anchor expected to be
+// generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/,
+// and should be added as a suffix to all alert descriptions.
+func DescriptionSuffix(serviceID, environmentID string) string {
+	return fmt.Sprintf(`See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s#%s for service and infrastructure access details.
+If you need additional assistance, reach out to #discuss-core-services.`,
+		serviceID, environmentID)
+}
+
 type NotificationChannels map[SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
 
 // Config for a Monitoring Alert Policy
@@ -173,12 +182,6 @@ type Config struct {
 	ResponseCodeMetric   *ResponseCodeMetric
 }
 
-// getDocsSlug points to the service page and environment anchor expected to be
-// generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/
-func (c Config) getDocsSlug() string {
-	return fmt.Sprintf("%s#%s", c.Service.ID, c.EnvironmentID)
-}
-
 // makeDocsSubject prefixes the name with the service and environment for ease
 // of reading in various feeds.
 func (c Config) makeDocsSubject() string {
@@ -209,7 +212,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 See https://handbook.sourcegraph.com/departments/engineering/managed-services/%s for service and infrastructure access details.
 If you need additional assistance, reach out to #discuss-core-services.`,
 			config.Description,
-			config.getDocsSlug())
+			DescriptionSuffix(config.Service.ID, config.EnvironmentID))
 	}
 
 	// Set default
