@@ -72,7 +72,7 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 		e.endpoint = endpoint
 		e.token = token
 
-		// We are communicate out of the cluster so we need to use ExternalDoer.
+		// We communicate out of the cluster so we need to use ExternalDoer.
 		httpClient := httpcli.ExternalDoer
 		if MockHttpClient != nil {
 			httpClient = MockHttpClient
