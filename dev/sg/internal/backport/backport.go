@@ -1,6 +1,8 @@
 package backport
 
 import (
+	"fmt"
+
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -36,10 +38,17 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 	// Fetch latest change from remote
 	p := std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
 	if err := gitExec(cmd.Context, "fetch"); err != nil {
-		p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
+		p.Destroy()
 		return err
 	}
 	p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched latest changes from remote"))
 
+	worktreeName := fmt.Sprintf(".worktrees/backport-%d", prNumber)
+	p.Updatef("%s Creating new working tree %q...", output.EmojiHourglass, worktreeName)
+	if err := gitExec(cmd.Context, "worktree", "add", worktreeName, version); err != nil {
+		p.Destroy()
+		return err
+	}
+	// confirm the branch
 	return nil
 }
