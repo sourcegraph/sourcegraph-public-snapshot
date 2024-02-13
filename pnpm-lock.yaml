@@ -49,6 +49,9 @@ importers:
       '@codemirror/view':
         specifier: ^6.23.1
         version: 6.23.1
+      '@date-fns/utc':
+        specifier: ^1.1.1
+        version: 1.1.1
       '@graphiql/react':
         specifier: ^0.10.0
         version: 0.10.0(@codemirror/language@6.2.0)(@types/node@20.8.0)(graphql-ws@5.14.1)(graphql@15.4.0)(react-dom@18.1.0)(react@18.1.0)
@@ -3264,6 +3267,10 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
+
+  /@date-fns/utc@1.1.1:
+    resolution: {integrity: sha512-xHqw5SkB6z2OpouO/6BqLSL1nEI2jLC6WIXT01TNFfffU0Os8U/Gk2yxoKB/qbY44tfnGbqUF+nkST5QqLJpDA==}
+    dev: false
 
   /@discoveryjs/json-ext@0.5.7:
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
