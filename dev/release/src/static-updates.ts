@@ -12,6 +12,13 @@ import {
 export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
     const client = await getAuthenticatedGitHubClient()
 
+    // NOTE(keegan): 2024-02-13 I am running the 5.3 release but this is all
+    // borked. We used to run a src-cli reference doc generator, but we now
+    // have a docs repo which uses mdx files. So the reference generator needs
+    // to be updated. So for now I am just skipping this and will follow up
+    // later. Leaving the original comment below since we still need the next
+    // var to be calculated. Additionally just commenting out the broken code.
+    //
     // ok, this seems weird that we're cloning src-cli here, so read on -
     // We have docs that live in the main src/src repo about src-cli. Each version we update these docs for any changes
     // from the most recent version of src-cli. Cool, makes sense.
@@ -29,8 +36,9 @@ export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
 
     return [
         combyReplace('const MinimumVersion = ":[1]"', next.version, 'internal/src-cli/consts.go'),
-        `cd ${workdir}/cmd/src && go build`,
-        `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
+        // Broken since docs migration
+        //`cd ${workdir}/cmd/src && go build`,
+        //`cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
     ]
 }
 export async function bakeAWSExecutorsSteps(config: ReleaseConfig): Promise<void> {
