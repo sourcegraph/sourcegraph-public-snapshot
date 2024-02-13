@@ -81,6 +81,9 @@ func (e *enterpriseInitialization) Service() attribution.Service {
 	if e.endpoint == "" || e.token == "" {
 		return attribution.Uninitialized{}
 	}
+	if e.client == nil {
+		return attribution.Uninitialized{}
+	}
 	return attribution.NewGatewayProxy(e.observationCtx, e.client)
 }
 
