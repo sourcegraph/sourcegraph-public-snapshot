@@ -22,75 +22,76 @@
 </script>
 
 <aside class="sidebar" style:width>
-    <div class="section">
+    <h3>Filter results</h3>
+    <div>
+        <!-- TODO: unify the type section with Section -->
+        <h4>By type</h4>
         <TypeSection {queryFromURL} {queryState} />
     </div>
     {#if hasFilters}
-        <div class="section">
-            {#if filters['symbol type'].length > 0}
-                <Section
-                    items={filters['symbol type']}
-                    title="By symbol type"
-                    filterPlaceholder="Filter symbol types"
-                    showFilter
-                    {queryFilters}
-                >
-                    <svelte:fragment slot="label" let:label>
-                        <SymbolKind symbolKind={label.toUpperCase()} />
+        {#if filters['symbol type'].length > 0}
+            <Section
+                items={filters['symbol type']}
+                title="By symbol type"
+                filterPlaceholder="Filter symbol types"
+                showFilter
+                {queryFilters}
+            >
+                <svelte:fragment slot="label" let:label>
+                    <SymbolKind symbolKind={label.toUpperCase()} />
+                    {label}
+                </svelte:fragment>
+            </Section>
+        {/if}
+        {#if filters.author.length > 0}
+            <Section
+                items={filters.author}
+                title="By author"
+                filterPlaceholder="Filter authors"
+                showFilter
+                {queryFilters}
+            />
+        {/if}
+        {#if filters['commit date'].length > 0}
+            <Section items={filters['commit date']} title="By commit date" {queryFilters}>
+                <svelte:fragment slot="label" let:label let:value>
+                    <span class="commit-date-label">
                         {label}
-                    </svelte:fragment>
-                </Section>
-            {/if}
-            {#if filters.author.length > 0}
-                <Section
-                    items={filters.author}
-                    title="By author"
-                    filterPlaceholder="Filter authors"
-                    showFilter
-                    {queryFilters}
-                />
-            {/if}
-            {#if filters['commit date'].length > 0}
-                <Section items={filters['commit date']} title="By commit date" {queryFilters}>
-                    <svelte:fragment slot="label" let:label let:value>
-                        <span class="commit-date-label">
-                            {label}
-                            <small><pre>{value}</pre></small>
-                        </span>
-                    </svelte:fragment>
-                </Section>
-            {/if}
-            {#if filters.lang.length > 0}
-                <Section
-                    items={filters.lang}
-                    title="By language"
-                    showFilter
-                    filterPlaceholder="Filter languages"
-                    {queryFilters}
-                />
-            {/if}
-            {#if filters.repo.length > 0}
-                <Section
-                    items={filters.repo}
-                    title="By repository"
-                    showFilter
-                    filterPlaceholder="Filter repositories"
-                    preprocessLabel={displayRepoName}
-                    {queryFilters}
-                >
-                    <svelte:fragment slot="label" let:label>
-                        <CodeHostIcon repository={label} />
-                        {displayRepoName(label)}
-                    </svelte:fragment>
-                </Section>
-            {/if}
-            {#if filters.file.length > 0}
-                <Section items={filters.file} title="By file" {queryFilters} />
-            {/if}
-            {#if filters.utility.length > 0}
-                <Section items={filters.utility} title="Utility" {queryFilters} />
-            {/if}
-        </div>
+                        <small><pre>{value}</pre></small>
+                    </span>
+                </svelte:fragment>
+            </Section>
+        {/if}
+        {#if filters.lang.length > 0}
+            <Section
+                items={filters.lang}
+                title="By language"
+                showFilter
+                filterPlaceholder="Filter languages"
+                {queryFilters}
+            />
+        {/if}
+        {#if filters.repo.length > 0}
+            <Section
+                items={filters.repo}
+                title="By repository"
+                showFilter
+                filterPlaceholder="Filter repositories"
+                preprocessLabel={displayRepoName}
+                {queryFilters}
+            >
+                <svelte:fragment slot="label" let:label>
+                    <CodeHostIcon repository={label} />
+                    {displayRepoName(label)}
+                </svelte:fragment>
+            </Section>
+        {/if}
+        {#if filters.file.length > 0}
+            <Section items={filters.file} title="By file" {queryFilters} />
+        {/if}
+        {#if filters.utility.length > 0}
+            <Section items={filters.utility} title="Utility" {queryFilters} />
+        {/if}
     {/if}
     <a class="section help" href="/help/code_search/reference/queries" target="_blank">
         <span class="icon">
@@ -105,30 +106,13 @@
 
 <style lang="scss">
     .sidebar {
-        flex: 0 0 auto;
+        padding: 1rem;
         background-color: var(--sidebar-bg);
         overflow-y: auto;
+
         display: flex;
         flex-direction: column;
-
-        h4 {
-            font-weight: 600;
-            white-space: nowrap;
-            margin-bottom: 1rem;
-        }
-    }
-
-    .section {
-        padding: 1rem 0.5rem 1rem 1rem;
-        border-top: 1px solid var(--border-color);
-
-        &:first-child {
-            border-top: none;
-        }
-
-        &:last-child {
-            margin-top: auto;
-        }
+        gap: 1rem;
     }
 
     .help {

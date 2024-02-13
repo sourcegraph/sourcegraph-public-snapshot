@@ -1,13 +1,14 @@
 <script lang="ts">
+    import { mdiClose } from '@mdi/js'
+
     import { page } from '$app/stores'
+    import { pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
     import type { SidebarFilter } from '$lib/search/utils'
     import { updateFilter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Badge, Button } from '$lib/wildcard'
-    import { mdiClose } from '@mdi/js'
-    import { pluralize } from '$lib/common'
-    import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
 
     export let items: SidebarFilter[]
     export let title: string
@@ -101,10 +102,6 @@
 </article>
 
 <style lang="scss">
-    article {
-        padding-bottom: 1rem;
-    }
-
     h4 {
         white-space: nowrap;
     }
