@@ -1,6 +1,7 @@
 """OCI bazel defs"""
 
 load("@rules_oci//oci:defs.bzl", _oci_image = "oci_image", _oci_push = "oci_push", _oci_tarball = "oci_tarball")
+load("@with_cfg.bzl", "with_cfg")
 
 REGISTRY_REPOSITORY_PREFIX = "europe-west1-docker.pkg.dev/sourcegraph-security-logging/rules-oci-test/{}"
 # REGISTRY_REPOSITORY_PREFIX = "us.gcr.io/sourcegraph-dev/{}"
@@ -18,5 +19,11 @@ def oci_tarball(name, **kwargs):
         **kwargs
     )
 
-oci_image = _oci_image
+_oci_image_builder = with_cfg(_oci_image)
+_oci_image_builder.set("platforms", select({
+    "@platforms//os:macos": [Label("@zig_sdk//platform:linux_amd64")],
+    "//conditions:default": [],
+}))
+
+oci_image, _oci_image_internal = _oci_image_builder.build()
 oci_push = _oci_push
