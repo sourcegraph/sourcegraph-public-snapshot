@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -360,9 +359,6 @@ type Client interface {
 	// * Empty repository: gitdomain.RevisionNotFoundError
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
-
-	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes.
-	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -1261,78 +1257,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	res.FromProto(grpcResp)
 
 	return &res.Object, nil
-}
-
-var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
-
-func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) (_ []string, err error) {
-	ctx, _, endObservation := c.operations.resolveRevisions.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.Int("revs", len(revs)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
-
-	cmd := c.gitCommand(repo, args...)
-	stdout, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
-	}
-
-	return strings.Fields(string(stdout)), nil
-}
-
-func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
-	args := make([]string, 0, len(revSpecs))
-	for _, r := range revSpecs {
-		if r.RevSpec != "" {
-			args = append(args, r.RevSpec)
-		} else {
-			args = append(args, "HEAD")
-		}
-	}
-
-	// If revSpecs is empty, git treats it as equivalent to HEAD
-	if len(revSpecs) == 0 {
-		args = append(args, "HEAD")
-	}
-	return args
-}
-
-// readResponseBody will attempt to read the body of the HTTP response and return it as a
-// string. However, in the unlikely scenario that it fails to read the body, it will encode and
-// return the error message as a string.
-//
-// This allows us to use this function directly without yet another if err != nil check. As a
-// result, this function should **only** be used when we're attempting to return the body's content
-// as part of an error. In such scenarios we don't need to return the potential error from reading
-// the body, but can get away with returning that error as a string itself.
-//
-// This is an unusual pattern of not returning an error. Be careful of replicating this in other
-// parts of the code.
-func readResponseBody(body io.Reader) string {
-	content, err := io.ReadAll(body)
-	if err != nil {
-		return fmt.Sprintf("failed to read response body, error: %v", err)
-	}
-
-	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
-	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escaped into a \n
-	// character.  For what the error message would look in the UI without
-	// strings.TrimSpace, see attached screenshots in this pull request:
-	// https://github.com/sourcegraph/sourcegraph/pull/39358.
-	return strings.TrimSpace(string(content))
 }
 
 func stringsToByteSlices(in []string) [][]byte {
