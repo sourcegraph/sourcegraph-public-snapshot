@@ -38,6 +38,9 @@ export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: bool
             selectedFilter => selectedFilter.kind !== filter.kind || selectedFilter.value != filter.value
         )
     } else {
+        if (filter.kind === 'type') {
+            selectedFilters = selectedFilters.filter(selectedFilter => selectedFilter.kind !== 'type')
+        }
         selectedFilters.push(filter)
     }
 
