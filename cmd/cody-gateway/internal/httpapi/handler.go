@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/CAFxX/httpcompression"
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
@@ -138,12 +137,6 @@ func NewHandler(
 			),
 		)
 
-		compress, err := httpcompression.DefaultAdapter() // Use the default configuration
-		if err != nil {
-			if err != nil {
-				return nil, errors.Wrap(err, "init compression for Embeddigns")
-			}
-		}
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.embeddings",
 				gaugeHandler(
@@ -156,17 +149,16 @@ func NewHandler(
 					authr.Middleware(
 						requestlogger.Middleware(
 							logger,
-							compress(
-								embeddings.NewHandler(
-									logger,
-									eventLogger,
-									rs,
-									config.RateLimitNotifier,
-									embeddings.ModelFactoryMap{
-										embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-									},
-									config.EmbeddingsAllowedModels,
-								)),
+							embeddings.NewHandler(
+								logger,
+								eventLogger,
+								rs,
+								config.RateLimitNotifier,
+								embeddings.ModelFactoryMap{
+									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+								},
+								config.EmbeddingsAllowedModels,
+							),
 						),
 					),
 				),
