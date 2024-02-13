@@ -458,9 +458,3 @@ func (gs RefGlobs) Match(ref string) bool {
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
-
-// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
-// characters.
-//
-// See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
-func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
