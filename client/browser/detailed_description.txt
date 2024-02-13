@@ -33,6 +33,6 @@ After you install it, try it out on any of these public repositories:
 * C#: https://github.com/paiden/Nett/pull/76/files#diff-e969e1315b2cb01bab80b2860be0d87eR52
 * Python: https://github.com/ageitgey/face_recognition/blob/b8fed6/examples/facerec_on_raspberry_pi.py
 
-Usage with private code on GitHub.com, GitHub Enterprise, GitLab, Bitbucket Server, or Phabricator: https://docs.sourcegraph.com/integration/browser_extension
+Usage with private code on GitHub.com, GitHub Enterprise, GitLab, Bitbucket Server, or Phabricator: https://sourcegraph.com/docs/integration/browser_extension
 
 This extension is open source: https://github.com/sourcegraph/sourcegraph/tree/main/client/browser

@@ -12,7 +12,7 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
-LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
+LABEL org.opencontainers.image.documentation=https://sourcegraph.com/docs/
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 VOLUME /var/lib/docker

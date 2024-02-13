@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_BatchLog_FullMethodName                    = "/gitserver.v1.GitserverService/BatchLog"
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
@@ -45,14 +44,13 @@ const (
 	GitserverService_Blame_FullMethodName                       = "/gitserver.v1.GitserverService/Blame"
 	GitserverService_DefaultBranch_FullMethodName               = "/gitserver.v1.GitserverService/DefaultBranch"
 	GitserverService_ReadFile_FullMethodName                    = "/gitserver.v1.GitserverService/ReadFile"
+	GitserverService_GetCommit_FullMethodName                   = "/gitserver.v1.GitserverService/GetCommit"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
-	// Deprecated: Do not use.
-	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
@@ -107,6 +105,17 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error)
+	// GetCommit gets a commit from the repo ODB.
+	// The endpoint will verify that the user is allowed to view the given commit.
+	//
+	// If subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	//
+	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -115,16 +124,6 @@ type gitserverServiceClient struct {
 
 func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClient {
 	return &gitserverServiceClient{cc}
-}
-
-// Deprecated: Do not use.
-func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error) {
-	out := new(BatchLogResponse)
-	err := c.cc.Invoke(ctx, GitserverService_BatchLog_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error) {
@@ -516,12 +515,19 @@ func (x *gitserverServiceReadFileClient) Recv() (*ReadFileResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) GetCommit(ctx context.Context, in *GetCommitRequest, opts ...grpc.CallOption) (*GetCommitResponse, error) {
+	out := new(GetCommitResponse)
+	err := c.cc.Invoke(ctx, GitserverService_GetCommit_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
-	// Deprecated: Do not use.
-	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
@@ -576,6 +582,17 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error
+	// GetCommit gets a commit from the repo ODB.
+	// The endpoint will verify that the user is allowed to view the given commit.
+	//
+	// If subrepo permissions are enabled for the repo. If access is denied, an error
+	// with a RevisionNotFoundPayload is returned, to not leak existence of the commit.
+	//
+	// If the commit is not found, an error with a RevisionNotFoundPayload is returned.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+	// error will be returned, with a RepoNotFoundPayload in the details.
+	GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -583,9 +600,6 @@ type GitserverServiceServer interface {
 type UnimplementedGitserverServiceServer struct {
 }
 
-func (UnimplementedGitserverServiceServer) BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchLog not implemented")
-}
 func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
 }
@@ -661,6 +675,9 @@ func (UnimplementedGitserverServiceServer) DefaultBranch(context.Context, *Defau
 func (UnimplementedGitserverServiceServer) ReadFile(*ReadFileRequest, GitserverService_ReadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
 }
+func (UnimplementedGitserverServiceServer) GetCommit(context.Context, *GetCommitRequest) (*GetCommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCommit not implemented")
+}
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
 // UnsafeGitserverServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -672,24 +689,6 @@ type UnsafeGitserverServiceServer interface {
 
 func RegisterGitserverServiceServer(s grpc.ServiceRegistrar, srv GitserverServiceServer) {
 	s.RegisterService(&GitserverService_ServiceDesc, srv)
-}
-
-func _GitserverService_BatchLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchLogRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GitserverServiceServer).BatchLog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: GitserverService_BatchLog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).BatchLog(ctx, req.(*BatchLogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -1168,6 +1167,24 @@ func (x *gitserverServiceReadFileServer) Send(m *ReadFileResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_GetCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).GetCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_GetCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).GetCommit(ctx, req.(*GetCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1175,10 +1192,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "BatchLog",
-			Handler:    _GitserverService_BatchLog_Handler,
-		},
 		{
 			MethodName: "DiskInfo",
 			Handler:    _GitserverService_DiskInfo_Handler,
@@ -1250,6 +1263,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DefaultBranch",
 			Handler:    _GitserverService_DefaultBranch_Handler,
+		},
+		{
+			MethodName: "GetCommit",
+			Handler:    _GitserverService_GetCommit_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

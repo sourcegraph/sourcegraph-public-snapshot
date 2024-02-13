@@ -54,8 +54,9 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	getQdrantDB := vdb.NewDBFromConfFunc(observationCtx.Logger, vdb.NewNoopDB())
-	getQdrantInserter := func() (vdb.VectorInserter, error) { return getQdrantDB() }
+	// qdrant is going to be removed. For now we only ever set the noop db.
+	qdrantDB := vdb.NewNoopDB()
+	getQdrantInserter := func() (vdb.VectorInserter, error) { return qdrantDB, nil }
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
