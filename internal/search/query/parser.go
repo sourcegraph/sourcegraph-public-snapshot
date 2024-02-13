@@ -254,8 +254,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 
 // matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
-		// "not" must be preceded by a space or ( anywhere except the beginning of the string
+	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || isRightParen(p.buf[p.pos-1:p.pos]) || isLeftParen(p.buf[p.pos-1:p.pos])) {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -1139,7 +1138,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 	if left == nil {
 		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
-	if !p.expect(AND) {
+	if !(p.expect(AND) || p.expect(NOT)) {
 		return left, nil
 	}
 	right, err := p.parseAnd()
