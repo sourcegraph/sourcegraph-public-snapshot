@@ -10,6 +10,7 @@ go_library(
         "//internal/completions/types",
         "//internal/httpcli",
         "//lib/errors",
+        "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2//aws/signer/v4:signer",
         "@com_github_aws_aws_sdk_go_v2_aws_protocol_eventstream//:eventstream",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
