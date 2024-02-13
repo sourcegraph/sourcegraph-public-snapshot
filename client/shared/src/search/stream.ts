@@ -244,17 +244,17 @@ export interface Skipped {
      * - display :: we hit the display limit, so we stopped sending results from the backend.
      */
     reason:
-        | 'document-match-limit'
-        | 'shard-match-limit'
-        | 'repository-limit'
-        | 'shard-timedout'
-        | 'repository-cloning'
-        | 'repository-missing'
-        | 'backend-missing'
-        | 'excluded-fork'
-        | 'excluded-archive'
-        | 'display'
-        | 'error'
+    | 'document-match-limit'
+    | 'shard-match-limit'
+    | 'repository-limit'
+    | 'shard-timedout'
+    | 'repository-cloning'
+    | 'repository-missing'
+    | 'backend-missing'
+    | 'excluded-fork'
+    | 'excluded-archive'
+    | 'display'
+    | 'error'
     /**
      * A short message. eg 1,200 timed out.
      */
@@ -279,7 +279,7 @@ export interface Filter {
     label: string
     count: number
     exhaustive: boolean
-    kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
+    kind: 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'

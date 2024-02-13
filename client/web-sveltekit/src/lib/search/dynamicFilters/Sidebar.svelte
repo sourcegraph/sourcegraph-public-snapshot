@@ -4,94 +4,67 @@
     import Icon from '$lib/Icon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import Section from '$lib/search/dynamicFilters/Section.svelte'
-    import TypeSection from '$lib/search/dynamicFilters/TypeSection.svelte'
-    import type { QueryStateStore } from '$lib/search/state'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
-    import { groupFilters } from '$lib/search/utils'
     import { displayRepoName, type Filter } from '$lib/shared'
 
-    export let queryFromURL: string
+    import { type URLQueryFilter, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
+
     export let streamFilters: Filter[]
-    export let queryFilters: string
-    export let queryState: QueryStateStore
+    export let selectedFilters: URLQueryFilter[]
     export let size: number
 
     $: width = `max(100px, min(50%, ${size * 100}%))`
-    $: filters = groupFilters(streamFilters)
-    $: hasFilters = filters.lang.length > 0 || filters.repo.length > 0 || filters.file.length > 0
+    // TODO: merge streamed filters and static type filters
+    $: filters = groupFilters(streamFilters, selectedFilters)
 </script>
 
 <aside class="sidebar" style:width>
     <h3>Filter results</h3>
-    <div>
-        <!-- TODO: unify the type section with Section -->
-        <h4>By type</h4>
-        <TypeSection {queryFromURL} {queryState} />
-    </div>
-    {#if hasFilters}
-        {#if filters['symbol type'].length > 0}
-            <Section
-                items={filters['symbol type']}
-                title="By symbol type"
-                filterPlaceholder="Filter symbol types"
-                showFilter
-                {queryFilters}
-            >
-                <svelte:fragment slot="label" let:label>
-                    <SymbolKind symbolKind={label.toUpperCase()} />
+    <Section items={filters['type']} title="By type" showAll>
+        <svelte:fragment slot="label" let:label>
+            <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />
+            {label}
+        </svelte:fragment>
+    </Section>
+    {#if filters['symbol type'].length > 0}
+        <Section items={filters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
+            <svelte:fragment slot="label" let:label>
+                <SymbolKind symbolKind={label.toUpperCase()} />
+                {label}
+            </svelte:fragment>
+        </Section>
+    {/if}
+    {#if filters.author.length > 0}
+        <Section items={filters.author} title="By author" filterPlaceholder="Filter authors" />
+    {/if}
+    {#if filters['commit date'].length > 0}
+        <Section items={filters['commit date']} title="By commit date">
+            <svelte:fragment slot="label" let:label let:value>
+                <span class="commit-date-label">
                     {label}
-                </svelte:fragment>
-            </Section>
-        {/if}
-        {#if filters.author.length > 0}
-            <Section
-                items={filters.author}
-                title="By author"
-                filterPlaceholder="Filter authors"
-                showFilter
-                {queryFilters}
-            />
-        {/if}
-        {#if filters['commit date'].length > 0}
-            <Section items={filters['commit date']} title="By commit date" {queryFilters}>
-                <svelte:fragment slot="label" let:label let:value>
-                    <span class="commit-date-label">
-                        {label}
-                        <small><pre>{value}</pre></small>
-                    </span>
-                </svelte:fragment>
-            </Section>
-        {/if}
-        {#if filters.lang.length > 0}
-            <Section
-                items={filters.lang}
-                title="By language"
-                showFilter
-                filterPlaceholder="Filter languages"
-                {queryFilters}
-            />
-        {/if}
-        {#if filters.repo.length > 0}
-            <Section
-                items={filters.repo}
-                title="By repository"
-                showFilter
-                filterPlaceholder="Filter repositories"
-                preprocessLabel={displayRepoName}
-                {queryFilters}
-            >
-                <svelte:fragment slot="label" let:label>
-                    <CodeHostIcon repository={label} />
-                    {displayRepoName(label)}
-                </svelte:fragment>
-            </Section>
-        {/if}
-        {#if filters.file.length > 0}
-            <Section items={filters.file} title="By file" {queryFilters} />
-        {/if}
-        {#if filters.utility.length > 0}
-            <Section items={filters.utility} title="Utility" {queryFilters} />
-        {/if}
+                    <small><pre>{value}</pre></small>
+                </span>
+            </svelte:fragment>
+        </Section>
+    {/if}
+    {#if filters.lang.length > 0}
+        <Section items={filters.lang} title="By language" filterPlaceholder="Filter languages" />
+    {/if}
+    {#if filters.repo.length > 0}
+        <Section
+            items={filters.repo}
+            title="By repository"
+            filterPlaceholder="Filter repositories"
+            preprocessLabel={displayRepoName}
+        >
+            <svelte:fragment slot="label" let:label>
+                <CodeHostIcon repository={label} />
+                {displayRepoName(label)}
+            </svelte:fragment>
+        </Section>
+    {/if}
+    {#if filters.utility.length > 0}
+        <Section items={filters.utility} title="Utility" showAll />
     {/if}
     <a class="section help" href="/help/code_search/reference/queries" target="_blank">
         <span class="icon">

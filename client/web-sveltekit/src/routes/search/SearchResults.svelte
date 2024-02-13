@@ -18,9 +18,11 @@
     import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
+    import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { filtersFromURL } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
@@ -33,7 +35,6 @@
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
-    export let queryFilters: string
     export let queryState: QueryStateStore
 
     export function capture(): SearchResultsCapture {
@@ -62,6 +63,9 @@
     $: count = cacheEntry?.count ?? DEFAULT_INITIAL_ITEMS_TO_SHOW
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
+
+    $: selectedFilters = filtersFromURL($page.url)
+    $: streamFilters = $stream?.filters ?? []
 
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
@@ -109,13 +113,7 @@
 </div>
 
 <div class="search-results">
-    <DynamicFiltersSidebar
-        size={$sidebarSize}
-        {queryFromURL}
-        {queryFilters}
-        {queryState}
-        streamFilters={$stream?.filters ?? []}
-    />
+    <DynamicFiltersSidebar size={$sidebarSize} {selectedFilters} {streamFilters} />
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
         <aside class="actions">

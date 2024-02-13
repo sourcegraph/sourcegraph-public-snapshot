@@ -4,63 +4,39 @@
     import { page } from '$app/stores'
     import { pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { USE_CLIENT_CACHE_QUERY_PARAMETER } from '$lib/search/constants'
     import type { SidebarFilter } from '$lib/search/utils'
-    import { updateFilter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Badge, Button } from '$lib/wildcard'
 
+    import { updateFilterInURL } from '.'
+
     export let items: SidebarFilter[]
     export let title: string
-    export let queryFilters: string
-    export let showFilter: boolean = false
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
     export let preprocessLabel: (label: string) => string = label => label
 
-    function generateURL(filter: SidebarFilter, remove: boolean) {
-        const url = new URL($page.url)
-        let filters = queryFilters
-        if (remove) {
-            filters = filters.replace(filter.value, '').trim()
-        } else {
-            try {
-                const separator = filter.value.indexOf(':')
-                const key = filter.value.slice(0, separator)
-                const value = filter.value.slice(separator + 1)
-                filters = updateFilter(queryFilters, key, value)
-            } catch {
-                filters = filter.value
-            }
-        }
-        if (filters) {
-            url.searchParams.set('filters', filters)
-        } else {
-            url.searchParams.delete('filters')
-        }
-        url.searchParams.set(USE_CLIENT_CACHE_QUERY_PARAMETER, '') // Enforce use of client-side caching
-        return url.toString()
+    function generateURL(filter: SidebarFilter) {
+        return updateFilterInURL($page.url, filter, filter.selected)
     }
 
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
-    $: filteredItems =
-        showFilter && processedFilterText
-            ? items.filter(item => preprocessLabel(item.label).toLowerCase().includes(processedFilterText))
-            : items
+    $: filteredItems = processedFilterText
+        ? items.filter(item => preprocessLabel(item.label).toLowerCase().includes(processedFilterText))
+        : items
     $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
 </script>
 
 <article>
     <header><h4>{title}</h4></header>
-    {#if showFilter && items.length > 5}
+    {#if !showAll && items.length > 5}
         <input bind:value={filterText} placeholder={filterPlaceholder} />
     {/if}
     <ul>
         {#each limitedItems as item}
-            {@const selected = queryFilters.includes(item.value)}
             <li>
-                <a href={generateURL(item, selected)} class:selected>
+                <a href={generateURL(item).toString()} class:selected={item.selected}>
                     <span class="label">
                         <slot name="label" label={item.label} value={item.value}>
                             {item.label}
@@ -79,7 +55,7 @@
                             {/if}
                         </span>
                     {/if}
-                    {#if selected}
+                    {#if item.selected}
                         <span class="close">
                             <Icon svgPath={mdiClose} inline />
                         </span>
@@ -94,7 +70,7 @@
                 Show all ({filteredItems.length})
             </Button>
         </footer>
-    {:else if limitedItems.length > 5}
+    {:else if !showAll && limitedItems.length > 5}
         <footer>
             <Button variant="link" on:click={() => (showAll = false)}>Show less</Button>
         </footer>
