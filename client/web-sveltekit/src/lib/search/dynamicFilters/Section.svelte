@@ -104,7 +104,7 @@
 
     ul {
         margin: 0;
-        padding: 0.125rem;
+        padding: 0;
         list-style: none;
     }
 

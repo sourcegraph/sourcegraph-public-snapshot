@@ -14,15 +14,23 @@
     export let size: number
 
     $: width = `max(100px, min(50%, ${size * 100}%))`
-    // TODO: merge streamed filters and static type filters
     $: filters = groupFilters(streamFilters, selectedFilters)
+    $: typeFilters = staticTypeFilters.map(
+        staticTypeFilter =>
+            filters.type.find(typeFilter => typeFilter.label === staticTypeFilter.label) ?? {
+                ...staticTypeFilter,
+                count: 0,
+                exhaustive: false,
+                selected: false,
+            }
+    )
 </script>
 
 <aside class="sidebar" style:width>
     <h3>Filter results</h3>
-    <Section items={filters['type']} title="By type" showAll>
+    <Section items={typeFilters} title="By type" showAll>
         <svelte:fragment slot="label" let:label>
-            <Icon svgPath={typeFilterIcons.get(label)} inline aria-hidden="true" />
+            <Icon svgPath={typeFilterIcons.get(label) ?? ''} inline aria-hidden="true" />
             {label}
         </svelte:fragment>
     </Section>
