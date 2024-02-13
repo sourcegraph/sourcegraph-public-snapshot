@@ -68,6 +68,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 
 func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
 	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < s.coolDownInterval {
+		s.log.Debug("actor recently updated, skipping update", log.Duration("secondsSinceUpdate", time.Since(*act.LastUpdated)))
 		return actor.ErrActorRecentlyUpdated{
 			RetryAt: act.LastUpdated.Add(s.coolDownInterval),
 		}

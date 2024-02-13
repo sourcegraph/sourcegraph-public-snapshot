@@ -159,6 +159,10 @@ const (
 	EnvironmentDeployTypeRollout      = "rollout"
 )
 
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
+}
+
 type EnvironmentDeploySpec struct {
 	// Type specifies the deployment method for the environment. There are
 	// 3 supported types:

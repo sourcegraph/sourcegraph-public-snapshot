@@ -22,6 +22,7 @@ go_library(
         "//internal/httpcli",
         "//internal/trace",
         "//lib/errors",
+        "@com_github_go_json_experiment_json//:json",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
@@ -36,6 +37,9 @@ go_test(
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
         "//lib/errors",
+        "@com_github_go_json_experiment_json//:json",
+        "@com_github_json_iterator_go//:go",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )

@@ -11,7 +11,7 @@ steps:
       comby -in-place -config  /tmp/patterns.toml -exclude-dir .,vendor;
     container: comby/comby
     # files to mount on the container can be directly included in the spec file
-    # for other options, see https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#steps-mount
+    # for other options, see https://sourcegraph.com/docs/batch_changes/references/batch_spec_yaml_reference#stepsmount
     files:
       /tmp/patterns.toml: |
         [my-first-pattern]

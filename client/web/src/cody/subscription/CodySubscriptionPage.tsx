@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import React, { useEffect, useState } from 'react'
 
-import { mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
+import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import {
     Badge,
     Button,
     ButtonLink,
+    Link,
     H1,
     H2,
     Icon,
@@ -90,7 +91,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     }
 
     const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
-    const hasNotAddedCreditCard = data.currentUser.codySubscription?.status === CodySubscriptionStatus.PENDING
+    const hasAddedCreditCard = data.currentUser.codySubscription?.status !== CodySubscriptionStatus.PENDING
 
     return (
         <>
@@ -99,9 +100,20 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 <PageHeader
                     className="mb-4"
                     actions={
-                        <ButtonLink to="/cody/manage" variant="secondary" outline={true} size="sm">
-                            Dashboard
-                        </ButtonLink>
+                        isProUser &&
+                        arePaymentsEnabled &&
+                        hasAddedCreditCard && (
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                    window.location.href = manageSubscriptionRedirectURL
+                                }}
+                            >
+                                <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
+                                Manage subscription
+                            </Button>
+                        )
                     }
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
@@ -110,6 +122,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
+
+                <Link to="/cody/manage" className="my-4">
+                    <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
+                    Back to Cody Dashboard
+                </Link>
 
                 <div className={classNames('d-flex mt-4', styles.responsiveContainer)}>
                     <div className="border d-flex flex-column flex-1 bg-1 rounded">
@@ -232,17 +249,35 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     </Text>
                                 )}
                                 {isProUser ? (
-                                    arePaymentsEnabled && hasNotAddedCreditCard ? (
-                                        <Button
-                                            className="flex-1 mt-1"
-                                            variant="primary"
-                                            onClick={() => {
-                                                eventLogger.log(EventName.CODY_SUBSCRIPTION_ADD_CREDIT_CARD_CLICKED)
-                                                window.location.href = manageSubscriptionRedirectURL
-                                            }}
-                                        >
-                                            Add credit card
-                                        </Button>
+                                    arePaymentsEnabled ? (
+                                        hasAddedCreditCard ? (
+                                            <Text
+                                                className="mb-0 text-muted d-inline cursor-pointer"
+                                                size="small"
+                                                onClick={() => {
+                                                    eventLogger.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                                    window.location.href = manageSubscriptionRedirectURL
+                                                }}
+                                            >
+                                                Manage subscription
+                                            </Text>
+                                        ) : (
+                                            <Button
+                                                className="flex-1 mt-1"
+                                                variant="primary"
+                                                onClick={() => {
+                                                    eventLogger.log(EventName.CODY_SUBSCRIPTION_ADD_CREDIT_CARD_CLICKED)
+                                                    window.location.href = manageSubscriptionRedirectURL
+                                                }}
+                                            >
+                                                <Icon
+                                                    svgPath={mdiCreditCardOutline}
+                                                    className="mr-1"
+                                                    aria-hidden={true}
+                                                />
+                                                Add credit card
+                                            </Button>
+                                        )
                                     ) : (
                                         <div>
                                             <Text

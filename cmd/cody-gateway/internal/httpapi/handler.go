@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/CAFxX/httpcompression"
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
@@ -144,7 +145,10 @@ func NewHandler(
 				otelhttp.WithPublicEndpoint(),
 			),
 		)
-
+		compress, err := httpcompression.DefaultAdapter() // Use the default configuration
+		if err != nil {
+			return nil, errors.Wrap(err, "init compression for Embeddings")
+		}
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			overhead.HTTPMiddleware(latencyHistogram,
 				instrumentation.HTTPMiddleware("v1.embeddings",
@@ -158,7 +162,7 @@ func NewHandler(
 						authr.Middleware(
 							requestlogger.Middleware(
 								logger,
-								embeddings.NewHandler(
+								compress(embeddings.NewHandler(
 									logger,
 									eventLogger,
 									rs,
@@ -167,7 +171,7 @@ func NewHandler(
 										embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
 									},
 									config.EmbeddingsAllowedModels,
-								),
+								)),
 							),
 						),
 					),

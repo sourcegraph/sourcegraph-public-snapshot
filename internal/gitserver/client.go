@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/status"
 
@@ -39,7 +37,6 @@ const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -260,6 +257,42 @@ type CommitLog struct {
 	ChangedFiles []string
 }
 
+// ArchiveOptions contains options for the Archive func.
+type ArchiveOptions struct {
+	Treeish string        // the tree or commit to produce an archive for
+	Format  ArchiveFormat // format of the resulting archive (usually "tar" or "zip")
+	Paths   []string      // if nonempty, only include these paths.
+}
+
+func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
+	pathAttrs := make([]string, len(a.Paths))
+	for i, path := range a.Paths {
+		pathAttrs[i] = string(path)
+	}
+	return []attribute.KeyValue{
+		attribute.String("treeish", a.Treeish),
+		attribute.String("format", string(a.Format)),
+		attribute.StringSlice("paths", pathAttrs),
+	}
+}
+
+func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	*o = ArchiveOptions{
+		Treeish: x.GetTreeish(),
+		Format:  ArchiveFormatFromProto(x.GetFormat()),
+		Paths:   x.GetPaths(),
+	}
+}
+
+func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
+	return &proto.ArchiveRequest{
+		Repo:    repo,
+		Treeish: o.Treeish,
+		Format:  o.Format.ToProto(),
+		Paths:   o.Paths,
+	}
+}
+
 type Client interface {
 	// Scoped adds a usage scope to the client and returns a new client with that scope.
 	// Usage scopes should be descriptive and be lowercase plaintext, eg. batches.reconciler.
@@ -363,10 +396,13 @@ type Client interface {
 	// If you just need to check a file's existence, use Stat, not a file reader.
 	//
 	// If the file doesn't exist, the returned error will pass the os.IsNotExist()
-	// check.
+	// check. Subrepo permissions are respected by this method and if no access
+	// is granted, the error will also pass the os.IsNotExist() check.
 	//
 	// If the path points to a submodule, a reader for an empty file is returned
 	// (ie. io.EOF is returned immediately).
+	//
+	// If the specified commit does not exist, a RevisionNotFoundError is returned.
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -552,80 +588,6 @@ func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName
 	return c.clientSource.ClientForRepo(ctx, repo)
 }
 
-// ArchiveOptions contains options for the Archive func.
-type ArchiveOptions struct {
-	Treeish   string               // the tree or commit to produce an archive for
-	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
-	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
-}
-
-func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
-	specs := make([]string, len(a.Pathspecs))
-	for i, pathspec := range a.Pathspecs {
-		specs[i] = string(pathspec)
-	}
-	return []attribute.KeyValue{
-		attribute.String("treeish", a.Treeish),
-		attribute.String("format", string(a.Format)),
-		attribute.StringSlice("pathspecs", specs),
-	}
-}
-
-func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
-	protoPathSpecs := x.GetPathspecs()
-	pathSpecs := make([]gitdomain.Pathspec, 0, len(protoPathSpecs))
-
-	for _, path := range protoPathSpecs {
-		pathSpecs = append(pathSpecs, gitdomain.Pathspec(path))
-	}
-
-	*o = ArchiveOptions{
-		Treeish:   x.GetTreeish(),
-		Format:    ArchiveFormat(x.GetFormat()),
-		Pathspecs: pathSpecs,
-	}
-}
-
-func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
-	protoPathSpecs := make([]string, 0, len(o.Pathspecs))
-
-	for _, path := range o.Pathspecs {
-		protoPathSpecs = append(protoPathSpecs, string(path))
-	}
-
-	return &proto.ArchiveRequest{
-		Repo:      repo,
-		Treeish:   o.Treeish,
-		Format:    string(o.Format),
-		Pathspecs: protoPathSpecs,
-	}
-}
-
-// archiveReader wraps the StdoutReader yielded by gitserver's
-// RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
-// error more carefully.
-type archiveReader struct {
-	base io.ReadCloser
-	repo api.RepoName
-	spec string
-}
-
-// Read checks the known output behavior of the StdoutReader.
-func (a *archiveReader) Read(p []byte) (int, error) {
-	n, err := a.base.Read(p)
-	if err != nil {
-		// handle the special case where git archive failed because of an invalid spec
-		if isRevisionNotFound(err.Error()) {
-			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
-		}
-	}
-	return n, err
-}
-
-func (a *archiveReader) Close() error {
-	return a.base.Close()
-}
-
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
@@ -649,7 +611,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
 		return nil, err
 	}
 
@@ -742,11 +703,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		}
 	}
 }
-
-var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_client_deadline_exceeded",
-	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
-})
 
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {

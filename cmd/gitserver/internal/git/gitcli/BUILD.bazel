@@ -4,6 +4,7 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "gitcli",
     srcs = [
+        "archivereader.go",
         "blame.go",
         "clibackend.go",
         "config.go",
@@ -22,6 +23,7 @@ go_library(
         "//cmd/gitserver/internal/executil",
         "//cmd/gitserver/internal/git",
         "//internal/api",
+        "//internal/collections",
         "//internal/gitserver/gitdomain",
         "//internal/lazyregexp",
         "//internal/trace",
@@ -38,6 +40,7 @@ go_library(
 go_test(
     name = "gitcli_test",
     srcs = [
+        "archivereader_test.go",
         "blame_test.go",
         "config_test.go",
         "exec_test.go",

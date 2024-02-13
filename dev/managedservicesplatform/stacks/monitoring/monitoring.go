@@ -2,9 +2,11 @@ package monitoring
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
@@ -121,7 +123,7 @@ const nobl9ClientID = "0oab428uphKZbY1jy417"
 const nobl9OrganizationID = "sourcegraph-n8JWJzlFjsCw"
 
 func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
-	stack, _, err := stacks.New(StackName,
+	stack, locals, err := stacks.New(StackName,
 		googleprovider.With(vars.ProjectID),
 		opsgenieprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretOpsgenieAPIToken,
@@ -157,12 +159,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	// Configure opsgenie channels
-	// TODO: Enable after we dogfood the alerts for a while.
-	// var opsgenieAlerts bool
-	// switch vars.EnvironmentCategory {
-	// case spec.EnvironmentCategoryInternal, spec.EnvironmentCategoryExternal:
-	// 	opsgenieAlerts = true
-	// }
+	var opsgenieChannels []monitoringnotificationchannel.MonitoringNotificationChannel
 	for i, owner := range vars.Service.Owners {
 		// Use index because Opsgenie team names has lax character requirements
 		id := id.Group("opsgenie_owner_%d", i)
@@ -216,25 +213,27 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}},
 			})
 
-		addChannel(alertpolicy.SeverityLevelCritical,
-			monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
-				id.TerraformID("notification_channel"),
-				&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
-					Project:     &vars.ProjectID,
-					DisplayName: pointers.Stringf("Opsgenie - %s", owner),
-					Type:        pointers.Ptr("webhook_tokenauth"),
-					Labels: &map[string]*string{
-						// This is kind of a secret, but we can't put this in
-						// sensitive_labels so here it is. It seems we do this
-						// in Cloud as well.
-						"url": pointers.Stringf(
-							"https://api.opsgenie.com/v1/json/googlestackdriver?apiKey=%s",
-							*integration.ApiKey()),
-					},
-				}))
+		channel := monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
+			id.TerraformID("notification_channel"),
+			&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
+				Project:     &vars.ProjectID,
+				DisplayName: pointers.Stringf("Opsgenie - %s", owner),
+				Type:        pointers.Ptr("webhook_tokenauth"),
+				Labels: &map[string]*string{
+					// This is kind of a secret, but we can't put this in
+					// sensitive_labels so here it is. It seems we do this
+					// in Cloud as well.
+					"url": pointers.Stringf(
+						"https://api.opsgenie.com/v1/json/googlestackdriver?apiKey=%s",
+						*integration.ApiKey()),
+				},
+			})
+		addChannel(alertpolicy.SeverityLevelCritical, channel)
+		opsgenieChannels = append(opsgenieChannels, channel)
 	}
 
 	// Configure Slack channels
+	var slackChannels []monitoringnotificationchannel.MonitoringNotificationChannel
 	slackToken := gsmsecret.Get(stack, id.Group("slack_token"), gsmsecret.DataConfig{
 		Secret:    googlesecretsmanager.SecretSlackOAuthToken,
 		ProjectID: googlesecretsmanager.SharedSecretsProjectID,
@@ -296,7 +295,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			}
 		}
 
-		slackNotifications := monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
+		notificationChannel := monitoringnotificationchannel.NewMonitoringNotificationChannel(stack,
 			id.TerraformID("notification_channel"),
 			&monitoringnotificationchannel.MonitoringNotificationChannelConfig{
 				Project:     &vars.ProjectID,
@@ -316,9 +315,44 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}(),
 			})
 
-		addChannel(alertpolicy.SeverityLevelWarning, slackNotifications)
-		addChannel(alertpolicy.SeverityLevelCritical, slackNotifications)
+		addChannel(alertpolicy.SeverityLevelWarning, notificationChannel)
+		addChannel(alertpolicy.SeverityLevelCritical, notificationChannel)
+		slackChannels = append(slackChannels, notificationChannel)
 	}
+
+	// Now that we're done with configure channels, make the generalized
+	// level-based channels available as vars, so that custom alerts can mimic
+	// the behaviour of our built-ins.
+	levels := maps.Keys(channels)
+	slices.Sort(levels)
+	for _, l := range levels {
+		levelString := strings.ToLower(string(l))
+		locals.AddSlice(
+			fmt.Sprintf("notifications_%s", levelString),
+			notificationChannelIDs(channels[l]),
+			fmt.Sprintf("Google Monitoring notification channels for %s-level alerts", levelString),
+		)
+	}
+	// Also add per-owner notification channels, such that using one of these
+	// routes alerts to an Opsgenie owner and the usual Slack channels.
+	for i, opsgenieChannel := range opsgenieChannels {
+		locals.AddSlice(
+			// Use index because Opsgenie team names has lax character
+			// requirements that are hard to adapt to valid Terraform IDs - this
+			// is just the order of the spec owners list so should be fairly
+			// easy to reason with.
+			fmt.Sprintf("notifications_owner_%d", i),
+			notificationChannelIDs(append(slackChannels, opsgenieChannel)),
+			fmt.Sprintf("Google Monitoring notification channel IDs for %s", *opsgenieChannel.DisplayNameInput()),
+		)
+	}
+
+	// Add some variables that might help with writing alerts.
+	locals.Add("service_id", vars.Service.ID, "Service ID")
+	locals.Add("environment_id", vars.EnvironmentID, "Environment ID")
+	locals.Add("service_name", vars.Service.GetName(), "Human-readable service name")
+	locals.Add("alert_description_suffix", alertpolicy.DescriptionSuffix(vars.Service.ID, vars.EnvironmentID),
+		"Supplemental MSP help text intended to be added to alert descriptions")
 
 	// Set up alerts, configuring each with all our notification channels
 	err = createCommonAlerts(stack, id.Group("common"), vars, channels)
@@ -362,4 +396,15 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	}
 
 	return &CrossStackOutput{}, nil
+}
+
+func notificationChannelIDs(channels []monitoringnotificationchannel.MonitoringNotificationChannel) []string {
+	if len(channels) == 0 {
+		return nil
+	}
+	var ids []string
+	for _, c := range channels {
+		ids = append(ids, *c.Id())
+	}
+	return ids
 }
