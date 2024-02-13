@@ -37,6 +37,7 @@ go_library(
         "//internal/perforce",
         "//internal/search/streaming/http",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_go_git_go_git_v5//plumbing/format/config",
         "@com_github_golang_groupcache//lru",
         "@com_github_prometheus_client_golang//prometheus",

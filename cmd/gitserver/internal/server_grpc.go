@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
@@ -41,7 +40,7 @@ type service interface {
 	RepoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse
 	CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 	SearchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error)
-	EnsureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool)
+	EnsureRevision(ctx context.Context, repo api.RepoName, rev string) (didUpdate bool)
 }
 
 func NewGRPCServer(server *Server) proto.GitserverServiceServer {
@@ -144,12 +143,11 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		return err
 	}
 
-	gs.svc.EnsureRevision(ctx, repoName, string(req.GetEnsureRevision()), repoDir)
-
-	if req.NoTimeout {
+	if req.GetNoTimeout() {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
 		defer cancel()
+
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -860,9 +858,6 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		return nil, err
 	}
 
-	// TODO: This should be included in requests where we do ensure the revision exists.
-	// gs.server.ensureRevision(ctx, repoName, "THE REVISION", repoDir)
-
 	backend := gs.getBackendFunc(repoDir, repoName)
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
@@ -1205,6 +1200,64 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	_, err = io.Copy(w, r)
 	return err
+}
+
+func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRevisionRequest) (*proto.ResolveRevisionResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.String("revspec", string(req.GetRevSpec())),
+	)
+
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
+
+	if err := gs.maybeStartClone(ctx, repoName); err != nil {
+		return nil, err
+	}
+
+	revspec := string(req.GetRevSpec())
+
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	// First, try to resolve the revspec.
+	sha, err := backend.ResolveRevision(ctx, revspec)
+	if err != nil {
+		// If that fails to resolve the revspec, try to ensure the revision exists,
+		// if requested by the caller.
+		if req.GetEnsureRevision() && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			// We ensured the revision exists, so try to resolve it again.
+			if gs.svc.EnsureRevision(ctx, repoName, revspec) {
+				sha, err = backend.ResolveRevision(ctx, revspec)
+			}
+		}
+	}
+
+	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return nil, err
+	}
+
+	return &proto.ResolveRevisionResponse{
+		CommitSha: string(sha),
+	}, nil
 }
 
 func (gs *grpcServer) maybeStartClone(ctx context.Context, repo api.RepoName) error {
