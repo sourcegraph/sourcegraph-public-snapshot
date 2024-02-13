@@ -919,6 +919,13 @@
 					1679051112
 				],
 				"PreCreation": false
+			},
+			"v5.3.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1679051112
+				],
+				"PreCreation": false
 			}
 		}
 	},
@@ -1876,6 +1883,13 @@
 				"PreCreation": false
 			},
 			"v5.2.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1686315964
+				],
+				"PreCreation": false
+			},
+			"v5.3.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1686315964
@@ -10776,6 +10790,312 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1697220815,
+				"Name": "add_creator_and_updater_to_external_services",
+				"UpQuery": "ALTER TABLE external_services ADD COLUMN IF NOT EXISTS creator_id integer, ADD COLUMN IF NOT EXISTS last_updater_id integer;\nALTER TABLE ONLY external_services\n    DROP CONSTRAINT IF EXISTS external_services_creator_id_fkey,\n    ADD CONSTRAINT external_services_creator_id_fkey\n         FOREIGN KEY (creator_id)\n            REFERENCES users(id)\n            ON DELETE SET NULL DEFERRABLE;\nALTER TABLE ONLY external_services\n    DROP CONSTRAINT IF EXISTS external_services_last_updater_id_fkey,\n    ADD CONSTRAINT external_services_last_updater_id_fkey\n         FOREIGN KEY (last_updater_id)\n            REFERENCES users(id)\n            ON DELETE SET NULL DEFERRABLE;",
+				"DownQuery": "ALTER TABLE external_services DROP COLUMN IF EXISTS creator_id, DROP COLUMN IF EXISTS last_updater_id;\nALTER TABLE external_services DROP CONSTRAINT IF EXISTS external_services_creator_id_fkey;\nALTER TABLE external_services DROP CONSTRAINT IF EXISTS external_services_last_updater_id_fkey;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1696003224
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1697489421,
+				"Name": "add gitlab topics",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_repo_gitlab_topics\nON repo\nUSING GIN((metadata-\u003e'topics'))\nWHERE external_service_type = 'gitlab';",
+				"DownQuery": "DROP INDEX IF EXISTS idx_repo_gitlab_topics;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1696003224
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "repo",
+					"IndexName": "idx_repo_gitlab_topics"
+				}
+			},
+			{
+				"ID": 1697558292,
+				"Name": "comment on gitlab topic idx",
+				"UpQuery": "COMMENT ON INDEX idx_repo_gitlab_topics\nIS 'An index to speed up listing repos by gitlab topic. Intended to be used when TopicFilters are added to the RepoListOptions';",
+				"DownQuery": "COMMENT ON INDEX idx_repo_gitlab_topics\nIS NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697489421
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1697535944,
+				"Name": "drop users tags column",
+				"UpQuery": "ALTER TABLE users DROP COLUMN IF EXISTS tags;",
+				"DownQuery": "ALTER TABLE users ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}'::TEXT[];",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1696003224
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1697750425,
+				"Name": "topic column",
+				"UpQuery": "CREATE OR REPLACE FUNCTION extract_topics_from_metadata(external_service_type text, metadata jsonb)\n    RETURNS text[]\n    IMMUTABLE\nAS $$\nBEGIN\n    RETURN CASE external_service_type\n    WHEN 'github' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))\n    WHEN 'gitlab' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata-\u003e'topics'))\n    ELSE\n        '{}'::text[]\n    END;\nEXCEPTION WHEN others THEN\n    -- Catch exceptions in the case that metadata is not shaped like we expect\n    RETURN '{}'::text[];\nEND;\n$$ LANGUAGE plpgsql;\n\n\nALTER TABLE IF EXISTS repo\nADD COLUMN IF NOT EXISTS topics text[] GENERATED ALWAYS AS (extract_topics_from_metadata(external_service_type, metadata)) STORED;",
+				"DownQuery": "ALTER TABLE IF EXISTS repo DROP COLUMN IF EXISTS topics;\nDROP FUNCTION IF EXISTS get_topics;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697535944,
+					1697558292
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1697752805,
+				"Name": "index topics column",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_repo_topics\nON repo USING GIN(topics);",
+				"DownQuery": "DROP INDEX IF EXISTS idx_repo_topics;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697750425
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "repo",
+					"IndexName": "idx_repo_topics"
+				}
+			},
+			{
+				"ID": 1697754648,
+				"Name": "drop old repo topic indexes",
+				"UpQuery": "DROP INDEX IF EXISTS idx_repo_github_topics;\nDROP INDEX IF EXISTS idx_repo_gitlab_topics;",
+				"DownQuery": "CREATE INDEX IF NOT EXISTS idx_repo_gitlab_topics\nON repo\nUSING GIN((metadata-\u003e'topics'))\nWHERE external_service_type = 'gitlab';\n\nCREATE INDEX IF NOT EXISTS idx_repo_github_topics\nON repo\nUSING GIN((metadata-\u003e'RepositoryTopics'-\u003e'Nodes'))\nWHERE external_service_type = 'github';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697752805
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1698068529,
+				"Name": "make repo fork false by default",
+				"UpQuery": "ALTER TABLE repo ALTER COLUMN fork SET DEFAULT false;\nALTER TABLE repo ALTER COLUMN fork SET NOT NULL;",
+				"DownQuery": "ALTER TABLE repo ALTER COLUMN fork DROP DEFAULT;\nALTER TABLE repo ALTER COLUMN fork DROP NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697535944,
+					1697558292
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1698772485,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name) VALUES (UNNEST('{OpenInEditorClicked,GitBlameEnabled}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE FROM event_logs_export_allowlist WHERE event_name IN (SELECT * FROM UNNEST('{OpenInEditorClicked,GitBlameEnabled}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697535944
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1698836192,
+				"Name": "add_cody_pro_enabled_at_to_users",
+				"UpQuery": "ALTER TABLE users ADD COLUMN IF NOT EXISTS cody_pro_enabled_at TIMESTAMP WITH TIME ZONE;",
+				"DownQuery": "ALTER TABLE users DROP COLUMN IF EXISTS cody_pro_enabled_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1697754648,
+					1698068529,
+					1698772485
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1700613818,
+				"Name": "add_repo_embedding_jobs_index",
+				"UpQuery": "CREATE INDEX IF NOT EXISTS repo_embedding_jobs_repo ON repo_embedding_jobs USING btree (repo_id, revision)",
+				"DownQuery": "DROP INDEX IF EXISTS repo_embedding_jobs_repo",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1698836192
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1700645180,
+				"Name": "turn_gitserver_repos_statistics_into_append_only",
+				"UpQuery": "----------------------------------------------\n-- Drop the data, which locks the table.\n----------------------------------------------\nDROP TABLE IF EXISTS gitserver_repos_statistics;\n\n----------------------------------------------\n-- Recreate the table, but `shard_id` is now not a primary key anymore\n----------------------------------------------\nCREATE TABLE IF NOT EXISTS gitserver_repos_statistics (\n  shard_id text,\n\n  total        BIGINT NOT NULL DEFAULT 0,\n  not_cloned   BIGINT NOT NULL DEFAULT 0,\n  cloning      BIGINT NOT NULL DEFAULT 0,\n  cloned       BIGINT NOT NULL DEFAULT 0,\n  failed_fetch BIGINT NOT NULL DEFAULT 0,\n  corrupted    BIGINT NOT NULL DEFAULT 0\n);\nCOMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';\nCOMMENT ON COLUMN gitserver_repos_statistics.total IS 'Number of repositories in gitserver_repos table on this shard';\nCOMMENT ON COLUMN gitserver_repos_statistics.not_cloned IS 'Number of repositories in gitserver_repos table on this shard that are not cloned yet';\nCOMMENT ON COLUMN gitserver_repos_statistics.cloning IS 'Number of repositories in gitserver_repos table on this shard that cloning';\nCOMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories in gitserver_repos table on this shard that are cloned';\nCOMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';\nCOMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';\n\n----------------------------------------------\n-- Add index on shard_id\n----------------------------------------------\nCREATE INDEX IF NOT EXISTS gitserver_repos_statistics_shard_id ON gitserver_repos_statistics(shard_id);\n\n----------------------------------------------\n-- Add index on shard_id\n----------------------------------------------\nINSERT INTO\n  gitserver_repos_statistics (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\nSELECT\n  shard_id,\n  COUNT(*) AS total,\n  COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n  COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n  COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n  COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,\n  COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted\nFROM\n  gitserver_repos\nGROUP BY shard_id\n;\n\n----------------------------------------------\n-- Now we replace the triggers...\n----------------------------------------------\n\n------------------------------------------------------------------\n-- INSERT\n------------------------------------------------------------------\nCREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n      -------------------------------------------------\n      -- THIS IS CHANGED TO APPEND\n      -------------------------------------------------\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,\n        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted\n      FROM\n        newtab\n      GROUP BY shard_id\n      ;\n\n      RETURN NULL;\n  END\n$$;\n\n------------------------------------------------------------------\n-- UPDATE\n------------------------------------------------------------------\nCREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n\n      -------------------------------------------------\n      -- THIS IS CHANGED TO APPEND\n      -------------------------------------------------\n      WITH diff(shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted) AS (\n        SELECT\n            COALESCE(newtab.shard_id, oldtab.shard_id) AS shard_id,\n            COUNT(newtab.repo_id) - COUNT(oldtab.repo_id) AS total,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'not_cloned') - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'not_cloned') AS not_cloned,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'cloning')    - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'cloning') AS cloning,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'cloned')     - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'cloned') AS cloned,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.last_error IS NOT NULL)      - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.corrupted_at IS NOT NULL)    - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted\n        FROM\n            newtab\n        FULL OUTER JOIN\n            oldtab ON newtab.repo_id = oldtab.repo_id AND newtab.shard_id = oldtab.shard_id\n        GROUP BY\n            COALESCE(newtab.shard_id, oldtab.shard_id)\n      )\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted\n      FROM diff\n      WHERE\n            total != 0\n        OR not_cloned != 0\n        OR cloning != 0\n        OR cloned != 0\n        OR failed_fetch != 0\n        OR corrupted != 0\n      ;\n\n      -------------------------------------------------\n      -- UNCHANGED\n      -------------------------------------------------\n      WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (\n        VALUES (\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.corrupted_at IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.corrupted_at IS NOT NULL)\n          )\n\n        )\n      )\n      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT not_cloned, cloning, cloned, failed_fetch, corrupted\n      FROM diff\n      WHERE\n           not_cloned != 0\n        OR cloning != 0\n        OR cloned != 0\n        OR failed_fetch != 0\n        OR corrupted != 0\n      ;\n\n      RETURN NULL;\n  END\n$$;\n\n\n------------------------------------------------------------------\n-- DELETE\n------------------------------------------------------------------\nCREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        oldtab.shard_id,\n        (-COUNT(*)),\n        (-COUNT(*) FILTER(WHERE clone_status = 'not_cloned')),\n        (-COUNT(*) FILTER(WHERE clone_status = 'cloning')),\n        (-COUNT(*) FILTER(WHERE clone_status = 'cloned')),\n        (-COUNT(*) FILTER(WHERE last_error IS NOT NULL)),\n        (-COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL))\n      FROM oldtab\n      GROUP BY oldtab.shard_id;\n\n      RETURN NULL;\n  END\n$$;",
+				"DownQuery": "-- Drop\nDROP TABLE IF EXISTS gitserver_repos_statistics;\n\n-- Recreate the table\nCREATE TABLE IF NOT EXISTS gitserver_repos_statistics (\n  shard_id text PRIMARY KEY,\n\n  total        BIGINT NOT NULL DEFAULT 0,\n  not_cloned   BIGINT NOT NULL DEFAULT 0,\n  cloning      BIGINT NOT NULL DEFAULT 0,\n  cloned       BIGINT NOT NULL DEFAULT 0,\n  failed_fetch BIGINT NOT NULL DEFAULT 0,\n  corrupted    BIGINT NOT NULL DEFAULT 0\n);\n\nCOMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';\nCOMMENT ON COLUMN gitserver_repos_statistics.total IS 'Number of repositories in gitserver_repos table on this shard';\nCOMMENT ON COLUMN gitserver_repos_statistics.not_cloned IS 'Number of repositories in gitserver_repos table on this shard that are not cloned yet';\nCOMMENT ON COLUMN gitserver_repos_statistics.cloning IS 'Number of repositories in gitserver_repos table on this shard that cloning';\nCOMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories in gitserver_repos table on this shard that are cloned';\nCOMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';\nCOMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';\n\n-- Insert initial values into gitserver_repos_statistics\nINSERT INTO\n  gitserver_repos_statistics (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\nSELECT\n  shard_id,\n  COUNT(*) AS total,\n  COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n  COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n  COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n  COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\nFROM\n  gitserver_repos\nGROUP BY shard_id\nON CONFLICT(shard_id)\nDO UPDATE\nSET\n  total        = gitserver_repos_statistics.total        + excluded.total,\n  not_cloned   = gitserver_repos_statistics.not_cloned   + excluded.not_cloned,\n  cloning      = gitserver_repos_statistics.cloning      + excluded.cloning,\n  cloned       = gitserver_repos_statistics.cloned       + excluded.cloned,\n  failed_fetch = gitserver_repos_statistics.failed_fetch + excluded.failed_fetch\n;\n\n-- Now restore triggers\n\n-- UPDATE\nCREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        newtab.shard_id AS shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,\n        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted\n      FROM\n        newtab\n      GROUP BY newtab.shard_id\n      ON CONFLICT(shard_id) DO\n      UPDATE\n      SET\n        total        = grs.total        + (excluded.total        - (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        corrupted    = grs.corrupted    + (excluded.corrupted    - (SELECT COUNT(*) FILTER(WHERE ot.corrupted_at IS NOT NULL)    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))\n      ;\n\n      WITH moved AS (\n        SELECT\n          oldtab.shard_id AS shard_id,\n          COUNT(*) AS total,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,\n          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,\n          COUNT(*) FILTER(WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted\n        FROM\n          oldtab\n        JOIN newtab ON newtab.repo_id = oldtab.repo_id\n        WHERE\n          oldtab.shard_id != newtab.shard_id\n        GROUP BY oldtab.shard_id\n      )\n      UPDATE gitserver_repos_statistics grs\n      SET\n        total        = grs.total        - moved.total,\n        not_cloned   = grs.not_cloned   - moved.not_cloned,\n        cloning      = grs.cloning      - moved.cloning,\n        cloned       = grs.cloned       - moved.cloned,\n        failed_fetch = grs.failed_fetch - moved.failed_fetch,\n        corrupted    = grs.corrupted    - moved.corrupted\n      FROM moved\n      WHERE moved.shard_id = grs.shard_id;\n\n      WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (\n        VALUES (\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.corrupted_at IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.corrupted_at IS NOT NULL)\n          )\n        )\n      )\n      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT not_cloned, cloning, cloned, failed_fetch, corrupted\n      FROM diff\n      WHERE\n           not_cloned != 0\n        OR cloning != 0\n        OR cloned != 0\n        OR failed_fetch != 0\n        OR corrupted != 0\n      ;\n\n      RETURN NULL;\n  END\n$$;\nDROP TRIGGER IF EXISTS trig_recalc_gitserver_repos_statistics_on_update ON gitserver_repos;\nCREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_update\nAFTER UPDATE ON gitserver_repos\nREFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab\nFOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update();\n\n-- INSERT\nCREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\n      FROM\n        newtab\n      GROUP BY shard_id\n      ON CONFLICT(shard_id)\n      DO UPDATE\n      SET\n        total        = grs.total        + excluded.total,\n        not_cloned   = grs.not_cloned   + excluded.not_cloned,\n        cloning      = grs.cloning      + excluded.cloning,\n        cloned       = grs.cloned       + excluded.cloned,\n        failed_fetch = grs.failed_fetch + excluded.failed_fetch\n      ;\n\n      RETURN NULL;\n  END\n$$;\nDROP TRIGGER IF EXISTS trig_recalc_gitserver_repos_statistics_on_insert ON gitserver_repos;\nCREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_insert\nAFTER INSERT ON gitserver_repos\nREFERENCING NEW TABLE AS newtab\nFOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_insert();\n\n-- DELETE\nCREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$ BEGIN\n      UPDATE gitserver_repos_statistics grs\n      SET\n        total        = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        not_cloned   = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        cloning      = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        cloned       = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        failed_fetch = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab WHERE oldtab.shard_id = grs.shard_id)\n      ;\n\n      RETURN NULL;\n  END\n$$;\nDROP TRIGGER IF EXISTS trig_recalc_gitserver_repos_statistics_on_delete ON gitserver_repos;\nCREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_delete\nAFTER DELETE ON gitserver_repos REFERENCING\nOLD TABLE AS oldtab\nFOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete();",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1698836192
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1695152835,
+				"Name": "Add index for indexers",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS lsif_uploads_repository_id_indexer ON lsif_uploads(repository_id, indexer);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_uploads_repository_id_indexer;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1691759644,
+					1693825517
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "lsif_uploads",
+					"IndexName": "lsif_uploads_repository_id_indexer"
+				}
+			},
+			{
+				"ID": 1695152902,
+				"Name": "Add index for index indexers",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS lsif_indexes_repository_id_indexer ON lsif_indexes(repository_id, indexer);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_indexes_repository_id_indexer;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1695152835
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "lsif_indexes",
+					"IndexName": "lsif_indexes_repository_id_indexer"
+				}
+			},
+			{
+				"ID": 1702500918,
+				"Name": "Add expiry to access tokens",
+				"UpQuery": "ALTER TABLE access_tokens ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone;",
+				"DownQuery": "ALTER TABLE access_tokens DROP COLUMN IF EXISTS expires_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1695152902,
+					1697220815,
+					1700613818,
+					1700645180
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706629185,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name)\nVALUES (UNNEST('{SearchFilePreviewOpen}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN (SELECT * FROM UNNEST('{SearchFilePreviewOpen}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1702500918
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706629265,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name)\nVALUES (UNNEST('{SearchFilePreviewClose}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN (SELECT * FROM UNNEST('{SearchFilePreviewClose}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1706629185
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706629302,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name)\nVALUES (UNNEST('{ViewSearchFilePreview}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN (SELECT * FROM UNNEST('{ViewSearchFilePreview}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1706629265
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706629338,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name)\nVALUES (UNNEST('{SearchFiltersApplyFiltersClick}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN (SELECT * FROM UNNEST('{SearchFiltersApplyFiltersClick}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1706629302
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706629375,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name)\nVALUES (UNNEST('{SearchFiltersTypeClick}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN (SELECT * FROM UNNEST('{SearchFiltersTypeClick}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1706629338
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706629467,
+				"Name": "sg_telemetry_allowlist",
+				"UpQuery": "-- This migration was generated by the command `sg telemetry add`\nINSERT INTO event_logs_export_allowlist (event_name)\nVALUES (UNNEST('{SearchFiltersSelectFilter}'::TEXT[])) ON CONFLICT DO NOTHING;",
+				"DownQuery": "-- This migration was generated by the command `sg telemetry add`\nDELETE\nFROM event_logs_export_allowlist\nWHERE event_name IN (SELECT * FROM UNNEST('{SearchFiltersSelectFilter}'::TEXT[]));",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1706629375
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1706710430,
+				"Name": "Add syntactic_scip_indexes table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS syntactic_scip_indexing_jobs (\n    id bigserial NOT NULL PRIMARY KEY,\n    commit text NOT NULL,\n    queued_at timestamp with time zone DEFAULT now() NOT NULL,\n    state text DEFAULT 'queued'::text NOT NULL,\n    failure_message text,\n    started_at timestamp with time zone,\n    finished_at timestamp with time zone,\n    repository_id integer NOT NULL,\n    process_after timestamp with time zone,\n    num_resets integer DEFAULT 0 NOT NULL,\n    num_failures integer DEFAULT 0 NOT NULL,\n    execution_logs json[],\n    commit_last_checked_at timestamp with time zone,\n    worker_hostname text DEFAULT ''::text NOT NULL,\n    last_heartbeat_at timestamp with time zone,\n    cancel boolean DEFAULT false NOT NULL,\n    should_reindex boolean DEFAULT false NOT NULL,\n    enqueuer_user_id integer DEFAULT 0 NOT NULL,\n    CONSTRAINT syntactic_scip_indexing_jobs_commit_valid_chars CHECK ((commit ~ '^[a-f0-9]{40}$'::text))\n);\n\n\nCREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_dequeue_order_idx\n    ON syntactic_scip_indexing_jobs\n    USING btree (((enqueuer_user_id \u003e 0)) DESC, queued_at DESC, id)\n    WHERE ((state = 'queued'::text) OR (state = 'errored'::text));\n\nCREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_queued_at_id ON syntactic_scip_indexing_jobs USING btree (queued_at DESC, id);\n\nCREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_repository_id_commit ON syntactic_scip_indexing_jobs USING btree (repository_id, commit);\n\nCREATE INDEX IF NOT EXISTS syntactic_scip_indexing_jobs_state ON syntactic_scip_indexing_jobs USING btree (state);\n\nCOMMENT ON TABLE syntactic_scip_indexing_jobs IS 'Stores metadata about a code intel syntactic index job.';\n\nCOMMENT ON COLUMN syntactic_scip_indexing_jobs.commit IS 'A 40-char revhash. Note that this commit may not be resolvable in the future.';\n\nCOMMENT ON COLUMN syntactic_scip_indexing_jobs.execution_logs IS 'An array of [log entries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/internal/workerutil/store.go#L48:6) (encoded as JSON) from the most recent execution.';\n\nCOMMENT ON COLUMN syntactic_scip_indexing_jobs.enqueuer_user_id IS 'ID of the user who scheduled this index. Records with a non-NULL user ID are prioritised over the rest';\n\nCREATE OR REPLACE VIEW syntactic_scip_indexing_jobs_with_repository_name AS\n    SELECT u.id,\n        u.commit,\n        u.queued_at,\n        u.state,\n        u.failure_message,\n        u.started_at,\n        u.finished_at,\n        u.repository_id,\n        u.process_after,\n        u.num_resets,\n        u.num_failures,\n        u.execution_logs,\n        u.should_reindex,\n        u.enqueuer_user_id,\n        r.name AS repository_name\n    FROM (syntactic_scip_indexing_jobs u\n        JOIN repo r ON ((r.id = u.repository_id)))\n    WHERE (r.deleted_at IS NULL);",
+				"DownQuery": "-- Undo the changes made in the up migration\n\nDROP VIEW IF EXISTS syntactic_scip_indexing_jobs_with_repository_name;\nDROP TABLE IF EXISTS syntactic_scip_indexing_jobs;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1702500918
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11021,6 +11341,14 @@
 				"RootID": 1648051770,
 				"LeafIDs": [
 					1696003224
+				],
+				"PreCreation": false
+			},
+			"v5.3.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1706629467,
+					1706710430
 				],
 				"PreCreation": false
 			}
