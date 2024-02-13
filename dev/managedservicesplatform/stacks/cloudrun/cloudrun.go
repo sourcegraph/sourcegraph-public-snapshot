@@ -154,11 +154,12 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// once. If called, it always returns a non-nil value.
 	privateNetwork := sync.OnceValue(func() *privatenetwork.Output {
 		privateNetworkEnabled = true
-		return privatenetwork.New(stack, privatenetwork.Config{
-			ProjectID: vars.ProjectID,
-			ServiceID: vars.Service.ID,
-			Region:    gcpRegion,
-		})
+		return privatenetwork.New(stack, resourceid.New("privatenetwork"),
+			privatenetwork.Config{
+				ProjectID: vars.ProjectID,
+				ServiceID: vars.Service.ID,
+				Region:    gcpRegion,
+			})
 	})
 
 	// Add MSP env var indicating that the service is running in a Managed

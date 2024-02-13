@@ -86,10 +86,20 @@ func (b *serviceBuilder) AddDependency(dep cdktf.ITerraformDependable) {
 
 func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
 	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
+	var launchStage *string
 	if vars.PrivateNetwork != nil {
+		// Direct VPC is still in beta. We only use it for Cloud Run services,
+		// as there are a number of caveats for Cloud Run jobs.
+		//
+		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service#example-usage---cloudrunv2-service-directvpc
+		// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc
+		launchStage = pointers.Ptr("BETA")
 		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
-			Connector: vars.PrivateNetwork.Connector.SelfLink(),
-			Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
+			NetworkInterfaces: &[]*cloudrunv2service.CloudRunV2ServiceTemplateVpcAccessNetworkInterfaces{{
+				Network:    vars.PrivateNetwork.Network.Id(),
+				Subnetwork: vars.PrivateNetwork.Subnetwork.Id(),
+			}},
+			Egress: pointers.Ptr("ALL_TRAFFIC"),
 		}
 	}
 
@@ -116,6 +126,8 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
+
+		LaunchStage: launchStage,
 
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
