@@ -423,9 +423,9 @@ export const useCodyChat = ({
         }
     }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal, logTranscriptEvent])
 
-    const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
+    const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredFile']>(() => {
         logTranscriptEvent(
-            scope.includeInferredRepository
+            scope.includeInferredFile
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED
         )

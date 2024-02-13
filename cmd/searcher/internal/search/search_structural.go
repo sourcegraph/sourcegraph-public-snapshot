@@ -249,23 +249,15 @@ func filteredStructuralSearch(
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.IsStructuralPat = false
+	rp.PatternMatchesContent = true
+	rp.PatternMatchesPath = false
 
 	ra := *a
 	ra.Value = comby.StructuralPatToRegexpQuery(a.Value, false)
 	ra.IsRegExp = true
 	rp.Query = &ra
 
-	m, err := toMatchTree(rp.Query, rp.IsCaseSensitive)
-	if err != nil {
-		return err
-	}
-
-	pm, err := toPathMatcher(&rp)
-	if err != nil {
-		return err
-	}
-
-	fileMatches, _, err := regexSearchBatch(ctx, m, pm, zf, p.Limit, true, false, p.IsCaseSensitive, contextLines)
+	fileMatches, err := regexSearchBatch(ctx, &rp, zf, contextLines)
 	if err != nil {
 		return err
 	}

@@ -126,7 +126,6 @@
 .content {
     grid-area: contents;
     overflow: auto;
-    padding: 1rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;
@@ -161,17 +160,10 @@
         }
     }
 
-    &--list {
-        // Compensate content parent block paddings in order
-        // to have paddings anywhere but content list with search matches
-        margin: -1rem;
-
-        // This is needed because search list may have search result matches
-        // block which have sticky header elements, sticky top position doesn't
-        // take into account negative margins so we
-        [data-result-header] {
-            top: -1rem;
-        }
+    &-meta-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 }
 

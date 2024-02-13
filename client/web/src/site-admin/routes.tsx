@@ -26,6 +26,7 @@ const AnalyticsExtensionsPage = lazyComponent(
     'AnalyticsExtensionsPage'
 )
 const AnalyticsUsersPage = lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage')
+const AnalyticsCodyPage = lazyComponent(() => import('./analytics/AnalyticsCodyPage'), 'AnalyticsCodyPage')
 const AnalyticsCodeInsightsPage = lazyComponent(
     () => import('./analytics/AnalyticsCodeInsightsPage'),
     'AnalyticsCodeInsightsPage'
@@ -216,6 +217,11 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/users',
         render: () => <AnalyticsUsersPage />,
+    },
+    {
+        path: '/analytics/cody',
+        render: () => <AnalyticsCodyPage />,
+        condition: ({ license }) => license.isCodyEnabled,
     },
     {
         path: '/analytics/code-insights',

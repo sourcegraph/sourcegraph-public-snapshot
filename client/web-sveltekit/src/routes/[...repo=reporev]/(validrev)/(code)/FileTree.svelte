@@ -81,18 +81,18 @@
     }
 
     let treeView: TreeView<FileTreeNodeValue>
-    let repoID = treeProvider.getRepoID()
+    let repoName = treeProvider.getRepoName()
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
-    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoID()))
+    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoName()))
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
-    $: repoID = treeProvider.getRepoID()
-    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoID))
+    $: repoName = treeProvider.getRepoName()
+    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
 

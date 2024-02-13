@@ -1,14 +1,12 @@
-query BlobDiffQuery($repoID: ID!, $revspec: String!, $paths: [String!]) {
-    node(id: $repoID) {
-        ... on Repository {
+query BlobDiffQuery($repoName: String!, $revspec: String!, $paths: [String!]) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
             id
-            commit(rev: $revspec) {
-                id
-                diff {
-                    fileDiffs(paths: $paths) {
-                        nodes {
-                            ...FileDiff_Diff
-                        }
+            diff {
+                fileDiffs(paths: $paths) {
+                    nodes {
+                        ...FileDiff_Diff
                     }
                 }
             }
@@ -16,16 +14,14 @@ query BlobDiffQuery($repoID: ID!, $revspec: String!, $paths: [String!]) {
     }
 }
 
-query BlobPageQuery($repoID: ID!, $revspec: String!, $path: String!) {
-    node(id: $repoID) {
-        ... on Repository {
+query BlobPageQuery($repoName: String!, $revspec: String!, $path: String!) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
             id
-            commit(rev: $revspec) {
-                id
-                oid
-                blob(path: $path) {
-                    ...BlobPage_Blob
-                }
+            oid
+            blob(path: $path) {
+                ...BlobPage_Blob
             }
         }
     }
@@ -38,18 +34,16 @@ fragment BlobPage_Blob on GitBlob {
     languages
 }
 
-query BlobSyntaxHighlightQuery($repoID: ID!, $revspec: String!, $path: String!, $disableTimeout: Boolean!) {
-    node(id: $repoID) {
-        ... on Repository {
+query BlobSyntaxHighlightQuery($repoName: String!, $revspec: String!, $path: String!, $disableTimeout: Boolean!) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
             id
-            commit(rev: $revspec) {
-                id
-                blob(path: $path) {
-                    canonicalURL
-                    highlight(disableTimeout: $disableTimeout) {
-                        aborted
-                        lsif
-                    }
+            blob(path: $path) {
+                canonicalURL
+                highlight(disableTimeout: $disableTimeout) {
+                    aborted
+                    lsif
                 }
             }
         }

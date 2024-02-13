@@ -677,12 +677,12 @@ type mockGitHubClient struct {
 	mock.Mock
 }
 
-func (m *mockGitHubClient) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
-	args := m.Called(ctx)
+func (m *mockGitHubClient) GetAppInstallations(ctx context.Context, page int) ([]*github.Installation, bool, error) {
+	args := m.Called(ctx, page)
 	if args.Get(0) != nil {
-		return args.Get(0).([]*github.Installation), args.Error(1)
+		return args.Get(0).([]*github.Installation), args.Get(1).(bool), args.Error(2)
 	}
-	return nil, args.Error(1)
+	return nil, false, args.Error(1)
 }
 
 func TestSyncInstallations(t *testing.T) {
@@ -703,7 +703,7 @@ func TestSyncInstallations(t *testing.T) {
 			name: "no installations",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{}, nil)
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{}, false, nil)
 				return client
 			}(),
 			expectedInstallIDs: []int{},
@@ -718,9 +718,9 @@ func TestSyncInstallations(t *testing.T) {
 			name: "one installation",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{
 					{ID: github.Int64(1)},
-				}, nil)
+				}, false, nil)
 				return client
 			}(),
 			expectedInstallIDs: []int{1},
@@ -735,17 +735,39 @@ func TestSyncInstallations(t *testing.T) {
 			name: "multiple installations",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{
 					{ID: github.Int64(2)},
 					{ID: github.Int64(3)},
 					{ID: github.Int64(4)},
-				}, nil)
+				}, false, nil)
 				return client
 			}(),
 			expectedInstallIDs: []int{2, 3, 4},
 			app: ghtypes.GitHubApp{
 				AppID:      3,
 				Name:       "Test App With Multiple Installs",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
+		{
+			name: "paged installations",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx, 1).Return([]*github.Installation{
+					{ID: github.Int64(1)},
+					{ID: github.Int64(2)},
+				}, true, nil)
+				client.On("GetAppInstallations", ctx, 2).Return([]*github.Installation{
+					{ID: github.Int64(3)},
+					{ID: github.Int64(4)},
+				}, false, nil)
+				return client
+			}(),
+			expectedInstallIDs: []int{1, 2, 3, 4},
+			app: ghtypes.GitHubApp{
+				AppID:      4,
+				Name:       "Test App With Paged Installs",
 				BaseURL:    "https://example.com",
 				PrivateKey: "private-key",
 			},

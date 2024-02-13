@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -204,14 +203,6 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 		return nil, nil
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
-		results, err := c.getEmbeddingsContextFromQdrant(ctx, args)
-		if err != nil {
-			return nil, err
-		}
-		return filter(results), nil
-	}
-
 	repoNames := make([]api.RepoName, len(args.Repos))
 	repoIDs := make([]api.RepoID, len(args.Repos))
 	for i, repo := range args.Repos {
@@ -349,52 +340,6 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	}
 
 	return append(results[0], results[1]...), nil
-}
-
-func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
-	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
-	if c == nil {
-		return nil, errors.New("embeddings not configured or disabled")
-	}
-	client, err := embed.NewEmbeddingsClient(embeddingsConf)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting embeddings client")
-	}
-	qdrantSearcher, err := c.getQdrantSearcher()
-	if err != nil {
-		return nil, errors.Wrap(err, "getting qdrant searcher")
-	}
-
-	resp, err := client.GetQueryEmbedding(ctx, args.Query)
-	if err != nil || len(resp.Failed) > 0 {
-		return nil, errors.Wrap(err, "getting query embedding")
-	}
-	query := resp.Embeddings
-
-	params := vdb.SearchParams{
-		ModelID:   client.GetModelIdentifier(),
-		RepoIDs:   args.RepoIDs(),
-		Query:     query,
-		CodeLimit: int(args.CodeResultsCount),
-		TextLimit: int(args.TextResultsCount),
-	}
-	chunks, err := qdrantSearcher.Search(ctx, params)
-	if err != nil {
-		return nil, errors.Wrap(err, "searching vector DB")
-	}
-
-	res := make([]FileChunkContext, 0, len(chunks))
-	for _, chunk := range chunks {
-		res = append(res, FileChunkContext{
-			RepoName:  chunk.Point.Payload.RepoName,
-			RepoID:    chunk.Point.Payload.RepoID,
-			CommitID:  chunk.Point.Payload.Revision,
-			Path:      chunk.Point.Payload.FilePath,
-			StartLine: int(chunk.Point.Payload.StartLine),
-			EndLine:   int(chunk.Point.Payload.EndLine),
-		})
-	}
-	return res, nil
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
