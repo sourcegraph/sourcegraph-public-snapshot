@@ -11,7 +11,12 @@ import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 export type URLQueryFilter = Pick<Filter, 'kind' | 'label' | 'value'>
 
-export interface SidebarFilter extends Filter {
+export interface SidebarFilter {
+    value: Filter['value']
+    label: Filter['label']
+    exhaustive: Filter['exhaustive']
+    kind: Filter['kind']
+    count?: Filter['count']
     selected: boolean
 }
 
@@ -27,7 +32,7 @@ function serializeURLFilter(input: URLQueryFilter): string {
 }
 
 export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: boolean): URL {
-    let selectedFilters = filtersFromURL(url)
+    let selectedFilters = filtersFromParams(url.searchParams)
     if (remove) {
         selectedFilters = selectedFilters.filter(
             selectedFilter => selectedFilter.kind !== filter.kind || selectedFilter.value != filter.value
@@ -45,8 +50,8 @@ export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: bool
     return newURL
 }
 
-export function filtersFromURL(url: URL): URLQueryFilter[] {
-    return url.searchParams.getAll(DYNAMIC_FILTER_URL_QUERY_KEY).map(deserializeURLFilter)
+export function filtersFromParams(params: URLSearchParams): URLQueryFilter[] {
+    return params.getAll(DYNAMIC_FILTER_URL_QUERY_KEY).map(deserializeURLFilter)
 }
 
 export const staticTypeFilters: URLQueryFilter[] = [
@@ -69,7 +74,7 @@ export const typeFilterIcons = new Map([
 
 export type FilterGroups = Record<Filter['kind'], SidebarFilter[]>
 
-export function groupFilters(filters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
+export function groupFilters(streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
     const groupedFilters: FilterGroups = {
         type: [],
         repo: [],
@@ -80,11 +85,29 @@ export function groupFilters(filters: Filter[], selectedFilters: URLQueryFilter[
         'commit date': [],
         'symbol type': [],
     }
-    for (const filter of filters) {
-        const selected = selectedFilters.some(
-            selectedFilter => selectedFilter.kind === filter.kind && selectedFilter.value === filter.value
+    for (const selectedFilter of selectedFilters) {
+        const streamFilter = streamFilters.find(
+            streamFilter => streamFilter.kind === selectedFilter.kind && streamFilter.value === selectedFilter.value
         )
-        groupedFilters[filter.kind].push({ ...filter, selected })
+        groupedFilters[selectedFilter.kind].push({
+            value: selectedFilter.value,
+            label: selectedFilter.label,
+            kind: selectedFilter.kind,
+            selected: true,
+            // Use count and exhaustiveness from the stream filter if it exists
+            count: streamFilter?.count,
+            exhaustive: streamFilter?.exhaustive || false,
+        })
+    }
+    for (const filter of streamFilters) {
+        if (groupedFilters[filter.kind].some(existingFilter => existingFilter.value === filter.value)) {
+            // Skip any filters that were already added by the seleced loop above
+            continue
+        }
+        groupedFilters[filter.kind].push({
+            ...filter,
+            selected: false,
+        })
     }
     return groupedFilters
 }

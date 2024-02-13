@@ -96,7 +96,7 @@ export const load: PageLoad = ({ url, depends }) => {
     const forceCache = url.searchParams.has(USE_CLIENT_CACHE_QUERY_PARAMETER)
 
     if (hasQuery) {
-        const parsedQuery = parseExtendedSearchURL(url.search)
+        const parsedQuery = parseExtendedSearchURL(url)
         let {
             query = '',
             searchMode,

@@ -22,7 +22,7 @@
     import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { filtersFromURL } from '$lib/search/dynamicFilters'
+    import { filtersFromParams } from '$lib/search/dynamicFilters'
     import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { submitSearch, type QueryStateStore } from '$lib/search/state'
@@ -64,7 +64,7 @@
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    $: selectedFilters = filtersFromURL($page.url)
+    $: selectedFilters = filtersFromParams($page.url.searchParams)
     $: streamFilters = $stream?.filters ?? []
 
     setSearchResultsContext({
