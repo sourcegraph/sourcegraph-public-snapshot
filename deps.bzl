@@ -1794,6 +1794,13 @@ def go_dependencies():
         version = "v0.0.0-20200222043503-6f7a984d4dc4",
     )
     go_repository(
+        name = "com_github_go_json_experiment_json",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/go-json-experiment/json",
+        sum = "h1:ymLjT4f35nQbASLnvxEde4XOBL+Sn7rFuV+FOJqkljg=",
+        version = "v0.0.0-20231102232822-2e55bd4e08b0",
+    )
+    go_repository(
         name = "com_github_go_kit_kit",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-kit/kit",
