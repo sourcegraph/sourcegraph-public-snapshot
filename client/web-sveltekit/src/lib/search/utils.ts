@@ -1,4 +1,4 @@
-import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch, Filter } from '$lib/shared'
+import type { ContentMatch, MatchGroup, ChunkMatch, LineMatch } from '$lib/shared'
 
 /**
  * A context object provided on pages with the main search input to interact
