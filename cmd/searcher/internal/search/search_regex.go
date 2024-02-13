@@ -111,7 +111,10 @@ func regexSearch(
 	for i := 0; i < numWorkers; i++ {
 		l := fileLoader{zf: zf, isCaseSensitive: isCaseSensitive}
 		var f *srcFile
-		getContent := func() ([]byte, error) {
+
+		// A callback to use when detecting the language. The function signature includes an
+		// error so to match the expectations of the library we use, helping avoid allocations.
+		getContent := func() ([]byte, error) { //nolint:unparam
 			l.load(f)
 			return l.fileBuf, nil
 		}
