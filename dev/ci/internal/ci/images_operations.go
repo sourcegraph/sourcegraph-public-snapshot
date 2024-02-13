@@ -102,8 +102,8 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 				bk.Env("PUSH_VERSION", version),
 				bk.Env("CANDIDATE_ONLY", candidate),
 				bk.Cmd(`echo "--- DRY RUN: bazel-push-images"`),
-				bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
-				bk.Cmd("./dev/ci/push_all.sh"),
+				// bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
+				// bk.Cmd("./dev/ci/push_all.sh"),
 			)...,
 		)
 	}
