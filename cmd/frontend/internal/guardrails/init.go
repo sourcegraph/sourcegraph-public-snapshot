@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
@@ -34,7 +36,7 @@ func Init(
 	var resolver *resolvers.GuardrailsResolver
 	if envvar.SourcegraphDotComMode() {
 		// On DotCom guardrails endpoint runs search, and is initialized at startup.
-		searchClient := client.New(observationCtx.Logger, db, gitserver.NewClient("http.guardrails.search"))
+		searchClient := client.New(log.NoOp(), db, gitserver.NewClient("http.guardrails.search"))
 		service := attribution.NewLocalSearch(observationCtx, searchClient)
 		resolver = resolvers.NewGuardrailsResolver(service)
 	} else {
