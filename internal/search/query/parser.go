@@ -119,18 +119,22 @@ const (
 )
 
 func isSpace(buf []byte) bool {
-	r, _ := utf8.DecodeRune(buf)
-	return unicode.IsSpace(r)
-}
-
-func isRightParen(buf []byte) bool {
-	r, _ := utf8.DecodeRune(buf)
-	return r == ')'
+	for i := 0; i < len(buf); i++ {
+		if !unicode.IsSpace(rune(buf[i])) {
+			return false
+		}
+	}
+	return true
 }
 
 func isLeftParen(buf []byte) bool {
 	r, _ := utf8.DecodeRune(buf)
 	return r == '('
+}
+
+func isRightParen(buf []byte) bool {
+	r, _ := utf8.DecodeRune(buf)
+	return r == ')'
 }
 
 // skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
@@ -233,9 +237,10 @@ func (p *parser) expect(keyword keyword) bool {
 	return true
 }
 
-// matchKeyword is like match but expects the keyword to be preceded and followed by whitespace.
+// matchKeyword is like match but checks whether the keyword has a valid prefix
+// and suffix.
 func (p *parser) matchKeyword(keyword keyword) bool {
-	if p.pos == 0 {
+	if isSpace(p.buf[:p.pos]) {
 		return false
 	}
 	if !(isSpace(p.buf[p.pos-1:p.pos]) || isRightParen(p.buf[p.pos-1:p.pos])) {

@@ -813,6 +813,10 @@ func TestParseParensKeyword(t *testing.T) {
 	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b) or c"))
 	autogold.Expect(`(or (and "a" "b") "c" "d")`).Equal(t, test("(a and b or c) or d"))
 	autogold.Expect(`(or "a" (and "b" "c") "d")`).Equal(t, test("(a or b and c)or d"))
+
+	// first token
+	autogold.Expect(`(and "and" "b")`).Equal(t, test("  and b"))
+	autogold.Expect(`(and "and" "b")`).Equal(t, test("and b"))
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
