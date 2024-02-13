@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- GitHub apps installation records will only be deleted from the database if the GitHub App has been uninstalled or if the GitHub app has been deleted. [#60460](https://github.com/sourcegraph/sourcegraph/pull/60460)
 
 ### Fixed
 
