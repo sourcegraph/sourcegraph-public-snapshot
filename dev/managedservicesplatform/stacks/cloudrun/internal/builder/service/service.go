@@ -88,12 +88,9 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
 	var launchStage *string
 	if vars.PrivateNetwork != nil {
-		// Direct VPC is still in beta. We only use it for Cloud Run services,
-		// as there are a number of caveats for Cloud Run jobs.
-		//
 		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service#example-usage---cloudrunv2-service-directvpc
 		// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc
-		launchStage = pointers.Ptr("BETA")
+		launchStage = pointers.Ptr("BETA") // Direct VPC is still in beta.
 		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
 			NetworkInterfaces: &[]*cloudrunv2service.CloudRunV2ServiceTemplateVpcAccessNetworkInterfaces{{
 				Network:    vars.PrivateNetwork.Network.Id(),

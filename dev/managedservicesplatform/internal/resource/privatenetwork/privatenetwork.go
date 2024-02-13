@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesubnetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/servicenetworkingconnection"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/vpcaccessconnector"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -29,8 +28,6 @@ type Output struct {
 	// ServiceNetworkingConnection is required for Cloud SQL access, and is
 	// provisioned by default.
 	ServiceNetworkingConnection servicenetworkingconnection.ServiceNetworkingConnection
-	// Connector is used by Cloud Run to connect to the private network. TODO
-	Connector vpcaccessconnector.VpcAccessConnector
 }
 
 // New sets up a network for the Cloud Run service to interface with other GCP
@@ -49,11 +46,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 
 	// This is similar to the setup in Cloud v1.1 for connecting to Cloud SQL - we
 	// set up an arbitrary ip_cidr_range that covers enough IPs for VPC direct access.
-	//
-	// TODO: Figure out a range we can use for both VPC connector (requires /28)
-	// and for VPC direct access (has some suggestions here https://cloud.google.com/run/docs/configuring/vpc-direct-vpc#supported-ip-ranges,
-	// requires lots of addresses)
-	subnetworkIPCIDRRange := "172.16.0.0/28"
+	// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc#supported-ip-ranges
+	subnetworkIPCIDRRange := "172.16.0.0/12"
 	subnetworkName := random.New(scope, id.Group("subnetwork-name"), random.Config{
 		Prefix:     config.ServiceID,
 		ByteLength: 4,
@@ -108,29 +102,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			ReservedPeeringRanges: &[]*string{serviceNetworkingConnectionIP.Name()},
 		})
 
-	// Cloud Run services can't connect directly to networks, and seem to require a
-	// VPC connector, so we provision one to allow Cloud Run services to talk to
-	// other GCP services (like Redis)
-	connector := vpcaccessconnector.NewVpcAccessConnector(
-		scope,
-		pointers.Ptr("cloudrun-connector"),
-		&vpcaccessconnector.VpcAccessConnectorConfig{
-			Project: &config.ProjectID,
-			Region:  &config.Region,
-			Name:    pointers.Ptr(config.ServiceID),
-			Subnet: &vpcaccessconnector.VpcAccessConnectorSubnet{
-				Name: subnetwork.Name(),
-			},
-		},
-	)
-
 	return &Output{
 		Network:                     network,
 		Subnetwork:                  subnetwork,
 		ServiceNetworkingConnection: serviceNetworkingConnection,
-		// TODO: Use sync.OnceValue to make connector only created on-demand,
-		// since we still want to use it for Jobs.
-		// Keep for now until we have a configuration that works for both.
-		Connector: connector,
 	}
 }
