@@ -59,7 +59,6 @@ func pathspecLiteral(s string) string { return ":(literal)" + s }
 
 func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths []string) error {
 	args := []string{"ls-tree", treeish, "--"}
-	// TODO: Can this work? These are potentially using `*` characters etc.
 	args = append(args, paths...)
 	cmd, cancel, err := g.gitCommand(ctx, args...)
 	defer cancel()
@@ -86,29 +85,31 @@ func (g *gitCLIBackend) verifyPaths(ctx context.Context, treeish string, paths [
 		return err
 	}
 
+	if len(paths) == 0 {
+		return nil
+	}
+
 	// Check if the resulting objects match the requested
 	// paths. If not, one or more of the requested
 	// file paths don't exist.
-	if len(paths) != 0 {
-		gotPaths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
-		fileSet := collections.NewSet[string]()
-		for _, p := range gotPaths {
-			if len(p) == 0 {
-				continue
-			}
-			pathSegments := bytes.Fields(p)
-			fileSet.Add(string(pathSegments[len(pathSegments)-1]))
+	gotPaths := bytes.Split(bytes.TrimSpace(stdout), []byte("\n"))
+	fileSet := collections.NewSet[string]()
+	for _, p := range gotPaths {
+		if len(p) == 0 {
+			continue
 		}
+		pathSegments := bytes.Fields(p)
+		fileSet.Add(string(pathSegments[len(pathSegments)-1]))
+	}
 
-		pathsSet := collections.NewSet[string]()
-		for _, path := range paths {
-			pathsSet.Add(path)
-		}
-		diff := pathsSet.Difference(fileSet)
+	pathsSet := collections.NewSet[string]()
+	for _, path := range paths {
+		pathsSet.Add(path)
+	}
+	diff := pathsSet.Difference(fileSet)
 
-		if len(diff) != 0 {
-			return &os.PathError{Op: "open", Path: diff.Values()[0], Err: os.ErrNotExist}
-		}
+	if len(diff) != 0 {
+		return &os.PathError{Op: "open", Path: diff.Values()[0], Err: os.ErrNotExist}
 	}
 
 	return nil

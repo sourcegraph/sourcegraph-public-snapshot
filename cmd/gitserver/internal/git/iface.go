@@ -50,7 +50,7 @@ type GitBackend interface {
 	// paths to include in the archive. If empty, all paths are included.
 	//
 	// If the commit does not exist, a RevisionNotFoundError is returned.
-	// If any pathspec does not exist, a os.PathError is returned.
+	// If any path does not exist, a os.PathError is returned.
 	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.

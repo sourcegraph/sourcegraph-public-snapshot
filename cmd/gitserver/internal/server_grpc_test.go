@@ -438,18 +438,20 @@ func TestGRPCServer_Archive(t *testing.T) {
 		err := gs.Archive(&v1.ArchiveRequest{Repo: ""}, mockSS)
 		require.ErrorContains(t, err, "repo must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
-		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo"}, mockSS)
-		require.ErrorContains(t, err, "unknown archive format")
-		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+
 		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_TAR}, mockSS)
 		require.ErrorContains(t, err, "treeish must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+
+		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD"}, mockSS)
+		require.ErrorContains(t, err, "unknown archive format")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
 	t.Run("checks for uncloned repo", func(t *testing.T) {
 		svc := NewMockService()
 		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
 		gs := &grpcServer{svc: svc}
-		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
+		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -471,6 +473,16 @@ func TestGRPCServer_Archive(t *testing.T) {
 			},
 		}
 
+		t.Run("subrepo perms are enabled but actor is internal", func(t *testing.T) {
+			srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+			mockSS := gitserver.NewMockGitserverService_ArchiveServer()
+			// Add an internal actor to the context.
+			mockSS.ContextFunc.SetDefaultReturn(actor.WithInternalActor(context.Background()))
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
+			assert.NoError(t, err)
+			mockassert.NotCalled(t, srp.EnabledForRepoFunc)
+		})
+
 		t.Run("subrepo perms are not enabled", func(t *testing.T) {
 			srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
 			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
@@ -485,16 +497,6 @@ func TestGRPCServer_Archive(t *testing.T) {
 			assertGRPCStatusCode(t, err, codes.Unimplemented)
 			require.Contains(t, err.Error(), "archiveReader invoked for a repo with sub-repo permissions")
 			mockassert.Called(t, srp.EnabledForRepoFunc)
-		})
-
-		t.Run("subrepo perms are enabled but actor is internal", func(t *testing.T) {
-			srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
-			mockSS := gitserver.NewMockGitserverService_ArchiveServer()
-			// Add an internal actor to the context.
-			mockSS.ContextFunc.SetDefaultReturn(actor.WithInternalActor(context.Background()))
-			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
-			assert.NoError(t, err)
-			mockassert.NotCalled(t, srp.EnabledForRepoFunc)
 		})
 	})
 	t.Run("e2e", func(t *testing.T) {
