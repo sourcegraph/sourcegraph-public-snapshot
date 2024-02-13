@@ -2,8 +2,7 @@ import React, { type FunctionComponent, useCallback, useEffect, useMemo, useStat
 
 import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
-import { parseISO } from 'date-fns'
-import formatDistance from 'date-fns/formatDistance'
+import { parseISO, formatDistance } from 'date-fns'
 import type {
     SetAutoUpgradeResult,
     SetAutoUpgradeVariables,

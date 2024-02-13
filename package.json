@@ -332,7 +332,7 @@
     "d3-shape": "^1.2.0",
     "d3-time-format": "^3.0.0",
     "d3-voronoi": "^1.1.2",
-    "date-fns": "^2.16.1",
+    "date-fns": "^3.3.1",
     "delay": "^4.4.1",
     "detect-indent": "^6.1.0",
     "downshift": "^3.4.8",
