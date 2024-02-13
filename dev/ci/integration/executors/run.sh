@@ -24,6 +24,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# TODO(burmudar): Remove this FORCED candidate version
+CANDIDATE_VERSION="25e4e167af9cb74ff70d30522ad40ce6aaa0dcd8_8307_candidate"
+
 export POSTGRES_IMAGE="us.gcr.io/sourcegraph-dev/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 export EXECUTOR_IMAGE="us.gcr.io/sourcegraph-dev/executor:${CANDIDATE_VERSION}"
@@ -33,6 +36,10 @@ export TMP_DIR
 export DATA
 if [ -n "${DOCKER_GATEWAY_HOST}" ]; then
   DOCKER_HOST="tcp://${DOCKER_GATEWAY_HOST:-host.docker.internal}:2375"
+  export DOCKER_HOST
+fi
+if [ -z "${DOCKER_HOST}" ]; then
+  DOCKER_HOST="unix:///var/run/docker.sock"
   export DOCKER_HOST
 fi
 
