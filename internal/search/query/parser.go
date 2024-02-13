@@ -123,6 +123,16 @@ func isSpace(buf []byte) bool {
 	return unicode.IsSpace(r)
 }
 
+func isRightParen(buf []byte) bool {
+	r, _ := utf8.DecodeRune(buf)
+	return r == ')'
+}
+
+func isLeftParen(buf []byte) bool {
+	r, _ := utf8.DecodeRune(buf)
+	return r == '('
+}
+
 // skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
 func skipSpace(buf []byte) int {
 	count := 0
@@ -228,7 +238,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 	if p.pos == 0 {
 		return false
 	}
-	if !isSpace(p.buf[p.pos-1 : p.pos]) {
+	if !(isSpace(p.buf[p.pos-1:p.pos]) || isRightParen(p.buf[p.pos-1:p.pos])) {
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -236,7 +246,7 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 		return false
 	}
 	after := p.pos + len(string(keyword))
-	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
+	if after >= len(p.buf) || !(isSpace(p.buf[after:after+1]) || isLeftParen(p.buf[after:after+1])) {
 		return false
 	}
 	return strings.EqualFold(v, string(keyword))
@@ -965,7 +975,8 @@ loop:
 				return nil, err
 			}
 			nodes = append(nodes, result...)
-		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+		case p.match(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+			// Caller advances.
 			if p.balanced <= 0 {
 				if label.IsSet(QuotesAsLiterals) {
 					return nil, errors.New("unsupported expression. The combination of parentheses in the query has an unclear meaning. Use \"...\" to quote patterns that contain parentheses")
@@ -1148,6 +1159,11 @@ func (p *parser) parseOr() ([]Node, error) {
 	if left == nil {
 		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
+
+	// parseAnd might have parsed an expression, in which case parser.pos is
+	// currently pointing to a RPAREN.
+	_ = p.expect(RPAREN)
+
 	if !p.expect(OR) {
 		return left, nil
 	}

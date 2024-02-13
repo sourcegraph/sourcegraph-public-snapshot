@@ -767,6 +767,8 @@ func TestParseParensKeyword(t *testing.T) {
 
 	// parentheses
 	autogold.Expect(`"()"`).Equal(t, test("()"))
+	autogold.Expect(`"()"`).Equal(t, test("(())"))
+	autogold.Expect(`"()"`).Equal(t, test("(     )"))
 	autogold.Expect(`(and "()" "=>" "{}")`).Equal(t, test("() => {}"))
 	autogold.Expect(`(and "err" "error," "ok" "bool")`).Equal(t, test("(err error, ok bool)"))
 
@@ -785,6 +787,32 @@ func TestParseParensKeyword(t *testing.T) {
 	autogold.Expect(`"\"\"foo\""`).Equal(t, test(`""foo"`))
 	autogold.Expect(`"\"\"foo\"\""`).Equal(t, test(`""foo""`))
 	autogold.Expect(`"\"foo\"bar\"bas\""`).Equal(t, test(`"foo"bar"bas"`))
+
+	// detect keywords at boundaries
+	autogold.Expect(`(and (or "a" "b") "c")`).Equal(t, test("(a or b) and c"))
+	autogold.Expect(`(and (or "a" "b") "c")`).Equal(t, test("(a or b)and c"))
+	autogold.Expect(`(and "c" (or "a" "b"))`).Equal(t, test("c and(a or b)"))
+	autogold.Expect(`(and "c" (or "a" "b"))`).Equal(t, test("c and (a or b)"))
+	autogold.Expect(`(and (or "a" "b") (or "c" "d"))`).Equal(t, test("(a or b)and(c or d)"))
+
+	autogold.Expect(`(or (and "a" "b") "c")`).Equal(t, test("(a and b) or c"))
+	autogold.Expect(`(or (and "a" "b") "c")`).Equal(t, test("(a and b)or c"))
+	autogold.Expect(`(or (and "a" "and") "c")`).Equal(t, test("(a and)or c"))
+	autogold.Expect(`(or "a" (and "b" "c"))`).Equal(t, test("a or(b and c)"))
+
+	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b) not c"))
+	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b)not c"))
+
+	autogold.Expect(`(or "a" "bandc")`).Equal(t, test("a or (bandc)"))
+	autogold.Expect(`(and "a" "andor" "b")`).Equal(t, test("a andor b"))
+	autogold.Expect(`(and "a" "(and" "b")`).Equal(t, test("a (and b"))
+	autogold.Expect(`unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`).Equal(t, test("a )and b"))
+
+	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b)or c"))
+	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b) or c"))
+	autogold.Expect(`(or (and "a" "b") "c" "d")`).Equal(t, test("(a and b or c) or d"))
+	autogold.Expect(`(or "a" (and "b" "c") "d")`).Equal(t, test("(a or b and c)or d"))
+
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
