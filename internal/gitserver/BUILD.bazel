@@ -79,7 +79,6 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc",
-        "//internal/types",
         "//lib/errors",
         "//schema",
         "@com_github_google_go_cmp//cmp",
