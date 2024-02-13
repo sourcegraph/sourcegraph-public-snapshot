@@ -111,14 +111,7 @@ func (l *StackLocals) Add(name string, value string, description string) {
 		})
 	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
 
-	// If MetadataKeyStackLocalsGSMProjectID is set, emit to GSM
-	if project, ok := l.s.Metadata[MetadataKeyStackLocalsGSMProjectID]; ok {
-		_ = gsmsecret.New(l.s.Stack, id.Group("gsm").Group(name), gsmsecret.Config{
-			ID:        stacks.OutputSecretID(l.s.Name, name),
-			ProjectID: project,
-			Value:     value,
-		})
-	}
+	l.maybeEmitToGSM(id, name, value)
 }
 
 // AddSlice is the same as Add, but accepts a slice instead. The value is
@@ -134,12 +127,16 @@ func (l *StackLocals) AddSlice(name string, value []string, description string) 
 		})
 	_ = cdktf.NewTerraformLocal(l.s.Stack, &name, value)
 
+	l.maybeEmitToGSM(id, name, strings.Join(value, ","))
+}
+
+func (l *StackLocals) maybeEmitToGSM(id resourceid.ID, name, value string) {
 	// If MetadataKeyStackLocalsGSMProjectID is set, emit to GSM
 	if project, ok := l.s.Metadata[MetadataKeyStackLocalsGSMProjectID]; ok {
 		_ = gsmsecret.New(l.s.Stack, id.Group("gsm").Group(name), gsmsecret.Config{
 			ID:        stacks.OutputSecretID(l.s.Name, name),
 			ProjectID: project,
-			Value:     strings.Join(value, ","),
+			Value:     value,
 		})
 	}
 }
