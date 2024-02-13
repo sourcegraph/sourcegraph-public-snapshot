@@ -4,7 +4,7 @@
 
 This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
 
-To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://docs.sourcegraph.com/admin/observability/metrics).
+To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://sourcegraph.com/docs/admin/observability/metrics).
 
 ## Frontend
 
@@ -5223,7 +5223,7 @@ p95 response time to incoming webhook requests from code hosts.
 
 							Increases in response time can point to too much load on the database to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)
+							See this documentation page for more details on webhook requests: (https://sourcegraph.com/docs/admin/config/webhooks/incoming)
 
 This panel has no related alerts.
 
@@ -11478,7 +11478,7 @@ Query: `max by (type) (ceil(rate(src_repo_perms_syncer_sync_errors_total[1m])))`
 <p class="subtitle">Total number of repos scheduled for permissions sync</p>
 
 Indicates how many repositories have been scheduled for a permissions sync.
-More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/permissions/syncing#scheduling)
+More about repository permissions synchronization [here](https://sourcegraph.com/docs/admin/permissions/syncing#scheduling)
 
 This panel has no related alerts.
 
@@ -22485,7 +22485,7 @@ Query: `sum by(job) (scrape_samples_post_metric_relabeling{job!=""})`
 A high value here indicates Prometheus rule evaluation is taking longer than expected.
 It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
 
-Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
+Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://sourcegraph.com/docs/admin/observability/metrics#prometheus-configuration).
 
 Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-duration) for 1 alert related to this panel.
 
@@ -22506,7 +22506,7 @@ Query: `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_se
 
 <p class="subtitle">Failed prometheus rule evaluations over 5m by rule group</p>
 
-Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).
+Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Custom rules are grouped under `/sg_prometheus_addons`](https://sourcegraph.com/docs/admin/observability/metrics#prometheus-configuration).
 
 Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-failures) for 1 alert related to this panel.
 
