@@ -738,7 +738,7 @@ cc @${release.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             // Update sourcegraph/server:VERSION everywhere except changelog
-                            `find . -type f -name '*.mdx' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
+                            `find . -type f -name '*.mdx' ! -name 'doc/CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
                             // Update Sourcegraph versions in installation guides
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
