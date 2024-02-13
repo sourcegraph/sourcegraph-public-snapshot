@@ -7,7 +7,7 @@ import (
 // IsValidUpgrade returns true if the given previous and latest versions comply with our
 // documented upgrade policy. All roll-backs or downgrades are supported.
 //
-// See https://docs.sourcegraph.com/#upgrading-sourcegraph.
+// See https://sourcegraph.com/docs/admin/updates
 func IsValidUpgrade(previous, latest *semver.Version) bool {
 	switch {
 	case previous == nil || latest == nil:

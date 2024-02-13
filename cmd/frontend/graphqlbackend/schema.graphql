@@ -3347,7 +3347,7 @@ type ExternalService implements Node {
 
     Only site admins may access this field.
 
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice
+    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice
     """
     webhookLogs(
         """
@@ -3376,7 +3376,7 @@ type ExternalService implements Node {
         until: DateTime
     ): WebhookLogConnection!
         @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice"
+            reason: "Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice"
         )
 
     """
@@ -7437,8 +7437,8 @@ type Site implements SettingsSubject {
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
     is to monitor Sourcegraph, it is better to configure alerting or query Prometheus directly in
     order to ensure that if the frontend goes down you still receive alerts:
-    Configure alerting: https://docs.sourcegraph.com/admin/observability/alerting
-    Query Prometheus directly: https://docs.sourcegraph.com/admin/observability/alerting_custom_consumption
+    Configure alerting: https://sourcegraph.com/docs/admin/observability/alerting
+    Query Prometheus directly: https://sourcegraph.com/docs/admin/observability/alerting_custom_consumption
     """
     monitoringStatistics(
         """
@@ -8596,7 +8596,7 @@ type MonitoringStatistics {
 }
 
 """
-A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
+A high-level monitoring alert, for details see https://sourcegraph.com/docs/admin/observability/metrics#high-level-alerting-metrics
 """
 type MonitoringAlert {
     """

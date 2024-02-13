@@ -668,6 +668,12 @@ func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bo
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
+	case *schema.AzureDevOpsConnection:
+		limit = GetDefaultRateLimit(KindAzureDevOps)
+		if c != nil && c.RateLimit != nil {
+			isDefault = false
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
 	default:
 		return limit, isDefault, ErrRateLimitUnsupported{codehostKind: kind}
 	}
@@ -712,6 +718,8 @@ func GetDefaultRateLimit(kind string) rate.Limit {
 	case KindRubyPackages:
 		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
 		return rate.Limit(10)
+	case KindAzureDevOps:
+		return rate.Inf
 	default:
 		return rate.Inf
 	}

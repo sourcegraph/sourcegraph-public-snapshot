@@ -65,7 +65,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
 	if err != nil {
-		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://sourcegraph.com/docs/admin/auth/#username-normalization.", login), err
 	}
 
 	ghClient := s.newClient(token.AccessToken)

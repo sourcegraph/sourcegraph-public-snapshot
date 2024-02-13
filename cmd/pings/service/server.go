@@ -18,7 +18,7 @@ var meter = otel.GetMeterProvider().Meter("pings/shared")
 
 func registerServerHandlers(logger log.Logger, r *mux.Router, pubsubClient pubsub.TopicPublisher) error {
 	r.Path("/").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://docs.sourcegraph.com/admin/pings", http.StatusFound)
+		http.Redirect(w, r, "https://sourcegraph.com/docs/admin/pings", http.StatusFound)
 	})
 
 	requestCounter, err := meter.Int64Counter(

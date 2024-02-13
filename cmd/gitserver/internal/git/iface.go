@@ -40,6 +40,18 @@ type GitBackend interface {
 	// If the path points to a submodule, an empty reader is returned and no error.
 	// If the commit does not exist, a RevisionNotFoundError is returned.
 	ReadFile(ctx context.Context, commit api.CommitID, path string) (io.ReadCloser, error)
+	// GetCommit retrieves the commit with the given ID from the git ODB.
+	// If includeModifiedFiles is true, the returned GitCommitWithFiles will contain
+	// the list of all files touched in this commit.
+	// If the commit doesn't exist, a RevisionNotFoundError is returned.
+	GetCommit(ctx context.Context, commit api.CommitID, includeModifiedFiles bool) (*GitCommitWithFiles, error)
+	// ArchiveReader returns a reader for an archive in the given format.
+	// Treeish is the tree or commit to archive, and paths is the list of
+	// paths to include in the archive. If empty, all paths are included.
+	//
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// If any path does not exist, a os.PathError is returned.
+	ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (io.ReadCloser, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -78,3 +90,22 @@ type BlameHunkReader interface {
 	Read() (*gitdomain.Hunk, error)
 	Close() error
 }
+
+// GitCommitWithFiles wraps a gitdomain.Commit and adds a list of modified files.
+// Modified files are only populated when requested.
+// This data is required for sub repo permission filtering.
+type GitCommitWithFiles struct {
+	*gitdomain.Commit
+	ModifiedFiles []string
+}
+
+// ArchiveFormat indicates the desired format of the archive as an enum.
+type ArchiveFormat string
+
+const (
+	// ArchiveFormatZip indicates a zip archive is desired.
+	ArchiveFormatZip ArchiveFormat = "zip"
+
+	// ArchiveFormatTar indicates a tar archive is desired.
+	ArchiveFormatTar ArchiveFormat = "tar"
+)

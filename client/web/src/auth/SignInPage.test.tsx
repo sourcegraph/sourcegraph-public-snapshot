@@ -2,6 +2,7 @@ import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import type { AuthenticatedUser } from '../auth'
@@ -62,6 +63,7 @@ describe('SignInPage', () => {
                                 xhrHeaders: {},
                                 primaryLoginProvidersCount: props.primaryLoginProvidersCount ?? 5,
                             }}
+                            telemetryRecorder={noOpTelemetryRecorder}
                         />
                     }
                 />

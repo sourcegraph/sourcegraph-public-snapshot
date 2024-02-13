@@ -283,6 +283,9 @@ func (c BlameHunkReaderReadFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git) used for
 // unit testing.
 type MockGitBackend struct {
+	// ArchiveReaderFunc is an instance of a mock function object
+	// controlling the behavior of the method ArchiveReader.
+	ArchiveReaderFunc *GitBackendArchiveReaderFunc
 	// BlameFunc is an instance of a mock function object controlling the
 	// behavior of the method Blame.
 	BlameFunc *GitBackendBlameFunc
@@ -292,6 +295,9 @@ type MockGitBackend struct {
 	// ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method Exec.
 	ExecFunc *GitBackendExecFunc
+	// GetCommitFunc is an instance of a mock function object controlling
+	// the behavior of the method GetCommit.
+	GetCommitFunc *GitBackendGetCommitFunc
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *GitBackendGetObjectFunc
@@ -313,6 +319,11 @@ type MockGitBackend struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
+		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
+			defaultHook: func(context.Context, ArchiveFormat, string, []string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
 		BlameFunc: &GitBackendBlameFunc{
 			defaultHook: func(context.Context, api.CommitID, string, BlameOptions) (r0 BlameHunkReader, r1 error) {
 				return
@@ -325,6 +336,11 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ExecFunc: &GitBackendExecFunc{
 			defaultHook: func(context.Context, ...string) (r0 io.ReadCloser, r1 error) {
+				return
+			},
+		},
+		GetCommitFunc: &GitBackendGetCommitFunc{
+			defaultHook: func(context.Context, api.CommitID, bool) (r0 *GitCommitWithFiles, r1 error) {
 				return
 			},
 		},
@@ -360,6 +376,11 @@ func NewMockGitBackend() *MockGitBackend {
 // All methods panic on invocation, unless overwritten.
 func NewStrictMockGitBackend() *MockGitBackend {
 	return &MockGitBackend{
+		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
+			defaultHook: func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockGitBackend.ArchiveReader")
+			},
+		},
 		BlameFunc: &GitBackendBlameFunc{
 			defaultHook: func(context.Context, api.CommitID, string, BlameOptions) (BlameHunkReader, error) {
 				panic("unexpected invocation of MockGitBackend.Blame")
@@ -373,6 +394,11 @@ func NewStrictMockGitBackend() *MockGitBackend {
 		ExecFunc: &GitBackendExecFunc{
 			defaultHook: func(context.Context, ...string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockGitBackend.Exec")
+			},
+		},
+		GetCommitFunc: &GitBackendGetCommitFunc{
+			defaultHook: func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error) {
+				panic("unexpected invocation of MockGitBackend.GetCommit")
 			},
 		},
 		GetObjectFunc: &GitBackendGetObjectFunc{
@@ -407,6 +433,9 @@ func NewStrictMockGitBackend() *MockGitBackend {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 	return &MockGitBackend{
+		ArchiveReaderFunc: &GitBackendArchiveReaderFunc{
+			defaultHook: i.ArchiveReader,
+		},
 		BlameFunc: &GitBackendBlameFunc{
 			defaultHook: i.Blame,
 		},
@@ -415,6 +444,9 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ExecFunc: &GitBackendExecFunc{
 			defaultHook: i.Exec,
+		},
+		GetCommitFunc: &GitBackendGetCommitFunc{
+			defaultHook: i.GetCommit,
 		},
 		GetObjectFunc: &GitBackendGetObjectFunc{
 			defaultHook: i.GetObject,
@@ -432,6 +464,120 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 			defaultHook: i.SymbolicRefHead,
 		},
 	}
+}
+
+// GitBackendArchiveReaderFunc describes the behavior when the ArchiveReader
+// method of the parent MockGitBackend instance is invoked.
+type GitBackendArchiveReaderFunc struct {
+	defaultHook func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)
+	hooks       []func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)
+	history     []GitBackendArchiveReaderFuncCall
+	mutex       sync.Mutex
+}
+
+// ArchiveReader delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitBackend) ArchiveReader(v0 context.Context, v1 ArchiveFormat, v2 string, v3 []string) (io.ReadCloser, error) {
+	r0, r1 := m.ArchiveReaderFunc.nextHook()(v0, v1, v2, v3)
+	m.ArchiveReaderFunc.appendCall(GitBackendArchiveReaderFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ArchiveReader method
+// of the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendArchiveReaderFunc) SetDefaultHook(hook func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ArchiveReader method of the parent MockGitBackend instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitBackendArchiveReaderFunc) PushHook(hook func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendArchiveReaderFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+	f.SetDefaultHook(func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendArchiveReaderFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+	f.PushHook(func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendArchiveReaderFunc) nextHook() func(context.Context, ArchiveFormat, string, []string) (io.ReadCloser, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendArchiveReaderFunc) appendCall(r0 GitBackendArchiveReaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendArchiveReaderFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendArchiveReaderFunc) History() []GitBackendArchiveReaderFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendArchiveReaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendArchiveReaderFuncCall is an object that describes an invocation
+// of method ArchiveReader on an instance of MockGitBackend.
+type GitBackendArchiveReaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ArchiveFormat
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 io.ReadCloser
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendArchiveReaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendArchiveReaderFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitBackendBlameFunc describes the behavior when the Blame method of the
@@ -756,6 +902,117 @@ func (c GitBackendExecFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendExecFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitBackendGetCommitFunc describes the behavior when the GetCommit method
+// of the parent MockGitBackend instance is invoked.
+type GitBackendGetCommitFunc struct {
+	defaultHook func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error)
+	hooks       []func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error)
+	history     []GitBackendGetCommitFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCommit delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitBackend) GetCommit(v0 context.Context, v1 api.CommitID, v2 bool) (*GitCommitWithFiles, error) {
+	r0, r1 := m.GetCommitFunc.nextHook()(v0, v1, v2)
+	m.GetCommitFunc.appendCall(GitBackendGetCommitFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetCommit method of
+// the parent MockGitBackend instance is invoked and the hook queue is
+// empty.
+func (f *GitBackendGetCommitFunc) SetDefaultHook(hook func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCommit method of the parent MockGitBackend instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GitBackendGetCommitFunc) PushHook(hook func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitBackendGetCommitFunc) SetDefaultReturn(r0 *GitCommitWithFiles, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitBackendGetCommitFunc) PushReturn(r0 *GitCommitWithFiles, r1 error) {
+	f.PushHook(func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitBackendGetCommitFunc) nextHook() func(context.Context, api.CommitID, bool) (*GitCommitWithFiles, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitBackendGetCommitFunc) appendCall(r0 GitBackendGetCommitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitBackendGetCommitFuncCall objects
+// describing the invocations of this function.
+func (f *GitBackendGetCommitFunc) History() []GitBackendGetCommitFuncCall {
+	f.mutex.Lock()
+	history := make([]GitBackendGetCommitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitBackendGetCommitFuncCall is an object that describes an invocation of
+// method GetCommit on an instance of MockGitBackend.
+type GitBackendGetCommitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.CommitID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *GitCommitWithFiles
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitBackendGetCommitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitBackendGetCommitFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
