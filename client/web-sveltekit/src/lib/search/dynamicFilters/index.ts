@@ -76,6 +76,7 @@ export function groupFilters(filters: Filter[], selectedFilters: URLQueryFilter[
         lang: [],
         utility: [],
         author: [],
+        file: [],
         'commit date': [],
         'symbol type': [],
     }

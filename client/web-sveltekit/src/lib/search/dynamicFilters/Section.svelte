@@ -4,11 +4,10 @@
     import { page } from '$app/stores'
     import { pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import type { SidebarFilter } from '$lib/search/utils'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Badge, Button } from '$lib/wildcard'
 
-    import { updateFilterInURL } from '.'
+    import { updateFilterInURL, type SidebarFilter } from './index'
 
     export let items: SidebarFilter[]
     export let title: string
@@ -28,54 +27,59 @@
     $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
 </script>
 
-<article>
-    <header><h4>{title}</h4></header>
-    {#if !showAll && items.length > 5}
-        <input bind:value={filterText} placeholder={filterPlaceholder} />
-    {/if}
-    <ul>
-        {#each limitedItems as item}
-            <li>
-                <a href={generateURL(item).toString()} class:selected={item.selected}>
-                    <span class="label">
-                        <slot name="label" label={item.label} value={item.value}>
-                            {item.label}
-                        </slot>
-                    </span>
-                    {#if item.count !== undefined}
-                        <span class="count">
-                            {#if item.exhaustive}
-                                <Badge variant="secondary">{item.count}</Badge>
-                            {:else}
-                                <Tooltip
-                                    tooltip="At least {item.count} {pluralize('result', item.count)} match this filter."
-                                >
-                                    <Badge variant="secondary">{item.count}+</Badge>
-                                </Tooltip>
-                            {/if}
+{#if items.length > 0}
+    <article>
+        <header><h4>{title}</h4></header>
+        {#if !showAll && items.length > 5}
+            <input bind:value={filterText} placeholder={filterPlaceholder} />
+        {/if}
+        <ul>
+            {#each limitedItems as item}
+                <li>
+                    <a href={generateURL(item).toString()} class:selected={item.selected}>
+                        <span class="label">
+                            <slot name="label" label={item.label} value={item.value}>
+                                {item.label}
+                            </slot>
                         </span>
-                    {/if}
-                    {#if item.selected}
-                        <span class="close">
-                            <Icon svgPath={mdiClose} inline />
-                        </span>
-                    {/if}
-                </a>
-            </li>
-        {/each}
-    </ul>
-    {#if limitedItems.length < filteredItems.length}
-        <footer>
-            <Button variant="link" on:click={() => (showAll = true)}>
-                Show all ({filteredItems.length})
-            </Button>
-        </footer>
-    {:else if !showAll && limitedItems.length > 5}
-        <footer>
-            <Button variant="link" on:click={() => (showAll = false)}>Show less</Button>
-        </footer>
-    {/if}
-</article>
+                        {#if item.count !== undefined}
+                            <span class="count">
+                                {#if item.exhaustive}
+                                    <Badge variant="secondary">{item.count}</Badge>
+                                {:else}
+                                    <Tooltip
+                                        tooltip="At least {item.count} {pluralize(
+                                            'result',
+                                            item.count
+                                        )} match this filter."
+                                    >
+                                        <Badge variant="secondary">{item.count}+</Badge>
+                                    </Tooltip>
+                                {/if}
+                            </span>
+                        {/if}
+                        {#if item.selected}
+                            <span class="close">
+                                <Icon svgPath={mdiClose} inline />
+                            </span>
+                        {/if}
+                    </a>
+                </li>
+            {/each}
+        </ul>
+        {#if limitedItems.length < filteredItems.length}
+            <footer>
+                <Button variant="link" on:click={() => (showAll = true)}>
+                    Show all ({filteredItems.length})
+                </Button>
+            </footer>
+        {:else if !showAll && limitedItems.length > 5}
+            <footer>
+                <Button variant="link" on:click={() => (showAll = false)}>Show less</Button>
+            </footer>
+        {/if}
+    </article>
+{/if}
 
 <style lang="scss">
     h4 {
