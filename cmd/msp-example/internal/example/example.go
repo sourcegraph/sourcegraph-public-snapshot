@@ -35,7 +35,7 @@ func (s Service) Initialize(
 	logger log.Logger,
 	contract runtime.Contract,
 	config Config,
-) (background.CombinedRoutine, error) {
+) (background.Routine, error) {
 	logger.Info("starting service")
 
 	if !config.StatelessMode {
