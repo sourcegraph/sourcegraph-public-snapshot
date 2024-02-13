@@ -12,18 +12,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"google.golang.org/grpc"
 )
 
 // initHTTPTestGitServer instantiates an httptest.Server to make it return an HTTP response as set
@@ -135,18 +132,6 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	mockGitServerResponse := "this is a gitserver archive response"
-	source := gitserver.NewTestClientSource(t, []string{"gitserver"}, func(o *gitserver.TestClientSourceOptions) {
-		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-			c := gitserver.NewMockGitserverServiceClient()
-			ac := gitserver.NewMockGitserverService_ArchiveClient()
-			ac.RecvFunc.PushReturn(&proto.ArchiveResponse{
-				Data: []byte(mockGitServerResponse),
-			}, nil)
-			ac.RecvFunc.PushReturn(nil, io.EOF)
-			c.ArchiveFunc.SetDefaultReturn(ac, nil)
-			return c
-		}
-	})
 
 	t.Run("success response for format=zip", func(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
@@ -157,7 +142,9 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		client := gitserver.NewTestClient(t).WithClientSource(source)
+		client := gitserver.NewMockClient()
+		client.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader(mockGitServerResponse)), nil)
+
 		err := serveRaw(logger, db, client)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
@@ -183,7 +170,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 			}
 		}
 
-		body := string(w.Body.Bytes())
+		body := w.Body.String()
 		if body != mockGitServerResponse {
 			t.Errorf("Want %q in body, but got %q", mockGitServerResponse, body)
 		}
@@ -198,7 +185,8 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		client := gitserver.NewTestClient(t).WithClientSource(source)
+		client := gitserver.NewMockClient()
+		client.ArchiveReaderFunc.SetDefaultReturn(io.NopCloser(strings.NewReader(mockGitServerResponse)), nil)
 		err := serveRaw(logger, db, client)(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
@@ -224,7 +212,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 			}
 		}
 
-		body := string(w.Body.Bytes())
+		body := w.Body.String()
 		if body != mockGitServerResponse {
 			t.Errorf("Want %q in body, but got %q", mockGitServerResponse, body)
 		}
@@ -320,7 +308,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		want := `a/
 b/
 c.go`
-		body := string(w.Body.Bytes())
+		body := w.Body.String()
 		if body != want {
 			t.Errorf("Want %q in body, but got %q", want, body)
 		}
@@ -352,7 +340,7 @@ c.go`
 
 		want := "this is a test file"
 
-		body := string(w.Body.Bytes())
+		body := w.Body.String()
 		if body != want {
 			t.Errorf("Want %q in body, but got %q", want, body)
 		}
@@ -385,7 +373,7 @@ c.go`
 
 		want := "this is a test file"
 
-		body := string(w.Body.Bytes())
+		body := w.Body.String()
 		if body != want {
 			t.Errorf("Want %q in body, but got %q", want, body)
 		}

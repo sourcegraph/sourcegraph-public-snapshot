@@ -82,9 +82,6 @@ go_test(
         "templ_test.go",
     ],
     embed = [":ui"],
-    tags = [
-        "requires-network",
-    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
@@ -99,7 +96,6 @@ go_test(
         "//internal/fileutil",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
-        "//internal/gitserver/v1:gitserver",
         "//internal/repoupdater",
         "//internal/search/result",
         "//internal/types",
@@ -109,6 +105,5 @@ go_test(
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
-        "@org_golang_google_grpc//:go_default_library",
     ],
 )

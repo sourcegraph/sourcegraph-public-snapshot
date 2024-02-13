@@ -436,9 +436,14 @@ func TestGRPCServer_Archive(t *testing.T) {
 	t.Run("argument validation", func(t *testing.T) {
 		gs := &grpcServer{}
 		err := gs.Archive(&v1.ArchiveRequest{Repo: ""}, mockSS)
-		require.ErrorContains(t, err, "empty repo")
+		require.ErrorContains(t, err, "repo must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
-		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo"}, mockSS)
+
+		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_TAR}, mockSS)
+		require.ErrorContains(t, err, "treeish must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+
+		err = gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD"}, mockSS)
 		require.ErrorContains(t, err, "unknown archive format")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
@@ -446,7 +451,7 @@ func TestGRPCServer_Archive(t *testing.T) {
 		svc := NewMockService()
 		svc.MaybeStartCloneFunc.SetDefaultReturn(&protocol.NotFoundPayload{CloneInProgress: true, CloneProgress: "cloning"}, false)
 		gs := &grpcServer{svc: svc}
-		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
+		err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -468,17 +473,28 @@ func TestGRPCServer_Archive(t *testing.T) {
 			},
 		}
 
+		t.Run("subrepo perms are enabled but actor is internal", func(t *testing.T) {
+			srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+			mockSS := gitserver.NewMockGitserverService_ArchiveServer()
+			// Add an internal actor to the context.
+			mockSS.ContextFunc.SetDefaultReturn(actor.WithInternalActor(context.Background()))
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
+			assert.NoError(t, err)
+			mockassert.NotCalled(t, srp.EnabledForRepoFunc)
+		})
+
 		t.Run("subrepo perms are not enabled", func(t *testing.T) {
 			srp.EnabledForRepoFunc.SetDefaultReturn(false, nil)
-			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
 			assert.NoError(t, err)
 			mockassert.Called(t, srp.EnabledForRepoFunc)
 		})
 
 		t.Run("subrepo perms are enabled, returns error", func(t *testing.T) {
 			srp.EnabledForRepoFunc.SetDefaultReturn(true, nil)
-			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
+			err := gs.Archive(&v1.ArchiveRequest{Repo: "therepo", Treeish: "HEAD", Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP}, mockSS)
 			assert.Error(t, err)
+			assertGRPCStatusCode(t, err, codes.Unimplemented)
 			require.Contains(t, err.Error(), "archiveReader invoked for a repo with sub-repo permissions")
 			mockassert.Called(t, srp.EnabledForRepoFunc)
 		})
@@ -502,8 +518,9 @@ func TestGRPCServer_Archive(t *testing.T) {
 
 		cli := spawnServer(t, gs)
 		r, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
-			Repo:   "therepo",
-			Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
+			Repo:    "therepo",
+			Treeish: "HEAD",
+			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
 		})
 		require.NoError(t, err)
 		for {
@@ -521,21 +538,25 @@ func TestGRPCServer_Archive(t *testing.T) {
 			}
 		}
 
+		// Invalid file path.
 		b.ArchiveReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 		cc, err := cli.Archive(context.Background(), &v1.ArchiveRequest{
-			Repo:   "therepo",
-			Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
+			Repo:    "therepo",
+			Treeish: "HEAD",
+			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
 		})
 		require.NoError(t, err)
 		_, err = cc.Recv()
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
-		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		assertHasGRPCErrorDetailOfType(t, err, &proto.FileNotFoundPayload{})
 
+		// TODO: Do we return this?
 		b.ArchiveReaderFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
 		cc, err = cli.Archive(context.Background(), &v1.ArchiveRequest{
-			Repo:   "therepo",
-			Format: proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
+			Repo:    "therepo",
+			Treeish: "HEAD",
+			Format:  proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP,
 		})
 		require.NoError(t, err)
 		_, err = cc.Recv()
