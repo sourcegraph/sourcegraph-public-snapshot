@@ -2,7 +2,7 @@ import { Base64 } from 'js-base64'
 
 import type * as sourcegraph from './api'
 
-export const linkURL = 'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence'
+export const linkURL = 'https://sourcegraph.com/docs/code_navigation/explanations/precise_code_navigation'
 
 // Aggregable badges
 //
@@ -95,5 +95,5 @@ export const impreciseBadge = {
     light: { icon: infoIcon('#000000') },
     hoverMessage:
         'Search-based results - click to see how these results are calculated and how to get precise intelligence with LSIF.',
-    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/basic_code_intelligence',
+    linkURL: 'https://sourcegraph.com/docs/code_intelligence/explanations/basic_code_intelligence',
 }

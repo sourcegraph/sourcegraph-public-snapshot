@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Link, Text } from '@sourcegraph/wildcard'
@@ -21,7 +22,7 @@ import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import styles from './SignUpPage.module.scss'
 
-export interface SignUpPageProps extends TelemetryProps {
+export interface SignUpPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -38,6 +39,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     authenticatedUser,
     context,
     telemetryService,
+    telemetryRecorder,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -48,6 +50,9 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
+        telemetryRecorder.recordEvent('auth.signUp', 'view', {
+            metadata: { 'invited-by-user': invitedBy !== null ? 1 : 0 },
+        })
 
         if (invitedBy !== null) {
             const parameters = {
@@ -56,7 +61,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             }
             eventLogger.log('SignUpInvitedByUser', parameters, parameters)
         }
-    }, [invitedBy, authenticatedUser, context.allowSignup])
+    }, [invitedBy, authenticatedUser, context.allowSignup, telemetryRecorder])
 
     if (authenticatedUser) {
         return <Navigate to={returnTo} replace={true} />
@@ -83,6 +88,8 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
 
             const source = query.get('editor') === 'vscode' ? 'ide_extension' : 'web'
             telemetryService.log(EventName.SIGNUP_COMPLETED, { source }, { source })
+            const v2Source = query.get('editor') === 'vscode' ? 0 : 1
+            telemetryRecorder.recordEvent('auth.signUp', 'complete', { metadata: { source: v2Source } })
 
             // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
             window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
@@ -98,6 +105,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
@@ -111,6 +119,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 isSourcegraphDotCom={context.sourcegraphDotComMode}
             />
         )
@@ -129,7 +138,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             >
                 {context.sourcegraphDotComMode && <Text className="pt-1 pb-2">Start searching public code now</Text>}
                 <Container>
-                    <SignUpForm context={context} onSignUp={handleSignUp} />
+                    <SignUpForm context={context} onSignUp={handleSignUp} telemetryRecorder={telemetryRecorder} />
                 </Container>
                 <Text className="text-center mt-3">
                     Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>

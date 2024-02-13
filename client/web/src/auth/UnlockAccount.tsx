@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Alert, Link, LoadingSpinner, ErrorAlert, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -14,7 +15,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 
 import styles from './UnlockAccount.module.scss'
 
-interface UnlockAccountPageProps {
+interface UnlockAccountPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -51,24 +52,28 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
                 throw new Error('The url you provided is either expired or invalid.')
             }
 
-            eventLogger.log('OkUnlockAccount', { token })
+            eventLogger.log('OkUnlockAccount')
+            props.telemetryRecorder.recordEvent('auth.unlockAccount', 'success')
         } catch (error) {
             setError(error)
-            eventLogger.log('KoUnlockAccount', { token })
+            eventLogger.log('KoUnlockAccount')
+            props.telemetryRecorder.recordEvent('auth.unlockAccount', 'fail')
         } finally {
             setLoading(false)
         }
-    }, [token, props.context.xhrHeaders])
+    }, [token, props.context.xhrHeaders, props.telemetryRecorder])
 
     useEffect(() => {
         if (props.authenticatedUser) {
             return
         }
         eventLogger.logPageView('UnlockUserAccountRequest', null, false)
+        props.telemetryRecorder.recordEvent('auth.unlockAccount', 'view')
+
         unlockAccount().catch(error => {
             setError(error)
         })
-    }, [unlockAccount, props.authenticatedUser])
+    }, [unlockAccount, props.authenticatedUser, props.telemetryRecorder])
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)

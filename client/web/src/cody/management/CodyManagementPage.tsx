@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { mdiHelpCircleOutline, mdiInformationOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiHelpCircleOutline, mdiInformationOutline, mdiOpenInNew, mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -190,7 +190,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                         {userIsOnProTier && (
                             <div>
-                                <ButtonLink to="/cody/subscription" variant="secondary" outline={true} size="sm">
+                                <ButtonLink to="/cody/subscription" variant="primary" size="sm">
+                                    <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                     Manage subscription
                                 </ButtonLink>
                             </div>
@@ -505,6 +506,7 @@ const DoNotLoseCodyProBanner: React.FunctionComponent<{
                 </div>
                 <div>
                     <ButtonLink to={manageSubscriptionRedirectURL} variant="primary" size="sm">
+                        <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                         Add Credit Card
                     </ButtonLink>
                 </div>

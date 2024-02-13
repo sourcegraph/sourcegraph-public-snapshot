@@ -62,7 +62,7 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, token *oa
 	login, err = auth.NormalizeUsername(login)
 	if err != nil {
 		return false, nil,
-			fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login),
+			fmt.Sprintf("Error normalizing the username %q. See https://sourcegraph.com/docs/admin/auth/#username-normalization.", login),
 			errors.Wrap(err, "normalize username")
 	}
 

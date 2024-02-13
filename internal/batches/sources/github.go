@@ -207,7 +207,7 @@ func (s GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 			// There is a creation limit (undocumented) in GitHub. When reached, GitHub provides an unclear error
 			// message to users. See https://github.com/cli/cli/issues/4801.
 			if strings.Contains(err.Error(), "was submitted too quickly") {
-				return exists, errors.Wrap(err, "reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits")
+				return exists, errors.Wrapf(err, "reached GitHub's internal creation limit: see https://sourcegraph.com/docs/admin/config/batch_changes#avoiding-hitting-rate-limits")
 			}
 			return exists, err
 		}

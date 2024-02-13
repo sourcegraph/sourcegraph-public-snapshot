@@ -256,7 +256,7 @@ type AzureDevOpsConnection struct {
 	//
 	// If "http", Sourcegraph will access repositories using Git URLs of the form http(s)://dev.azure.com/myrepo.git.
 	//
-	// If "ssh", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
@@ -337,7 +337,7 @@ type BitbucketCloudAuthProvider struct {
 	Url string `json:"url,omitempty"`
 }
 
-// BitbucketCloudAuthorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
+// BitbucketCloudAuthorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
 type BitbucketCloudAuthorization struct {
 	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
 	IdentityProvider string `json:"identityProvider,omitempty"`
@@ -351,7 +351,7 @@ type BitbucketCloudConnection struct {
 	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
 	AppPassword string `json:"appPassword,omitempty"`
-	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
+	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
 	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
 	//
@@ -361,7 +361,7 @@ type BitbucketCloudConnection struct {
 	//
 	// If "http", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form https://bitbucket.org/myteam/myproject.git.
 	//
-	// If "ssh", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
 	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
@@ -409,13 +409,13 @@ type BitbucketServerConnection struct {
 	//
 	// Supports excluding by name ({"name": "projectKey/repositorySlug"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
-	// ExcludePersonalRepositories description: Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.
+	// ExcludePersonalRepositories description: Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://sourcegraph.com/docs/integration/bitbucket_server#excluding-personal-repositories for more information.
 	ExcludePersonalRepositories bool `json:"excludePersonalRepositories,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server / Bitbucket Data Center instance.
 	//
 	// If "http", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server / Bitbucket Data Center instance uses HTTPS).
 	//
-	// If "ssh", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form ssh://git@example.bitbucket.org/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form ssh://git@example.bitbucket.org/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. BitBucket repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
@@ -497,7 +497,7 @@ type BitbucketServerPlugin struct {
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
-	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server / Bitbucket Data Center instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
+	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server / Bitbucket Data Center instance. For details of how the webhook is configured, see our docs: https://sourcegraph.com/docs/admin/external_service/bitbucket_server#webhooks
 	DisableSync bool `json:"disableSync,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
@@ -1138,7 +1138,7 @@ type GerritAuthProvider struct {
 	Url string `json:"url"`
 }
 
-// GerritAuthorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+// GerritAuthorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
 type GerritAuthorization struct {
 	// IdentityProvider description: The identity provider to use for user information. If not set, the `url` field is used.
 	IdentityProvider string `json:"identityProvider,omitempty"`
@@ -1146,7 +1146,7 @@ type GerritAuthorization struct {
 
 // GerritConnection description: Configuration for a connection to Gerrit.
 type GerritConnection struct {
-	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
+	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
 	Authorization *GerritAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Gerrit instance. Takes precedence over "projects" configuration.
 	//
@@ -1212,7 +1212,7 @@ type GitHubAppDetails struct {
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
-	// AllowGroupsPermissionsSync description: Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).
+	// AllowGroupsPermissionsSync description: Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://sourcegraph.com/docs/admin/external_service/github#teams-and-organizations-permissions-caching).
 	AllowGroupsPermissionsSync bool `json:"allowGroupsPermissionsSync,omitempty"`
 	// AllowOrgs description: Restricts new logins and signups (if allowSignup is true) to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.
 	AllowOrgs []string `json:"allowOrgs,omitempty"`
@@ -1233,9 +1233,9 @@ type GitHubAuthProvider struct {
 	Url string `json:"url,omitempty"`
 }
 
-// GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "github" with the same `url` field as specified in this `GitHubConnection`.
+// GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
-	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).
+	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://sourcegraph.com/docs/admin/external_service/github#teams-and-organizations-permissions-caching).
 	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
 	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
 	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
@@ -1245,7 +1245,7 @@ type GitHubAuthorization struct {
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
-	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "github" with the same `url` field as specified in this `GitHubConnection`.
+	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://sourcegraph.com/docs/admin/config/site_config#auth-providers) `auth.providers` field, of type "github" with the same `url` field as specified in this `GitHubConnection`.
 	Authorization *GitHubAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
@@ -1265,7 +1265,7 @@ type GitHubConnection struct {
 	//
 	// If "http", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 	//
-	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// GithubAppInstallationID description: DEPRECATED: The installation ID of the GitHub App.
 	GithubAppInstallationID string `json:"githubAppInstallationID,omitempty"`
@@ -1302,7 +1302,7 @@ type GitHubConnection struct {
 	//
 	// If you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.
 	RepositoryQuery []string `json:"repositoryQuery,omitempty"`
-	// Token description: A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.
+	// Token description: A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://sourcegraph.com/docs/admin/external_service/github#github-api-access for which scopes are required for which use cases.
 	Token string `json:"token,omitempty"`
 	// Url description: URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url"`
@@ -1373,7 +1373,7 @@ type GitLabConnection struct {
 	//
 	// If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).
 	//
-	// If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://sourcegraph.com/docs/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
@@ -1785,11 +1785,11 @@ type ObservabilityClient struct {
 	OpenTelemetry *OpenTelemetry `json:"openTelemetry,omitempty"`
 }
 
-// ObservabilityTracing description: Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing
+// ObservabilityTracing description: Configures distributed tracing within Sourcegraph. To learn more, refer to https://sourcegraph.com/docs/admin/observability/tracing
 type ObservabilityTracing struct {
 	// Debug description: Turns on debug logging of tracing client requests. This can be useful for debugging connectivity issues between the tracing client and tracing backend, the performance overhead of tracing, and other issues related to the use of distributed tracing. May have performance implications in production.
 	Debug bool `json:"debug,omitempty"`
-	// Sampling description: Determines the conditions under which distributed traces are recorded. "none" turns off tracing entirely. "selective" (default) sends traces whenever `?trace=1` is present in the URL (though background jobs may still emit traces). "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. To learn more about additional sampling and traace export configuration with the default tracing type "opentelemetry", refer to https://docs.sourcegraph.com/admin/observability/opentelemetry#tracing
+	// Sampling description: Determines the conditions under which distributed traces are recorded. "none" turns off tracing entirely. "selective" (default) sends traces whenever `?trace=1` is present in the URL (though background jobs may still emit traces). "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. To learn more about additional sampling and traace export configuration with the default tracing type "opentelemetry", refer to https://sourcegraph.com/docs/admin/observability/opentelemetry#tracing
 	Sampling string `json:"sampling,omitempty"`
 	// Type description: Determines what tracing provider to enable. For "opentelemetry", the required backend is an OpenTelemetry collector instance (deployed by default with Sourcegraph). For "jaeger", a Jaeger instance is required to be configured via Jaeger client environment variables: https://github.com/jaegertracing/jaeger-client-go#environment-variables
 	Type string `json:"type,omitempty"`
@@ -2253,7 +2253,7 @@ type SAMLAuthProvider struct {
 }
 
 // SMTPServerConfig description: The SMTP server used to send transactional emails.
-// Please see https://docs.sourcegraph.com/admin/config/email
+// Please see https://sourcegraph.com/docs/admin/config/email
 type SMTPServerConfig struct {
 	// AdditionalHeaders description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
 	AdditionalHeaders []*Header `json:"additionalHeaders,omitempty"`
@@ -2756,9 +2756,9 @@ type SiteConfiguration struct {
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
 	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
-	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://docs.sourcegraph.com/admin/access_control
+	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control
 	CodyPermissions *bool `json:"cody.permissions,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://sourcegraph.com/docs/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
@@ -2783,12 +2783,12 @@ type SiteConfiguration struct {
 	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
-	// Please see https://docs.sourcegraph.com/admin/config/email
+	// Please see https://sourcegraph.com/docs/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
 	// EmailSenderName description: The name to use in the "from" address for emails sent by this server.
 	EmailSenderName string `json:"email.senderName,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails.
-	// Please see https://docs.sourcegraph.com/admin/config/email
+	// Please see https://sourcegraph.com/docs/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EmailTemplates description: Configurable templates for some email types sent by Sourcegraph.
 	EmailTemplates *EmailTemplates `json:"email.templates,omitempty"`
@@ -2885,7 +2885,7 @@ type SiteConfiguration struct {
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
-	// ObservabilityTracing description: Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing
+	// ObservabilityTracing description: Configures distributed tracing within Sourcegraph. To learn more, refer to https://sourcegraph.com/docs/admin/observability/tracing
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// OrganizationInvitations description: Configuration for organization invitations.
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
