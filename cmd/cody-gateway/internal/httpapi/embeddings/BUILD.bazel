@@ -32,7 +32,6 @@ go_library(
 go_test(
     name = "embeddings_test",
     srcs = ["openai_test.go"],
-    data = glob(["testdata/**"]),
     embed = [":embeddings"],
     deps = [
         "//cmd/cody-gateway/internal/response",
