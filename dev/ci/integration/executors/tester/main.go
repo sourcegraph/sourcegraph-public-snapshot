@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	SourcegraphEndpoint = env.Get("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080", "Sourcegraph frontend endpoint")
+	SourcegraphEndpoint = env.Get("SOURCEGRAPH_BASE_URL", "http://localhost:7080", "Sourcegraph frontend endpoint")
 	githubToken         = env.Get("GITHUB_TOKEN", "", "GITHUB_TOKEN to clone the repositories")
 )
 

@@ -10,4 +10,12 @@ export SRC_LOG_LEVEL=dbug
 aspectRC="aspect-generated.bazelrc"
 rosetta bazelrc > "$aspectRC"
 
+echo "--- debug"
+groups
+whoami
+docker info
+env
+
+echo "--- run tests"
+
 bazel --bazelrc="$aspectRC" run //dev/ci/integration/executors/tester:tester

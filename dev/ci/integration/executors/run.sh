@@ -14,16 +14,25 @@ mkdir "${DATA}"
 mkdir "${DATA}/data"
 mkdir "${DATA}/config"
 
+EXECUTOR_UID="$(id -u)"
+EXECUTOR_GID="$(id -g)"
+export EXECUTOR_UID
+export EXECUTOR_GID
+
 cleanup() {
   pushd "$root_dir"/dev/ci/integration/executors/ 1>/dev/null
   docker-compose logs >"${root_dir}/docker-compose.log"
+  # We have to remove the directory here since the container creates files in that directory as root, and
+  # we can't remove outside of the container
+  docker-compose exec server /bin/sh -c "rm -rf /var/opt/sourcegraph/*"
   docker-compose down --volumes --timeout 30 # seconds
   docker volume rm executors-e2e || true
   popd 1>/dev/null
-  rm -rf "${TMP_WORK_DIR}"
 }
 trap cleanup EXIT
 
+# TODO(burmudar): remove forcing this version
+CANDIDATE_VERSION="5.2.7"
 export POSTGRES_IMAGE="us.gcr.io/sourcegraph-dev/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 export EXECUTOR_IMAGE="us.gcr.io/sourcegraph-dev/executor:${CANDIDATE_VERSION}"
@@ -33,6 +42,10 @@ export TMP_DIR
 export DATA
 if [ -n "${DOCKER_GATEWAY_HOST}" ]; then
   DOCKER_HOST="tcp://${DOCKER_GATEWAY_HOST:-host.docker.internal}:2375"
+  export DOCKER_HOST
+fi
+if [ -z "${DOCKER_HOST}" ]; then
+  DOCKER_HOST="unix:///var/run/docker.sock"
   export DOCKER_HOST
 fi
 
@@ -56,6 +69,7 @@ docker-compose up -d
 
 echo "--- :terminal: Wait for server to be up"
 URL="http://localhost:7080"
+sleep 10
 timeout 120s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
