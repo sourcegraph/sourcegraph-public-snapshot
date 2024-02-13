@@ -35,7 +35,6 @@ import (
 const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -1194,10 +1193,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		},
 	})
 	defer endObservation(1, observation.Args{})
-
-	if ClientMocks.GetObject != nil {
-		return ClientMocks.GetObject(repo, objectName)
-	}
 
 	req := protocol.GetObjectRequest{
 		Repo:       repo,
