@@ -229,29 +229,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 // it with methods on the given server.
 func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	configurationWatcher := conf.DefaultClient()
+	scopedLogger := logger.Scoped("gitserver.accesslog")
 
-	var additionalServerOptions []grpc.ServerOption
-
-	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:          logger.Scoped("exec.accesslog"),
-		proto.GitserverService_Archive_FullMethodName:       logger.Scoped("archive.accesslog"),
-		proto.GitserverService_P4Exec_FullMethodName:        logger.Scoped("p4exec.accesslog"),
-		proto.GitserverService_GetObject_FullMethodName:     logger.Scoped("get-object.accesslog"),
-		proto.GitserverService_MergeBase_FullMethodName:     logger.Scoped("merge-base.accesslog"),
-		proto.GitserverService_Blame_FullMethodName:         logger.Scoped("blame.accesslog"),
-		proto.GitserverService_DefaultBranch_FullMethodName: logger.Scoped("default-branch.accesslog"),
-		proto.GitserverService_GetCommit_FullMethodName:     logger.Scoped("get-commit.accesslog"),
-	} {
-		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
-		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
-
-		additionalServerOptions = append(additionalServerOptions,
-			grpc.ChainStreamInterceptor(methodSpecificStreamInterceptor(method, streamInterceptor)),
-			grpc.ChainUnaryInterceptor(methodSpecificUnaryInterceptor(method, unaryInterceptor)),
-		)
-	}
-
-	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
+	grpcServer := defaults.NewServer(
+		logger,
+		grpc.ChainStreamInterceptor(accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)),
+		grpc.ChainUnaryInterceptor(accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)),
+	)
 	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	return grpcServer
@@ -300,32 +284,6 @@ func getRemoteURLFunc(
 		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-// methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
-//
-// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
-func methodSpecificStreamInterceptor(method string, next grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if method != info.FullMethod {
-			return handler(srv, ss)
-		}
-
-		return next(srv, ss, info, handler)
-	}
-}
-
-// methodSpecificUnaryInterceptor returns a gRPC unary server interceptor that only calls the next interceptor if the method matches.
-//
-// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
-func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		if method != info.FullMethod {
-			return handler(ctx, req)
-		}
-
-		return next(ctx, req, info, handler)
-	}
 }
 
 var defaultIgnoredGitCommands = []string{
