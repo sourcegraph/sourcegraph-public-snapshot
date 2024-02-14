@@ -9,7 +9,7 @@ import {
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
-import type { SectionItem } from './Section'
+import type { SectionItem } from './Section.svelte'
 
 /**
  * URLQueryFilter is the subset of a filter that is stored in the URL query

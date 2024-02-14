@@ -7,7 +7,7 @@
     import { displayRepoName, type Filter } from '$lib/shared'
 
     import { type URLQueryFilter, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
-    import type { SectionItem } from './Section'
+    import type { SectionItem } from './Section.svelte'
     import Section from './Section.svelte'
 
     export let streamFilters: Filter[]
