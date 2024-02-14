@@ -28587,19 +28587,6 @@
           "Comment": ""
         },
         {
-          "Name": "searchable",
-          "Index": 19,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "true",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "site_admin",
           "Index": 12,
           "TypeName": "boolean",

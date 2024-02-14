@@ -844,6 +844,18 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 
 	sha, err := backend.MergeBase(ctx, string(req.GetBase()), string(req.GetHead()))
 	if err != nil {
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepoName(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return nil, s.Err()
+		}
+
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
 		// TODO: Better error checking.
 		return nil, err
