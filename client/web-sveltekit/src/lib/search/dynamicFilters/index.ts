@@ -9,16 +9,15 @@ import {
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
-export type URLQueryFilter = Pick<Filter, 'kind' | 'label' | 'value'>
+import type { SectionItem } from './Section'
 
-export interface SidebarFilter {
-    value: Filter['value']
-    label: Filter['label']
-    exhaustive: Filter['exhaustive']
-    kind: Filter['kind']
-    count?: Filter['count']
-    selected: boolean
-}
+/**
+ * URLQueryFilter is the subset of a filter that is stored in the URL query
+ * when a dynamic filter is selected. This is the minimum amount of state
+ * necessary to render the selected filter before the backend streams back
+ * any filters.
+ */
+export type URLQueryFilter = Pick<Filter, 'kind' | 'label' | 'value'>
 
 const DYNAMIC_FILTER_URL_QUERY_KEY = 'df'
 
@@ -75,7 +74,7 @@ export const typeFilterIcons: Record<string, string> = {
     Diffs: mdiPlusMinus,
 }
 
-export type FilterGroups = Record<Filter['kind'], SidebarFilter[]>
+export type FilterGroups = Record<Filter['kind'], SectionItem[]>
 
 export function groupFilters(streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
     const groupedFilters: FilterGroups = {

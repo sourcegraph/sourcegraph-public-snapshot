@@ -3,18 +3,21 @@
 
     import Icon from '$lib/Icon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
-    import Section from '$lib/search/dynamicFilters/Section.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { displayRepoName, type Filter } from '$lib/shared'
 
     import { type URLQueryFilter, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
+    import type { SectionItem } from './Section'
+    import Section from './Section.svelte'
 
     export let streamFilters: Filter[]
     export let selectedFilters: URLQueryFilter[]
 
-    $: filters = groupFilters(streamFilters, selectedFilters)
-    $: typeFilters = staticTypeFilters.map(staticTypeFilter => {
-        const selectedOrStreamFilter = filters.type.find(typeFilter => typeFilter.label === staticTypeFilter.label)
+    $: groupedFilters = groupFilters(streamFilters, selectedFilters)
+    $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItem => {
+        const selectedOrStreamFilter = groupedFilters.type.find(
+            typeFilter => typeFilter.label === staticTypeFilter.label
+        )
         return {
             ...staticTypeFilter,
             count: selectedOrStreamFilter?.count,
@@ -32,14 +35,14 @@
             {label}
         </svelte:fragment>
     </Section>
-    <Section items={filters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
+    <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
         <svelte:fragment slot="label" let:label>
             <SymbolKind symbolKind={label.toUpperCase()} />
             {label}
         </svelte:fragment>
     </Section>
-    <Section items={filters.author} title="By author" filterPlaceholder="Filter authors" />
-    <Section items={filters['commit date']} title="By commit date">
+    <Section items={groupedFilters.author} title="By author" filterPlaceholder="Filter authors" />
+    <Section items={groupedFilters['commit date']} title="By commit date">
         <svelte:fragment slot="label" let:label let:value>
             <span class="commit-date-label">
                 {label}
@@ -47,9 +50,9 @@
             </span>
         </svelte:fragment>
     </Section>
-    <Section items={filters.lang} title="By language" filterPlaceholder="Filter languages" />
+    <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages" />
     <Section
-        items={filters.repo}
+        items={groupedFilters.repo}
         title="By repository"
         filterPlaceholder="Filter repositories"
         preprocessLabel={displayRepoName}
@@ -59,8 +62,8 @@
             {displayRepoName(label)}
         </svelte:fragment>
     </Section>
-    <Section items={filters.file} title="By file" showAll />
-    <Section items={filters.utility} title="Utility" showAll />
+    <Section items={groupedFilters.file} title="By file" showAll />
+    <Section items={groupedFilters.utility} title="Utility" showAll />
     <a class="section help" href="/help/code_search/reference/queries" target="_blank">
         <span class="icon">
             <Icon --color="var(--icon-color)" svgPath={mdiBookOpenVariant} inline />

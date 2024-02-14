@@ -7,15 +7,16 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import { Badge, Button } from '$lib/wildcard'
 
-    import { updateFilterInURL, type SidebarFilter } from './index'
+    import { updateFilterInURL } from './index'
+    import type { SectionItem } from './Section'
 
-    export let items: SidebarFilter[]
+    export let items: SectionItem[]
     export let title: string
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
     export let preprocessLabel: (label: string) => string = label => label
 
-    function generateURL(filter: SidebarFilter) {
+    function generateURL(filter: SectionItem) {
         return updateFilterInURL($page.url, filter, filter.selected)
     }
 
