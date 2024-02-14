@@ -35,7 +35,7 @@ var legacyDockerImages = []string{
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// TODO(burmudar): REMOVE ME
-	c.RunType = runtype.MainDryRun
+	c.RunType = runtype.WolfiBaseRebuild
 
 	if err := c.ensureCommit(); err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		baseImageOps := wolfiRebuildAllBaseImages(c)
 		if baseImageOps != nil {
 			ops.Merge(baseImageOps)
-			ops.Merge(wolfiGenerateBaseImagePR())
+			//ops.Merge(wolfiGenerateBaseImagePR())
 		}
 
 	// Use CandidateNoTest if you want to build legacy Docker Images

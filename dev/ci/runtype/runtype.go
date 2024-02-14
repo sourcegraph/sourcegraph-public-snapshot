@@ -38,10 +38,7 @@ const (
 	ExecutorPatchNoTest // build executor image without testing
 	CandidatesNoTest    // build one or all candidate images without testing
 
-	// Special test branches
-
-	BackendIntegrationTests // run backend tests that are used on main
-	BazelDo                 // run a specific bazel command
+	BazelDo // run a specific bazel command
 
 	// None is a no-op, add all run types above this type.
 	None
@@ -185,7 +182,7 @@ func (t RunType) String() string {
 	case BazelDo:
 		return "Bazel command"
 	}
-	return ""
+	return "None"
 }
 
 // RunTypeMatcher defines the requirements for any given build to be considered a build of
