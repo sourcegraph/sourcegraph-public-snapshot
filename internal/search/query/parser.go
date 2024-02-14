@@ -118,11 +118,15 @@ const (
 	NOT    keyword = "not"
 )
 
+// isSpace returns true if the buffer only contains UTF-8 encoded whitespace as
+// defined by unicode.IsSpace.
 func isSpace(buf []byte) bool {
-	for i := 0; i < len(buf); i++ {
-		if !unicode.IsSpace(rune(buf[i])) {
+	for len(buf) > 0 {
+		r, n := utf8.DecodeRune(buf)
+		if !unicode.IsSpace(r) {
 			return false
 		}
+		buf = buf[n:]
 	}
 	return true
 }

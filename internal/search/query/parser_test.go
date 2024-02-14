@@ -1023,3 +1023,25 @@ func TestParseKeywordPattern(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"foo \"bar\""`)))
 	})
 }
+
+func TestIsSpace(t *testing.T) {
+	cases := []struct {
+		input []byte
+		want  bool
+	}{
+		{[]byte{'\xa0'}, false},
+		{[]byte{' ', ' '}, true},
+		{[]byte{' ', '\t'}, true},
+		{[]byte{' ', '\t', '\f', '\r'}, true},
+		{[]byte{' ', '\t', '\f', '\r', 'a'}, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(string(tc.input), func(t *testing.T) {
+			got := isSpace([]byte(tc.input))
+			if got != tc.want {
+				t.Errorf("got %t, want %t, first byte %d", got, tc.want, rune(tc.input[0]))
+			}
+		})
+	}
+}
