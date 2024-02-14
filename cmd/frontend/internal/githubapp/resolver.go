@@ -81,7 +81,7 @@ func (r *resolver) RefreshGitHubApp(ctx context.Context, args *graphqlbackend.Re
 		return nil, err
 	}
 
-	err = app.syncInstallations(true)
+	err = app.syncInstallationsWithError(ctx)
 	return nil, err
 }
 
@@ -292,7 +292,7 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 
 		// We use this opportunity to sync installations in our database. This is done in
 		// a goroutine so that we don't block the request completion.
-		go r.syncInstallations(false)
+		go r.syncInstallations()
 
 		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindGitHub},
@@ -334,10 +334,8 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 }
 
 // syncInstallations syncs the GitHub App Installations in our database with those
-// found on GitHub. This method only logs errors rather than assigning them to
-// the resolver because they should not block the request from completing.
-func (r *gitHubAppResolver) syncInstallations(returnError bool) (err error) {
-	ctx := context.Background()
+// found on GitHub.
+func (r *gitHubAppResolver) syncInstallationsWithError(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
@@ -346,19 +344,13 @@ func (r *gitHubAppResolver) syncInstallations(returnError bool) (err error) {
 	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
 	if err != nil {
 		r.logger.Warn("Error creating GitHub App authenticator", log.Error(err))
-		if returnError {
-			return err
-		}
-		return nil
+		return err
 	}
 
 	baseURL, err := url.Parse(r.app.BaseURL)
 	if err != nil {
 		r.logger.Warn("Error parsing GitHub App base URL", log.Error(err))
-		if returnError {
-			return err
-		}
-		return nil
+		return err
 	}
 	apiURL, _ := github.APIRoot(baseURL)
 
@@ -367,9 +359,16 @@ func (r *gitHubAppResolver) syncInstallations(returnError bool) (err error) {
 	errs := r.db.GitHubApps().SyncInstallations(ctx, *r.app, r.logger, client)
 	if errs != nil && len(errs.Errors()) > 0 {
 		r.logger.Warn("Error syncing GitHub App Installations", log.Error(errs))
-		if returnError {
-			return errs
-		}
+		return errs
 	}
 	return nil
+}
+
+// This method only logs errors rather than assigning them to
+// the resolver because they should not block the request from completing.
+func (r *gitHubAppResolver) syncInstallations() {
+	ctx := context.Background()
+	if err := r.syncInstallationsWithError(ctx); err != nil {
+		r.logger.Error("Error syncing GitHub App Installations", log.Error(err))
+	}
 }
