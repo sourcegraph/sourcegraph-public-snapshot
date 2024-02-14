@@ -794,13 +794,6 @@ def go_dependencies():
         version = "v0.0.0-20220606134207-859f65c6625b",
     )
     go_repository(
-        name = "com_github_cafxx_httpcompression",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/CAFxX/httpcompression",
-        sum = "h1:0ue2X8dOLEpxTm8tt+OdHcgA+gbDge0OqFQWGKSqgrg=",
-        version = "v0.0.9",
-    )
-    go_repository(
         name = "com_github_cenkalti_backoff",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/cenkalti/backoff",
@@ -2321,13 +2314,6 @@ def go_dependencies():
         version = "v1.8.9",
     )
     go_repository(
-        name = "com_github_google_brotli_go_cbrotli",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/google/brotli/go/cbrotli",
-        sum = "h1:jopqB+UTSdJGEJT8tEqYyE29zN91fi2827oLET8tl7k=",
-        version = "v0.0.0-20230829110029-ed738e842d2f",
-    )
-    go_repository(
         name = "com_github_google_btree",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/google/btree",
@@ -3550,8 +3536,8 @@ def go_dependencies():
         name = "com_github_klauspost_pgzip",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/klauspost/pgzip",
-        sum = "h1:8RXeL5crjEUFnR2/Sn6GJNWtSQ3Dk8pq4CL3jvdDyjU=",
-        version = "v1.2.6",
+        sum = "h1:qnWYvvKqedOF2ulHpMG72XQol4ILEJ8k2wwRl/Km8oE=",
+        version = "v1.2.5",
     )
     go_repository(
         name = "com_github_kljensen_snowball",
@@ -5510,13 +5496,6 @@ def go_dependencies():
         version = "v1.2.7",
     )
     go_repository(
-        name = "com_github_ulikunitz_xz",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/ulikunitz/xz",
-        sum = "h1:kpFauv27b6ynzBNT/Xy+1k+fK4WswhN/6PN5WhFAGw8=",
-        version = "v0.5.11",
-    )
-    go_repository(
         name = "com_github_urfave_cli",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/urfave/cli",
@@ -5557,13 +5536,6 @@ def go_dependencies():
         importpath = "github.com/valyala/fasttemplate",
         sum = "h1:lxLXG0uE3Qnshl9QyaK6XJxMXlQZELvChBOCmQD0Loo=",
         version = "v1.2.2",
-    )
-    go_repository(
-        name = "com_github_valyala_gozstd",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/valyala/gozstd",
-        sum = "h1:xPnnnvjmaDDitMFfDxmQ4vpx0+3CdTg2o3lALvXTU/g=",
-        version = "v1.20.1",
     )
     go_repository(
         name = "com_github_vbatts_tar_split",
