@@ -25,6 +25,7 @@ type RepoRev struct {
 type RepositorySchedulingStore interface {
 	WithTransaction(ctx context.Context, f func(tx RepositorySchedulingStore) error) error
 	GetRepositoriesForIndexScan(ctx context.Context, batchOptions RepositoryBatchOptions, now time.Time) ([]int, error)
+
 	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
 	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
@@ -38,19 +39,37 @@ type operations struct {
 	isQueued                    *observation.Operation
 }
 
+type StoreType int32
+
+const (
+	Precise   StoreType = 1
+	Syntactic StoreType = 2
+)
+
 type store struct {
 	db         *basestore.Store
 	logger     logger.Logger
 	operations *operations
+	storeType  StoreType
 }
 
 var _ RepositorySchedulingStore = &store{}
 
-func NewStore(observationCtx *observation.Context, db database.DB) RepositorySchedulingStore {
+func NewPreciseStore(observationCtx *observation.Context, db database.DB) RepositorySchedulingStore {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		logger:     logger.Scoped("reposcheduler.store"),
 		operations: newOperations(observationCtx),
+		storeType:  Precise,
+	}
+}
+
+func NewSyntacticStore(observationCtx *observation.Context, db database.DB) RepositorySchedulingStore {
+	return &store{
+		db:         basestore.NewWithHandle(db.Handle()),
+		logger:     logger.Scoped("reposcheduler.store"),
+		operations: newOperations(observationCtx),
+		storeType:  Syntactic,
 	}
 }
 
@@ -125,6 +144,13 @@ func (s *store) GetRepositoriesForIndexScan(
 		repositoryMatchLimitValue = *batchOptions.RepositoryMatchLimit
 	}
 
+	var enabledFieldName string
+	if s.storeType == Precise {
+		enabledFieldName = "indexing_enabled"
+	} else {
+		enabledFieldName = "syntactic_indexing_enabled"
+	}
+
 	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Bool("allowGlobalPolicies", batchOptions.AllowGlobalPolicies),
 		attribute.Int("repositoryMatchLimit", repositoryMatchLimitValue),
@@ -139,15 +165,15 @@ func (s *store) GetRepositoriesForIndexScan(
 			optionalLimit(batchOptions.RepositoryMatchLimit),
 		))
 	}
-	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyQuery))
-	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery))
+	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyQuery(enabledFieldName)))
+	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery(enabledFieldName)))
 
 	for i, query := range queries {
 		queries[i] = sqlf.Sprintf("(%s)", query)
 	}
 
 	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
-		getRepositoriesForIndexScanQuery,
+		getRepositoriesForIndexScanQuery(enabledFieldName),
 		sqlf.Join(queries, " UNION ALL "),
 		now,
 		int(batchOptions.ProcessDelay/time.Second),
@@ -157,8 +183,10 @@ func (s *store) GetRepositoriesForIndexScan(
 	)))
 }
 
-const getRepositoriesForIndexScanQuery = `
-WITH
+func getRepositoriesForIndexScanQuery(enabledFieldName string) string {
+	globalPolicyCTE := fmt.Sprintf(
+		`
+		WITH
 -- This CTE will contain a single row if there is at least one global policy, and will return an empty
 -- result set otherwise. If any global policy is for HEAD, the value for the column is_head_policy will
 -- be true.
@@ -166,12 +194,16 @@ global_policy_descriptor AS MATERIALIZED (
 	SELECT (p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD') AS is_head_policy
 	FROM lsif_configuration_policies p
 	WHERE
-		p.indexing_enabled AND
+		p.%s AND
 		p.repository_id IS NULL AND
 		p.repository_patterns IS NULL
 	ORDER BY is_head_policy DESC
 	LIMIT 1
 ),
+`,
+		enabledFieldName)
+
+	return globalPolicyCTE + `
 repositories_matching_policy AS (
 	%s
 ),
@@ -198,6 +230,7 @@ ON CONFLICT (repository_id) DO UPDATE
 SET last_index_scan_at = %s
 RETURNING repository_id
 `
+}
 
 const getRepositoriesForIndexScanGlobalRepositoriesQuery = `
 SELECT
@@ -220,7 +253,9 @@ ORDER BY stars DESC NULLS LAST, id
 %s
 `
 
-const getRepositoriesForIndexScanRepositoriesWithPolicyQuery = `
+func getRepositoriesForIndexScanRepositoriesWithPolicyQuery(enabledFieldName string) string {
+
+	return fmt.Sprintf(`
 SELECT
 	r.id,
 	CASE
@@ -236,11 +271,13 @@ JOIN lsif_configuration_policies p ON p.repository_id = r.id
 WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL AND
-	p.indexing_enabled AND
+	p.%s AND
 	gr.clone_status = 'cloned'
-`
+`, enabledFieldName)
+}
 
-const getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery = `
+func getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery(enabledFieldName string) string {
+	return fmt.Sprintf(`
 SELECT
 	r.id,
 	CASE
@@ -257,9 +294,10 @@ JOIN lsif_configuration_policies p ON p.id = rpl.policy_id
 WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL AND
-	p.indexing_enabled AND
+	p.%s AND
 	gr.clone_status = 'cloned'
-`
+`, enabledFieldName)
+}
 
 //
 //

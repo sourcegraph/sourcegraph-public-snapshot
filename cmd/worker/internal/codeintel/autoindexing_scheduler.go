@@ -8,6 +8,7 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -47,11 +48,16 @@ func (j *autoindexingScheduler) Routines(_ context.Context, observationCtx *obse
 		true,
 	)
 
+	repoSchedulingStore := reposcheduler.NewPreciseStore(observationCtx, db)
+	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
+
 	return autoindexing.NewIndexSchedulers(
 		observationCtx,
 		services.UploadsService,
 		services.PoliciesService,
 		matcher,
+		repoSchedulingSvc,
+		repoSchedulingStore,
 		services.AutoIndexingService,
 		db.Repos(),
 	), nil
