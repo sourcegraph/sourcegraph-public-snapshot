@@ -106,10 +106,11 @@ func (b indexSchedulerJob) handleScheduler(
 	// the backlog.
 	repositories, err := b.repositorySchedulingService.GetRepositoriesForIndexScan(
 		ctx,
-		repositoryProcessDelay,
-		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-		repositoryMatchLimit,
-		repositoryBatchSize,
+		reposcheduler.NewBatchOptions(
+			repositoryProcessDelay,
+			conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+			repositoryMatchLimit,
+			repositoryBatchSize),
 		time.Now(),
 	)
 	if err != nil {

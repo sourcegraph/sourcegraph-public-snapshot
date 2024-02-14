@@ -9,7 +9,7 @@ type RepositoryBatchOptions struct {
 	Limit                int
 }
 
-func newBatchOptions(processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) RepositoryBatchOptions {
+func NewBatchOptions(processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) RepositoryBatchOptions {
 	return RepositoryBatchOptions{
 		ProcessDelay:         processDelay,
 		AllowGlobalPolicies:  allowGlobalPolicies,

@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,7 +49,7 @@ func TestGetQueuedRepoRev(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
-	expected := []RepoRev{
+	expected := []reposcheduler.RepoRev{
 		{1, 50, "HEAD"},
 		{2, 50, "HEAD~1"},
 		{3, 50, "HEAD~2"},
