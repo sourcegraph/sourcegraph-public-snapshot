@@ -127,7 +127,8 @@ docker load <"$tarball"
 # there is an unexpcted behaviour in upstream
 # where the arch is always appended to the tag
 # hardcode for now as we only support linux/amd64 anyway
-local_image_name="$image_name:latest-amd64"
+# TODO(burmudar): uncomment below
+# local_image_name="$image_name:latest-amd64"
 
 # Push to internal dev repo
 echo " :x: * Pushing image to internal dev repo..."
