@@ -505,6 +505,7 @@ func GitServer() *monitoring.Dashboard {
 				},
 			},
 
+			shared.GitServer.NewBackendGroup(containerName),
 			shared.GitServer.NewClientGroup("*"),
 
 			shared.NewDiskMetricsGroup(

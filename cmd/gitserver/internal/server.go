@@ -969,7 +969,7 @@ func (s *Server) doClone(
 		testRepoCorrupter(ctx, common.GitDir(tmpPath))
 	}
 
-	if err := postRepoFetchActions(ctx, logger, s.db, s.hostname, s.recordingCommandFactory, repo, common.GitDir(tmpPath), remoteURL, syncer); err != nil {
+	if err := postRepoFetchActions(ctx, logger, s.db, s.getBackendFunc(common.GitDir(tmpPath), repo), s.hostname, s.recordingCommandFactory, repo, common.GitDir(tmpPath), remoteURL, syncer); err != nil {
 		return err
 	}
 
@@ -1059,6 +1059,7 @@ func postRepoFetchActions(
 	ctx context.Context,
 	logger log.Logger,
 	db database.DB,
+	backend git.GitBackend,
 	shardID string,
 	rcf *wrexec.RecordingCommandFactory,
 	repo api.RepoName,
@@ -1066,8 +1067,6 @@ func postRepoFetchActions(
 	remoteURL *vcs.URL,
 	syncer vcssyncer.VCSSyncer,
 ) (errs error) {
-	backend := gitcli.NewBackend(logger, rcf, dir, repo)
-
 	// Note: We use a multi error in this function to try to make as many of the
 	// post repo fetch actions succeed.
 
@@ -1365,7 +1364,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		}
 	}
 
-	return postRepoFetchActions(ctx, logger, s.db, s.hostname, s.recordingCommandFactory, repo, dir, remoteURL, syncer)
+	return postRepoFetchActions(ctx, logger, s.db, s.getBackendFunc(dir, repo), s.hostname, s.recordingCommandFactory, repo, dir, remoteURL, syncer)
 }
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
