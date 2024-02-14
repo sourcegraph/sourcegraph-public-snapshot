@@ -66,14 +66,14 @@ export const staticTypeFilters: URLQueryFilter[] = [
     { kind: 'type', label: 'Diffs', value: 'type:diff' },
 ]
 
-export const typeFilterIcons = new Map([
-    ['Code', mdiCodeTags],
-    ['Repositories', mdiSourceRepository],
-    ['Paths', mdiFileCodeOutline],
-    ['Symbols', mdiShapeOutline],
-    ['Commits', mdiSourceCommit],
-    ['Diffs', mdiPlusMinus],
-])
+export const typeFilterIcons: Record<string, string> = {
+    Code: mdiCodeTags,
+    Repositories: mdiSourceRepository,
+    Paths: mdiFileCodeOutline,
+    Symbols: mdiShapeOutline,
+    Commits: mdiSourceCommit,
+    Diffs: mdiPlusMinus,
+}
 
 export type FilterGroups = Record<Filter['kind'], SidebarFilter[]>
 

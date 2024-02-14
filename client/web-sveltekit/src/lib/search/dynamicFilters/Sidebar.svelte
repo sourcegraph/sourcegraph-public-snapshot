@@ -28,7 +28,7 @@
     <h3>Filter results</h3>
     <Section items={typeFilters} title="By type" showAll>
         <svelte:fragment slot="label" let:label>
-            <Icon svgPath={typeFilterIcons.get(label) ?? ''} inline aria-hidden="true" />
+            <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />
             {label}
         </svelte:fragment>
     </Section>
