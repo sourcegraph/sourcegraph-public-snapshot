@@ -48,4 +48,9 @@ build --output_groups=+clippy_checks
 
 common --noenable_bzlmod
 
+# Don't write or read oci_tarball outputs to and from the remote cache.
+# The output of oci_tarball is a single enormous tarball that includes the
+# base image. If all oci_tarball images are cache busted then the thundering
+# heard of remote cache reads and writes can overwhelm the remote cache
+# and bring CI builds to a crawl.
 common --modify_execution_info=OCITarball=+no-remote
