@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
+set -eux -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
