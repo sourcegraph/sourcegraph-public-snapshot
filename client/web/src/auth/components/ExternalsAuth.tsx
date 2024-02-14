@@ -2,13 +2,34 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
 
 import type { AuthProvider, SourcegraphContext } from '../../jscontext'
+import { EventName, V2AuthProviderTypes } from '../../util/constants'
 
 import styles from './ExternalsAuth.module.scss'
 
-interface ExternalsAuthProps {
+export type AuthPages =
+    | 'vscode-signup-page'
+    | 'cloud-signup-page'
+    | 'cody-marketing-page'
+    | 'get-cody-page'
+    | 'try-cody-widget-blob'
+    | 'try-cody-widget-repo'
+const v2Pages: { [p in AuthPages]: number } = {
+    'vscode-signup-page': 0,
+    'cloud-signup-page': 1,
+    'cody-marketing-page': 2,
+    'get-cody-page': 3,
+    'try-cody-widget-blob': 4,
+    'try-cody-widget-repo': 5,
+}
+
+interface ExternalsAuthProps extends TelemetryProps, TelemetryV2Props {
+    // page is the page on which external auth was initiated; used as metadata for telemetry.
+    page: AuthPages
     context: Pick<SourcegraphContext, 'authProviders'>
     githubLabel: string
     gitlabLabel: string
@@ -123,6 +144,7 @@ const GoogleIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: 
 )
 
 export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAuthProps>> = ({
+    page,
     context,
     githubLabel,
     gitlabLabel,
@@ -132,6 +154,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     ctaClassName,
     iconClassName,
     redirect,
+    telemetryService,
+    telemetryRecorder,
 }) => {
     // Since this component is only intended for use on Sourcegraph.com, it's OK to hardcode
     // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
@@ -147,6 +171,17 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     const googleProvider = context.authProviders.find(provider =>
         provider.authenticationURL.startsWith('/.auth/openidconnect/login?pc=google')
     )
+
+    const logAuthAndCallback = (
+        type: AuthProvider['serviceType'],
+        callback: (type: AuthProvider['serviceType']) => void
+    ): void => {
+        telemetryService.log(EventName.AUTH_INITIATED, { type, page }, { type, page })
+        telemetryRecorder.recordEvent('auth', 'initiate', {
+            metadata: { type: V2AuthProviderTypes[type], page: v2Pages[page] },
+        })
+        callback(type)
+    }
 
     return (
         <>
@@ -165,7 +200,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         styles.githubButton,
                         ctaClassName
                     )}
-                    onClick={() => onClick('github')}
+                    onClick={() => logAuthAndCallback('github', onClick)}
                 >
                     <GithubIcon className={classNames('mr-2', iconClassName)} />
                     {githubLabel}
@@ -187,7 +222,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         styles.gitlabButton,
                         ctaClassName
                     )}
-                    onClick={() => onClick('gitlab')}
+                    onClick={() => logAuthAndCallback('gitlab', onClick)}
                 >
                     <GitlabColorIcon className={classNames('mr-2', iconClassName)} /> {gitlabLabel}
                 </Link>
@@ -208,7 +243,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         styles.googleButton,
                         ctaClassName
                     )}
-                    onClick={() => onClick('openidconnect')}
+                    onClick={() => logAuthAndCallback('openidconnect', onClick)}
                 >
                     <GoogleIcon className={classNames('mr-2', iconClassName)} /> {googleLabel}
                 </Link>

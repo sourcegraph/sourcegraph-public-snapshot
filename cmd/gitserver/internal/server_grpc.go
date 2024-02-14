@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -158,46 +158,100 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 }
 
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
-	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.GetRepo(),
-		log.String("treeish", req.GetTreeish()),
-		log.String("format", req.GetFormat()),
-		log.Strings("path", req.GetPathspecs()),
-	)
-
-	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if req.GetRepo() == "" || req.GetFormat() == "" {
-		return status.Error(codes.InvalidArgument, "empty repo or format")
-	}
+	ctx := ss.Context()
 
 	if req.GetRepo() == "" {
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
+	if req.GetTreeish() == "" {
+		return status.New(codes.InvalidArgument, "treeish must be specified").Err()
+	}
+
+	var format git.ArchiveFormat
+	switch req.GetFormat() {
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
+		format = git.ArchiveFormatZip
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
+		format = git.ArchiveFormatTar
+	default:
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("unknown archive format %q", req.GetFormat()))
+	}
+
+	if err := git.CheckSpecArgSafety(req.GetTreeish()); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	accesslog.Record(ctx, req.GetRepo(),
+		log.String("treeish", req.GetTreeish()),
+		log.String("format", string(format)),
+		log.Strings("path", req.GetPaths()),
+	)
+
 	repoName := api.RepoName(req.GetRepo())
+	repoDir := gitserverfs.RepoDirFromName(gs.reposDir, repoName)
 
 	if err := gs.maybeStartClone(ss.Context(), repoName); err != nil {
 		return err
 	}
 
-	execReq := &protocol.ExecRequest{
-		Repo: api.RepoName(req.GetRepo()),
-		Args: []string{
-			"archive",
-			"--worktree-attributes",
-			"--format=" + req.GetFormat(),
-		},
+	if !actor.FromContext(ctx).IsInternal() {
+		if enabled, err := gs.subRepoChecker.EnabledForRepo(ctx, repoName); err != nil {
+			return errors.Wrap(err, "sub-repo permissions check")
+		} else if enabled {
+			s := status.New(codes.Unimplemented, "archiveReader invoked for a repo with sub-repo permissions")
+			return s.Err()
+		}
 	}
 
-	if req.GetFormat() == string(gitserver.ArchiveFormatZip) {
-		execReq.Args = append(execReq.Args, "-0")
-	}
+	// This is a long time, but this never blocks a user request for this
+	// long. Even repos that are not that large can take a long time, for
+	// example a search over all repos in an organization may have several
+	// large repos. All of those repos will be competing for IO => we need
+	// a larger timeout.
+	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
 
-	execReq.Args = append(execReq.Args, req.GetTreeish(), "--")
-	execReq.Args = append(execReq.Args, req.GetPathspecs()...)
+	backend := gs.getBackendFunc(repoDir, repoName)
+
+	r, err := backend.ArchiveReader(ctx, format, req.GetTreeish(), req.GetPaths())
+	if err != nil {
+		if os.IsNotExist(err) {
+			var path string
+			var pathError *os.PathError
+			if errors.As(err, &pathError) {
+				path = pathError.Path
+			}
+			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
+				Repo: string(repoName),
+				// TODO: I'm not sure this should be allowed, a treeish is not necessarily
+				// a commit.
+				Commit: string(req.GetTreeish()),
+				Path:   path,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+
+		var e *gitdomain.RevisionNotFoundError
+		if errors.As(err, &e) {
+			s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+				Repo: req.GetRepo(),
+				Spec: e.Spec,
+			})
+			if err != nil {
+				return err
+			}
+			return s.Err()
+		}
+
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		// TODO: Better error checking.
+		return err
+	}
+	defer r.Close()
 
 	w := streamio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ArchiveResponse{
@@ -205,15 +259,8 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		})
 	})
 
-	// This is a long time, but this never blocks a user request for this
-	// long. Even repos that are not that large can take a long time, for
-	// example a search over all repos in an organization may have several
-	// large repos. All of those repos will be competing for IO => we need
-	// a larger timeout.
-	ctx, cancel := context.WithTimeout(ss.Context(), conf.GitLongCommandTimeout())
-	defer cancel()
-
-	return gs.doExec(ctx, execReq, w)
+	_, err = io.Copy(w, r)
+	return err
 }
 
 // doExec executes the given git command and streams the output to the given writer.
@@ -257,7 +304,6 @@ func (gs *grpcServer) doExec(ctx context.Context, req *protocol.ExecRequest, w i
 	}
 
 	return nil
-
 }
 
 func (gs *grpcServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
@@ -342,7 +388,6 @@ func (gs *grpcServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
 
 	if _, err := gs.svc.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
-
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
 
@@ -940,7 +985,6 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	}
 
 	r, err := backend.Blame(ctx, api.CommitID(req.GetCommit()), req.GetPath(), opts)
-
 	if err != nil {
 		if os.IsNotExist(err) {
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{

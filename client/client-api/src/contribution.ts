@@ -57,7 +57,7 @@ export interface ActionContribution {
      * a noop.
      *
      * See "[Builtin commands](../../../../doc/extensions/authoring/builtin_commands.md)" (online at
-     * https://docs.sourcegraph.com/extensions/authoring/builtin_commands) for documentation on
+     * https://sourcegraph.com/docs/extensions/authoring/builtin_commands) for documentation on
      * builtin client commands.
      *
      * Extensions: The command must be registered (unless it is a builtin command). Extensions can

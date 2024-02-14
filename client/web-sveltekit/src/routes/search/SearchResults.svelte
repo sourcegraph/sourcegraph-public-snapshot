@@ -13,27 +13,23 @@
 </script>
 
 <script lang="ts">
+    import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
+    import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import DynamicFiltersSidebar from '$lib/search/dynamicFilters/Sidebar.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { resultTypeFilter } from '$lib/search/sidebar'
-    import { submitSearch, type QueryStateStore, getQueryURL } from '$lib/search/state'
-    import { groupFilters } from '$lib/search/utils'
-    import { type AggregateStreamingSearchResults, displayRepoName, type SearchMatch, type Progress } from '$lib/shared'
+    import { submitSearch, type QueryStateStore } from '$lib/search/state'
+    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import { type AggregateStreamingSearchResults, type SearchMatch, type Progress } from '$lib/shared'
 
-    import Section from './SidebarSection.svelte'
-    import StreamingProgress from './StreamingProgress.svelte'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
-    import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
-    import Icon from '$lib/Icon.svelte'
-    import { mdiBookOpenVariant, mdiCloseOctagonOutline } from '@mdi/js'
-    import CodeHostIcon from './CodeHostIcon.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import StreamingProgress from './StreamingProgress.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
@@ -54,14 +50,11 @@
 
     const sidebarSize = getSeparatorPosition('search-results-sidebar', 0.2)
 
-    $: sidebarWidth = `max(100px, min(50%, ${$sidebarSize * 100}%))`
     $: progress = $stream?.progress
     // NOTE: done is present but apparently not officially exposed. However
     // $stream.state is always "loading". Need to look into this.
     $: loading = !(progress as Progress & { done?: boolean })?.done
     $: results = $stream?.results
-    $: filters = groupFilters($stream?.filters)
-    $: hasFilters = filters.lang.length > 0 || filters.repo.length > 0 || filters.file.length > 0
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -116,108 +109,13 @@
 </div>
 
 <div class="search-results">
-    <aside class="sidebar" style:width={sidebarWidth}>
-        <div class="section">
-            <!-- TODO: a11y -->
-            <ul>
-                {#each resultTypeFilter as filter}
-                    <li class:selected={filter.isSelected(queryFromURL)}>
-                        <a
-                            href={getQueryURL(
-                                {
-                                    searchMode: $queryState.searchMode,
-                                    patternType: $queryState.patternType,
-                                    caseSensitive: $queryState.caseSensitive,
-                                    searchContext: $queryState.searchContext,
-                                    query: filter.getQuery($queryState.query),
-                                },
-                                true
-                            )}
-                        >
-                            <Icon svgPath={filter.icon} inline aria-hidden="true" />
-                            {filter.label}
-                        </a>
-                    </li>
-                {/each}
-            </ul>
-        </div>
-        {#if hasFilters}
-            <div class="section">
-                {#if filters['symbol type'].length > 0}
-                    <Section
-                        items={filters['symbol type']}
-                        title="By symbol type"
-                        filterPlaceholder="Filter symbol types"
-                        showFilter
-                        {queryFilters}
-                    >
-                        <svelte:fragment slot="label" let:label>
-                            <SymbolKind symbolKind={label.toUpperCase()} />
-                            {label}
-                        </svelte:fragment>
-                    </Section>
-                {/if}
-                {#if filters.author.length > 0}
-                    <Section
-                        items={filters.author}
-                        title="By author"
-                        filterPlaceholder="Filter authors"
-                        showFilter
-                        {queryFilters}
-                    />
-                {/if}
-                {#if filters['commit date'].length > 0}
-                    <Section items={filters['commit date']} title="By commit date" {queryFilters}>
-                        <svelte:fragment slot="label" let:label let:value>
-                            <span class="commit-date-label">
-                                {label}
-                                <small><pre>{value}</pre></small>
-                            </span>
-                        </svelte:fragment>
-                    </Section>
-                {/if}
-                {#if filters.lang.length > 0}
-                    <Section
-                        items={filters.lang}
-                        title="By language"
-                        showFilter
-                        filterPlaceholder="Filter languages"
-                        {queryFilters}
-                    />
-                {/if}
-                {#if filters.repo.length > 0}
-                    <Section
-                        items={filters.repo}
-                        title="By repository"
-                        showFilter
-                        filterPlaceholder="Filter repositories"
-                        preprocessLabel={displayRepoName}
-                        {queryFilters}
-                    >
-                        <svelte:fragment slot="label" let:label>
-                            <CodeHostIcon repository={label} />
-                            {displayRepoName(label)}
-                        </svelte:fragment>
-                    </Section>
-                {/if}
-                {#if filters.file.length > 0}
-                    <Section items={filters.file} title="By file" {queryFilters} />
-                {/if}
-                {#if filters.utility.length > 0}
-                    <Section items={filters.utility} title="Utility" {queryFilters} />
-                {/if}
-            </div>
-        {/if}
-        <a class="section help" href="/help/code_search/reference/queries" target="_blank">
-            <span class="icon">
-                <Icon svgPath={mdiBookOpenVariant} inline />
-            </span>
-            <div>
-                <h4>Need more advanced filters?</h4>
-                <span>Explore the query syntax docs</span>
-            </div>
-        </a>
-    </aside>
+    <DynamicFiltersSidebar
+        size={$sidebarSize}
+        {queryFromURL}
+        {queryFilters}
+        {queryState}
+        streamFilters={$stream?.filters ?? []}
+    />
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
         <aside class="actions">
@@ -266,66 +164,6 @@
         overflow: hidden;
     }
 
-    .sidebar {
-        flex: 0 0 auto;
-        background-color: var(--sidebar-bg);
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-
-        h4 {
-            font-weight: 600;
-            white-space: nowrap;
-            margin-bottom: 1rem;
-        }
-
-        .section {
-            padding: 1rem 0.5rem 1rem 1rem;
-            border-top: 1px solid var(--border-color);
-
-            &:first-child {
-                border-top: none;
-            }
-
-            &:last-child {
-                margin-top: auto;
-            }
-        }
-
-        ul {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-
-            a {
-                flex: 1;
-                color: var(--sidebar-text-color);
-                text-decoration: none;
-                padding: 0.25rem 0.5rem;
-                border-radius: var(--border-radius);
-                // Controls icon color
-                --color: var(--icon-color);
-
-                &:hover {
-                    background-color: var(--secondary-4);
-                }
-            }
-
-            li {
-                display: flex;
-                white-space: nowrap;
-
-                &.selected {
-                    a {
-                        background-color: var(--primary);
-                        color: var(--primary-4);
-                        --color: var(--primary-4);
-                    }
-                }
-            }
-        }
-    }
-
     .results {
         flex: 1;
         overflow: auto;
@@ -357,28 +195,5 @@
             margin: auto;
             color: var(--text-muted);
         }
-    }
-
-    .help {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-
-        text-decoration: none;
-        color: var(--text-muted);
-        font-size: 0.75rem;
-
-        h4 {
-            margin: 0;
-        }
-
-        .icon {
-            flex-shrink: 0;
-        }
-    }
-
-    pre {
-        // Overwrites global default
-        margin-bottom: 0;
     }
 </style>

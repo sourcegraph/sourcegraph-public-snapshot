@@ -94,7 +94,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "5.2.0"
+	const minimumUpgradeableVersion = "5.3.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()

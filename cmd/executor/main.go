@@ -46,7 +46,7 @@ func main() {
 	app := &cli.App{
 		Version: version.Version(),
 		// TODO: More info, link to docs, some inline documentation etc.
-		Description:    "The Sourcegraph untrusted jobs runner. See https://docs.sourcegraph.com/admin/executors to learn more about setup, how it works and how to configure features that depend on it.",
+		Description:    "The Sourcegraph untrusted jobs runner. See https://sourcegraph.com/docs/admin/executors to learn more about setup, how it works and how to configure features that depend on it.",
 		Name:           "executor",
 		Usage:          "The Sourcegraph untrusted jobs runner.",
 		DefaultCommand: "run",

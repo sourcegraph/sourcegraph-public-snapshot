@@ -2191,13 +2191,29 @@ const (
 	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
-// ArchiveReader streams back the file contents of an archived git repo.
-func (c *clientImplementor) ArchiveReader(
-	ctx context.Context,
-	repo api.RepoName,
-	options ArchiveOptions,
-) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request because we return a reader
+func ArchiveFormatFromProto(pf proto.ArchiveFormat) ArchiveFormat {
+	switch pf {
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP:
+		return ArchiveFormatZip
+	case proto.ArchiveFormat_ARCHIVE_FORMAT_TAR:
+		return ArchiveFormatTar
+	default:
+		return ""
+	}
+}
+
+func (f ArchiveFormat) ToProto() proto.ArchiveFormat {
+	switch f {
+	case ArchiveFormatZip:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_ZIP
+	case ArchiveFormatTar:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_TAR
+	default:
+		return proto.ArchiveFormat_ARCHIVE_FORMAT_UNSPECIFIED
+	}
+}
+
+func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName, options ArchiveOptions) (_ io.ReadCloser, err error) {
 	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: append(
@@ -2205,101 +2221,85 @@ func (c *clientImplementor) ArchiveReader(
 			options.Attrs()...,
 		),
 	})
-	defer endObservation(1, observation.Args{})
-
-	if authz.SubRepoEnabled(c.subRepoPermsChecker) {
-		if enabled, err := authz.SubRepoEnabledForRepo(ctx, c.subRepoPermsChecker, repo); err != nil {
-			return nil, errors.Wrap(err, "sub-repo permissions check:")
-		} else if enabled {
-			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
-		}
-	}
-
-	if ClientMocks.Archive != nil {
-		return ClientMocks.Archive(ctx, repo, options)
-	}
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
-		return nil, err
-	}
 
 	client, err := c.clientSource.ClientForRepo(ctx, repo)
 	if err != nil {
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+	req := options.ToProto(string(repo))
 
 	ctx, cancel := context.WithCancel(ctx)
-
-	stream, err := client.Archive(ctx, req)
+	cli, err := client.Archive(ctx, req)
 	if err != nil {
 		cancel()
+		endObservation(1, observation.Args{})
 		return nil, err
 	}
 
-	// first message from the gRPC stream needs to be read to check for errors before continuing
-	// to read the rest of the stream. If the first message is an error, we cancel the stream
-	// and return the error.
-	//
-	// This is necessary to provide parity between the REST and gRPC implementations of
-	// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
-	// as is the case with the HTTP implementation where errors are returned as soon as the
-	// function returns. gRPC is asynchronous, so we have to start consuming messages from
-	// the stream to see any errors from the server. Reading the first message ensures we
-	// handle any errors synchronously, similar to the HTTP implementation.
-
-	firstMessage, firstError := stream.Recv()
-	if firstError != nil {
-		// Hack: The ArchiveReader.Read() implementation handles surfacing the
-		// any "revision not found" errors returned from the invoked git binary.
-		//
-		// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-		// instead of returning it immediately.
-
-		// We return early only if this isn't a revision not found error.
-
-		err := firstError
-
-		var cse *CommandStatusError
-		if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
+	// We start by reading the first message to early-exit on potential errors,
+	// ie. revision not found errors or invalid git command.
+	firstMessage, firstErr := cli.Recv()
+	if firstErr != nil {
+		if s, ok := status.FromError(firstErr); ok {
+			if s.Code() == codes.NotFound {
+				for _, d := range s.Details() {
+					switch d.(type) {
+					case *proto.FileNotFoundPayload:
+						cancel()
+						err = firstErr
+						endObservation(1, observation.Args{})
+						// We don't have a specific path here, so we return ErrNotExist instead of PathError.
+						return nil, os.ErrNotExist
+					}
+				}
+			}
+		}
+		if errors.HasType(firstErr, &gitdomain.RevisionNotFoundError{}) {
 			cancel()
+			err = firstErr
+			endObservation(1, observation.Args{})
 			return nil, err
 		}
 	}
 
-	firstMessageRead := false
-
-	// Create a reader to read from the gRPC stream.
+	firstRespRead := false
 	r := streamio.NewReader(func() ([]byte, error) {
-		// Check if we've read the first message yet. If not, read it and return.
-		if !firstMessageRead {
-			firstMessageRead = true
-
-			if firstError != nil {
-				return nil, firstError
+		if !firstRespRead {
+			firstRespRead = true
+			if firstErr != nil {
+				return nil, firstErr
 			}
-
 			return firstMessage.GetData(), nil
 		}
 
-		// Receive the next message from the stream.
-		msg, err := stream.Recv()
+		m, err := cli.Recv()
 		if err != nil {
 			return nil, err
 		}
-
-		// Return the data from the received message.
-		return msg.GetData(), nil
+		return m.GetData(), nil
 	})
 
 	return &archiveReader{
-		base: &readCloseWrapper{Reader: r, closeFn: cancel},
-		repo: repo,
-		spec: options.Treeish,
+		Reader: r,
+		cancel: cancel,
+		onClose: func() {
+			endObservation(1, observation.Args{})
+		},
 	}, nil
+}
+
+type archiveReader struct {
+	io.Reader
+	cancel  context.CancelFunc
+	onClose func()
+}
+
+func (br *archiveReader) Close() error {
+	br.cancel()
+	br.onClose()
+	return nil
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {

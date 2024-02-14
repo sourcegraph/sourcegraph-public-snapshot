@@ -26,13 +26,14 @@ func createServiceAlerts(
 			Service:       vars.Service,
 			EnvironmentID: vars.EnvironmentID,
 
-			ID:           "instance_count",
-			Name:         "Container Instance Count",
-			Description:  "There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count",
-			ProjectID:    vars.ProjectID,
-			ResourceName: vars.Service.ID,
-			ResourceKind: alertpolicy.CloudRunService,
+			ID:          "instance_count",
+			Name:        "Container Instance Count",
+			Description: "There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count",
+			ProjectID:   vars.ProjectID,
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+				ResourceName: vars.Service.ID,
+				ResourceKind: alertpolicy.CloudRunService,
+
 				Filters: map[string]string{"metric.type": "run.googleapis.com/container/instance_count"},
 				Aligner: alertpolicy.MonitoringAlignMax,
 				Reducer: alertpolicy.MonitoringReduceMax,
@@ -51,13 +52,14 @@ func createServiceAlerts(
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
 
-		ID:           "cloud_run_pending_requests",
-		Name:         "Cloud Run Pending Requests",
-		Description:  "There are requests pending - we may need to increase  Cloud Run instance count, request concurrency, or investigate further.",
-		ProjectID:    vars.ProjectID,
-		ResourceName: vars.Service.ID,
-		ResourceKind: alertpolicy.CloudRunService,
+		ID:          "cloud_run_pending_requests",
+		Name:        "Cloud Run Pending Requests",
+		Description: "There are requests pending - we may need to increase  Cloud Run instance count, request concurrency, or investigate further.",
+		ProjectID:   vars.ProjectID,
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+			ResourceName: vars.Service.ID,
+			ResourceKind: alertpolicy.CloudRunService,
+
 			Filters:    map[string]string{"metric.type": "run.googleapis.com/pending_queue/pending_requests"},
 			Aligner:    alertpolicy.MonitoringAlignSum,
 			Reducer:    alertpolicy.MonitoringReduceSum,
@@ -148,10 +150,10 @@ func createExternalHealthcheckAlert(
 		// If a service is not reachable, it's definitely a problem.
 		Severity: alertpolicy.SeverityLevelCritical,
 
-		ResourceKind: alertpolicy.URLUptime,
-		ResourceName: *uptimeCheck.UptimeCheckId(),
-
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+			ResourceKind: alertpolicy.URLUptime,
+			ResourceName: *uptimeCheck.UptimeCheckId(),
+
 			Filters: map[string]string{
 				"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
 			},
