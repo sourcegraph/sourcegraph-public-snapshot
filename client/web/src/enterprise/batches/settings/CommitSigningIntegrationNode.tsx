@@ -125,13 +125,9 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                 </Button>
             </div>
-            {error && (
-                <NodeAlert visible={Boolean(!loading && error)} variant="danger">
-                    {error.message}
-                </NodeAlert>
-            )}
+            {error && <NodeAlert variant="danger">{error.message}</NodeAlert>}
             {!loading && data && (
-                <NodeAlert visible={true} variant="success">
+                <NodeAlert variant="success">
                     Installations for <span className="font-weight-bold">"{config.name}"</span> successfully refreshed.
                 </NodeAlert>
             )}
@@ -168,19 +164,20 @@ const ONE_REM_IN_PX = convertREMToPX(1)
 const APPROX_BANNER_HEIGHT_PX = 40
 
 interface NodeAlertProps {
-    visible: boolean
     variant: 'danger' | 'success'
 }
 
-const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({
-    visible,
-    children,
-    variant,
-}) => {
+const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({ children, variant }) => {
     const ref = useRef<HTMLDivElement>(null)
     const style = useSpring({
-        height: visible ? `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px` : '0px',
-        opacity: visible ? 1 : 0,
+        from: {
+            height: '0px',
+            opacity: 0,
+        },
+        to: {
+            height: `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px`,
+            opacity: 1,
+        },
     })
 
     return (

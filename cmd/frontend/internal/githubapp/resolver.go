@@ -336,9 +336,6 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 // syncInstallations syncs the GitHub App Installations in our database with those
 // found on GitHub.
 func (r *gitHubAppResolver) syncInstallationsWithError(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-	defer cancel()
-
 	r.logger.Info("Performing opportunistic GitHub App Installations sync", log.String("app_name", r.app.Name))
 
 	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
@@ -367,7 +364,8 @@ func (r *gitHubAppResolver) syncInstallationsWithError(ctx context.Context) erro
 // This method only logs errors rather than assigning them to
 // the resolver because they should not block the request from completing.
 func (r *gitHubAppResolver) syncInstallations() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(context.Background()), 1*time.Minute)
+	defer cancel()
 	if err := r.syncInstallationsWithError(ctx); err != nil {
 		r.logger.Error("Error syncing GitHub App Installations", log.Error(err))
 	}
