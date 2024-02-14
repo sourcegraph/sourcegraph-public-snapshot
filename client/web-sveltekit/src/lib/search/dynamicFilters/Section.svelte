@@ -14,7 +14,6 @@
     export let title: string
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
-    export let preprocessLabel: (label: string) => string = label => label
 
     function generateURL(filter: SectionItem) {
         return updateFilterInURL($page.url, filter, filter.selected)
@@ -23,7 +22,7 @@
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
     $: filteredItems = processedFilterText
-        ? items.filter(item => preprocessLabel(item.label).toLowerCase().includes(processedFilterText))
+        ? items.filter(item => item.label.toLowerCase().includes(processedFilterText))
         : items
     $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
 </script>

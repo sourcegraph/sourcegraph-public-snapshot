@@ -51,12 +51,7 @@
         </svelte:fragment>
     </Section>
     <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages" />
-    <Section
-        items={groupedFilters.repo}
-        title="By repository"
-        filterPlaceholder="Filter repositories"
-        preprocessLabel={displayRepoName}
-    >
+    <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
         <svelte:fragment slot="label" let:label>
             <CodeHostIcon repository={label} />
             {displayRepoName(label)}
