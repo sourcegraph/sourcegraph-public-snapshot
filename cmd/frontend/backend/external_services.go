@@ -397,6 +397,10 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 	case extsvc.TypeAzureDevOps:
 		if repo, ok := repository.Metadata.(*azuredevops.Repository); ok {
 			name = fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)
+			org, err := repo.GetOrganization()
+			if err == nil {
+				name = fmt.Sprintf("%s/%s", org, name)
+			}
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAzureDevOps))
 		}

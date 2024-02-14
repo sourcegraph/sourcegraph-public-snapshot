@@ -50,7 +50,7 @@ func TestAddRepoToExclude(t *testing.T) {
 			kind:           extsvc.KindAzureDevOps,
 			repo:           makeAzureDevOpsRepo(),
 			initialConfig:  `{"url":"https://dev.azure.com","username":"test","token":"test","orgs":["org"]}`,
-			expectedConfig: `{"exclude":[{"name":"org/test"}],"orgs":["org"],"token":"test","url":"https://dev.azure.com","username":"test"}`,
+			expectedConfig: `{"exclude":[{"name":"org/namespace/test"}],"orgs":["org"],"token":"test","url":"https://dev.azure.com","username":"test"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketCloud schema",
@@ -151,11 +151,12 @@ func makeAWSCodeCommitRepo() *types.Repo {
 
 // makeAzureDevOpsRepo returns a configured Azure DevOps repository.
 func makeAzureDevOpsRepo() *types.Repo {
-	repo := typestest.MakeRepo("dev.azure.com/org/test", "https://dev.azure.com", extsvc.TypeAzureDevOps)
+	repo := typestest.MakeRepo("dev.azure.com/org/namespace/test", "https://dev.azure.com", extsvc.TypeAzureDevOps)
 	repo.Metadata = &azuredevops.Repository{
-		Name: "test",
+		APIURL: "https://azure.devops.com/org/namespace/test",
+		Name:   "test",
 		Project: azuredevops.Project{
-			Name: "org",
+			Name: "namespace",
 		},
 	}
 	return repo
