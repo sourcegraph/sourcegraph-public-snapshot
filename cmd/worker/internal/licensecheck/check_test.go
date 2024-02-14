@@ -207,6 +207,47 @@ func Test_licenseChecker(t *testing.T) {
 		require.NotEmpty(t, lastCalledAt)
 	})
 
+	t.Run("skips check if license is free plan", func(t *testing.T) {
+		defaultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
+		licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+			return &licensing.GetFreeLicenseInfo().Info, "", nil
+		}
+
+		t.Cleanup(func() {
+			licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+		})
+
+		_ = store.Del(licensing.LicenseValidityStoreKey)
+		_ = store.Del(lastCalledAtStoreKey)
+
+		doer := &mockDoer{
+			status:   '1',
+			response: []byte(``),
+		}
+		handler := licenseChecker{
+			siteID: siteID,
+			token:  token,
+			doer:   doer,
+			logger: logtest.NoOp(t),
+		}
+
+		err := handler.Handle(context.Background())
+		require.NoError(t, err)
+
+		// check doer NOT called
+		require.False(t, doer.DoCalled)
+
+		// check result was set to true
+		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+		require.NoError(t, err)
+		require.True(t, valid)
+
+		// check last called at was set
+		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+		require.NoError(t, err)
+		require.NotEmpty(t, lastCalledAt)
+	})
+
 	tests := map[string]struct {
 		response []byte
 		status   int
