@@ -11096,6 +11096,20 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1707759188,
+				"Name": "drop_user_searchable",
+				"UpQuery": "ALTER TABLE users DROP COLUMN IF EXISTS searchable;",
+				"DownQuery": "ALTER TABLE users ADD COLUMN IF NOT EXISTS searchable boolean DEFAULT true NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1706629467,
+					1706710430
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11347,8 +11361,7 @@
 			"v5.3.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1706629467,
-					1706710430
+					1707759188
 				],
 				"PreCreation": false
 			}
