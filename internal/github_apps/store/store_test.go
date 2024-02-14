@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -700,7 +702,7 @@ func TestSyncInstallations(t *testing.T) {
 		githubClient       *mockGitHubClient
 		expectedInstallIDs []int
 		app                ghtypes.GitHubApp
-		expectedErr        string
+		expectedErr        error
 	}{
 		{
 			name: "no installations",
@@ -783,7 +785,11 @@ func TestSyncInstallations(t *testing.T) {
 				return client
 			}(),
 			expectedInstallIDs: []int{},
-			expectedErr:        "request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found",
+			expectedErr: &gh.APIError{
+				URL:     "https://ghe.sgdev.org/api/v3/app/installations?page=1",
+				Code:    http.StatusNotFound,
+				Message: "request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found",
+			},
 			app: ghtypes.GitHubApp{
 				AppID:      5,
 				Name:       "Test Deleted GitHub App",
@@ -823,8 +829,9 @@ func TestSyncInstallations(t *testing.T) {
 
 			errs := store.SyncInstallations(ctx, app, logger, tc.githubClient)
 
-			if tc.expectedErr != "" {
-				require.Error(t, errs, tc.expectedErr)
+			if tc.expectedErr != nil {
+				var e *gh.APIError
+				require.ErrorAs(t, tc.expectedErr, &e)
 			} else {
 				require.NoError(t, errs)
 			}

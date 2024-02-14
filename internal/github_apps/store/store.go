@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -479,22 +481,19 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 
 		// if the error from github is 404 then it means the GitHub app has been deleted. If not, we return
 		// the error and preserve whatever installations we have in the database.
-		// Sample:
-		// {"error": "request to https://ghe.sgdev.org/api/v3/app/installations?page=1 returned status 404: Integration not found", "appName": "BolJHI COMMIT SIgn", "id": 1}
-		if !strings.Contains(err.Error(), "returned status 404: Integration not found") {
-			return errs
-		}
-
-		var toBeDeleted []int
-		for _, install := range dbInstallations {
-			toBeDeleted = append(toBeDeleted, install.InstallationID)
-		}
-		if len(toBeDeleted) > 0 {
-			logger.Info("Deleting GitHub App Installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
-			err = s.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
-			if err != nil {
-				logger.Error("Failed to remove GitHub App Installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
-				return errors.Append(errs, err)
+		var e *gh.APIError
+		if errors.As(err, &e) && e.Code == http.StatusNotFound {
+			var toBeDeleted []int
+			for _, install := range dbInstallations {
+				toBeDeleted = append(toBeDeleted, install.InstallationID)
+			}
+			if len(toBeDeleted) > 0 {
+				logger.Info("Deleting GitHub App Installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
+				err = s.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+				if err != nil {
+					logger.Error("Failed to remove GitHub App Installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+					return errors.Append(errs, err)
+				}
 			}
 		}
 
