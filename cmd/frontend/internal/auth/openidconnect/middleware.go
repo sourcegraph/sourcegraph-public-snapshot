@@ -439,11 +439,9 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	// validating the response to the ID Token request. We re-use the Authn request
 	// state as the nonce.
 	//
-	// The "prompt=login" asks the OP to prompt the user for re-authentication.
-	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState)) + "&prompt=login"
+	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState))
 	// Pass along the prompt_auth to OP for the specific type of authentication to
 	// use, e.g. "github", "gitlab", "google".
 	promptAuth := r.URL.Query().Get("prompt_auth")
