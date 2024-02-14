@@ -23,10 +23,6 @@
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
 
-    function generateURL(filter: SectionItem) {
-        return updateFilterInURL($page.url, filter, filter.selected)
-    }
-
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
     $: filteredItems = processedFilterText
@@ -44,7 +40,10 @@
         <ul>
             {#each limitedItems as item}
                 <li>
-                    <a href={generateURL(item).toString()} class:selected={item.selected}>
+                    <a
+                        href={updateFilterInURL($page.url, item, item.selected).toString()}
+                        class:selected={item.selected}
+                    >
                         <span class="label">
                             <slot name="label" label={item.label} value={item.value}>
                                 {item.label}

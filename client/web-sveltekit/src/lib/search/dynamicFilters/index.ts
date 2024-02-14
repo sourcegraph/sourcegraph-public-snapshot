@@ -40,10 +40,10 @@ export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: bool
         if (filter.kind === 'type') {
             selectedFilters = selectedFilters.filter(selectedFilter => selectedFilter.kind !== 'type')
         }
-        selectedFilters.push(filter)
+        selectedFilters = selectedFilters.concat([filter])
     }
 
-    const newURL = new URL(url)
+    const newURL = new URL(url.toString())
     newURL.searchParams.delete(DYNAMIC_FILTER_URL_QUERY_KEY)
     selectedFilters
         .map(serializeURLFilter)
