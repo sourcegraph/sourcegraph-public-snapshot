@@ -1143,7 +1143,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 	if left == nil {
 		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
-	if !(p.expect(AND) || p.expect(NOT)) {
+	if !p.expect(AND) {
 		return left, nil
 	}
 	right, err := p.parseAnd()

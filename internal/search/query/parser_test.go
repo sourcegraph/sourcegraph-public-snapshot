@@ -803,6 +803,10 @@ func TestParseParensKeyword(t *testing.T) {
 	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b) not c"))
 	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b)not c"))
 	autogold.Expect(`(and "a" (not "b") (not "c"))`).Equal(t, test("(a not b)not c"))
+	autogold.Expect(`(and (not "a") "b")`).Equal(t, test("not a b"))
+	autogold.Expect(`(or "a" (not "b"))`).Equal(t, test("a or not b"))
+	autogold.Expect(`(not "b")`).Equal(t, test("not b"))
+	autogold.Expect(`(not "b")`).Equal(t, test(" not b"))
 
 	autogold.Expect(`(or "a" "bandc")`).Equal(t, test("a or (bandc)"))
 	autogold.Expect(`(and "a" "andor" "b")`).Equal(t, test("a andor b"))
