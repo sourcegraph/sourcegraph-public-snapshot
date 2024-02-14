@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -343,6 +344,11 @@ func addRepoToExclude(ctx context.Context, logger log.Logger, externalService *t
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
 			c.Exclude = append(c.Exclude, &schema.ExcludedAWSCodeCommitRepo{Name: excludableName})
 		}
+	case *schema.AzureDevOpsConnection:
+		exclusion := &schema.ExcludedAzureDevOpsServerRepo{Name: excludableName}
+		if !schemaContainsExclusion(c.Exclude, exclusion) {
+			c.Exclude = append(c.Exclude, &schema.ExcludedAzureDevOpsServerRepo{Name: excludableName})
+		}
 	case *schema.BitbucketCloudConnection:
 		exclusion := &schema.ExcludedBitbucketCloudRepo{Name: excludableName}
 		if !schemaContainsExclusion(c.Exclude, exclusion) {
@@ -387,6 +393,12 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 			name = repo.Name
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAWSCodeCommit))
+		}
+	case extsvc.TypeAzureDevOps:
+		if repo, ok := repository.Metadata.(*azuredevops.Repository); ok {
+			name = fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)
+		} else {
+			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeAzureDevOps))
 		}
 	case extsvc.TypeBitbucketCloud:
 		if repo, ok := repository.Metadata.(*bitbucketcloud.Repo); ok {

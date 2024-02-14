@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -43,6 +44,13 @@ func TestAddRepoToExclude(t *testing.T) {
 			repo:           makeAWSCodeCommitRepo(),
 			initialConfig:  `{"accessKeyID":"accessKeyID","gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
 			expectedConfig: `{"accessKeyID":"accessKeyID","exclude":[{"name":"test"}],"gitCredentials":{"password":"","username":""},"region":"","secretAccessKey":""}`,
+		},
+		{
+			name:           "second attempt of excluding same repo is ignored for Azure DevOps schema",
+			kind:           extsvc.KindAzureDevOps,
+			repo:           makeAzureDevOpsRepo(),
+			initialConfig:  `{"url":"https://dev.azure.com","username":"test","token":"test","orgs":["org"]}`,
+			expectedConfig: `{"exclude":[{"name":"org/test"}],"orgs":["org"],"token":"test","url":"https://dev.azure.com","username":"test"}`,
 		},
 		{
 			name:           "second attempt of excluding same repo is ignored for BitbucketCloud schema",
@@ -137,6 +145,18 @@ func makeAWSCodeCommitRepo() *types.Repo {
 		ID:           "%s",
 		Name:         "test",
 		HTTPCloneURL: "https://git-codecommit.uae-west-1.amazonaws.com/v1/repos/test",
+	}
+	return repo
+}
+
+// makeAzureDevOpsRepo returns a configured Azure DevOps repository.
+func makeAzureDevOpsRepo() *types.Repo {
+	repo := typestest.MakeRepo("dev.azure.com/org/test", "https://dev.azure.com", extsvc.TypeAzureDevOps)
+	repo.Metadata = &azuredevops.Repository{
+		Name: "test",
+		Project: azuredevops.Project{
+			Name: "org",
+		},
 	}
 	return repo
 }
