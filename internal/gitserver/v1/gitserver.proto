@@ -41,9 +41,6 @@ service GitserverService {
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {
-    option deprecated = true;
-  }
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {
     option idempotency_level = IDEMPOTENT;
   }
@@ -624,19 +621,6 @@ message RepoUpdateResponse {
   google.protobuf.Timestamp last_changed = 2;
   // error is the error that occurred during the update.
   string error = 3;
-}
-
-// Do not use: The P4Exec method has been deprecated and will disappear soon!
-message P4ExecRequest {
-  string p4port = 1 [deprecated = true];
-  string p4user = 2 [deprecated = true];
-  string p4passwd = 3 [deprecated = true];
-  repeated bytes args = 4 [deprecated = true];
-}
-
-// Do not use: The P4Exec method has been deprecated and will disappear soon!
-message P4ExecResponse {
-  bytes data = 1 [deprecated = true];
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.
