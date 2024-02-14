@@ -16,7 +16,7 @@ import (
 
 type SearchRequest struct {
 	Repo                 api.RepoName
-	Revisions            []RevisionSpecifier
+	Revisions            []string
 	Query                Node
 	IncludeDiff          bool
 	Limit                int
@@ -26,7 +26,7 @@ type SearchRequest struct {
 func (r *SearchRequest) ToProto() *proto.SearchRequest {
 	revs := make([]*proto.RevisionSpecifier, 0, len(r.Revisions))
 	for _, rev := range r.Revisions {
-		revs = append(revs, rev.ToProto())
+		revs = append(revs, &proto.RevisionSpecifier{RevSpec: rev})
 	}
 	return &proto.SearchRequest{
 		Repo:                 string(r.Repo),
@@ -44,9 +44,9 @@ func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
 		return nil, err
 	}
 
-	revisions := make([]RevisionSpecifier, 0, len(p.GetRevisions()))
+	revisions := make([]string, 0, len(p.GetRevisions()))
 	for _, rev := range p.GetRevisions() {
-		revisions = append(revisions, RevisionSpecifierFromProto(rev))
+		revisions = append(revisions, rev.GetRevSpec())
 	}
 
 	return &SearchRequest{
@@ -57,24 +57,6 @@ func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
 		Limit:                int(p.GetLimit()),
 		IncludeModifiedFiles: p.GetIncludeModifiedFiles(),
 	}, nil
-}
-
-type RevisionSpecifier struct {
-	// RevSpec is a revision range specifier suitable for passing to git. See
-	// the manpage gitrevisions(7).
-	RevSpec string
-}
-
-func (r *RevisionSpecifier) ToProto() *proto.RevisionSpecifier {
-	return &proto.RevisionSpecifier{
-		RevSpec: r.RevSpec,
-	}
-}
-
-func RevisionSpecifierFromProto(p *proto.RevisionSpecifier) RevisionSpecifier {
-	return RevisionSpecifier{
-		RevSpec: p.GetRevSpec(),
-	}
 }
 
 type SearchEventMatches []CommitMatch

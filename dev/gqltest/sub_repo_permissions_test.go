@@ -32,7 +32,6 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	// Test cases
 
-	// flaky test
 	t.Run("can read README.md", func(t *testing.T) {
 		blob, err := userClient.GitBlob(repoName, "main", "README.md")
 		if err != nil {
