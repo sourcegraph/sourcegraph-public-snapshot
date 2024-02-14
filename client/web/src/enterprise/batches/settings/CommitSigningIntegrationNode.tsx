@@ -75,7 +75,6 @@ interface AppDetailsControlsProps {
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
     const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
-    console.log({ data, loading })
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     return config ? (
         <>
