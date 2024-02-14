@@ -20,6 +20,8 @@ type GitBackend interface {
 	GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error)
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
+	// If one of the two given revspecs does not exist, a RevisionNotFoundError
+	// is returned.
 	MergeBase(ctx context.Context, baseRevspec, headRevspec string) (api.CommitID, error)
 	// Blame returns a reader for the blame info of the given path.
 	// BlameHunkReader must always be closed.

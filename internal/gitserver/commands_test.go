@@ -2265,6 +2265,23 @@ func TestClient_MergeBase(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, api.CommitID(""), sha)
 	})
+	t.Run("revision not found", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s, err := status.New(codes.NotFound, "bad revision").WithDetails(&proto.RevisionNotFoundPayload{Repo: "repo", Spec: "deadbeef"})
+				require.NoError(t, err)
+				c.MergeBaseFunc.SetDefaultReturn(nil, s.Err())
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		_, err := c.MergeBase(context.Background(), "repo", "master", "b2")
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
 }
 
 func TestClient_NewFileReader(t *testing.T) {

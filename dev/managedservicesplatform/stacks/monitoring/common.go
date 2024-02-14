@@ -76,11 +76,11 @@ func createCommonAlerts(
 			},
 		},
 	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: serviceKind,
-			ResourceName: vars.Service.ID,
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = serviceKind
+		config.ThresholdAggregation.ResourceName = vars.Service.ID
 
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,

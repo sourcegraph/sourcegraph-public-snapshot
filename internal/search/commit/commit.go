@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -42,7 +43,7 @@ type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitpro
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
-	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
+	ResolveRevision(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error)
 }
 
 func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -61,7 +62,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		args := &protocol.SearchRequest{
 			Repo:                 repoRev.Repo.Name,
-			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+			Revisions:            repoRev.Revs,
 			Query:                j.Query,
 			IncludeDiff:          j.Diff,
 			Limit:                j.Limit,
@@ -246,16 +247,6 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 	}
 
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
-}
-
-func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
-	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
-	for _, rev := range in {
-		out = append(out, gitprotocol.RevisionSpecifier{
-			RevSpec: rev,
-		})
-	}
-	return out
 }
 
 func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitprotocol.Node {
