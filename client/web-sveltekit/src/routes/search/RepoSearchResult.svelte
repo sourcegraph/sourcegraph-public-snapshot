@@ -6,14 +6,14 @@
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
     import Icon from '$lib/Icon.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
     import { displayRepoName, getRepoMatchUrl, type RepositoryMatch } from '$lib/shared'
     import { Badge } from '$lib/wildcard'
 
-    import CodeHostIcon from './CodeHostIcon.svelte'
+    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
-    import RepoStars from './RepoStars.svelte'
 
     export let result: RepositoryMatch
 

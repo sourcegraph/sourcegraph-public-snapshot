@@ -35,7 +35,7 @@ export const FIXTURE_CONTENT: Badged<MarkupContent> = {
 
 export const FIXTURE_SEMANTIC_BADGE: AggregableBadge = {
     text: 'semantic',
-    linkURL: 'https://docs.sourcegraph.com/code_navigation/explanations/precise_code_navigation',
+    linkURL: 'https://sourcegraph.com/docs/code_navigation/explanations/precise_code_navigation',
     hoverMessage: 'Sample hover message',
 }
 

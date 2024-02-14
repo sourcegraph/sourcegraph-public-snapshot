@@ -263,6 +263,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
+			w.Header().Add("x-cody-resolved-model", gatewayModel)
+
 			var (
 				upstreamStarted    = time.Now()
 				upstreamLatency    time.Duration

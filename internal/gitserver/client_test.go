@@ -24,7 +24,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
 
-func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
+func TestClientArchiveOptions_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
 	fn := func(original gitserver.ArchiveOptions) bool {

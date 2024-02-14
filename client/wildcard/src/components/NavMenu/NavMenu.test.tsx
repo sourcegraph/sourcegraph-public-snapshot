@@ -73,7 +73,7 @@ describe('<NavMenu />', () => {
                     {
                         content: 'Browser Extension',
                         itemAs: AnchorLink,
-                        to: 'https://docs.sourcegraph.com/integration/browser_extension',
+                        to: 'https://sourcegraph.com/docs/integration/browser_extension',
                         key: 7,
                     },
                 ],

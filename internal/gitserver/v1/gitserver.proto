@@ -25,6 +25,19 @@ service GitserverService {
   rpc Search(SearchRequest) returns (stream SearchResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // Archive creates an archive for the given treeish in the given format.
+  // If paths are specified, only those paths are included in the archive.
+  //
+  // If subrepo permissions are enabled for the repo, no archive will be created
+  // for non-internal actors and an unimplemented error will be returned. We can
+  // currently not filter parts of the archive, so this would be considered leaking
+  // information.
+  //
+  // If the given treeish does not exist, an error with a RevisionNotFoundPayload
+  // is returned.
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -510,17 +523,23 @@ message CommitMatch {
   repeated string modified_files = 9;
 }
 
+enum ArchiveFormat {
+  ARCHIVE_FORMAT_UNSPECIFIED = 0;
+  ARCHIVE_FORMAT_ZIP = 1;
+  ARCHIVE_FORMAT_TAR = 2;
+}
+
 // ArchiveRequest is set of parameters for the Archive RPC.
 message ArchiveRequest {
-  // repo is the name of the repo to be archived
+  // repo is the name of the repo to be archived.
   string repo = 1;
-  // treeish is the tree or commit to produce an archive for
+  // treeish is the tree or commit to produce an archive for.
   string treeish = 2;
-  // format is the format of the resulting archive (usually "tar" or "zip")
-  string format = 3;
-  // pathspecs is the list of pathspecs to include in the archive. If empty, all
-  // pathspecs are included.
-  repeated string pathspecs = 4;
+  // format is the format of the resulting archive (either ZIP or TAR).
+  ArchiveFormat format = 3;
+  // paths is the list of paths to include in the archive. If empty, all
+  // paths are included.
+  repeated string paths = 4;
 }
 
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of

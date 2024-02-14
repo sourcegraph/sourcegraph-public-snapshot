@@ -8,6 +8,7 @@ go_library(
         "environment.go",
         "monitoring.go",
         "projectid.go",
+        "rollout.go",
         "service.go",
         "spec.go",
     ],
