@@ -731,56 +731,56 @@ func TestParseSearchTypeKeyword(t *testing.T) {
 		want  string
 	}{
 		// parens as grouping
-		{input: "foo and bar and bas", want: `(and "foo" "bar" "bas")`},
-		{input: "(foo and bar) and bas", want: `(and "foo" "bar" "bas")`},
-		{input: "foo bar bas", want: `(and "foo" "bar" "bas")`},
-		{input: "(foo bar) bas", want: `(and "foo" "bar" "bas")`},
-		{input: "foo (bar bas)", want: `(and "foo" "bar" "bas")`},
-		{input: "(foo bar bas)", want: `(and "foo" "bar" "bas")`},
-		{input: "(foo) bar bas", want: `(and "foo" "bar" "bas")`},
-		{input: "foo (bar) bas", want: `(and "foo" "bar" "bas")`},
-		{input: "foo bar (bas)", want: `(and "foo" "bar" "bas")`},
+		{input: `foo and bar and bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo and bar) and bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo bar bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo bar) bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo (bar bas)`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo bar bas)`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo) bar bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo (bar) bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo bar (bas)`, want: `(and "foo" "bar" "bas")`},
 
 		// not
-		{input: "foo and not bar", want: `(and "foo" (not "bar"))`},
-		{input: "foo (not bar)", want: `(and "foo" (not "bar"))`},
-		{input: "foo not bar", want: `(and "foo" (not "bar"))`},
+		{input: `foo and not bar`, want: `(and "foo" (not "bar"))`},
+		{input: `foo (not bar)`, want: `(and "foo" (not "bar"))`},
+		{input: `foo not bar`, want: `(and "foo" (not "bar"))`},
 
 		// literal
 		{input: `"(foo bar)" bas`, want: `(and "(foo bar)" "bas")`},
 
 		// mix implicit AND and explicit OR
-		{input: "(foo bar) and bas", want: `(and "foo" "bar" "bas")`},
-		{input: "(foo bar) or bas", want: `(or (and "foo" "bar") "bas")`},
+		{input: `(foo bar) and bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo bar) or bas`, want: `(or (and "foo" "bar") "bas")`},
 		{input: `(foo or bar) bas`, want: `(and (or "foo" "bar") "bas")`},
 		{input: `(foo or bar) bas qux`, want: `(and (or "foo" "bar") "bas" "qux")`},
 
 		// nested
-		{input: "foo (bar (bas or qux))", want: `(and "foo" "bar" (or "bas" "qux"))`},
-		{input: "(foo or bas) (bar or qux) hoge", want: `(and (or "foo" "bas") (or "bar" "qux") "hoge")`},
-		{input: "(foo or (bas and qux and (hoge or fuga)))", want: `(or "foo" (and "bas" "qux" (or "hoge" "fuga")))`},
-		{input: "(foo and bas) or (hoge and fuga)", want: `(or (and "foo" "bas") (and "hoge" "fuga"))`},
+		{input: `foo (bar (bas or qux))`, want: `(and "foo" "bar" (or "bas" "qux"))`},
+		{input: `(foo or bas) (bar or qux) hoge`, want: `(and (or "foo" "bas") (or "bar" "qux") "hoge")`},
+		{input: `(foo or (bas and qux and (hoge or fuga)))`, want: `(or "foo" (and "bas" "qux" (or "hoge" "fuga")))`},
+		{input: `(foo and bas) or (hoge and fuga)`, want: `(or (and "foo" "bas") (and "hoge" "fuga"))`},
 
 		// regex
-		{input: "(foo /ba.*/) bas", want: `(and "foo" "ba.*" "bas")`},
-		{input: "(foo or /bar/) and bas", want: `(and (or "foo" "bar") "bas")`},
+		{input: `(foo /ba.*/) bas`, want: `(and "foo" "ba.*" "bas")`},
+		{input: `(foo or /bar/) and bas`, want: `(and (or "foo" "bar") "bas")`},
 
 		// function signatures
-		{input: "func() error", want: `(and "func()" "error")`},
-		{input: "func(a int, b bool) error", want: `(and "func(a int, b bool)" "error")`},
+		{input: `func() error`, want: `(and "func()" "error")`},
+		{input: `func(a int, b bool) error`, want: `(and "func(a int, b bool)" "error")`},
 
 		// parentheses
-		{input: "()", want: `"()"`},
-		{input: "(())", want: `"()"`},
-		{input: "(     )", want: `"()"`},
-		{input: "() => {}", want: `(and "()" "=>" "{}")`},
-		{input: "(err error, ok bool)", want: `(and "err" "error," "ok" "bool")`},
+		{input: `()`, want: `"()"`},
+		{input: `(())`, want: `"()"`},
+		{input: `(     )`, want: `"()"`},
+		{input: `() => {}`, want: `(and "()" "=>" "{}")`},
+		{input: `(err error, ok bool)`, want: `(and "err" "error," "ok" "bool")`},
 
 		// unbalanced parentheses
-		{input: "(", want: `"("`},
-		{input: "(()", want: `"(()"`},
-		{input: "())", want: `unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`},
-		{input: "foo(", want: `"foo("`},
+		{input: `(`, want: `"("`},
+		{input: `(()`, want: `"(()"`},
+		{input: `())`, want: `unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`},
+		{input: `foo(`, want: `"foo("`},
 
 		// unescaped quotes
 		{input: `"`, want: `"\""`},
@@ -793,38 +793,38 @@ func TestParseSearchTypeKeyword(t *testing.T) {
 		{input: `"foo"bar"bas"`, want: `"\"foo\"bar\"bas\""`},
 
 		// detect keywords at boundaries
-		{input: "(a or b) and c", want: `(and (or "a" "b") "c")`},
-		{input: "(a or b)and c", want: `(and (or "a" "b") "c")`},
-		{input: "c and(a or b)", want: `(and "c" (or "a" "b"))`},
-		{input: "c and (a or b)", want: `(and "c" (or "a" "b"))`},
-		{input: "(a or b)and(c or d)", want: `(and (or "a" "b") (or "c" "d"))`},
+		{input: `(a or b) and c`, want: `(and (or "a" "b") "c")`},
+		{input: `(a or b)and c`, want: `(and (or "a" "b") "c")`},
+		{input: `c and(a or b)`, want: `(and "c" (or "a" "b"))`},
+		{input: `c and (a or b)`, want: `(and "c" (or "a" "b"))`},
+		{input: `(a or b)and(c or d)`, want: `(and (or "a" "b") (or "c" "d"))`},
 
-		{input: "(a and b) or c", want: `(or (and "a" "b") "c")`},
-		{input: "(a and b)or c", want: `(or (and "a" "b") "c")`},
-		{input: "(a and)or c", want: `(or (and "a" "and") "c")`},
-		{input: "a or(b and c)", want: `(or "a" (and "b" "c"))`},
+		{input: `(a and b) or c`, want: `(or (and "a" "b") "c")`},
+		{input: `(a and b)or c`, want: `(or (and "a" "b") "c")`},
+		{input: `(a and)or c`, want: `(or (and "a" "and") "c")`},
+		{input: `a or(b and c)`, want: `(or "a" (and "b" "c"))`},
 
-		{input: "(a or b) not c", want: `(and (or "a" "b") (not "c"))`},
-		{input: "(a or b)not c", want: `(and (or "a" "b") (not "c"))`},
-		{input: "(a not b)not c", want: `(and "a" (not "b") (not "c"))`},
-		{input: "not a b", want: `(and (not "a") "b")`},
-		{input: "a or not b", want: `(or "a" (not "b"))`},
-		{input: "not b", want: `(not "b")`},
-		{input: " not b", want: `(not "b")`},
+		{input: `(a or b) not c`, want: `(and (or "a" "b") (not "c"))`},
+		{input: `(a or b)not c`, want: `(and (or "a" "b") (not "c"))`},
+		{input: `(a not b)not c`, want: `(and "a" (not "b") (not "c"))`},
+		{input: `not a b`, want: `(and (not "a") "b")`},
+		{input: `a or not b`, want: `(or "a" (not "b"))`},
+		{input: `not b`, want: `(not "b")`},
+		{input: ` not b`, want: `(not "b")`},
 
-		{input: "a or (bandc)", want: `(or "a" "bandc")`},
-		{input: "a andor b", want: `(and "a" "andor" "b")`},
-		{input: "a (and b", want: `(and "a" "(and" "b")`},
-		{input: "a )and b", want: `unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`},
+		{input: `a or (bandc)`, want: `(or "a" "bandc")`},
+		{input: `a andor b`, want: `(and "a" "andor" "b")`},
+		{input: `a (and b`, want: `(and "a" "(and" "b")`},
+		{input: `a )and b`, want: `unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`},
 
-		{input: "(a or b)or c", want: `(or "a" "b" "c")`},
-		{input: "(a or b) or c", want: `(or "a" "b" "c")`},
-		{input: "(a and b or c) or d", want: `(or (and "a" "b") "c" "d")`},
-		{input: "(a or b and c)or d", want: `(or "a" (and "b" "c") "d")`},
+		{input: `(a or b)or c`, want: `(or "a" "b" "c")`},
+		{input: `(a or b) or c`, want: `(or "a" "b" "c")`},
+		{input: `(a and b or c) or d`, want: `(or (and "a" "b") "c" "d")`},
+		{input: `(a or b and c)or d`, want: `(or "a" (and "b" "c") "d")`},
 
 		// first token
-		{input: "  and b", want: `(and "and" "b")`},
-		{input: "and b", want: `(and "and" "b")`},
+		{input: `  and b`, want: `(and "and" "b")`},
+		{input: `and b`, want: `(and "and" "b")`},
 	}
 
 	for _, tc := range testcases {
