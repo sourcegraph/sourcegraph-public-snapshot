@@ -230,6 +230,8 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		}
 	case config.ResponseCodeMetric != nil:
 		condition = newResponseCodeMetricCondition(config)
+	default:
+		return nil, errors.New("no condition configuration provided")
 	}
 
 	// Build the final alert policy
