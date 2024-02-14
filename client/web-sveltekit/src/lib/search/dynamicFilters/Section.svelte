@@ -97,7 +97,7 @@
         background-clip: padding-box;
         border: var(--input-border-width) solid var(--input-border-color);
         border-radius: var(--border-radius);
-        margin-bottom: 0.5rem;
+        margin: 0.75rem 0;
     }
 
     ul {

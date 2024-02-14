@@ -4,6 +4,7 @@
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
     import Icon from '$lib/Icon.svelte'
+    import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
@@ -42,6 +43,7 @@
 
 <aside class="sidebar">
     <h3>Filter results</h3>
+
     {#if !queryHasTypeFilter(searchQuery)}
         <Section items={typeFilters} title="By type" showAll>
             <svelte:fragment slot="label" let:label>
@@ -59,14 +61,17 @@
     </Section>
     <Section items={groupedFilters.author} title="By author" filterPlaceholder="Filter authors" />
     <Section items={groupedFilters['commit date']} title="By commit date">
-        <svelte:fragment slot="label" let:label let:value>
-            <span class="commit-date-label">
-                {label}
-                <small><pre>{value}</pre></small>
-            </span>
+        <span class="commit-date-label" slot="label" let:label let:value>
+            {label}
+            <small><pre>{value}</pre></small>
+        </span>
+    </Section>
+    <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
+        <svelte:fragment slot="label" let:label>
+            <LanguageIcon class="icon" language={label} inline />&nbsp;
+            {label}
         </svelte:fragment>
     </Section>
-    <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages" />
     <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
         <svelte:fragment slot="label" let:label>
             <CodeHostIcon repository={label} />
