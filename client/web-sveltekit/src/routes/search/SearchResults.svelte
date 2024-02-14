@@ -112,7 +112,7 @@
 
 <div class="search-results">
     <div style:width={sidebarWidth}>
-        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream?.filters ?? []} />
+        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream?.filters ?? []} searchQuery={queryFromURL} />
     </div>
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>

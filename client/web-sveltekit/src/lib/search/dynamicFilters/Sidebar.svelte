@@ -1,16 +1,28 @@
 <script lang="ts">
     import { mdiBookOpenVariant } from '@mdi/js'
 
+    import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
+
     import Icon from '$lib/Icon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
-    import { displayRepoName, type Filter } from '$lib/shared'
+    import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
 
     import { type URLQueryFilter, type SectionItem, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
     import Section from './Section.svelte'
 
+    export let searchQuery: string
     export let streamFilters: Filter[]
     export let selectedFilters: URLQueryFilter[]
+
+    function queryHasTypeFilter(query: string): boolean {
+        const tokens = scanSearchQuery(query)
+        if (tokens.type !== 'success') {
+            return false
+        }
+        const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
+        return filters.some(filter => filter.field.value === 'type')
+    }
 
     $: groupedFilters = groupFilters(streamFilters, selectedFilters)
     $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItem => {
@@ -28,12 +40,14 @@
 
 <aside class="sidebar">
     <h3>Filter results</h3>
-    <Section items={typeFilters} title="By type" showAll>
-        <svelte:fragment slot="label" let:label>
-            <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />
-            {label}
-        </svelte:fragment>
-    </Section>
+    {#if !queryHasTypeFilter(searchQuery)}
+        <Section items={typeFilters} title="By type" showAll>
+            <svelte:fragment slot="label" let:label>
+                <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />
+                {label}
+            </svelte:fragment>
+        </Section>
+    {/if}
     <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
         <svelte:fragment slot="label" let:label>
             <SymbolKind symbolKind={label.toUpperCase()} />
