@@ -13169,6 +13169,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_updater_id",
+          "Index": 19,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "next_sync_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
@@ -13267,8 +13280,6 @@
           "RefTableName": "code_hosts",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED"
-<<<<<<< HEAD
-=======
         },
         {
           "Name": "external_services_creator_id_fkey",
@@ -13283,28 +13294,6 @@
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
-        },
-        {
-          "Name": "external_services_max_1_namespace",
-          "ConstraintType": "c",
-          "RefTableName": "",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) \u003c\u003e (namespace_org_id IS NULL))"
-        },
-        {
-          "Name": "external_services_namepspace_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_services_namespace_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE"
->>>>>>> main
         }
       ],
       "Triggers": []
