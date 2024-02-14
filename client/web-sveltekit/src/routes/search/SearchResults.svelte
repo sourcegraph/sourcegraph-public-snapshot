@@ -65,8 +65,6 @@
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
 
-    $: streamFilters = $stream?.filters ?? []
-
     setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
@@ -114,7 +112,7 @@
 
 <div class="search-results">
     <div style:width={sidebarWidth}>
-        <DynamicFiltersSidebar {selectedFilters} {streamFilters} />
+        <DynamicFiltersSidebar {selectedFilters} streamFilters={$stream?.filters ?? []} />
     </div>
     <Separator currentPosition={sidebarSize} />
     <div class="results" bind:this={resultContainer}>
