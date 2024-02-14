@@ -221,6 +221,30 @@ func (b *observableBackend) Exec(ctx context.Context, args ...string) (_ io.Read
 	}, nil
 }
 
+func (b *observableBackend) ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (_ io.ReadCloser, err error) {
+	ctx, errCollector, endObservation := b.operations.archiveReader.WithErrors(ctx, &err, observation.Args{})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ArchiveReader").Inc()
+
+	r, err := b.backend.ArchiveReader(ctx, format, treeish, paths)
+	if err != nil {
+		concurrentOps.WithLabelValues("ArchiveReader").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableReadCloser{
+		inner: r,
+		endObservation: func(err error) {
+			concurrentOps.WithLabelValues("ArchiveReader").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
 type observableReadCloser struct {
 	inner          io.ReadCloser
 	endObservation func(err error)
@@ -248,6 +272,7 @@ type operations struct {
 	readFile        *observation.Operation
 	exec            *observation.Operation
 	getCommit       *observation.Operation
+	archiveReader   *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -284,6 +309,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		readFile:        op("read-file"),
 		exec:            op("exec"),
 		getCommit:       op("get-commit"),
+		archiveReader:   op("archive-reader"),
 	}
 }
 
