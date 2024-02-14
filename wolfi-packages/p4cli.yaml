@@ -27,6 +27,7 @@ pipeline:
     with:
       uri: https://cdist2.perforce.com/perforce/r${{package.version}}/bin.linux26x86_64/p4
       # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r23.1/bin.linux26x86_64/SHA256SUMS (check version)
+      # TESTING
       expected-sha256: d63f0e38c6c6bce469ce584d64792ea06112ba7dfbe8bcdffd216c5b710421e8
       extract: false
   - runs: |
