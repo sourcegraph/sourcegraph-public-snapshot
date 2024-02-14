@@ -250,7 +250,6 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.4.1
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
-	github.com/CAFxX/httpcompression v0.0.9
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/dghubble/gologin/v2 v2.4.0
@@ -521,7 +520,7 @@ require (
 	github.com/karlseguin/typed v1.1.8 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.17.5 // indirect
-	github.com/klauspost/pgzip v1.2.6 // indirect
+	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/pretty v0.3.1
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
