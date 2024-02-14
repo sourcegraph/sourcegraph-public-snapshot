@@ -67,16 +67,19 @@ func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbac
 		return nil, err
 	}
 
-	ms, err := r.db.CodeMonitors().ListMonitors(ctx, database.ListMonitorsOpts{
-		UserID: userID,
-		First:  pointers.Ptr(int(newArgs.First)),
-		After:  intPtrToInt64Ptr(after),
-	})
+	listOpts := database.ListMonitorsOpts{
+		UserID:       userID,
+		First:        pointers.Ptr(int(newArgs.First)),
+		After:        intPtrToInt64Ptr(after),
+		SkipOrphaned: true,
+	}
+
+	ms, err := r.db.CodeMonitors().ListMonitors(ctx, listOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount, err := r.db.CodeMonitors().CountMonitors(ctx, userID)
+	totalCount, err := r.db.CodeMonitors().CountMonitors(ctx, listOpts)
 	if err != nil {
 		return nil, err
 	}

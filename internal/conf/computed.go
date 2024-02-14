@@ -84,10 +84,10 @@ func AccessTokensMaxPerUser() int {
 // AccessTokensAllowNoExpiration returns whether access tokens can be created without expiration.
 func AccessTokensAllowNoExpiration() bool {
 	cfg := Get().AuthAccessTokens
-	if cfg == nil {
-		return false
+	if cfg == nil || cfg.AllowNoExpiration == nil {
+		return true
 	}
-	return cfg.AllowNoExpiration
+	return *cfg.AllowNoExpiration
 }
 
 // AccessTokensExpirationOptions returns the default access token expiration days
@@ -888,6 +888,23 @@ func GetConfigFeatures(siteConfig schema.SiteConfiguration) (c *conftypes.Config
 	return computedConfig
 }
 
+func GetAttributionGateway(siteConfig schema.SiteConfiguration) (string, string) {
+	if !codyEnabled(siteConfig) {
+		return "", ""
+	}
+	// Explicit attribution gateway config overrides autocomplete config (if used).
+	if g := siteConfig.AttributionGateway; g != nil {
+		return g.Endpoint, getSourcegraphProviderAccessToken(g.AccessToken, siteConfig)
+	}
+	// Fall back to autocomplete config if no explicit gateway config.
+	cc := GetCompletionsConfig(siteConfig)
+	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
+	if ccUsingGateway {
+		return cc.Endpoint, getSourcegraphProviderAccessToken(cc.AccessToken, siteConfig)
+	}
+	return "", ""
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
@@ -1178,7 +1195,7 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
-		return 7_500
+		return 7_000
 	case conftypes.CompletionsProviderNameAWSBedrock:
 		if strings.HasPrefix(model, "anthropic.") {
 			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
@@ -1208,7 +1225,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 func openaiDefaultMaxPromptTokens(model string) int {
 	switch model {
 	case "gpt-4":
-		return 7_500
+		return 7_000
 	case "gpt-4-32k":
 		return 32_000
 	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":

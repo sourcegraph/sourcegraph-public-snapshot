@@ -1,18 +1,16 @@
-query GitHistoryQuery($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
-    node(id: $repo) {
-        ... on Repository {
+query GitHistoryQuery($repoName: String!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
             id
-            commit(rev: $revspec) {
-                id
-                ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
-                    # This is a bit hacky, but by fetching all the data needed by both
-                    # the history panel and the commits page we ensure that our custom
-                    # Apollo infinitiy scroll cache handling for this field works
-                    # correctly. Eventually we should revsisit the use of infinity scroll
-                    # on the commits page.
-                    ...CommitsPage_GitCommitConnection
-                    ...GitHistory_HistoryConnection
-                }
+            ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
+                # This is a bit hacky, but by fetching all the data needed by both
+                # the history panel and the commits page we ensure that our custom
+                # Apollo infinitiy scroll cache handling for this field works
+                # correctly. Eventually we should revsisit the use of infinity scroll
+                # on the commits page.
+                ...CommitsPage_GitCommitConnection
+                ...GitHistory_HistoryConnection
             }
         }
     }

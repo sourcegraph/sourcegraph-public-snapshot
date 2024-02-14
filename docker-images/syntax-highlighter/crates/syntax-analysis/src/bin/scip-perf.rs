@@ -2,7 +2,7 @@ use std::{path::Path, time::Instant};
 
 use clap::Parser;
 use syntax_analysis::locals;
-use tree_sitter_all_languages::parsers::BundledParser;
+use tree_sitter_all_languages::ParserId;
 use walkdir::WalkDir;
 
 #[derive(Parser)]
@@ -31,15 +31,15 @@ struct ParseTiming {
 fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
     let (config, extension) = match language {
         Language::Go => (
-            syntax_analysis::languages::get_local_configuration(BundledParser::Go).unwrap(),
+            syntax_analysis::languages::get_local_configuration(ParserId::Go).unwrap(),
             "go",
         ),
         Language::Java => (
-            syntax_analysis::languages::get_local_configuration(BundledParser::Java).unwrap(),
+            syntax_analysis::languages::get_local_configuration(ParserId::Java).unwrap(),
             "java",
         ),
         Language::Matlab => (
-            syntax_analysis::languages::get_local_configuration(BundledParser::Matlab).unwrap(),
+            syntax_analysis::languages::get_local_configuration(ParserId::Matlab).unwrap(),
             "m",
         ),
     };
@@ -67,16 +67,15 @@ fn parse_files(dir: &Path, language: Language) -> Vec<ParseTiming> {
                 continue;
             }
         };
-        let source_bytes = source.as_bytes();
         let mut parser = config.get_parser();
-        let tree = parser.parse(source_bytes, None).unwrap();
+        let tree = parser.parse(source.as_bytes(), None).unwrap();
 
-        locals::find_locals(config, &tree, source_bytes);
+        locals::find_locals(config, &tree, &source).unwrap();
         let finish = Instant::now();
 
         timings.push(ParseTiming {
             file_path: entry.file_stem().unwrap().to_string_lossy().to_string(),
-            file_size: source_bytes.len(),
+            file_size: source.len(),
             duration: finish - start,
         });
     }

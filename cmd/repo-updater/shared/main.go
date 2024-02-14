@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -27,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
@@ -41,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
@@ -65,10 +62,8 @@ const port = "3182"
 var stateHTMLTemplate string
 
 type LazyDebugserverEndpoint struct {
-	repoUpdaterStateEndpoint     http.HandlerFunc
-	listAuthzProvidersEndpoint   http.HandlerFunc
-	gitserverReposStatusEndpoint http.HandlerFunc
-	manualPurgeEndpoint          http.HandlerFunc
+	repoUpdaterStateEndpoint http.HandlerFunc
+	manualPurgeEndpoint      http.HandlerFunc
 }
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint) error {
@@ -181,8 +176,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	debugDumpers := make(map[string]debugserver.Dumper)
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
-	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
-	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.manualPurgeEndpoint = manualPurgeHandler(db)
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
@@ -242,30 +235,6 @@ func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 	})
 }
 
-func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		repo := r.FormValue("repo")
-		if repo == "" {
-			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
-			return
-		}
-
-		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
-		if err != nil {
-			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
-			return
-		}
-
-		resp, err := json.MarshalIndent(status, "", "  ")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(resp)
-	}
-}
-
 func manualPurgeHandler(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, err := strconv.Atoi(r.FormValue("limit"))
@@ -301,38 +270,6 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 			return
 		}
 		fmt.Fprintf(w, "manual purge started with limit of %d and rate of %f", limit, perSecond)
-	}
-}
-
-func listAuthzProvidersHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		type providerInfo struct {
-			ServiceType        string `json:"service_type"`
-			ServiceID          string `json:"service_id"`
-			ExternalServiceURL string `json:"external_service_url"`
-		}
-
-		_, providers := authz.GetProviders()
-		infos := make([]providerInfo, len(providers))
-		for i, p := range providers {
-			_, id := extsvc.DecodeURN(p.URN())
-
-			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
-			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
-			infos[i] = providerInfo{
-				ServiceType:        p.ServiceType(),
-				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
-			}
-		}
-
-		resp, err := json.MarshalIndent(infos, "", "  ")
-		if err != nil {
-			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(resp)
 	}
 }
 

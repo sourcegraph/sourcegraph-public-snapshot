@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -13,7 +12,7 @@ func createCommonAlerts(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	// Convert a spec.ServiceKind into a alertpolicy.ServiceKind
 	serviceKind := alertpolicy.CloudRunService
@@ -38,8 +37,9 @@ func createCommonAlerts(
 				Filters:   map[string]string{"metric.type": "run.googleapis.com/container/cpu/utilizations"},
 				Aligner:   alertpolicy.MonitoringAlignPercentile99,
 				Reducer:   alertpolicy.MonitoringReduceMax,
-				Period:    "300s",
-				Threshold: 0.8,
+				Period:    "60s",
+				Duration:  "600s",
+				Threshold: 0.9,
 			},
 		},
 		{
@@ -76,11 +76,11 @@ func createCommonAlerts(
 			},
 		},
 	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: serviceKind,
-			ResourceName: vars.Service.ID,
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = serviceKind
+		config.ThresholdAggregation.ResourceName = vars.Service.ID
 
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,

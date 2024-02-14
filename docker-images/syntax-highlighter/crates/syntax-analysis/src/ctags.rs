@@ -9,7 +9,7 @@ use anyhow::{Context, Result};
 use itertools::intersperse;
 use scip::types::{descriptor::Suffix, symbol_information, Descriptor};
 use serde::{Deserialize, Serialize};
-use tree_sitter_all_languages::parsers::BundledParser;
+use tree_sitter_all_languages::ParserId;
 
 use crate::{get_globals, globals::Scope};
 
@@ -187,14 +187,14 @@ fn emit_tags_for_scope<W: std::io::Write>(
 pub fn generate_tags<W: std::io::Write>(
     buf_writer: &mut BufWriter<W>,
     filename: String,
-    file_data: &[u8],
+    file_data: &str,
 ) -> Option<()> {
     let path = path::Path::new(&filename);
     let extension = path.extension()?.to_str()?;
     let filepath = path.file_name()?.to_str()?;
 
-    let parser = BundledParser::get_parser_from_extension(extension)?;
-    let (root_scope, _) = match get_globals(parser, file_data)? {
+    let parser = ParserId::from_file_extension(extension)?;
+    let (root_scope, _) = match get_globals(parser, file_data) {
         Ok(vals) => vals,
         Err(err) => {
             // TODO: Not sure I want to keep this or not
@@ -217,7 +217,7 @@ pub fn generate_tags<W: std::io::Write>(
         &root_scope,
         // I don't believe the language name is actually used anywhere but we'll
         // keep it to be compliant with the ctags spec
-        parser.get_language_name(),
+        parser.name(),
         &mut scope_deduplicator,
     );
     Some(())
@@ -258,7 +258,8 @@ pub fn ctags_runner<R: Read, W: Write>(
                     .read_exact(&mut file_data)
                     .expect("Could not fill file data exactly");
 
-                generate_tags(output, filename, &file_data);
+                let code = String::from_utf8(file_data).context("when generating tags")?;
+                generate_tags(output, filename, &code);
             }
         }
 

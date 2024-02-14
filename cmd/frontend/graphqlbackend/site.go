@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -317,6 +318,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 
+	cloudSiteConfig := cloud.SiteConfig()
+	if cloudSiteConfig.SiteConfigAllowlistEnabled() && !actor.FromContext(ctx).SourcegraphOperator {
+		if p, ok := allowEdit(prev.Site, unredacted, cloudSiteConfig.SiteConfigAllowlist.Paths); !ok {
+			return false, cloudSiteConfig.SiteConfigAllowlistOnError(p)
+		}
+	}
+
 	prev.Site = unredacted
 
 	server := globals.ConfigurationServerFrontendOnly
@@ -588,7 +596,10 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	return !isAdmin
 }
 
-func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx, r.db) }
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool {
+	enabled, _ := cody.IsCodyEnabled(ctx, r.db)
+	return enabled
+}
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
 	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
@@ -646,4 +657,17 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 		return &max
 	}
 	return nil
+}
+
+func allowEdit(before, after string, allowlist []string) ([]string, bool) {
+	var notAllowed []string
+	changes := conf.Diff(before, after)
+	for key := range changes {
+		for _, p := range allowlist {
+			if key != p {
+				notAllowed = append(notAllowed, key)
+			}
+		}
+	}
+	return notAllowed, len(notAllowed) == 0
 }

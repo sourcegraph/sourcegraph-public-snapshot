@@ -13,7 +13,6 @@ go_library(
         "//internal/database/basestore",
         "//internal/database/dbconn",
         "//internal/database/dbutil",
-        "//internal/honey",
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",

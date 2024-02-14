@@ -704,7 +704,7 @@ func fetchTimeoutForCI(t *testing.T) time.Duration {
 	if deadline, ok := t.Deadline(); ok {
 		return time.Until(deadline) / 2
 	}
-	return 500 * time.Millisecond
+	return 1000 * time.Millisecond
 }
 
 func toString(m []protocol.FileMatch) string {

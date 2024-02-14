@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,8 +35,8 @@ import (
 
 var patchID uint64
 
-func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	logger := s.Logger.Scoped("createCommitFromPatch").
+func (s *Server) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchReader io.Reader) protocol.CreateCommitFromPatchResponse {
+	logger := s.logger.Scoped("createCommitFromPatch").
 		With(
 			log.String("repo", string(req.Repo)),
 			log.String("baseCommit", string(req.BaseCommit)),
@@ -46,13 +46,13 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	var resp protocol.CreateCommitFromPatchResponse
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
-	repoDir := filepath.Join(s.ReposDir, repo)
+	repoDir := filepath.Join(s.reposDir, repo)
 	repoGitDir := filepath.Join(repoDir, ".git")
 	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
-		repoGitDir = filepath.Join(s.ReposDir, repo)
+		repoGitDir = filepath.Join(s.reposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 			resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: repo does not exist"))
-			return http.StatusInternalServerError, resp
+			return resp
 		}
 	}
 
@@ -77,7 +77,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		if err != nil {
 			logger.Error("Failed to get remote refs", log.Error(err))
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
-			return http.StatusInternalServerError, resp
+			return resp
 		}
 
 		retry := 1
@@ -99,7 +99,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if err != nil {
 		logger.Error("Failed to get remote URL", log.Error(err))
 		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	redactor := urlredactor.New(remoteURL)
@@ -114,10 +114,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := gitserverfs.TempDir(s.ReposDir, "patch-repo-")
+	tmpRepoDir, err := gitserverfs.TempDir(s.reposDir, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 	defer cleanUpTmpRepo(logger, tmpRepoDir)
 
@@ -135,7 +135,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		t := time.Now()
 
 		// runRemoteGitCommand since one of our commands could be git push
-		out, err := executil.RunRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true)
+		out, err := executil.RunRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.logger, cmd), true)
 		logger := logger.With(
 			log.String("prefix", prefix),
 			log.String("command", redactor.Redact(argsToString(cmd.Args))),
@@ -164,7 +164,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Env = append(os.Environ(), tmpGitPathEnv)
 
 	if _, err := run(cmd, "init tmp repo"); err != nil {
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "reset", "-q", string(req.BaseCommit))
@@ -175,7 +175,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		logger.Error("Failed to base the temporary repo on the base revision",
 			log.String("output", string(out)),
 		)
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
@@ -183,11 +183,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
-	cmd.Stdin = bytes.NewReader(req.Patch)
+	cmd.Stdin = patchReader
 
 	if out, err := run(cmd, "applying patch"); err != nil {
 		logger.Error("Failed to apply patch", log.String("output", string(out)))
-		return http.StatusBadRequest, resp
+		return resp
 	}
 
 	messages := req.CommitInfo.Messages
@@ -234,7 +234,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if out, err := run(cmd, "committing patch"); err != nil {
 		logger.Error("Failed to commit patch.", log.String("output", string(out)))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
@@ -245,7 +245,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	out, err := cmd.Output()
 	if err != nil {
 		resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: retrieving new commit id"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 	cmtHash := strings.TrimSpace(string(out))
 
@@ -274,7 +274,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	})
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "copying git objects"))
-		return http.StatusInternalServerError, resp
+		return resp
 	}
 
 	if req.Push != nil {
@@ -284,7 +284,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			cid, err := s.shelveChangelist(ctx, req, cmtHash, remoteURL, tmpGitPathEnv, altObjectsEnv)
 			if err != nil {
 				resp.SetError(repo, "", "", err)
-				return http.StatusInternalServerError, resp
+				return resp
 			}
 
 			resp.ChangelistId = cid
@@ -303,7 +303,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 				agent, err := sshagent.New(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 				if err != nil {
 					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
-					return http.StatusInternalServerError, resp
+					return resp
 				}
 				go agent.Listen()
 				// Make sure we shut this down once we're done.
@@ -319,7 +319,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 			if out, err = run(cmd, "pushing ref"); err != nil {
 				logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
-				return http.StatusInternalServerError, resp
+				return resp
 			}
 		}
 	}
@@ -331,11 +331,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		if out, err = run(cmd, "creating ref"); err != nil {
 			logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
-			return http.StatusInternalServerError, resp
+			return resp
 		}
 	}
 
-	return http.StatusOK, resp
+	return resp
 }
 
 // repoRemoteRefs returns a map containing ref + commit pairs from the
@@ -352,7 +352,7 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	r := urlredactor.New(remoteURL)
-	_, err := executil.RunCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
+	_, err := executil.RunCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, s.logger, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {
@@ -388,7 +388,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	repo := string(req.Repo)
 	baseCommit := string(req.BaseCommit)
 
-	p4home, err := gitserverfs.MakeP4HomeDir(s.ReposDir)
+	p4home, err := gitserverfs.MakeP4HomeDir(s.reposDir)
 	if err != nil {
 		return "", err
 	}
@@ -406,7 +406,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		_, _, _, p4depot, _ = perforce.DecomposePerforceRemoteURL(remoteURL)
 	}
 
-	logger := s.Logger.Scoped("shelveChangelist").
+	logger := s.logger.Scoped("shelveChangelist").
 		With(
 			log.String("repo", repo),
 			log.String("baseCommit", baseCommit),
@@ -419,7 +419,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
 
 	// do all work in (another) temporary directory
-	tmpClientDir, err := gitserverfs.TempDir(s.ReposDir, "perforce-client-")
+	tmpClientDir, err := gitserverfs.TempDir(s.reposDir, "perforce-client-")
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
 	}
@@ -444,12 +444,28 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 
 	p4Cmd := p4Command{
 		ctx:        ctx,
+		homeDir:    p4home,
 		workingDir: tmpClientDir,
-		env:        commonEnv,
+		commonOptions: []perforce.P4OptionFunc{
+			perforce.WithHost(p4port),
+			perforce.WithAuthentication(p4user, p4passwd),
+			perforce.WithClient(p4client),
+			perforce.WithEnvironment(commonEnv...),
+		},
 	}
 
 	// check to see if there's a changelist for this target branch already
-	cl, err := perforce.GetChangelistByClient(ctx, p4port, p4user, p4passwd, tmpClientDir, p4client)
+	args := perforce.GetChangeListByClientArguments{
+		P4Home:   p4home,
+		P4Port:   p4port,
+		P4User:   p4user,
+		P4Passwd: p4passwd,
+
+		WorkDir: tmpClientDir,
+		Client:  p4client,
+	}
+
+	cl, err := perforce.GetChangelistByClient(ctx, args)
 	if err == nil && cl.ID != "" {
 		return cl.ID, nil
 	}
@@ -624,16 +640,10 @@ func (g gitCommand) getListOfFilesInCommit(patchCommit string) ([]string, error)
 }
 
 type p4Command struct {
-	ctx        context.Context
-	workingDir string
-	env        []string
-}
-
-func (p p4Command) commandContext(args ...string) *exec.Cmd {
-	cmd := exec.CommandContext(p.ctx, "p4", args...)
-	cmd.Dir = p.workingDir
-	cmd.Env = p.env
-	return cmd
+	ctx           context.Context
+	homeDir       string
+	workingDir    string
+	commonOptions []perforce.P4OptionFunc
 }
 
 const clientSpecForm = `Client:	%s
@@ -652,6 +662,10 @@ View:	%s... //%s/...
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 client`
 func (p p4Command) createClientSpec(p4depot, p4client, p4user, description string) error {
+	options := append(p.commonOptions,
+		perforce.WithArguments("client", "-i"),
+	)
+
 	clientSpec := fmt.Sprintf(
 		clientSpecForm,
 		p4client,
@@ -661,12 +675,16 @@ func (p p4Command) createClientSpec(p4depot, p4client, p4user, description strin
 		p4depot,
 		p4client,
 	)
-	cmd := p.commandContext("client", "-i")
-	cmd.Stdin = bytes.NewReader([]byte(clientSpec))
+	options = append(options,
+		perforce.WithStdin(bytes.NewReader([]byte(clientSpec))),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, string(out))
 	}
+
 	return nil
 }
 
@@ -695,8 +713,11 @@ func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string)
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 sync`
 func (p p4Command) cloneFiles(filesWithCid []string) error {
-	cmd := p.commandContext("sync")
-	cmd.Args = append(cmd.Args, filesWithCid...)
+	options := append(p.commonOptions,
+		perforce.WithArguments(append([]string{"sync"}, filesWithCid...)...),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, string(out))
@@ -709,8 +730,11 @@ func (p p4Command) cloneFiles(filesWithCid []string) error {
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 edit`
 func (p p4Command) editFiles(fileList []string) error {
-	cmd := p.commandContext("edit")
-	cmd.Args = append(cmd.Args, fileList...)
+	options := append(p.commonOptions,
+		perforce.WithArguments(append([]string{"edit"}, fileList...)...),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, string(out))
@@ -726,10 +750,11 @@ func (p p4Command) editFiles(fileList []string) error {
 // __|- error -> combined output from `p4 diff`
 func (p p4Command) areThereChangedFiles() (bool, error) {
 	// use p4 diff to list the changes
-	diffCmd := p.commandContext("diff", "-f", "-sa")
+	options := append(p.commonOptions,
+		perforce.WithArguments("diff", "-f", "-sa"),
+	)
 
-	// capture the output of `p4 diff` and count the lines
-	// so that the output can be returned in an error message
+	diffCmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := diffCmd.CombinedOutput()
 	if err != nil {
 		return false, errors.Wrap(err, string(out))
@@ -744,7 +769,10 @@ func (p p4Command) areThereChangedFiles() (bool, error) {
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 change`
 func (p p4Command) generateChangeForm(description string) (string, error) {
-	cmd := p.commandContext("change", "-o")
+	options := append(p.commonOptions,
+		perforce.WithArguments("change", "-o"),
+	)
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrap(err, string(out))
@@ -763,10 +791,17 @@ var cidPattern = lazyregexp.New(`Change (\d+) files shelved`)
 // error -> "p4 shelve output does not contain a changelist id"
 // __|- error -> combined output from `p4 shelve`
 func (p p4Command) shelveChangelist(changeForm string) (string, error) {
-	cmd := p.commandContext("shelve", "-i")
+	options := append(p.commonOptions,
+		perforce.WithArguments("shelve", "-i"),
+	)
+
 	changeBuffer := bytes.Buffer{}
 	changeBuffer.Write([]byte(changeForm))
-	cmd.Stdin = &changeBuffer
+	options = append(options,
+		perforce.WithStdin(&changeBuffer),
+	)
+
+	cmd := perforce.NewBaseCommand(p.ctx, p.homeDir, p.workingDir, options...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrap(err, string(out))

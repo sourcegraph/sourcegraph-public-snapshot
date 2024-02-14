@@ -9,13 +9,15 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
+anyhow.workspace = true
 clap.workspace = true
+protobuf.workspace = true
 rocket.workspace = true
 scip.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 syntect.workspace = true
-protobuf.workspace = true
+tree-sitter-highlight.workspace = true
 
 rustyline = "9.1.2"
 base64 = "0.13.0"
@@ -38,7 +40,7 @@ rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 members = [
     "crates/syntax-analysis",
     "crates/tree-sitter-all-languages",
-    "crates/scip-treesitter-cli",
+    "crates/scip-syntax",
 ]
 
 [workspace.dependencies]
@@ -46,6 +48,8 @@ anyhow = "1"
 # "cargo" feature is enabled for using the `crate_version` macro
 clap = { version = "4.1.11", features = ["derive", "cargo"] }
 itertools = "0.10.5"
+lazy_static = "1.0"
+paste = "1.0.6"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

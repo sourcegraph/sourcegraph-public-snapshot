@@ -1,5 +1,5 @@
-use crate::range::PackedRange;
-use anyhow::Result;
+use crate::range::Range;
+use anyhow::{Context, Result};
 use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
@@ -8,8 +8,8 @@ use crate::languages::TagConfiguration;
 
 #[derive(Debug)]
 pub struct Scope {
-    pub ident_range: PackedRange,
-    pub scope_range: PackedRange,
+    pub ident_range: Range,
+    pub scope_range: Range,
     pub globals: Vec<Global>,
     pub children: Vec<Scope>,
     pub descriptors: Vec<Descriptor>,
@@ -18,8 +18,8 @@ pub struct Scope {
 
 #[derive(Debug)]
 pub struct Global {
-    pub range: PackedRange,
-    pub enclosing: Option<PackedRange>,
+    pub range: Range,
+    pub enclosing: Option<Range>,
     pub descriptors: Vec<Descriptor>,
     pub kind: symbol_information::Kind,
 }
@@ -146,8 +146,9 @@ impl Scope {
 pub fn parse_tree<'a>(
     config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
-    source_bytes: &'a [u8],
+    source: &'a str,
 ) -> Result<(Scope, usize)> {
+    let source_bytes = source.as_bytes();
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
@@ -177,7 +178,13 @@ pub fn parse_tree<'a>(
                 .expect("capture indexes should always work");
 
             if capture_name.starts_with("descriptor") {
-                descriptors.push((capture_name, capture.node.utf8_text(source_bytes)?));
+                descriptors.push((
+                    capture_name,
+                    capture
+                        .node
+                        .utf8_text(source_bytes)
+                        .context("Unexpected non-utf-8 content. This is a tree-sitter bug")?,
+                ));
                 node = Some(capture.node);
             }
 
@@ -314,25 +321,23 @@ pub fn parse_tree<'a>(
 pub mod test {
     use crate::snapshot::{self, dump_document_with_config, SnapshotOptions};
     use scip::types::Document;
-    use tree_sitter_all_languages::parsers::BundledParser;
+    use tree_sitter_all_languages::ParserId;
 
     use super::*;
 
-    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
-        let source_bytes = source_code.as_bytes();
+    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Document {
         let mut parser = config.get_parser();
-        let tree = parser.parse(source_bytes, None).unwrap();
+        let tree = parser.parse(source_code.as_bytes(), None).unwrap();
 
-        let (mut scope, hint) = parse_tree(config, &tree, source_bytes)?;
-        Ok(scope.into_document(hint, vec![]))
+        let (mut scope, hint) = parse_tree(config, &tree, source_code).unwrap();
+        scope.into_document(hint, vec![])
     }
 
     #[test]
-    fn test_enclosing_range() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(BundledParser::Go).expect("to have parser");
+    fn test_enclosing_range() {
+        let config = crate::languages::get_tag_configuration(ParserId::Go).expect("to have parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
-        let doc = parse_file_for_lang(config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code);
 
         // let dumped = dump_document(&doc, source_code)?;
         let dumped = dump_document_with_config(
@@ -343,10 +348,9 @@ pub mod test {
                 emit_syntax: snapshot::EmitSyntax::None,
                 emit_symbol: snapshot::EmitSymbol::Enclosing,
             },
-        )?;
+        )
+        .unwrap();
 
         insta::assert_snapshot!(dumped);
-
-        Ok(())
     }
 }

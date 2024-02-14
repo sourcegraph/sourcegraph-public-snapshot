@@ -85,7 +85,7 @@ type CommitSearcher struct {
 	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree
-	Revisions            []protocol.RevisionSpecifier
+	Revisions            []string
 	IncludeDiff          bool
 	IncludeModifiedFiles bool
 	RepoName             api.RepoName
@@ -141,6 +141,18 @@ func (cs *CommitSearcher) gitArgs() []string {
 		args = append(args, "--name-status")
 	}
 	return args
+}
+
+func revsToGitArgs(revs []string) []string {
+	revArgs := make([]string, 0, len(revs))
+	for _, rev := range revs {
+		if rev != "" {
+			revArgs = append(revArgs, rev)
+		} else {
+			revArgs = append(revArgs, "HEAD")
+		}
+	}
+	return revArgs
 }
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
@@ -261,18 +273,6 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		errs = errors.Append(errs, runJob(j))
 	}
 	return errs
-}
-
-func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
-	revArgs := make([]string, 0, len(revs))
-	for _, rev := range revs {
-		if rev.RevSpec != "" {
-			revArgs = append(revArgs, rev.RevSpec)
-		} else {
-			revArgs = append(revArgs, "HEAD")
-		}
-	}
-	return revArgs
 }
 
 // RawCommit is a shallow parse of the output of git log

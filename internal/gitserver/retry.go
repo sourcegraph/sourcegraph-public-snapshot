@@ -51,11 +51,6 @@ func (r *automaticRetryClient) Exec(ctx context.Context, in *proto.ExecRequest, 
 	return r.base.Exec(ctx, in, opts...)
 }
 
-func (r *automaticRetryClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.BatchLog(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.DiskInfo(ctx, in, opts...)
@@ -144,6 +139,26 @@ func (r *automaticRetryClient) PerforceGetChangelist(ctx context.Context, in *pr
 func (r *automaticRetryClient) MergeBase(ctx context.Context, in *proto.MergeBaseRequest, opts ...grpc.CallOption) (*proto.MergeBaseResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.MergeBase(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) Blame(ctx context.Context, in *proto.BlameRequest, opts ...grpc.CallOption) (proto.GitserverService_BlameClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.Blame(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) DefaultBranch(ctx context.Context, in *proto.DefaultBranchRequest, opts ...grpc.CallOption) (*proto.DefaultBranchResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.DefaultBranch(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadFileClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadFile(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.GetCommit(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

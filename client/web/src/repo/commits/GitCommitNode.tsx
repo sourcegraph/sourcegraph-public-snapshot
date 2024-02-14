@@ -7,6 +7,7 @@ import { capitalize } from 'lodash'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import { Button, ButtonGroup, ErrorAlert, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { type GitCommitFields, RepositoryType } from '../../graphql-operations'
@@ -43,7 +44,11 @@ export interface GitCommitNodeProps {
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
 
-    /** Show the absolute timestamp and move relative time to tooltip. */
+    /**
+     * Show the absolute timestamp and move relative time to tooltip.
+     * If not explicitly set, the user's preference from settings
+     * (history.preferAbsoluteTimestamps) is used.
+     */
     preferAbsoluteTimestamps?: boolean
 
     /** Fragment to show at the end to the right of the SHA. */
@@ -83,6 +88,8 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     onHandleDiffMode,
     wrapperElement: WrapperElement = 'div',
 }) => {
+    const settings = useSettings()
+
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [truncateCommitMessage, setTruncateCommitMessage] = useState<boolean>(true)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -92,6 +99,8 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const abbreviatedRefID = node.perforceChangelist?.cid ?? node.abbreviatedOID
     const refID = node.perforceChangelist?.cid ?? node.oid
     const canonicalURL = getCanonicalURL(sourceType, node)
+    // Fall back to user preference if not explicitly set
+    preferAbsoluteTimestamps = preferAbsoluteTimestamps ?? Boolean(settings?.['history.preferAbsoluteTimestamps'])
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         eventLogger.log('CommitBodyToggled')

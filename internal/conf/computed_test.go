@@ -467,7 +467,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt-4",
-				ChatModelMaxTokens:       7500,
+				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   4000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
@@ -493,11 +493,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "gpt4-deployment",
-				ChatModelMaxTokens:       7500,
+				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt35-turbo-deployment",
-				FastChatModelMaxTokens:   7500,
+				FastChatModelMaxTokens:   7000,
 				CompletionModel:          "gpt35-turbo-deployment",
-				CompletionModelMaxTokens: 7500,
+				CompletionModelMaxTokens: 7000,
 				AccessToken:              "asdf",
 				Provider:                 "azure-openai",
 				Endpoint:                 "https://acmecorp.openai.azure.com",
@@ -1201,7 +1201,7 @@ func TestAccessTokenAllowNoExpiration(t *testing.T) {
 		{
 			name:       "no accesstoken config set",
 			siteConfig: schema.SiteConfiguration{},
-			want:       false,
+			want:       true,
 		},
 		{
 			name: "default value",
@@ -1210,17 +1210,27 @@ func TestAccessTokenAllowNoExpiration(t *testing.T) {
 					Allow: string(AccessTokensAll),
 				},
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "allow no expiration",
 			siteConfig: schema.SiteConfiguration{
 				AuthAccessTokens: &schema.AuthAccessTokens{
 					Allow:             string(AccessTokensAll),
-					AllowNoExpiration: true,
+					AllowNoExpiration: pointers.Ptr(true),
 				},
 			},
 			want: true,
+		},
+		{
+			name: "do not allow no expiration",
+			siteConfig: schema.SiteConfiguration{
+				AuthAccessTokens: &schema.AuthAccessTokens{
+					Allow:             string(AccessTokensAll),
+					AllowNoExpiration: pointers.Ptr(false),
+				},
+			},
+			want: false,
 		},
 	}
 

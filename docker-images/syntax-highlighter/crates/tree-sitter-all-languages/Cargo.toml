@@ -6,12 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lazy_static = "1.0"
-paste = "1.0.6"
-
-scip.workspace = true
 tree-sitter.workspace = true
-tree-sitter-highlight.workspace = true
 
 tree-sitter-c = "0.20.2"
 tree-sitter-c-sharp = "0.20.0"
@@ -33,7 +28,6 @@ tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", re
 tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }
 tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "d956b54ea151b12f19c945f7be421c3dcd3a77ba" }
 tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f" }
-
 
 # As of 2022 Apr 06, the upstream crate seems to have paused development,
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend

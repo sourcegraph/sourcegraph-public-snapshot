@@ -16,7 +16,7 @@ import (
 
 type SearchRequest struct {
 	Repo                 api.RepoName
-	Revisions            []RevisionSpecifier
+	Revisions            []string
 	Query                Node
 	IncludeDiff          bool
 	Limit                int
@@ -26,7 +26,7 @@ type SearchRequest struct {
 func (r *SearchRequest) ToProto() *proto.SearchRequest {
 	revs := make([]*proto.RevisionSpecifier, 0, len(r.Revisions))
 	for _, rev := range r.Revisions {
-		revs = append(revs, rev.ToProto())
+		revs = append(revs, &proto.RevisionSpecifier{RevSpec: rev})
 	}
 	return &proto.SearchRequest{
 		Repo:                 string(r.Repo),
@@ -44,9 +44,9 @@ func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
 		return nil, err
 	}
 
-	revisions := make([]RevisionSpecifier, 0, len(p.GetRevisions()))
+	revisions := make([]string, 0, len(p.GetRevisions()))
 	for _, rev := range p.GetRevisions() {
-		revisions = append(revisions, RevisionSpecifierFromProto(rev))
+		revisions = append(revisions, rev.GetRevSpec())
 	}
 
 	return &SearchRequest{
@@ -59,24 +59,6 @@ func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
 	}, nil
 }
 
-type RevisionSpecifier struct {
-	// RevSpec is a revision range specifier suitable for passing to git. See
-	// the manpage gitrevisions(7).
-	RevSpec string
-}
-
-func (r *RevisionSpecifier) ToProto() *proto.RevisionSpecifier {
-	return &proto.RevisionSpecifier{
-		RevSpec: r.RevSpec,
-	}
-}
-
-func RevisionSpecifierFromProto(p *proto.RevisionSpecifier) RevisionSpecifier {
-	return RevisionSpecifier{
-		RevSpec: p.GetRevSpec(),
-	}
-}
-
 type SearchEventMatches []CommitMatch
 
 type SearchEventDone struct {
@@ -87,7 +69,7 @@ type SearchEventDone struct {
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
 		var e gitdomain.RepoNotExistError
-		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
+		if err := json.Unmarshal([]byte(s.Error), &e); err == nil {
 			return &e
 		}
 		return errors.New(s.Error)
@@ -489,7 +471,7 @@ func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFrom
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata, patch []byte) {
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata) {
 	gp := p.GetPush()
 	var pushConfig *PushConfig
 	if gp != nil {
@@ -502,7 +484,6 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
-		Patch:        patch,
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),

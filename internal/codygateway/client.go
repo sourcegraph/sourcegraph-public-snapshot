@@ -48,7 +48,6 @@ func NewClientFromSiteConfig(cli httpcli.Doer) (_ Client, ok bool) {
 	config := conf.Get().SiteConfig()
 	cc := conf.GetCompletionsConfig(config)
 
-	// TODO: What if customer is BYOK? How do we talk to gateway then?
 	// If completions isn't using Cody Gateway, return empty.
 	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
 	if !ccUsingGateway {
@@ -142,6 +141,9 @@ func (c *client) Attribution(ctx context.Context, snippet string, limit int) (At
 		return Attribution{}, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	if c.cli == nil {
+		return Attribution{}, errors.New("no http client")
+	}
 	resp, err := c.cli.Do(req)
 	if err != nil {
 		return Attribution{}, err

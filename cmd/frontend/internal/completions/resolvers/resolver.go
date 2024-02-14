@@ -33,8 +33,8 @@ func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.Co
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
-	if isEnabled := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
-		return "", errors.New("cody is not enabled for current user")
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, c.db); !isEnabled {
+		return "", errors.Newf("cody is not enabled: %s", reason)
 	}
 
 	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {

@@ -19,4 +19,5 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":background"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

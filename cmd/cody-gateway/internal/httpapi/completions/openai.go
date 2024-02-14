@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -127,7 +126,7 @@ func (_ *OpenAIHandlerMethods) transformBody(body *openaiRequest, identifier str
 	// We forward the actor ID to support tracking.
 	body.User = identifier
 }
-func (_ *OpenAIHandlerMethods) getRequestMetadata(_ context.Context, _ log.Logger, _ *actor.Actor, _ codygateway.Feature, body openaiRequest) (model string, additionalMetadata map[string]any) {
+func (_ *OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 

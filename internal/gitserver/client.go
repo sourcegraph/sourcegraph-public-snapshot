@@ -7,15 +7,11 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/conc/pool"
@@ -31,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,7 +36,6 @@ const git = "git"
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
 }
@@ -61,9 +55,9 @@ var _ Client = &clientImplementor{}
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
-	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
-	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
+	AddrForRepo(ctx context.Context, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
 	// GetAddressWithClient returns the address and client for a gitserver instance.
@@ -76,12 +70,8 @@ type ClientSource interface {
 func NewClient(scope string) Client {
 	logger := sglog.Scoped("GitserverClient")
 	return &clientImplementor{
-		logger: logger,
-		scope:  scope,
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               scope,
 		operations:          getOperations(),
 		clientSource:        conns,
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -93,12 +83,8 @@ func NewTestClient(t testing.TB) TestClient {
 	logger := logtest.Scoped(t)
 
 	return &clientImplementor{
-		logger: logger,
-		scope:  fmt.Sprintf("gitserver.test.%s", t.Name()),
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:           filepath.Base(os.Args[0]),
+		logger:              logger,
+		scope:               fmt.Sprintf("gitserver.test.%s", t.Name()),
 		operations:          newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 		clientSource:        NewTestClientSource(t, nil),
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
@@ -194,10 +180,6 @@ func NewMockClientWithExecReader(checker authz.SubRepoPermissionChecker, execRea
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
-	// userAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	userAgent string
-
 	// the current scope of the client.
 	scope string
 
@@ -219,7 +201,6 @@ func (c *clientImplementor) Scoped(scope string) Client {
 	return &clientImplementor{
 		logger:       c.logger,
 		scope:        appendScope(c.scope, scope),
-		userAgent:    c.userAgent,
 		operations:   c.operations,
 		clientSource: c.clientSource,
 	}
@@ -233,8 +214,38 @@ func appendScope(existing, new string) string {
 }
 
 type HunkReader interface {
-	Read() (*Hunk, error)
+	Read() (*gitdomain.Hunk, error)
 	Close() error
+}
+
+// BlameOptions configures a blame.
+type BlameOptions struct {
+	NewestCommit     api.CommitID `json:",omitempty" url:",omitempty"`
+	IgnoreWhitespace bool         `json:",omitempty" url:",omitempty"`
+	Range            *BlameRange  `json:",omitempty" url:",omitempty"`
+}
+
+func (o *BlameOptions) Attrs() []attribute.KeyValue {
+	kvs := []attribute.KeyValue{
+		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Bool("ignoreWhitespace", o.IgnoreWhitespace),
+	}
+	if o.Range != nil {
+		kvs = append(kvs, o.Range.Attrs()...)
+	}
+	return kvs
+}
+
+type BlameRange struct {
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
+}
+
+func (o *BlameRange) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("startLine", o.StartLine),
+		attribute.Int("endLine", o.EndLine),
+	}
 }
 
 type CommitLog struct {
@@ -243,6 +254,42 @@ type CommitLog struct {
 	Timestamp    time.Time
 	SHA          string
 	ChangedFiles []string
+}
+
+// ArchiveOptions contains options for the Archive func.
+type ArchiveOptions struct {
+	Treeish string        // the tree or commit to produce an archive for
+	Format  ArchiveFormat // format of the resulting archive (usually "tar" or "zip")
+	Paths   []string      // if nonempty, only include these paths.
+}
+
+func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
+	pathAttrs := make([]string, len(a.Paths))
+	for i, path := range a.Paths {
+		pathAttrs[i] = string(path)
+	}
+	return []attribute.KeyValue{
+		attribute.String("treeish", a.Treeish),
+		attribute.String("format", string(a.Format)),
+		attribute.StringSlice("paths", pathAttrs),
+	}
+}
+
+func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	*o = ArchiveOptions{
+		Treeish: x.GetTreeish(),
+		Format:  ArchiveFormatFromProto(x.GetFormat()),
+		Paths:   x.GetPaths(),
+	}
+}
+
+func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
+	return &proto.ArchiveRequest{
+		Repo:    repo,
+		Treeish: o.Treeish,
+		Format:  o.Format.ToProto(),
+		Paths:   o.Paths,
+	}
 }
 
 type Client interface {
@@ -313,9 +360,6 @@ type Client interface {
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
-	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes.
-	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
-
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
@@ -348,10 +392,13 @@ type Client interface {
 	// If you just need to check a file's existence, use Stat, not a file reader.
 	//
 	// If the file doesn't exist, the returned error will pass the os.IsNotExist()
-	// check.
+	// check. Subrepo permissions are respected by this method and if no access
+	// is granted, the error will also pass the os.IsNotExist() check.
 	//
 	// If the path points to a submodule, a reader for an empty file is returned
 	// (ie. io.EOF is returned immediately).
+	//
+	// If the specified commit does not exist, a RevisionNotFoundError is returned.
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
@@ -530,85 +577,11 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 }
 
 func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	return c.clientSource.AddrForRepo(ctx, c.userAgent, repo)
+	return c.clientSource.AddrForRepo(ctx, repo)
 }
 
 func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
-}
-
-// ArchiveOptions contains options for the Archive func.
-type ArchiveOptions struct {
-	Treeish   string               // the tree or commit to produce an archive for
-	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
-	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
-}
-
-func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
-	specs := make([]string, len(a.Pathspecs))
-	for i, pathspec := range a.Pathspecs {
-		specs[i] = string(pathspec)
-	}
-	return []attribute.KeyValue{
-		attribute.String("treeish", a.Treeish),
-		attribute.String("format", string(a.Format)),
-		attribute.StringSlice("pathspecs", specs),
-	}
-}
-
-func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
-	protoPathSpecs := x.GetPathspecs()
-	pathSpecs := make([]gitdomain.Pathspec, 0, len(protoPathSpecs))
-
-	for _, path := range protoPathSpecs {
-		pathSpecs = append(pathSpecs, gitdomain.Pathspec(path))
-	}
-
-	*o = ArchiveOptions{
-		Treeish:   x.GetTreeish(),
-		Format:    ArchiveFormat(x.GetFormat()),
-		Pathspecs: pathSpecs,
-	}
-}
-
-func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
-	protoPathSpecs := make([]string, 0, len(o.Pathspecs))
-
-	for _, path := range o.Pathspecs {
-		protoPathSpecs = append(protoPathSpecs, string(path))
-	}
-
-	return &proto.ArchiveRequest{
-		Repo:      repo,
-		Treeish:   o.Treeish,
-		Format:    string(o.Format),
-		Pathspecs: protoPathSpecs,
-	}
-}
-
-// archiveReader wraps the StdoutReader yielded by gitserver's
-// RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
-// error more carefully.
-type archiveReader struct {
-	base io.ReadCloser
-	repo api.RepoName
-	spec string
-}
-
-// Read checks the known output behavior of the StdoutReader.
-func (a *archiveReader) Read(p []byte) (int, error) {
-	n, err := a.base.Read(p)
-	if err != nil {
-		// handle the special case where git archive failed because of an invalid spec
-		if isRevisionNotFound(err.Error()) {
-			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
-		}
-	}
-	return n, err
-}
-
-func (a *archiveReader) Close() error {
-	return a.base.Close()
+	return c.clientSource.ClientForRepo(ctx, repo)
 }
 
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
@@ -634,7 +607,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
 		return nil, err
 	}
 
@@ -658,92 +630,23 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 	}
 	r := streamio.NewReader(func() ([]byte, error) {
 		msg, err := stream.Recv()
-		if status.Code(err) == codes.Canceled {
-			return nil, context.Canceled
-		} else if err != nil {
+		if err != nil {
 			return nil, err
 		}
 		return msg.GetData(), nil
 	})
 
-	return &readCloseWrapper{r: r, closeFn: done}, nil
+	return &readCloseWrapper{Reader: r, closeFn: done}, nil
 }
 
 type readCloseWrapper struct {
-	r       io.Reader
+	io.Reader
 	closeFn func()
-}
-
-func (r *readCloseWrapper) Read(p []byte) (int, error) {
-	n, err := r.r.Read(p)
-	if err != nil {
-		err = convertGRPCErrorToGitDomainError(err)
-	}
-
-	return n, err
 }
 
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
-}
-
-// convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
-// If the error is not a GRPC error, it is returned as-is.
-func convertGRPCErrorToGitDomainError(err error) error {
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		switch payload := detail.(type) {
-
-		case *proto.ExecStatusPayload:
-			return &CommandStatusError{
-				Message:    st.Message(),
-				Stderr:     payload.Stderr,
-				StatusCode: payload.StatusCode,
-			}
-
-		case *proto.NotFoundPayload:
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(payload.Repo),
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			}
-		}
-	}
-
-	return err
-}
-
-type CommandStatusError struct {
-	Message    string
-	StatusCode int32
-	Stderr     string
-}
-
-func (c *CommandStatusError) Error() string {
-	stderr := c.Stderr
-	if len(stderr) > 100 {
-		stderr = stderr[:100] + "... (truncated)"
-	}
-	if c.Message != "" {
-		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
-	}
-	if c.StatusCode != 0 {
-		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
-	}
-	return stderr
 }
 
 func isRevisionNotFound(err string) bool {
@@ -773,14 +676,17 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	cs, err := client.Search(ctx, args.ToProto())
 	if err != nil {
-		return false, convertGitserverError(err)
+		return false, err
 	}
 
 	limitHit := false
 	for {
 		msg, err := cs.Recv()
 		if err != nil {
-			return limitHit, convertGitserverError(err)
+			if errors.Is(err, io.EOF) {
+				return limitHit, nil
+			}
+			return limitHit, err
 		}
 
 		switch m := msg.Message.(type) {
@@ -793,42 +699,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		}
 	}
 }
-
-func convertGitserverError(err error) error {
-	if errors.Is(err, io.EOF) {
-		return nil
-	}
-
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-
-	if st.Code() == codes.Canceled {
-		return context.Canceled
-	}
-
-	if st.Code() == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
-	}
-
-	for _, detail := range st.Details() {
-		if notFound, ok := detail.(*proto.NotFoundPayload); ok {
-			return &gitdomain.RepoNotExistError{
-				Repo:            api.RepoName(notFound.GetRepo()),
-				CloneProgress:   notFound.GetCloneProgress(),
-				CloneInProgress: notFound.GetCloneInProgress(),
-			}
-		}
-	}
-
-	return err
-}
-
-var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_client_deadline_exceeded",
-	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
-})
 
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {
@@ -1387,78 +1257,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	res.FromProto(grpcResp)
 
 	return &res.Object, nil
-}
-
-var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
-
-func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) (_ []string, err error) {
-	ctx, _, endObservation := c.operations.resolveRevisions.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			repo.Attr(),
-			attribute.Int("revs", len(revs)),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
-
-	cmd := c.gitCommand(repo, args...)
-	stdout, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
-	}
-
-	return strings.Fields(string(stdout)), nil
-}
-
-func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
-	args := make([]string, 0, len(revSpecs))
-	for _, r := range revSpecs {
-		if r.RevSpec != "" {
-			args = append(args, r.RevSpec)
-		} else {
-			args = append(args, "HEAD")
-		}
-	}
-
-	// If revSpecs is empty, git treats it as equivalent to HEAD
-	if len(revSpecs) == 0 {
-		args = append(args, "HEAD")
-	}
-	return args
-}
-
-// readResponseBody will attempt to read the body of the HTTP response and return it as a
-// string. However, in the unlikely scenario that it fails to read the body, it will encode and
-// return the error message as a string.
-//
-// This allows us to use this function directly without yet another if err != nil check. As a
-// result, this function should **only** be used when we're attempting to return the body's content
-// as part of an error. In such scenarios we don't need to return the potential error from reading
-// the body, but can get away with returning that error as a string itself.
-//
-// This is an unusual pattern of not returning an error. Be careful of replicating this in other
-// parts of the code.
-func readResponseBody(body io.Reader) string {
-	content, err := io.ReadAll(body)
-	if err != nil {
-		return fmt.Sprintf("failed to read response body, error: %v", err)
-	}
-
-	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
-	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escaped into a \n
-	// character.  For what the error message would look in the UI without
-	// strings.TrimSpace, see attached screenshots in this pull request:
-	// https://github.com/sourcegraph/sourcegraph/pull/39358.
-	return strings.TrimSpace(string(content))
 }
 
 func stringsToByteSlices(in []string) [][]byte {

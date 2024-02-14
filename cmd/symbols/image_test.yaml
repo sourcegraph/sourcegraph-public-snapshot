@@ -15,6 +15,11 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "ctags has correct features"
+    command: "universal-ctags"
+    args:
+      - --list-features
+    expectedOutput: ["interactive", "json"]
 
   # TODO(security): This container should not be running as root
   # - name: "not running as root"
@@ -31,6 +36,3 @@ fileExistenceTests:
   uid: 100
   gid: 101
   permissions: 'drwxr-xr-x'
-- name: 'jansson package'
-  path: 'usr/lib/libjansson.la'
-  shouldExist: true

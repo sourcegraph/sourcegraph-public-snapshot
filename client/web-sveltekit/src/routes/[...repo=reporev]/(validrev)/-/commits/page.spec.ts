@@ -19,8 +19,7 @@ test.beforeEach(async ({ sg }) => {
             const from = afterCursor ? +afterCursor : 0
             const to = from ? (first ?? 20) - 5 : first ?? 20
             return {
-                node: {
-                    __typename: 'Repository',
+                repository: {
                     id: '1',
                     commit: {
                         id: '1',

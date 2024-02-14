@@ -77,7 +77,7 @@ func (r *searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.json", r.Job.ID))
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.jsonl", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}

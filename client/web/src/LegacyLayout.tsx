@@ -226,6 +226,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 <>
                     {newSearchNavigation ? (
                         <NewGlobalNavigationBar
+                            routes={props.routes}
                             showSearchBox={showNavigationSearchBox}
                             authenticatedUser={props.authenticatedUser}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
@@ -235,6 +236,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             codeMonitoringEnabled={props.codeMonitoringEnabled}
                             batchChangesEnabled={props.batchChangesEnabled}
                             codeInsightsEnabled={props.codeInsightsEnabled ?? false}
+                            showFeedbackModal={showFeedbackModal}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
                         />

@@ -4,17 +4,17 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func createCloudSQLAlerts(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
-	channels []monitoringnotificationchannel.MonitoringNotificationChannel,
+	channels alertpolicy.NotificationChannels,
 ) error {
 	cloudSQLResourceName := fmt.Sprintf("%s:%s",
 		vars.ProjectID, *vars.CloudSQLInstanceID)
@@ -29,7 +29,7 @@ func createCloudSQLAlerts(
 		ThresholdAggregation *alertpolicy.ThresholdAggregation
 	}{
 		{
-			ID:          "memory",
+			ID:          "cloud_sql_memory",
 			Name:        "Cloud SQL - Memory Utilization",
 			Description: "Cloud SQL instance memory utilization is above acceptable threshold.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -38,12 +38,12 @@ func createCloudSQLAlerts(
 				},
 				Aligner:   alertpolicy.MonitoringAlignMean,
 				Reducer:   alertpolicy.MonitoringReduceNone,
-				Period:    "300s",
+				Period:    "60s",
 				Threshold: 0.8,
 			},
 		},
 		{
-			ID:          "cpu",
+			ID:          "cloud_sql_cpu",
 			Name:        "Cloud SQL - CPU Utilization",
 			Description: "Cloud SQL instance CPU utilization is above acceptable threshold.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -52,12 +52,13 @@ func createCloudSQLAlerts(
 				},
 				Aligner:   alertpolicy.MonitoringAlignMean,
 				Reducer:   alertpolicy.MonitoringReduceNone,
-				Period:    "300s",
+				Period:    "60s",
 				Threshold: 0.9,
+				Duration:  "180s", // pegged at high usage
 			},
 		},
 		{
-			ID:          "server_up",
+			ID:          "cloud_sql_server_up",
 			Name:        "Cloud SQL - Server Availability",
 			Description: "Cloud SQL instance is down.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -73,7 +74,7 @@ func createCloudSQLAlerts(
 			},
 		},
 		{
-			ID:          "disk_utilization",
+			ID:          "cloud_sql_disk_utilization",
 			Name:        "Cloud SQL - Disk Utilization",
 			Description: "Cloud SQL instance disk utilization is above acceptable threshold.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
@@ -86,12 +87,31 @@ func createCloudSQLAlerts(
 				Threshold: 0.95,
 			},
 		},
-	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: alertpolicy.CloudSQL,
-			ResourceName: cloudSQLResourceName,
+		{
+			ID:   "cloud_sql_connections",
+			Name: "Cloud SQL - Connections",
+			Description: `The number of Cloud SQL connections are approaching the maximum number of connections.
+This can be caused by an increase in the number of active service instances.
 
+Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.`,
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+				Filters: map[string]string{
+					// Despite the name, the metric is titled 'PostgreSQL Connections'
+					"metric.type": "cloudsql.googleapis.com/database/postgresql/num_backends",
+				},
+				Aligner: alertpolicy.MonitoringAlignMax,
+				Reducer: alertpolicy.MonitoringReduceSum, // count across all
+				Period:  "120s",
+				Threshold: 0.9 * float64(pointers.Deref(vars.CloudSQLMaxConections,
+					100)), // 100 seems to be the Cloud SQL default
+			},
+		},
+	} {
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudSQL
+		config.ThresholdAggregation.ResourceName = cloudSQLResourceName
+
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,
@@ -116,9 +136,29 @@ func createCloudSQLAlerts(
 		ThresholdAggregation *alertpolicy.ThresholdAggregation
 	}{
 		{
-			ID:          "per_query_lock_time",
-			Name:        "Cloud SQL - Per-Query Lock Time",
-			Description: "Cloud SQL database queries are encountering lock times above acceptable thresholds.",
+			ID:          "per_query_lock_time_sustained",
+			Name:        "Cloud SQL - Sustained Per-Query Lock Times",
+			Description: "Cloud SQL database queries are encountering lock times above acceptable thresholds over a window.",
+			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+				Filters: map[string]string{
+					"metric.type": "cloudsql.googleapis.com/database/postgresql/insights/perquery/lock_time",
+				},
+				GroupByFields: []string{
+					"metric.label.querystring",
+					"metric.label.user",
+				},
+				Aligner: alertpolicy.MonitoringAlignRate,
+				Reducer: alertpolicy.MonitoringReduceMean,
+				Period:  "60s",
+				// Threshold of 0.2 seconds
+				Threshold: 0.2 * 1_000_000, // metric is in microseconds (us)
+				Duration:  "180s",
+			},
+		},
+		{
+			ID:          "per_query_lock_time_spike",
+			Name:        "Cloud SQL - Spike in Per-Query Lock Time",
+			Description: "Cloud SQL database queries encountered lock times well above acceptable thresholds.",
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
 				Filters: map[string]string{
 					"metric.type": "cloudsql.googleapis.com/database/postgresql/insights/perquery/lock_time",
@@ -130,16 +170,16 @@ func createCloudSQLAlerts(
 				Aligner: alertpolicy.MonitoringAlignRate,
 				Reducer: alertpolicy.MonitoringReduceMean,
 				Period:  "120s",
-				// Threshold of 0.2 seconds
-				Threshold: 0.2 * 1_000_000, // metric is in microseconds (us)
+				// Threshold of 1 seconds - this is _very_ high
+				Threshold: 1 * 1_000_000, // metric is in microseconds (us)
 			},
 		},
 	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: alertpolicy.CloudSQLDatabase,
-			ResourceName: cloudSQLResourceName,
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudSQLDatabase
+		config.ThresholdAggregation.ResourceName = cloudSQLResourceName
 
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,

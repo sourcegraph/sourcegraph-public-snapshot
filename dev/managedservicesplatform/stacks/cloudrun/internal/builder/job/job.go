@@ -177,7 +177,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 			HttpTarget: &cloudschedulerjob.CloudSchedulerJobHttpTarget{
 				HttpMethod: pointers.Ptr(http.MethodPost),
 				Uri: pointers.Ptr(fmt.Sprintf("https://%s-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/%s/jobs/%s:run",
-					*job.Location(), vars.GCPProjectID, vars.Service.ID)),
+					*job.Location(), vars.GCPProjectID, *job.Name())),
 
 				Headers: &map[string]*string{
 					"User-Agent": pointers.Ptr("MSP-Google-Cloud-Scheduler"),

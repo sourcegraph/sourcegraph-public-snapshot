@@ -477,6 +477,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		DeployType:                    deploy.Type(),
 		ClientVersionString:           version.Version(),
 		LicenseKey:                    conf.Get().LicenseKey,
+		ExternalURL:                   conf.ExternalURL(),
 		CodeIntelUsage:                []byte("{}"),
 		NewCodeIntelUsage:             []byte("{}"),
 		SearchUsage:                   []byte("{}"),
