@@ -47,3 +47,5 @@ build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build --output_groups=+clippy_checks
 
 common --noenable_bzlmod
+
+common --modify_execution_info=OCITarball=+no-remote
