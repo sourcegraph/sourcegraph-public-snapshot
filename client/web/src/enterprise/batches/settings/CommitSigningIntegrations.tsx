@@ -77,7 +77,11 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
                 {success && !readOnly && (
-                    <DismissibleAlert className="mb-3" variant="success">
+                    <DismissibleAlert
+                        className="mb-3"
+                        variant="success"
+                        partialStorageKey="batch-changes-commit-signing-integration-success"
+                    >
                         GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
                     </DismissibleAlert>
                 )}

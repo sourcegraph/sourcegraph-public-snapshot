@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiCogOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
+import { animated, useSpring } from 'react-spring'
 
-import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
+import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { AppLogo } from '../../../components/gitHubApps/AppLogo'
@@ -72,7 +74,8 @@ interface AppDetailsControlsProps {
 
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
-    const [refreshGitHubApp, { loading, error }] = useRefreshGitHubApp()
+    const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
+    console.log({ data, loading })
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     return config ? (
         <>
@@ -123,7 +126,16 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                 </Button>
             </div>
-            {error && <ErrorAlert error={error} />}
+            {error && (
+                <NodeAlert visible={Boolean(!loading && error)} variant="danger">
+                    {error.message}
+                </NodeAlert>
+            )}
+            {!loading && data && (
+                <NodeAlert visible={true} variant="success">
+                    Installations for <span className="font-weight-bold">"{config.name}"</span> successfully refreshed.
+                </NodeAlert>
+            )}
         </>
     ) : (
         <ButtonLink to={createURL} className="ml-auto text-nowrap" variant="success" as={Link} size="sm">
@@ -151,3 +163,33 @@ const ReadOnlyAppDetails: React.FunctionComponent<ReadOnlyAppDetailsProps> = ({ 
             </Text>
         </div>
     )
+
+// The Alert banner has a 1rem bottom margin
+const ONE_REM_IN_PX = convertREMToPX(1)
+const APPROX_BANNER_HEIGHT_PX = 40
+
+interface NodeAlertProps {
+    visible: boolean
+    variant: 'danger' | 'success'
+}
+
+const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({
+    visible,
+    children,
+    variant,
+}) => {
+    const ref = useRef<HTMLDivElement>(null)
+    const style = useSpring({
+        height: visible ? `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px` : '0px',
+        opacity: visible ? 1 : 0,
+    })
+
+    return (
+        <animated.div style={style}>
+            {/* Keep this in sync with calculation above: mb-3 = 1rem */}
+            <Alert ref={ref} variant={variant} className="mb-3">
+                {children}
+            </Alert>
+        </animated.div>
+    )
+}
