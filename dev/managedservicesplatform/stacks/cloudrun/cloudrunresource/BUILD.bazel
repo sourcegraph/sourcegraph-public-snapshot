@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cloudrunresource",
+    srcs = ["cloudrunresource.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun/cloudrunresource",
+    visibility = ["//visibility:public"],
+)

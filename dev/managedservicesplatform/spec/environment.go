@@ -151,11 +151,25 @@ func (c EnvironmentCategory) Validate() error {
 	return nil
 }
 
+type EnvironmentDeployType string
+
+const (
+	EnvironmentDeployTypeManual       = "manual"
+	EnvironmentDeployTypeSubscription = "subscription"
+	EnvironmentDeployTypeRollout      = "rollout"
+)
+
 func (c EnvironmentCategory) IsProduction() bool {
 	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
 }
 
 type EnvironmentDeploySpec struct {
+	// Type specifies the deployment method for the environment. There are
+	// 3 supported types:
+	//
+	//  - 'manual': Revisions are deployed manually by configuring it in 'deploy.manual.tag'
+	//  - 'subscription': Revisions are deployed via GitHub Action, which pins to the latest image SHA of 'deploy.subscription.tag'.
+	//  - 'rollout': Revisions are deployed via Cloud Deploy - an env-level 'rollout' spec is required, and a 'rollout.clouddeploy.yaml' is rendered with further instructions.
 	Type         EnvironmentDeployType                  `yaml:"type"`
 	Manual       *EnvironmentDeployManualSpec           `yaml:"manual,omitempty"`
 	Subscription *EnvironmentDeployTypeSubscriptionSpec `yaml:"subscription,omitempty"`
@@ -179,16 +193,7 @@ func (s EnvironmentDeploySpec) Validate() []error {
 	return errs
 }
 
-type EnvironmentDeployType string
-
-const (
-	EnvironmentDeployTypeManual       = "manual"
-	EnvironmentDeployTypeSubscription = "subscription"
-)
-
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
-//
-// TODO: Implement ability to resolve latest concrete tag from a source
 func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
@@ -207,8 +212,11 @@ func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
 		}
 		return tagAndDigest, nil
+	case EnvironmentDeployTypeRollout:
+		// Enforce convention
+		return "insiders", nil
 	default:
-		return "", errors.New("unable to resolve tag")
+		return "", errors.Newf("unable to resolve tag for unknown deploy type %q", d.Type)
 	}
 }
 

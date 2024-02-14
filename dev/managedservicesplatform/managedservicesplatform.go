@@ -55,10 +55,8 @@ type Renderer struct {
 //
 // The required workspaces are managed by 'sg msp tfc sync'.
 func (r *Renderer) RenderEnvironment(
-	svc spec.ServiceSpec,
-	build spec.BuildSpec,
+	svc spec.Spec,
 	env spec.EnvironmentSpec,
-	monitoringSpec spec.MonitoringSpec,
 ) (*CDKTF, error) {
 	terraformVersion := terraform.Version
 	stacks := stack.NewSet(r.OutputDir,
@@ -68,7 +66,7 @@ func (r *Renderer) RenderEnvironment(
 		// provisioned separately.
 		tfcbackend.With(tfcbackend.Config{
 			Workspace: func(stackName string) string {
-				return terraformcloud.WorkspaceName(svc, env, stackName)
+				return terraformcloud.WorkspaceName(svc.Service, env, stackName)
 			},
 		}))
 
@@ -76,24 +74,27 @@ func (r *Renderer) RenderEnvironment(
 	// destroys.
 	preventDestroys := !pointers.DerefZero(env.AllowDestroys)
 
+	// Only non-nil if this is the last stage in a rollout spec.
+	rolloutPipeline := svc.BuildRolloutPipelineConfiguration(env)
+
 	// Render all required CDKTF stacks for this environment.
 	//
 	// This MUST line up with managedservicesplatform.StackNames() in this
 	// package.
 	projectOutput, err := project.NewStack(stacks, project.Variables{
 		ProjectID:   env.ProjectID,
-		DisplayName: fmt.Sprintf("%s - %s", svc.GetName(), env.ID),
+		DisplayName: fmt.Sprintf("%s - %s", svc.Service.GetName(), env.ID),
 
 		Category: env.Category,
 		Labels: map[string]string{
-			"service":     svc.ID,
+			"service":     svc.Service.ID,
 			"environment": env.ID,
 			"category":    string(env.Category),
 			"msp":         "true",
 		},
 		Services: func() []string {
-			if svc.IAM != nil && len(svc.IAM.Services) > 0 {
-				return svc.IAM.Services
+			if svc.Service.IAM != nil && len(svc.Service.IAM.Services) > 0 {
+				return svc.Service.IAM.Services
 			}
 			return nil
 		}(),
@@ -104,10 +105,12 @@ func (r *Renderer) RenderEnvironment(
 	}
 	iamOutput, err := iam.NewStack(stacks, iam.Variables{
 		ProjectID:       *projectOutput.Project.ProjectId(),
-		Image:           build.Image,
-		Service:         svc,
+		Image:           svc.Build.Image,
+		Service:         svc.Service,
 		SecretEnv:       env.SecretEnv,
 		PreventDestroys: preventDestroys,
+
+		IsFinalStageOfRollout: rolloutPipeline != nil,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")
@@ -116,9 +119,11 @@ func (r *Renderer) RenderEnvironment(
 		ProjectID: *projectOutput.Project.ProjectId(),
 		IAM:       *iamOutput,
 
-		Service:     svc,
-		Image:       build.Image,
+		Service:     svc.Service,
+		Image:       svc.Build.Image,
 		Environment: env,
+
+		RolloutPipeline: rolloutPipeline,
 
 		StableGenerate: r.StableGenerate,
 
@@ -129,12 +134,12 @@ func (r *Renderer) RenderEnvironment(
 	}
 	if _, err := monitoring.NewStack(stacks, monitoring.Variables{
 		ProjectID:           *projectOutput.Project.ProjectId(),
-		Service:             svc,
+		Service:             svc.Service,
 		EnvironmentCategory: env.Category,
 		EnvironmentID:       env.ID,
 		Alerting:            pointers.DerefZero(env.Alerting),
 
-		Monitoring:            monitoringSpec,
+		Monitoring:            *svc.Monitoring,
 		MaxInstanceCount:      env.Instances.Scaling.GetMaxCount(), // returns nil if not relevant
 		ExternalDomain:        pointers.DerefZero(env.EnvironmentServiceSpec).Domain,
 		ServiceAuthentication: pointers.DerefZero(env.EnvironmentServiceSpec).Authentication,

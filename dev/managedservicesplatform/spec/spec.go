@@ -28,6 +28,9 @@ type Spec struct {
 	Build        BuildSpec         `yaml:"build"`
 	Environments []EnvironmentSpec `yaml:"environments"`
 	Monitoring   *MonitoringSpec   `yaml:"monitoring,omitempty"`
+	// Rollout can be configured to indicate how releases should roll out
+	// through a set of environments.
+	Rollout *RolloutSpec `yaml:"rollout,omitempty"`
 }
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
@@ -134,6 +137,9 @@ func (s Spec) Validate() []error {
 			if e.EnvironmentServiceSpec != nil {
 				errs = append(errs, errors.New("service specifications are not supported for 'kind: job'"))
 			}
+			if e.Deploy.Type == EnvironmentDeployTypeRollout {
+				errs = append(errs, errors.New("'deploy { type: \"rollout\" }' not supported for 'kind: job'"))
+			}
 			if e.Instances.Scaling != nil {
 				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
 			}
@@ -169,6 +175,36 @@ func (s Spec) Validate() []error {
 					domain))
 			} else {
 				configuredDomains[domain] = struct{}{}
+			}
+		}
+
+		if s.Rollout.GetStageByEnvironment(env.ID) != nil {
+			if env.Deploy.Type != EnvironmentDeployTypeRollout {
+				errs = append(errs, errors.Newf("environment %q is referenced in a rollout stage - deploy type must be '%s'",
+					env.ID, EnvironmentDeployTypeRollout))
+			}
+		} else if env.Deploy.Type == EnvironmentDeployTypeRollout {
+			errs = append(errs, errors.Newf("environment %q has deploy type '%s', but is not referenced in rollout stages",
+				EnvironmentDeployTypeRollout, env.ID))
+		}
+	}
+
+	if s.Rollout != nil {
+		if len(s.Rollout.Stages) == 0 {
+			errs = append(errs, errors.New("rollout spec is defined but contains no stages"))
+		}
+
+		seenStages := make(map[string]struct{})
+		for _, stage := range s.Rollout.Stages {
+			if s.GetEnvironment(stage.EnvironmentID) == nil {
+				errs = append(errs, errors.Newf("rollout stage references unknown environment %q",
+					stage.EnvironmentID))
+			}
+			if _, seen := seenStages[stage.EnvironmentID]; seen {
+				errs = append(errs, errors.Newf("rollout stage references environment %q more than once",
+					stage.EnvironmentID))
+			} else {
+				seenStages[stage.EnvironmentID] = struct{}{}
 			}
 		}
 	}
