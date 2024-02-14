@@ -45,3 +45,4 @@ sg ci bazel run //testing/tools/upgradetest:sh_upgradetest
 - Make it so it can fail early if needed perhaps?
 - test OOB migrations by seeding data.
 - read known bug versions from file, improve visability of known bugs versions, and select by test type
+- The stitched migration file requires that the local branch have `consts.go` `maxVersionString` updated before a new stitched-migration graph version is stamped via `VERSION` then `bazel run //dev:write_all_generated` is run. (this will be handled in bazel)
