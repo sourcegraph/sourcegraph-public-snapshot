@@ -9,9 +9,11 @@
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
 
     import { type URLQueryFilter, type SectionItem, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
+    import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
 
     export let searchQuery: string
+    export let loading: boolean
     export let streamFilters: Filter[]
     export let selectedFilters: URLQueryFilter[]
 
@@ -48,6 +50,7 @@
             </svelte:fragment>
         </Section>
     {/if}
+
     <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
         <svelte:fragment slot="label" let:label>
             <SymbolKind symbolKind={label.toUpperCase()} />
@@ -72,6 +75,11 @@
     </Section>
     <Section items={groupedFilters.file} title="By file" showAll />
     <Section items={groupedFilters.utility} title="Utility" showAll />
+
+    {#if loading}
+        <LoadingSkeleton />
+    {/if}
+
     <a class="section help" href="/help/code_search/reference/queries" target="_blank">
         <span class="icon">
             <Icon --color="var(--icon-color)" svgPath={mdiBookOpenVariant} inline />
