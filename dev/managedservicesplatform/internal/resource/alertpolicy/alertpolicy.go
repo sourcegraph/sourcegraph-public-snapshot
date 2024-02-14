@@ -149,7 +149,6 @@ If you need additional assistance, reach out to #discuss-core-services.`,
 type NotificationChannels map[SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
 
 // Config for a Monitoring Alert Policy
-// Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
 	Service       spec.ServiceSpec
 	EnvironmentID string
@@ -258,9 +257,6 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 				AutoClose: pointers.Ptr("86400s"), // 24 hours
 			},
 			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
-			// For now, set all MSP alerts as WARNING. In the future, we should
-			// have different severity levels.
-			// https://github.com/sourcegraph/managed-services/issues/385
 			// Possible values: ["CRITICAL", "ERROR", "WARNING"]
 			Severity: pointers.Ptr(string(config.Severity)),
 
