@@ -77,8 +77,8 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
 			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "aspect-default"),
-			bk.DependsOn(AspectTestStepKey),
+			bk.Agent("queue", AspectWorkflows.QueueSmall),
+			bk.DependsOn(AspectWorkflows.TestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		)
@@ -90,7 +90,7 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
 			bk.Cmd("./dev/ci/scripts/wolfi/build-repo-index.sh"),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueSmall),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
 			bk.Key("buildRepoIndex"),
@@ -113,8 +113,8 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 				},
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "aspect-default"),
-			bk.DependsOn(AspectTestStepKey),
+			bk.Agent("queue", AspectWorkflows.QueueSmall),
+			bk.DependsOn(AspectWorkflows.TestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		}
@@ -136,7 +136,7 @@ func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
 		pipeline.AddStep(":octopus: All base images built",
 			bk.Cmd("echo 'All base images built'"),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueSmall),
 			// Depend on all previous package building steps
 			bk.DependsOn(baseImageKeys...),
 			bk.Key("buildAllBaseImages"),
@@ -343,8 +343,9 @@ func wolfiGenerateBaseImagePR() *operations.Set {
 		func(pipeline *bk.Pipeline) {
 			pipeline.AddStep(":clown_face::whale::hash: Update Base Image Hashes",
 				//bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
+				//TODO(burmudar): undry me
 				bk.Cmd(`echo "--- DRY RUN: wolfiGEnerateBaseImagePR"`),
-				bk.Agent("queue", "aspect-default"),
+				bk.Agent("queue", AspectWorkflows.QueueSmall),
 				bk.DependsOn("buildAllBaseImages"),
 				bk.Key("updateBaseImageHashes"),
 			)

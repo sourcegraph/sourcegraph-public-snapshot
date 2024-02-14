@@ -74,8 +74,7 @@ func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
 
 // Used in default run type
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	depKey := "__main__::test"
-	return bazelPushImagesCmd(version, false, bk.DependsOn(depKey))
+	return bazelPushImagesCmd(version, false, bk.DependsOn(AspectWorkflows.TestStepKey))
 }
 
 // Used in CandidateNoTest run type
@@ -97,7 +96,7 @@ func bazelPushImagesCmd(version string, isCandidate bool, opts ...bk.StepOpt) fu
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			append(opts,
-				bk.Agent("queue", "aspect-default"),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key(stepKey),
 				bk.Env("PUSH_VERSION", version),
 				bk.Env("CANDIDATE_ONLY", candidate),

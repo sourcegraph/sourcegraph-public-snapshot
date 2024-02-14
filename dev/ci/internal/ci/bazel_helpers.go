@@ -69,7 +69,7 @@ func bazelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-prechecks"),
 		bk.SoftFail(100),
-		bk.Agent("queue", "aspect-default"),
+		bk.Agent("queue", AspectWorkflows.QueueDefault),
 		bk.ArtifactPaths("./sg"),
 		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{

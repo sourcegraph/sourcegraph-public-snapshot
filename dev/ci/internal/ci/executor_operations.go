@@ -14,7 +14,7 @@ func bazelBuildExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
@@ -38,7 +38,7 @@ func bazelPublishExecutorVM(c Config, alwaysRebuild bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.DependsOn(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
@@ -65,7 +65,7 @@ func bazelBuildExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
@@ -81,7 +81,7 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
 		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
@@ -95,7 +95,7 @@ func bazelPublishExecutorDockerMirror(c Config) operations.Operation {
 func bazelPublishExecutorBinary(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 			bk.Cmd(bazelStampedCmd(`run //cmd/executor:binary.push`)),
@@ -139,7 +139,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn("bazel-push-images-candidate"),
-			bk.Agent("queue", "aspect-default"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),

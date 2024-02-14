@@ -119,7 +119,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(func(pipeline *bk.Pipeline) {
 					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
 						bk.Key("bazel-do"),
-						bk.Agent("queue", "aspect-default"),
+						bk.Agent("queue", AspectWorkflows.QueueDefault),
 						bk.Cmd(bazelCmd(bzlCmd)),
 					)
 				})

@@ -6,8 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
 )
 
-const AspectTestStepKey = "__main__::test"
-
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
