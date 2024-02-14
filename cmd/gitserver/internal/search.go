@@ -63,7 +63,7 @@ func (s *Server) SearchWithObservability(ctx context.Context, tr trace.Trace, ar
 				_ = ev.Send()
 			}
 			if traceLogs {
-				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+				s.logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 			}
 		}
 	}()
@@ -119,9 +119,9 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	}
 
 	searcher := &search.CommitSearcher{
-		Logger:               s.Logger,
+		Logger:               s.logger,
 		RepoName:             args.Repo,
-		RepoDir:              gitserverfs.RepoDirFromName(s.ReposDir, args.Repo).Path(),
+		RepoDir:              gitserverfs.RepoDirFromName(s.reposDir, args.Repo).Path(),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,

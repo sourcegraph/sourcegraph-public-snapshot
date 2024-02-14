@@ -1,16 +1,16 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import type { SymbolMatch } from '$lib/shared'
-    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
-
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
-    import CodeHostIcon from './CodeHostIcon.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import type { SymbolMatch } from '$lib/shared'
+
+    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
     import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
 
     export let result: SymbolMatch
 

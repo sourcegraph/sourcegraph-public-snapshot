@@ -24,7 +24,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
 
-func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
+func TestClientArchiveOptions_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
 	fn := func(original gitserver.ArchiveOptions) bool {
@@ -120,7 +120,6 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 		fn := func(
 			repo string,
 			baseCommit string,
-			patch []byte,
 			targetRef string,
 			uniqueRef bool,
 			pushRef *string,
@@ -138,7 +137,6 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 			original := protocol.CreateCommitFromPatchRequest{
 				Repo:       api.RepoName(repo),
 				BaseCommit: api.CommitID(baseCommit),
-				Patch:      patch,
 				TargetRef:  targetRef,
 				UniqueRef:  uniqueRef,
 				CommitInfo: protocol.PatchCommitInfo{
@@ -152,7 +150,7 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 				GitApplyArgs: gitApplyArgs,
 			}
 			var converted protocol.CreateCommitFromPatchRequest
-			converted.FromProto(original.ToMetadataProto(), original.Patch)
+			converted.FromProto(original.ToMetadataProto())
 
 			if diff = cmp.Diff(original, converted); diff != "" {
 				return false

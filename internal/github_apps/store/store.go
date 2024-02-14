@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/google/go-github/v55/github"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
@@ -458,7 +459,20 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 		return errors.Append(errs, err)
 	}
 
-	remoteInstallations, err := client.GetAppInstallations(ctx)
+	getAllAppInstallations := func() (allInstallations []*github.Installation, err error) {
+		hasNextPage := true
+		for page := 1; hasNextPage; page++ {
+			var installations []*github.Installation
+			installations, hasNextPage, err = client.GetAppInstallations(ctx, page)
+			if err != nil {
+				return nil, err
+			}
+			allInstallations = append(allInstallations, installations...)
+		}
+		return allInstallations, nil
+	}
+
+	remoteInstallations, err := getAllAppInstallations()
 	if err != nil {
 		logger.Error("Fetching App Installations from GitHub", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
 		errs = errors.Append(errs, err)

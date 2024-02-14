@@ -85,7 +85,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<
             ...commonProps,
             // If we are not running in the browser extension where we can open the options menu,
             // open the documentation for how to configure the code host we are on.
-            href: new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href,
+            href: new URL(snakeCase(codeHostType), 'https://sourcegraph.com/docs/integration/').href,
             // onClick can call preventDefault() to prevent that and take a different action (opening the options menu).
             onClick: onConfigureSourcegraphClick,
         }
@@ -149,7 +149,7 @@ export const ConfigureSourcegraphButton: React.FunctionComponent<
 > = ({ onConfigureSourcegraphClick, codeHostType, ...commonProps }) => (
     <SourcegraphIconButton
         {...commonProps}
-        href={commonProps.href || new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
+        href={commonProps.href || new URL(snakeCase(codeHostType), 'https://sourcegraph.com/docs/integration/').href}
         onClick={onConfigureSourcegraphClick}
         label="Configure Sourcegraph"
         title="Set up Sourcegraph for search and code navigation on private repositories"

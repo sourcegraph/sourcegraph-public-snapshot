@@ -137,6 +137,8 @@
   interfaces:
     - GitserverServiceClient
     - GitserverService_ExecServer
+    - GitserverService_ArchiveServer
+    - GitserverService_ArchiveClient
     - GitserverService_BlameServer
     - GitserverService_BlameClient
     - GitserverService_ReadFileServer

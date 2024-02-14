@@ -299,9 +299,9 @@ func (c *Client) createMessageBlocks(info *BuildNotification, author string) []s
 			&slack.TextBlockObject{
 				Type: slack.MarkdownType,
 				Text: `:books: *More information on flakes*
-• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flaky tests>
+• <https://sourcegraph.com/docs/dev/background-information/ci#flakes|How to disable flaky tests>
 • <https://github.com/sourcegraph/sourcegraph/issues/new/choose|Create a flaky test issue>
-• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flaky client steps and how to fix them>
+• <https://sourcegraph.com/docs/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flaky client steps and how to fix them>
 
 _Disable flakes on sight and save your fellow teammate some time!_`,
 			},

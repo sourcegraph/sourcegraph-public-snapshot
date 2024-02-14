@@ -738,11 +738,10 @@ cc @${release.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             // Update sourcegraph/server:VERSION everywhere except changelog
-                            `find . -type f -name '*.mdx' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
+                            `find . -type f -name '*.mdx' ! -name 'doc/CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version.version}/g' {} +`,
                             // Update Sourcegraph versions in installation guides
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
-                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./docs/admin/executors/deploy_executors_kubernetes.mdx`,
                             // Update fork variables in installation guides
                             `find ./docs/admin/deploy/ -type f -name '*.mdx' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
 
@@ -1111,7 +1110,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                     version,
                     'internal/database/migration/shared/data/cmd/generator/consts.go'
                 ),
-                'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+                `bazel run //dev:write_all_generated`,
             ]
             const srcCliSteps = await bakeSrcCliSteps(config)
 
@@ -1136,7 +1135,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             }
 
             const sets = await createChangesets({
-                requiredCommands: ['comby', 'go'],
+                requiredCommands: ['comby', 'go', 'bazel'],
                 changes: [
                     {
                         ...prDetails,

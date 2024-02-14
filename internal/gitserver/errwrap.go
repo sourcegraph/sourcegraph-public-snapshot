@@ -144,11 +144,6 @@ func (r *errorTranslatingExecClient) Recv() (*proto.ExecResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
-func (r *errorTranslatingClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	res, err := r.base.BatchLog(ctx, in, opts...) //nolint:SA1019
-	return res, convertGRPCErrorToGitDomainError(err)
-}
-
 func (r *errorTranslatingClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 	res, err := r.base.DiskInfo(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
@@ -299,6 +294,11 @@ type errorTranslatingReadFileClient struct {
 
 func (r *errorTranslatingReadFileClient) Recv() (*proto.ReadFileResponse, error) {
 	res, err := r.GitserverService_ReadFileClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
+func (r *errorTranslatingClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+	res, err := r.base.GetCommit(ctx, in, opts...)
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
