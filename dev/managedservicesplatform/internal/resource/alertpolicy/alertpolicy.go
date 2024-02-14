@@ -2,6 +2,8 @@ package alertpolicy
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -73,28 +75,21 @@ const (
 //   - For services it defaults to `["resource.label.revision_name"]`; additional fields are appended
 //   - For jobs there is no default
 type ThresholdAggregation struct {
-	// ResourceKind identifies what is being monitored. Optional.
-	ResourceKind ResourceKind
-	// ResourceName is the identifier for the monitored resource of ResourceKind.
-	// Only required if ResourceKind is provided.
-	ResourceName string
+	ConditionBuilder
 
-	Filters       map[string]string
-	GroupByFields []string
-
-	// Aggregations
-	Aligner   Aligner
-	Reducer   Reducer
-	Period    string
-	Threshold float64
-
-	Duration string
-
+	// Threshold
+	Threshold  float64
+	Duration   string
 	Comparison Comparison
+}
 
-	// Trigger is the strategy for determining if an alert should fire based
-	// on the thresholds.
-	Trigger TriggerKind
+// MetricAbsence for alerting when a metric is missing for a defined amount
+// of time.
+type MetricAbsence struct {
+	ConditionBuilder
+
+	// Duration (must be in seconds)
+	Duration string
 }
 
 // ResponseCodeMetric for alerting when the number of a certain response code exceeds a threshold
@@ -109,32 +104,6 @@ type ResponseCodeMetric struct {
 	Ratio        float64
 	Duration     *string
 }
-
-type ResourceKind string
-
-const (
-	CloudRunService ResourceKind = "cloud-run-service"
-	CloudRunJob     ResourceKind = "cloud-run-job"
-	CloudRedis      ResourceKind = "cloud-redis"
-
-	// CloudSQL represents a Cloud SQL instance.
-	CloudSQL ResourceKind = "cloud-sql"
-	// CloudSQLDatabase represents a database within a Cloud SQL instance.
-	CloudSQLDatabase ResourceKind = "cloud-sql-database"
-
-	URLUptime ResourceKind = "url-uptime"
-)
-
-type TriggerKind int
-
-const (
-	// TriggerKindAnyViolation is trigger { count: 1 } - any violation will
-	// cause an alert to fire. This is the default.
-	TriggerKindAnyViolation TriggerKind = iota
-	// TriggerKindAllInViolation is trigger { percent: 100 } - all time series
-	// must be in violation for alert to fire.
-	TriggerKindAllInViolation
-)
 
 type SeverityLevel string
 
@@ -179,6 +148,7 @@ type Config struct {
 
 	// Only one of the following can be set.
 	ThresholdAggregation *ThresholdAggregation
+	MetricAbsence        *MetricAbsence
 	ResponseCodeMetric   *ResponseCodeMetric
 }
 
@@ -192,12 +162,8 @@ func (c Config) makeDocsSubject() string {
 type Output struct{}
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
-	if config.ThresholdAggregation == nil && config.ResponseCodeMetric == nil {
-		return nil, errors.New("Must provide either SingleMetric or ResponseCodeMetric config")
-	}
-
-	if config.ThresholdAggregation != nil && config.ResponseCodeMetric != nil {
-		return nil, errors.New("Must provide either SingleMetric or ResponseCodeMetric config, not both")
+	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence}); err != nil {
+		return nil, err
 	}
 
 	// Universal alert description addendum
@@ -239,8 +205,16 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		if config.ThresholdAggregation.ResourceKind != "" {
 			labels["resource_kind"] = pointers.Ptr(string(config.ThresholdAggregation.ResourceKind))
 		}
+
+	case config.MetricAbsence != nil:
+		condition = newMetricAbsenceCondition(config)
+		if config.MetricAbsence.ResourceKind != "" {
+			labels["resource_kind"] = pointers.Ptr(string(config.MetricAbsence.ResourceKind))
+		}
+
 	case config.ResponseCodeMetric != nil:
 		condition = newResponseCodeMetricCondition(config)
+
 	default:
 		return nil, errors.New("no condition configuration provided")
 	}
@@ -271,4 +245,22 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		})
 
 	return &Output{}, nil
+}
+
+func onlyOneNonNil(options []any) error {
+	var types []string
+	var nonNil []string
+	for _, o := range options {
+		t := fmt.Sprintf("%T", o)
+		types = append(types, t)
+		// we must reflect as []any boxes the pointer
+		if !reflect.ValueOf(o).IsNil() {
+			nonNil = append(nonNil, t)
+		}
+	}
+	if len(nonNil) != 1 {
+		return errors.Newf("exactly one of [ %s ] must be specified, found: [ %s ]",
+			strings.Join(types, ", "), strings.Join(nonNil, ", "))
+	}
+	return nil
 }
