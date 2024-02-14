@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- GitHub app installations can now be refreshed from the Batch Changes Site Admin page. [#60125](https://github.com/sourcegraph/sourcegraph/pull/60125)
 
 ### Changed
 
