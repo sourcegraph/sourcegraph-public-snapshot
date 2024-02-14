@@ -99,6 +99,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getRepositoriesForIndexScan: op("GetRepositoriesForIndexScan"),
 		getQueuedRepoRev:            op("GetQueuedRepoRev"),
 		markRepoRevsAsProcessed:     op("MarkRepoRevsAsProcessed"),
+		queueRepoRev:                op("QueueRepoRev"),
+		isQueued:                    op("IsQueued"),
 	}
 }
 
@@ -117,9 +119,10 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 	}
 
 	return &store{
-		logger: s.logger,
-		db:     tx,
-		// operations: s.operations,
+		logger:     s.logger,
+		db:         tx,
+		operations: s.operations,
+		storeType:  s.storeType,
 	}, nil
 }
 
@@ -184,9 +187,27 @@ func (s *store) GetRepositoriesForIndexScan(
 }
 
 func getRepositoriesForIndexScanQuery(enabledFieldName string) string {
-	globalPolicyCTE := fmt.Sprintf(
-		`
-		WITH
+	// globalPolicyCTE := fmt.Sprintf(
+	// 	`
+	// 	WITH
+	// -- This CTE will contain a single row if there is at least one global policy, and will return an empty
+	// -- result set otherwise. If any global policy is for HEAD, the value for the column is_head_policy will
+	// -- be true.
+	// global_policy_descriptor AS MATERIALIZED (
+	// SELECT (p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD') AS is_head_policy
+	// FROM lsif_configuration_policies p
+	// WHERE
+	// 	p.%s AND
+	// 	p.repository_id IS NULL AND
+	// 	p.repository_patterns IS NULL
+	// ORDER BY is_head_policy DESC
+	// LIMIT 1
+	// ),
+	// `,
+	// 	enabledFieldName)
+
+	return fmt.Sprintf(`
+WITH
 -- This CTE will contain a single row if there is at least one global policy, and will return an empty
 -- result set otherwise. If any global policy is for HEAD, the value for the column is_head_policy will
 -- be true.
@@ -200,12 +221,8 @@ global_policy_descriptor AS MATERIALIZED (
 	ORDER BY is_head_policy DESC
 	LIMIT 1
 ),
-`,
-		enabledFieldName)
-
-	return globalPolicyCTE + `
 repositories_matching_policy AS (
-	%s
+	%%s
 ),
 repositories AS (
 	SELECT rmp.id
@@ -214,7 +231,7 @@ repositories AS (
 	WHERE
 		-- Records that have not been checked within the global reindex threshold are also eligible for
 		-- indexing. Note that condition here is true for a record that has never been indexed.
-		(%s - lrs.last_index_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE OR
+		(%%s - lrs.last_index_scan_at > (%%s * '1 second'::interval)) IS DISTINCT FROM FALSE OR
 
 		-- Records that have received an update since their last scan are also eligible for re-indexing.
 		-- Note that last_changed is NULL unless the repository is attached to a policy for HEAD.
@@ -222,14 +239,14 @@ repositories AS (
 	ORDER BY
 		lrs.last_index_scan_at NULLS FIRST,
 		rmp.id -- tie breaker
-	LIMIT %s
+	LIMIT %%s
 )
 INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
-SELECT DISTINCT r.id, %s::timestamp FROM repositories r
+SELECT DISTINCT r.id, %%s::timestamp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
-SET last_index_scan_at = %s
+SET last_index_scan_at = %%s
 RETURNING repository_id
-`
+`, enabledFieldName)
 }
 
 const getRepositoriesForIndexScanGlobalRepositoriesQuery = `
@@ -339,6 +356,7 @@ WHERE id = ANY(%s)
 `
 
 func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
+	fmt.Printf("Queueing %d: %v\n", repositoryID, s.operations.queueRepoRev)
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("rev", rev),
@@ -346,7 +364,10 @@ func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) 
 	defer endObservation(1, observation.Args{})
 
 	return s.withTransaction(ctx, func(tx *store) error {
+		fmt.Printf("hello? %v\n", tx)
 		isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
+		fmt.Println(isQueued)
+		logger.Error(err)
 		if err != nil {
 			return err
 		}
@@ -365,6 +386,7 @@ ON CONFLICT DO NOTHING
 `
 
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	fmt.Printf("Is queued %d: %v", repositoryID, s.operations.isQueued)
 	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("commit", commit),
@@ -376,6 +398,7 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 		repositoryID, commit,
 		repositoryID, commit,
 	)))
+	logger.Error(err)
 	return isQueued, err
 }
 
