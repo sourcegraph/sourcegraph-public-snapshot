@@ -42,12 +42,18 @@ func init() {
 
 func main() {
 	ctx := context.Background()
-	currentVersion := os.Args[1]
-	if currentVersion == "" {
+	currentVersionRaw := os.Args[1]
+	if currentVersionRaw == "" {
 		fmt.Println("Current version argument is required.")
 		fmt.Println("usage: airgappedgen vX.Y.Z <path to folder>")
 		os.Exit(1)
 	}
+
+	currentVersion, err := semver.NewVersion(currentVersionRaw)
+	if err != nil {
+		panic(err)
+	}
+
 	exportPath := os.Args[2]
 	if exportPath == "" {
 		fmt.Println("Export path argument is required.")
@@ -60,7 +66,7 @@ func main() {
 		panic(err)
 	}
 
-	githubVersions, err := listRemoteTaggedVersions(ctx)
+	githubVersions, err := listRemoteTaggedVersions(ctx, currentVersion)
 	if err != nil {
 		panic(err)
 	}
@@ -158,7 +164,7 @@ func downloadGCSVersions(ctx context.Context, versions []semver.Version) ([]*sch
 	return p.Wait()
 }
 
-func listRemoteTaggedVersions(ctx context.Context) ([]semver.Version, error) {
+func listRemoteTaggedVersions(ctx context.Context, currentVersion *semver.Version) ([]semver.Version, error) {
 	var ghc *github.Client
 	if tok := os.Getenv("GH_TOKEN"); tok != "" {
 		ghc = github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
@@ -185,7 +191,19 @@ func listRemoteTaggedVersions(ctx context.Context) ([]semver.Version, error) {
 		page = resp.NextPage
 
 		for _, tag := range tags {
-			if isTagSourcegraphRelease(tag.GetName()) {
+			// If the tag is not a Sourcegraph release, like an old tag for App, we skip it.
+			if !isTagSourcegraphRelease(tag.GetName()) {
+				continue
+			}
+
+			// Now we're sure it's a proper tag, let's parse it.
+			versionTag, err := semver.NewVersion(tag.GetName())
+			if err != nil {
+				return nil, errors.Wrapf(err, "list remote release tags: %w")
+			}
+
+			// If the tag is relevant to the version we're releasing, include it.
+			if isTagAfterGCS(versionTag) && isTagPriorToCurrentRelease(versionTag, currentVersion) {
 				allTags = append(allTags, tag.GetName())
 			}
 		}
@@ -204,9 +222,27 @@ func listRemoteTaggedVersions(ctx context.Context) ([]semver.Version, error) {
 
 var versionRegexp = regexp.MustCompile(`^v\d+\.\d+\.\d+$`)
 
+// isTagSourcegraphRelease returns true if the tag we're looking at is a Sourcegraph release.
 func isTagSourcegraphRelease(tag string) bool {
-	if !versionRegexp.MatchString(tag) {
-		return false
-	}
-	return semver.MustParse(tag).GreaterThan(&gcsVersions[len(gcsVersions)-1])
+	return versionRegexp.MatchString(tag)
+}
+
+// isTagAfterGCS returns true if the tag we're looking at has been released at the time we started
+// committing to Git all schemas descriptions. The versions mentioned in ./gcs_versions.json were not
+// but the tags are still there, so we can't fetch those from GitHub as they'll be missing at that
+// point in time.
+func isTagAfterGCS(versionFromTag *semver.Version) bool {
+	return versionFromTag.GreaterThan(&gcsVersions[len(gcsVersions)-1])
+}
+
+// isTagPriorToCurrentRelease returns true if the tag we're looking at has been release prior to the
+// current version we're releasing. This is to avoid embedding 5.3.0 schemas into a 5.2.X patch release
+// that gets released AFTER 5.3.0, typically to share a bug fix to customers still running on 5.2.X-1.
+func isTagPriorToCurrentRelease(versionFromTag *semver.Version, currentVersion *semver.Version) bool {
+	// We include versions that are:
+	// - released after than the latest gcs version
+	// - before the current version we're releasing.
+	// Basically, if we release 5.2.X after 5.3.0 is out, we don't want to include the schemas for 5.3.0
+	// because from the POV of the migrator, they don't exist yet.
+	return versionFromTag.LessThan(currentVersion)
 }

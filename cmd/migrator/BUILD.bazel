@@ -30,10 +30,7 @@ go_binary(
 )
 
 # This rule builds a tarball of the database schema descriptions that only contains the current database schema
-# description. It's used by the normal variant of cmd/migrator, which is reaches out to the GitHub repository
-# to find the missing schema descriptions.
-#
-# Air gapped customers should use the migrator-airgapped variant instead, see :image_airgapped.
+# description. If the build is not stamped with a proper VERSION env var, this will end up as "dev-...".
 genrule(
     name = "tar_current_schema_descriptions",
     srcs = [
@@ -45,7 +42,16 @@ genrule(
     cmd = """\
     if grep -q "STABLE_VERSION" bazel-out/stable-status.txt; then
         # When we're stamping, we can find the current version in the stable-status.
-        version="v$$(cat bazel-out/stable-status.txt | grep STABLE_VERSION | cut -d' ' -f2)"
+        # But we do stamp main builds with a specific format, which is irrelevant for migrator, so we override this to be dev.
+        stable_version="$$(cat bazel-out/stable-status.txt | grep STABLE_VERSION | cut -d' ' -f2)"
+
+        if ! [[ $$stable_version =~ ^[0-9]\\.[0-9]+\\.[0-9]+ ]]; then
+            echo "🟠 (//cmd/migrator:tar_current_schema_descriptions) Stamping with dev version, will use "dev" as current version"
+            echo $$stable_version
+            version="dev"
+        else
+            version="v$$stable_version"
+        fi
     else
         # When not, usually during local development, we just use dev instead.
         version="dev"
@@ -81,22 +87,6 @@ oci_image(
     tars = [
         ":tar_migrator",
         ":tar_current_schema_descriptions",
-    ],
-    user = "sourcegraph",
-)
-
-oci_image(
-    name = "image_airgapped",
-    base = "@wolfi_base",
-    entrypoint = [
-        "/sbin/tini",
-        "--",
-        "/migrator",
-    ],
-    tags = ["manual"],
-    tars = [
-        ":tar_migrator",
-        ":tar_current_schema_descriptions",
         "//cmd/migrator/airgappedgen:tar_schema_descriptions",
     ],
     user = "sourcegraph",
@@ -105,12 +95,6 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["migrator:candidate"],
-)
-
-oci_tarball(
-    name = "image_airgapped_tarball",
-    image = ":image_airgapped",
     repo_tags = ["migrator:candidate"],
 )
 
@@ -126,26 +110,8 @@ container_structure_test(
     ],
 )
 
-container_structure_test(
-    name = "image_airgapped_test",
-    timeout = "short",
-    configs = ["image_airgapped_test.yaml"],
-    driver = "docker",
-    image = ":image_airgapped",
-    tags = [
-        "exclusive",
-        "requires-network",
-    ],
-)
-
 oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("migrator"),
-)
-
-oci_push(
-    name = "airgapped_candidate_push",
-    image = ":image_airgapped",
-    repository = image_repository("migrator-airgapped"),
 )

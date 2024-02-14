@@ -32,7 +32,15 @@ genrule(
     cmd = """\
     if grep -q "STABLE_VERSION" bazel-out/stable-status.txt; then
         # When we're stamping, we can find the current version in the stable-status.
-        version="v$$(cat bazel-out/stable-status.txt | grep STABLE_VERSION | cut -d' ' -f2)"
+        stable_version="$$(cat bazel-out/stable-status.txt | grep STABLE_VERSION | cut -d' ' -f2)"
+
+        # Don't miss the not operator!
+        if ! [[ $$stable_version =~ ^[0-9]\\.[0-9]+\\.[0-9]+ ]]; then
+            echo "🟠 (//cmd/migrator/airgappedgen:tar_schema_descriptions) Stamping with dev version, will use "dev" as current version"
+            version="dev"
+        else
+            version="v$$stable_version"
+        fi
     else
         # When not, usually during local development, we just use dev instead.
         version="dev"
