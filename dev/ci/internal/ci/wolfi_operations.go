@@ -78,6 +78,7 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "aspect-default"),
+			bk.DependsOn(AspectTestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		)
@@ -102,7 +103,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 
 	return func(pipeline *bk.Pipeline) {
 
-		//cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
 		cmd := fmt.Sprintf("./dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)
 		opts := []bk.StepOpt{
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
@@ -114,6 +114,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "aspect-default"),
+			bk.DependsOn(AspectTestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		}
@@ -123,7 +124,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 		}
 
 		pipeline.AddStep(
-			fmt.Sprintf(":clown_face::octopus: Build Wolfi base image '%s'", target),
+			fmt.Sprintf(":octopus: Build Wolfi base image '%s'", target),
 			opts...,
 		)
 	}, stepKey

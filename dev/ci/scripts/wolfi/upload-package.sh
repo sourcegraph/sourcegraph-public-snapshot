@@ -22,7 +22,9 @@ cd wolfi-packages/packages/$TARGET_ARCH
 
 # Check that this exact package does not already exist in the repo - fail if so
 
-echo " * Uploading package to repository"
+# TODO(burmudar): remove me
+echo " :x: * Uploading package to repository"
+exit 0
 
 # List all .apk files under wolfi-packages/packages/$TARGET_ARCH/
 error="false"

@@ -130,19 +130,20 @@ docker load <"$tarball"
 local_image_name="$image_name:latest-amd64"
 
 # Push to internal dev repo
-echo " * Pushing image to internal dev repo..."
-docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
-docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
-docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
-docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+echo " :x: * Pushing image to internal dev repo..."
+# docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+# docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+# docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+# docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 
 # Push to Dockerhub only on main branch
 if [[ "$IS_MAIN" == "true" ]]; then
-  echo " * Pushing image to prod repo..."
-  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:$tag"
-  docker push "sourcegraph/wolfi-${name}-base:$tag"
-  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:latest"
-  docker push "sourcegraph/wolfi-${name}-base:latest"
+  echo " :x: * Pushing image to prod repo..."
+  # TODO(burmudar): Remove me
+  # docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:$tag"
+  # docker push "sourcegraph/wolfi-${name}-base:$tag"
+  # docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:latest"
+  # docker push "sourcegraph/wolfi-${name}-base:latest"
 fi
 
 # Show image usage message on branches
