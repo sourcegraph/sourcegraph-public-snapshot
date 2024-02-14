@@ -756,19 +756,17 @@ func (authorNameGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
 func Test_revsToGitArgs(t *testing.T) {
 	cases := []struct {
 		name     string
-		revSpecs []protocol.RevisionSpecifier
+		revSpecs []string
 		expected []string
 	}{
 		{
-			name: "explicit HEAD",
-			revSpecs: []protocol.RevisionSpecifier{{
-				RevSpec: "HEAD",
-			}},
+			name:     "explicit HEAD",
+			revSpecs: []string{"HEAD"},
 			expected: []string{"HEAD"},
 		},
 		{
 			name:     "implicit HEAD",
-			revSpecs: []protocol.RevisionSpecifier{{}},
+			revSpecs: []string{""},
 			expected: []string{"HEAD"},
 		},
 	}

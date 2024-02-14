@@ -16,6 +16,7 @@ go_library(
         "//cmd/cody-gateway/internal/httpapi/completions",
         "//cmd/cody-gateway/internal/httpapi/embeddings",
         "//cmd/cody-gateway/internal/httpapi/featurelimiter",
+        "//cmd/cody-gateway/internal/httpapi/overhead",
         "//cmd/cody-gateway/internal/httpapi/requestlogger",
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",

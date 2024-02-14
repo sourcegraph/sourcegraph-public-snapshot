@@ -151,7 +151,25 @@ func (c EnvironmentCategory) Validate() error {
 	return nil
 }
 
+type EnvironmentDeployType string
+
+const (
+	EnvironmentDeployTypeManual       = "manual"
+	EnvironmentDeployTypeSubscription = "subscription"
+	EnvironmentDeployTypeRollout      = "rollout"
+)
+
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
+}
+
 type EnvironmentDeploySpec struct {
+	// Type specifies the deployment method for the environment. There are
+	// 3 supported types:
+	//
+	//  - 'manual': Revisions are deployed manually by configuring it in 'deploy.manual.tag'
+	//  - 'subscription': Revisions are deployed via GitHub Action, which pins to the latest image SHA of 'deploy.subscription.tag'.
+	//  - 'rollout': Revisions are deployed via Cloud Deploy - an env-level 'rollout' spec is required, and a 'rollout.clouddeploy.yaml' is rendered with further instructions.
 	Type         EnvironmentDeployType                  `yaml:"type"`
 	Manual       *EnvironmentDeployManualSpec           `yaml:"manual,omitempty"`
 	Subscription *EnvironmentDeployTypeSubscriptionSpec `yaml:"subscription,omitempty"`
@@ -175,16 +193,7 @@ func (s EnvironmentDeploySpec) Validate() []error {
 	return errs
 }
 
-type EnvironmentDeployType string
-
-const (
-	EnvironmentDeployTypeManual       = "manual"
-	EnvironmentDeployTypeSubscription = "subscription"
-)
-
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
-//
-// TODO: Implement ability to resolve latest concrete tag from a source
 func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
@@ -203,8 +212,11 @@ func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
 		}
 		return tagAndDigest, nil
+	case EnvironmentDeployTypeRollout:
+		// Enforce convention
+		return "insiders", nil
 	default:
-		return "", errors.New("unable to resolve tag")
+		return "", errors.Newf("unable to resolve tag for unknown deploy type %q", d.Type)
 	}
 }
 
@@ -259,6 +271,10 @@ type EnvironmentServiceDomainSpec struct {
 	// Type is one of 'none' or 'cloudflare'. If empty, defaults to 'none'.
 	Type       EnvironmentDomainType            `yaml:"type"`
 	Cloudflare *EnvironmentDomainCloudflareSpec `yaml:"cloudflare,omitempty"`
+
+	// Networking configures additional networking configuration.
+	// Only applicable if a domain 'type' is configured.
+	Networking *EnvironmentDomainNetworkingSpec `yaml:"networking,omitempty"`
 }
 
 // GetDNSName generates the DNS name for the environment. If nil or not configured,
@@ -289,10 +305,6 @@ type EnvironmentDomainCloudflareSpec struct {
 	//
 	// Default: true
 	Proxied *bool `yaml:"proxied,omitempty"`
-
-	// Required configures whether traffic can only be allowed through Cloudflare.
-	// TODO: Unimplemented.
-	Required bool `yaml:"required,omitempty"`
 }
 
 // ShouldProxy evaluates whether Cloudflare WAF proxying should be used.
@@ -301,6 +313,14 @@ func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
 		return false
 	}
 	return pointers.Deref(e.Proxied, true)
+}
+
+type EnvironmentDomainNetworkingSpec struct {
+	// LoadBalancerLogging enables logs on load balancers:
+	// https://cloud.google.com/load-balancing/docs/https/https-logging-monitoring#viewing_logs
+	//
+	// Defaults to false. When enabled, no sampling is configured.
+	LoadBalancerLogging *bool `yaml:"loadBalancerLogging,omitempty"`
 }
 
 type EnvironmentInstancesSpec struct {

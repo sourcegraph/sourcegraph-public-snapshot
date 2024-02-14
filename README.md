@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <a href="https://docs.sourcegraph.com">Docs</a> •
+    <a href="https://sourcegraph.com/docs">Docs</a> •
     <a href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CONTRIBUTING.md">Contributing</a> •
     <a href="https://twitter.com/sourcegraph">Twitter</a> •
     <a href="https://discord.gg/s2qDtYGnAE">Discord</a>
@@ -38,7 +38,7 @@
 
 ## Getting started
 
-- [Use Sourcegraph on the cloud or self-hosted](https://docs.sourcegraph.com/)
+- [Use Sourcegraph on the cloud or self-hosted](https://sourcegraph.com/docs/)
 - [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
 <br><br>
@@ -47,7 +47,7 @@
 
 ## Development
 
-Refer to the [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev) to get started.
+Refer to the [Developing Sourcegraph guide](https://sourcegraph.com/docs/dev) to get started.
 
 ### Documentation
 

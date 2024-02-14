@@ -51,7 +51,7 @@ func TestClone(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	s := server.Server{
+	s := server.NewServer(&server.ServerOpts{
 		Logger:   logger,
 		ReposDir: reposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
@@ -71,10 +71,10 @@ func TestClone(t *testing.T) {
 		Locker:                  locker,
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 		Hostname:                "test-shard",
-	}
+	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
@@ -147,7 +147,7 @@ func TestClone_Fail(t *testing.T) {
 	lock := NewMockRepositoryLock()
 	locker.TryAcquireFunc.SetDefaultReturn(lock, true)
 
-	s := server.Server{
+	s := server.NewServer(&server.ServerOpts{
 		Logger:   logger,
 		ReposDir: reposDir,
 		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
@@ -167,10 +167,10 @@ func TestClone_Fail(t *testing.T) {
 		Locker:                  locker,
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 		Hostname:                "test-shard",
-	}
+	})
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(&s))
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)

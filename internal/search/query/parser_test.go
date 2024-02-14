@@ -767,6 +767,8 @@ func TestParseParensKeyword(t *testing.T) {
 
 	// parentheses
 	autogold.Expect(`"()"`).Equal(t, test("()"))
+	autogold.Expect(`"()"`).Equal(t, test("(())"))
+	autogold.Expect(`"()"`).Equal(t, test("(     )"))
 	autogold.Expect(`(and "()" "=>" "{}")`).Equal(t, test("() => {}"))
 	autogold.Expect(`(and "err" "error," "ok" "bool")`).Equal(t, test("(err error, ok bool)"))
 
@@ -785,6 +787,40 @@ func TestParseParensKeyword(t *testing.T) {
 	autogold.Expect(`"\"\"foo\""`).Equal(t, test(`""foo"`))
 	autogold.Expect(`"\"\"foo\"\""`).Equal(t, test(`""foo""`))
 	autogold.Expect(`"\"foo\"bar\"bas\""`).Equal(t, test(`"foo"bar"bas"`))
+
+	// detect keywords at boundaries
+	autogold.Expect(`(and (or "a" "b") "c")`).Equal(t, test("(a or b) and c"))
+	autogold.Expect(`(and (or "a" "b") "c")`).Equal(t, test("(a or b)and c"))
+	autogold.Expect(`(and "c" (or "a" "b"))`).Equal(t, test("c and(a or b)"))
+	autogold.Expect(`(and "c" (or "a" "b"))`).Equal(t, test("c and (a or b)"))
+	autogold.Expect(`(and (or "a" "b") (or "c" "d"))`).Equal(t, test("(a or b)and(c or d)"))
+
+	autogold.Expect(`(or (and "a" "b") "c")`).Equal(t, test("(a and b) or c"))
+	autogold.Expect(`(or (and "a" "b") "c")`).Equal(t, test("(a and b)or c"))
+	autogold.Expect(`(or (and "a" "and") "c")`).Equal(t, test("(a and)or c"))
+	autogold.Expect(`(or "a" (and "b" "c"))`).Equal(t, test("a or(b and c)"))
+
+	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b) not c"))
+	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b)not c"))
+	autogold.Expect(`(and "a" (not "b") (not "c"))`).Equal(t, test("(a not b)not c"))
+	autogold.Expect(`(and (not "a") "b")`).Equal(t, test("not a b"))
+	autogold.Expect(`(or "a" (not "b"))`).Equal(t, test("a or not b"))
+	autogold.Expect(`(not "b")`).Equal(t, test("not b"))
+	autogold.Expect(`(not "b")`).Equal(t, test(" not b"))
+
+	autogold.Expect(`(or "a" "bandc")`).Equal(t, test("a or (bandc)"))
+	autogold.Expect(`(and "a" "andor" "b")`).Equal(t, test("a andor b"))
+	autogold.Expect(`(and "a" "(and" "b")`).Equal(t, test("a (and b"))
+	autogold.Expect(`unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`).Equal(t, test("a )and b"))
+
+	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b)or c"))
+	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b) or c"))
+	autogold.Expect(`(or (and "a" "b") "c" "d")`).Equal(t, test("(a and b or c) or d"))
+	autogold.Expect(`(or "a" (and "b" "c") "d")`).Equal(t, test("(a or b and c)or d"))
+
+	// first token
+	autogold.Expect(`(and "and" "b")`).Equal(t, test("  and b"))
+	autogold.Expect(`(and "and" "b")`).Equal(t, test("and b"))
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
@@ -986,4 +1022,26 @@ func TestParseKeywordPattern(t *testing.T) {
 	t.Run("literal quotes 2. Double quotes within double quotes", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"foo \"bar\""`)))
 	})
+}
+
+func TestIsSpace(t *testing.T) {
+	cases := []struct {
+		input []byte
+		want  bool
+	}{
+		{[]byte{'\xa0'}, false},
+		{[]byte{' ', ' '}, true},
+		{[]byte{' ', '\t'}, true},
+		{[]byte{' ', '\t', '\f', '\r'}, true},
+		{[]byte{' ', '\t', '\f', '\r', 'a'}, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(string(tc.input), func(t *testing.T) {
+			got := isSpace([]byte(tc.input))
+			if got != tc.want {
+				t.Errorf("got %t, want %t, first byte %d", got, tc.want, rune(tc.input[0]))
+			}
+		})
+	}
 }

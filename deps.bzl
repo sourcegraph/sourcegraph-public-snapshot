@@ -1787,6 +1787,13 @@ def go_dependencies():
         version = "v0.0.0-20200222043503-6f7a984d4dc4",
     )
     go_repository(
+        name = "com_github_go_json_experiment_json",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/go-json-experiment/json",
+        sum = "h1:ymLjT4f35nQbASLnvxEde4XOBL+Sn7rFuV+FOJqkljg=",
+        version = "v0.0.0-20231102232822-2e55bd4e08b0",
+    )
+    go_repository(
         name = "com_github_go_kit_kit",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-kit/kit",
@@ -5216,8 +5223,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1://9ddP+HGyVf9Zr5SslDDt2l8VdCW89LA4M0VcZ9jE4=",
-        version = "v0.0.0-20240202144453-245e0cebf761",
+        sum = "h1:E3Uk6bQwBiW7em65FzsinLQhBZEZn5qplm164il6TLg=",
+        version = "v0.0.0-20240212021124-1c158f9b8661",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

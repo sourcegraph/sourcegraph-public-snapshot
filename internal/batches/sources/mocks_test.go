@@ -10986,9 +10986,6 @@ type MockGitserverClient struct {
 	// ResolveRevisionFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevision.
 	ResolveRevisionFunc *GitserverClientResolveRevisionFunc
-	// ResolveRevisionsFunc is an instance of a mock function object
-	// controlling the behavior of the method ResolveRevisions.
-	ResolveRevisionsFunc *GitserverClientResolveRevisionsFunc
 	// RevListFunc is an instance of a mock function object controlling the
 	// behavior of the method RevList.
 	RevListFunc *GitserverClientRevListFunc
@@ -11228,11 +11225,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
 			defaultHook: func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (r0 api.CommitID, r1 error) {
-				return
-			},
-		},
-		ResolveRevisionsFunc: &GitserverClientResolveRevisionsFunc{
-			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -11493,11 +11485,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.ResolveRevision")
 			},
 		},
-		ResolveRevisionsFunc: &GitserverClientResolveRevisionsFunc{
-			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-				panic("unexpected invocation of MockGitserverClient.ResolveRevisions")
-			},
-		},
 		RevListFunc: &GitserverClientRevListFunc{
 			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) error {
 				panic("unexpected invocation of MockGitserverClient.RevList")
@@ -11669,9 +11656,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
 			defaultHook: i.ResolveRevision,
-		},
-		ResolveRevisionsFunc: &GitserverClientResolveRevisionsFunc{
-			defaultHook: i.ResolveRevisions,
 		},
 		RevListFunc: &GitserverClientRevListFunc{
 			defaultHook: i.RevList,
@@ -16560,120 +16544,6 @@ func (c GitserverClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientResolveRevisionsFunc describes the behavior when the
-// ResolveRevisions method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientResolveRevisionsFunc struct {
-	defaultHook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
-	history     []GitserverClientResolveRevisionsFuncCall
-	mutex       sync.Mutex
-}
-
-// ResolveRevisions delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) ResolveRevisions(v0 context.Context, v1 api.RepoName, v2 []protocol.RevisionSpecifier) ([]string, error) {
-	r0, r1 := m.ResolveRevisionsFunc.nextHook()(v0, v1, v2)
-	m.ResolveRevisionsFunc.appendCall(GitserverClientResolveRevisionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ResolveRevisions
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientResolveRevisionsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ResolveRevisions method of the parent MockGitserverClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverClientResolveRevisionsFunc) PushHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientResolveRevisionsFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientResolveRevisionsFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientResolveRevisionsFunc) nextHook() func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientResolveRevisionsFunc) appendCall(r0 GitserverClientResolveRevisionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientResolveRevisionsFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientResolveRevisionsFunc) History() []GitserverClientResolveRevisionsFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientResolveRevisionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientResolveRevisionsFuncCall is an object that describes an
-// invocation of method ResolveRevisions on an instance of
-// MockGitserverClient.
-type GitserverClientResolveRevisionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []protocol.RevisionSpecifier
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientResolveRevisionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientResolveRevisionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

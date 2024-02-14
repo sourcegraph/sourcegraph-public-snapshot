@@ -4349,7 +4349,6 @@ Foreign-key constraints:
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
- searchable              | boolean                  |           | not null | true
  completions_quota       | integer                  |           |          | 
  code_completions_quota  | integer                  |           |          | 
  completed_post_signup   | boolean                  |           | not null | false

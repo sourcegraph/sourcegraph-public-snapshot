@@ -13,7 +13,7 @@ import (
 func TestSearchRequestProtoRoundtrip(t *testing.T) {
 	req := &SearchRequest{
 		Repo:      "test1",
-		Revisions: []RevisionSpecifier{{RevSpec: "ABC"}},
+		Revisions: []string{"ABC"},
 		Query: &Operator{
 			Kind: And,
 			Operands: []Node{
