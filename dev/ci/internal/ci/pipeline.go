@@ -163,9 +163,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			))
 		}
 
-	case runtype.ReleaseNightly:
-		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
-
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
