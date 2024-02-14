@@ -107,11 +107,11 @@ Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.
 			},
 		},
 	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: alertpolicy.CloudSQL,
-			ResourceName: cloudSQLResourceName,
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudSQL
+		config.ThresholdAggregation.ResourceName = cloudSQLResourceName
 
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,
@@ -175,11 +175,11 @@ Try increasing the 'resource.postgreSQL.maxConnections' configuration parameter.
 			},
 		},
 	} {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			// Resource we are targetting in this helper
-			ResourceKind: alertpolicy.CloudSQLDatabase,
-			ResourceName: cloudSQLResourceName,
+		// Resource we are targeting in this helper
+		config.ThresholdAggregation.ResourceKind = alertpolicy.CloudSQLDatabase
+		config.ThresholdAggregation.ResourceName = cloudSQLResourceName
 
+		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			// Alert policy
 			ID:                   config.ID,
 			Name:                 config.Name,

@@ -86,7 +86,6 @@ func TestResponseCodeMQLBuilder(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := responseCodeMQLBuilder(&Config{
-				ResourceName:       "test-service",
 				ResponseCodeMetric: &tc.ResponseCodeMetric,
 			})
 			tc.want.Equal(t, got)

@@ -15,9 +15,9 @@ func TestBuildThresholdAggregationFilter(t *testing.T) {
 		{
 			name: "Service Metric",
 			config: Config{
-				ResourceName: "my-service-name",
-				ResourceKind: CloudRunService,
 				ThresholdAggregation: &ThresholdAggregation{
+					ResourceName: "my-service-name",
+					ResourceKind: CloudRunService,
 					Filters: map[string]string{
 						"metric.type": "run.googleapis.com/container/startup_latencies",
 					},
@@ -28,9 +28,9 @@ func TestBuildThresholdAggregationFilter(t *testing.T) {
 		{
 			name: "Job Metric",
 			config: Config{
-				ResourceName: "my-job-name",
-				ResourceKind: CloudRunJob,
 				ThresholdAggregation: &ThresholdAggregation{
+					ResourceName: "my-job-name",
+					ResourceKind: CloudRunJob,
 					Filters: map[string]string{
 						"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
 						"metric.labels.result": "failed",

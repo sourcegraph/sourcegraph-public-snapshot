@@ -21,7 +21,7 @@ func newThresholdAggregationCondition(config *Config) (*monitoringalertpolicy.Mo
 	}
 
 	// Set some defaults for threshold aggregations
-	switch config.ResourceKind {
+	switch config.ThresholdAggregation.ResourceKind {
 	case CloudRunService:
 		config.ThresholdAggregation.GroupByFields = append(
 			[]string{"resource.label.revision_name"},
@@ -36,7 +36,7 @@ func newThresholdAggregationCondition(config *Config) (*monitoringalertpolicy.Mo
 		// No defaults
 
 	default:
-		return nil, errors.Newf("invalid service kind %q", config.ResourceKind)
+		return nil, errors.Newf("invalid service kind %q", config.ThresholdAggregation.ResourceKind)
 	}
 
 	if config.ThresholdAggregation.Comparison == "" {
@@ -91,34 +91,34 @@ func buildThresholdAggregationFilter(config *Config) string {
 	// config.ThresholdAggregation.Filters is a map.
 	sort.Strings(filters)
 
-	switch config.ResourceKind {
+	switch config.ThresholdAggregation.ResourceKind {
 	case CloudRunService:
 		filters = append(filters,
 			`resource.type = "cloud_run_revision"`,
-			fmt.Sprintf(`resource.labels.service_name = starts_with("%s")`, config.ResourceName),
+			fmt.Sprintf(`resource.labels.service_name = starts_with("%s")`, config.ThresholdAggregation.ResourceName),
 		)
 	case CloudRunJob:
 		filters = append(filters,
 			`resource.type = "cloud_run_job"`,
-			fmt.Sprintf(`resource.labels.job_name = starts_with("%s")`, config.ResourceName),
+			fmt.Sprintf(`resource.labels.job_name = starts_with("%s")`, config.ThresholdAggregation.ResourceName),
 		)
 	case CloudRedis:
 		filters = append(filters,
 			`resource.type = "redis_instance"`,
-			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ResourceName),
+			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ThresholdAggregation.ResourceName),
 		)
 	case CloudSQL:
 		filters = append(filters,
 			`resource.type = "cloudsql_database"`,
-			fmt.Sprintf(`resource.labels.database_id = "%s"`, config.ResourceName))
+			fmt.Sprintf(`resource.labels.database_id = "%s"`, config.ThresholdAggregation.ResourceName))
 	case CloudSQLDatabase:
 		filters = append(filters,
 			`resource.type = "cloudsql_instance_database"`,
-			fmt.Sprintf(`resource.labels.resource_id = "%s"`, config.ResourceName))
+			fmt.Sprintf(`resource.labels.resource_id = "%s"`, config.ThresholdAggregation.ResourceName))
 	case URLUptime:
 		filters = append(filters,
 			`resource.type = "uptime_url"`,
-			fmt.Sprintf(`metric.labels.check_id = "%s"`, config.ResourceName),
+			fmt.Sprintf(`metric.labels.check_id = "%s"`, config.ThresholdAggregation.ResourceName),
 		)
 	}
 

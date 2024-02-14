@@ -73,6 +73,12 @@ const (
 //   - For services it defaults to `["resource.label.revision_name"]`; additional fields are appended
 //   - For jobs there is no default
 type ThresholdAggregation struct {
+	// ResourceKind identifies what is being monitored. Optional.
+	ResourceKind ResourceKind
+	// ResourceName is the identifier for the monitored resource of ResourceKind.
+	// Only required if ResourceKind is provided.
+	ResourceName string
+
 	Filters       map[string]string
 	GroupByFields []string
 
@@ -168,12 +174,6 @@ type Config struct {
 	// If not provided, SeverityLevelWarning is used.
 	Severity SeverityLevel
 
-	// ResourceKind identifies what is being monitored. Optional.
-	ResourceKind ResourceKind
-	// ResourceName is the identifier for the monitored resource of ResourceKind.
-	// Only required if ResourceKind is provided.
-	ResourceName string
-
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
 
@@ -217,6 +217,15 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		config.Severity = SeverityLevelWarning
 	}
 
+	// Labels for the alert
+	labels := map[string]*string{
+		"source": pointers.Ptr("managed-services-platform"),
+
+		"msp_alert_id":       pointers.Ptr(config.ID),
+		"msp_service_id":     pointers.Ptr(config.Service.ID),
+		"msp_environment_id": pointers.Ptr(config.EnvironmentID),
+	}
+
 	// Build the condition, each of which may have special handling and additional
 	// defaults based on recommendations and other best practices
 	var condition *monitoringalertpolicy.MonitoringAlertPolicyConditions
@@ -226,6 +235,9 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		condition, err = newThresholdAggregationCondition(config)
 		if err != nil {
 			return nil, errors.Wrap(err, "newThresholdAggregationCondition")
+		}
+		if config.ThresholdAggregation.ResourceKind != "" {
+			labels["resource_kind"] = pointers.Ptr(string(config.ThresholdAggregation.ResourceKind))
 		}
 	case config.ResponseCodeMetric != nil:
 		condition = newResponseCodeMetricCondition(config)
@@ -243,14 +255,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
-			UserLabels: &map[string]*string{
-				"source":        pointers.Ptr("managed-services-platform"),
-				"resource_kind": pointers.Ptr(string(config.ResourceKind)),
-
-				"msp_alert_id":       pointers.Ptr(config.ID),
-				"msp_service_id":     pointers.Ptr(config.Service.ID),
-				"msp_environment_id": pointers.Ptr(config.EnvironmentID),
-			},
+			UserLabels: &labels,
 
 			// Notification strategy
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
