@@ -2,3 +2,9 @@
     margin-left: 0.375rem;
     margin-right: 0.375rem;
 }
+
+.revision-label {
+    max-width: 15ch;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}

@@ -19,13 +19,14 @@ type ServiceMetadata interface {
 type Service[ConfigT any] interface {
 	ServiceMetadata
 	// Initialize should use given configuration to build a combined background
-	// routine that implements starting and stopping the service.
+	// routine (such as background.CombinedRoutine or background.LIFOStopRoutine)
+	// that implements starting and stopping the service.
 	Initialize(
 		ctx context.Context,
 		logger log.Logger,
 		contract Contract,
 		config ConfigT,
-	) (background.CombinedRoutine, error)
+	) (background.Routine, error)
 }
 
 // Start handles the entire lifecycle of the program running Service, and should
@@ -77,7 +78,8 @@ func Start[
 			return log.SinksConfig{
 				Sentry: &log.SentrySink{
 					ClientOptions: sentry.ClientOptions{
-						Dsn: *contract.internal.sentryDSN,
+						Dsn:         *contract.internal.sentryDSN,
+						Environment: contract.EnvironmentID,
 					},
 				},
 			}

@@ -138,44 +138,35 @@ func TestCodeMonitorHook(t *testing.T) {
 	ctx := context.Background()
 
 	gs := gitserver.NewMockClient()
-	gs.ResolveRevisionsFunc.PushReturn([]string{"hash1", "hash2"}, nil)
-	gs.ResolveRevisionsFunc.PushReturn([]string{"hash3", "hash4"}, nil)
-	gs.ResolveRevisionsFunc.PushReturn([]string{"hash5", "hash6"}, nil)
+	gs.ResolveRevisionFunc.PushReturn("hash1", nil)
+	gs.ResolveRevisionFunc.PushReturn("hash2", nil)
+	gs.ResolveRevisionFunc.PushReturn("hash3", nil)
+	gs.ResolveRevisionFunc.PushReturn("hash4", nil)
+	gs.ResolveRevisionFunc.PushReturn("hash5", nil)
+	gs.ResolveRevisionFunc.PushReturn("hash6", nil)
 
 	// The first time, doSearch should receive only the resolved hashes
 	doSearch := func(args *gitprotocol.SearchRequest) error {
-		require.Equal(t, args.Revisions, []gitprotocol.RevisionSpecifier{{
-			RevSpec: "hash1",
-		}, {
-			RevSpec: "hash2",
-		}})
+		require.Equal(t, args.Revisions, []string{"hash1", "hash2"})
 		return nil
 	}
-	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{Revisions: []string{"rev1", "rev2"}}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
 	// hashes from last time, but excluded
 	doSearch = func(args *gitprotocol.SearchRequest) error {
-		require.Equal(t, args.Revisions, []gitprotocol.RevisionSpecifier{{
-			RevSpec: "hash3",
-		}, {
-			RevSpec: "hash4",
-		}, {
-			RevSpec: "^hash1",
-		}, {
-			RevSpec: "^hash2",
-		}})
+		require.Equal(t, args.Revisions, []string{"hash3", "hash4", "^hash1", "^hash2"})
 		return nil
 	}
-	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{Revisions: []string{"rev1", "rev2"}}, doSearch)
 	require.NoError(t, err)
 
 	t.Run("deadline exceeded is propagated", func(t *testing.T) {
 		doSearch = func(args *gitprotocol.SearchRequest) error {
 			return context.DeadlineExceeded
 		}
-		err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+		err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{Revisions: []string{"rev1", "rev2"}}, doSearch)
 		require.ErrorContains(t, err, "some commits may be skipped")
 	})
 }

@@ -80,6 +80,11 @@ func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName a
 		return err
 	}
 
-	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
+	// Update the old request with the new path, retaining any additional
+	// query params and fragments.
+	origURLCopy := *r.URL
+	origURLCopy.Path = destURL.Path
+
+	http.Redirect(w, r, origURLCopy.String(), http.StatusMovedPermanently)
 	return nil
 }

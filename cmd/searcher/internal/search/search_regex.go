@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"time"
-	"unicode/utf8"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
@@ -19,18 +18,24 @@ import (
 
 func regexSearchBatch(
 	ctx context.Context,
-	m matchTree,
-	pm *pathMatcher,
+	p *protocol.PatternInfo,
 	zf *zipFile,
-	limit int,
-	patternMatchesContent, patternMatchesPaths bool,
-	isCaseSensitive bool,
 	contextLines int32,
-) ([]protocol.FileMatch, bool, error) {
-	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
+) ([]protocol.FileMatch, error) {
+	m, err := toMatchTree(p.Query, p.IsCaseSensitive)
+	if err != nil {
+		return nil, err
+	}
+
+	pm, err := toPathMatcher(p)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel, sender := newLimitedStreamCollector(ctx, p.Limit)
 	defer cancel()
-	err := regexSearch(ctx, m, pm, zf, patternMatchesContent, patternMatchesPaths, isCaseSensitive, sender, contextLines)
-	return sender.collected, sender.LimitHit(), err
+	err = regexSearch(ctx, m, pm, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsCaseSensitive, sender, contextLines)
+	return sender.collected, err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using m.
@@ -242,6 +247,10 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 	prevStart := 0
 	prevStartLine := 0
 
+	c := columnHelper{
+		data: buf,
+	}
+
 	for _, loc := range locs {
 		start, end := loc[0], loc[1]
 
@@ -262,12 +271,12 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 			Start: protocol.Location{
 				Offset: int32(start),
 				Line:   int32(startLine),
-				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
+				Column: int32(c.get(firstLineStart, start)),
 			},
 			End: protocol.Location{
 				Offset: int32(end),
 				Line:   int32(endLine),
-				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
+				Column: int32(c.get(lastLineStart, end)),
 			},
 		})
 

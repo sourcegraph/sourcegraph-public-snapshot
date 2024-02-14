@@ -89,7 +89,7 @@ func (s *searchClient) Plan(
 	protocol search.Protocol,
 	contextLines *int32,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	tr, ctx := trace.New(ctx, "Plan", attribute.String("query", searchQuery))
 	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
@@ -97,10 +97,6 @@ func (s *searchClient) Plan(
 		return nil, err
 	}
 	searchType = overrideSearchType(searchQuery, searchType)
-
-	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
-	}
 
 	settings, err := s.settingsService.UserFromContext(ctx)
 	if err != nil {
@@ -126,6 +122,12 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
+
+	if searchType == query.SearchTypeKeyword {
+		plan = query.MapPlan(plan, query.ExperimentalPhraseBoost(s.runtimeClients.Logger, searchQuery))
+		tr.AddEvent("applied phrase boost")
+	}
+
 	tr.AddEvent("parsing done")
 
 	var finalContextLines int32
@@ -241,10 +243,10 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeStructural, nil
 	case "lucky":
 		return query.SearchTypeLucky, nil
+	case "codycontext":
+		return query.SearchTypeCodyContext, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
-	case "newStandardRC1":
-		return query.SearchTypeNewStandardRC1, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -266,10 +268,8 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeLiteral
 		case "V3":
 			searchType = query.SearchTypeStandard
-		case "V4-rc1":
-			searchType = query.SearchTypeNewStandardRC1
 		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got %q", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
 		}
 	}
 	return searchType, nil
@@ -295,10 +295,10 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeStructural
 		case "lucky":
 			searchType = query.SearchTypeLucky
+		case "codycontext":
+			searchType = query.SearchTypeCodyContext
 		case "keyword":
 			searchType = query.SearchTypeKeyword
-		case "newStandardRC1":
-			searchType = query.SearchTypeNewStandardRC1
 		}
 	})
 	return searchType

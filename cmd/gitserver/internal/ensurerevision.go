@@ -56,7 +56,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	err := s.doRepoUpdate(ctx, repo, rev)
 	if err != nil {
 		ensureRevisionCounter.WithLabelValues("update_failed").Inc()
-		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
+		s.logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 		// TODO: Shouldn't we return false here?
 	} else {
 		ensureRevisionCounter.WithLabelValues("updated").Inc()

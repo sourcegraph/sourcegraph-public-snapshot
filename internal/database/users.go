@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
@@ -398,6 +400,24 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 				return nil, ErrCannotCreateUser{ErrorCodeEmailExists}
 			}
 			return nil, err
+		}
+
+		// Cancel possible pending access request for this email
+		accessRequestsStore := AccessRequestsWith(u, u.logger)
+		ar, err := accessRequestsStore.GetByEmail(ctx, info.Email)
+
+		if err != nil && !errors.Is(err, &ErrAccessRequestNotFound{Email: info.Email}) {
+			return nil, err
+		}
+
+		if err == nil {
+			ar.Status = types.AccessRequestStatusCanceled
+			ar.UpdatedAt = time.Now()
+			ar.DecisionByUserID = pointers.Ptr(id)
+			_, err = accessRequestsStore.Update(ctx, ar)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

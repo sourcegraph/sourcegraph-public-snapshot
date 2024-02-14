@@ -32,17 +32,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.2.5")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.3.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.2.5")
+	latestReleaseKubernetesBuild = newPingResponse("5.3.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.5")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.3.0")
 )
 
 func getLatestRelease(deployType string) pingResponse {
@@ -88,7 +88,6 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicPublisher, meter *Meter,
 
 	pr, err := readPingRequest(r)
 	if err != nil {
-		logger.Error("malformed request", log.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -191,6 +190,7 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
+	ExternalURL          string          `json:"externalURL,omitempty"`
 	DeployType           string          `json:"deployType"`
 	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
@@ -323,6 +323,7 @@ type pingPayload struct {
 	RemoteSiteVersion             string          `json:"remote_site_version"`
 	RemoteSiteID                  string          `json:"remote_site_id"`
 	LicenseKey                    string          `json:"license_key"`
+	ExternalURL                   string          `json:"external_url"`
 	HasUpdate                     string          `json:"has_update"`
 	UniqueUsersToday              string          `json:"unique_users_today"`
 	SiteActivity                  json.RawMessage `json:"site_activity"`
@@ -431,6 +432,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteVersion:             pr.ClientVersionString,
 		RemoteSiteID:                  pr.ClientSiteID,
 		LicenseKey:                    pr.LicenseKey,
+		ExternalURL:                   pr.ExternalURL,
 		Os:                            pr.Os,
 		HasUpdate:                     strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),

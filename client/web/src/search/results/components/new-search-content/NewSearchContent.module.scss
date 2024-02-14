@@ -41,7 +41,8 @@
 
 .new-filters {
     grid-area: new-filters;
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color-2);
+    background-color: var(--color-bg-1);
 }
 
 .filters {
@@ -117,15 +118,14 @@
 .infobar {
     grid-area: infobar;
     padding: 0.3rem 0.5rem;
-    background: var(--color-bg-1);
     border-bottom: 1px solid var(--border-color-2);
     min-height: 41px;
+    background-color: var(--result-header-bg);
 }
 
 .content {
     grid-area: contents;
     overflow: auto;
-    padding: 0 0.5rem 0.5rem 0.5rem;
 
     &::-webkit-scrollbar {
         width: 0.5rem;
@@ -159,6 +159,12 @@
             scrollbar-color: var(--oc-gray-6);
         }
     }
+
+    &-meta-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
 
 .alert-area {
@@ -185,15 +191,12 @@
 
     &-file-link {
         padding: 0.25rem 0.5rem;
-        background: var(--oc-gray-1);
+        background: var(--result-header-bg);
         overflow: hidden;
         flex-shrink: 0;
         width: 100%;
         text-overflow: ellipsis;
-
-        :global(.theme-dark) & {
-            background: var(--oc-gray-9);
-        }
+        border-bottom: 1px solid var(--border-color-2);
     }
 
     &-content {

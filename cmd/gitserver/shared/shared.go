@@ -14,12 +14,14 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
-	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 
 	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
@@ -88,10 +90,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	locker := server.NewRepositoryLocker()
-	gitserver := server.Server{
-		Logger:         logger,
-		ObservationCtx: observationCtx,
-		ReposDir:       config.ReposDir,
+	hostname := config.ExternalAddress
+	gitserver := server.NewServer(&server.ServerOpts{
+		Logger:   logger,
+		ReposDir: config.ReposDir,
+		GetBackendFunc: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
+		},
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
@@ -107,10 +112,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				Logger:                  logger,
 			})
 		},
-		Hostname:                config.ExternalAddress,
+		Hostname:                hostname,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
@@ -118,7 +122,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			ratelimit.GitRPSLimiterBucketName,
 			ratelimit.NewGlobalRateLimiter(logger, ratelimit.GitRPSLimiterBucketName),
 		),
-	}
+	})
 
 	// Make sure we watch for config updates that affect the recordingCommandFactory.
 	go conf.Watch(func() {
@@ -134,15 +138,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	gitserver.RegisterMetrics(observationCtx, db)
 
-	// Create Handler now since it also initializes state
-	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, &gitserver), handler)
+	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver), handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -157,7 +159,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			logger,
 			db,
 			locker,
-			gitserver.Hostname,
+			hostname,
 			config.ReposDir,
 			config.SyncRepoStateInterval,
 			config.SyncRepoStateBatchSize,
@@ -174,7 +176,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.NewJanitor(
 				ctx,
 				server.JanitorConfig{
-					ShardID:                        gitserver.Hostname,
+					ShardID:                        hostname,
 					JanitorInterval:                config.JanitorInterval,
 					ReposDir:                       config.ReposDir,
 					DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
@@ -195,7 +197,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		if recordable, ok := r.(recorder.Recordable); ok {
 			// Set the hostname to the shardID so we record the routines per
 			// gitserver instance.
-			recordable.SetJobName(fmt.Sprintf("gitserver %s", gitserver.Hostname))
+			recordable.SetJobName(fmt.Sprintf("gitserver %s", hostname))
 			recordable.RegisterRecorder(rec)
 			rec.Register(recordable)
 		}
@@ -227,28 +229,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 // it with methods on the given server.
 func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	configurationWatcher := conf.DefaultClient()
+	scopedLogger := logger.Scoped("gitserver.accesslog")
 
-	var additionalServerOptions []grpc.ServerOption
-
-	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog"),
-		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog"),
-		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog"),
-		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog"),
-	} {
-		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
-		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
-
-		additionalServerOptions = append(additionalServerOptions,
-			grpc.ChainStreamInterceptor(methodSpecificStreamInterceptor(method, streamInterceptor)),
-			grpc.ChainUnaryInterceptor(methodSpecificUnaryInterceptor(method, unaryInterceptor)),
-		)
-	}
-
-	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
-		Server: s,
-	})
+	grpcServer := defaults.NewServer(
+		logger,
+		grpc.ChainStreamInterceptor(accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)),
+		grpc.ChainUnaryInterceptor(accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)),
+	)
+	proto.RegisterGitserverServiceServer(grpcServer, server.NewGRPCServer(s))
 
 	return grpcServer
 }
@@ -296,32 +284,6 @@ func getRemoteURLFunc(
 		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-// methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
-//
-// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
-func methodSpecificStreamInterceptor(method string, next grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if method != info.FullMethod {
-			return handler(srv, ss)
-		}
-
-		return next(srv, ss, info, handler)
-	}
-}
-
-// methodSpecificUnaryInterceptor returns a gRPC unary server interceptor that only calls the next interceptor if the method matches.
-//
-// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
-func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		if method != info.FullMethod {
-			return handler(ctx, req)
-		}
-
-		return next(ctx, req, info, handler)
-	}
 }
 
 var defaultIgnoredGitCommands = []string{

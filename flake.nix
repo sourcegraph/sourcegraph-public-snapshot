@@ -19,13 +19,14 @@
     flake-utils.lib.eachDefaultSystem
       (system:
         let
-          pkgs = import nixpkgs { inherit system; overlays = [ self.overlays.nodejs-20_x ]; };
+          pkgs = nixpkgs.legacyPackages.${system};
+          pkgsShell = import nixpkgs { inherit system; overlays = with self.overlays; [ nodejs-20_x bazel_7 ]; };
           pkgsBins = nixpkgs-stable.legacyPackages.${system};
-          pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
+          pkgsAll = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
           pkgsX = xcompileTargets.${system} or null;
         in
         {
-          legacyPackages = pkgs';
+          legacyPackages = pkgsAll;
 
           packages = xcompilify { inherit pkgsX; pkgs = pkgsBins; }
             (p: {
@@ -35,12 +36,13 @@
             }) // {
             # doesnt need the same stability as those above
             nodejs-20_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
+            inherit (pkgs.callPackage ./dev/nix/bazel.nix { inherit nixpkgs; }) bazel_7;
           };
 
-          # We use pkgs (not pkgs') intentionally to avoid doing extra work of
+          # We use pkgsShell (not pkgsAll) intentionally to avoid doing extra work of
           # building static comby/universal-ctags in our development
           # environments.
-          devShells.default = pkgs.callPackage ./shell.nix { };
+          devShells.default = pkgsShell.callPackage ./shell.nix { };
 
           formatter = pkgs.nixpkgs-fmt;
         }) // {
@@ -49,6 +51,7 @@
         comby = final: prev: { comby = self.packages.${prev.system}.comby; };
         nodejs-20_x = final: prev: { nodejs-20_x = self.packages.${prev.system}.nodejs-20_x; };
         p4-fusion = final: prev: { p4-fusion = self.packages.${prev.system}.p4-fusion; };
+        bazel_7 = final: prev: { bazel_7 = self.packages.${prev.system}.bazel_7; };
       };
     };
 }

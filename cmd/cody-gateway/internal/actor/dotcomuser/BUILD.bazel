@@ -10,7 +10,6 @@ go_library(
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/dotcom",
         "//cmd/cody-gateway/internal/limiter",
-        "//cmd/cody-gateway/internal/notify",
         "//internal/accesstoken",
         "//internal/codygateway",
         "//internal/trace",

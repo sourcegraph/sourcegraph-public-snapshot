@@ -22,7 +22,6 @@ go_test(
     name = "attribution_test",
     srcs = ["handler_test.go"],
     deps = [
-        ":attribution",
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/auth",
         "//cmd/cody-gateway/internal/dotcom",

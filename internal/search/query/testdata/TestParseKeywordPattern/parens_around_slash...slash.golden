@@ -1,0 +1,44 @@
+[
+  {
+    "and": [
+      {
+        "value": "sancerre",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Literal",
+          "QuotesAsLiterals",
+          "Standard"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 1
+          },
+          "end": {
+            "line": 0,
+            "column": 9
+          }
+        }
+      },
+      {
+        "value": "pouilly-fume",
+        "negated": false,
+        "labels": [
+          "HeuristicHoisted",
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 14
+          },
+          "end": {
+            "line": 0,
+            "column": 28
+          }
+        }
+      }
+    ]
+  }
+]

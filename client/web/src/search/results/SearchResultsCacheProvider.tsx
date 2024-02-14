@@ -14,7 +14,7 @@ import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, tap, throttleTime } from 'rxjs/operators'
 
-import { URLQueryFilter, serializeURLQueryFilters } from '@sourcegraph/branded'
+import { URLQueryFilter, serializeURLQueryFilters, mergeQueryAndFilters } from '@sourcegraph/branded'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
@@ -42,7 +42,7 @@ interface CachedSearchResultsInput {
      * Filter query, different from the search query since new filters
      * don't modify the main search query
      */
-    filterQuery: URLQueryFilter[]
+    urlFilters: URLQueryFilter[]
 
     /**
      * Options to pass on to `streamSeach`.
@@ -64,7 +64,7 @@ interface CachedSearchResultsInput {
  * (updated as new streaming results come in).
  */
 export function useCachedSearchResults(props: CachedSearchResultsInput): AggregateStreamingSearchResults | undefined {
-    const { query, filterQuery: selectedFilters, options, streamSearch, telemetryService } = props
+    const { query, urlFilters: selectedFilters, options, streamSearch, telemetryService } = props
     const cachedResults = useContext(SearchResultsCacheContext)
 
     const location = useLocation()
@@ -87,8 +87,8 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
                 cachedResults.current = { query, options, cache: { ...previousCache, [filterCacheKey]: results } }
             }
 
-            const filterQuery = selectedFilters.map(f => f.value).join(' ')
-            const stream = streamSearch(of(`${query} ${filterQuery}`.trim()), options).pipe(share())
+            const extendQueryWithFilters = mergeQueryAndFilters(query, selectedFilters)
+            const stream = streamSearch(of(extendQueryWithFilters), options).pipe(share())
 
             // If the throttleTime option `trailing` is set, we will return the
             // final value, but it also removes the guarantee that the output events

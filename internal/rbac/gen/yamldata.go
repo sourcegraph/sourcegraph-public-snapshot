@@ -134,7 +134,8 @@ func generateTSConstants(output io.Writer, permissions []permissionNamespace) {
 		fmt.Fprintf(output, "export const %sPermission: RbacPermission = '%s'\n", sentencizeNamespace(name), name)
 	}
 	fmt.Fprintln(output)
-	fmt.Fprintf(output, "export type RbacPermission = %s\n", strings.Join(permissionNames, " | "))
+	sep := "\n    | "
+	fmt.Fprintf(output, "export type RbacPermission =%s%s\n", sep, strings.Join(permissionNames, sep))
 }
 
 func generateGoConstants(output io.Writer, permissions []permissionNamespace) {

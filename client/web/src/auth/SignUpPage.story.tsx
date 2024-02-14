@@ -1,5 +1,6 @@
 import type { Meta, StoryFn } from '@storybook/react'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
@@ -57,6 +58,7 @@ export const Default: StoryFn = () => (
                     sourcegraphDotComMode: false,
                 }}
                 authenticatedUser={null}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )}
     </WebStory>

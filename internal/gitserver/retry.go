@@ -3,9 +3,10 @@ package gitserver
 import (
 	"context"
 
+	"google.golang.org/grpc"
+
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
 )
 
 // automaticRetryClient is a convenience wrapper around a base proto.GitserverServiceClient that automatically retries
@@ -48,11 +49,6 @@ func (r *automaticRetryClient) Exec(ctx context.Context, in *proto.ExecRequest, 
 	// - 2. not used in Exec directly, but instead only via a specific RPC (like CreateCommitFromPatchBinary) where the caller is responsible for retrying.
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.Exec(ctx, in, opts...)
-}
-
-func (r *automaticRetryClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.BatchLog(ctx, in, opts...)
 }
 
 func (r *automaticRetryClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
@@ -138,6 +134,31 @@ func (r *automaticRetryClient) IsPerforceSuperUser(ctx context.Context, in *prot
 func (r *automaticRetryClient) PerforceGetChangelist(ctx context.Context, in *proto.PerforceGetChangelistRequest, opts ...grpc.CallOption) (*proto.PerforceGetChangelistResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.PerforceGetChangelist(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) MergeBase(ctx context.Context, in *proto.MergeBaseRequest, opts ...grpc.CallOption) (*proto.MergeBaseResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.MergeBase(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) Blame(ctx context.Context, in *proto.BlameRequest, opts ...grpc.CallOption) (proto.GitserverService_BlameClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.Blame(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) DefaultBranch(ctx context.Context, in *proto.DefaultBranchRequest, opts ...grpc.CallOption) (*proto.DefaultBranchResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.DefaultBranch(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ReadFile(ctx context.Context, in *proto.ReadFileRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadFileClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadFile(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) GetCommit(ctx context.Context, in *proto.GetCommitRequest, opts ...grpc.CallOption) (*proto.GetCommitResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.GetCommit(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

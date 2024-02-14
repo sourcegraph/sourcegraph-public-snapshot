@@ -35,6 +35,7 @@ go_test(
     ],
     embed = [":db"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//lib/pointers",

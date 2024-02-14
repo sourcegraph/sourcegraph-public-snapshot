@@ -1,9 +1,11 @@
 package resolvers_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"strings"
@@ -109,7 +111,7 @@ func fakeOwnDb() *dbmocks.MockDB {
 
 type repoFiles map[repoPath]string
 
-func (g fakeGitserver) ReadFile(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (g fakeGitserver) NewFileReader(_ context.Context, repoName api.RepoName, commitID api.CommitID, file string) (io.ReadCloser, error) {
 	if g.files == nil {
 		return nil, os.ErrNotExist
 	}
@@ -117,7 +119,7 @@ func (g fakeGitserver) ReadFile(_ context.Context, repoName api.RepoName, commit
 	if !ok {
 		return nil, os.ErrNotExist
 	}
-	return []byte(content), nil
+	return io.NopCloser(bytes.NewReader([]byte(content))), nil
 }
 
 // Stat is a fake implementation that returns a FileInfo

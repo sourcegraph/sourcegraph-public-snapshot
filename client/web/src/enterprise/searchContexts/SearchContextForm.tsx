@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
-import { type Observable, of, throwError } from 'rxjs'
+import { type Observable, of, throwError, from } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/branded'
@@ -218,7 +218,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         return of({ type: 'repositories', repositories: [] } as RepositoriesParseResult)
                     }
 
-                    return fetchRepositoriesByNames(repositoryNames).pipe(
+                    return from(fetchRepositoriesByNames(repositoryNames)).pipe(
                         map(repositories => {
                             const repositoryNameToID = new Map(repositories.map(({ id, name }) => [name, id]))
                             const errors: Error[] = []

@@ -6,11 +6,12 @@
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
     import Icon from '$lib/Icon.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
     import { displayRepoName, getRepoMatchUrl, type RepositoryMatch } from '$lib/shared'
     import { Badge } from '$lib/wildcard'
 
-    import CodeHostIcon from './CodeHostIcon.svelte'
+    import RepoStars from './RepoStars.svelte'
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
 
@@ -62,6 +63,11 @@
             </span>
         {/if}
     </div>
+    <svelte:fragment slot="info">
+        {#if result.repoStars}
+            <RepoStars repoStars={result.repoStars} />
+        {/if}
+    </svelte:fragment>
     {#if description}
         <!-- #key is needed here to recreate the paragraph because use:highlightRanges changes the DOM -->
         {#key description}

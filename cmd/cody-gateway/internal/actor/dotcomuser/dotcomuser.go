@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,10 +36,6 @@ const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 15 * time.Minute
-	// defaultRefreshInterval is used for updates, which is also called when a
-	// user's rate limit is hit, so we don't want to update every time. We use
-	// a shorter interval than the default in this case.
-	defaultRefreshInterval = 5 * time.Minute
 )
 
 type Source struct {
@@ -48,20 +43,20 @@ type Source struct {
 	cache             httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom            graphql.Client
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
-	redisStore        limiter.RedisStore
-	rateLimitNotifier notify.RateLimitNotifier
+	usageStore        limiter.RedisStore
+	coolDownInterval  time.Duration
 }
 
 var _ actor.SourceUpdater = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig, usageStore limiter.RedisStore, coolDownInterval time.Duration) *Source {
 	return &Source{
 		log:               logger.Scoped("dotcomuser"),
 		cache:             cache,
 		dotcom:            dotComClient,
 		concurrencyConfig: concurrencyConfig,
-		redisStore:        rs,
-		rateLimitNotifier: rateLimitNotifier,
+		usageStore:        usageStore,
+		coolDownInterval:  coolDownInterval,
 	}
 }
 
@@ -72,9 +67,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 }
 
 func (s *Source) Update(ctx context.Context, act *actor.Actor) error {
-	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < defaultRefreshInterval {
+	if act.LastUpdated != nil && time.Since(*act.LastUpdated) < s.coolDownInterval {
+		s.log.Debug("actor recently updated, skipping update", log.Duration("secondsSinceUpdate", time.Since(*act.LastUpdated)))
 		return actor.ErrActorRecentlyUpdated{
-			RetryAt: act.LastUpdated.Add(defaultRefreshInterval),
+			RetryAt: act.LastUpdated.Add(s.coolDownInterval),
 		}
 	}
 
@@ -89,7 +85,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string, oldAct *actor.
 	var act *actor.Actor
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
-		// Generate a stateless actor and save in the cache so that we aren't constantly hitting the dotcom API.
+		// Generate a stateless actor so that we aren't constantly hitting the dotcom API.
 		act = newActor(s, token, dotcom.DotcomUserState{}, s.concurrencyConfig)
 	} else {
 		act = newActor(s, token,
@@ -134,20 +130,16 @@ func (s *Source) maybeResetUsageData(current actor.Actor, oldAct *actor.Actor) e
 			continue
 		}
 
-		// Get the base limiter for the feature which implements the core rate limiting based on the config.
-		l, ok := current.BaseLimiter(s.redisStore, feature, s.rateLimitNotifier)
-		if !ok {
-			return errors.Errorf("failed to create base limiter for feature: %s and actor id: %s", feature, current.ID)
-		}
-
 		// If the expiry on the key is greater than the intervalSeconds, update the TTL.
 		// This is here as a safeguard for the case where the TTL is wrongly set or the
 		// usage cache is not reset when the intervalSeconds config change. This only covers
 		// the case where the new intervalSeconds in shorter than the present TTL.
 		isTTLGreaterThanInterval := false
 
-		if ttl, err := l.Redis.TTL(l.Identifier); err == nil {
-			if ttl > int(l.Interval.Seconds()) {
+		featureUsageStore := limiter.NewFeatureUsageStore(s.usageStore, feature)
+
+		if ttl, err := featureUsageStore.TTL(current.ID); err == nil {
+			if ttl > int(rl.Interval.Seconds()) {
 				isTTLGreaterThanInterval = true
 			}
 		}
@@ -157,7 +149,7 @@ func (s *Source) maybeResetUsageData(current actor.Actor, oldAct *actor.Actor) e
 		// (e.g. zero out previous usage as part of upgrading the plan. This has the potential for
 		// abuse, which we prevent by limiting how frequently a user can change their subscription plan.)
 		if oldAct.IsEmpty() || rl.Interval != oldAct.RateLimits[feature].Interval || isTTLGreaterThanInterval {
-			if err := l.ResetUsage(); err != nil {
+			if err := featureUsageStore.Del(current.ID); err != nil {
 				message := fmt.Sprintf("failed to reset usage cache for feature: %s and actor id: %s", feature, current.ID)
 				return errors.Wrap(err, message)
 			}
@@ -198,6 +190,7 @@ func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*acto
 	if len(token) != tokenLength {
 		return nil, errors.New("invalid token format")
 	}
+
 	// NOTE(naman): figure out a way to cache the actor in the limiter
 	// based on actor id and not the token to avoid storing the config for each token.
 	data, hit := s.cache.Get(token)

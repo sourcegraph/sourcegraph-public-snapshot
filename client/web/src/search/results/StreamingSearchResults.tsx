@@ -3,7 +3,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 
-import { limitHit, useFilterQuery } from '@sourcegraph/branded'
+import { limitHit, useUrlFilters } from '@sourcegraph/branded'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -11,7 +11,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -22,13 +22,12 @@ import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useFeatureFlagOverrides } from '../../featureFlags/useFeatureFlagOverrides'
 import type { CodeInsightsProps } from '../../insights/types'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
-import { useDeveloperSettings, useNavbarQueryState } from '../../stores'
+import { setSearchPatternType, useDeveloperSettings, useNavbarQueryState } from '../../stores'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import { useAggregationUIMode } from './components/aggregation'
 import { NewSearchContent } from './components/new-search-content/NewSearchContent'
-import { SearchContent } from './components/search-content/SearchContent'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { useStreamingSearchPings } from './useStreamingSearchPings'
 
@@ -67,7 +66,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Feature flags
     const featureOverrides = useFeatureFlagOverrides()
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-    const newSearchResultsUI = useExperimentalFeatures(features => features.newSearchResultsUI)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -76,7 +74,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
     const queryState = useNavbarQueryState(state => state.queryState)
-    const [filterQuery] = useFilterQuery()
+    const [urlFilters] = useUrlFilters()
 
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
     const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
@@ -95,13 +93,16 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
             searchMode,
             chunkMatches: true,
+            // 5kb is a conservative upperbound on a reasonable line to show
+            // to a user. In practice we can likely go much lower.
+            maxLineLen: 5 * 1024,
             zoektSearchOptions: searchOptions,
         }),
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
     )
     const results = useCachedSearchResults({
         query: submittedURLQuery,
-        filterQuery,
+        urlFilters,
         options,
         streamSearch,
         telemetryService,
@@ -146,19 +147,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
          * Example use-case: search-aggregation result bar click where we first update the URL
          * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
          */
-        (updates: QueryUpdate[], updatedSearchQuery?: string) =>
+        (updates: QueryUpdate[], updatedSearchQuery?: string) => {
             submitQuerySearch(
                 {
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    source: 'filter',
                     historyOrNavigate: navigate,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
                     location: {
                         ...location,
                         search: updatedSearchQuery || location.search,
                     },
-                    source: 'filter',
                 },
                 updates
-            ),
+            )
+        },
         [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
     )
 
@@ -215,42 +217,30 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         })
     }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
+    const onTogglePatternType = useCallback(
+        (patternType: SearchPatternType) => {
+            const newPatternType =
+                patternType !== SearchPatternType.keyword ? SearchPatternType.keyword : SearchPatternType.standard
+            const { selectedSearchContextSpec } = props
+
+            setSearchPatternType(newPatternType)
+            submitSearch({
+                historyOrNavigate: navigate,
+                location,
+                selectedSearchContextSpec,
+                caseSensitive,
+                patternType: newPatternType,
+                query: submittedURLQuery,
+                source: 'nav',
+            })
+        },
+        [caseSensitive, location, navigate, props, submittedURLQuery]
+    )
+
     const hasResultsToAggregate = results?.state === 'complete' ? (results?.results.length ?? 0) > 0 : true
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
-    return !newSearchResultsUI ? (
-        <SearchContent
-            submittedURLQuery={submittedURLQuery}
-            queryState={queryState}
-            liveQuery={liveQuery}
-            allExpanded={allExpanded}
-            searchMode={searchMode}
-            trace={!!trace}
-            searchContextsEnabled={props.searchContextsEnabled}
-            patternType={patternType}
-            results={results}
-            showAggregationPanel={showAggregationPanel}
-            selectedSearchContextSpec={props.selectedSearchContextSpec}
-            aggregationUIMode={aggregationUIMode}
-            caseSensitive={caseSensitive}
-            authenticatedUser={authenticatedUser}
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            enableRepositoryMetadata={enableRepositoryMetadata}
-            options={options}
-            codeMonitoringEnabled={codeMonitoringEnabled}
-            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-            onNavbarQueryChange={setQueryState}
-            onSearchSubmit={handleSidebarSearchSubmit}
-            onQuerySubmit={handleSearchAggregationBarClick}
-            onExpandAllResultsToggle={onExpandAllResultsToggle}
-            onSearchAgain={onSearchAgain}
-            onDisableSmartSearch={onDisableSmartSearch}
-            onLogSearchResultClick={logSearchResultClicked}
-            settingsCascade={props.settingsCascade}
-            telemetryService={telemetryService}
-            platformContext={platformContext}
-        />
-    ) : (
+    return (
         <NewSearchContent
             submittedURLQuery={submittedURLQuery}
             queryState={queryState}
@@ -260,6 +250,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             trace={!!trace}
             searchContextsEnabled={props.searchContextsEnabled}
             patternType={patternType}
+            setPatternType={setSearchPatternType}
             results={results}
             showAggregationPanel={showAggregationPanel}
             selectedSearchContextSpec={props.selectedSearchContextSpec}
@@ -277,6 +268,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             onExpandAllResultsToggle={onExpandAllResultsToggle}
             onSearchAgain={onSearchAgain}
             onDisableSmartSearch={onDisableSmartSearch}
+            onTogglePatternType={onTogglePatternType}
             onLogSearchResultClick={logSearchResultClicked}
             settingsCascade={props.settingsCascade}
             telemetryService={telemetryService}

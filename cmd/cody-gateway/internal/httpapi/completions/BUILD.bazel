@@ -15,10 +15,12 @@ go_library(
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/events",
         "//cmd/cody-gateway/internal/httpapi/featurelimiter",
+        "//cmd/cody-gateway/internal/httpapi/overhead",
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",
         "//cmd/cody-gateway/internal/response",
         "//cmd/cody-gateway/internal/tokenizer",
+        "//cmd/cody-gateway/shared/config",
         "//internal/codygateway",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
@@ -33,7 +35,6 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
-        "@org_golang_x_exp//slices",
     ],
 )
 

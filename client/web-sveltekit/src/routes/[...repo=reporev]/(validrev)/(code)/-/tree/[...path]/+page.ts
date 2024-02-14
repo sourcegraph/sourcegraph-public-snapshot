@@ -1,15 +1,20 @@
+import { getGraphQLClient } from '$lib/graphql'
 import { fetchTreeEntries } from '$lib/repo/api/tree'
 import { findReadme } from '$lib/repo/tree'
+import { resolveRevision } from '$lib/repo/utils'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { PageLoad } from './$types'
 import { TreePageCommitInfoQuery, TreePageReadmeQuery } from './page.gql'
 
-export const load: PageLoad = async ({ params, parent }) => {
-    const { resolvedRevision, graphqlClient } = await parent()
+export const load: PageLoad = async ({ parent, params }) => {
+    const client = await getGraphQLClient()
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
+    const resolvedRevision = await resolveRevision(parent, revision)
 
     const treeEntries = fetchTreeEntries({
-        repoID: resolvedRevision.repo.id,
-        commitID: resolvedRevision.commitID,
+        repoName,
+        revision: resolvedRevision,
         filePath: params.path,
         first: null,
     }).then(
@@ -19,48 +24,40 @@ export const load: PageLoad = async ({ params, parent }) => {
 
     return {
         filePath: params.path,
-        deferred: {
-            treeEntries,
-            commitInfo: graphqlClient
+        treeEntries,
+        commitInfo: client
+            .query({
+                query: TreePageCommitInfoQuery,
+                variables: {
+                    repoName,
+                    revision: resolvedRevision,
+                    filePath: params.path,
+                    first: null,
+                },
+            })
+            .then(result => {
+                return result.data.repository?.commit?.tree ?? null
+            }),
+        readme: treeEntries.then(result => {
+            if (!result) {
+                return null
+            }
+            const readme = findReadme(result.entries)
+            if (!readme) {
+                return null
+            }
+            return client
                 .query({
-                    query: TreePageCommitInfoQuery,
+                    query: TreePageReadmeQuery,
                     variables: {
-                        repoID: resolvedRevision.repo.id,
-                        commitID: resolvedRevision.commitID,
-                        filePath: params.path,
-                        first: null,
+                        repoName,
+                        revision: resolvedRevision,
+                        path: readme.path,
                     },
                 })
                 .then(result => {
-                    if (result.data.node?.__typename !== 'Repository') {
-                        throw new Error('Unable to load repository')
-                    }
-                    return result.data.node.commit?.tree ?? null
-                }),
-            readme: treeEntries.then(result => {
-                if (!result) {
-                    return null
-                }
-                const readme = findReadme(result.entries)
-                if (!readme) {
-                    return null
-                }
-                return graphqlClient
-                    .query({
-                        query: TreePageReadmeQuery,
-                        variables: {
-                            repoID: resolvedRevision.repo.id,
-                            revspec: resolvedRevision.commitID,
-                            path: readme.path,
-                        },
-                    })
-                    .then(result => {
-                        if (result.data.node?.__typename !== 'Repository') {
-                            throw new Error('Expected Repository')
-                        }
-                        return result.data.node.commit?.blob ?? null
-                    })
-            }),
-        },
+                    return result.data.repository?.commit?.blob ?? null
+                })
+        }),
     }
 }
