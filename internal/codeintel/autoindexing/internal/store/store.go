@@ -33,11 +33,6 @@ type Store interface {
 	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]uploadsshared.AvailableIndexer) error
 	TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) error
 
-	// Scheduler
-	GetRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error)
-	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
-	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error
-
 	// Enqueuer
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (bool, error)
@@ -46,12 +41,6 @@ type Store interface {
 	// Dependency indexing
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
-}
-
-type RepoRev struct {
-	ID           int
-	RepositoryID int
-	Rev          string
 }
 
 type store struct {

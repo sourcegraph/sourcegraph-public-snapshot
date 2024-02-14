@@ -1,7 +1,9 @@
-package store
+package reposcheduler
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,28 +55,28 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// Can return null last_index_scan
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 2, now); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 2), now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -84,7 +86,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	insertRepo(t, db, 54, "r4")
 
 	// 95 minutes later, new repository is not yet visible
-	if repositoryIDs, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*95)); err != nil {
+	if repositoryIDs, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*95)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -96,14 +98,14 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// 100 minutes later, only new repository is visible
-	if repositoryIDs, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*100)); err != nil {
+	if repositoryIDs, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*100)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 110 minutes later, nothing is ready to go (too close to last index scan)
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*110)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*110)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -116,7 +118,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// 110 minutes later, updated repositories are ready for re-indexing
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*110)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*110)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -157,7 +159,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	}
 
 	// Returns nothing when disabled
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, false, nil, 100, now); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, false, nil, 100), now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -167,28 +169,30 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	limit := 2
 
 	// Can return null last_index_scan
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, &limit, 100, now); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, &limit, 100), now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), newBatchOptions(time.Hour, true, nil, 100), now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(),
+		newBatchOptions(time.Hour, true, nil, 100),
+		now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -199,7 +203,7 @@ func TestMarkRepoRevsAsProcessed(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := NewStore(&observation.TestContext, db)
 
 	expected := []RepoRev{
 		{1, 50, "HEAD"},
@@ -244,17 +248,51 @@ func TestMarkRepoRevsAsProcessed(t *testing.T) {
 //
 
 // removes default configuration policies
-func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
+func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) RepositorySchedulingStore {
 	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	return New(&observation.TestContext, db)
+	return NewStore(&observation.TestContext, db)
 }
 
 func updateGitserverUpdatedAt(t *testing.T, db database.DB, now time.Time) {
 	gitserverReposQuery := sqlf.Sprintf(`UPDATE gitserver_repos SET last_changed = %s`, now.Add(-time.Hour*24))
 	if _, err := db.ExecContext(context.Background(), gitserverReposQuery.Query(sqlf.PostgresBindVar), gitserverReposQuery.Args()...); err != nil {
 		t.Fatalf("unexpected error while upodating gitserver_repos last updated time: %s", err)
+	}
+}
+
+func insertRepo(t testing.TB, db database.DB, id int, name string) {
+	if name == "" {
+		name = fmt.Sprintf("n-%d", id)
+	}
+
+	deletedAt := sqlf.Sprintf("NULL")
+	if strings.HasPrefix(name, "DELETED-") {
+		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
+	}
+	insertRepoQuery := sqlf.Sprintf(
+		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		id,
+		name,
+		deletedAt,
+		false,
+	)
+	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting repository: %s", err)
+	}
+
+	status := "cloned"
+	if strings.HasPrefix(name, "DELETED-") {
+		status = "not_cloned"
+	}
+	updateGitserverRepoQuery := sqlf.Sprintf(
+		`UPDATE gitserver_repos SET clone_status = %s WHERE repo_id = %s`,
+		status,
+		id,
+	)
+	if _, err := db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting gitserver repository: %s", err)
 	}
 }

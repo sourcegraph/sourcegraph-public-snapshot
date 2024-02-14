@@ -5,12 +5,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
+
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,18 +24,18 @@ import (
 )
 
 type indexSchedulerJob struct {
-	autoindexingSvc AutoIndexingService
-	policiesSvc     PoliciesService
-	policyMatcher   PolicyMatcher
-	indexEnqueuer   IndexEnqueuer
-	repoStore       database.RepoStore
+	repositorySchedulingService reposcheduler.RepositorySchedulingService
+	policiesSvc                 PoliciesService
+	policyMatcher               PolicyMatcher
+	indexEnqueuer               IndexEnqueuer
+	repoStore                   database.RepoStore
 }
 
 var m = new(metrics.SingletonREDMetrics)
 
 func NewScheduler(
 	observationCtx *observation.Context,
-	autoindexingSvc AutoIndexingService,
+	repositorySchedulingService reposcheduler.RepositorySchedulingService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
@@ -42,11 +43,11 @@ func NewScheduler(
 	config *Config,
 ) goroutine.BackgroundRoutine {
 	job := indexSchedulerJob{
-		autoindexingSvc: autoindexingSvc,
-		policiesSvc:     policiesSvc,
-		policyMatcher:   policyMatcher,
-		indexEnqueuer:   indexEnqueuer,
-		repoStore:       repoStore,
+		repositorySchedulingService: repositorySchedulingService,
+		policiesSvc:                 policiesSvc,
+		policyMatcher:               policyMatcher,
+		indexEnqueuer:               indexEnqueuer,
+		repoStore:                   repoStore,
 	}
 
 	redMetrics := m.Get(func() *metrics.REDMetrics {
@@ -103,7 +104,7 @@ func (b indexSchedulerJob) handleScheduler(
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
 	// the backlog.
-	repositories, err := b.autoindexingSvc.GetRepositoriesForIndexScan(
+	repositories, err := b.repositorySchedulingService.GetRepositoriesForIndexScan(
 		ctx,
 		repositoryProcessDelay,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
@@ -128,7 +129,7 @@ func (b indexSchedulerJob) handleScheduler(
 		errMu sync.Mutex
 	)
 
-	for _, repositoryID := range repositories {
+	for _, repository := range repositories {
 		if err := sema.Acquire(ctx, 1); err != nil {
 			return err
 		}
@@ -141,7 +142,7 @@ func (b indexSchedulerJob) handleScheduler(
 					errMu.Unlock()
 				}
 			}
-		}(repositoryID)
+		}(repository.ID)
 	}
 
 	if err := sema.Acquire(ctx, int64(inferenceConcurrency)); err != nil {
@@ -203,7 +204,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 	}
 }
 
-func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Config) goroutine.BackgroundRoutine {
+func NewOnDemandScheduler(repoSchedulingStore reposcheduler.RepositorySchedulingStore, indexEnqueuer IndexEnqueuer, config *Config) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -211,7 +212,7 @@ func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Co
 				return nil
 			}
 
-			return s.WithTransaction(ctx, func(tx store.Store) error {
+			return repoSchedulingStore.WithTransaction(ctx, func(tx reposcheduler.RepositorySchedulingStore) error {
 				repoRevs, err := tx.GetQueuedRepoRev(ctx, config.OnDemandBatchsize)
 				if err != nil {
 					return err
