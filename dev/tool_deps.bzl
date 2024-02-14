@@ -17,7 +17,11 @@ filegroup(
 """
 
 GCLOUD_VERSION = "456.0.0"
-GCLOUD_BUILDFILE = """package(default_visibility = ["//visibility:public"])\nexports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])"""
+GCLOUD_BUILDFILE = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])
+"""
 GCLOUD_PATCH_CMDS = [
     "ln -s google-cloud-sdk/bin/gcloud gcloud",
     "ln -s google-cloud-sdk/bin/gsutil gsutil",
