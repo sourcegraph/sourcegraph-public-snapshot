@@ -271,6 +271,10 @@ type EnvironmentServiceDomainSpec struct {
 	// Type is one of 'none' or 'cloudflare'. If empty, defaults to 'none'.
 	Type       EnvironmentDomainType            `yaml:"type"`
 	Cloudflare *EnvironmentDomainCloudflareSpec `yaml:"cloudflare,omitempty"`
+
+	// Networking configures additional networking configuration.
+	// Only applicable if a domain 'type' is configured.
+	Networking *EnvironmentDomainNetworkingSpec `yaml:"networking,omitempty"`
 }
 
 // GetDNSName generates the DNS name for the environment. If nil or not configured,
@@ -301,10 +305,6 @@ type EnvironmentDomainCloudflareSpec struct {
 	//
 	// Default: true
 	Proxied *bool `yaml:"proxied,omitempty"`
-
-	// Required configures whether traffic can only be allowed through Cloudflare.
-	// TODO: Unimplemented.
-	Required bool `yaml:"required,omitempty"`
 }
 
 // ShouldProxy evaluates whether Cloudflare WAF proxying should be used.
@@ -313,6 +313,14 @@ func (e *EnvironmentDomainCloudflareSpec) ShouldProxy() bool {
 		return false
 	}
 	return pointers.Deref(e.Proxied, true)
+}
+
+type EnvironmentDomainNetworkingSpec struct {
+	// LoadBalancerLogging enables logs on load balancers:
+	// https://cloud.google.com/load-balancing/docs/https/https-logging-monitoring#viewing_logs
+	//
+	// Defaults to false. When enabled, no sampling is configured.
+	LoadBalancerLogging *bool `yaml:"loadBalancerLogging,omitempty"`
 }
 
 type EnvironmentInstancesSpec struct {

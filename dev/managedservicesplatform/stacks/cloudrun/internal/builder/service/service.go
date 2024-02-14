@@ -297,6 +297,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			SSLCertificate:    sslCertificate,
 			CloudflareProxied: domain.Cloudflare.ShouldProxy(),
 			Production:        vars.Environment.Category.IsProduction(),
+			EnableLogging:     pointers.DerefZero(pointers.DerefZero(domain.Networking).LoadBalancerLogging),
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "loadbalancer.New")
