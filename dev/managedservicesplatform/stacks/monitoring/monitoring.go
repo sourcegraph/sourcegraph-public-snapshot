@@ -391,7 +391,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		}
 	}
 
-	if vars.Monitoring.Nobl9 {
+	if pointers.DerefZero(vars.Monitoring.Nobl9) {
 		createNobl9Project(stack, id.Group("nobl9"), vars)
 	}
 
