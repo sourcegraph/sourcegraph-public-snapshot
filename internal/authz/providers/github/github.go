@@ -160,7 +160,7 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 		oneOf: []string{"read:org", "write:org", "admin:org"},
 		message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
 			"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
-			"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
+			"corresponding entry in [`auth.providers`](https://sourcegraph.com/docs/admin/auth) to enable `allowGroupsPermissionsSync`.",
 	}, true
 }
 

@@ -3,6 +3,7 @@ package gitcli
 import (
 	"context"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -31,16 +32,19 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 
 	ctx := context.Background()
 
+	commit, err := backend.RevParseHead(ctx)
+	require.NoError(t, err)
+
 	t.Run("bad input", func(t *testing.T) {
 		// Bad commit triggers error.
-		_, err := backend.Blame(ctx, "foo.txt", git.BlameOptions{NewestCommit: "-very badarg"})
+		_, err := backend.Blame(ctx, "-very badarg", "foo.txt", git.BlameOptions{})
 		require.Error(t, err)
 	})
 
 	t.Run("stream hunks", func(t *testing.T) {
 		// Verify that the blame output is correct and that the hunk reader correctly
 		// terminates.
-		hr, err := backend.Blame(ctx, "foo.txt", git.BlameOptions{})
+		hr, err := backend.Blame(ctx, commit, "foo.txt", git.BlameOptions{})
 		require.NoError(t, err)
 
 		h, err := hr.Read()
@@ -102,7 +106,7 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		t.Cleanup(cancel)
 
-		hr, err := backend.Blame(ctx, "foo.txt", git.BlameOptions{})
+		hr, err := backend.Blame(ctx, commit, "foo.txt", git.BlameOptions{})
 		require.NoError(t, err)
 
 		cancel()
@@ -113,42 +117,52 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 
 		require.NoError(t, hr.Close())
 	})
+
+	t.Run("commit not found", func(t *testing.T) {
+		// Ambiguous ref, could be commit, could be a ref.
+		_, err := backend.Blame(ctx, "deadbeef", "foo.txt", git.BlameOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+		// Definitely a commit (yes, those yield different errors from git).
+		_, err = backend.Blame(ctx, "e3889dff4263a2273459471739aafabc10269885", "foo.txt", git.BlameOptions{})
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	t.Run("file not found", func(t *testing.T) {
+		_, err := backend.Blame(ctx, commit, "notfoundfile", git.BlameOptions{})
+		require.Error(t, err)
+		require.True(t, os.IsNotExist(err))
+	})
 }
 
 func TestBuildBlameArgs(t *testing.T) {
+	commit := "deadbeef"
 	path := "foo.txt"
 
 	t.Run("default options", func(t *testing.T) {
-		want := []string{"blame", "--porcelain", "--incremental", "--", "foo.txt"}
+		want := []string{"blame", "--porcelain", "--incremental", commit, "--", "foo.txt"}
 		opt := git.BlameOptions{}
-		got := buildBlameArgs(path, opt)
+		got := buildBlameArgs(api.CommitID(commit), path, opt)
 		if !equalSlice(got, want) {
 			t.Errorf("unexpected args:\ngot: %v\nwant: %v", got, want)
 		}
 	})
 
 	t.Run("with ignore whitespace", func(t *testing.T) {
-		want := []string{"blame", "--porcelain", "--incremental", "-w", "--", "foo.txt"}
+		want := []string{"blame", "--porcelain", "--incremental", "-w", commit, "--", "foo.txt"}
 		opt := git.BlameOptions{IgnoreWhitespace: true}
-		got := buildBlameArgs(path, opt)
+		got := buildBlameArgs(api.CommitID(commit), path, opt)
 		if !equalSlice(got, want) {
 			t.Errorf("unexpected args:\ngot: %v\nwant: %v", got, want)
 		}
 	})
 
 	t.Run("with line range", func(t *testing.T) {
-		want := []string{"blame", "--porcelain", "--incremental", "-L5,10", "--", "foo.txt"}
-		opt := git.BlameOptions{StartLine: 5, EndLine: 10}
-		got := buildBlameArgs(path, opt)
-		if !equalSlice(got, want) {
-			t.Errorf("unexpected args:\ngot: %v\nwant: %v", got, want)
-		}
-	})
-
-	t.Run("with commit", func(t *testing.T) {
-		want := []string{"blame", "--porcelain", "--incremental", "abc123", "--", "foo.txt"}
-		opt := git.BlameOptions{NewestCommit: api.CommitID("abc123")}
-		got := buildBlameArgs(path, opt)
+		want := []string{"blame", "--porcelain", "--incremental", "-L5,10", commit, "--", "foo.txt"}
+		opt := git.BlameOptions{Range: &git.BlameRange{StartLine: 5, EndLine: 10}}
+		got := buildBlameArgs(api.CommitID(commit), path, opt)
 		if !equalSlice(got, want) {
 			t.Errorf("unexpected args:\ngot: %v\nwant: %v", got, want)
 		}

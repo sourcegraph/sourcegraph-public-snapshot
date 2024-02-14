@@ -34,8 +34,8 @@ const (
 	// PlanCodyEnterprise is the cody-only plan.
 	PlanCodyEnterprise Plan = "cody-enterprise-0"
 
-	// PlanCodeAIEnterprise is the full package plan. It includes code search and cody.
-	PlanCodeAIEnterprise Plan = "code-ai-enterprise-0"
+	// PlanCodeIntelligencePlatform is the full package plan. It includes code search and cody.
+	PlanCodeIntelligencePlatform Plan = "code-ai-enterprise-0"
 )
 
 var AllPlans = []Plan{
@@ -50,7 +50,7 @@ var AllPlans = []Plan{
 	PlanEnterprise0,
 	PlanEnterprise1,
 	PlanCodyEnterprise,
-	PlanCodeAIEnterprise,
+	PlanCodeIntelligencePlatform,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -109,7 +109,6 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeInsights,
 			FeatureSCIM,
-			FeatureCody,
 			FeatureCodeMonitors,
 			FeatureNotebooks,
 			FeatureCodeSearch,
@@ -138,7 +137,6 @@ var planDetails = map[Plan]PlanDetails{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureSCIM,
-			FeatureCody,
 			FeatureCodeMonitors,
 			FeatureNotebooks,
 			FeatureCodeSearch,
@@ -148,7 +146,7 @@ var planDetails = map[Plan]PlanDetails{
 	// - max 10 batch changes on enterprise-0 vs unlimited batch changes.
 	// - No code insights on enterprise-0
 	PlanEnterprise1: {
-		DisplayName: "Sourcegraph Enterprise",
+		DisplayName: "Code Search Enterprise",
 		Features: []Feature{
 			FeatureACLs,
 			FeatureCodeInsights,
@@ -157,7 +155,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			FeatureSCIM,
-			FeatureCody,
 			FeatureCodeMonitors,
 			FeatureNotebooks,
 			FeatureCodeSearch,
@@ -196,7 +193,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			FeatureSCIM,
-			FeatureCody,
 			FeatureAllowAirGapped,
 			FeatureCodeMonitors,
 			FeatureNotebooks,
@@ -214,8 +210,8 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 	},
-	PlanCodeAIEnterprise: {
-		DisplayName: "Code AI Enterprise",
+	PlanCodeIntelligencePlatform: {
+		DisplayName: "Code Intelligence Platform",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,

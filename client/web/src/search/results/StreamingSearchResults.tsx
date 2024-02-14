@@ -93,6 +93,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             featureOverrides: formatUrlOverrideFeatureFlags(featureOverrides),
             searchMode,
             chunkMatches: true,
+            // 5kb is a conservative upperbound on a reasonable line to show
+            // to a user. In practice we can likely go much lower.
+            maxLineLen: 5 * 1024,
             zoektSearchOptions: searchOptions,
         }),
         [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]

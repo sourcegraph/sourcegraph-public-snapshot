@@ -7,7 +7,7 @@ import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H1, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     authorFilter,
@@ -27,6 +27,9 @@ import { FilterKind, SearchTypeFilter, SEARCH_TYPES_TO_FILTER_TYPES, DYNAMIC_FIL
 
 import styles from './NewSearchFilters.module.scss'
 
+const OPTION_KEY_CHAR = '\u2325'
+const BACKSPACE_KEY_CHAR = '\u232B'
+
 interface NewSearchFiltersProps extends TelemetryProps {
     query: string
     filters?: Filter[]
@@ -34,6 +37,22 @@ interface NewSearchFiltersProps extends TelemetryProps {
     isFilterLoadingComplete: boolean
     onQueryChange: (nextQuery: string, updatedSearchURLQuery?: string) => void
     children?: ReactNode
+}
+
+export function inferOperatingSystem(userAgent: string): 'Windows' | 'MacOS' | 'Linux' | undefined {
+    if (userAgent.includes('Win')) {
+        return 'Windows'
+    }
+
+    if (userAgent.includes('Mac')) {
+        return 'MacOS'
+    }
+
+    if (userAgent.includes('Linux')) {
+        return 'Linux'
+    }
+
+    return undefined
 }
 
 export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
@@ -46,6 +65,8 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
     telemetryService,
 }) => {
     const [selectedFilters, setSelectedFilters, serializeFiltersURL] = useUrlFilters()
+    const os = inferOperatingSystem(navigator.userAgent)
+    const optionSymbol = os === 'MacOS' ? OPTION_KEY_CHAR : 'Alt'
 
     const hasNoFilters = useMemo(() => {
         const dynamicFilters = filters?.filter(filter => DYNAMIC_FILTER_KINDS.includes(filter.kind as FilterKind)) ?? []
@@ -97,16 +118,51 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         telemetryService.log('SearchFiltersApplyFiltersClick')
     }
 
+    const onAddFilterToQuery = (filter: string): void => {
+        onQueryChange(`${query} ${filter}`)
+    }
+
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            if (e.altKey && e.key === 'Backspace') {
+                setSelectedFilters([])
+            }
+        },
+        [setSelectedFilters]
+    )
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown)
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [handleKeyDown])
+
     return (
         <div className={styles.scrollWrapper}>
-            <FilterTypeList
-                backendFilters={filters ?? []}
-                disabled={queryHasTypeFilter(query)}
-                selectedFilters={selectedFilters}
-                onClick={handleFilterTypeClick}
-            />
-
+            <div className={styles.filterPanelHeader}>
+                <H3 as={H1} className="px-2 py-1">
+                    Filter results
+                </H3>
+                {selectedFilters.length !== 0 && (
+                    <div className={styles.resetButton}>
+                        <Button variant="link" size="sm" onClick={() => setSelectedFilters([])} className="p-0 m-0">
+                            Reset all
+                            <kbd className={styles.keybind}>
+                                {optionSymbol} {BACKSPACE_KEY_CHAR}
+                            </kbd>
+                        </Button>
+                    </div>
+                )}
+            </div>
             <div className={styles.filters}>
+                {!queryHasTypeFilter(query) && (
+                    <FilterTypeList
+                        backendFilters={filters ?? []}
+                        selectedFilters={selectedFilters}
+                        onClick={handleFilterTypeClick}
+                    />
+                )}
                 {hasNoFilters && !isFilterLoadingComplete && (
                     <>
                         <SearchFilterSkeleton />
@@ -122,6 +178,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     selectedFilters={selectedFilters}
                     renderItem={repoFilter}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SearchDynamicFilter
@@ -131,6 +188,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     selectedFilters={selectedFilters}
                     renderItem={languageFilter}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SearchDynamicFilter
@@ -140,6 +198,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     selectedFilters={selectedFilters}
                     renderItem={symbolFilter}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SearchDynamicFilter
@@ -149,6 +208,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     selectedFilters={selectedFilters}
                     renderItem={authorFilter}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SearchDynamicFilter
@@ -158,6 +218,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     selectedFilters={selectedFilters}
                     renderItem={commitDateFilter}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SearchDynamicFilter
@@ -166,6 +227,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     filters={filters}
                     selectedFilters={selectedFilters}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SearchDynamicFilter
@@ -175,6 +237,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
                     selectedFilters={selectedFilters}
                     renderItem={utilityFilter}
                     onSelectedFilterChange={handleFilterChange}
+                    onAddFilterToQuery={onAddFilterToQuery}
                 />
 
                 <SyntheticCountFilter
@@ -288,6 +351,7 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
             selectedFilters={selectedCountFilter}
             renderItem={commitDateFilter}
             onSelectedFilterChange={handleCountAllFilter}
+            onAddFilterToQuery={() => {}}
         />
     )
 }

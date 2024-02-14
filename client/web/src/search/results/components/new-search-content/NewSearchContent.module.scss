@@ -157,6 +157,12 @@
             scrollbar-color: var(--oc-gray-6);
         }
     }
+
+    &-meta-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
 
 .alert-area {

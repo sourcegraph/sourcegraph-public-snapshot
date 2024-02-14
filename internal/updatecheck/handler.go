@@ -190,6 +190,7 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
+	ExternalURL          string          `json:"externalURL,omitempty"`
 	DeployType           string          `json:"deployType"`
 	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
@@ -322,6 +323,7 @@ type pingPayload struct {
 	RemoteSiteVersion             string          `json:"remote_site_version"`
 	RemoteSiteID                  string          `json:"remote_site_id"`
 	LicenseKey                    string          `json:"license_key"`
+	ExternalURL                   string          `json:"external_url"`
 	HasUpdate                     string          `json:"has_update"`
 	UniqueUsersToday              string          `json:"unique_users_today"`
 	SiteActivity                  json.RawMessage `json:"site_activity"`
@@ -430,6 +432,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteSiteVersion:             pr.ClientVersionString,
 		RemoteSiteID:                  pr.ClientSiteID,
 		LicenseKey:                    pr.LicenseKey,
+		ExternalURL:                   pr.ExternalURL,
 		Os:                            pr.Os,
 		HasUpdate:                     strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:              strconv.FormatInt(int64(pr.UniqueUsers), 10),

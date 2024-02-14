@@ -3,10 +3,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "guardrails",
-    srcs = ["attribution_filter.go"],
+    srcs = [
+        "attribution_filter.go",
+        "attribution_threshold.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/guardrails",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/completions/types",
         "//lib/errors",
     ],

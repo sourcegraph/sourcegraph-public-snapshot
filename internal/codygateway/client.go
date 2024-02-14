@@ -141,6 +141,9 @@ func (c *client) Attribution(ctx context.Context, snippet string, limit int) (At
 		return Attribution{}, err
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	if c.cli == nil {
+		return Attribution{}, errors.New("no http client")
+	}
 	resp, err := c.cli.Do(req)
 	if err != nil {
 		return Attribution{}, err

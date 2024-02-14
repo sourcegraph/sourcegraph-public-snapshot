@@ -25,10 +25,9 @@ import styles from './RepoRevisionSidebarCommits.module.scss'
 
 interface CommitNodeProps {
     node: GitCommitFields
-    preferAbsoluteTimestamps: boolean
 }
 
-const CommitNode: FC<CommitNodeProps> = ({ node, preferAbsoluteTimestamps }) => {
+const CommitNode: FC<CommitNodeProps> = ({ node }) => {
     const location = useLocation()
 
     return (
@@ -38,7 +37,6 @@ const CommitNode: FC<CommitNodeProps> = ({ node, preferAbsoluteTimestamps }) => 
                 compact={true}
                 node={node}
                 hideExpandCommitMessageBody={true}
-                preferAbsoluteTimestamps={preferAbsoluteTimestamps}
                 afterElement={
                     <Link
                         to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
@@ -55,7 +53,6 @@ const CommitNode: FC<CommitNodeProps> = ({ node, preferAbsoluteTimestamps }) => 
 
 interface Props extends Partial<RevisionSpec>, FileSpec {
     repoID: Scalars['ID']
-    preferAbsoluteTimestamps: boolean
     defaultPageSize?: number
 }
 
@@ -103,7 +100,7 @@ export const RepoRevisionSidebarCommits: FC<Props> = props => {
         <ConnectionContainer>
             {error && <ErrorAlert error={error} />}
             {connection?.nodes.map(node => (
-                <CommitNode key={node.id} node={node} preferAbsoluteTimestamps={props.preferAbsoluteTimestamps} />
+                <CommitNode key={node.id} node={node} />
             ))}
             {loading && <ConnectionLoading />}
             {!loading && connection && (
