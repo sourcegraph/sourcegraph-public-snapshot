@@ -1,14 +1,5 @@
-<script lang="ts" context="module">
-    export type SectionItem = Omit<Filter, 'count'> & {
-        count?: Filter['count']
-        selected: boolean
-    }
-</script>
-
 <script lang="ts">
     import { mdiClose } from '@mdi/js'
-
-    import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
     import { page } from '$app/stores'
     import { pluralize } from '$lib/common'
@@ -16,7 +7,7 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import { Badge, Button } from '$lib/wildcard'
 
-    import { updateFilterInURL } from './index'
+    import { updateFilterInURL, type SectionItem } from './index'
 
     export let items: SectionItem[]
     export let title: string

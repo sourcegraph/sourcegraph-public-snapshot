@@ -9,7 +9,10 @@ import {
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
-import type { SectionItem } from './Section.svelte'
+export type SectionItem = Omit<Filter, 'count'> & {
+    count?: Filter['count']
+    selected: boolean
+}
 
 /**
  * URLQueryFilter is the subset of a filter that is stored in the URL query

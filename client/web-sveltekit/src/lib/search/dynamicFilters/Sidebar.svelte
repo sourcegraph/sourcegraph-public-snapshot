@@ -6,8 +6,7 @@
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { displayRepoName, type Filter } from '$lib/shared'
 
-    import { type URLQueryFilter, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
-    import type { SectionItem } from './Section.svelte'
+    import { type URLQueryFilter, type SectionItem, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
     import Section from './Section.svelte'
 
     export let streamFilters: Filter[]
