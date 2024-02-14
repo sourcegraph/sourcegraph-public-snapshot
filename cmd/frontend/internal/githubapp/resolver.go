@@ -292,7 +292,7 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 
 		// We use this opportunity to sync installations in our database. This is done in
 		// a goroutine so that we don't block the request completion.
-		go r.syncInstallations()
+		go r.syncInstallations(ctx)
 
 		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindGitHub},
@@ -363,8 +363,11 @@ func (r *gitHubAppResolver) syncInstallationsWithError(ctx context.Context) erro
 
 // This method only logs errors rather than assigning them to
 // the resolver because they should not block the request from completing.
-func (r *gitHubAppResolver) syncInstallations() {
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(context.Background()), 1*time.Minute)
+func (r *gitHubAppResolver) syncInstallations(ctx context.Context) {
+	// We reuse the context that was passed from the request here so that
+	// we retain all the other information in the context (like tracing
+	// information, auth information, etc.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 1*time.Minute)
 	defer cancel()
 	if err := r.syncInstallationsWithError(ctx); err != nil {
 		r.logger.Error("Error syncing GitHub App Installations", log.Error(err))
