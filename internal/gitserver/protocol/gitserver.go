@@ -365,12 +365,6 @@ type RepoDeleteRequest struct {
 	Repo api.RepoName
 }
 
-// RepoCloneProgressRequest is a request for information about the clone progress of multiple
-// repositories on gitserver.
-type RepoCloneProgressRequest struct {
-	Repos []api.RepoName
-}
-
 // RepoCloneProgress is information about the clone progress of a repo
 type RepoCloneProgress struct {
 	CloneInProgress bool   // whether the repository is currently being cloned
@@ -378,53 +372,19 @@ type RepoCloneProgress struct {
 	Cloned          bool   // whether the repository has been cloned successfully
 }
 
-func (r *RepoCloneProgress) ToProto() *proto.RepoCloneProgress {
-	return &proto.RepoCloneProgress{
+func (r *RepoCloneProgress) ToProto() *proto.RepoCloneProgressResponse {
+	return &proto.RepoCloneProgressResponse{
 		CloneInProgress: r.CloneInProgress,
 		CloneProgress:   r.CloneProgress,
 		Cloned:          r.Cloned,
 	}
 }
 
-func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
+func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgressResponse) {
 	*r = RepoCloneProgress{
 		CloneInProgress: p.GetCloneInProgress(),
 		CloneProgress:   p.GetCloneProgress(),
 		Cloned:          p.GetCloned(),
-	}
-}
-
-// RepoCloneProgressResponse is the response to a repository clone progress request
-// for multiple repositories at the same time.
-type RepoCloneProgressResponse struct {
-	Results map[api.RepoName]*RepoCloneProgress
-}
-
-func (r *RepoCloneProgressResponse) ToProto() *proto.RepoCloneProgressResponse {
-	results := make(map[string]*proto.RepoCloneProgress, len(r.Results))
-	for k, v := range r.Results {
-		results[string(k)] = &proto.RepoCloneProgress{
-			CloneInProgress: v.CloneInProgress,
-			CloneProgress:   v.CloneProgress,
-			Cloned:          v.Cloned,
-		}
-	}
-	return &proto.RepoCloneProgressResponse{
-		Results: results,
-	}
-}
-
-func (r *RepoCloneProgressResponse) FromProto(p *proto.RepoCloneProgressResponse) {
-	results := make(map[api.RepoName]*RepoCloneProgress, len(p.GetResults()))
-	for k, v := range p.GetResults() {
-		results[api.RepoName(k)] = &RepoCloneProgress{
-			CloneInProgress: v.GetCloneInProgress(),
-			CloneProgress:   v.GetCloneProgress(),
-			Cloned:          v.GetCloned(),
-		}
-	}
-	*r = RepoCloneProgressResponse{
-		Results: results,
 	}
 }
 

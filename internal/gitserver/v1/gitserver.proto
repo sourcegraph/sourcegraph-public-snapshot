@@ -578,24 +578,22 @@ message RepoCloneResponse {
 // RepoCloneProgressRequest is a request for information about the clone
 // progress of multiple repositories on gitserver.
 message RepoCloneProgressRequest {
-  repeated string repos = 1;
+  reserved 1;
+  reserved "repos";
+
+  // repo_name is the name of the repo to get the progress for.
+  string repo_name = 2;
 }
 
-// RepoCloneProgress is information about the clone progress of a repo
-message RepoCloneProgress {
+// RepoCloneProgressResponse is the response to a repository clone progress
+// request.
+message RepoCloneProgressResponse {
   // clone_in_progress is whether the repository is currently being cloned
   bool clone_in_progress = 1;
   // clone_progress is a progress message from the running clone command.
   string clone_progress = 2;
   // cloned is whether the repository has been cloned successfully
   bool cloned = 3;
-}
-
-// RepoCloneProgressResponse is the response to a repository clone progress
-// request for multiple repositories at the same time.
-message RepoCloneProgressResponse {
-  // results is a map from repository name to clone progress information
-  map<string, RepoCloneProgress> results = 1;
 }
 
 // RepoDeleteRequest is a request to delete a repository.

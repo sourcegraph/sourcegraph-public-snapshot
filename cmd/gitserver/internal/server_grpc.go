@@ -395,17 +395,15 @@ func (gs *grpcServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 }
 
 func (gs *grpcServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
-	repositories := req.GetRepos()
+	if req.GetRepoName() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
 
-	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(repositories)),
-	}
-	for _, repo := range repositories {
-		repoName := api.RepoName(repo)
-		result := repoCloneProgress(gs.reposDir, gs.locker, repoName)
-		resp.Results[repoName] = result
-	}
-	return resp.ToProto(), nil
+	repoName := api.RepoName(req.GetRepoName())
+
+	progress := repoCloneProgress(gs.reposDir, gs.locker, repoName)
+
+	return progress.ToProto(), nil
 }
 
 func (gs *grpcServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {

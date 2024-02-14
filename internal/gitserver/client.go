@@ -348,7 +348,7 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
-	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	RepoCloneProgress(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 	// used.
@@ -850,60 +850,29 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
-func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (_ *protocol.RepoCloneProgressResponse, err error) {
+func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repo api.RepoName) (_ *protocol.RepoCloneProgress, err error) {
 	ctx, _, endObservation := c.operations.repoCloneProgress.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.Int("repos", len(repos)),
+			repo.Attr(),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	numPossibleShards := len(c.clientSource.Addresses())
-
-	shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-	for _, r := range repos {
-		client, err := c.ClientForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		shard := shards[client]
-		if shard == nil {
-			shard = new(proto.RepoCloneProgressRequest)
-			shards[client] = shard
-		}
-
-		shard.Repos = append(shard.Repos, string(r))
-	}
-
-	p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
-
-	for client, req := range shards {
-		client := client
-		req := req
-		p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
-			return client.RepoCloneProgress(ctx, req)
-		})
-	}
-
-	res, err := p.Wait()
+	client, err := c.ClientForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	result := &protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-	}
-	for _, r := range res {
-		for repo, info := range r.Results {
-			var rp protocol.RepoCloneProgress
-			rp.FromProto(info)
-			result.Results[api.RepoName(repo)] = &rp
-		}
+	res, err := client.RepoCloneProgress(ctx, &proto.RepoCloneProgressRequest{RepoName: string(repo)})
+	if err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	var rcp protocol.RepoCloneProgress
+	rcp.FromProto(res)
+
+	return &rcp, nil
 }
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) (err error) {
