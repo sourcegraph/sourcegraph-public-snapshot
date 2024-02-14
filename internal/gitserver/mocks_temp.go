@@ -377,7 +377,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoCloneProgressResponse, r1 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 *protocol.RepoCloneProgress, r1 error) {
 				return
 			},
 		},
@@ -634,7 +634,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 				panic("unexpected invocation of MockClient.RepoCloneProgress")
 			},
 		},
@@ -5185,16 +5185,16 @@ func (c ClientRemoveFuncCall) Results() []interface{} {
 // ClientRepoCloneProgressFunc describes the behavior when the
 // RepoCloneProgress method of the parent MockClient instance is invoked.
 type ClientRepoCloneProgressFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
-	hooks       []func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)
 	history     []ClientRepoCloneProgressFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoCloneProgress delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1...)
+func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 api.RepoName) (*protocol.RepoCloneProgress, error) {
+	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1)
 	m.RepoCloneProgressFunc.appendCall(ClientRepoCloneProgressFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
@@ -5202,7 +5202,7 @@ func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 ...api.RepoName) (
 // SetDefaultHook sets function that is called when the RepoCloneProgress
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
+func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)) {
 	f.defaultHook = hook
 }
 
@@ -5210,7 +5210,7 @@ func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, 
 // RepoCloneProgress method of the parent MockClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
+func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5218,20 +5218,20 @@ func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, ...api
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *ClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgress, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *ClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgress, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientRepoCloneProgressFunc) nextHook() func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (f *ClientRepoCloneProgressFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoCloneProgress, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5267,28 +5267,21 @@ type ClientRepoCloneProgressFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []api.RepoName
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.RepoCloneProgressResponse
+	Result0 *protocol.RepoCloneProgress
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c ClientRepoCloneProgressFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
