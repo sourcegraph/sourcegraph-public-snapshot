@@ -196,9 +196,9 @@ func (_ *OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body ope
 		if event.Usage.CompletionTokens > 0 {
 			completionUsage.tokens = event.Usage.CompletionTokens
 		}
-		if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
-			logger.Warn("did not extract token counts from OpenAI streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
-		}
+	}
+	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
+		logger.Warn("did not extract token counts from OpenAI streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
 	if err := dec.Err(); err != nil {
 		logger.Error("failed to decode OpenAI streaming response", log.Error(err))
