@@ -18,13 +18,13 @@ func createJobAlerts(
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
 
-		ID:           "job_failures",
-		Name:         "Cloud Run Job Failures",
-		Description:  "Cloud Run Job executions failed",
-		ProjectID:    vars.ProjectID,
-		ResourceName: vars.Service.ID,
-		ResourceKind: alertpolicy.CloudRunJob,
+		ID:          "job_failures",
+		Name:        "Cloud Run Job Failures",
+		Description: "Cloud Run Job executions failed",
+		ProjectID:   vars.ProjectID,
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
+			ResourceName: vars.Service.ID,
+			ResourceKind: alertpolicy.CloudRunJob,
 			Filters: map[string]string{
 				"metric.type":          "run.googleapis.com/job/completed_task_attempt_count",
 				"metric.labels.result": "failed",

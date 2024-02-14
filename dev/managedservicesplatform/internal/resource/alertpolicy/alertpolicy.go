@@ -2,9 +2,6 @@ package alertpolicy
 
 import (
 	"fmt"
-	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -76,14 +73,24 @@ const (
 //   - For services it defaults to `["resource.label.revision_name"]`; additional fields are appended
 //   - For jobs there is no default
 type ThresholdAggregation struct {
+	// ResourceKind identifies what is being monitored. Optional.
+	ResourceKind ResourceKind
+	// ResourceName is the identifier for the monitored resource of ResourceKind.
+	// Only required if ResourceKind is provided.
+	ResourceName string
+
 	Filters       map[string]string
 	GroupByFields []string
-	Comparison    Comparison
-	Aligner       Aligner
-	Reducer       Reducer
-	Period        string
-	Threshold     float64
-	Duration      string
+
+	// Aggregations
+	Aligner   Aligner
+	Reducer   Reducer
+	Period    string
+	Threshold float64
+
+	Duration string
+
+	Comparison Comparison
 
 	// Trigger is the strategy for determining if an alert should fire based
 	// on the thresholds.
@@ -148,7 +155,6 @@ If you need additional assistance, reach out to #discuss-core-services.`,
 type NotificationChannels map[SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
 
 // Config for a Monitoring Alert Policy
-// Must define either `ThresholdAggregation` or `ResponseCodeMetric`
 type Config struct {
 	Service       spec.ServiceSpec
 	EnvironmentID string
@@ -167,12 +173,6 @@ type Config struct {
 	//
 	// If not provided, SeverityLevelWarning is used.
 	Severity SeverityLevel
-
-	// ResourceKind identifies what is being monitored. Optional.
-	ResourceKind ResourceKind
-	// ResourceName is the identifier for the monitored resource of ResourceKind.
-	// Only required if ResourceKind is provided.
-	ResourceName string
 
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
@@ -217,50 +217,37 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 		config.Severity = SeverityLevelWarning
 	}
 
-	if config.ThresholdAggregation != nil {
-		if len(config.ThresholdAggregation.Filters) == 0 {
-			return nil, errors.New("must specify at least one filter for threshold aggregation")
-		}
+	// Labels for the alert
+	labels := map[string]*string{
+		"source": pointers.Ptr("managed-services-platform"),
 
-		if _, ok := config.ThresholdAggregation.Filters["metric.type"]; !ok {
-			return nil, errors.New("must specify filter for `metric.type`")
-		}
-		return newThresholdAggregationAlert(scope, id, config)
+		"msp_alert_id":       pointers.Ptr(config.ID),
+		"msp_service_id":     pointers.Ptr(config.Service.ID),
+		"msp_environment_id": pointers.Ptr(config.EnvironmentID),
 	}
-	return newResponseCodeMetricAlert(scope, id, config)
-}
 
-// threshholdAggregation defines a monitoring alert policy based on a single metric threshold
-func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
-	// Set some defaults
-	switch config.ResourceKind {
-	case CloudRunService:
-		config.ThresholdAggregation.GroupByFields = append(
-			[]string{"resource.label.revision_name"},
-			config.ThresholdAggregation.GroupByFields...)
-
-	case CloudSQLDatabase:
-		config.ThresholdAggregation.GroupByFields = append(
-			[]string{"resource.label.database"},
-			config.ThresholdAggregation.GroupByFields...)
-
-	case CloudRunJob, CloudRedis, URLUptime, CloudSQL, "":
-		// No defaults
-
+	// Build the condition, each of which may have special handling and additional
+	// defaults based on recommendations and other best practices
+	var condition *monitoringalertpolicy.MonitoringAlertPolicyConditions
+	switch {
+	case config.ThresholdAggregation != nil:
+		var err error
+		condition, err = newThresholdAggregationCondition(config)
+		if err != nil {
+			return nil, errors.Wrap(err, "newThresholdAggregationCondition")
+		}
+		if config.ThresholdAggregation.ResourceKind != "" {
+			labels["resource_kind"] = pointers.Ptr(string(config.ThresholdAggregation.ResourceKind))
+		}
+	case config.ResponseCodeMetric != nil:
+		condition = newResponseCodeMetricCondition(config)
 	default:
-		return nil, errors.Newf("invalid service kind %q", config.ResourceKind)
+		return nil, errors.New("no condition configuration provided")
 	}
 
-	if config.ThresholdAggregation.Comparison == "" {
-		config.ThresholdAggregation.Comparison = ComparisonGT
-	}
-
-	if config.ThresholdAggregation.Duration == "" {
-		config.ThresholdAggregation.Duration = "0s"
-	}
-
-	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope,
-		id.TerraformID(config.ID), &monitoringalertpolicy.MonitoringAlertPolicyConfig{
+	// Build the final alert policy
+	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope, id.TerraformID(config.ID),
+		&monitoringalertpolicy.MonitoringAlertPolicyConfig{
 			Project:     pointers.Ptr(config.ProjectID),
 			DisplayName: pointers.Ptr(config.Name),
 			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
@@ -268,196 +255,20 @@ func newThresholdAggregationAlert(scope constructs.Construct, id resourceid.ID, 
 				Content:  pointers.Ptr(config.Description),
 				MimeType: pointers.Ptr("text/markdown"),
 			},
-			UserLabels: &map[string]*string{
-				"source":        pointers.Ptr("managed-services-platform"),
-				"resource_kind": pointers.Ptr(string(config.ResourceKind)),
-
-				"msp_alert_id":       pointers.Ptr(config.ID),
-				"msp_service_id":     pointers.Ptr(config.Service.ID),
-				"msp_environment_id": pointers.Ptr(config.EnvironmentID),
-			},
+			UserLabels: &labels,
 
 			// Notification strategy
 			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
 				AutoClose: pointers.Ptr("86400s"), // 24 hours
 			},
 			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
-			// For now, set all MSP alerts as WARNING. In the future, we should
-			// have different severity levels.
-			// https://github.com/sourcegraph/managed-services/issues/385
 			// Possible values: ["CRITICAL", "ERROR", "WARNING"]
-			Severity: pointers.Ptr("WARNING"),
+			Severity: pointers.Ptr(string(config.Severity)),
 
 			// Conditions
-			Combiner: pointers.Ptr("OR"),
-			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
-				{
-					DisplayName: pointers.Ptr(config.Name),
-					ConditionThreshold: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThreshold{
-						Aggregations: []monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdAggregations{
-							{
-								AlignmentPeriod:    pointers.Ptr(config.ThresholdAggregation.Period),
-								PerSeriesAligner:   pointers.NonZeroPtr(string(config.ThresholdAggregation.Aligner)),
-								CrossSeriesReducer: pointers.NonZeroPtr(string(config.ThresholdAggregation.Reducer)),
-								GroupByFields:      pointers.Ptr(pointers.Slice(config.ThresholdAggregation.GroupByFields)),
-							},
-						},
-						Comparison:     pointers.Ptr(string(config.ThresholdAggregation.Comparison)),
-						Duration:       pointers.Ptr(config.ThresholdAggregation.Duration),
-						Filter:         pointers.Ptr(buildFilter(config)),
-						ThresholdValue: pointers.Float64(config.ThresholdAggregation.Threshold),
-						Trigger: func() *monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger {
-							switch config.ThresholdAggregation.Trigger {
-							case TriggerKindAllInViolation:
-								return &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
-									Percent: pointers.Float64(100),
-								}
-
-							case TriggerKindAnyViolation:
-								fallthrough
-							default:
-								return &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionThresholdTrigger{
-									Count: pointers.Float64(1),
-								}
-							}
-						}(),
-					},
-				},
-			},
+			Combiner:   pointers.Ptr("OR"),
+			Conditions: []*monitoringalertpolicy.MonitoringAlertPolicyConditions{condition},
 		})
+
 	return &Output{}, nil
-}
-
-// buildFilter creates the Filter string for a ThresholdAggregation monitoring alert policy
-func buildFilter(config *Config) string {
-	filters := make([]string, 0)
-	for key, val := range config.ThresholdAggregation.Filters {
-		filters = append(filters, fmt.Sprintf(`%s = "%s"`, key, val))
-	}
-
-	// Sort to ensure stable output for testing, because
-	// config.ThresholdAggregation.Filters is a map.
-	sort.Strings(filters)
-
-	switch config.ResourceKind {
-	case CloudRunService:
-		filters = append(filters,
-			`resource.type = "cloud_run_revision"`,
-			fmt.Sprintf(`resource.labels.service_name = starts_with("%s")`, config.ResourceName),
-		)
-	case CloudRunJob:
-		filters = append(filters,
-			`resource.type = "cloud_run_job"`,
-			fmt.Sprintf(`resource.labels.job_name = starts_with("%s")`, config.ResourceName),
-		)
-	case CloudRedis:
-		filters = append(filters,
-			`resource.type = "redis_instance"`,
-			fmt.Sprintf(`resource.labels.instance_id = "%s"`, config.ResourceName),
-		)
-	case CloudSQL:
-		filters = append(filters,
-			`resource.type = "cloudsql_database"`,
-			fmt.Sprintf(`resource.labels.database_id = "%s"`, config.ResourceName))
-	case CloudSQLDatabase:
-		filters = append(filters,
-			`resource.type = "cloudsql_instance_database"`,
-			fmt.Sprintf(`resource.labels.resource_id = "%s"`, config.ResourceName))
-	case URLUptime:
-		filters = append(filters,
-			`resource.type = "uptime_url"`,
-			fmt.Sprintf(`metric.labels.check_id = "%s"`, config.ResourceName),
-		)
-	}
-
-	return strings.Join(filters, " AND ")
-}
-
-// newResponseCodeMetricAlert defines the MonitoringAlertPolicy for response code metrics
-// Supports a single Code e.g. 404 or an entire Code Class e.g. 4xx
-// Optionally when using a Code Class, codes to exclude can be defined
-func newResponseCodeMetricAlert(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
-	query := responseCodeBuilder(config)
-
-	if config.ResponseCodeMetric.Duration == nil {
-		config.ResponseCodeMetric.Duration = pointers.Ptr("60s")
-	}
-
-	_ = monitoringalertpolicy.NewMonitoringAlertPolicy(scope,
-		id.TerraformID(config.ID), &monitoringalertpolicy.MonitoringAlertPolicyConfig{
-			Project:     pointers.Ptr(config.ProjectID),
-			DisplayName: pointers.Ptr(config.Name),
-			Documentation: &monitoringalertpolicy.MonitoringAlertPolicyDocumentation{
-				Subject:  pointers.Ptr(config.makeDocsSubject()),
-				Content:  pointers.Ptr(config.Description),
-				MimeType: pointers.Ptr("text/markdown"),
-			},
-			Combiner: pointers.Ptr("OR"),
-			Conditions: []monitoringalertpolicy.MonitoringAlertPolicyConditions{
-				{
-					DisplayName: pointers.Ptr(config.Name),
-					ConditionMonitoringQueryLanguage: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguage{
-						Query:    pointers.Ptr(query),
-						Duration: config.ResponseCodeMetric.Duration,
-						Trigger: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguageTrigger{
-							Count: pointers.Float64(1),
-						},
-					},
-				},
-			},
-			AlertStrategy: &monitoringalertpolicy.MonitoringAlertPolicyAlertStrategy{
-				AutoClose: pointers.Ptr("86400s"),
-			},
-			NotificationChannels: notificationChannelIDs(config.NotificationChannels[config.Severity]),
-		})
-	return &Output{}, nil
-}
-
-// responseCodeBuilder builds the MQL for a response code metric alert
-func responseCodeBuilder(config *Config) string {
-	var builder strings.Builder
-
-	builder.WriteString(`fetch cloud_run_revision
-| metric 'run.googleapis.com/request_count'
-| group_by 15s, [value_request_count_aggregate: aggregate(value.request_count)]
-| every 15s
-| {
-`)
-	if config.ResponseCodeMetric.CodeClass != nil {
-		builder.WriteString("  group_by [metric.response_code, metric.response_code_class],\n")
-	} else {
-		builder.WriteString("  group_by [metric.response_code],\n")
-	}
-	builder.WriteString("  [response_code_count_aggregate: aggregate(value_request_count_aggregate)]\n")
-	if config.ResponseCodeMetric.Code != nil {
-		builder.WriteString(fmt.Sprintf("  | filter (metric.response_code = '%d')\n", *config.ResponseCodeMetric.Code))
-	} else {
-		builder.WriteString(fmt.Sprintf("  | filter (metric.response_code_class = '%s')\n", *config.ResponseCodeMetric.CodeClass))
-	}
-	if config.ResponseCodeMetric.ExcludeCodes != nil && len(config.ResponseCodeMetric.ExcludeCodes) > 0 {
-		for _, code := range config.ResponseCodeMetric.ExcludeCodes {
-			builder.WriteString(fmt.Sprintf("  | filter (metric.response_code != '%s')\n", code))
-		}
-	}
-	builder.WriteString(`; group_by [],
-  [value_request_count_aggregate_aggregate: aggregate(value_request_count_aggregate)]
-}
-| join
-| value [response_code_ratio: val(0) / val(1)]
-`)
-	builder.WriteString(fmt.Sprintf("| condition gt(val(), %s)\n", strconv.FormatFloat(config.ResponseCodeMetric.Ratio, 'f', -1, 64)))
-	return builder.String()
-}
-
-// notificationChannelIDs collects the IDs of the given notification channels.
-// Returns nil if there are no channels.
-func notificationChannelIDs(channels []monitoringnotificationchannel.MonitoringNotificationChannel) *[]*string {
-	if len(channels) == 0 {
-		return nil
-	}
-	var ids []*string
-	for _, c := range channels {
-		ids = append(ids, c.Id())
-	}
-	return &ids
 }
