@@ -26,22 +26,8 @@
 
     export let treeProvider: TreeProvider<N>
 
-    /**
-     * Scroll the selected item into view.
-     * If the selected item cannot be found it will try again up to 5 times.
-     */
     export function scrollSelectedItemIntoView() {
-        let tries = 5
-        ;(function scrollIntoView() {
-            const selectedItem = treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')
-            if (!selectedItem) {
-                if (tries-- > 0) {
-                    setTimeout(scrollIntoView, 10)
-                }
-                return
-            }
-            selectedItem.scrollIntoView({ block: 'nearest' })
-        })()
+        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'nearest' })
     }
 
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()
