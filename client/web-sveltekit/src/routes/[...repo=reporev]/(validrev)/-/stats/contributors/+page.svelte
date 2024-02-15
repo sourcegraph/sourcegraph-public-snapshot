@@ -6,7 +6,7 @@
     import Timestamp from '$lib/Timestamp.svelte'
     import Avatar from '$lib/Avatar.svelte'
     import { createPromiseStore } from '$lib/utils'
-    import { Button, ButtonGroup } from '$lib/wildcard'
+    import { Alert, Button, ButtonGroup } from '$lib/wildcard'
     import type { ContributorConnection } from './page.gql'
 
     import type { PageData } from './$types'
@@ -20,15 +20,15 @@
         ['All time', ''],
     ]
 
-    const { pending, latestValue: contributorConnection, set } = createPromiseStore<ContributorConnection | null>()
-    $: set(data.contributors)
+    const contributorConnection = createPromiseStore<ContributorConnection | null>()
+    $: contributorConnection.set(data.contributors)
 
     // We want to show stale contributors data when the user navigates to
     // the next or previous page for the current time period. When the user
     // changes the time period we want to show a loading indicator instead.
-    let currentContributorConnection = $contributorConnection
-    $: if (!$pending && $contributorConnection) {
-        currentContributorConnection = $contributorConnection
+    let currentContributorConnection = $contributorConnection.value
+    $: if (!$contributorConnection.pending) {
+        currentContributorConnection = $contributorConnection.value
     }
 
     $: timePeriod = data.after
@@ -68,7 +68,7 @@
                 {/each}
             </ButtonGroup>
         </form>
-        {#if !currentContributorConnection && $pending}
+        {#if !currentContributorConnection && $contributorConnection.pending}
             <div class="mt-3">
                 <LoadingSpinner />
             </div>
@@ -90,14 +90,31 @@
                             >
                             <td>{contributor.count}&nbsp;commits</td>
                         </tr>
+                    {:else}
+                        <tr>
+                            <td colspan="3">
+                                <Alert variant="info">No contributors found</Alert>
+                            </td>
+                        </tr>
                     {/each}
                 </tbody>
             </table>
-            <div class="d-flex flex-column align-items-center">
-                <Paginator disabled={$pending} pageInfo={currentContributorConnection.pageInfo} />
-                <p class="mt-1 text-muted">
-                    <small>Total contributors: {currentContributorConnection.totalCount}</small>
-                </p>
+            {#if nodes.length > 0}
+                <div class="d-flex flex-column align-items-center">
+                    <Paginator
+                        disabled={$contributorConnection.pending}
+                        pageInfo={currentContributorConnection.pageInfo}
+                    />
+                    <p class="mt-1 text-muted">
+                        <small>Total contributors: {currentContributorConnection.totalCount}</small>
+                    </p>
+                </div>
+            {/if}
+        {:else if $contributorConnection.error}
+            <div class="mt-2">
+                <Alert variant="danger">
+                    Unable to load contributors: {$contributorConnection.error.message}
+                </Alert>
             </div>
         {/if}
     </div>
@@ -118,6 +135,7 @@
 
     table {
         border-collapse: collapse;
+        width: 100%;
     }
 
     td {

@@ -21,14 +21,18 @@ query CommitPage_DiffQuery($repoName: String!, $base: String, $head: String, $fi
         id
         comparison(base: $base, head: $head) {
             fileDiffs(first: $first, after: $after) {
-                nodes {
-                    ...FileDiff_Diff
-                }
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
+                ...CommitPage_DiffConnection
             }
         }
+    }
+}
+
+fragment CommitPage_DiffConnection on FileDiffConnection {
+    nodes {
+        ...FileDiff_Diff
+    }
+    pageInfo {
+        endCursor
+        hasNextPage
     }
 }

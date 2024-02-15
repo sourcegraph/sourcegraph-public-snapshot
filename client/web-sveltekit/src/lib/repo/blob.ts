@@ -1,7 +1,7 @@
 import type { EditorView } from '@codemirror/view'
-import { from, type Subscription } from 'rxjs'
-import { switchMap, map, startWith } from 'rxjs/operators'
-import { get, writable, type Readable, readonly } from 'svelte/store'
+import { Subject, from, of } from 'rxjs'
+import { switchMap, map, startWith, catchError } from 'rxjs/operators'
+import { get, type Readable, readable } from 'svelte/store'
 
 import { goto as svelteGoto } from '$app/navigation'
 import { page } from '$app/stores'
@@ -141,43 +141,77 @@ export function openImplementations(
 
 interface CombinedBlobData {
     blob: BlobPage_Blob | null
-    highlights: string | undefined
+    /**
+     * JSON encoded highlighting information. Can be an empty string.
+     */
+    highlights: string
+    blobPending: boolean
+    highlightsPending: boolean
+    blobError: Error | null
+    highlightsError: Error | null
 }
 
-interface BlobDataHandler {
-    set(blob: Promise<BlobPage_Blob | null>, highlight: Promise<string | undefined>): void
-    combinedBlobData: Readable<CombinedBlobData>
-    loading: Readable<boolean>
+interface BlobDataHandler extends Readable<CombinedBlobData> {
+    set(blob: PromiseLike<BlobPage_Blob | null>, highlight: PromiseLike<string | undefined>): void
 }
 
 /**
- * Helper store to synchronize blob data and highlighting data handling.
+ * This store synchronizes the state of the blob data and the highlights. While new blob data is
+ * loading, the old blob and highlighs data is still available. Once the blob data is loaded, the
+ * highlights are updated.
  */
 export function createBlobDataHandler(): BlobDataHandler {
-    const combinedBlobData = writable<CombinedBlobData>({ blob: null, highlights: undefined })
-    const loading = writable<boolean>(false)
-
-    let subscription: Subscription | undefined
+    const input = new Subject<{ blob: PromiseLike<BlobPage_Blob | null>; highlight: PromiseLike<string | undefined> }>()
 
     return {
-        set(blob: Promise<BlobPage_Blob | null>, highlight: Promise<string | undefined>): void {
-            subscription?.unsubscribe()
-            loading.set(true)
-            subscription = from(blob)
-                .pipe(
-                    switchMap(blob =>
-                        from(highlight).pipe(
-                            startWith(undefined),
-                            map(highlights => ({ blob, highlights }))
-                        )
+        ...readable<CombinedBlobData>(
+            {
+                blob: null,
+                highlights: '',
+                blobPending: false,
+                highlightsPending: false,
+                blobError: null,
+                highlightsError: null,
+            },
+            (_set, update) => {
+                const subscription = input
+                    .pipe(
+                        switchMap(({ blob, highlight }) => {
+                            return from(blob).pipe(
+                                switchMap(blob => {
+                                    return from(highlight).pipe(
+                                        map((highlights = '') => ({
+                                            highlights,
+                                            highlightsPending: false,
+                                            highlightsError: null,
+                                        })),
+                                        startWith({
+                                            blob,
+                                            blobPending: false,
+                                            blobError: null,
+                                            highlights: '',
+                                            highlightsPending: true,
+                                            highlightsError: null,
+                                        }),
+                                        catchError(error =>
+                                            of({ highlights: '', highlightsPending: false, highlightsError: error })
+                                        )
+                                    )
+                                }),
+                                startWith({ blobPending: true }),
+                                catchError(error => of({ blob: null, blobPending: false, blobError: error }))
+                            )
+                        })
                     )
-                )
-                .subscribe(result => {
-                    combinedBlobData.set(result)
-                    loading.set(false)
-                })
+                    .subscribe(updatedCombinedData => {
+                        update(combinedData => ({ ...combinedData, ...updatedCombinedData }))
+                    })
+                return () => subscription.unsubscribe()
+            }
+        ),
+
+        set(blob, highlight) {
+            input.next({ blob, highlight })
         },
-        combinedBlobData: readonly(combinedBlobData),
-        loading: readonly(loading),
     }
 }

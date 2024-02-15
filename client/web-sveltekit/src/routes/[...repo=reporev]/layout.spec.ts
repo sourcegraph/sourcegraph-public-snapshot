@@ -18,7 +18,7 @@ test.beforeEach(({ sg }) => {
 test.describe('cloned repository', () => {
     test.beforeEach(async ({ sg, page }) => {
         sg.mockOperations({
-            ResolveRepoRevison: ({ repoName }) => ({
+            ResolveRepoRevision: ({ repoName }) => ({
                 repositoryRedirect: {
                     id: '1',
                     name: repoName,
@@ -40,7 +40,7 @@ test.describe('cloned repository', () => {
 
 test('clone in progress', async ({ sg, page }) => {
     sg.mockOperations({
-        ResolveRepoRevison: ({ repoName }) => ({
+        ResolveRepoRevision: ({ repoName }) => ({
             repositoryRedirect: {
                 id: '1',
                 name: repoName,
@@ -62,7 +62,7 @@ test('clone in progress', async ({ sg, page }) => {
 
 test('not cloned', async ({ sg, page }) => {
     sg.mockOperations({
-        ResolveRepoRevison: ({ repoName }) => ({
+        ResolveRepoRevision: ({ repoName }) => ({
             repositoryRedirect: {
                 id: '1',
                 name: repoName,
