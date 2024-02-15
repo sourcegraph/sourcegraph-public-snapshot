@@ -91,8 +91,10 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				}
 				// Attach instance ID to all subsequent log messages
 				logger = logger.With(log.String("instanceID", identifier.InstanceId))
-				// Record start of stream + salesforce opportunity once
+				// Record start of stream + additional diagnostics details
+				// like salesforce info and external URL once
 				logger.Info("handling events submission stream for licensed instance",
+					log.String("instanceExternalURL", identifier.ExternalUrl),
 					log.Stringp("license.salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
 					log.Stringp("license.salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
 
