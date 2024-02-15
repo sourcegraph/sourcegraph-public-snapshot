@@ -711,12 +711,12 @@ func TestMatchUnaryKeyword(t *testing.T) {
 		pos   int
 		want  bool
 	}{
-		{"NOT bar", 0, true},
-		{"foo NOT bar", 4, true},
-		{"foo NOT", 4, false},
-		{"fooNOT bar", 3, false},
-		{"NOTbar", 0, false},
-		{"(not bar)", 1, true},
+		{input: `NOT bar`, pos: 0, want: true},
+		{input: `foo NOT bar`, pos: 4, want: true},
+		{input: `foo NOT`, pos: 4, want: false},
+		{input: `fooNOT bar`, pos: 3, want: false},
+		{input: `NOTbar`, pos: 0, want: false},
+		{input: `(not bar)`, pos: 1, want: true},
 	}
 
 	for _, tc := range testcases {
@@ -964,21 +964,32 @@ func TestParseAndOrLiteral(t *testing.T) {
 }
 
 func TestScanBalancedPattern(t *testing.T) {
-	test := func(input string) string {
-		result, _, ok := ScanBalancedPattern([]byte(input))
-		if !ok {
-			return "ERROR"
-		}
-		return result
+	testcases := []struct {
+		input    string
+		balanced bool
+		want     string
+	}{
+		// balanced pattern
+		{input: `foo OR bar`, balanced: true, want: `foo`},
+		{input: `(hello there)`, balanced: true, want: `(hello there)`},
+		{input: `( general:kenobi )`, balanced: true, want: `( general:kenobi )`},
+		// negative cases
+		{input: `(foo OR bar)`},
+		{input: `(foo not bar)`},
+		{input: `repo:foo AND bar`},
+		{input: `repo:foo bar`},
 	}
-
-	autogold.Expect("foo").Equal(t, test("foo OR bar"))
-	autogold.Expect("(hello there)").Equal(t, test("(hello there)"))
-	autogold.Expect("( general:kenobi )").Equal(t, test("( general:kenobi )"))
-	autogold.Expect("ERROR").Equal(t, test("(foo OR bar)"))
-	autogold.Expect("ERROR").Equal(t, test("(foo not bar)"))
-	autogold.Expect("ERROR").Equal(t, test("repo:foo AND bar"))
-	autogold.Expect("ERROR").Equal(t, test("repo:foo bar"))
+	for _, tc := range testcases {
+		t.Run(tc.input, func(t *testing.T) {
+			result, _, ok := ScanBalancedPattern([]byte(tc.input))
+			if tc.balanced != ok {
+				t.Errorf("expected %t, got %t", tc.balanced, ok)
+			}
+			if result != tc.want {
+				t.Errorf("got %s, expected %s", result, tc.want)
+			}
+		})
+	}
 }
 
 func Test_newOperator(t *testing.T) {
