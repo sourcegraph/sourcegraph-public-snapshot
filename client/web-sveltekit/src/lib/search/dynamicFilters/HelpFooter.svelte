@@ -56,8 +56,10 @@
                 flex-shrink: 0;
             }
 
-            text-decoration: none;
-            color: var(--text-muted);
+            &:not(:hover) {
+                text-decoration: none;
+                color: var(--text-muted);
+            }
             font-size: 0.75rem;
         }
     }
