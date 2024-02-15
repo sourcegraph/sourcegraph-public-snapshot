@@ -27,9 +27,9 @@ steps:
         command: |
           echo "--- :git: check we're after commit
           if git merge-base --is-ancestor 20a3c0836eaa300beecf88e21f78dcd708b047d3 HEAD; then
-            echo ":white_checkmark: We are after the commit."
+            echo "✅ We are after the commit."
           else
-            echo ":x: HEAD commit should be after 20a3c0836eaa300beecf88e21f78dcd708b047d3"
+            echo "❌ HEAD commit should be after 20a3c0836eaa300beecf88e21f78dcd708b047d3"
             exit 1
           fi
 
@@ -43,16 +43,10 @@ steps:
           agents:
             queue: aspect-small
         - label: ":pipeline: Generate pipeline"
-          if: build.branch !~ /^main(-dry-run\/)?.*/ && build.branch != "wb/aspect/gen-pipeline"
+          if: build.branch !~ /^main(-dry-run\/)?.*/
           commands:
             - "./dev/ci/gen-pipeline.sh"
           agents:
             queue: bazel
           env:
             ASPECT_WORKFLOWS_BUILD: "1"
-        - label: ":pipeline: Generate pipeline(Aspect)"
-          if: build.branch == "wb/aspect/gen-pipeline"
-          commands:
-            - "./dev/ci/gen-pipeline.sh"
-          agents:
-            queue: aspect-default
