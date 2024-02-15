@@ -11,7 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -55,45 +57,24 @@ func (j *syntacticIndexingScheduler) Routines(_ context.Context, observationCtx 
 		true,
 	)
 
-	repoSchedulingStore := reposcheduler.NewPreciseStore(observationCtx, db)
+	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	return []goroutine.BackgroundRoutine{newScheduler(observationCtx, repoSchedulingSvc, matcher)}, nil
+	return []goroutine.BackgroundRoutine{
+		newScheduler(
+			observationCtx, repoSchedulingSvc, matcher, *services.PoliciesService, db.Repos(),
+		),
+	}, nil
 
-	// return autoindexing.NewIndexSchedulers(
-	// 	observationCtx,
-	// 	services.UploadsService,
-	// 	services.PoliciesService,
-	// 	matcher,
-	// 	repoSchedulingSvc,
-	// 	repoSchedulingStore,
-	// 	services.AutoIndexingService,
-	// 	db.Repos(),
-	// ), nil
 }
 
 func newScheduler(
 	observationCtx *observation.Context,
 	repositorySchedulingService reposcheduler.RepositorySchedulingService,
 	policyMatcher autoindexing.PolicyMatcher,
+	policiesService policies.Service,
+	repoStore database.RepoStore,
 ) goroutine.BackgroundRoutine {
-	// job := indexSchedulerJob{
-	// 	repositorySchedulingService: repositorySchedulingService,
-	// 	policiesSvc:                 policiesSvc,
-	// 	policyMatcher:               policyMatcher,
-	// 	indexEnqueuer:               indexEnqueuer,
-	// 	repoStore:                   repoStore,
-	// }
-
-	// redMetrics := m.Get(func() *metrics.REDMetrics {
-	// 	return metrics.NewREDMetrics(
-	// 		observationCtx.Registerer,
-	// 		"codeintel_autoindexing_background",
-	// 		metrics.WithLabels("op"),
-	// 		metrics.WithCountHelp("Total number of method invocations."),
-	// 	)
-	// })
-
 	batchOptions := reposcheduler.NewBatchOptions(config.RepositoryProcessDelay, true, &config.PolicyBatchSize, config.RepositoryBatchSize)
 
 	return goroutine.NewPeriodicGoroutine(
@@ -103,8 +84,35 @@ func newScheduler(
 			repos, err := repositorySchedulingService.GetRepositoriesForIndexScan(ctx,
 				batchOptions, time.Now())
 
-			fmt.Printf("Repos: %v, err: %v", repos, err)
+			if err != nil {
+				return err
+			}
 
+			for _, repoToIndex := range repos {
+				repo, _ := repoStore.Get(ctx, repoToIndex.ID)
+				fmt.Println(repo.Name)
+
+				offset := 0
+				t := true
+
+				policies, totalCount, err := policiesService.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+					RepositoryID:         int(repoToIndex.ID),
+					ForSyntacticIndexing: &t,
+					Limit:                config.PolicyBatchSize,
+					Offset:               offset,
+				})
+
+				if err != nil {
+					return err
+				}
+
+				fmt.Println("Policies: ", policies, totalCount)
+				// if err != nil {
+				// 	return errors.Wrap(err, "policySvc.GetConfigurationPolicies")
+				// }
+				// offset += len(policies)
+
+			}
 			// return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
 			return nil
 		}),

@@ -3,12 +3,13 @@ package reposcheduler
 import (
 	"context"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type RepositoryToIndex struct {
-	ID int
+	ID api.RepoID
 }
-
 
 type RepositorySchedulingService interface {
 	GetRepositoriesForIndexScan(
@@ -38,7 +39,7 @@ func (s *service) GetRepositoriesForIndexScan(ctx context.Context, batchOptions 
 
 	repos := make([]RepositoryToIndex, len(ids))
 	for i, repoId := range ids {
-		repos[i] = RepositoryToIndex{ID: repoId}
+		repos[i] = RepositoryToIndex{ID: api.RepoID(int32(repoId))}
 	}
 
 	return repos, nil

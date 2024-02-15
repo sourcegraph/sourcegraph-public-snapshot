@@ -134,7 +134,7 @@ func (b indexSchedulerJob) handleScheduler(
 		if err := sema.Acquire(ctx, 1); err != nil {
 			return err
 		}
-		go func(repositoryID int) {
+		go func(repositoryID api.RepoID) {
 			defer sema.Release(1)
 			if repositoryErr := b.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
 				if !errors.As(err, &inference.LimitError{}) {
@@ -153,7 +153,7 @@ func (b indexSchedulerJob) handleScheduler(
 	return errs
 }
 
-func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
+func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID api.RepoID, policyBatchSize int, now time.Time) error {
 	repo, err := b.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
 		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-			RepositoryID: repositoryID,
+			RepositoryID: int(repositoryID),
 			ForIndexing:  &t,
 			Limit:        policyBatchSize,
 			Offset:       offset,
@@ -179,7 +179,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 		offset += len(policies)
 
 		// Get the set of commits within this repository that match an indexing policy
-		commitMap, err := b.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policies, now)
+		commitMap, err := b.policyMatcher.CommitsDescribedByPolicy(ctx, int(repositoryID), repoName, policies, now)
 		if err != nil {
 			return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 		}
@@ -190,7 +190,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := b.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := b.indexEnqueuer.QueueIndexes(ctx, int(repositoryID), commit, "", false, false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}
