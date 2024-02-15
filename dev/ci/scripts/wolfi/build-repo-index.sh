@@ -6,10 +6,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
 # TODO: Manage these variables properly
 # TODO(burmudar): Remove this if
-if [[ "$BUILDKITE_PIPELINE_SLUG" == "sourcegraph" ]]; then
-  GCP_PROJECT="sourcegraph-ci"
-else
+if [[ "$BUILDKITE_PIPELINE_SLUG" == "aspect-experimental" ]]; then
   GCP_PROJECT="aspect-dev"
+else
+  GCP_PROJECT="sourcegraph-ci"
 fi
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
@@ -48,7 +48,7 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
+gsutil -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment
