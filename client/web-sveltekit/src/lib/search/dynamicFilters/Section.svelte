@@ -90,6 +90,9 @@
 {/if}
 
 <style lang="scss">
+    article {
+        padding: 0 1rem;
+    }
     h4 {
         white-space: nowrap;
     }

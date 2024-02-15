@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiBookOpenVariant } from '@mdi/js'
-
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
     import Icon from '$lib/Icon.svelte'
@@ -10,6 +8,7 @@
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
 
+    import HelpFooter from './HelpFooter.svelte'
     import { type URLQueryFilter, type SectionItem, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
@@ -88,24 +87,19 @@
         <LoadingSkeleton />
     {/if}
 
-    <a class="section help" href="/help/code_search/reference/queries" target="_blank">
-        <span class="icon">
-            <Icon --color="var(--icon-color)" svgPath={mdiBookOpenVariant} inline />
-        </span>
-        <div>
-            <h4>Need more advanced filters?</h4>
-            <span>Explore the query syntax docs</span>
-        </div>
-    </a>
+    <div class="sidebar-footer">
+        <HelpFooter />
+    </div>
 </aside>
 
 <style lang="scss">
     .sidebar {
+        padding-top: 1rem;
         h3 {
             margin: 0;
+            padding: 0 1rem;
         }
         height: 100%;
-        padding: 1rem;
         background-color: var(--sidebar-bg);
         overflow-y: auto;
 
@@ -114,25 +108,7 @@
         gap: 1.5rem;
     }
 
-    .help {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-
-        text-decoration: none;
-        color: var(--text-muted);
-        font-size: 0.75rem;
-
-        h4 {
-            margin: 0;
-        }
-
-        .icon {
-            flex-shrink: 0;
-        }
-    }
-
-    a {
+    .sidebar-footer {
         margin-top: auto;
     }
 
