@@ -37,9 +37,7 @@
                 );
             }
 
-            :global(svg) {
-                --icon-color: var(--primary);
-            }
+            --icon-color: var(--primary);
         }
 
         a {
