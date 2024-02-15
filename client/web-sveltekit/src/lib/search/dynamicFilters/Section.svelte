@@ -20,6 +20,16 @@
         ? items.filter(item => item.label.toLowerCase().includes(processedFilterText))
         : items
     $: limitedItems = showAll ? filteredItems : filteredItems.slice(0, 5)
+
+    function roundCount(count: number): number {
+        const roundNumbers = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1]
+        for (const roundNumber of roundNumbers) {
+            if (count >= roundNumber) {
+                return roundNumber
+            }
+        }
+        return 0
+    }
 </script>
 
 {#if items.length > 0}
@@ -51,7 +61,7 @@
                                             item.count
                                         )} match this filter."
                                     >
-                                        <Badge variant="secondary">{item.count}+</Badge>
+                                        <Badge variant="secondary">{roundCount(item.count)}+</Badge>
                                     </Tooltip>
                                 {/if}
                             </span>
