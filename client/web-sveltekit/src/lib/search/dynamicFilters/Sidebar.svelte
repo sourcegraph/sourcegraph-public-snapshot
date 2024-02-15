@@ -53,6 +53,18 @@
         </Section>
     {/if}
 
+    <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
+        <svelte:fragment slot="label" let:label>
+            <CodeHostIcon repository={label} />
+            {displayRepoName(label)}
+        </svelte:fragment>
+    </Section>
+    <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
+        <svelte:fragment slot="label" let:label>
+            <LanguageIcon class="icon" language={label} inline />&nbsp;
+            {label}
+        </svelte:fragment>
+    </Section>
     <Section items={groupedFilters['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
         <svelte:fragment slot="label" let:label>
             <SymbolKind symbolKind={label.toUpperCase()} />
@@ -65,18 +77,6 @@
             {label}
             <small><pre>{value}</pre></small>
         </span>
-    </Section>
-    <Section items={groupedFilters.lang} title="By language" filterPlaceholder="Filter languages">
-        <svelte:fragment slot="label" let:label>
-            <LanguageIcon class="icon" language={label} inline />&nbsp;
-            {label}
-        </svelte:fragment>
-    </Section>
-    <Section items={groupedFilters.repo} title="By repository" filterPlaceholder="Filter repositories">
-        <svelte:fragment slot="label" let:label>
-            <CodeHostIcon repository={label} />
-            {displayRepoName(label)}
-        </svelte:fragment>
     </Section>
     <Section items={groupedFilters.file} title="By file" showAll />
     <Section items={groupedFilters.utility} title="Utility" showAll />
