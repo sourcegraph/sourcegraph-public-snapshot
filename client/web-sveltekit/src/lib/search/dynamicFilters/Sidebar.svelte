@@ -47,7 +47,7 @@
     {#if !queryHasTypeFilter(searchQuery)}
         <Section items={typeFilters} title="By type" showAll>
             <svelte:fragment slot="label" let:label>
-                <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />
+                <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                 {label}
             </svelte:fragment>
         </Section>
