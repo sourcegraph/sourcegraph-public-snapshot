@@ -13,7 +13,9 @@ go_library(
         "//internal/pubsub",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//lib/errors",
+        "@com_github_cockroachdb_redact//:redact",
         "@com_github_sourcegraph_conc//pool",
+        "@com_google_cloud_go_pubsub//:pubsub",
         "@org_golang_google_protobuf//encoding/protojson",
     ],
 )
