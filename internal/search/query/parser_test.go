@@ -929,28 +929,28 @@ func TestParseAndOrLiteral(t *testing.T) {
 		{input: `bar and (foo or x\) ()`, want: `(or (and "bar" "(foo") (concat "x\\)" "()")) (HeuristicDanglingParens,Literal)`},
 
 		// For implementation simplicity, behavior preserves whitespace inside parentheses.
-		{input: "repo:foo (lisp    lisp)", want: `(and "repo:foo" "(lisp    lisp)") (HeuristicParensAsPatterns,Literal)`},
-		{input: "repo:foo main( or (lisp    lisp)", want: `(and "repo:foo" (or "main(" "(lisp    lisp)")) (HeuristicHoisted,HeuristicParensAsPatterns,Literal)`},
-		{input: "repo:foo )foo(", want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: "repo:foo ) main( or (lisp    lisp)", want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: "repo:foo )))) main( or (lisp    lisp) and )))", want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `repo:foo Args or main)`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `repo:foo Args) and main`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `repo:foo bar and baz)`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `repo:foo bar)) and baz`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `repo:foo (bar and baz))`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `repo:foo (bar and (baz)))`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
+		{input: `repo:foo (lisp    lisp)`, want: `(and "repo:foo" "(lisp    lisp)") (HeuristicParensAsPatterns,Literal)`},
+		{input: `repo:foo main( or (lisp    lisp)`, want: `(and "repo:foo" (or "main(" "(lisp    lisp)")) (HeuristicHoisted,HeuristicParensAsPatterns,Literal)`},
+		{input: `repo:foo )foo(`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo ) main( or (lisp    lisp)`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo )))) main( or (lisp    lisp) and )))`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo Args or main)`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo Args) and main`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo bar and baz)`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo bar)) and baz`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo (bar and baz))`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `repo:foo (bar and (baz)))`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
 		{input: `repo:foo (bar( and baz())`, want: `(and "repo:foo" "bar(" "baz()") (HeuristicHoisted,Literal)`},
 		{input: `"quoted"`, want: `"\"quoted\"" (Literal)`},
-		{input: `not (stocks or stonks)`, want: "ERROR: it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries"},
+		{input: `not (stocks or stonks)`, want: `ERROR: it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries`},
 
 		// This test input should error because the single quote in 'after' is unclosed.
-		{input: `type:commit message:'a commit message' after:'10 days ago" test test2`, want: "ERROR: unterminated literal: expected '"},
+		{input: `type:commit message:'a commit message' after:'10 days ago" test test2`, want: `ERROR: unterminated literal: expected '`},
 
 		// Fringe tests cases at the boundary of heuristics and invalid syntax.
-		{input: `x()(y or z)`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `)(0 )0`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
-		{input: `((R:)0))0`, want: "ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses"},
+		{input: `x()(y or z)`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `)(0 )0`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
+		{input: `((R:)0))0`, want: `ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses`},
 	}
 
 	for _, tc := range testcases {
