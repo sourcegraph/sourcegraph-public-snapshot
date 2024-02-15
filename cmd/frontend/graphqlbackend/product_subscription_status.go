@@ -34,7 +34,7 @@ func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) 
 	}
 
 	// We only show this warning to free license instances.
-	if !info.Plan.IsFree() {
+	if !info.Plan.IsFreePlan() {
 		return nil, nil
 	}
 
@@ -46,7 +46,7 @@ func (productSubscriptionStatus) MaximumAllowedUserCount(ctx context.Context) (*
 	if err != nil {
 		return nil, err
 	}
-	if !info.Plan.IsFree() {
+	if !info.Plan.IsFreePlan() {
 		tmp := info.UserCount()
 		return &tmp, nil
 	}

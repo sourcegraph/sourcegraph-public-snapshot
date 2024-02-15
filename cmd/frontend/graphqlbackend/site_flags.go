@@ -55,7 +55,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	// Only show alert if the license is a free plan.
-	if !info.Plan.IsFree() {
+	if !info.Plan.IsFreePlan() {
 		return false, nil
 	}
 
