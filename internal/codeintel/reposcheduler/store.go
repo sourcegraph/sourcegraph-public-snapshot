@@ -157,6 +157,8 @@ func (s *store) GetRepositoriesForIndexScan(
 		indexingType = "syntactic"
 	}
 
+	fmt.Println()
+
 	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Bool("allowGlobalPolicies", batchOptions.AllowGlobalPolicies),
 		attribute.Int("repositoryMatchLimit", repositoryMatchLimitValue),
@@ -180,8 +182,7 @@ func (s *store) GetRepositoriesForIndexScan(
 
 	query := getRepositoriesForIndexScanQuery(enabledFieldName)
 
-
-	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
+	finalQuery := sqlf.Sprintf(
 		query,
 		sqlf.Join(queries, " UNION ALL "),
 		indexingType,
@@ -191,7 +192,11 @@ func (s *store) GetRepositoriesForIndexScan(
 		now,
 		indexingType,
 		now,
-	)))
+	)
+
+	fmt.Println(finalQuery)
+
+	return basestore.ScanInts(s.db.Query(ctx, finalQuery))
 }
 
 func getRepositoriesForIndexScanQuery(enabledFieldName string) string {

@@ -58,7 +58,12 @@ func NewMatcher(
 // commit date.
 //
 // A subset of all commits can be returned by passing in any number of commit revhash strings.
-func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, repoName api.RepoName, policies []shared.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
+func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context,
+	repositoryID int,
+	repoName api.RepoName,
+	policies []shared.ConfigurationPolicy,
+	now time.Time,
+	filterCommits ...string) (map[string][]PolicyMatch, error) {
 	if len(policies) == 0 && !m.includeTipOfDefaultBranch {
 		return nil, nil
 	}
