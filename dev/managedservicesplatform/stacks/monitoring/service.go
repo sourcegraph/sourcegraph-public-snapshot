@@ -31,13 +31,15 @@ func createServiceAlerts(
 			Description: "There are a lot of Cloud Run instances running - we may need to increase per-instance requests make make sure we won't hit the configured max instance count",
 			ProjectID:   vars.ProjectID,
 			ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-				ResourceName: vars.Service.ID,
-				ResourceKind: alertpolicy.CloudRunService,
+				ConditionBuilder: alertpolicy.ConditionBuilder{
+					ResourceName: vars.Service.ID,
+					ResourceKind: alertpolicy.CloudRunService,
 
-				Filters: map[string]string{"metric.type": "run.googleapis.com/container/instance_count"},
-				Aligner: alertpolicy.MonitoringAlignMax,
-				Reducer: alertpolicy.MonitoringReduceMax,
-				Period:  "60s",
+					Filters: map[string]string{"metric.type": "run.googleapis.com/container/instance_count"},
+					Aligner: alertpolicy.MonitoringAlignMax,
+					Reducer: alertpolicy.MonitoringReduceMax,
+					Period:  "60s",
+				},
 				// Fire when we are 1 instance away from hitting the limit.
 				Threshold:  float64(*vars.MaxInstanceCount - 1),
 				Comparison: alertpolicy.ComparisonGT,
@@ -57,13 +59,15 @@ func createServiceAlerts(
 		Description: "There are requests pending - we may need to increase  Cloud Run instance count, request concurrency, or investigate further.",
 		ProjectID:   vars.ProjectID,
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-			ResourceName: vars.Service.ID,
-			ResourceKind: alertpolicy.CloudRunService,
+			ConditionBuilder: alertpolicy.ConditionBuilder{
+				ResourceName: vars.Service.ID,
+				ResourceKind: alertpolicy.CloudRunService,
 
-			Filters:    map[string]string{"metric.type": "run.googleapis.com/pending_queue/pending_requests"},
-			Aligner:    alertpolicy.MonitoringAlignSum,
-			Reducer:    alertpolicy.MonitoringReduceSum,
-			Period:     "60s",
+				Filters: map[string]string{"metric.type": "run.googleapis.com/pending_queue/pending_requests"},
+				Aligner: alertpolicy.MonitoringAlignSum,
+				Reducer: alertpolicy.MonitoringReduceSum,
+				Period:  "60s",
+			},
 			Threshold:  5,
 			Comparison: alertpolicy.ComparisonGT,
 		},
@@ -151,25 +155,27 @@ func createExternalHealthcheckAlert(
 		Severity: alertpolicy.SeverityLevelCritical,
 
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-			ResourceKind: alertpolicy.URLUptime,
-			ResourceName: *uptimeCheck.UptimeCheckId(),
+			ConditionBuilder: alertpolicy.ConditionBuilder{
+				ResourceKind: alertpolicy.URLUptime,
+				ResourceName: *uptimeCheck.UptimeCheckId(),
 
-			Filters: map[string]string{
-				"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
+				Filters: map[string]string{
+					"metric.type": "monitoring.googleapis.com/uptime_check/check_passed",
+				},
+				Aligner: alertpolicy.MonitoringAlignFractionTrue,
+				// Checks run once every 60s, if 2/3 fail we are in trouble.
+				Period: "180s",
+				// We want to alert when all locations go down, but right now that
+				// sends 6 notifications when the alert fires, which is annoying -
+				// there seems to be no way to change this. So we group by the check
+				// target anyway.
+				Trigger:       alertpolicy.TriggerKindAllInViolation,
+				GroupByFields: []string{"metric.labels.host"},
+				Reducer:       alertpolicy.MonitoringReduceMean,
 			},
-			Aligner:    alertpolicy.MonitoringAlignFractionTrue,
+			Threshold:  0.4,
 			Duration:   "0s",
 			Comparison: alertpolicy.ComparisonLT,
-			// Checks run once every 60s, if 2/3 fail we are in trouble.
-			Period:    "180s",
-			Threshold: 0.4,
-			// We want to alert when all locations go down, but right now that
-			// sends 6 notifications when the alert fires, which is annoying -
-			// there seems to be no way to change this. So we group by the check
-			// target anyway.
-			Trigger:       alertpolicy.TriggerKindAllInViolation,
-			GroupByFields: []string{"metric.labels.host"},
-			Reducer:       alertpolicy.MonitoringReduceMean,
 		},
 		NotificationChannels: channels,
 	}); err != nil {
@@ -214,17 +220,19 @@ func createCloudRunPreconditionFailedAlert(
 		Description: `Cloud Run instance failed to start due to a precondition failure.
 This is unlikely to cause immediate downtime, and may auto-resolve if no new instances are created and/or we return to a healthy state, but you should follow up to ensure the latest Cloud Run revision is healthy.`,
 		ThresholdAggregation: &alertpolicy.ThresholdAggregation{
-			Filters: map[string]string{
-				"metric.type": metric.Metric,
-				// HACK: Strangely, this seems required on our log-based metric
-				"resource.type": "cloud_run_revision",
+			ConditionBuilder: alertpolicy.ConditionBuilder{
+				Filters: map[string]string{
+					"metric.type": metric.Metric,
+					// HACK: Strangely, this seems required on our log-based metric
+					"resource.type": "cloud_run_revision",
+				},
+				Aligner: alertpolicy.MonitoringAlignMax,
+				Reducer: alertpolicy.MonitoringReduceSum,
+				Period:  "60s",
+				Trigger: alertpolicy.TriggerKindAnyViolation,
 			},
-			Aligner:    alertpolicy.MonitoringAlignMax,
-			Reducer:    alertpolicy.MonitoringReduceSum,
-			Period:     "60s",
 			Threshold:  0, // any occurence is bad
 			Comparison: alertpolicy.ComparisonGT,
-			Trigger:    alertpolicy.TriggerKindAnyViolation,
 		},
 		NotificationChannels: channels,
 	}); err != nil {
