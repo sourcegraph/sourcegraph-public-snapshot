@@ -239,15 +239,23 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
             // all of the date-fns calculations will do them with respect to UTC (which is the desired behavior with
             // expiration dates).
 
-            const date = event.target.valueAsDate
-                ? event.target.valueAsDate
+            // The value field from the date picker input element is in the format
+            // yyyy-mm-dd, so we can use it to directly construct a new UTCDate object
+            // with the appropriate date.
+            //
+            // See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/date#value
+            // for more information.
+            const dateRegex = /\d{4}-\d{2}-\d{2}/
+
+            const date: Date = dateRegex.test(event.target.value)
+                ? new UTCDate(event.target.value)
                 : getEmptyFormData(subscriptionAccount, latestLicense).expiresAt
 
             const expiresAt = endOfDay(new UTCDate(date))
 
             setFormData(formData => ({
                 ...formData,
-                expiresAt: expiresAt,
+                expiresAt,
             }))
         },
         [subscriptionAccount, latestLicense]
