@@ -8,8 +8,14 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 # TODO(burmudar): Remove this if
 if [[ "$BUILDKITE_PIPELINE_SLUG" == "aspect-experimental" ]]; then
   GCP_PROJECT="aspect-dev"
+  KEY_DIR="./keys"
+  # TODO(burmudar): fix this in aspect image
+  mkdir -p "$KEY_DIR"
+  echo "$BUILDKITE_MELANGE_PACKAGE_SIGNING_KEY_DEV" > "$KEY_DIR/sourcegraph-melange-dev.rsa"
+  echo "$BUILDKITE_MELANGE_PACKAGE_SIGNING_KEY_PROD" > "$KEY_DIR/sourcegraph-melange-prod.rsa"
 else
   GCP_PROJECT="sourcegraph-ci"
+  KEY_DIR="/keys"
 fi
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
@@ -57,10 +63,11 @@ touch DESCRIPTION
 tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 
 # Sign index, using separate keys from GCS for staging and prod repos
+# TODO(burmudar): fix key paths
 if [[ "$IS_MAIN" == "true" ]]; then
-  key_path="/keys/sourcegraph-melange-prod.rsa"
+  key_path="$KEY_DIR/sourcegraph-melange-prod.rsa"
 else
-  key_path="/keys/sourcegraph-melange-dev.rsa"
+  key_path="$KEY_DIR/sourcegraph-melange-dev.rsa"
 fi
 melange sign-index --signing-key "$key_path" APKINDEX.tar.gz
 
