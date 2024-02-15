@@ -25,7 +25,7 @@ steps:
         label: ":oncoming_police_car: commit check"
         agents: { queue: aspect-small }
         command: |
-          echo "--- :git: check we're after commit
+          echo "--- :git: check we're after commit"
           if git merge-base --is-ancestor 20a3c0836eaa300beecf88e21f78dcd708b047d3 HEAD; then
             echo "✅ We are after the commit."
           else
