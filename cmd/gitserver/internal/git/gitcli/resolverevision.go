@@ -29,6 +29,10 @@ func (g *gitCLIBackend) ResolveRevision(ctx context.Context, spec string) (api.C
 		return "", err
 	}
 
+	return g.revParse(ctx, spec)
+}
+
+func (g *gitCLIBackend) revParse(ctx context.Context, spec string) (api.CommitID, error) {
 	r, err := g.NewCommand(ctx, WithArguments("rev-parse", spec, "--"))
 	if err != nil {
 		return "", err
