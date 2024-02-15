@@ -258,3 +258,9 @@ func gaugeHandler(counter metric.Int64UpDownCounter, attrs attribute.Set, handle
 		counter.Add(context.Background(), -1, metric.WithAttributeSet(attrs))
 	})
 }
+
+type CompletionsConfig struct {
+	logger      log.Logger
+	eventLogger events.Logger
+	rs          limiter.RedisStore
+}
