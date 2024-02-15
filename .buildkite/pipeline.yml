@@ -32,6 +32,6 @@ steps:
         commands:
           - "./dev/ci/gen-pipeline.sh"
         agents:
-          queue: bazel
+          queue: aspect-default
         env:
           ASPECT_WORKFLOWS_BUILD: "1"
