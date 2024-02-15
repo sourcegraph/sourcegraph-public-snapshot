@@ -130,6 +130,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	for i := range allowedModels {
 		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
 	}
+	// turn off sanitization since we're only detecting
+	d := goaway.NewProfanityDetector().WithSanitizeAccents(false).WithSanitizeLeetSpeak(false).WithSanitizeSpaces(false).WithSanitizeSpecialCharacters(false)
 
 	return featurelimiter.Handle(
 		baseLogger,
@@ -254,7 +256,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			// Retrieve metadata from the initial request.
 			model, requestMetadata := methods.getRequestMetadata(body)
 			prompt := body.BuildPrompt()
-			if goaway.IsProfane(prompt) {
+
+			if d.IsProfane(prompt) {
 				requestMetadata["is_profane"] = true
 			}
 			for _, p := range patternsToDetect {
