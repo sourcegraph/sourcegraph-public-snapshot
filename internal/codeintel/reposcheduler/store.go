@@ -148,10 +148,13 @@ func (s *store) GetRepositoriesForIndexScan(
 	}
 
 	var enabledFieldName string
+	var indexingType string
 	if s.storeType == Precise {
 		enabledFieldName = "indexing_enabled"
+		indexingType = "precise"
 	} else {
 		enabledFieldName = "syntactic_indexing_enabled"
+		indexingType = "syntactic"
 	}
 
 	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
@@ -175,37 +178,23 @@ func (s *store) GetRepositoriesForIndexScan(
 		queries[i] = sqlf.Sprintf("(%s)", query)
 	}
 
+	query := getRepositoriesForIndexScanQuery(enabledFieldName)
+
+
 	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
-		getRepositoriesForIndexScanQuery(enabledFieldName),
+		query,
 		sqlf.Join(queries, " UNION ALL "),
+		indexingType,
 		now,
 		int(batchOptions.ProcessDelay/time.Second),
 		batchOptions.Limit,
 		now,
+		indexingType,
 		now,
 	)))
 }
 
 func getRepositoriesForIndexScanQuery(enabledFieldName string) string {
-	// globalPolicyCTE := fmt.Sprintf(
-	// 	`
-	// 	WITH
-	// -- This CTE will contain a single row if there is at least one global policy, and will return an empty
-	// -- result set otherwise. If any global policy is for HEAD, the value for the column is_head_policy will
-	// -- be true.
-	// global_policy_descriptor AS MATERIALIZED (
-	// SELECT (p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD') AS is_head_policy
-	// FROM lsif_configuration_policies p
-	// WHERE
-	// 	p.%s AND
-	// 	p.repository_id IS NULL AND
-	// 	p.repository_patterns IS NULL
-	// ORDER BY is_head_policy DESC
-	// LIMIT 1
-	// ),
-	// `,
-	// 	enabledFieldName)
-
 	return fmt.Sprintf(`
 WITH
 -- This CTE will contain a single row if there is at least one global policy, and will return an empty
@@ -227,7 +216,7 @@ repositories_matching_policy AS (
 repositories AS (
 	SELECT rmp.id
 	FROM repositories_matching_policy rmp
-	LEFT JOIN lsif_last_index_scan lrs ON lrs.repository_id = rmp.id
+	LEFT JOIN lsif_last_index_scan lrs ON lrs.repository_id = rmp.id and lrs.indexing_type = %%s
 	WHERE
 		-- Records that have not been checked within the global reindex threshold are also eligible for
 		-- indexing. Note that condition here is true for a record that has never been indexed.
@@ -241,8 +230,8 @@ repositories AS (
 		rmp.id -- tie breaker
 	LIMIT %%s
 )
-INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
-SELECT DISTINCT r.id, %%s::timestamp FROM repositories r
+INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at, indexing_Type)
+SELECT DISTINCT r.id, %%s::timestamp, %%s::indexing_type FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
 SET last_index_scan_at = %%s
 RETURNING repository_id
@@ -356,7 +345,6 @@ WHERE id = ANY(%s)
 `
 
 func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
-	fmt.Printf("Queueing %d: %v\n", repositoryID, s.operations.queueRepoRev)
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("rev", rev),
@@ -364,9 +352,7 @@ func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) 
 	defer endObservation(1, observation.Args{})
 
 	return s.withTransaction(ctx, func(tx *store) error {
-		fmt.Printf("hello? %v\n", tx)
 		isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
-		fmt.Println(isQueued)
 		logger.Error(err)
 		if err != nil {
 			return err
@@ -386,7 +372,6 @@ ON CONFLICT DO NOTHING
 `
 
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	fmt.Printf("Is queued %d: %v", repositoryID, s.operations.isQueued)
 	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("commit", commit),
