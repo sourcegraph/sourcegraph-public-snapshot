@@ -5,7 +5,7 @@ set -e
 # TODO(burmudar): remove me
 if [[ "$BUILDKITE_LABEL" == ":card_index_dividers: Build and sign repository index" ]]; then
     echo "~~~ :gcp: Activating service account"
-    gcloud auth activate-service-account $(jq -r '.client_email' /etc/gcp/key.json) --key-file='/etc/gcp/key.json' --project='aspect-dev'
+    gcloud auth activate-service-account "$(jq -r '.client_email' /etc/gcp/key.json)" --key-file='/etc/gcp/key.json' --project='aspect-dev'
 fi
 
 # Create the folder for annotations
