@@ -26,10 +26,10 @@ steps:
         agents: { queue: aspect-small }
         command: |
           echo "--- :git: check we're after commit
-          if git merge-base --is-ancestor c844eaf2958bdc37fbc65488b98804a846ae9681 HEAD; then
+          if git merge-base --is-ancestor 20a3c0836eaa300beecf88e21f78dcd708b047d3 HEAD; then
             echo ":white_checkmark: We are after the commit."
           else
-            echo ":x: HEAD commit should be after c844eaf2958bdc37fbc65488b98804a846ae9681"
+            echo ":x: HEAD commit should be after 20a3c0836eaa300beecf88e21f78dcd708b047d3"
             exit 1
           fi
 
