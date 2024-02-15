@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	googlepubsub "cloud.google.com/go/pubsub"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/cockroachdb/redact"
@@ -26,6 +27,9 @@ type PublishStreamOptions struct {
 	// ConcurrencyLimit sets the maximum number of concurrent publishes for
 	// a stream.
 	ConcurrencyLimit int
+	// MessageSizeHistogram, if provided, records the size of message payloads
+	// published to the events topic.
+	MessageSizeHistogram metric.Int64Histogram
 }
 
 func NewPublisherForStream(eventsTopic pubsub.TopicPublisher, metadata *telemetrygatewayv1.RecordEventsRequestMetadata, opts PublishStreamOptions) (*Publisher, error) {
@@ -71,6 +75,10 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			})
 			if err != nil {
 				return errors.Wrap(err, "marshalling event payload")
+			}
+
+			if p.opts.MessageSizeHistogram != nil {
+				p.opts.MessageSizeHistogram.Record(ctx, int64(len(payload)))
 			}
 
 			// If the payload is obviously oversized, don't bother publishing it

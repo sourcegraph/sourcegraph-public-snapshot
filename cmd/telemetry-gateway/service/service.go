@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -25,6 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
+
+var meter = otel.GetMeterProvider().Meter("cmd/telemetry-gateway/service")
 
 type Service struct{}
 
@@ -49,6 +53,13 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 			return nil, errors.Errorf("create Events Pub/Sub client: %v", err)
 		}
 	}
+	publishMessageBytes, err := meter.Int64Histogram(
+		"telemetry-gateway.pubsub.published_message_size",
+		metric.WithUnit("By"), // UCUM for "bytes": https://github.com/open-telemetry/opentelemetry-specification/issues/2973#issuecomment-1430035419
+		metric.WithDescription("Size of published messages in bytes"))
+	if err != nil {
+		return nil, errors.Wrap(err, "create pubsub.published_message_size metric")
+	}
 
 	// Initialize our gRPC server
 	grpcServer := defaults.NewPublicServer(logger)
@@ -56,7 +67,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		logger,
 		eventsTopic,
 		events.PublishStreamOptions{
-			ConcurrencyLimit: config.Events.StreamPublishConcurrency,
+			ConcurrencyLimit:     config.Events.StreamPublishConcurrency,
+			MessageSizeHistogram: publishMessageBytes,
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "init telemetry gateway server")
