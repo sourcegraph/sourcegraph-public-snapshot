@@ -5,12 +5,12 @@
 
 <footer class="help">
     <a href="/help/code_search/reference/queries" class="link">
-        <OpenBookIcon />
+        <OpenBookIcon aria-hidden />
         <span>
             <h4>Need more advanced filters?</h4>
             <small>Explore the query syntax docs</small>
         </span>
-        <LinkShareIcon class="icon" />
+        <LinkShareIcon aria-hidden />
     </a>
 </footer>
 

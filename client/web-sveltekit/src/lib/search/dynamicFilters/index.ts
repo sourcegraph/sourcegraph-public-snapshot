@@ -9,6 +9,8 @@ import {
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
+import { parseExtendedSearchURL } from '..'
+
 export type SectionItem = Omit<Filter, 'count'> & {
     count?: Filter['count']
     selected: boolean
@@ -52,6 +54,17 @@ export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: bool
         .map(serializeURLFilter)
         .forEach(selectedFilter => newURL.searchParams.append(DYNAMIC_FILTER_URL_QUERY_KEY, selectedFilter))
 
+    return newURL
+}
+
+export function moveFiltersToQuery(url: URL): URL {
+    const extendedSearchURL = parseExtendedSearchURL(url)
+    if (!extendedSearchURL.filteredQuery) {
+        return url
+    }
+    const newURL = new URL(url)
+    newURL.searchParams.delete(DYNAMIC_FILTER_URL_QUERY_KEY)
+    newURL.searchParams.set('q', extendedSearchURL.filteredQuery)
     return newURL
 }
 

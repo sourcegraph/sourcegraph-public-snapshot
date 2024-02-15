@@ -1,15 +1,26 @@
 <script lang="ts">
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
+    import { goto } from '$app/navigation'
+    import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
+    import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKind from '$lib/search/SymbolKind.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
+    import Button from '$lib/wildcard/Button.svelte'
 
     import HelpFooter from './HelpFooter.svelte'
-    import { type URLQueryFilter, type SectionItem, staticTypeFilters, typeFilterIcons, groupFilters } from './index'
+    import {
+        type URLQueryFilter,
+        type SectionItem,
+        staticTypeFilters,
+        typeFilterIcons,
+        groupFilters,
+        moveFiltersToQuery,
+    } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
 
@@ -89,6 +100,22 @@
 
     <div class="sidebar-footer">
         <HelpFooter />
+
+        {#if selectedFilters.length > 0}
+            <div class="move-button">
+                <Button
+                    variant="secondary"
+                    display="block"
+                    outline
+                    on:click={() => goto(moveFiltersToQuery($page.url))}
+                >
+                    <svelte:fragment>
+                        Move filters to query&nbsp;
+                        <ArrowBendIcon aria-hidden class="arrow-icon" />
+                    </svelte:fragment>
+                </Button>
+            </div>
+        {/if}
     </div>
 </aside>
 
@@ -110,6 +137,16 @@
 
     .sidebar-footer {
         margin-top: auto;
+    }
+
+    .move-button {
+        padding: 1rem;
+        border-top: 1px solid var(--border-color);
+        :global(svg) {
+            transform: rotateX(180deg);
+            fill: none !important;
+            --icon-color: var(--body-color);
+        }
     }
 
     pre {
