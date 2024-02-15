@@ -241,7 +241,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
-                    initialValue={query && '(' + patternType + `) ` + query}
+                    initialValue={query && '(' + patternType + ') ' + query}
                 />
             ) : null}
             {refFromCodySearch && codySearchInput.input && codySearchInput.translatedQuery === props.query ? (
