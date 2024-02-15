@@ -128,6 +128,10 @@
         }
     }
 
+    a {
+        margin-top: auto;
+    }
+
     pre {
         // Overwrites global default
         margin-bottom: 0;
