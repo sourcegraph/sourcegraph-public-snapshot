@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -427,7 +428,11 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 		}
 	case extsvc.TypeGerrit:
 		if repo, ok := repository.Metadata.(*gerrit.Project); ok {
-			name = repo.Name
+			var err error
+			name, err = url.QueryUnescape(repo.ID)
+			if err != nil {
+				logger.Error("failed to unescape Gerrit project id", log.String("repoID", repo.ID))
+			}
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeGerrit))
 		}
