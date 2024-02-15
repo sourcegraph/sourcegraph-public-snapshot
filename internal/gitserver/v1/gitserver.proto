@@ -128,6 +128,45 @@ service GitserverService {
   rpc GetCommit(GetCommitRequest) returns (GetCommitResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ResolveRevision resolves a given revspec-ish to a commit SHA.
+  // If passed a commit sha, the endpoint will also verify that the commit exists.
+  //
+  // If the revision cannot be resolved an error with RevisionNotFoundPayload is
+  // returned.
+  //
+  // Under the hood, this endpoint currently uses git rev-parse to resolve the revspec,
+  // but we forbid certain revspecs (like HEAD) to avoid leaking existence files,
+  // and to avoid running very expensive rev-parse operations.
+  // Assume only the following are supported:
+  // - Symbolic refs
+  // - All refs under refs/, including tags
+  // - Commit hashes
+  // - Abbreviated commit hashes
+  //
+  // If the given repo is not cloned, it will be enqueued for cloning and a NotFound
+  // error will be returned, with a RepoNotFoundPayload in the details.
+  rpc ResolveRevision(ResolveRevisionRequest) returns (ResolveRevisionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message ResolveRevisionRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // The rev spec to resolve. I.e., HEAD, deadbeefdeadbeefdeadbeefdeadbeef, or refs/heads/main.
+  bytes rev_spec = 3;
+  // ensure_revision tries to ensure that the revision is present in the repo by
+  // triggering a git fetch if it is not present. It's not guaranteed that
+  // a revision exists in the repo after this call, if it really doesn't exist.
+  // This can slow down the response time significantly, only use it if you have
+  // good reason to do so.
+  optional bool ensure_revision = 4;
+}
+
+message ResolveRevisionResponse {
+  // commit is the commit SHA of the resolved revision.
+  string commit_sha = 1;
 }
 
 message GetCommitRequest {
@@ -322,7 +361,7 @@ message CreateCommitFromPatchBinaryResponse {
 
 message ExecRequest {
   string repo = 1;
-  bytes ensure_revision = 2;
+  bytes ensure_revision = 2 [deprecated = true];
   repeated bytes args = 3;
   bytes stdin = 4 [deprecated = true];
   bool no_timeout = 5;
