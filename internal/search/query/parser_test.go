@@ -714,7 +714,7 @@ func TestMatchUnaryKeyword(t *testing.T) {
 	autogold.Expect("true").Equal(t, test("(not bar)", 1))
 }
 
-func TestParseParensKeyword(t *testing.T) {
+func TestParseSearchTypeKeyword(t *testing.T) {
 	test := func(input string) string {
 		plan, err := Pipeline(
 			Init(input, SearchTypeKeyword),
@@ -726,101 +726,115 @@ func TestParseParensKeyword(t *testing.T) {
 		return plan.ToQ().String()
 	}
 
-	// parens as grouping
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo and bar and bas"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo and bar) and bas"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo bar bas"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo bar) bas"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo (bar bas)"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo bar bas)"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo) bar bas"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo (bar) bas"))
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("foo bar (bas)"))
+	testcases := []struct {
+		input string
+		want  string
+	}{
+		// parens as grouping
+		{input: `foo and bar and bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo and bar) and bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo bar bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo bar) bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo (bar bas)`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo bar bas)`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo) bar bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo (bar) bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `foo bar (bas)`, want: `(and "foo" "bar" "bas")`},
 
-	// not
-	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo and not bar"))
-	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo (not bar)"))
-	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo not bar"))
+		// not
+		{input: `foo and not bar`, want: `(and "foo" (not "bar"))`},
+		{input: `foo (not bar)`, want: `(and "foo" (not "bar"))`},
+		{input: `foo not bar`, want: `(and "foo" (not "bar"))`},
 
-	// literal
-	autogold.Expect(`(and "(foo bar)" "bas")`).Equal(t, test(`"(foo bar)" bas`))
+		// literal
+		{input: `"(foo bar)" bas`, want: `(and "(foo bar)" "bas")`},
 
-	// mix implicit AND and explicit OR
-	autogold.Expect(`(and "foo" "bar" "bas")`).Equal(t, test("(foo bar) and bas"))
-	autogold.Expect(`(or (and "foo" "bar") "bas")`).Equal(t, test("(foo bar) or bas"))
-	autogold.Expect(`(and (or "foo" "bar") "bas")`).Equal(t, test(`(foo or bar) bas`))
-	autogold.Expect(`(and (or "foo" "bar") "bas" "qux")`).Equal(t, test(`(foo or bar) bas qux`))
+		// mix implicit AND and explicit OR
+		{input: `(foo bar) and bas`, want: `(and "foo" "bar" "bas")`},
+		{input: `(foo bar) or bas`, want: `(or (and "foo" "bar") "bas")`},
+		{input: `(foo or bar) bas`, want: `(and (or "foo" "bar") "bas")`},
+		{input: `(foo or bar) bas qux`, want: `(and (or "foo" "bar") "bas" "qux")`},
 
-	// nested
-	autogold.Expect(`(and "foo" "bar" (or "bas" "qux"))`).Equal(t, test("foo (bar (bas or qux))"))
-	autogold.Expect(`(and (or "foo" "bas") (or "bar" "qux") "hoge")`).Equal(t, test("(foo or bas) (bar or qux) hoge"))
-	autogold.Expect(`(or "foo" (and "bas" "qux" (or "hoge" "fuga")))`).Equal(t, test("(foo or (bas and qux and (hoge or fuga)))"))
-	autogold.Expect(`(or (and "foo" "bas") (and "hoge" "fuga"))`).Equal(t, test("(foo and bas) or (hoge and fuga)"))
+		// nested
+		{input: `foo (bar (bas or qux))`, want: `(and "foo" "bar" (or "bas" "qux"))`},
+		{input: `(foo or bas) (bar or qux) hoge`, want: `(and (or "foo" "bas") (or "bar" "qux") "hoge")`},
+		{input: `(foo or (bas and qux and (hoge or fuga)))`, want: `(or "foo" (and "bas" "qux" (or "hoge" "fuga")))`},
+		{input: `(foo and bas) or (hoge and fuga)`, want: `(or (and "foo" "bas") (and "hoge" "fuga"))`},
 
-	// regex
-	autogold.Expect(`(and "foo" "ba.*" "bas")`).Equal(t, test("(foo /ba.*/) bas"))
-	autogold.Expect(`(and (or "foo" "bar") "bas")`).Equal(t, test("(foo or /bar/) and bas"))
+		// regex
+		{input: `(foo /ba.*/) bas`, want: `(and "foo" "ba.*" "bas")`},
+		{input: `(foo or /bar/) and bas`, want: `(and (or "foo" "bar") "bas")`},
 
-	// function signatures
-	autogold.Expect(`(and "func()" "error")`).Equal(t, test("func() error"))
-	autogold.Expect(`(and "func(a int, b bool)" "error")`).Equal(t, test("func(a int, b bool) error"))
+		// function signatures
+		{input: `func() error`, want: `(and "func()" "error")`},
+		{input: `func(a int, b bool) error`, want: `(and "func(a int, b bool)" "error")`},
 
-	// parentheses
-	autogold.Expect(`"()"`).Equal(t, test("()"))
-	autogold.Expect(`"()"`).Equal(t, test("(())"))
-	autogold.Expect(`"()"`).Equal(t, test("(     )"))
-	autogold.Expect(`(and "()" "=>" "{}")`).Equal(t, test("() => {}"))
-	autogold.Expect(`(and "err" "error," "ok" "bool")`).Equal(t, test("(err error, ok bool)"))
+		// parentheses
+		{input: `()`, want: `"()"`},
+		{input: `(())`, want: `"()"`},
+		{input: `(     )`, want: `"()"`},
+		{input: `() => {}`, want: `(and "()" "=>" "{}")`},
+		{input: `(err error, ok bool)`, want: `(and "err" "error," "ok" "bool")`},
 
-	// unbalanced parentheses
-	autogold.Expect(`"("`).Equal(t, test("("))
-	autogold.Expect(`"(()"`).Equal(t, test("(()"))
-	autogold.Expect(`unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`).Equal(t, test("())"))
-	autogold.Expect(`"foo("`).Equal(t, test("foo("))
+		// unbalanced parentheses
+		{input: `(`, want: `"("`},
+		{input: `(()`, want: `"(()"`},
+		{input: `())`, want: `unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`},
+		{input: `foo(`, want: `"foo("`},
 
-	// unescaped quotes
-	autogold.Expect(`"\""`).Equal(t, test(`"`))
-	autogold.Expect(`""`).Equal(t, test(`""`))
-	autogold.Expect(`"\"\"\""`).Equal(t, test(`"""`))
-	autogold.Expect(`"\"\"\"\""`).Equal(t, test(`""""`))
-	autogold.Expect(`"\"\"\"\"\""`).Equal(t, test(`"""""`))
-	autogold.Expect(`"\"\"foo\""`).Equal(t, test(`""foo"`))
-	autogold.Expect(`"\"\"foo\"\""`).Equal(t, test(`""foo""`))
-	autogold.Expect(`"\"foo\"bar\"bas\""`).Equal(t, test(`"foo"bar"bas"`))
+		// unescaped quotes
+		{input: `"`, want: `"\""`},
+		{input: `""`, want: `""`},
+		{input: `"""`, want: `"\"\"\""`},
+		{input: `""""`, want: `"\"\"\"\""`},
+		{input: `"""""`, want: `"\"\"\"\"\""`},
+		{input: `""foo"`, want: `"\"\"foo\""`},
+		{input: `""foo""`, want: `"\"\"foo\"\""`},
+		{input: `"foo"bar"bas"`, want: `"\"foo\"bar\"bas\""`},
 
-	// detect keywords at boundaries
-	autogold.Expect(`(and (or "a" "b") "c")`).Equal(t, test("(a or b) and c"))
-	autogold.Expect(`(and (or "a" "b") "c")`).Equal(t, test("(a or b)and c"))
-	autogold.Expect(`(and "c" (or "a" "b"))`).Equal(t, test("c and(a or b)"))
-	autogold.Expect(`(and "c" (or "a" "b"))`).Equal(t, test("c and (a or b)"))
-	autogold.Expect(`(and (or "a" "b") (or "c" "d"))`).Equal(t, test("(a or b)and(c or d)"))
+		// detect keywords at boundaries
+		{input: `(a or b) and c`, want: `(and (or "a" "b") "c")`},
+		{input: `(a or b)and c`, want: `(and (or "a" "b") "c")`},
+		{input: `c and(a or b)`, want: `(and "c" (or "a" "b"))`},
+		{input: `c and (a or b)`, want: `(and "c" (or "a" "b"))`},
+		{input: `(a or b)and(c or d)`, want: `(and (or "a" "b") (or "c" "d"))`},
 
-	autogold.Expect(`(or (and "a" "b") "c")`).Equal(t, test("(a and b) or c"))
-	autogold.Expect(`(or (and "a" "b") "c")`).Equal(t, test("(a and b)or c"))
-	autogold.Expect(`(or (and "a" "and") "c")`).Equal(t, test("(a and)or c"))
-	autogold.Expect(`(or "a" (and "b" "c"))`).Equal(t, test("a or(b and c)"))
+		{input: `(a and b) or c`, want: `(or (and "a" "b") "c")`},
+		{input: `(a and b)or c`, want: `(or (and "a" "b") "c")`},
+		{input: `(a and)or c`, want: `(or (and "a" "and") "c")`},
+		{input: `a or(b and c)`, want: `(or "a" (and "b" "c"))`},
 
-	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b) not c"))
-	autogold.Expect(`(and (or "a" "b") (not "c"))`).Equal(t, test("(a or b)not c"))
-	autogold.Expect(`(and "a" (not "b") (not "c"))`).Equal(t, test("(a not b)not c"))
-	autogold.Expect(`(and (not "a") "b")`).Equal(t, test("not a b"))
-	autogold.Expect(`(or "a" (not "b"))`).Equal(t, test("a or not b"))
-	autogold.Expect(`(not "b")`).Equal(t, test("not b"))
-	autogold.Expect(`(not "b")`).Equal(t, test(" not b"))
+		{input: `(a or b) not c`, want: `(and (or "a" "b") (not "c"))`},
+		{input: `(a or b)not c`, want: `(and (or "a" "b") (not "c"))`},
+		{input: `(a not b)not c`, want: `(and "a" (not "b") (not "c"))`},
+		{input: `not a b`, want: `(and (not "a") "b")`},
+		{input: `a or not b`, want: `(or "a" (not "b"))`},
+		{input: `not b`, want: `(not "b")`},
+		{input: ` not b`, want: `(not "b")`},
 
-	autogold.Expect(`(or "a" "bandc")`).Equal(t, test("a or (bandc)"))
-	autogold.Expect(`(and "a" "andor" "b")`).Equal(t, test("a andor b"))
-	autogold.Expect(`(and "a" "(and" "b")`).Equal(t, test("a (and b"))
-	autogold.Expect(`unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`).Equal(t, test("a )and b"))
+		{input: `a or (bandc)`, want: `(or "a" "bandc")`},
+		{input: `a andor b`, want: `(and "a" "andor" "b")`},
+		{input: `a (and b`, want: `(and "a" "(and" "b")`},
+		{input: `a )and b`, want: `unsupported expression. The combination of parentheses in the query has an unclear meaning. Use "..." to quote patterns that contain parentheses`},
 
-	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b)or c"))
-	autogold.Expect(`(or "a" "b" "c")`).Equal(t, test("(a or b) or c"))
-	autogold.Expect(`(or (and "a" "b") "c" "d")`).Equal(t, test("(a and b or c) or d"))
-	autogold.Expect(`(or "a" (and "b" "c") "d")`).Equal(t, test("(a or b and c)or d"))
+		{input: `(a or b)or c`, want: `(or "a" "b" "c")`},
+		{input: `(a or b) or c`, want: `(or "a" "b" "c")`},
+		{input: `(a and b or c) or d`, want: `(or (and "a" "b") "c" "d")`},
+		{input: `(a or b and c)or d`, want: `(or "a" (and "b" "c") "d")`},
 
-	// first token
-	autogold.Expect(`(and "and" "b")`).Equal(t, test("  and b"))
-	autogold.Expect(`(and "and" "b")`).Equal(t, test("and b"))
+		// first token
+		{input: `  and b`, want: `(and "and" "b")`},
+		{input: `and b`, want: `(and "and" "b")`},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.input, func(t *testing.T) {
+			got := test(tc.input)
+			if got != tc.want {
+				t.Errorf("got %s, expected %s", got, tc.want)
+			}
+		})
+	}
 }
 
 func TestParseAndOrLiteral(t *testing.T) {
