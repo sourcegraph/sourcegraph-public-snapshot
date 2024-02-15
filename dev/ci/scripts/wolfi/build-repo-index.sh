@@ -8,7 +8,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 # TODO(burmudar): Remove this if
 if [[ "$BUILDKITE_PIPELINE_SLUG" == "aspect-experimental" ]]; then
   GCP_PROJECT="aspect-dev"
-  KEY_DIR="./keys"
+  KEY_DIR="$(pwd)/keys"
   # TODO(burmudar): fix this in aspect image
   mkdir -p "$KEY_DIR"
   echo "$BUILDKITE_MELANGE_PACKAGE_SIGNING_KEY_DEV" > "$KEY_DIR/sourcegraph-melange-dev.rsa"
